@@ -182719,9 +182719,10 @@
         }
     ],
     "startTime": 1602288000,
-    "initialStakeAmount": 0,
-    "initialStakeDuration": 0,
+    "initialStakeAmount": 100000000000000000,
+    "initialStakeDuration": 7776000,
     "initialStakeAddresses": null,
+    "initialStakeNodeIDs": null,
     "cChainGenesis": null,
     "message": "Behind the Vast Market Rally: A Tumbling Dollar."
 }
