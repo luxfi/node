@@ -1,22 +1,27 @@
 // (c) 2019-2020, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package node
+package version
 
 import (
 	"time"
 
 	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/version"
 )
 
 var (
-	Version                      = version.NewDefaultVersion(constants.PlatformName, 1, 4, 4)
-	MinimumCompatibleVersion     = version.NewDefaultVersion(constants.PlatformName, 1, 4, 0)
-	PrevMinimumCompatibleVersion = version.NewDefaultVersion(constants.PlatformName, 1, 3, 0)
-	MinimumUnmaskedVersion       = version.NewDefaultVersion(constants.PlatformName, 1, 1, 0)
-	PrevMinimumUnmaskedVersion   = version.NewDefaultVersion(constants.PlatformName, 1, 0, 0)
-	VersionParser                = version.NewDefaultParser()
+	Current                      = NewDefaultApplication(constants.PlatformName, 1, 4, 5)
+	MinimumCompatibleVersion     = NewDefaultApplication(constants.PlatformName, 1, 4, 0)
+	PrevMinimumCompatibleVersion = NewDefaultApplication(constants.PlatformName, 1, 3, 0)
+	MinimumUnmaskedVersion       = NewDefaultApplication(constants.PlatformName, 1, 1, 0)
+	PrevMinimumUnmaskedVersion   = NewDefaultApplication(constants.PlatformName, 1, 0, 0)
+	VersionParser                = NewDefaultApplicationParser()
+
+	CurrentDatabase = DatabaseVersion1_4_5
+	PrevDatabase    = DatabaseVersion1_0_0
+
+	DatabaseVersion1_4_5 = NewDefaultVersion(1, 4, 5)
+	DatabaseVersion1_0_0 = NewDefaultVersion(1, 0, 0)
 
 	ApricotPhase0Times = map[uint32]time.Time{
 		constants.MainnetID: time.Date(2020, time.December, 8, 3, 0, 0, 0, time.UTC),
@@ -56,4 +61,16 @@ func GetApricotPhase2Time(networkID uint32) time.Time {
 		return upgradeTime
 	}
 	return ApricotPhase2DefaultTime
+}
+
+func GetCompatibility(networkID uint32) Compatibility {
+	return NewCompatibility(
+		Current,
+		MinimumCompatibleVersion,
+		GetApricotPhase2Time(networkID),
+		PrevMinimumCompatibleVersion,
+		MinimumUnmaskedVersion,
+		GetApricotPhase0Time(networkID),
+		PrevMinimumUnmaskedVersion,
+	)
 }
