@@ -1,15 +1,8 @@
-<div align="center">
-  <img src="resources/AvalancheLogoRed.png?raw=true">
-</div>
 
----
-
-Node implementation for the [Avalanche](https://avax.network) network -
-a blockchains platform with high throughput, and blazing fast transactions.
 
 ## Installation
 
-Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
+Lux is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 Note that as network usage increases, hardware requirements may change.
 
 The minimum recommended hardware specification for nodes connected to Mainnet is:
@@ -28,27 +21,27 @@ If you plan to build AvalancheGo from source, you will also need the following s
 
 ### Native Install
 
-Clone the AvalancheGo repository:
+Clone the LuxGo repository:
 
 ```sh
-git clone git@github.com:ava-labs/avalanchego.git
-cd avalanchego
+git clone https://github.com/luxdefi/Luxgo.git
+cd Luxgo
 ```
 
 This will clone and checkout to `master` branch.
 
-#### Building the Avalanche Executable
+#### Building the Lux Executable
 
-Build Avalanche by running the build script:
+Build Lux by running the build script:
 
 ```sh
 ./scripts/build.sh
 ```
 
-The output of the script will be the Avalanche binary named `avalanchego`. It is located in the build directory:
+The output of the script will be the Lux binary named `Luxgo`. It is located in the build directory:
 
 ```sh
-./build/avalanchego
+./build/luxgo
 ```
 
 ### Binary Repository
