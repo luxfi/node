@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -16,7 +16,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -177,22 +177,22 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 	decisionTxs := make([]*txs.Tx, 0, count)
 	for i := uint32(0); i < uint32(count); i++ {
 		utx := &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    10,
 				BlockchainID: ids.Empty.Prefix(uint64(i)),
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID:        ids.ID{'t', 'x', 'I', 'D'},
 						OutputIndex: i,
 					},
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					In: &secp256k1fx.TransferInput{
 						Amt:   uint64(5678),
 						Input: secp256k1fx.Input{SigIndices: []uint32{i}},
 					},
 				}},
-				Outs: []*avax.TransferableOutput{{
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Outs: []*lux.TransferableOutput{{
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: uint64(1234),
 						OutputOwners: secp256k1fx.OutputOwners{

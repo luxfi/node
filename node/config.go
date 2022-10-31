@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -145,7 +145,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	AvaxAssetID  ids.ID `json:"avaxAssetID"`
+	LuxAssetID  ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

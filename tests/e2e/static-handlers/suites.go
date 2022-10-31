@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements static handlers tests for avm and platformvm
@@ -145,7 +145,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 			addr, err := address.FormatBech32(hrp, id.Bytes())
 			gomega.Expect(err).Should(gomega.BeNil())
 			genesisUTXOs[i] = api.UTXO{
-				Amount:  json.Uint64(50000 * units.MilliAvax),
+				Amount:  json.Uint64(50000 * units.MilliLux),
 				Address: addr,
 			}
 		}
@@ -175,12 +175,12 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 
 		buildGenesisArgs := api.BuildGenesisArgs{
 			NetworkID:     json.Uint32(constants.UnitTestID),
-			AvaxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
+			LuxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
 			UTXOs:         genesisUTXOs,
 			Validators:    genesisValidators,
 			Chains:        nil,
 			Time:          json.Uint64(time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			InitialSupply: json.Uint64(360 * units.MegaAvax),
+			InitialSupply: json.Uint64(360 * units.MegaLux),
 			Encoding:      formatting.Hex,
 		}
 

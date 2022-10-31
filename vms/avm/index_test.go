@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -26,7 +26,7 @@ import (
 	"github.com/luxdefi/luxd/utils/wrappers"
 	"github.com/luxdefi/luxd/version"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/index"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -40,8 +40,8 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
-	avaxID := genesisTx.ID()
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+	luxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
 		if err := vm.Shutdown(); err != nil {
@@ -54,12 +54,12 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	addr := key.PublicKey().Address()
 
 	var uniqueTxs []*UniqueTx
-	txAssetID := avax.Asset{ID: avaxID}
+	txAssetID := lux.Asset{ID: luxID}
 
 	ctx.Lock.Lock()
 	for i := 0; i < 5; i++ {
 		// create utxoID and assetIDs
-		utxoID := avax.UTXOID{
+		utxoID := lux.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -103,7 +103,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		uniqueTxs = append(uniqueTxs, uniqueParsedTX)
 
-		var inputUTXOs []*avax.UTXO
+		var inputUTXOs []*lux.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -133,9 +133,9 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
-	avaxID := genesisTx.ID()
+	luxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
 		if err := vm.Shutdown(); err != nil {
@@ -145,13 +145,13 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	}()
 
 	addressTxMap := map[ids.ShortID]*UniqueTx{}
-	txAssetID := avax.Asset{ID: avaxID}
+	txAssetID := lux.Asset{ID: luxID}
 
 	ctx.Lock.Lock()
 	for _, key := range keys {
 		addr := key.PublicKey().Address()
 		// create utxoID and assetIDs
-		utxoID := avax.UTXOID{
+		utxoID := lux.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -195,7 +195,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		addressTxMap[addr] = uniqueParsedTX
 
-		var inputUTXOs []*avax.UTXO
+		var inputUTXOs []*lux.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -225,9 +225,9 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
-	avaxID := genesisTx.ID()
+	luxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
 		if err := vm.Shutdown(); err != nil {
@@ -236,7 +236,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	txAssetID := avax.Asset{ID: avaxID}
+	txAssetID := lux.Asset{ID: luxID}
 	addrs := make([]ids.ShortID, len(keys))
 	for _, key := range keys {
 		addrs = append(addrs, key.PublicKey().Address())
@@ -247,7 +247,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	key := keys[0]
 	addr := key.PublicKey().Address()
 	// create utxoID and assetIDs
-	utxoID := avax.UTXOID{
+	utxoID := lux.UTXOID{
 		TxID: ids.GenerateTestID(),
 	}
 
@@ -267,7 +267,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 		t.Fatal("Error saving utxo", err)
 	}
 
-	var inputUTXOs []*avax.UTXO //nolint:prealloc
+	var inputUTXOs []*lux.UTXO //nolint:prealloc
 	for _, utxoID := range tx.Unsigned.InputUTXOs() {
 		utxo, err := vm.getUTXO(utxoID)
 		if err != nil {
@@ -291,8 +291,8 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
-	avaxID := genesisTx.ID()
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+	luxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
 		if err := vm.Shutdown(); err != nil {
@@ -302,13 +302,13 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 	}()
 
 	addressTxMap := map[ids.ShortID]*UniqueTx{}
-	txAssetID := avax.Asset{ID: avaxID}
+	txAssetID := lux.Asset{ID: luxID}
 
 	ctx.Lock.Lock()
 	for _, key := range keys {
 		addr := key.PublicKey().Address()
 		// create utxoID and assetIDs
-		utxoID := avax.UTXOID{
+		utxoID := lux.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -352,7 +352,7 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		addressTxMap[addr] = uniqueParsedTX
 
-		var inputUTXOs []*avax.UTXO
+		var inputUTXOs []*lux.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -471,8 +471,8 @@ func TestIndexingAllowIncomplete(t *testing.T) {
 	require.Error(t, err)
 }
 
-func buildPlatformUTXO(utxoID avax.UTXOID, txAssetID avax.Asset, addr ids.ShortID) *avax.UTXO {
-	return &avax.UTXO{
+func buildPlatformUTXO(utxoID lux.UTXOID, txAssetID lux.Asset, addr ids.ShortID) *lux.UTXO {
+	return &lux.UTXO{
 		UTXOID: utxoID,
 		Asset:  txAssetID,
 		Out: &secp256k1fx.TransferOutput{
@@ -489,12 +489,12 @@ func signTX(codec codec.Manager, tx *txs.Tx, key *crypto.PrivateKeySECP256K1R) e
 	return tx.SignSECP256K1Fx(codec, [][]*crypto.PrivateKeySECP256K1R{{key}})
 }
 
-func buildTX(utxoID avax.UTXOID, txAssetID avax.Asset, address ...ids.ShortID) *txs.Tx {
+func buildTX(utxoID lux.UTXOID, txAssetID lux.Asset, address ...ids.ShortID) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.BaseTx{
-		BaseTx: avax.BaseTx{
+		BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
+			Ins: []*lux.TransferableInput{{
 				UTXOID: utxoID,
 				Asset:  txAssetID,
 				In: &secp256k1fx.TransferInput{
@@ -502,7 +502,7 @@ func buildTX(utxoID avax.UTXOID, txAssetID avax.Asset, address ...ids.ShortID) *
 					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 				},
 			}},
-			Outs: []*avax.TransferableOutput{{
+			Outs: []*lux.TransferableOutput{{
 				Asset: txAssetID,
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1000,

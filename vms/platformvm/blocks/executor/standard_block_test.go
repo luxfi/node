@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -16,7 +16,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
@@ -148,12 +148,12 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 
 	txID := ids.GenerateTestID()
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID: txID,
 		},
-		Asset: avax.Asset{
-			ID: avaxAssetID,
+		Asset: lux.Asset{
+			ID: luxAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: env.config.CreateSubnetTxFee,
@@ -164,10 +164,10 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 
 	// Create the tx
 	utx := &txs.CreateSubnetTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    env.ctx.NetworkID,
 			BlockchainID: env.ctx.ChainID,
-			Ins: []*avax.TransferableInput{{
+			Ins: []*lux.TransferableInput{{
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,
 				In: &secp256k1fx.TransferInput{

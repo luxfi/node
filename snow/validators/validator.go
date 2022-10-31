@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -19,7 +19,7 @@ type Validator interface {
 	ID() ids.NodeID
 
 	// Weight that can be used for weighted sampling. If this validator is
-	// validating the primary network, returns the amount of AVAX staked.
+	// validating the primary network, returns the amount of LUX staked.
 	Weight() uint64
 }
 

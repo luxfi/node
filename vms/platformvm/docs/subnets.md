@@ -25,7 +25,7 @@ A permissioned subnet can be modified by a few different transactions.
 - TransformSubnetTx
   - Converts the permissioned subnet into a permissionless subnet.
   - Specifies all of the staking parameters.
-    - AVAX is not allowed to be used as a staking token. In general, it is not
+    - LUX is not allowed to be used as a staking token. In general, it is not
       advisable to have multiple subnets using the same staking token.
   - After becoming a permissionless subnet, previously added permissioned
     validators will remain to finish their staking period.

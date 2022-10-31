@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -20,7 +20,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/units"
 	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/config"
 	"github.com/luxdefi/luxd/vms/platformvm/genesis"
@@ -261,13 +261,13 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 			NodeID: initialNodeID,
 			Start:  uint64(initialTime.Unix()),
 			End:    uint64(initialValidatorEndTime.Unix()),
-			Wght:   units.Avax,
+			Wght:   units.Lux,
 		},
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{ID: initialTxID},
+				Asset: lux.Asset{ID: initialTxID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: units.Avax,
+					Amt: units.Lux,
 				},
 			},
 		},
@@ -288,13 +288,13 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 
 	genesisBlkID := ids.GenerateTestID()
 	genesisState := &genesis.State{
-		UTXOs: []*avax.UTXO{
+		UTXOs: []*lux.UTXO{
 			{
-				UTXOID: avax.UTXOID{
+				UTXOID: lux.UTXOID{
 					TxID:        initialTxID,
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: initialTxID},
+				Asset: lux.Asset{ID: initialTxID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: units.Schmeckle,
 				},
@@ -307,7 +307,7 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 			initialChainTx,
 		},
 		Timestamp:     uint64(initialTime.Unix()),
-		InitialSupply: units.Schmeckle + units.Avax,
+		InitialSupply: units.Schmeckle + units.Lux,
 	}
 
 	genesisBlk, err := blocks.NewApricotCommitBlock(genesisBlkID, 0)
@@ -338,7 +338,7 @@ func newStateFromDB(require *require.Assertions, db database.Database) State {
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
+			SupplyCap:          720 * units.MegaLux,
 		}),
 	)
 	require.NoError(err)

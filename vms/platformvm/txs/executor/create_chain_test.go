@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -213,7 +213,7 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 		{
 			name:         "post-fork - incorrectly priced",
 			time:         ap3Time,
-			fee:          100*defaultTxFee - 1*units.NanoAvax,
+			fee:          100*defaultTxFee - 1*units.NanoLux,
 			expectsError: true,
 		},
 		{
@@ -246,7 +246,7 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			// Create the tx
 
 			utx := &txs.CreateChainTx{
-				BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    env.ctx.NetworkID,
 					BlockchainID: env.ctx.ChainID,
 					Ins:          ins,

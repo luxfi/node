@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 )
@@ -35,7 +35,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 	ctx := &snow.Context{
 		ChainID:     chainID,
 		NetworkID:   networkID,
-		AVAXAssetID: ids.GenerateTestID(),
+		LUXAssetID: ids.GenerateTestID(),
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -45,7 +45,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
-		BaseTx: avax.BaseTx{
+		BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
@@ -93,15 +93,15 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			err: errEmptyAssetID,
 		},
 		{
-			name: "AVAX assetID",
+			name: "LUX assetID",
 			txFunc: func(*gomock.Controller) *TransformSubnetTx {
 				return &TransformSubnetTx{
 					BaseTx:  validBaseTx,
 					Subnet:  ids.GenerateTestID(),
-					AssetID: ctx.AVAXAssetID,
+					AssetID: ctx.LUXAssetID,
 				}
 			},
-			err: errAssetIDCantBeAVAX,
+			err: errAssetIDCantBeLUX,
 		},
 		{
 			name: "initialSupply == 0",

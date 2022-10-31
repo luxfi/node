@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -171,7 +171,7 @@ type ManagerConfig struct {
 	Server                      server.Server      // Handles HTTP API calls
 	Keystore                    keystore.Keystore
 	AtomicMemory                *atomic.Memory
-	AVAXAssetID                 ids.ID
+	LUXAssetID                 ids.ID
 	XChainID                    ids.ID
 	CriticalChains              ids.Set         // Chains that can't exit gracefully
 	TimeoutManager              timeout.Manager // Manages request timeouts when sending messages to other validators
@@ -397,7 +397,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 			NodeID:    m.NodeID,
 
 			XChainID:    m.XChainID,
-			AVAXAssetID: m.AVAXAssetID,
+			LUXAssetID: m.LUXAssetID,
 
 			Log:          chainLog,
 			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),

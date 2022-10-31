@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -27,7 +27,7 @@ import (
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/utils/math"
 	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/config"
 	"github.com/luxdefi/luxd/vms/platformvm/genesis"
@@ -89,8 +89,8 @@ type Chain interface {
 	GetCurrentSupply(subnetID ids.ID) (uint64, error)
 	SetCurrentSupply(subnetID ids.ID, cs uint64)
 
-	GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error)
-	AddRewardUTXO(txID ids.ID, utxo *avax.UTXO)
+	GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error)
+	AddRewardUTXO(txID ids.ID, utxo *lux.UTXO)
 
 	GetSubnets() ([]*txs.Tx, error)
 	AddSubnet(createSubnetTx *txs.Tx)
@@ -120,7 +120,7 @@ type State interface {
 	Chain
 	BlockState
 	uptime.State
-	avax.UTXOReader
+	lux.UTXOReader
 
 	GetValidatorWeightDiffs(height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorWeightDiff, error)
 
@@ -251,13 +251,13 @@ type state struct {
 	txCache  cache.Cacher            // cache of txID -> {*txs.Tx, Status} if the entry is nil, it is not in the database
 	txDB     database.Database
 
-	addedRewardUTXOs map[ids.ID][]*avax.UTXO // map of txID -> []*UTXO
+	addedRewardUTXOs map[ids.ID][]*lux.UTXO // map of txID -> []*UTXO
 	rewardUTXOsCache cache.Cacher            // cache of txID -> []*UTXO
 	rewardUTXODB     database.Database
 
-	modifiedUTXOs map[ids.ID]*avax.UTXO // map of modified UTXOID -> *UTXO if the UTXO is nil, it has been removed
+	modifiedUTXOs map[ids.ID]*lux.UTXO // map of modified UTXOID -> *UTXO if the UTXO is nil, it has been removed
 	utxoDB        database.Database
-	utxoState     avax.UTXOState
+	utxoState     lux.UTXOState
 
 	cachedSubnets []*txs.Tx // nil if the subnets haven't been loaded
 	addedSubnets  []*txs.Tx
@@ -425,7 +425,7 @@ func new(
 	}
 
 	utxoDB := prefixdb.New(utxoPrefix, baseDB)
-	utxoState, err := avax.NewMeteredUTXOState(utxoDB, txs.GenesisCodec, metricsReg)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, txs.GenesisCodec, metricsReg)
 	if err != nil {
 		return nil, err
 	}
@@ -511,11 +511,11 @@ func new(
 		txDB:     prefixdb.New(txPrefix, baseDB),
 		txCache:  txCache,
 
-		addedRewardUTXOs: make(map[ids.ID][]*avax.UTXO),
+		addedRewardUTXOs: make(map[ids.ID][]*lux.UTXO),
 		rewardUTXODB:     rewardUTXODB,
 		rewardUTXOsCache: rewardUTXOsCache,
 
-		modifiedUTXOs: make(map[ids.ID]*avax.UTXO),
+		modifiedUTXOs: make(map[ids.ID]*lux.UTXO),
 		utxoDB:        utxoDB,
 		utxoState:     utxoState,
 
@@ -769,12 +769,12 @@ func (s *state) AddTx(tx *txs.Tx, status status.Status) {
 	}
 }
 
-func (s *state) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
+func (s *state) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
 	if utxos, exists := s.addedRewardUTXOs[txID]; exists {
 		return utxos, nil
 	}
 	if utxos, exists := s.rewardUTXOsCache.Get(txID); exists {
-		return utxos.([]*avax.UTXO), nil
+		return utxos.([]*lux.UTXO), nil
 	}
 
 	rawTxDB := prefixdb.New(txID[:], s.rewardUTXODB)
@@ -782,9 +782,9 @@ func (s *state) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
 	it := txDB.NewIterator()
 	defer it.Release()
 
-	utxos := []*avax.UTXO(nil)
+	utxos := []*lux.UTXO(nil)
 	for it.Next() {
-		utxo := &avax.UTXO{}
+		utxo := &lux.UTXO{}
 		if _, err := txs.Codec.Unmarshal(it.Value(), utxo); err != nil {
 			return nil, err
 		}
@@ -798,11 +798,11 @@ func (s *state) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
 	return utxos, nil
 }
 
-func (s *state) AddRewardUTXO(txID ids.ID, utxo *avax.UTXO) {
+func (s *state) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
 	s.addedRewardUTXOs[txID] = append(s.addedRewardUTXOs[txID], utxo)
 }
 
-func (s *state) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
+func (s *state) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	if utxo, exists := s.modifiedUTXOs[utxoID]; exists {
 		if utxo == nil {
 			return nil, database.ErrNotFound
@@ -816,7 +816,7 @@ func (s *state) UTXOIDs(addr []byte, start ids.ID, limit int) ([]ids.ID, error) 
 	return s.utxoState.UTXOIDs(addr, start, limit)
 }
 
-func (s *state) AddUTXO(utxo *avax.UTXO) {
+func (s *state) AddUTXO(utxo *lux.UTXO) {
 	s.modifiedUTXOs[utxo.InputID()] = utxo
 }
 
@@ -1011,7 +1011,7 @@ func (s *state) syncGenesis(genesisBlk blocks.Block, genesis *genesis.State) err
 		// Ensure all chains that the genesis bytes say to create have the right
 		// network ID
 		if unsignedChain.NetworkID != s.ctx.NetworkID {
-			return avax.ErrWrongNetworkID
+			return lux.ErrWrongNetworkID
 		}
 
 		s.AddChain(chain)

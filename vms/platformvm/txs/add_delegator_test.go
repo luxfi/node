@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -25,7 +25,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 
 	var (
@@ -41,19 +41,19 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	require.ErrorIs(addDelegatorTx.SyntacticVerify(ctx), ErrNilTx)
 
 	validatorWeight := uint64(2022)
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -62,8 +62,8 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -76,7 +76,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	addDelegatorTx = &AddDelegatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Outs:         outputs,
@@ -124,11 +124,11 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	addDelegatorTx.Validator.Wght = validatorWeight
 }
 
-func TestAddDelegatorTxSyntacticVerifyNotAVAX(t *testing.T) {
+func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 
 	var (
@@ -139,19 +139,19 @@ func TestAddDelegatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 
 	assetID := ids.GenerateTestID()
 	validatorWeight := uint64(2022)
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -160,8 +160,8 @@ func TestAddDelegatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -174,7 +174,7 @@ func TestAddDelegatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 		},
 	}}
 	addDelegatorTx = &AddDelegatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Outs:         outputs,

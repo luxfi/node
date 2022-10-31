@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -154,7 +154,7 @@ type Client interface {
 	// Import sends an import transaction to import funds from [sourceChain] and
 	// returns the ID of the newly created transaction
 	Import(ctx context.Context, user api.UserPass, to ids.ShortID, sourceChain string, options ...rpc.Option) (ids.ID, error) // Export sends an asset from this chain to the P/C-Chain.
-	// After this tx is accepted, the AVAX must be imported to the P/C-chain with an importTx.
+	// After this tx is accepted, the LUX must be imported to the P/C-chain with an importTx.
 	// Returns the ID of the newly created atomic transaction
 	Export(
 		ctx context.Context,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -18,7 +18,7 @@ import (
 	"github.com/luxdefi/luxd/utils"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/config"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
@@ -57,11 +57,11 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 		verifiedTx = txs.AddPermissionlessValidatorTx{
 			BaseTx: txs.BaseTx{
 				SyntacticallyVerified: true,
-				BaseTx: avax.BaseTx{
+				BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: ids.GenerateTestID(),
-					Outs:         []*avax.TransferableOutput{},
-					Ins:          []*avax.TransferableInput{},
+					Outs:         []*lux.TransferableOutput{},
+					Ins:          []*lux.TransferableInput{},
 				},
 			},
 			Validator: validator.Validator{
@@ -71,9 +71,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				Wght:   unsignedTransformTx.MinValidatorStake,
 			},
 			Subnet: subnetID,
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: customAssetID,
 					},
 				},
@@ -292,9 +292,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			sTxF: func() *txs.Tx { return &verifiedSignedTx },
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
-				tx.StakeOuts = []*avax.TransferableOutput{
+				tx.StakeOuts = []*lux.TransferableOutput{
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 					},
@@ -532,7 +532,7 @@ func TestGetValidatorRules(t *testing.T) {
 			MaxStakeDuration:  2 * time.Second,
 			MinDelegationFee:  1337,
 		}
-		avaxAssetID   = ids.GenerateTestID()
+		luxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 		testErr       = errors.New("an error")
@@ -545,14 +545,14 @@ func TestGetValidatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					AVAXAssetID: avaxAssetID,
+					LUXAssetID: luxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addValidatorRules{
-				assetID:           avaxAssetID,
+				assetID:           luxAssetID,
 				minValidatorStake: config.MinValidatorStake,
 				maxValidatorStake: config.MaxValidatorStake,
 				minStakeDuration:  config.MinStakeDuration,
@@ -652,7 +652,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			MinStakeDuration:  time.Second,
 			MaxStakeDuration:  2 * time.Second,
 		}
-		avaxAssetID   = ids.GenerateTestID()
+		luxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 		testErr       = errors.New("an error")
@@ -664,14 +664,14 @@ func TestGetDelegatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					AVAXAssetID: avaxAssetID,
+					LUXAssetID: luxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addDelegatorRules{
-				assetID:                  avaxAssetID,
+				assetID:                  luxAssetID,
 				minDelegatorStake:        config.MinDelegatorStake,
 				maxValidatorStake:        config.MaxValidatorStake,
 				minStakeDuration:         config.MinStakeDuration,

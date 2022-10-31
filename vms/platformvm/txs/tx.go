@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -71,16 +71,16 @@ func (tx *Tx) Bytes() []byte { return tx.bytes }
 func (tx *Tx) ID() ids.ID    { return tx.id }
 
 // UTXOs returns the UTXOs transaction is producing.
-func (tx *Tx) UTXOs() []*avax.UTXO {
+func (tx *Tx) UTXOs() []*lux.UTXO {
 	outs := tx.Unsigned.Outputs()
-	utxos := make([]*avax.UTXO, len(outs))
+	utxos := make([]*lux.UTXO, len(outs))
 	for i, out := range outs {
-		utxos[i] = &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxos[i] = &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        tx.id,
 				OutputIndex: uint32(i),
 			},
-			Asset: avax.Asset{ID: out.AssetID()},
+			Asset: lux.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 	}

@@ -1,16 +1,16 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
 
 import (
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 // UTXO adds messages to UTXOs
 type UTXO struct {
-	avax.UTXO `serialize:"true"`
+	lux.UTXO `serialize:"true"`
 	Message   []byte `serialize:"true" json:"message"`
 }
 
@@ -44,7 +44,7 @@ func Parse(genesisBytes []byte) (*Genesis, error) {
 
 // State represents the genesis state of the platform chain
 type State struct {
-	UTXOs         []*avax.UTXO
+	UTXOs         []*lux.UTXO
 	Validators    []*txs.Tx
 	Chains        []*txs.Tx
 	Timestamp     uint64
@@ -57,7 +57,7 @@ func ParseState(genesisBytes []byte) (*State, error) {
 		return nil, err
 	}
 
-	utxos := make([]*avax.UTXO, 0, len(genesis.UTXOs))
+	utxos := make([]*lux.UTXO, 0, len(genesis.UTXOs))
 	for _, utxo := range genesis.UTXOs {
 		utxos = append(utxos, &utxo.UTXO)
 	}

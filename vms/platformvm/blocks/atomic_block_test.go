@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
@@ -22,12 +22,12 @@ func TestNewApricotAtomicBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.ImportTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: avax.BaseTx{
-					Ins:  []*avax.TransferableInput{},
-					Outs: []*avax.TransferableOutput{},
+				BaseTx: lux.BaseTx{
+					Ins:  []*lux.TransferableInput{},
+					Outs: []*lux.TransferableOutput{},
 				},
 			},
-			ImportedInputs: []*avax.TransferableInput{},
+			ImportedInputs: []*lux.TransferableInput{},
 		},
 		Creds: []verify.Verifiable{},
 	}

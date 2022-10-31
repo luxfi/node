@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements X-chain transfer tests.
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/luxd/tests"
 	"github.com/luxdefi/luxd/tests/e2e"
 	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
@@ -32,14 +32,14 @@ const (
 
 const totalRounds = 50
 
-var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
-	ginkgo.It("can issue a virtuous transfer tx for AVAX asset",
+var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
+	ginkgo.It("can issue a virtuous transfer tx for LUX asset",
 		// use this for filtering tests by labels
 		// ref. https://onsi.github.io/ginkgo/#spec-labels
 		ginkgo.Label(
 			"require-network-runner",
 			"x",
-			"virtuous-transfer-tx-avax",
+			"virtuous-transfer-tx-lux",
 		),
 		func() {
 			rpcEps := e2e.Env.GetURIs()
@@ -74,7 +74,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					cancel()
 					gomega.Expect(err).Should(gomega.BeNil())
 				})
-				avaxAssetID := baseWallet.X().AVAXAssetID()
+				luxAssetID := baseWallet.X().LUXAssetID()
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))
@@ -111,10 +111,10 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					balances, err := w.X().Builder().GetFTBalance()
 					gomega.Expect(err).Should(gomega.BeNil())
 
-					bal := balances[avaxAssetID]
+					bal := balances[luxAssetID]
 					testBalances = append(testBalances, bal)
 
-					fmt.Printf(`CURRENT BALANCE %21d AVAX (SHORT ADDRESS %q)
+					fmt.Printf(`CURRENT BALANCE %21d LUX (SHORT ADDRESS %q)
 `,
 						bal,
 						testKeys[i].PublicKey().Address(),
@@ -155,9 +155,9 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 				ginkgo.By("X-Chain transfer with wrong amount must fail", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 					_, err = wallets[fromIdx].X().IssueBaseTx(
-						[]*avax.TransferableOutput{{
-							Asset: avax.Asset{
-								ID: avaxAssetID,
+						[]*lux.TransferableOutput{{
+							Asset: lux.Asset{
+								ID: luxAssetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: senderOrigBal + 1,
@@ -177,14 +177,14 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 TRANSFERRING
 
 FROM [%q]
-SENDER    CURRENT BALANCE     : %21d AVAX
-SENDER    NEW BALANCE (AFTER) : %21d AVAX
+SENDER    CURRENT BALANCE     : %21d LUX
+SENDER    NEW BALANCE (AFTER) : %21d LUX
 
-TRANSFER AMOUNT FROM SENDER   : %21d AVAX
+TRANSFER AMOUNT FROM SENDER   : %21d LUX
 
 TO [%q]
-RECEIVER  CURRENT BALANCE     : %21d AVAX
-RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
+RECEIVER  CURRENT BALANCE     : %21d LUX
+RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 ===
 `,
 					shortAddrs[fromIdx],
@@ -198,9 +198,9 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				txID, err := wallets[fromIdx].X().IssueBaseTx(
-					[]*avax.TransferableOutput{{
-						Asset: avax.Asset{
-							ID: avaxAssetID,
+					[]*lux.TransferableOutput{{
+						Asset: lux.Asset{
+							ID: luxAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: amountToTransfer,
@@ -217,12 +217,12 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 
 				balances, err := wallets[fromIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				senderCurBalX := balances[avaxAssetID]
+				senderCurBalX := balances[luxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}}  %d\n", senderCurBalX)
 
 				balances, err = wallets[toIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				receiverCurBalX := balances[avaxAssetID]
+				receiverCurBalX := balances[luxAssetID]
 				tests.Outf("{{green}}second wallet balance:{{/}} %d\n", receiverCurBalX)
 
 				gomega.Expect(senderCurBalX).Should(gomega.Equal(senderNewBal))

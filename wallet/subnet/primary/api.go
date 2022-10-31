@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/rpc"
 	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/wallet/chain/p"
@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	MainnetAPIURI = "https://api.avax.network"
-	FujiAPIURI    = "https://api.avax-test.network"
+	MainnetAPIURI = "https://api.lux.network"
+	FujiAPIURI    = "https://api.lux-test.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
@@ -129,7 +129,7 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			var utxo avax.UTXO
+			var utxo lux.UTXO
 			_, err := codec.Unmarshal(utxoBytes, &utxo)
 			if err != nil {
 				return err

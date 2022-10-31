@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -96,7 +96,7 @@ func (vm *VMServer) Initialize(_ context.Context, req *vmpb.InitializeRequest) (
 	if err != nil {
 		return nil, err
 	}
-	avaxAssetID, err := ids.ToID(req.AvaxAssetId)
+	luxAssetID, err := ids.ToID(req.LuxAssetId)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (vm *VMServer) Initialize(_ context.Context, req *vmpb.InitializeRequest) (
 		NodeID:    nodeID,
 
 		XChainID:    xChainID,
-		AVAXAssetID: avaxAssetID,
+		LUXAssetID: luxAssetID,
 
 		Log:          logging.NoLog{},
 		Keystore:     keystoreClient,
