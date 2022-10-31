@@ -10,13 +10,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/nodb"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/units"
+	"github.com/luxdefi/luxd/utils/wrappers"
 
-	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxdefi/luxd/proto/pb/rpcdb"
 )
 
 const (

@@ -6,9 +6,9 @@ package info
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/rpc"
-	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/rpc"
+	"github.com/luxdefi/luxd/vms/platformvm/signer"
 )
 
 var _ Client = (*client)(nil)

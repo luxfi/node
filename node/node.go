@@ -22,64 +22,64 @@ import (
 
 	"go.uber.org/zap"
 
-	coreth "github.com/ava-labs/coreth/plugin/evm"
+	coreth "github.com/luxdefi/coreth/plugin/evm"
 
-	"github.com/ava-labs/avalanchego/api/admin"
-	"github.com/ava-labs/avalanchego/api/auth"
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/api/keystore"
-	"github.com/ava-labs/avalanchego/api/metrics"
-	"github.com/ava-labs/avalanchego/api/server"
-	"github.com/ava-labs/avalanchego/chains"
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/leveldb"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/indexer"
-	"github.com/ava-labs/avalanchego/ipcs"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/network"
-	"github.com/ava-labs/avalanchego/network/dialer"
-	"github.com/ava-labs/avalanchego/network/peer"
-	"github.com/ava-labs/avalanchego/network/throttling"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/snow/networking/timeout"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/uptime"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/filesystem"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/math/meter"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/profiler"
-	"github.com/ava-labs/avalanchego/utils/resource"
-	"github.com/ava-labs/avalanchego/utils/timer"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/version"
-	"github.com/ava-labs/avalanchego/vms/avm"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/platformvm/config"
-	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
-	"github.com/ava-labs/avalanchego/vms/propertyfx"
-	"github.com/ava-labs/avalanchego/vms/registry"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/api/admin"
+	"github.com/luxdefi/luxd/api/auth"
+	"github.com/luxdefi/luxd/api/health"
+	"github.com/luxdefi/luxd/api/info"
+	"github.com/luxdefi/luxd/api/keystore"
+	"github.com/luxdefi/luxd/api/metrics"
+	"github.com/luxdefi/luxd/api/server"
+	"github.com/luxdefi/luxd/chains"
+	"github.com/luxdefi/luxd/chains/atomic"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/leveldb"
+	"github.com/luxdefi/luxd/database/manager"
+	"github.com/luxdefi/luxd/database/memdb"
+	"github.com/luxdefi/luxd/database/prefixdb"
+	"github.com/luxdefi/luxd/genesis"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/indexer"
+	"github.com/luxdefi/luxd/ipcs"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/network/dialer"
+	"github.com/luxdefi/luxd/network/peer"
+	"github.com/luxdefi/luxd/network/throttling"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/networking/benchlist"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/timeout"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/snow/uptime"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/filesystem"
+	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/luxd/utils/ips"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/utils/math"
+	"github.com/luxdefi/luxd/utils/math/meter"
+	"github.com/luxdefi/luxd/utils/perms"
+	"github.com/luxdefi/luxd/utils/profiler"
+	"github.com/luxdefi/luxd/utils/resource"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/luxd/vms/avm"
+	"github.com/luxdefi/luxd/vms/nftfx"
+	"github.com/luxdefi/luxd/vms/platformvm"
+	"github.com/luxdefi/luxd/vms/platformvm/config"
+	"github.com/luxdefi/luxd/vms/platformvm/signer"
+	"github.com/luxdefi/luxd/vms/propertyfx"
+	"github.com/luxdefi/luxd/vms/registry"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 
-	ipcsapi "github.com/ava-labs/avalanchego/api/ipcs"
+	ipcsapi "github.com/luxdefi/luxd/api/ipcs"
 )
 
 var (
@@ -90,7 +90,7 @@ var (
 	errShuttingDown  = errors.New("server shutting down")
 )
 
-// Node is an instance of an Avalanche node.
+// Node is an instance of an LUX node.
 type Node struct {
 	Log        logging.Logger
 	LogFactory logging.Factory
@@ -750,7 +750,7 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 	return nil
 }
 
-// initVMs initializes the VMs Avalanche supports + any additional vms installed as plugins.
+// initVMs initializes the VMs LUX supports + any additional vms installed as plugins.
 func (n *Node) initVMs() error {
 	n.Log.Info("initializing VMs")
 
@@ -769,7 +769,7 @@ func (n *Node) initVMs() error {
 		VMManager: n.Config.VMManager,
 	})
 
-	// Register the VMs that Avalanche supports
+	// Register the VMs that LUX supports
 	errs := wrappers.Errs{}
 	errs.Add(
 		vmRegisterer.Register(constants.PlatformVMID, &platformvm.Factory{

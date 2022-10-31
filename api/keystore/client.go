@@ -6,14 +6,14 @@ package keystore
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/luxd/api"
+	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/luxdefi/luxd/utils/rpc"
 )
 
 var _ Client = (*client)(nil)
 
-// Client interface for Avalanche Keystore API Endpoint
+// Client interface for LUX Keystore API Endpoint
 type Client interface {
 	CreateUser(context.Context, api.UserPass, ...rpc.Option) error
 	// Returns the usernames of all keystore users
@@ -26,7 +26,7 @@ type Client interface {
 	DeleteUser(context.Context, api.UserPass, ...rpc.Option) error
 }
 
-// Client implementation for Avalanche Keystore API Endpoint
+// Client implementation for LUX Keystore API Endpoint
 type client struct {
 	requester rpc.EndpointRequester
 }

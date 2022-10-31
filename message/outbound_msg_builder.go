@@ -6,8 +6,8 @@ package message
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/ips"
 )
 
 // OutboundMsgBuilder builds outbound messages. Outbound messages are returned

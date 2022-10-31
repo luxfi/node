@@ -6,7 +6,7 @@ package events
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/ids"
 )
 
 // Blockable defines what an object must implement to be able to block on

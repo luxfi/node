@@ -6,10 +6,10 @@ package snowstorm
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow"
 
-	sbcon "github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	sbcon "github.com/luxdefi/luxd/snow/consensus/snowball"
 )
 
 // Consensus is a snowball instance deciding between an unbounded number of

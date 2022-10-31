@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/vms"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/vms"
 )
 
 var errOops = errors.New("oops")

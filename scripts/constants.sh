@@ -9,18 +9,18 @@ AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Direct
 
 # Set the PATHS
 GOPATH="$(go env GOPATH)"
-coreth_path="$GOPATH/pkg/mod/github.com/ava-labs/coreth@$coreth_version"
+coreth_path="$GOPATH/pkg/mod/github.com/luxdefi/coreth@$coreth_version"
 
-# Where AvalancheGo binary goes
+# Where LUXGo binary goes
 build_dir="$AVALANCHE_PATH/build"
-avalanchego_path="$build_dir/avalanchego"
+luxd_path="$build_dir/luxd"
 plugin_dir="$build_dir/plugins"
 evm_path="$plugin_dir/evm"
 
 # Avalabs docker hub
-# avaplatform/avalanchego - defaults to local as to avoid unintentional pushes
-# You should probably set it - export DOCKER_REPO='avaplatform/avalanchego'
-avalanchego_dockerhub_repo=${DOCKER_REPO:-"avalanchego"}
+# avaplatform/luxd - defaults to local as to avoid unintentional pushes
+# You should probably set it - export DOCKER_REPO='avaplatform/luxd'
+luxd_dockerhub_repo=${DOCKER_REPO:-"luxd"}
 
 # Current branch
 # TODO: fix "fatal: No names found, cannot describe anything" in github CI

@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanche-ledger-go/mocks"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/avalanche-ledger-go/mocks"
+	"github.com/luxdefi/luxd/ids"
 )
 
 var errTest = errors.New("test")

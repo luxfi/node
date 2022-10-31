@@ -6,12 +6,12 @@ package api
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/luxdefi/luxd/utils/formatting/address"
+	"github.com/luxdefi/luxd/utils/json"
+	"github.com/luxdefi/luxd/vms/platformvm/genesis"
 )
 
 const testNetworkID = 10 // To be used in tests

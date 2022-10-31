@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/utils/cb58"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/luxd/utils/cb58"
+	"github.com/luxdefi/luxd/utils/hashing"
 )
 
 // ShortEmpty is a useful all zero value

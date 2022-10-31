@@ -6,8 +6,8 @@ package snowman
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/consensus/snowman"
 )
 
 // issuer issues [blk] into to consensus after its dependencies are met.

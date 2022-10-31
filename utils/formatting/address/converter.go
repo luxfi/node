@@ -4,7 +4,7 @@
 package address
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/ids"
 )
 
 func ParseToID(addrStr string) (ids.ShortID, error) {

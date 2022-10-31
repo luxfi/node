@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/vms/components/verify"
 )
 
 var (

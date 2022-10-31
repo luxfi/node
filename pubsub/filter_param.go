@@ -6,7 +6,7 @@ package pubsub
 import (
 	"sync"
 
-	"github.com/ava-labs/avalanchego/utils/bloom"
+	"github.com/luxdefi/luxd/utils/bloom"
 )
 
 type FilterParam struct {

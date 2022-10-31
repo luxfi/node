@@ -10,8 +10,8 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/trace"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/trace"
 )
 
 var _ BootstrapableEngine = (*tracedBootstrapableEngine)(nil)

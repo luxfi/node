@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# Avalanchego root folder
+# LUXgo root folder
 AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the versions
 source "$AVALANCHE_PATH"/scripts/versions.sh
@@ -15,14 +15,14 @@ source "$AVALANCHE_PATH"/scripts/constants.sh
 echo "Downloading dependencies..."
 go mod download
 
-# Build avalanchego
+# Build luxd
 "$AVALANCHE_PATH"/scripts/build_avalanche.sh
 
 # Build coreth
 "$AVALANCHE_PATH"/scripts/build_coreth.sh
 
 # Exit build successfully if the binaries are created
-if [[ -f "$avalanchego_path" && -f "$evm_path" ]]; then
+if [[ -f "$luxd_path" && -f "$evm_path" ]]; then
         echo "Build Successful"
         exit 0
 else

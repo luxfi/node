@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/network/peer"
-	"github.com/ava-labs/avalanchego/staking"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/network/peer"
+	"github.com/luxdefi/luxd/staking"
 )
 
 var (

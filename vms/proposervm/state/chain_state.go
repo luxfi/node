@@ -4,8 +4,8 @@
 package state
 
 import (
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
 )
 
 const (

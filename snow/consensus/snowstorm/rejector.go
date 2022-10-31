@@ -6,9 +6,9 @@ package snowstorm
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/events"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/events"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 var _ events.Blockable = (*rejector)(nil)

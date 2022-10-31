@@ -29,16 +29,16 @@ version_lt() {
 }
 
 if version_lt "$(go_version)" "$go_version_minimum"; then
-    echo "AvalancheGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
+    echo "LUXGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1
 fi
 
-# Avalanchego root folder
+# LUXgo root folder
 AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the versions
 source "$AVALANCHE_PATH"/scripts/versions.sh
 # Load the constants
 source "$AVALANCHE_PATH"/scripts/constants.sh
 
-echo "Building AvalancheGo..."
-go build -ldflags "-X github.com/ava-labs/avalanchego/version.GitCommit=$git_commit $static_ld_flags" -o "$avalanchego_path" "$AVALANCHE_PATH/main/"*.go
+echo "Building LUXGo..."
+go build -ldflags "-X github.com/luxdefi/luxd/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$AVALANCHE_PATH/main/"*.go

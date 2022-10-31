@@ -5,7 +5,7 @@ package block
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/ids"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/luxdefi/luxd/tests/e2e"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"

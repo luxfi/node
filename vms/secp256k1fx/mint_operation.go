@@ -6,8 +6,8 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/vms/components/verify"
 )
 
 var errNilMintOperation = errors.New("nil mint operation")

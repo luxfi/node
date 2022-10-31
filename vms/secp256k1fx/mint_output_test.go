@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/components/verify"
 )
 
 func TestMintOutputVerifyNil(t *testing.T) {

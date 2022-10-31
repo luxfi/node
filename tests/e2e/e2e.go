@@ -14,12 +14,12 @@ import (
 
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
+	runner_sdk "github.com/luxdefi/avalanche-network-runner-sdk"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/tests"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/tests"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
 type ClusterType byte
@@ -89,7 +89,7 @@ func (te *TestEnvinronment) ConfigCluster(
 ) error {
 	if avalancheGoExecPath != "" {
 		if _, err := os.Stat(avalancheGoExecPath); err != nil {
-			return fmt.Errorf("could not find avalanchego binary: %w", err)
+			return fmt.Errorf("could not find luxd binary: %w", err)
 		}
 	}
 

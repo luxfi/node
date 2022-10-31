@@ -4,7 +4,7 @@
 package gsharedmemory
 
 import (
-	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/luxdefi/luxd/proto/pb/sharedmemory"
 )
 
 type filteredBatch struct {

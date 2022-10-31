@@ -6,8 +6,8 @@ package snowman
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
 )
 
 // Block is a possible decision that dictates the next canonical block.

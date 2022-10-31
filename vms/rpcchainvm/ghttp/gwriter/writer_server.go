@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	writerpb "github.com/ava-labs/avalanchego/proto/pb/io/writer"
+	writerpb "github.com/luxdefi/luxd/proto/pb/io/writer"
 )
 
 var _ writerpb.WriterServer = (*Server)(nil)

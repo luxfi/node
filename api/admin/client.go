@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/luxd/api"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/utils/rpc"
 )
 
 var _ Client = (*client)(nil)
 
-// Client interface for the Avalanche Platform Info API Endpoint
+// Client interface for the LUX Platform Info API Endpoint
 type Client interface {
 	StartCPUProfiler(context.Context, ...rpc.Option) error
 	StopCPUProfiler(context.Context, ...rpc.Option) error
@@ -31,7 +31,7 @@ type Client interface {
 	GetConfig(ctx context.Context, options ...rpc.Option) (interface{}, error)
 }
 
-// Client implementation for the Avalanche Platform Info API Endpoint
+// Client implementation for the LUX Platform Info API Endpoint
 type client struct {
 	requester rpc.EndpointRequester
 }

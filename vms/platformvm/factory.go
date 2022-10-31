@@ -4,9 +4,9 @@
 package platformvm
 
 import (
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/vms"
-	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/vms"
+	"github.com/luxdefi/luxd/vms/platformvm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)

@@ -6,7 +6,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 type Service struct {
