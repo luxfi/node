@@ -72,7 +72,7 @@ func init() {
 		&uris,
 		"uris",
 		"",
-		"HTTP RPC endpoint URIs for avalanche node (comma-separated, required to run against existing cluster)",
+		"HTTP RPC endpoint URIs for lux node (comma-separated, required to run against existing cluster)",
 	)
 
 	// file that contains a list of new-line separated secp256k1 private keys

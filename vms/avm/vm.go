@@ -28,7 +28,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/json"

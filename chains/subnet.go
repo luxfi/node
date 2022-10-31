@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/networking/sender"
 )
@@ -31,7 +31,7 @@ type SubnetConfig struct {
 
 	// ValidatorOnly indicates that this Subnet's Chains are available to only subnet validators.
 	ValidatorOnly       bool                 `json:"validatorOnly" yaml:"validatorOnly"`
-	ConsensusParameters avalanche.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters lux.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 }
 
 type subnet struct {

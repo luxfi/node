@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxdefi/luxd/ids"
 
-	ledger "github.com/luxdefi/avalanche-ledger-go"
+	ledger "github.com/luxdefi/lux-ledger-go"
 )
 
 var (

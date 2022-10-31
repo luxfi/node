@@ -15,7 +15,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/luxdefi/avalanche-network-runner-sdk"
+	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 	"github.com/luxdefi/luxd/tests"
 )
 

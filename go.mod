@@ -1,7 +1,7 @@
 module github.com/luxdefi/luxd
 
 // Changes to the minimum golang version must also be replicated in
-// scripts/build_avalanche.sh
+// scripts/build_lux.sh
 // scripts/local.Dockerfile
 // Dockerfile
 // README.md
@@ -11,8 +11,8 @@ go 1.18
 require (
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/luxdefi/avalanche-ledger-go v0.0.10
-	github.com/luxdefi/avalanche-network-runner-sdk v0.2.0
+	github.com/luxdefi/lux-ledger-go v0.0.10
+	github.com/luxdefi/lux-network-runner-sdk v0.2.0
 	github.com/luxdefi/coreth v0.11.1-rc.7
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1

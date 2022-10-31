@@ -29,7 +29,7 @@ import (
 	"github.com/luxdefi/luxd/network/dialer"
 	"github.com/luxdefi/luxd/network/throttling"
 	"github.com/luxdefi/luxd/node"
-	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/consensus/snowball"
 	"github.com/luxdefi/luxd/snow/networking/benchlist"
 	"github.com/luxdefi/luxd/snow/networking/router"
@@ -123,8 +123,8 @@ func GetRunnerConfig(v *viper.Viper) (runner.Config, error) {
 	return config, nil
 }
 
-func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
-	return avalanche.Parameters{
+func getConsensusConfig(v *viper.Viper) lux.Parameters {
+	return lux.Parameters{
 		Parameters: snowball.Parameters{
 			K:                       v.GetInt(SnowSampleSizeKey),
 			Alpha:                   v.GetInt(SnowQuorumSizeKey),

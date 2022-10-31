@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 
 # Changes to the minimum golang version must also be replicated in
-# scripts/build_avalanche.sh (here)
+# scripts/build_lux.sh (here)
 # scripts/local.Dockerfile
 # Dockerfile
 # README.md

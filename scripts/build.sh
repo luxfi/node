@@ -16,7 +16,7 @@ echo "Downloading dependencies..."
 go mod download
 
 # Build luxd
-"$LUX_PATH"/scripts/build_avalanche.sh
+"$LUX_PATH"/scripts/build_lux.sh
 
 # Build coreth
 "$LUX_PATH"/scripts/build_coreth.sh

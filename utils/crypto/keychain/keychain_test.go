@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/avalanche-ledger-go/mocks"
+	"github.com/luxdefi/lux-ledger-go/mocks"
 	"github.com/luxdefi/luxd/ids"
 )
 
