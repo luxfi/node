@@ -18,8 +18,8 @@ plugin_dir="$build_dir/plugins"
 evm_path="$plugin_dir/evm"
 
 # Avalabs docker hub
-# avaplatform/luxd - defaults to local as to avoid unintentional pushes
-# You should probably set it - export DOCKER_REPO='avaplatform/luxd'
+# luxdefi/luxd - defaults to local as to avoid unintentional pushes
+# You should probably set it - export DOCKER_REPO='luxdefi/luxd'
 luxd_dockerhub_repo=${DOCKER_REPO:-"luxd"}
 
 # Current branch

@@ -65,7 +65,7 @@ func TestNodeIDMarshalJSON(t *testing.T) {
 	}{
 		{"NodeID{}", NodeID{}, []byte("\"NodeID-111111111111111111116DBWJs\""), nil},
 		{
-			"ID(\"ava labs\")",
+			"ID(\"lux labs\")",
 			NodeID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			[]byte("\"NodeID-9tLMkeWFhWXd8QZc4rSiS5meuVXF5kRsz\""),
 			nil,
@@ -92,7 +92,7 @@ func TestNodeIDUnmarshalJSON(t *testing.T) {
 	}{
 		{"NodeID{}", []byte("null"), NodeID{}, false},
 		{
-			"NodeID(\"ava labs\")",
+			"NodeID(\"lux labs\")",
 			[]byte("\"NodeID-9tLMkeWFhWXd8QZc4rSiS5meuVXF5kRsz\""),
 			NodeID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			false,

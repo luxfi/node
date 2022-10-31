@@ -54,7 +54,7 @@ import (
 	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
 	aveng "github.com/luxdefi/luxd/snow/engine/lux"
 	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 
 	smcon "github.com/luxdefi/luxd/snow/consensus/snowman"
 	smeng "github.com/luxdefi/luxd/snow/engine/snowman"
@@ -673,7 +673,7 @@ func (m *manager) createLUXChain(
 		SharedCfg:                      &common.SharedConfig{},
 	}
 
-	avaGetHandler, err := avagetter.New(vtxManager, commonCfg)
+	luxGetHandler, err := luxgetter.New(vtxManager, commonCfg)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize lux base message handler: %w", err)
 	}
@@ -681,7 +681,7 @@ func (m *manager) createLUXChain(
 	// create bootstrap gear
 	bootstrapperConfig := avbootstrap.Config{
 		Config:        commonCfg,
-		AllGetsServer: avaGetHandler,
+		AllGetsServer: luxGetHandler,
 		VtxBlocked:    vtxBlocker,
 		TxBlocked:     txBlocker,
 		Manager:       vtxManager,
@@ -706,7 +706,7 @@ func (m *manager) createLUXChain(
 	// create engine gear
 	engineConfig := aveng.Config{
 		Ctx:           bootstrapperConfig.Ctx,
-		AllGetsServer: avaGetHandler,
+		AllGetsServer: luxGetHandler,
 		VM:            bootstrapperConfig.VM,
 		Manager:       vtxManager,
 		Sender:        bootstrapperConfig.Sender,

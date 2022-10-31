@@ -29,7 +29,7 @@ import (
 	"github.com/luxdefi/luxd/utils/wrappers"
 	"github.com/luxdefi/luxd/version"
 
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 )
 
 var (
@@ -1474,11 +1474,11 @@ func TestEngineGetVertex(t *testing.T) {
 	manager := vertex.NewTestManager(t)
 	manager.Default(true)
 	engCfg.Manager = manager
-	avaGetHandler, err := avagetter.New(manager, commonCfg)
+	luxGetHandler, err := luxgetter.New(manager, commonCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	engCfg.AllGetsServer = avaGetHandler
+	engCfg.AllGetsServer = luxGetHandler
 
 	gVtx := &lux.TestVertex{TestDecidable: choices.TestDecidable{
 		IDV:     ids.GenerateTestID(),

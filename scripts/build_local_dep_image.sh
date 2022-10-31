@@ -8,13 +8,13 @@ echo "Building docker image based off of most recent local commits of luxd and c
 
 LUX_REMOTE="git@github.com:luxdefi/luxd.git"
 CORETH_REMOTE="git@github.com:luxdefi/coreth.git"
-DOCKERHUB_REPO="avaplatform/luxd"
+DOCKERHUB_REPO="luxdefi/luxd"
 
 DOCKER="${DOCKER:-docker}"
 SCRIPT_DIRPATH=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 ROOT_DIRPATH="$(dirname "${SCRIPT_DIRPATH}")"
 
-AVA_LABS_RELATIVE_PATH="src/github.com/luxdefi"
+LUX_LABS_RELATIVE_PATH="src/github.com/luxdefi"
 EXISTING_GOPATH="$GOPATH"
 
 export GOPATH="$SCRIPT_DIRPATH/.build_image_gopath"
@@ -29,8 +29,8 @@ rm -rf "$WORKPREFIX"
 mkdir -p "$WORKPREFIX"
 
 
-LUX_COMMIT_HASH="$(git -C "$EXISTING_GOPATH/$AVA_LABS_RELATIVE_PATH/luxd" rev-parse --short HEAD)"
-CORETH_COMMIT_HASH="$(git -C "$EXISTING_GOPATH/$AVA_LABS_RELATIVE_PATH/coreth" rev-parse --short HEAD)"
+LUX_COMMIT_HASH="$(git -C "$EXISTING_GOPATH/$LUX_LABS_RELATIVE_PATH/luxd" rev-parse --short HEAD)"
+CORETH_COMMIT_HASH="$(git -C "$EXISTING_GOPATH/$LUX_LABS_RELATIVE_PATH/coreth" rev-parse --short HEAD)"
 
 git config --global credential.helper cache
 
