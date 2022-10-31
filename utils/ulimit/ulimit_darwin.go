@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 const DefaultFDLimit = 10 * 1024

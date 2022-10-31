@@ -6,7 +6,7 @@ package stakeable
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/avax"
 )
 
 var (

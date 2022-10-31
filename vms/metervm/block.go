@@ -3,7 +3,7 @@
 
 package metervm
 
-import "github.com/ava-labs/avalanchego/snow/consensus/snowman"
+import "github.com/luxdefi/luxd/snow/consensus/snowman"
 
 var (
 	_ snowman.Block       = (*meterBlock)(nil)

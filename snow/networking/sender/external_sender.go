@@ -4,8 +4,8 @@
 package sender
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/message"
 )
 
 // ExternalSender sends consensus messages to other validators

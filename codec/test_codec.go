@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 var Tests = []func(c GeneralCodec, t testing.TB){

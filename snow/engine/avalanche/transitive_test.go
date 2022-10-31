@@ -14,22 +14,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+	"github.com/luxdefi/luxd/snow/engine/avalanche/bootstrap"
+	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/engine/common/tracker"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/luxdefi/luxd/version"
 
-	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	avagetter "github.com/luxdefi/luxd/snow/engine/avalanche/getter"
 )
 
 var (

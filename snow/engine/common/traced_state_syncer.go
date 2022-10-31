@@ -3,7 +3,7 @@
 
 package common
 
-import "github.com/ava-labs/avalanchego/trace"
+import "github.com/luxdefi/luxd/trace"
 
 var _ StateSyncer = (*tracedStateSyncer)(nil)
 

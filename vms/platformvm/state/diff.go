@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/status"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/platformvm/status"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 var (

@@ -9,13 +9,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/snow/networking/handler"
-	"github.com/ava-labs/avalanchego/snow/networking/timeout"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/snow/networking/handler"
+	"github.com/luxdefi/luxd/snow/networking/timeout"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/version"
 )
 
 var _ Router = (*tracedRouter)(nil)

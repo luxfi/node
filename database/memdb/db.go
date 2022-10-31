@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/nodb"
+	"github.com/luxdefi/luxd/utils"
 )
 
 const (

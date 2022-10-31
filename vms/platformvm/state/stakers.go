@@ -6,8 +6,8 @@ package state
 import (
 	"github.com/google/btree"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
 )
 
 type Stakers interface {

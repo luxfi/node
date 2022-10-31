@@ -17,17 +17,17 @@ RUN go mod download
 # Copy the code into the container
 COPY . .
 
-# Build avalanchego and plugins
+# Build luxd and plugins
 RUN ./scripts/build.sh
 
 # ============= Cleanup Stage ================
 FROM debian:11-slim AS execution
 
 # Maintain compatibility with previous images
-RUN mkdir -p /avalanchego/build
-WORKDIR /avalanchego/build
+RUN mkdir -p /luxd/build
+WORKDIR /luxd/build
 
 # Copy the executables into the container
 COPY --from=builder /build/build/ .
 
-CMD [ "./avalanchego" ]
+CMD [ "./luxd" ]

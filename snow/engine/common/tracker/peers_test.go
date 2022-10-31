@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/version"
 )
 
 func TestPeers(t *testing.T) {

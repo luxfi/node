@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/luxdefi/luxd/api"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/formatting"
 )
 
 // strongPassword defines a password used for the following tests that

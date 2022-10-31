@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/memdb"
+	"github.com/luxdefi/luxd/ids"
 )
 
 func testChainState(a *require.Assertions, cs ChainState) {

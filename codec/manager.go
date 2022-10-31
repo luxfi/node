@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/utils/units"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 const (

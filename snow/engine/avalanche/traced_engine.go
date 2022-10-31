@@ -4,10 +4,10 @@
 package avalanche
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/trace"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/trace"
 )
 
 var _ Engine = (*tracedEngine)(nil)

@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/formatting"
 )
 
 type snowballNode struct {

@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/codec"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
 var (

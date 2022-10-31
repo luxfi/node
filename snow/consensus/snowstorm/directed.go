@@ -11,14 +11,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/metrics"
-	"github.com/ava-labs/avalanchego/snow/events"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/metrics"
+	"github.com/luxdefi/luxd/snow/events"
+	"github.com/luxdefi/luxd/utils/wrappers"
 
-	sbcon "github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	sbcon "github.com/luxdefi/luxd/snow/consensus/snowball"
 )
 
 var (
@@ -435,7 +435,7 @@ func (dg *Directed) RecordPoll(votes ids.Bag) (bool, error) {
 	// a transaction.
 	dg.pollNumber++
 
-	// This flag tracks if the Avalanche instance needs to recompute its
+	// This flag tracks if the LUX instance needs to recompute its
 	// frontiers. Frontiers only need to be recalculated if preferences change
 	// or if a tx was accepted.
 	changed := false

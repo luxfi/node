@@ -6,8 +6,8 @@ package avm
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/utils/metric"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/utils/metric"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 type metrics struct {

@@ -7,14 +7,14 @@ import (
 	"math"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/utils/units"
+	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
 func TestSetsAndGets(t *testing.T) {

@@ -11,12 +11,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/formatting/address"
+	"github.com/luxdefi/luxd/utils/wrappers"
 
-	safemath "github.com/ava-labs/avalanchego/utils/math"
+	safemath "github.com/luxdefi/luxd/utils/math"
 )
 
 type LockedAmount struct {

@@ -4,8 +4,8 @@
 package snowman
 
 import (
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/engine/snowman/block"
 )
 
 // Engine describes the events that can occur to a Snowman instance.

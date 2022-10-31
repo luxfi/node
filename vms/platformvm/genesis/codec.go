@@ -4,7 +4,7 @@
 package genesis
 
 import (
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 )
 
 const Version = blocks.Version

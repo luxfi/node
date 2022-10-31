@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/vms/platformvm/validator"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
 func TestByStartTime(t *testing.T) {

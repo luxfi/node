@@ -6,8 +6,8 @@ package txheap
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 var _ Heap = (*withMetrics)(nil)

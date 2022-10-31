@@ -12,18 +12,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/status"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/platformvm/blocks"
+	"github.com/luxdefi/luxd/vms/platformvm/state"
+	"github.com/luxdefi/luxd/vms/platformvm/status"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 
-	txexecutor "github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
+	txexecutor "github.com/luxdefi/luxd/vms/platformvm/txs/executor"
 )
 
 func TestApricotStandardBlockTimeVerification(t *testing.T) {
@@ -577,7 +577,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 	}
 }
 
-// Regression test for https://github.com/ava-labs/avalanchego/pull/584
+// Regression test for https://github.com/luxdefi/luxd/pull/584
 // that ensures it fixes a bug where subnet validators are not removed
 // when timestamp is advanced and there is a pending staker whose start time
 // is after the new timestamp

@@ -7,17 +7,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/rpc"
-	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/luxdefi/luxd/api"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/luxdefi/luxd/utils/formatting/address"
+	"github.com/luxdefi/luxd/utils/json"
+	"github.com/luxdefi/luxd/utils/rpc"
+	"github.com/luxdefi/luxd/vms/platformvm/status"
 
-	platformapi "github.com/ava-labs/avalanchego/vms/platformvm/api"
+	platformapi "github.com/luxdefi/luxd/vms/platformvm/api"
 )
 
 var _ Client = (*client)(nil)

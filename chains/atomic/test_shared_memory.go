@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/units"
 )
 
 // SharedMemoryTests is a list of all shared memory tests

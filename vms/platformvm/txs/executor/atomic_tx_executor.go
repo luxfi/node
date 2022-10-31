@@ -4,10 +4,10 @@
 package executor
 
 import (
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/chains/atomic"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/platformvm/state"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 var _ txs.Visitor = (*AtomicTxExecutor)(nil)

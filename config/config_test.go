@@ -17,8 +17,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/chains"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/chains"
+	"github.com/luxdefi/luxd/ids"
 )
 
 func TestGetChainConfigsFromFiles(t *testing.T) {

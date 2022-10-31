@@ -9,10 +9,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)

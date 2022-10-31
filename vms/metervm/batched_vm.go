@@ -6,9 +6,9 @@ package metervm
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/consensus/snowman"
+	"github.com/luxdefi/luxd/snow/engine/snowman/block"
 )
 
 func (vm *blockVM) GetAncestors(

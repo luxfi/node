@@ -4,8 +4,8 @@
 package peer
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/sampler"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/sampler"
 )
 
 var _ Set = (*set)(nil)

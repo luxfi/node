@@ -6,9 +6,9 @@ package throttling
 import (
 	"sync"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 // Used by the sybil-safe inbound and outbound message throttlers

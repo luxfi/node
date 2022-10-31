@@ -8,13 +8,13 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/network/dialer"
-	"github.com/ava-labs/avalanchego/network/throttling"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/uptime"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/network/dialer"
+	"github.com/luxdefi/luxd/network/throttling"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/snow/uptime"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/utils/ips"
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -128,7 +128,7 @@ type Config struct {
 	WhitelistedSubnets ids.Set        `json:"-"`
 	Beacons            validators.Set `json:"-"`
 
-	// Validators are the current validators in the Avalanche network
+	// Validators are the current validators in the LUX network
 	Validators validators.Manager `json:"-"`
 
 	UptimeCalculator uptime.Calculator `json:"-"`

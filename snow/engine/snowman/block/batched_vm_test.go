@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/consensus/snowman"
 )
 
 func TestGetAncestorsDatabaseNotFound(t *testing.T) {

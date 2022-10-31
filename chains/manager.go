@@ -15,51 +15,51 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/api/keystore"
-	"github.com/ava-labs/avalanchego/api/metrics"
-	"github.com/ava-labs/avalanchego/api/server"
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/network"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/state"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
-	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/syncer"
-	"github.com/ava-labs/avalanchego/snow/networking/handler"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/snow/networking/sender"
-	"github.com/ava-labs/avalanchego/snow/networking/timeout"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/buffer"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/version"
-	"github.com/ava-labs/avalanchego/vms"
-	"github.com/ava-labs/avalanchego/vms/metervm"
-	"github.com/ava-labs/avalanchego/vms/proposervm"
+	"github.com/luxdefi/luxd/api/health"
+	"github.com/luxdefi/luxd/api/keystore"
+	"github.com/luxdefi/luxd/api/metrics"
+	"github.com/luxdefi/luxd/api/server"
+	"github.com/luxdefi/luxd/chains/atomic"
+	"github.com/luxdefi/luxd/database/prefixdb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/luxd/snow/engine/avalanche/state"
+	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/engine/common/queue"
+	"github.com/luxdefi/luxd/snow/engine/common/tracker"
+	"github.com/luxdefi/luxd/snow/engine/snowman/block"
+	"github.com/luxdefi/luxd/snow/engine/snowman/syncer"
+	"github.com/luxdefi/luxd/snow/networking/handler"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/sender"
+	"github.com/luxdefi/luxd/snow/networking/timeout"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/buffer"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto/bls"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/luxd/vms"
+	"github.com/luxdefi/luxd/vms/metervm"
+	"github.com/luxdefi/luxd/vms/proposervm"
 
-	dbManager "github.com/ava-labs/avalanchego/database/manager"
-	timetracker "github.com/ava-labs/avalanchego/snow/networking/tracker"
+	dbManager "github.com/luxdefi/luxd/database/manager"
+	timetracker "github.com/luxdefi/luxd/snow/networking/tracker"
 
-	avcon "github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
-	avbootstrap "github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
-	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	avcon "github.com/luxdefi/luxd/snow/consensus/avalanche"
+	aveng "github.com/luxdefi/luxd/snow/engine/avalanche"
+	avbootstrap "github.com/luxdefi/luxd/snow/engine/avalanche/bootstrap"
+	avagetter "github.com/luxdefi/luxd/snow/engine/avalanche/getter"
 
-	smcon "github.com/ava-labs/avalanchego/snow/consensus/snowman"
-	smeng "github.com/ava-labs/avalanchego/snow/engine/snowman"
-	smbootstrap "github.com/ava-labs/avalanchego/snow/engine/snowman/bootstrap"
-	snowgetter "github.com/ava-labs/avalanchego/snow/engine/snowman/getter"
+	smcon "github.com/luxdefi/luxd/snow/consensus/snowman"
+	smeng "github.com/luxdefi/luxd/snow/engine/snowman"
+	smbootstrap "github.com/luxdefi/luxd/snow/engine/snowman/bootstrap"
+	snowgetter "github.com/luxdefi/luxd/snow/engine/snowman/getter"
 )
 
 const (
@@ -487,7 +487,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 	var chain *chain
 	switch vm := vm.(type) {
 	case vertex.DAGVM:
-		chain, err = m.createAvalancheChain(
+		chain, err = m.createLUXChain(
 			ctx,
 			chainParams.GenesisData,
 			vdrs,
@@ -530,8 +530,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 
 func (m *manager) AddRegistrant(r Registrant) { m.registrants = append(m.registrants, r) }
 
-// Create a DAG-based blockchain that uses Avalanche
-func (m *manager) createAvalancheChain(
+// Create a DAG-based blockchain that uses LUX
+func (m *manager) createLUXChain(
 	ctx *snow.ConsensusContext,
 	genesisData []byte,
 	vdrs,

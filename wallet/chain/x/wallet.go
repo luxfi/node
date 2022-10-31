@@ -6,14 +6,14 @@ package x
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/vms/avm"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/vms/avm"
+	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
 )
 
 var (

@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 )
 
 var Noop Metrics = noopMetrics{}

@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/validators"
 )
 
 // Assert fields are set correctly.

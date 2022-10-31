@@ -4,9 +4,9 @@
 package atomic
 
 import (
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/versiondb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/versiondb"
+	"github.com/luxdefi/luxd/ids"
 )
 
 var _ SharedMemory = (*sharedMemory)(nil)

@@ -6,9 +6,9 @@ package proposervm
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/vms/proposervm/block"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)
