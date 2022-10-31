@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 	"github.com/luxdefi/luxd/codec"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
@@ -28,11 +28,11 @@ type ImportTx struct {
 	SourceChain ids.ID `serialize:"true" json:"sourceChain"`
 
 	// The inputs to this transaction
-	ImportedIns []*avax.TransferableInput `serialize:"true" json:"importedInputs"`
+	ImportedIns []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
 }
 
 // InputUTXOs track which UTXOs this transaction is consuming.
-func (t *ImportTx) InputUTXOs() []*avax.UTXOID {
+func (t *ImportTx) InputUTXOs() []*lux.UTXOID {
 	utxos := t.BaseTx.InputUTXOs()
 	for _, in := range t.ImportedIns {
 		in.Symbol = true
@@ -86,14 +86,14 @@ func (t *ImportTx) SyntacticVerify(
 		return err
 	}
 
-	return avax.VerifyTx(
+	return lux.VerifyTx(
 		txFee,
 		txFeeAssetID,
-		[][]*avax.TransferableInput{
+		[][]*lux.TransferableInput{
 			t.Ins,
 			t.ImportedIns,
 		},
-		[][]*avax.TransferableOutput{t.Outs},
+		[][]*lux.TransferableOutput{t.Outs},
 		c,
 	)
 }

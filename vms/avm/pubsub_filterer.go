@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -7,7 +7,7 @@ import (
 	"github.com/luxdefi/luxd/api"
 	"github.com/luxdefi/luxd/pubsub"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 )
 
 var _ pubsub.Filterer = (*filterer)(nil)
@@ -24,7 +24,7 @@ func NewPubSubFilterer(tx *txs.Tx) pubsub.Filterer {
 func (f *filterer) Filter(filters []pubsub.Filter) ([]bool, interface{}) {
 	resp := make([]bool, len(filters))
 	for _, utxo := range f.tx.UTXOs() {
-		addressable, ok := utxo.Out.(avax.Addressable)
+		addressable, ok := utxo.Out.(lux.Addressable)
 		if !ok {
 			continue
 		}

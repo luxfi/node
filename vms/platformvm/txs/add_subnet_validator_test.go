@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -40,19 +40,19 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -65,7 +65,7 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
@@ -151,19 +151,19 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	// create a valid tx
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -176,7 +176,7 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,

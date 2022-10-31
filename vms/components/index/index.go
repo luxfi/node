@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package index
@@ -18,7 +18,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 )
 
 var (
@@ -45,8 +45,8 @@ type AddressTxsIndexer interface {
 	// If the error is non-nil, do not persist [txID] to disk as accepted in the VM
 	Accept(
 		txID ids.ID,
-		inputUTXOs []*avax.UTXO,
-		outputUTXOs []*avax.UTXO,
+		inputUTXOs []*lux.UTXO,
+		outputUTXOs []*lux.UTXO,
 	) error
 
 	// Read returns the IDs of transactions that changed [address]'s balance of [assetID].
@@ -96,7 +96,7 @@ func NewIndexer(
 // |  | "0"   => txID1
 // |  | "1"   => txID1
 // See interface documentation AddressTxsIndexer.Accept
-func (i *indexer) Accept(txID ids.ID, inputUTXOs []*avax.UTXO, outputUTXOs []*avax.UTXO) error {
+func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux.UTXO) error {
 	utxos := inputUTXOs
 	// Fetch and add the output UTXOs
 	utxos = append(utxos, outputUTXOs...)
@@ -107,7 +107,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*avax.UTXO, outputUTXOs []*av
 	// we do this step separately to simplify the write process later
 	balanceChanges := make(map[string]map[ids.ID]struct{})
 	for _, utxo := range utxos {
-		out, ok := utxo.Out.(avax.Addressable)
+		out, ok := utxo.Out.(lux.Addressable)
 		if !ok {
 			i.log.Verbo("skipping UTXO for indexing",
 				zap.Stringer("utxoID", utxo.InputID()),
@@ -251,7 +251,7 @@ func NewNoIndexer(db database.Database, allowIncomplete bool) (AddressTxsIndexer
 	return &noIndexer{}, checkIndexStatus(db, false, allowIncomplete)
 }
 
-func (i *noIndexer) Accept(ids.ID, []*avax.UTXO, []*avax.UTXO) error {
+func (i *noIndexer) Accept(ids.ID, []*lux.UTXO, []*lux.UTXO) error {
 	return nil
 }
 

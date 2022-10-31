@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -35,7 +35,7 @@ import (
 	"github.com/luxdefi/luxd/utils/window"
 	"github.com/luxdefi/luxd/utils/wrappers"
 	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/api"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
@@ -73,7 +73,7 @@ type VM struct {
 	blockbuilder.Builder
 
 	metrics            metrics.Metrics
-	atomicUtxosManager avax.AtomicUTXOManager
+	atomicUtxosManager lux.AtomicUTXOManager
 
 	// Used to get time. Useful for faking time during tests.
 	clock mockable.Clock
@@ -163,7 +163,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.atomicUtxosManager = avax.NewAtomicUTXOManager(ctx.SharedMemory, txs.Codec)
+	vm.atomicUtxosManager = lux.NewAtomicUTXOManager(ctx.SharedMemory, txs.Codec)
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.clock, vm.state, vm.fx)
 	vm.uptimeManager = uptime.NewManager(vm.state)
 	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrapped, &ctx.Lock, vm.uptimeManager)
@@ -401,7 +401,7 @@ func (vm *VM) CreateHandlers() (map[string]*common.HTTPHandler, error) {
 	if err := server.RegisterService(
 		&Service{
 			vm:          vm,
-			addrManager: avax.NewAddressManager(vm.ctx),
+			addrManager: lux.NewAddressManager(vm.ctx),
 		},
 		"platform",
 	); err != nil {

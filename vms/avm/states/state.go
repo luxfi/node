@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package states
@@ -9,7 +9,7 @@ import (
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/database/prefixdb"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 )
 
 var (
@@ -24,16 +24,16 @@ var (
 // State persistently maintains a set of UTXOs, transaction, statuses, and
 // singletons.
 type State interface {
-	avax.UTXOState
-	avax.StatusState
-	avax.SingletonState
+	lux.UTXOState
+	lux.StatusState
+	lux.SingletonState
 	TxState
 }
 
 type state struct {
-	avax.UTXOState
-	avax.StatusState
-	avax.SingletonState
+	lux.UTXOState
+	lux.StatusState
+	lux.SingletonState
 	TxState
 }
 
@@ -43,12 +43,12 @@ func New(db database.Database, parser txs.Parser, metrics prometheus.Registerer)
 	singletonDB := prefixdb.New(singletonPrefix, db)
 	txDB := prefixdb.New(txPrefix, db)
 
-	utxoState, err := avax.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics)
 	if err != nil {
 		return nil, err
 	}
 
-	statusState, err := avax.NewMeteredStatusState(statusDB, metrics)
+	statusState, err := lux.NewMeteredStatusState(statusDB, metrics)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func New(db database.Database, parser txs.Parser, metrics prometheus.Registerer)
 	return &state{
 		UTXOState:      utxoState,
 		StatusState:    statusState,
-		SingletonState: avax.NewSingletonState(singletonDB),
+		SingletonState: lux.NewSingletonState(singletonDB),
 		TxState:        txState,
 	}, err
 }

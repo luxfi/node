@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/units"
 	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -29,11 +29,11 @@ var (
 func validCreateAssetTx(t *testing.T) (*CreateAssetTx, codec.Manager, *snow.Context) {
 	c := setupCodec()
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{ID: assetID},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 12345,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -42,8 +42,8 @@ func validCreateAssetTx(t *testing.T) (*CreateAssetTx, codec.Manager, *snow.Cont
 					},
 				},
 			}},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -52,7 +52,7 @@ func validCreateAssetTx(t *testing.T) (*CreateAssetTx, codec.Manager, *snow.Cont
 					},
 					OutputIndex: 1,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -172,7 +172,7 @@ func TestCreateAssetTxSerialization(t *testing.T) {
 	}
 
 	tx := &Tx{Unsigned: &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID: 2,
 			BlockchainID: ids.ID{
 				0xff, 0xff, 0xff, 0xff, 0xee, 0xee, 0xee, 0xee,
@@ -181,8 +181,8 @@ func TestCreateAssetTxSerialization(t *testing.T) {
 				0x99, 0x99, 0x99, 0x99, 0x88, 0x88, 0x88, 0x88,
 			},
 			Memo: []byte{0x00, 0x01, 0x02, 0x03},
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{
 					ID: ids.ID{
 						0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 						0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -210,8 +210,8 @@ func TestCreateAssetTxSerialization(t *testing.T) {
 					},
 				},
 			}},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xf1, 0xe1, 0xd1, 0xc1, 0xb1, 0xa1, 0x91, 0x81,
 						0x71, 0x61, 0x51, 0x41, 0x31, 0x21, 0x11, 0x01,
@@ -220,7 +220,7 @@ func TestCreateAssetTxSerialization(t *testing.T) {
 					},
 					OutputIndex: 5,
 				},
-				Asset: avax.Asset{
+				Asset: lux.Asset{
 					ID: ids.ID{
 						0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 						0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -396,7 +396,7 @@ func TestCreateAssetTxSerializationAgain(t *testing.T) {
 	}
 
 	unsignedTx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 			Memo:         []byte{0x00, 0x01, 0x02, 0x03},
@@ -422,10 +422,10 @@ func TestCreateAssetTxSerializationAgain(t *testing.T) {
 	for _, key := range keys[:3] {
 		addr := key.PublicKey().Address()
 
-		unsignedTx.Outs = append(unsignedTx.Outs, &avax.TransferableOutput{
-			Asset: avax.Asset{ID: assetID},
+		unsignedTx.Outs = append(unsignedTx.Outs, &lux.TransferableOutput{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 20 * units.KiloAvax,
+				Amt: 20 * units.KiloLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{addr},
@@ -452,7 +452,7 @@ func TestCreateAssetTxSerializationAgain(t *testing.T) {
 
 func TestCreateAssetTxGetters(t *testing.T) {
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -468,7 +468,7 @@ func TestCreateAssetTxSyntacticVerify(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -502,7 +502,7 @@ func TestCreateAssetTxSyntacticVerifyNameTooShort(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -525,7 +525,7 @@ func TestCreateAssetTxSyntacticVerifyNameTooLong(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -550,7 +550,7 @@ func TestCreateAssetTxSyntacticVerifySymbolTooShort(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -573,7 +573,7 @@ func TestCreateAssetTxSyntacticVerifySymbolTooLong(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -596,7 +596,7 @@ func TestCreateAssetTxSyntacticVerifyNoFxs(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -616,7 +616,7 @@ func TestCreateAssetTxSyntacticVerifyDenominationTooLong(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -639,7 +639,7 @@ func TestCreateAssetTxSyntacticVerifyNameWithWhitespace(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -662,7 +662,7 @@ func TestCreateAssetTxSyntacticVerifyNameWithInvalidCharacter(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -685,7 +685,7 @@ func TestCreateAssetTxSyntacticVerifyNameWithUnicodeCharacter(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -708,7 +708,7 @@ func TestCreateAssetTxSyntacticVerifySymbolWithInvalidCharacter(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -731,7 +731,7 @@ func TestCreateAssetTxSyntacticVerifyInvalidBaseTx(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID + 1,
 			BlockchainID: chainID,
 		}},
@@ -754,7 +754,7 @@ func TestCreateAssetTxSyntacticVerifyInvalidInitialState(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -777,7 +777,7 @@ func TestCreateAssetTxSyntacticVerifyUnsortedInitialStates(t *testing.T) {
 	c := setupCodec()
 
 	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},

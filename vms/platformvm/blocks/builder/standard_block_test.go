@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/database/prefixdb"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -29,7 +29,7 @@ func TestAtomicTxImports(t *testing.T) {
 		}
 	}()
 
-	utxoID := avax.UTXOID{
+	utxoID := lux.UTXOID{
 		TxID:        ids.Empty.Prefix(1),
 		OutputIndex: 1,
 	}
@@ -40,9 +40,9 @@ func TestAtomicTxImports(t *testing.T) {
 
 	env.msm.SharedMemory = m.NewSharedMemory(env.ctx.ChainID)
 	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
-	utxo := &avax.UTXO{
+	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  avax.Asset{ID: avaxAssetID},
+		Asset:  lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
@@ -23,7 +23,7 @@ var (
 // BaseTx contains fields common to many transaction types. It should be
 // embedded in transaction implementations.
 type BaseTx struct {
-	avax.BaseTx `serialize:"true"`
+	lux.BaseTx `serialize:"true"`
 
 	// true iff this transaction has already passed syntactic verification
 	SyntacticallyVerified bool `json:"-"`
@@ -43,7 +43,7 @@ func (tx *BaseTx) InputIDs() ids.Set {
 	return inputIDs
 }
 
-func (tx *BaseTx) Outputs() []*avax.TransferableOutput { return tx.Outs }
+func (tx *BaseTx) Outputs() []*lux.TransferableOutput { return tx.Outs }
 
 // InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
 // sets the [ctx] to the given [vm.ctx] so that the addresses can be json
@@ -80,9 +80,9 @@ func (tx *BaseTx) SyntacticVerify(ctx *snow.Context) error {
 		}
 	}
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.Outs, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.Outs, Codec):
 		return errOutputsNotSorted
-	case !avax.IsSortedAndUniqueTransferableInputs(tx.Ins):
+	case !lux.IsSortedAndUniqueTransferableInputs(tx.Ins):
 		return errInputsNotSortedUnique
 	default:
 		return nil

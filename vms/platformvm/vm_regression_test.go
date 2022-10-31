@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -25,7 +25,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/config"
 	"github.com/luxdefi/luxd/vms/platformvm/metrics"
@@ -528,12 +528,12 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	}
 
 	// Create the UTXO that will be added to shared memory
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID: ids.GenerateTestID(),
 		},
-		Asset: avax.Asset{
-			ID: vm.ctx.AVAXAssetID,
+		Asset: lux.Asset{
+			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          vm.TxFee,
@@ -543,12 +543,12 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 
 	// Create the import tx that will fail verification
 	unsignedImportTx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    vm.ctx.NetworkID,
 			BlockchainID: vm.ctx.ChainID,
 		}},
 		SourceChain: vm.ctx.XChainID,
-		ImportedInputs: []*avax.TransferableInput{
+		ImportedInputs: []*lux.TransferableInput{
 			{
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,
@@ -782,12 +782,12 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	}
 
 	// Create the UTXO that will be added to shared memory
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID: ids.GenerateTestID(),
 		},
-		Asset: avax.Asset{
-			ID: vm.ctx.AVAXAssetID,
+		Asset: lux.Asset{
+			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          vm.TxFee,
@@ -797,12 +797,12 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 
 	// Create the import tx that will fail verification
 	unsignedImportTx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    vm.ctx.NetworkID,
 			BlockchainID: vm.ctx.ChainID,
 		}},
 		SourceChain: vm.ctx.XChainID,
-		ImportedInputs: []*avax.TransferableInput{
+		ImportedInputs: []*lux.TransferableInput{
 			{
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,

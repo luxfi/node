@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validator
@@ -16,7 +16,7 @@ const defaultWeight = 10000
 var (
 	errCalculatedSubsetWrong = errors.New("incorrectly calculated whether one duration was subset of other")
 
-	// each key controls an address that has [defaultBalance] AVAX at genesis
+	// each key controls an address that has [defaultBalance] LUX at genesis
 	keys = crypto.BuildTestKeys()
 )
 

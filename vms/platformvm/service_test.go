@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -28,7 +28,7 @@ import (
 	"github.com/luxdefi/luxd/utils/json"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
@@ -76,7 +76,7 @@ func defaultService(t *testing.T) (*Service, *mutableSharedMemory) {
 	vm.ctx.Keystore = ks.NewBlockchainKeyStore(vm.ctx.ChainID)
 	return &Service{
 		vm:          vm,
-		addrManager: avax.NewAddressManager(vm.ctx),
+		addrManager: lux.NewAddressManager(vm.ctx),
 	}, mutableSharedMemory
 }
 
@@ -202,12 +202,12 @@ func TestGetTxStatus(t *testing.T) {
 	peerSharedMemory := m.NewSharedMemory(xChainID)
 
 	// #nosec G404
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: rand.Uint32(),
 		},
-		Asset: avax.Asset{ID: avaxAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1234567,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -486,7 +486,7 @@ func TestGetStake(t *testing.T) {
 		outputBytes, err := formatting.Decode(args.Encoding, response.Outputs[0])
 		require.NoError(err)
 
-		var output avax.TransferableOutput
+		var output lux.TransferableOutput
 		_, err = txs.Codec.Unmarshal(outputBytes, &output)
 		require.NoError(err)
 
@@ -514,7 +514,7 @@ func TestGetStake(t *testing.T) {
 		outputBytes, err := formatting.Decode(args.Encoding, outputStr)
 		require.NoError(err)
 
-		var output avax.TransferableOutput
+		var output lux.TransferableOutput
 		_, err = txs.Codec.Unmarshal(outputBytes, &output)
 		require.NoError(err)
 
@@ -560,7 +560,7 @@ func TestGetStake(t *testing.T) {
 	require.Len(response.Outputs, 2)
 
 	// Unmarshal into transferable outputs
-	outputs := make([]avax.TransferableOutput, 2)
+	outputs := make([]lux.TransferableOutput, 2)
 	for i := range outputs {
 		outputBytes, err := formatting.Decode(args.Encoding, response.Outputs[i])
 		require.NoError(err)
@@ -605,7 +605,7 @@ func TestGetStake(t *testing.T) {
 	require.Len(response.Outputs, 3)
 
 	// Unmarshal
-	outputs = make([]avax.TransferableOutput, 3)
+	outputs = make([]lux.TransferableOutput, 3)
 	for i := range outputs {
 		outputBytes, err := formatting.Decode(args.Encoding, response.Outputs[i])
 		require.NoError(err)

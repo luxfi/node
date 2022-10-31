@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wrappers
@@ -252,7 +252,7 @@ func TestPackerUnpackLong(t *testing.T) {
 func TestPackerPackFixedBytes(t *testing.T) {
 	p := Packer{MaxSize: 4}
 
-	p.PackFixedBytes([]byte("Avax"))
+	p.PackFixedBytes([]byte("Lux"))
 
 	if p.Errored() {
 		t.Fatal(p.Err)
@@ -262,12 +262,12 @@ func TestPackerPackFixedBytes(t *testing.T) {
 		t.Fatalf("Packer.PackFixedBytes wrote %d byte(s) but expected %d byte(s)", size, 4)
 	}
 
-	expected := []byte("Avax")
+	expected := []byte("Lux")
 	if !bytes.Equal(p.Bytes, expected) {
 		t.Fatalf("Packer.PackFixedBytes wrote:\n%v\nExpected:\n%v", p.Bytes, expected)
 	}
 
-	p.PackFixedBytes([]byte("Avax"))
+	p.PackFixedBytes([]byte("Lux"))
 	if !p.Errored() {
 		t.Fatal("Packer.PackFixedBytes did not fail when attempt was beyond p.MaxSize")
 	}
@@ -275,9 +275,9 @@ func TestPackerPackFixedBytes(t *testing.T) {
 
 func TestPackerUnpackFixedBytes(t *testing.T) {
 	var (
-		p           = Packer{Bytes: []byte("Avax")}
+		p           = Packer{Bytes: []byte("Lux")}
 		actual      = p.UnpackFixedBytes(4)
-		expected    = []byte("Avax")
+		expected    = []byte("Lux")
 		expectedLen = 4
 	)
 
@@ -301,7 +301,7 @@ func TestPackerUnpackFixedBytes(t *testing.T) {
 func TestPackerPackBytes(t *testing.T) {
 	p := Packer{MaxSize: 8}
 
-	p.PackBytes([]byte("Avax"))
+	p.PackBytes([]byte("Lux"))
 
 	if p.Errored() {
 		t.Fatal(p.Err)
@@ -311,12 +311,12 @@ func TestPackerPackBytes(t *testing.T) {
 		t.Fatalf("Packer.PackBytes wrote %d byte(s) but expected %d byte(s)", size, 8)
 	}
 
-	expected := []byte("\x00\x00\x00\x04Avax")
+	expected := []byte("\x00\x00\x00\x04Lux")
 	if !bytes.Equal(p.Bytes, expected) {
 		t.Fatalf("Packer.PackBytes wrote:\n%v\nExpected:\n%v", p.Bytes, expected)
 	}
 
-	p.PackBytes([]byte("Avax"))
+	p.PackBytes([]byte("Lux"))
 	if !p.Errored() {
 		t.Fatal("Packer.PackBytes did not fail when attempt was beyond p.MaxSize")
 	}
@@ -324,9 +324,9 @@ func TestPackerPackBytes(t *testing.T) {
 
 func TestPackerUnpackBytes(t *testing.T) {
 	var (
-		p           = Packer{Bytes: []byte("\x00\x00\x00\x04Avax")}
+		p           = Packer{Bytes: []byte("\x00\x00\x00\x04Lux")}
 		actual      = p.UnpackBytes()
-		expected    = []byte("Avax")
+		expected    = []byte("Lux")
 		expectedLen = 8
 	)
 
@@ -350,7 +350,7 @@ func TestPackerUnpackBytes(t *testing.T) {
 func TestPackerString(t *testing.T) {
 	p := Packer{MaxSize: 6}
 
-	p.PackStr("Avax")
+	p.PackStr("Lux")
 
 	if p.Errored() {
 		t.Fatal(p.Err)

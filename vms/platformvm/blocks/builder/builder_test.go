@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -17,7 +17,7 @@ import (
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
@@ -307,8 +307,8 @@ func TestBuildBlock(t *testing.T) {
 	var (
 		parentID = ids.GenerateTestID()
 		height   = uint64(1337)
-		output   = &avax.TransferableOutput{
-			Asset: avax.Asset{ID: ids.GenerateTestID()},
+		output   = &lux.TransferableOutput{
+			Asset: lux.Asset{ID: ids.GenerateTestID()},
 			Out: &secp256k1fx.TransferOutput{
 				OutputOwners: secp256k1fx.OutputOwners{
 					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
@@ -319,22 +319,22 @@ func TestBuildBlock(t *testing.T) {
 		parentTimestamp = now.Add(-2 * time.Second)
 		transactions    = []*txs.Tx{{
 			Unsigned: &txs.AddValidatorTx{
-				BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
-					Ins: []*avax.TransferableInput{{
-						Asset: avax.Asset{ID: ids.GenerateTestID()},
+				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+					Ins: []*lux.TransferableInput{{
+						Asset: lux.Asset{ID: ids.GenerateTestID()},
 						In: &secp256k1fx.TransferInput{
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{0},
 							},
 						},
 					}},
-					Outs: []*avax.TransferableOutput{output},
+					Outs: []*lux.TransferableOutput{output},
 				}},
 				Validator: validator.Validator{
 					// Shouldn't be dropped
 					Start: uint64(now.Add(2 * txexecutor.SyncBound).Unix()),
 				},
-				StakeOuts: []*avax.TransferableOutput{output},
+				StakeOuts: []*lux.TransferableOutput{output},
 				RewardsOwner: &secp256k1fx.OutputOwners{
 					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
 				},

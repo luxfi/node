@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/luxd/utils/formatting/address"
 	"github.com/luxdefi/luxd/utils/json"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/genesis"
 	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
@@ -142,7 +142,7 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	AvaxAssetID   ids.ID                    `json:"avaxAssetID"`
+	LuxAssetID   ids.ID                    `json:"luxAssetID"`
 	NetworkID     json.Uint32               `json:"networkID"`
 	UTXOs         []UTXO                    `json:"utxos"`
 	Validators    []PermissionlessValidator `json:"validators"`
@@ -181,12 +181,12 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 			return err
 		}
 
-		utxo := avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,
 				OutputIndex: uint32(i),
 			},
-			Asset: avax.Asset{ID: args.AvaxAssetID},
+			Asset: lux.Asset{ID: args.LuxAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(apiUTXO.Amount),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -199,7 +199,7 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 		if apiUTXO.Locktime > args.Time {
 			utxo.Out = &stakeable.LockOut{
 				Locktime:        uint64(apiUTXO.Locktime),
-				TransferableOut: utxo.Out.(avax.TransferableOut),
+				TransferableOut: utxo.Out.(lux.TransferableOut),
 			}
 		}
 		messageBytes, err := formatting.Decode(args.Encoding, apiUTXO.Message)
@@ -216,7 +216,7 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 	vdrs := txheap.NewByEndTime()
 	for _, vdr := range args.Validators {
 		weight := uint64(0)
-		stake := make([]*avax.TransferableOutput, len(vdr.Staked))
+		stake := make([]*lux.TransferableOutput, len(vdr.Staked))
 		sortUTXOs(vdr.Staked)
 		for i, apiUTXO := range vdr.Staked {
 			addrID, err := bech32ToID(apiUTXO.Address)
@@ -224,8 +224,8 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 				return err
 			}
 
-			utxo := &avax.TransferableOutput{
-				Asset: avax.Asset{ID: args.AvaxAssetID},
+			utxo := &lux.TransferableOutput{
+				Asset: lux.Asset{ID: args.LuxAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(apiUTXO.Amount),
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -276,7 +276,7 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 		}
 
 		tx := &txs.Tx{Unsigned: &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
@@ -305,7 +305,7 @@ func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, r
 			return fmt.Errorf("problem decoding chain genesis data: %w", err)
 		}
 		tx := &txs.Tx{Unsigned: &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},

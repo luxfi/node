@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -10,7 +10,7 @@ import (
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/vms/avm"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
@@ -36,7 +36,7 @@ type Wallet interface {
 	// - [outputs] specifies all the recipients and amounts that should be sent
 	//   from this transaction.
 	IssueBaseTx(
-		outputs []*avax.TransferableOutput,
+		outputs []*lux.TransferableOutput,
 		options ...common.Option,
 	) (ids.ID, error)
 
@@ -127,7 +127,7 @@ type Wallet interface {
 	// - [outputs] specifies the outputs to send to the [chainID].
 	IssueExportTx(
 		chainID ids.ID,
-		outputs []*avax.TransferableOutput,
+		outputs []*lux.TransferableOutput,
 		options ...common.Option,
 	) (ids.ID, error)
 
@@ -170,7 +170,7 @@ func (w *wallet) Builder() Builder { return w.builder }
 func (w *wallet) Signer() Signer { return w.signer }
 
 func (w *wallet) IssueBaseTx(
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (ids.ID, error) {
 	utx, err := w.builder.NewBaseTx(outputs, options...)
@@ -266,7 +266,7 @@ func (w *wallet) IssueImportTx(
 
 func (w *wallet) IssueExportTx(
 	chainID ids.ID,
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (ids.ID, error) {
 	utx, err := w.builder.NewExportTx(chainID, outputs, options...)

@@ -12,10 +12,10 @@ if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   exit 255
 fi
 
-AVALANCHEGO_PATH="${1-}"
-if [[ -z "${AVALANCHEGO_PATH}" ]]; then
-  echo "Missing AVALANCHEGO_PATH argument!"
-  echo "Usage: ${0} [AVALANCHEGO_PATH]" >> /dev/stderr
+LUXGO_PATH="${1-}"
+if [[ -z "${LUXGO_PATH}" ]]; then
+  echo "Missing LUXGO_PATH argument!"
+  echo "Usage: ${0} [LUXGO_PATH]" >> /dev/stderr
   exit 255
 fi
 
@@ -75,12 +75,12 @@ server \
 PID=${!}
 
 #################################
-echo "running e2e tests against the local cluster with ${AVALANCHEGO_PATH}"
+echo "running e2e tests against the local cluster with ${LUXGO_PATH}"
 ./tests/e2e/e2e.test \
 --ginkgo.v \
 --log-level debug \
 --network-runner-grpc-endpoint="0.0.0.0:12342" \
---network-runner-luxd-path=${AVALANCHEGO_PATH} \
+--network-runner-luxd-path=${LUXGO_PATH} \
 --network-runner-luxd-log-level="WARN" \
 --test-keys-file=tests/test.insecure.secp256k1.keys --ginkgo.label-filter="${GINKGO_LABEL_FILTER}" \
 && EXIT_CODE=$? || EXIT_CODE=$?

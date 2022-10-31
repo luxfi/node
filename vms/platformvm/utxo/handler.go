@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/utils/math"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
 	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
@@ -32,7 +32,7 @@ var (
 )
 
 // Removes the UTXOs consumed by [ins] from the UTXO set
-func Consume(utxoDB state.UTXODeleter, ins []*avax.TransferableInput) {
+func Consume(utxoDB state.UTXODeleter, ins []*lux.TransferableInput) {
 	for _, input := range ins {
 		utxoDB.DeleteUTXO(input.InputID())
 	}
@@ -43,11 +43,11 @@ func Consume(utxoDB state.UTXODeleter, ins []*avax.TransferableInput) {
 func Produce(
 	utxoDB state.UTXOAdder,
 	txID ids.ID,
-	outs []*avax.TransferableOutput,
+	outs []*lux.TransferableOutput,
 ) {
 	for index, out := range outs {
-		utxoDB.AddUTXO(&avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxoDB.AddUTXO(&lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(index),
 			},
@@ -64,7 +64,7 @@ type Spender interface {
 	// Arguments:
 	// - [keys] are the owners of the funds
 	// - [amount] is the amount of funds that are trying to be staked
-	// - [fee] is the amount of AVAX that should be burned
+	// - [fee] is the amount of LUX that should be burned
 	// - [changeAddr] is the address that change, if there is any, is sent to
 	// Returns:
 	// - [inputs] the inputs that should be consumed to fund the outputs
@@ -79,9 +79,9 @@ type Spender interface {
 		fee uint64,
 		changeAddr ids.ShortID,
 	) (
-		[]*avax.TransferableInput, // inputs
-		[]*avax.TransferableOutput, // returnedOutputs
-		[]*avax.TransferableOutput, // stakedOutputs
+		[]*lux.TransferableInput, // inputs
+		[]*lux.TransferableOutput, // returnedOutputs
+		[]*lux.TransferableOutput, // stakedOutputs
 		[][]*crypto.PrivateKeySECP256K1R, // signers
 		error,
 	)
@@ -113,8 +113,8 @@ type Verifier interface {
 	VerifySpend(
 		tx txs.UnsignedTx,
 		utxoDB state.UTXOGetter,
-		ins []*avax.TransferableInput,
-		outs []*avax.TransferableOutput,
+		ins []*lux.TransferableInput,
+		outs []*lux.TransferableOutput,
 		creds []verify.Verifiable,
 		unlockedProduced map[ids.ID]uint64,
 	) error
@@ -132,9 +132,9 @@ type Verifier interface {
 	// Note: [unlockedProduced] is modified by this method.
 	VerifySpendUTXOs(
 		tx txs.UnsignedTx,
-		utxos []*avax.UTXO,
-		ins []*avax.TransferableInput,
-		outs []*avax.TransferableOutput,
+		utxos []*lux.UTXO,
+		ins []*lux.TransferableInput,
+		outs []*lux.TransferableOutput,
 		creds []verify.Verifiable,
 		unlockedProduced map[ids.ID]uint64,
 	) error
@@ -148,7 +148,7 @@ type Handler interface {
 func NewHandler(
 	ctx *snow.Context,
 	clk *mockable.Clock,
-	utxoReader avax.UTXOReader,
+	utxoReader lux.UTXOReader,
 	fx fx.Fx,
 ) Handler {
 	return &handler{
@@ -162,7 +162,7 @@ func NewHandler(
 type handler struct {
 	ctx         *snow.Context
 	clk         *mockable.Clock
-	utxosReader avax.UTXOReader
+	utxosReader lux.UTXOReader
 	fx          fx.Fx
 }
 
@@ -172,9 +172,9 @@ func (h *handler) Spend(
 	fee uint64,
 	changeAddr ids.ShortID,
 ) (
-	[]*avax.TransferableInput, // inputs
-	[]*avax.TransferableOutput, // returnedOutputs
-	[]*avax.TransferableOutput, // stakedOutputs
+	[]*lux.TransferableInput, // inputs
+	[]*lux.TransferableOutput, // returnedOutputs
+	[]*lux.TransferableOutput, // stakedOutputs
 	[][]*crypto.PrivateKeySECP256K1R, // signers
 	error,
 ) {
@@ -182,7 +182,7 @@ func (h *handler) Spend(
 	for _, key := range keys {
 		addrs.Add(key.PublicKey().Address())
 	}
-	utxos, err := avax.GetAllUTXOs(h.utxosReader, addrs) // The UTXOs controlled by [keys]
+	utxos, err := lux.GetAllUTXOs(h.utxosReader, addrs) // The UTXOs controlled by [keys]
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("couldn't get UTXOs: %w", err)
 	}
@@ -192,24 +192,24 @@ func (h *handler) Spend(
 	// Minimum time this transaction will be issued at
 	now := uint64(h.clk.Time().Unix())
 
-	ins := []*avax.TransferableInput{}
-	returnedOuts := []*avax.TransferableOutput{}
-	stakedOuts := []*avax.TransferableOutput{}
+	ins := []*lux.TransferableInput{}
+	returnedOuts := []*lux.TransferableOutput{}
+	stakedOuts := []*lux.TransferableOutput{}
 	signers := [][]*crypto.PrivateKeySECP256K1R{}
 
-	// Amount of AVAX that has been staked
+	// Amount of LUX that has been staked
 	amountStaked := uint64(0)
 
 	// Consume locked UTXOs
 	for _, utxo := range utxos {
-		// If we have consumed more AVAX than we are trying to stake, then we
-		// have no need to consume more locked AVAX
+		// If we have consumed more LUX than we are trying to stake, then we
+		// have no need to consume more locked LUX
 		if amountStaked >= amount {
 			break
 		}
 
-		if assetID := utxo.AssetID(); assetID != h.ctx.AVAXAssetID {
-			continue // We only care about staking AVAX, so ignore other assets
+		if assetID := utxo.AssetID(); assetID != h.ctx.LUXAssetID {
+			continue // We only care about staking LUX, so ignore other assets
 		}
 
 		out, ok := utxo.Out.(*stakeable.LockOut)
@@ -235,10 +235,10 @@ func (h *handler) Spend(
 			// We couldn't spend the output, so move on to the next one
 			continue
 		}
-		in, ok := inIntf.(avax.TransferableIn)
+		in, ok := inIntf.(lux.TransferableIn)
 		if !ok { // should never happen
 			h.ctx.Log.Warn("wrong input type",
-				zap.String("expectedType", "avax.TransferableIn"),
+				zap.String("expectedType", "lux.TransferableIn"),
 				zap.String("actualType", fmt.Sprintf("%T", inIntf)),
 			)
 			continue
@@ -256,9 +256,9 @@ func (h *handler) Spend(
 		remainingValue -= amountToStake
 
 		// Add the input to the consumed inputs
-		ins = append(ins, &avax.TransferableInput{
+		ins = append(ins, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  avax.Asset{ID: h.ctx.AVAXAssetID},
+			Asset:  lux.Asset{ID: h.ctx.LUXAssetID},
 			In: &stakeable.LockIn{
 				Locktime:       out.Locktime,
 				TransferableIn: in,
@@ -266,8 +266,8 @@ func (h *handler) Spend(
 		})
 
 		// Add the output to the staked outputs
-		stakedOuts = append(stakedOuts, &avax.TransferableOutput{
-			Asset: avax.Asset{ID: h.ctx.AVAXAssetID},
+		stakedOuts = append(stakedOuts, &lux.TransferableOutput{
+			Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 			Out: &stakeable.LockOut{
 				Locktime: out.Locktime,
 				TransferableOut: &secp256k1fx.TransferOutput{
@@ -280,8 +280,8 @@ func (h *handler) Spend(
 		if remainingValue > 0 {
 			// This input provided more value than was needed to be locked.
 			// Some of it must be returned
-			returnedOuts = append(returnedOuts, &avax.TransferableOutput{
-				Asset: avax.Asset{ID: h.ctx.AVAXAssetID},
+			returnedOuts = append(returnedOuts, &lux.TransferableOutput{
+				Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 				Out: &stakeable.LockOut{
 					Locktime: out.Locktime,
 					TransferableOut: &secp256k1fx.TransferOutput{
@@ -296,19 +296,19 @@ func (h *handler) Spend(
 		signers = append(signers, inSigners)
 	}
 
-	// Amount of AVAX that has been burned
+	// Amount of LUX that has been burned
 	amountBurned := uint64(0)
 
 	for _, utxo := range utxos {
-		// If we have consumed more AVAX than we are trying to stake,
-		// and we have burned more AVAX than we need to,
-		// then we have no need to consume more AVAX
+		// If we have consumed more LUX than we are trying to stake,
+		// and we have burned more LUX than we need to,
+		// then we have no need to consume more LUX
 		if amountBurned >= fee && amountStaked >= amount {
 			break
 		}
 
-		if assetID := utxo.AssetID(); assetID != h.ctx.AVAXAssetID {
-			continue // We only care about burning AVAX, so ignore other assets
+		if assetID := utxo.AssetID(); assetID != h.ctx.LUXAssetID {
+			continue // We only care about burning LUX, so ignore other assets
 		}
 
 		out := utxo.Out
@@ -328,7 +328,7 @@ func (h *handler) Spend(
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
 		}
-		in, ok := inIntf.(avax.TransferableIn)
+		in, ok := inIntf.(lux.TransferableIn)
 		if !ok {
 			// Because we only use the secp Fx right now, this should never
 			// happen
@@ -355,16 +355,16 @@ func (h *handler) Spend(
 		remainingValue -= amountToStake
 
 		// Add the input to the consumed inputs
-		ins = append(ins, &avax.TransferableInput{
+		ins = append(ins, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  avax.Asset{ID: h.ctx.AVAXAssetID},
+			Asset:  lux.Asset{ID: h.ctx.LUXAssetID},
 			In:     in,
 		})
 
 		if amountToStake > 0 {
 			// Some of this input was put for staking
-			stakedOuts = append(stakedOuts, &avax.TransferableOutput{
-				Asset: avax.Asset{ID: h.ctx.AVAXAssetID},
+			stakedOuts = append(stakedOuts, &lux.TransferableOutput{
+				Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amountToStake,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -378,8 +378,8 @@ func (h *handler) Spend(
 
 		if remainingValue > 0 {
 			// This input had extra value, so some of it must be returned
-			returnedOuts = append(returnedOuts, &avax.TransferableOutput{
-				Asset: avax.Asset{ID: h.ctx.AVAXAssetID},
+			returnedOuts = append(returnedOuts, &lux.TransferableOutput{
+				Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: remainingValue,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -401,9 +401,9 @@ func (h *handler) Spend(
 			amountBurned, amountStaked, fee, amount)
 	}
 
-	avax.SortTransferableInputsWithSigners(ins, signers)  // sort inputs and keys
-	avax.SortTransferableOutputs(returnedOuts, txs.Codec) // sort outputs
-	avax.SortTransferableOutputs(stakedOuts, txs.Codec)   // sort outputs
+	lux.SortTransferableInputsWithSigners(ins, signers)  // sort inputs and keys
+	lux.SortTransferableOutputs(returnedOuts, txs.Codec) // sort outputs
+	lux.SortTransferableOutputs(stakedOuts, txs.Codec)   // sort outputs
 
 	return ins, returnedOuts, stakedOuts, signers, nil
 }
@@ -454,12 +454,12 @@ func (h *handler) Authorize(
 func (h *handler) VerifySpend(
 	tx txs.UnsignedTx,
 	utxoDB state.UTXOGetter,
-	ins []*avax.TransferableInput,
-	outs []*avax.TransferableOutput,
+	ins []*lux.TransferableInput,
+	outs []*lux.TransferableOutput,
 	creds []verify.Verifiable,
 	unlockedProduced map[ids.ID]uint64,
 ) error {
-	utxos := make([]*avax.UTXO, len(ins))
+	utxos := make([]*lux.UTXO, len(ins))
 	for index, input := range ins {
 		utxo, err := utxoDB.GetUTXO(input.InputID())
 		if err != nil {
@@ -477,9 +477,9 @@ func (h *handler) VerifySpend(
 
 func (h *handler) VerifySpendUTXOs(
 	tx txs.UnsignedTx,
-	utxos []*avax.UTXO,
-	ins []*avax.TransferableInput,
-	outs []*avax.TransferableOutput,
+	utxos []*lux.UTXO,
+	ins []*lux.TransferableInput,
+	outs []*lux.TransferableOutput,
 	creds []verify.Verifiable,
 	unlockedProduced map[ids.ID]uint64,
 ) error {

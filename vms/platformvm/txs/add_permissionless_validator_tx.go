@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
@@ -47,7 +47,7 @@ type AddPermissionlessValidatorTx struct {
 	//       However, a NodeID does uniquely map to a BLS key
 	Signer signer.Signer `serialize:"true" json:"signer"`
 	// Where to send staked tokens when done validating
-	StakeOuts []*avax.TransferableOutput `serialize:"true" json:"stake"`
+	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send validation rewards when done validating
 	ValidatorRewardsOwner fx.Owner `serialize:"true" json:"validationRewardsOwner"`
 	// Where to send delegation rewards when done validating
@@ -91,7 +91,7 @@ func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
 	return SubnetPermissionlessValidatorCurrentPriority
 }
 
-func (tx *AddPermissionlessValidatorTx) Stake() []*avax.TransferableOutput {
+func (tx *AddPermissionlessValidatorTx) Stake() []*lux.TransferableOutput {
 	return tx.StakeOuts
 }
 
@@ -163,7 +163,7 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *snow.Context) error
 	}
 
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
 		return errOutputsNotSorted
 	case totalStakeWeight != tx.Validator.Wght:
 		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Validator.Wght, totalStakeWeight)

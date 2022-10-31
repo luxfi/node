@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -16,7 +16,7 @@ import (
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/vms/avm/fxs"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/nftfx"
 	"github.com/luxdefi/luxd/vms/propertyfx"
@@ -43,7 +43,7 @@ type Signer interface {
 }
 
 type SignerBackend interface {
-	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*avax.UTXO, error)
+	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
 }
 
 type signer struct {
@@ -133,7 +133,7 @@ func (s *signer) signExportTx(ctx stdcontext.Context, tx *txs.Tx, utx *txs.Expor
 	return s.sign(tx, txCreds, txSigners)
 }
 
-func (s *signer) getSigners(ctx stdcontext.Context, sourceChainID ids.ID, ins []*avax.TransferableInput) ([]verify.Verifiable, [][]keychain.Signer, error) {
+func (s *signer) getSigners(ctx stdcontext.Context, sourceChainID ids.ID, ins []*lux.TransferableInput) ([]verify.Verifiable, [][]keychain.Signer, error) {
 	txCreds := make([]verify.Verifiable, len(ins))
 	txSigners := make([][]keychain.Signer, len(ins))
 	for credIndex, transferInput := range ins {

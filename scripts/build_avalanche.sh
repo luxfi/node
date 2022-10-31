@@ -34,11 +34,11 @@ if version_lt "$(go_version)" "$go_version_minimum"; then
 fi
 
 # LUXgo root folder
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the versions
-source "$AVALANCHE_PATH"/scripts/versions.sh
+source "$LUX_PATH"/scripts/versions.sh
 # Load the constants
-source "$AVALANCHE_PATH"/scripts/constants.sh
+source "$LUX_PATH"/scripts/constants.sh
 
 echo "Building LUXGo..."
-go build -ldflags "-X github.com/luxdefi/luxd/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$AVALANCHE_PATH/main/"*.go
+go build -ldflags "-X github.com/luxdefi/luxd/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$LUX_PATH/main/"*.go

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -20,7 +20,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/units"
 	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
@@ -105,7 +105,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 					map[uint32][]verify.State{
 						0: {
 							&secp256k1fx.TransferOutput{
-								Amt:          100 * units.MegaAvax,
+								Amt:          100 * units.MegaLux,
 								OutputOwners: *owner,
 							},
 						},
@@ -121,17 +121,17 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				gomega.Expect(txStatus, err).To(gomega.Equal(choices.Accepted))
 			})
 
-			ginkgo.By(fmt.Sprintf("Send 100 MegaAvax of asset %s to the P-chain", subnetAssetID), func() {
+			ginkgo.By(fmt.Sprintf("Send 100 MegaLux of asset %s to the P-chain", subnetAssetID), func() {
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultWalletCreationTimeout)
 				exportTxID, err := xWallet.IssueExportTx(
 					constants.PlatformChainID,
-					[]*avax.TransferableOutput{
+					[]*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: subnetAssetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
-								Amt:          100 * units.MegaAvax,
+								Amt:          100 * units.MegaLux,
 								OutputOwners: *owner,
 							},
 						},
@@ -147,7 +147,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				gomega.Expect(txStatus, err).To(gomega.Equal(choices.Accepted))
 			})
 
-			ginkgo.By(fmt.Sprintf("Import the 100 MegaAvax of asset %s from the X-chain into the P-chain", subnetAssetID), func() {
+			ginkgo.By(fmt.Sprintf("Import the 100 MegaLux of asset %s from the X-chain into the P-chain", subnetAssetID), func() {
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultWalletCreationTimeout)
 				importTxID, err := pWallet.IssueImportTx(
 					xChainID,
@@ -168,12 +168,12 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				transformSubnetTxID, err := pWallet.IssueTransformSubnetTx(
 					subnetID,
 					subnetAssetID,
-					50*units.MegaAvax,
-					100*units.MegaAvax,
+					50*units.MegaLux,
+					100*units.MegaLux,
 					reward.PercentDenominator,
 					reward.PercentDenominator,
 					1,
-					100*units.MegaAvax,
+					100*units.MegaLux,
 					time.Second,
 					365*24*time.Hour,
 					0,
@@ -200,7 +200,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 							NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 							Start:  uint64(validatorStartTime.Unix()),
 							End:    uint64(validatorStartTime.Add(5 * time.Second).Unix()),
-							Wght:   25 * units.MegaAvax,
+							Wght:   25 * units.MegaLux,
 						},
 						Subnet: subnetID,
 					},
@@ -229,7 +229,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 							NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 							Start:  uint64(delegatorStartTime.Unix()),
 							End:    uint64(delegatorStartTime.Add(5 * time.Second).Unix()),
-							Wght:   25 * units.MegaAvax,
+							Wght:   25 * units.MegaLux,
 						},
 						Subnet: subnetID,
 					},

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -31,7 +31,7 @@ import (
 	"github.com/luxdefi/luxd/utils/sampler"
 	"github.com/luxdefi/luxd/version"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/index"
 	"github.com/luxdefi/luxd/vms/components/keystore"
 	"github.com/luxdefi/luxd/vms/components/verify"
@@ -44,9 +44,9 @@ var testChangeAddr = ids.GenerateTestShortID()
 
 var testCases = []struct {
 	name      string
-	avaxAsset bool
+	luxAsset bool
 }{
-	{"genesis asset is AVAX", true},
+	{"genesis asset is LUX", true},
 	{"genesis asset is TEST", false},
 }
 
@@ -55,14 +55,14 @@ var testCases = []struct {
 // 2) the VM
 // 3) The service that wraps the VM
 // 4) atomic memory to use in tests
-func setup(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
+func setup(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
 	var genesisBytes []byte
 	var vm *VM
 	var m *atomic.Memory
 	var genesisTx *txs.Tx
-	if isAVAXAsset {
+	if isLUXAsset {
 		genesisBytes, _, vm, m = GenesisVM(t)
-		genesisTx = GetAVAXTxFromGenesisTest(genesisBytes, t)
+		genesisTx = GetLUXTxFromGenesisTest(genesisBytes, t)
 	} else {
 		genesisBytes, _, vm, m = setupTxFeeAssets(t)
 		genesisTx = GetCreateTxFromGenesisTest(t, genesisBytes, feeAssetName)
@@ -77,11 +77,11 @@ func setup(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, *atomic.Memor
 // 3) The service that wraps the VM
 // 4) Issuer channel
 // 5) atomic memory to use in tests
-func setupWithIssuer(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, chan common.Message) {
+func setupWithIssuer(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, chan common.Message) {
 	var genesisBytes []byte
 	var vm *VM
 	var issuer chan common.Message
-	if isAVAXAsset {
+	if isLUXAsset {
 		genesisBytes, issuer, vm, _ = GenesisVM(t)
 	} else {
 		genesisBytes, issuer, vm, _ = setupTxFeeAssets(t)
@@ -95,8 +95,8 @@ func setupWithIssuer(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, cha
 // 2) the VM
 // 3) The service that wraps the VM
 // 4) atomic memory to use in tests
-func setupWithKeys(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
-	genesisBytes, vm, s, m, tx := setup(t, isAVAXAsset)
+func setupWithKeys(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
+	genesisBytes, vm, s, m, tx := setup(t, isLUXAsset)
 
 	// Import the initially funded private keys
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, username, password)
@@ -151,7 +151,7 @@ func verifyTxFeeDeducted(t *testing.T, s *Service, fromAddrs []ids.ShortID, numT
 	fromAddrsStartBalance := startBalance * uint64(len(fromAddrs))
 
 	// Key: Address
-	// Value: AVAX balance
+	// Value: LUX balance
 	balances := map[ids.ShortID]uint64{}
 
 	for _, addr := range addrs { // get balances for all addresses
@@ -288,12 +288,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 
 	// A UTXO with a 2 out of 2 multisig
 	// where one of the addresses is [addr]
-	twoOfTwoUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	twoOfTwoUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -333,12 +333,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
-	oneOfTwoUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	oneOfTwoUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -379,12 +379,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
 	now := vm.clock.Time()
-	futureUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	futureUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -484,12 +484,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 	}
 	// A UTXO with a 2 out of 2 multisig
 	// where one of the addresses is [addr]
-	twoOfTwoUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	twoOfTwoUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -526,12 +526,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
-	oneOfTwoUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	oneOfTwoUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -570,12 +570,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
 	now := vm.clock.Time()
-	futureUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	futureUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -614,12 +614,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 
 	// A UTXO for a different asset
 	otherAssetID := ids.GenerateTestID()
-	otherAssetUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	otherAssetUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: avax.Asset{ID: otherAssetID},
+		Asset: lux.Asset{ID: otherAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -696,7 +696,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	newTx := newAvaxBaseTxWithOutputs(t, genesisBytes, vm)
+	newTx := newLuxBaseTxWithOutputs(t, genesisBytes, vm)
 
 	txID, err := vm.IssueTx(newTx.Bytes())
 	if err != nil {
@@ -744,7 +744,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	newTx := newAvaxExportTxWithOutputs(t, genesisBytes, vm)
+	newTx := newLuxExportTxWithOutputs(t, genesisBytes, vm)
 
 	txID, err := vm.IssueTx(newTx.Bytes())
 	if err != nil {
@@ -832,7 +832,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	txID, err := vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -924,7 +924,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1029,7 +1029,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1136,7 +1136,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1243,7 +1243,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1351,7 +1351,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1456,7 +1456,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 
 	key := keys[0]
 
-	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1510,27 +1510,27 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	require.Contains(t, jsonString, "\"credentials\":[{\"fxID\":\"2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w\",\"credential\":{\"signatures\":[\"0x25b7ca14df108d4a32877bda4f10d84eda6d653c620f4c8d124265bdcf0ac91f45712b58b33f4b62a19698325a3c89adff214b77f772d9f311742860039abb5601\"]}},{\"fxID\":\"2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w\",\"credential\":{\"signatures\":[\"0x25b7ca14df108d4a32877bda4f10d84eda6d653c620f4c8d124265bdcf0ac91f45712b58b33f4b62a19698325a3c89adff214b77f772d9f311742860039abb5601\"]}}]")
 }
 
-func newAvaxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	avaxTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+func newLuxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
+	luxTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	key := keys[0]
-	tx := buildBaseTx(avaxTx, vm, key)
+	tx := buildBaseTx(luxTx, vm, key)
 	if err := tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*crypto.PrivateKeySECP256K1R{{key}}); err != nil {
 		t.Fatal(err)
 	}
 	return tx
 }
 
-func newAvaxExportTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	avaxTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+func newLuxExportTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
+	luxTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	key := keys[0]
-	tx := buildExportTx(avaxTx, vm, key)
+	tx := buildExportTx(luxTx, vm, key)
 	if err := tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*crypto.PrivateKeySECP256K1R{{key}}); err != nil {
 		t.Fatal(err)
 	}
 	return tx
 }
 
-func newAvaxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
+func newLuxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
 	key := keys[0]
 	tx := buildCreateAssetTx(key)
 	if err := vm.parser.InitializeTx(tx); err != nil {
@@ -1539,18 +1539,18 @@ func newAvaxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
 	return tx
 }
 
-func buildBaseTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
+func buildBaseTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.BaseTx{
-		BaseTx: avax.BaseTx{
+		BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
-					TxID:        avaxTx.ID(),
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
+					TxID:        luxTx.ID(),
 					OutputIndex: 2,
 				},
-				Asset: avax.Asset{ID: avaxTx.ID()},
+				Asset: lux.Asset{ID: luxTx.ID()},
 				In: &secp256k1fx.TransferInput{
 					Amt: startBalance,
 					Input: secp256k1fx.Input{
@@ -1560,8 +1560,8 @@ func buildBaseTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.
 					},
 				},
 			}},
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{ID: avaxTx.ID()},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: luxTx.ID()},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: startBalance - vm.TxFee,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1574,18 +1574,18 @@ func buildBaseTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.
 	}}
 }
 
-func buildExportTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
+func buildExportTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    networkID,
 				BlockchainID: chainID,
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
-						TxID:        avaxTx.ID(),
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
+						TxID:        luxTx.ID(),
 						OutputIndex: 2,
 					},
-					Asset: avax.Asset{ID: avaxTx.ID()},
+					Asset: lux.Asset{ID: luxTx.ID()},
 					In: &secp256k1fx.TransferInput{
 						Amt:   startBalance,
 						Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -1594,8 +1594,8 @@ func buildExportTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *tx
 			},
 		},
 		DestinationChain: constants.PlatformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: avaxTx.ID()},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: luxTx.ID()},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: startBalance - vm.TxFee,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1609,7 +1609,7 @@ func buildExportTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *tx
 
 func buildCreateAssetTx(key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.CreateAssetTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -1675,8 +1675,8 @@ func buildCreateAssetTx(key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 
 func buildNFTxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex, groupID uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: avax.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*avax.UTXOID{{
+		Asset: lux.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*lux.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1696,8 +1696,8 @@ func buildNFTxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, ou
 
 func buildPropertyFxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: avax.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*avax.UTXOID{{
+		Asset: lux.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*lux.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1717,8 +1717,8 @@ func buildPropertyFxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K
 
 func buildSecpMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: avax.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*avax.UTXOID{{
+		Asset: lux.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*lux.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1748,7 +1748,7 @@ func buildSecpMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, ou
 
 func buildOperationTxWithOp(op ...*txs.Operation) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.OperationTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -1799,11 +1799,11 @@ func TestServiceGetUTXOs(t *testing.T) {
 	numUTXOs := 10
 	// Put a bunch of UTXOs
 	for i := 0; i < numUTXOs; i++ {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1822,11 +1822,11 @@ func TestServiceGetUTXOs(t *testing.T) {
 	elems := make([]*atomic.Element, numUTXOs)
 	codec := vm.parser.Codec()
 	for i := range elems {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -2060,17 +2060,17 @@ func TestGetAssetDescription(t *testing.T) {
 		vm.ctx.Lock.Unlock()
 	}()
 
-	avaxAssetID := genesisTx.ID()
+	luxAssetID := genesisTx.ID()
 
 	reply := GetAssetDescriptionReply{}
 	err := s.GetAssetDescription(nil, &GetAssetDescriptionArgs{
-		AssetID: avaxAssetID.String(),
+		AssetID: luxAssetID.String(),
 	}, &reply)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if reply.Name != "AVAX" {
+	if reply.Name != "LUX" {
 		t.Fatalf("Wrong name returned from GetAssetDescription %s", reply.Name)
 	}
 	if reply.Symbol != "SYMB" {
@@ -2087,7 +2087,7 @@ func TestGetBalance(t *testing.T) {
 		vm.ctx.Lock.Unlock()
 	}()
 
-	avaxAssetID := genesisTx.ID()
+	luxAssetID := genesisTx.ID()
 
 	reply := GetBalanceReply{}
 	addrStr, err := vm.FormatLocalAddress(keys[0].PublicKey().Address())
@@ -2096,7 +2096,7 @@ func TestGetBalance(t *testing.T) {
 	}
 	err = s.GetBalance(nil, &GetBalanceArgs{
 		Address: addrStr,
-		AssetID: avaxAssetID.String(),
+		AssetID: luxAssetID.String(),
 	}, &reply)
 	if err != nil {
 		t.Fatal(err)
@@ -2110,7 +2110,7 @@ func TestGetBalance(t *testing.T) {
 func TestCreateFixedCapAsset(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
 			defer func() {
 				if err := vm.Shutdown(); err != nil {
 					t.Fatal(err)
@@ -2159,7 +2159,7 @@ func TestCreateFixedCapAsset(t *testing.T) {
 func TestCreateVariableCapAsset(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
 			defer func() {
 				if err := vm.Shutdown(); err != nil {
 					t.Fatal(err)
@@ -2276,7 +2276,7 @@ func TestCreateVariableCapAsset(t *testing.T) {
 func TestNFTWorkflow(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
 			defer func() {
 				if err := vm.Shutdown(); err != nil {
 					t.Fatal(err)
@@ -2567,7 +2567,7 @@ func TestSend(t *testing.T) {
 func TestSendMultiple(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, genesisTx := setupWithKeys(t, tc.avaxAsset)
+			_, vm, s, _, genesisTx := setupWithKeys(t, tc.luxAsset)
 			defer func() {
 				if err := vm.Shutdown(); err != nil {
 					t.Fatal(err)
@@ -2676,7 +2676,7 @@ func TestCreateAndListAddresses(t *testing.T) {
 func TestImport(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, m, genesisTx := setupWithKeys(t, tc.avaxAsset)
+			_, vm, s, m, genesisTx := setupWithKeys(t, tc.luxAsset)
 			defer func() {
 				if err := vm.Shutdown(); err != nil {
 					t.Fatal(err)
@@ -2686,9 +2686,9 @@ func TestImport(t *testing.T) {
 			assetID := genesisTx.ID()
 			addr0 := keys[0].PublicKey().Address()
 
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{TxID: ids.Empty},
-				Asset:  avax.Asset{ID: assetID},
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{TxID: ids.Empty},
+				Asset:  lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 7,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -2728,7 +2728,7 @@ func TestImport(t *testing.T) {
 			}
 			reply := &api.JSONTxID{}
 			if err := s.Import(nil, args, reply); err != nil {
-				t.Fatalf("Failed to import AVAX due to %s", err)
+				t.Fatalf("Failed to import LUX due to %s", err)
 			}
 		})
 	}
