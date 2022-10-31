@@ -28,7 +28,7 @@ func Parse(s string) (*Semantic, error) {
 }
 
 func ParseApplication(s string) (*Application, error) {
-	if !strings.HasPrefix(s, "avalanche/") {
+	if !strings.HasPrefix(s, "lux/") {
 		return nil, fmt.Errorf("application string %q missing required prefix", s)
 	}
 

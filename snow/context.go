@@ -72,11 +72,11 @@ type ConsensusContext struct {
 
 	// DecisionAcceptor is the callback that will be fired whenever a VM is
 	// notified that their object, either a block in snowman or a transaction
-	// in avalanche, was accepted.
+	// in lux, was accepted.
 	DecisionAcceptor Acceptor
 
 	// ConsensusAcceptor is the callback that will be fired whenever a
-	// container, either a block in snowman or a vertex in avalanche, was
+	// container, either a block in snowman or a vertex in lux, was
 	// accepted.
 	ConsensusAcceptor Acceptor
 

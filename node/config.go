@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/nat"
 	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/networking/benchlist"
 	"github.com/luxdefi/luxd/snow/networking/router"
 	"github.com/luxdefi/luxd/snow/networking/sender"
@@ -176,7 +176,7 @@ type Config struct {
 	FdLimit uint64 `json:"fdLimit"`
 
 	// Consensus configuration
-	ConsensusParams avalanche.Parameters `json:"consensusParams"`
+	ConsensusParams lux.Parameters `json:"consensusParams"`
 
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`

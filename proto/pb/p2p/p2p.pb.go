@@ -1227,7 +1227,7 @@ func (x *GetAccepted) GetContainerIds() [][]byte {
 // the sender's accepted frontier IDs, the X-chain engine responds only with
 // the accepted vertex IDs of the X-chain DAG.
 //
-// See "snow/engine/avalanche#GetAccepted" and "SendAccepted".
+// See "snow/engine/lux#GetAccepted" and "SendAccepted".
 // See "snow/engine/common/bootstrapper.go#Accepted".
 type Accepted struct {
 	state         protoimpl.MessageState

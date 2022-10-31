@@ -19,15 +19,15 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/engine/snowman"
 	"github.com/luxdefi/luxd/utils"
 	"github.com/luxdefi/luxd/utils/logging"
 
-	aveng "github.com/luxdefi/luxd/snow/engine/avalanche"
+	aveng "github.com/luxdefi/luxd/snow/engine/lux"
 	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
 )
 
@@ -291,7 +291,7 @@ func TestIndexer(t *testing.T) {
 	}
 	// Mocked VM knows about this block now
 	dagEngine.EXPECT().GetVtx(vtxID).Return(
-		&avalanche.TestVertex{
+		&lux.TestVertex{
 			TestDecidable: choices.TestDecidable{
 				StatusV: choices.Accepted,
 				IDV:     vtxID,

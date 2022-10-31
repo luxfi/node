@@ -2,8 +2,8 @@ github.com/luxdefi/luxd/api/server=Server=api/server/mock_server.go
 github.com/luxdefi/luxd/chains/atomic=SharedMemory=chains/atomic/mock_shared_memory.go
 github.com/luxdefi/luxd/database=Batch=database/mock_batch.go
 github.com/luxdefi/luxd/snow/consensus/snowman=Block=snow/consensus/snowman/mock_block.go
-github.com/luxdefi/luxd/snow/engine/avalanche=Engine=snow/engine/avalanche/mock_engine.go
-github.com/luxdefi/luxd/snow/engine/avalanche/vertex=DAGVM=snow/engine/avalanche/vertex/mock_vm.go
+github.com/luxdefi/luxd/snow/engine/lux=Engine=snow/engine/lux/mock_engine.go
+github.com/luxdefi/luxd/snow/engine/lux/vertex=DAGVM=snow/engine/lux/vertex/mock_vm.go
 github.com/luxdefi/luxd/snow/engine/common=Sender=snow/engine/common/mock_sender.go
 github.com/luxdefi/luxd/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
 github.com/luxdefi/luxd/snow/engine/snowman/block=ChainVM=snow/engine/snowman/block/mocks/chain_vm.go
