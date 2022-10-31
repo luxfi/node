@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
@@ -32,7 +32,7 @@ type AddDelegatorTx struct {
 	// Describes the delegatee
 	Validator validator.Validator `serialize:"true" json:"validator"`
 	// Where to send staked tokens when done validating
-	StakeOuts []*avax.TransferableOutput `serialize:"true" json:"stake"`
+	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send staking rewards when done validating
 	DelegationRewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
 }
@@ -58,7 +58,7 @@ func (tx *AddDelegatorTx) PendingPriority() Priority {
 	return PrimaryNetworkDelegatorApricotPendingPriority
 }
 func (tx *AddDelegatorTx) CurrentPriority() Priority         { return PrimaryNetworkDelegatorCurrentPriority }
-func (tx *AddDelegatorTx) Stake() []*avax.TransferableOutput { return tx.StakeOuts }
+func (tx *AddDelegatorTx) Stake() []*lux.TransferableOutput { return tx.StakeOuts }
 func (tx *AddDelegatorTx) RewardsOwner() fx.Owner            { return tx.DelegationRewardsOwner }
 
 // SyntacticVerify returns nil iff [tx] is valid
@@ -89,13 +89,13 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx *snow.Context) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		if assetID != ctx.AVAXAssetID {
-			return fmt.Errorf("stake output must be AVAX but is %q", assetID)
+		if assetID != ctx.LUXAssetID {
+			return fmt.Errorf("stake output must be LUX but is %q", assetID)
 		}
 	}
 
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
 		return errOutputsNotSorted
 	case totalStakeWeight != tx.Validator.Wght:
 		return fmt.Errorf("%w, delegator weight %d total stake weight %d",

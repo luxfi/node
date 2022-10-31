@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -70,7 +70,7 @@ func TestExportTxSerialization(t *testing.T) {
 	}
 
 	tx := &Tx{Unsigned: &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID: 2,
 			BlockchainID: ids.ID{
 				0xff, 0xff, 0xff, 0xff, 0xee, 0xee, 0xee, 0xee,
@@ -78,14 +78,14 @@ func TestExportTxSerialization(t *testing.T) {
 				0xbb, 0xbb, 0xbb, 0xbb, 0xaa, 0xaa, 0xaa, 0xaa,
 				0x99, 0x99, 0x99, 0x99, 0x88, 0x88, 0x88, 0x88,
 			},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{TxID: ids.ID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{TxID: ids.ID{
 					0x0f, 0x2f, 0x4f, 0x6f, 0x8e, 0xae, 0xce, 0xee,
 					0x0d, 0x2d, 0x4d, 0x6d, 0x8c, 0xac, 0xcc, 0xec,
 					0x0b, 0x2b, 0x4b, 0x6b, 0x8a, 0xaa, 0xca, 0xea,
 					0x09, 0x29, 0x49, 0x69, 0x88, 0xa8, 0xc8, 0xe8,
 				}},
-				Asset: avax.Asset{ID: ids.ID{
+				Asset: lux.Asset{ID: ids.ID{
 					0x1f, 0x3f, 0x5f, 0x7f, 0x9e, 0xbe, 0xde, 0xfe,
 					0x1d, 0x3d, 0x5d, 0x7d, 0x9c, 0xbc, 0xdc, 0xfc,
 					0x1b, 0x3b, 0x5b, 0x7b, 0x9a, 0xba, 0xda, 0xfa,
@@ -184,11 +184,11 @@ func TestExportTxSyntacticVerify(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -197,7 +197,7 @@ func TestExportTxSyntacticVerify(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -207,8 +207,8 @@ func TestExportTxSyntacticVerify(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -241,11 +241,11 @@ func TestExportTxSyntacticVerifyWrongNetworkID(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID + 1,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -254,7 +254,7 @@ func TestExportTxSyntacticVerifyWrongNetworkID(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -264,8 +264,8 @@ func TestExportTxSyntacticVerifyWrongNetworkID(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -287,7 +287,7 @@ func TestExportTxSyntacticVerifyWrongBlockchainID(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID: networkID,
 			BlockchainID: ids.ID{
 				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -295,8 +295,8 @@ func TestExportTxSyntacticVerifyWrongBlockchainID(t *testing.T) {
 				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
 				0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
 			},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -305,7 +305,7 @@ func TestExportTxSyntacticVerifyWrongBlockchainID(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -315,8 +315,8 @@ func TestExportTxSyntacticVerifyWrongBlockchainID(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -338,11 +338,11 @@ func TestExportTxSyntacticVerifyInvalidMemo(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -351,7 +351,7 @@ func TestExportTxSyntacticVerifyInvalidMemo(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -359,11 +359,11 @@ func TestExportTxSyntacticVerifyInvalidMemo(t *testing.T) {
 					},
 				},
 			}},
-			Memo: make([]byte, avax.MaxMemoSize+1),
+			Memo: make([]byte, lux.MaxMemoSize+1),
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -385,11 +385,11 @@ func TestExportTxSyntacticVerifyInvalidBaseOutput(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -398,7 +398,7 @@ func TestExportTxSyntacticVerifyInvalidBaseOutput(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -406,8 +406,8 @@ func TestExportTxSyntacticVerifyInvalidBaseOutput(t *testing.T) {
 					},
 				},
 			}},
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{ID: assetID},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 10000,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -418,8 +418,8 @@ func TestExportTxSyntacticVerifyInvalidBaseOutput(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 2345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -441,11 +441,11 @@ func TestExportTxSyntacticVerifyUnsortedBaseOutputs(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -454,7 +454,7 @@ func TestExportTxSyntacticVerifyUnsortedBaseOutputs(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -462,9 +462,9 @@ func TestExportTxSyntacticVerifyUnsortedBaseOutputs(t *testing.T) {
 					},
 				},
 			}},
-			Outs: []*avax.TransferableOutput{
+			Outs: []*lux.TransferableOutput{
 				{
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: 10000,
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -474,7 +474,7 @@ func TestExportTxSyntacticVerifyUnsortedBaseOutputs(t *testing.T) {
 					},
 				},
 				{
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: 1111,
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -486,8 +486,8 @@ func TestExportTxSyntacticVerifyUnsortedBaseOutputs(t *testing.T) {
 			},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1234,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -509,11 +509,11 @@ func TestExportTxSyntacticVerifyInvalidOutput(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -522,7 +522,7 @@ func TestExportTxSyntacticVerifyInvalidOutput(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -532,8 +532,8 @@ func TestExportTxSyntacticVerifyInvalidOutput(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -555,11 +555,11 @@ func TestExportTxSyntacticVerifyUnsortedOutputs(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -568,7 +568,7 @@ func TestExportTxSyntacticVerifyUnsortedOutputs(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -578,9 +578,9 @@ func TestExportTxSyntacticVerifyUnsortedOutputs(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{
+		ExportedOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 10000,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -590,7 +590,7 @@ func TestExportTxSyntacticVerifyUnsortedOutputs(t *testing.T) {
 				},
 			},
 			{
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2345,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -613,12 +613,12 @@ func TestExportTxSyntacticVerifyInvalidInput(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{
+			Ins: []*lux.TransferableInput{
 				{
-					UTXOID: avax.UTXOID{
+					UTXOID: lux.UTXOID{
 						TxID: ids.ID{
 							0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 							0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -627,7 +627,7 @@ func TestExportTxSyntacticVerifyInvalidInput(t *testing.T) {
 						},
 						OutputIndex: 0,
 					},
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					In: &secp256k1fx.TransferInput{
 						Amt: 54321,
 						Input: secp256k1fx.Input{
@@ -636,7 +636,7 @@ func TestExportTxSyntacticVerifyInvalidInput(t *testing.T) {
 					},
 				},
 				{
-					UTXOID: avax.UTXOID{
+					UTXOID: lux.UTXOID{
 						TxID: ids.ID{
 							0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 							0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -645,7 +645,7 @@ func TestExportTxSyntacticVerifyInvalidInput(t *testing.T) {
 						},
 						OutputIndex: 1,
 					},
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					In: &secp256k1fx.TransferInput{
 						Amt: 0,
 						Input: secp256k1fx.Input{
@@ -656,8 +656,8 @@ func TestExportTxSyntacticVerifyInvalidInput(t *testing.T) {
 			},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -679,12 +679,12 @@ func TestExportTxSyntacticVerifyUnsortedInputs(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{
+			Ins: []*lux.TransferableInput{
 				{
-					UTXOID: avax.UTXOID{
+					UTXOID: lux.UTXOID{
 						TxID: ids.ID{
 							0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 							0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -693,7 +693,7 @@ func TestExportTxSyntacticVerifyUnsortedInputs(t *testing.T) {
 						},
 						OutputIndex: 1,
 					},
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					In: &secp256k1fx.TransferInput{
 						Amt: 1,
 						Input: secp256k1fx.Input{
@@ -702,7 +702,7 @@ func TestExportTxSyntacticVerifyUnsortedInputs(t *testing.T) {
 					},
 				},
 				{
-					UTXOID: avax.UTXOID{
+					UTXOID: lux.UTXOID{
 						TxID: ids.ID{
 							0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 							0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -711,7 +711,7 @@ func TestExportTxSyntacticVerifyUnsortedInputs(t *testing.T) {
 						},
 						OutputIndex: 0,
 					},
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					In: &secp256k1fx.TransferInput{
 						Amt: 54321,
 						Input: secp256k1fx.Input{
@@ -722,8 +722,8 @@ func TestExportTxSyntacticVerifyUnsortedInputs(t *testing.T) {
 			},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 12345,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -745,11 +745,11 @@ func TestExportTxSyntacticVerifyInvalidFlowCheck(t *testing.T) {
 	c := setupCodec()
 
 	tx := &ExportTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID: ids.ID{
 						0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
 						0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
@@ -758,7 +758,7 @@ func TestExportTxSyntacticVerifyInvalidFlowCheck(t *testing.T) {
 					},
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: 54321,
 					Input: secp256k1fx.Input{
@@ -768,8 +768,8 @@ func TestExportTxSyntacticVerifyInvalidFlowCheck(t *testing.T) {
 			}},
 		}},
 		DestinationChain: platformChainID,
-		ExportedOuts: []*avax.TransferableOutput{{
-			Asset: avax.Asset{ID: assetID},
+		ExportedOuts: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 123450,
 				OutputOwners: secp256k1fx.OutputOwners{

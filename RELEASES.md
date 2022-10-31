@@ -51,7 +51,7 @@ The supported plugin version is `17`.
 ### Upgrades
 
 - Activated P2P serialization format change to Protobuf
-- Activated non-AVAX `ImportTx`/`ExportTx`s to/from the P-chain
+- Activated non-LUX `ImportTx`/`ExportTx`s to/from the P-chain
 - Activated `Banff*` blocks on the P-chain
 - Deactivated `Apricot*` blocks on the P-chain
 - Activated `RemoveSubnetValidatorTx`s on the P-chain
@@ -117,7 +117,7 @@ The supported plugin version is `16`.
 
 - Fixed stale block reference by evicting blocks upon successful verification
 
-### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalanchelux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
@@ -132,7 +132,7 @@ The supported plugin version is `16`.
 - Added temporarily invalid block caching to reduce repeated network requests
 - Added caching to the proposervm's inner block parsing
 
-### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalanchelux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
@@ -145,7 +145,7 @@ The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on bot
 
 The supported plugin version is `16`.
 
-### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalanchelux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Fixed live-lock in bootstrapping, after performing state-sync, by properly reporting `database.ErrNotFound` in `GetBlockIDAtHeight` rather than a formatted error
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
@@ -163,7 +163,7 @@ The supported plugin version is `16`.
 
 - Reduced the severity of not quickly connecting to bootstrap nodes from `FATAL` to `WARN`
 
-### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalanchelux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
@@ -260,7 +260,7 @@ The supported plugin version is `16`.
   - `timer.NewStagedTimer`
   - `timer.TimedMeter`
 
-### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalanchelux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Incorrectly deprecated Native Asset Call
 - Migrated to go-ethereum v1.10.23
@@ -363,7 +363,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 ### Coreth
 
 - Bumped go-ethereum dependency to v1.10.20
-- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.avax.network/nodes/maintain/chain-config-flags#c-chain-configs)
+- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.lux.network/nodes/maintain/chain-config-flags#c-chain-configs)
 - Optimized state sync by parallelizing trie syncing
 - Added `eth_syncing` API for compatibility. Note: This API is only accessible after bootstrapping and always returns `"false"`, since the node will no longer be syncing at that point
 - Added metrics to the atomic transaction mempool
@@ -391,7 +391,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using LUXGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/luxd/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using LUXGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/luxd/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -834,7 +834,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Added `--stake-max-consumption-rate` which defaults to `120,000`.
 - Added `--stake-min-consumption-rate` which defaults to `100,000`.
-- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nAVAX.
+- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nLUX.
 - Renamed `--bootstrap-multiput-max-containers-sent` to `--bootstrap-ancestors-max-containers-sent`.
 - Renamed `--bootstrap-multiput-max-containers-received` to `--bootstrap-ancestors-max-containers-received`.
 - Enforced that `--staking-enabled=false` can not be specified on public networks (`Fuji` and `Mainnet`).
@@ -940,12 +940,12 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 ### PlatformVM
 
 - Enabled `AtomicTx`s to be issued into `StandardBlock`s and deprecated `AtomicBlock`s.
-- Added the ability to export/import AVAX to/from the C-chain.
+- Added the ability to export/import LUX to/from the C-chain.
 
 ### Coreth
 
 - Enabled multiple `AtomicTx`s to be issued per block.
-- Added the ability to export/import AVAX to/from the P-chain.
+- Added the ability to export/import LUX to/from the P-chain.
 - Updated dynamic fee calculations.
 
 ### ProposerVM

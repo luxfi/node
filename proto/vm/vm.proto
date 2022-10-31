@@ -62,7 +62,7 @@ message InitializeRequest {
   bytes chain_id = 3;
   bytes node_id = 4;
   bytes x_chain_id = 5;
-  bytes avax_asset_id = 6;
+  bytes lux_asset_id = 6;
   bytes genesis_bytes = 7;
   bytes upgrade_bytes = 8;
   bytes config_bytes = 9;

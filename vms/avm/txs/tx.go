@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/nftfx"
 	"github.com/luxdefi/luxd/vms/propertyfx"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -31,7 +31,7 @@ type UnsignedTx interface {
 	AssetIDs() ids.Set
 
 	NumCredentials() int
-	InputUTXOs() []*avax.UTXOID
+	InputUTXOs() []*lux.UTXOID
 
 	SyntacticVerify(
 		ctx *snow.Context,
@@ -71,7 +71,7 @@ func (t *Tx) ID() ids.ID { return t.id }
 func (t *Tx) Bytes() []byte { return t.bytes }
 
 // UTXOs returns the UTXOs transaction is producing.
-func (t *Tx) UTXOs() []*avax.UTXO {
+func (t *Tx) UTXOs() []*lux.UTXO {
 	u := utxoGetter{tx: t}
 	// The visit error is explicitly dropped here because no error is ever
 	// returned from the utxoGetter.

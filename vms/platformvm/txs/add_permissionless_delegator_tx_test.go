@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -45,7 +45,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
-		BaseTx: avax.BaseTx{
+		BaseTx: lux.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
@@ -94,9 +94,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 1,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -115,7 +115,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fx.NewMockOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := avax.NewMockTransferableOut(ctrl)
+				stakeOut := lux.NewMockTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -123,9 +123,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 1,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: stakeOut,
@@ -147,9 +147,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 1,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -157,7 +157,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -182,9 +182,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 1,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -192,7 +192,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -217,9 +217,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 1,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -227,7 +227,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -252,9 +252,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 2,
 					},
 					Subnet: ids.GenerateTestID(),
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -262,7 +262,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -287,9 +287,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						Wght: 2,
 					},
 					Subnet: constants.PrimaryNetworkID,
-					StakeOuts: []*avax.TransferableOutput{
+					StakeOuts: []*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -297,7 +297,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -331,9 +331,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			Validator: validator.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 			},
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: ids.GenerateTestID(),
 					},
 					Out: &secp256k1fx.TransferOutput{
@@ -361,9 +361,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 				Wght:   1,
 			},
 			Subnet: ids.GenerateTestID(),
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: assetID,
 					},
 					Out: &secp256k1fx.TransferOutput{
@@ -371,7 +371,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					},
 				},
 				{
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: assetID,
 					},
 					Out: &secp256k1fx.TransferOutput{

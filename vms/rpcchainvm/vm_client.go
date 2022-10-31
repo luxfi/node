@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -199,7 +199,7 @@ func (vm *VMClient) Initialize(
 		ChainId:      ctx.ChainID[:],
 		NodeId:       ctx.NodeID.Bytes(),
 		XChainId:     ctx.XChainID[:],
-		AvaxAssetId:  ctx.AVAXAssetID[:],
+		LuxAssetId:  ctx.LUXAssetID[:],
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,

@@ -15,7 +15,7 @@ github.com/luxdefi/luxd/utils/filesystem=Reader=utils/filesystem/mock_io.go
 github.com/luxdefi/luxd/utils/hashing=Hasher=utils/hashing/mock_hasher.go
 github.com/luxdefi/luxd/utils/logging=Logger=utils/logging/mock_logger.go
 github.com/luxdefi/luxd/utils/resource=User=utils/resource/mock_user.go
-github.com/luxdefi/luxd/vms/components/avax=TransferableOut=vms/components/avax/mock_transferable_out.go
+github.com/luxdefi/luxd/vms/components/lux=TransferableOut=vms/components/lux/mock_transferable_out.go
 github.com/luxdefi/luxd/vms/components/verify=Verifiable=vms/components/verify/mock_verifiable.go
 github.com/luxdefi/luxd/vms/platformvm/blocks=Block=vms/platformvm/blocks/mock_block.go
 github.com/luxdefi/luxd/vms/platformvm/fx=Fx,Owner=vms/platformvm/fx/mock_fx.go

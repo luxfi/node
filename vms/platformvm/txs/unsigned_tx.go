@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,7 +6,7 @@ package txs
 import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
@@ -21,7 +21,7 @@ type UnsignedTx interface {
 	// InputIDs returns the set of inputs this transaction consumes
 	InputIDs() ids.Set
 
-	Outputs() []*avax.TransferableOutput
+	Outputs() []*lux.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
 	SyntacticVerify(ctx *snow.Context) error

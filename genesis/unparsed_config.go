@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -15,7 +15,7 @@ var errInvalidETHAddress = errors.New("invalid eth address")
 
 type UnparsedAllocation struct {
 	ETHAddr        string         `json:"ethAddr"`
-	AVAXAddr       string         `json:"avaxAddr"`
+	LUXAddr       string         `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -40,15 +40,15 @@ func (ua UnparsedAllocation) Parse() (Allocation, error) {
 	}
 	a.ETHAddr = ethAddr
 
-	_, _, avaxAddrBytes, err := address.Parse(ua.AVAXAddr)
+	_, _, luxAddrBytes, err := address.Parse(ua.LUXAddr)
 	if err != nil {
 		return a, err
 	}
-	avaxAddr, err := ids.ToShortID(avaxAddrBytes)
+	luxAddr, err := ids.ToShortID(luxAddrBytes)
 	if err != nil {
 		return a, err
 	}
-	a.AVAXAddr = avaxAddr
+	a.LUXAddr = luxAddr
 
 	return a, nil
 }
@@ -65,15 +65,15 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 		DelegationFee: us.DelegationFee,
 	}
 
-	_, _, avaxAddrBytes, err := address.Parse(us.RewardAddress)
+	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
 	if err != nil {
 		return s, err
 	}
-	avaxAddr, err := ids.ToShortID(avaxAddrBytes)
+	luxAddr, err := ids.ToShortID(luxAddrBytes)
 	if err != nil {
 		return s, err
 	}
-	s.RewardAddress = avaxAddr
+	s.RewardAddress = luxAddr
 	return s, nil
 }
 
@@ -114,15 +114,15 @@ func (uc UnparsedConfig) Parse() (Config, error) {
 		c.Allocations[i] = a
 	}
 	for i, isa := range uc.InitialStakedFunds {
-		_, _, avaxAddrBytes, err := address.Parse(isa)
+		_, _, luxAddrBytes, err := address.Parse(isa)
 		if err != nil {
 			return c, err
 		}
-		avaxAddr, err := ids.ToShortID(avaxAddrBytes)
+		luxAddr, err := ids.ToShortID(luxAddrBytes)
 		if err != nil {
 			return c, err
 		}
-		c.InitialStakedFunds[i] = avaxAddr
+		c.InitialStakedFunds[i] = luxAddr
 	}
 	for i, uis := range uc.InitialStakers {
 		is, err := uis.Parse()

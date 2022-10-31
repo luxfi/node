@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -21,7 +21,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/config"
 	"github.com/luxdefi/luxd/vms/platformvm/fx"
@@ -1111,12 +1111,12 @@ func newRemoveSubnetValidatorTx(t *testing.T) (*txs.RemoveSubnetValidatorTx, *tx
 	}
 	unsignedTx := &txs.RemoveSubnetValidatorTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: avax.BaseTx{
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+			BaseTx: lux.BaseTx{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID: ids.GenerateTestID(),
 					},
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: ids.GenerateTestID(),
 					},
 					In: &secp256k1fx.TransferInput{
@@ -1126,9 +1126,9 @@ func newRemoveSubnetValidatorTx(t *testing.T) (*txs.RemoveSubnetValidatorTx, *tx
 						},
 					},
 				}},
-				Outs: []*avax.TransferableOutput{
+				Outs: []*lux.TransferableOutput{
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 						Out: &secp256k1fx.TransferOutput{
@@ -1482,12 +1482,12 @@ func newTransformSubnetTx(t *testing.T) (*txs.TransformSubnetTx, *txs.Tx) {
 	}
 	unsignedTx := &txs.TransformSubnetTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: avax.BaseTx{
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+			BaseTx: lux.BaseTx{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID: ids.GenerateTestID(),
 					},
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: ids.GenerateTestID(),
 					},
 					In: &secp256k1fx.TransferInput{
@@ -1497,9 +1497,9 @@ func newTransformSubnetTx(t *testing.T) (*txs.TransformSubnetTx, *txs.Tx) {
 						},
 					},
 				}},
-				Outs: []*avax.TransferableOutput{
+				Outs: []*lux.TransferableOutput{
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 						Out: &secp256k1fx.TransferOutput{

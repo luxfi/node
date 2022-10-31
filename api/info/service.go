@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -297,7 +297,7 @@ type GetTxFeeResponse struct {
 	AddSubnetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
-// GetTxFee returns the transaction fee in nAVAX.
+// GetTxFee returns the transaction fee in nLUX.
 func (service *Info) GetTxFee(_ *http.Request, args *struct{}, reply *GetTxFeeResponse) error {
 	reply.TxFee = json.Uint64(service.TxFee)
 	reply.CreationTxFee = json.Uint64(service.CreateAssetTxFee)

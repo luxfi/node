@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -444,7 +444,7 @@ func TestVMGenesis(t *testing.T) {
 	}
 }
 
-func TestAVAXAssetID(t *testing.T) {
+func TestLUXAssetID(t *testing.T) {
 	tests := []struct {
 		networkID  uint32
 		expectedID string
@@ -468,13 +468,13 @@ func TestAVAXAssetID(t *testing.T) {
 			require := require.New(t)
 
 			config := GetConfig(test.networkID)
-			_, avaxAssetID, err := FromConfig(config)
+			_, luxAssetID, err := FromConfig(config)
 			require.NoError(err)
 
 			require.Equal(
 				test.expectedID,
-				avaxAssetID.String(),
-				"AVAX assetID with networkID %d mismatch",
+				luxAssetID.String(),
+				"LUX assetID with networkID %d mismatch",
 				test.networkID,
 			)
 		})

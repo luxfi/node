@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 	"github.com/luxdefi/luxd/codec"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
@@ -40,7 +40,7 @@ func (t *OperationTx) InitCtx(ctx *snow.Context) {
 // should not be modified.
 func (t *OperationTx) Operations() []*Operation { return t.Ops }
 
-func (t *OperationTx) InputUTXOs() []*avax.UTXOID {
+func (t *OperationTx) InputUTXOs() []*lux.UTXOID {
 	utxos := t.BaseTx.InputUTXOs()
 	for _, op := range t.Ops {
 		utxos = append(utxos, op.UTXOIDs...)

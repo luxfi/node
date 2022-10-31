@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/wallet/chain/p"
 	"github.com/luxdefi/luxd/wallet/chain/x"
 )
@@ -25,24 +25,24 @@ var (
 )
 
 type UTXOs interface {
-	AddUTXO(ctx context.Context, sourceChainID, destinationChainID ids.ID, utxo *avax.UTXO) error
+	AddUTXO(ctx context.Context, sourceChainID, destinationChainID ids.ID, utxo *lux.UTXO) error
 	RemoveUTXO(ctx context.Context, sourceChainID, destinationChainID, utxoID ids.ID) error
 
-	UTXOs(ctx context.Context, sourceChainID, destinationChainID ids.ID) ([]*avax.UTXO, error)
-	GetUTXO(ctx context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*avax.UTXO, error)
+	UTXOs(ctx context.Context, sourceChainID, destinationChainID ids.ID) ([]*lux.UTXO, error)
+	GetUTXO(ctx context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*lux.UTXO, error)
 }
 
 type ChainUTXOs interface {
-	AddUTXO(ctx context.Context, destinationChainID ids.ID, utxo *avax.UTXO) error
+	AddUTXO(ctx context.Context, destinationChainID ids.ID, utxo *lux.UTXO) error
 	RemoveUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) error
 
-	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*avax.UTXO, error)
-	GetUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) (*avax.UTXO, error)
+	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
+	GetUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) (*lux.UTXO, error)
 }
 
 func NewUTXOs() UTXOs {
 	return &utxos{
-		sourceToDestToUTXOIDToUTXO: make(map[ids.ID]map[ids.ID]map[ids.ID]*avax.UTXO),
+		sourceToDestToUTXOIDToUTXO: make(map[ids.ID]map[ids.ID]map[ids.ID]*lux.UTXO),
 	}
 }
 
@@ -56,22 +56,22 @@ func NewChainUTXOs(chainID ids.ID, utxos UTXOs) ChainUTXOs {
 type utxos struct {
 	lock sync.RWMutex
 	// sourceChainID -> destinationChainID -> utxoID -> utxo
-	sourceToDestToUTXOIDToUTXO map[ids.ID]map[ids.ID]map[ids.ID]*avax.UTXO
+	sourceToDestToUTXOIDToUTXO map[ids.ID]map[ids.ID]map[ids.ID]*lux.UTXO
 }
 
-func (u *utxos) AddUTXO(_ context.Context, sourceChainID, destinationChainID ids.ID, utxo *avax.UTXO) error {
+func (u *utxos) AddUTXO(_ context.Context, sourceChainID, destinationChainID ids.ID, utxo *lux.UTXO) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 
 	destToUTXOIDToUTXO, ok := u.sourceToDestToUTXOIDToUTXO[sourceChainID]
 	if !ok {
-		destToUTXOIDToUTXO = make(map[ids.ID]map[ids.ID]*avax.UTXO)
+		destToUTXOIDToUTXO = make(map[ids.ID]map[ids.ID]*lux.UTXO)
 		u.sourceToDestToUTXOIDToUTXO[sourceChainID] = destToUTXOIDToUTXO
 	}
 
 	utxoIDToUTXO, ok := destToUTXOIDToUTXO[destinationChainID]
 	if !ok {
-		utxoIDToUTXO = make(map[ids.ID]*avax.UTXO)
+		utxoIDToUTXO = make(map[ids.ID]*lux.UTXO)
 		destToUTXOIDToUTXO[destinationChainID] = utxoIDToUTXO
 	}
 
@@ -104,20 +104,20 @@ func (u *utxos) RemoveUTXO(_ context.Context, sourceChainID, destinationChainID,
 	return nil
 }
 
-func (u *utxos) UTXOs(_ context.Context, sourceChainID, destinationChainID ids.ID) ([]*avax.UTXO, error) {
+func (u *utxos) UTXOs(_ context.Context, sourceChainID, destinationChainID ids.ID) ([]*lux.UTXO, error) {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
 	destToUTXOIDToUTXO := u.sourceToDestToUTXOIDToUTXO[sourceChainID]
 	utxoIDToUTXO := destToUTXOIDToUTXO[destinationChainID]
-	utxos := make([]*avax.UTXO, 0, len(utxoIDToUTXO))
+	utxos := make([]*lux.UTXO, 0, len(utxoIDToUTXO))
 	for _, utxo := range utxoIDToUTXO {
 		utxos = append(utxos, utxo)
 	}
 	return utxos, nil
 }
 
-func (u *utxos) GetUTXO(_ context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*avax.UTXO, error) {
+func (u *utxos) GetUTXO(_ context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*lux.UTXO, error) {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
@@ -135,7 +135,7 @@ type chainUTXOs struct {
 	chainID ids.ID
 }
 
-func (c *chainUTXOs) AddUTXO(ctx context.Context, destinationChainID ids.ID, utxo *avax.UTXO) error {
+func (c *chainUTXOs) AddUTXO(ctx context.Context, destinationChainID ids.ID, utxo *lux.UTXO) error {
 	return c.utxos.AddUTXO(ctx, c.chainID, destinationChainID, utxo)
 }
 
@@ -143,10 +143,10 @@ func (c *chainUTXOs) RemoveUTXO(ctx context.Context, sourceChainID, utxoID ids.I
 	return c.utxos.RemoveUTXO(ctx, sourceChainID, c.chainID, utxoID)
 }
 
-func (c *chainUTXOs) UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*avax.UTXO, error) {
+func (c *chainUTXOs) UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error) {
 	return c.utxos.UTXOs(ctx, sourceChainID, c.chainID)
 }
 
-func (c *chainUTXOs) GetUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) (*avax.UTXO, error) {
+func (c *chainUTXOs) GetUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) (*lux.UTXO, error) {
 	return c.utxos.GetUTXO(ctx, sourceChainID, c.chainID, utxoID)
 }

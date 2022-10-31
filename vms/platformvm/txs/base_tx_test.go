@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 )
 
 func TestBaseTxMarshalJSON(t *testing.T) {
@@ -17,22 +17,22 @@ func TestBaseTxMarshalJSON(t *testing.T) {
 	utxoTxID := ids.ID{2}
 	assetID := ids.ID{3}
 	fxID := ids.ID{4}
-	tx := &BaseTx{BaseTx: avax.BaseTx{
+	tx := &BaseTx{BaseTx: lux.BaseTx{
 		BlockchainID: blockchainID,
 		NetworkID:    4,
-		Ins: []*avax.TransferableInput{
+		Ins: []*lux.TransferableInput{
 			{
 				FxID:   fxID,
-				UTXOID: avax.UTXOID{TxID: utxoTxID, OutputIndex: 5},
-				Asset:  avax.Asset{ID: assetID},
-				In:     &avax.TestTransferable{Val: 100},
+				UTXOID: lux.UTXOID{TxID: utxoTxID, OutputIndex: 5},
+				Asset:  lux.Asset{ID: assetID},
+				In:     &lux.TestTransferable{Val: 100},
 			},
 		},
-		Outs: []*avax.TransferableOutput{
+		Outs: []*lux.TransferableOutput{
 			{
 				FxID:  fxID,
-				Asset: avax.Asset{ID: assetID},
-				Out:   &avax.TestTransferable{Val: 100},
+				Asset: lux.Asset{ID: assetID},
+				Out:   &lux.TestTransferable{Val: 100},
 			},
 		},
 		Memo: []byte{1, 2, 3},

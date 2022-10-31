@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
@@ -339,8 +339,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 
 		// Refund the stake here
 		for i, out := range stake {
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + i),
 				},
@@ -363,8 +363,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 				return errInvalidState
 			}
 
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake)),
 				},
@@ -388,8 +388,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 
 		// Refund the stake here
 		for i, out := range stake {
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + i),
 				},
@@ -456,8 +456,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 			if !ok {
 				return errInvalidState
 			}
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake)),
 				},
@@ -482,8 +482,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 			if !ok {
 				return errInvalidState
 			}
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake) + offset),
 				},

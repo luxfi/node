@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
@@ -121,14 +121,14 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 	stakeOwners := stakerToRemoveTx.StakeOuts[0].Out.(*secp256k1fx.TransferOutput).AddressesSet()
 
 	// Get old balances
-	oldBalance, err := avax.GetBalance(env.state, stakeOwners)
+	oldBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 
 	txExecutor.OnCommitState.Apply(env.state)
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
-	onCommitBalance, err := avax.GetBalance(env.state, stakeOwners)
+	onCommitBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 	require.Equal(oldBalance+stakerToRemove.Weight+27, onCommitBalance)
 }
@@ -223,14 +223,14 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 	stakeOwners := stakerToRemoveTx.StakeOuts[0].Out.(*secp256k1fx.TransferOutput).AddressesSet()
 
 	// Get old balances
-	oldBalance, err := avax.GetBalance(env.state, stakeOwners)
+	oldBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 
 	txExecutor.OnAbortState.Apply(env.state)
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
-	onAbortBalance, err := avax.GetBalance(env.state, stakeOwners)
+	onAbortBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 	require.Equal(oldBalance+stakerToRemove.Weight, onAbortBalance)
 }
@@ -334,9 +334,9 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 
 	expectedReward := uint64(1000000)
 
-	oldVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
-	oldDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 
 	txExecutor.OnCommitState.Apply(env.state)
@@ -345,13 +345,13 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 
 	// If tx is committed, delegator and delegatee should get reward
 	// and the delegator's reward should be greater because the delegatee's share is 25%
-	commitVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	commitVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
 	vdrReward, err := math.Sub(commitVdrBalance, oldVdrBalance)
 	require.NoError(err)
 	require.NotZero(vdrReward, "expected delegatee balance to increase because of reward")
 
-	commitDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	commitDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 	delReward, err := math.Sub(commitDelBalance, oldDelBalance)
 	require.NoError(err)
@@ -459,9 +459,9 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 
 	expectedReward := uint64(1000000)
 
-	oldVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
-	oldDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 
 	txExecutor.OnAbortState.Apply(env.state)
@@ -469,13 +469,13 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	// If tx is aborted, delegator and delegatee shouldn't get reward
-	newVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	newVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
 	vdrReward, err := math.Sub(newVdrBalance, oldVdrBalance)
 	require.NoError(err)
 	require.Zero(vdrReward, "expected delegatee balance not to increase")
 
-	newDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	newDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 	delReward, err := math.Sub(newDelBalance, oldDelBalance)
 	require.NoError(err)

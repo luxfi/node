@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
@@ -27,12 +27,12 @@ func TestNewBanffProposalBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: avax.BaseTx{
-					Ins:  []*avax.TransferableInput{},
-					Outs: []*avax.TransferableOutput{},
+				BaseTx: lux.BaseTx{
+					Ins:  []*lux.TransferableInput{},
+					Outs: []*lux.TransferableOutput{},
 				},
 			},
-			StakeOuts: []*avax.TransferableOutput{},
+			StakeOuts: []*lux.TransferableOutput{},
 			Validator: validator.Validator{},
 			RewardsOwner: &secp256k1fx.OutputOwners{
 				Addrs: []ids.ShortID{},
@@ -69,12 +69,12 @@ func TestNewApricotProposalBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: avax.BaseTx{
-					Ins:  []*avax.TransferableInput{},
-					Outs: []*avax.TransferableOutput{},
+				BaseTx: lux.BaseTx{
+					Ins:  []*lux.TransferableInput{},
+					Outs: []*lux.TransferableOutput{},
 				},
 			},
-			StakeOuts: []*avax.TransferableOutput{},
+			StakeOuts: []*lux.TransferableOutput{},
 			Validator: validator.Validator{},
 			RewardsOwner: &secp256k1fx.OutputOwners{
 				Addrs: []ids.ShortID{},

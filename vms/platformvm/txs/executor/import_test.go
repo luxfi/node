@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/luxd/database/prefixdb"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
@@ -58,12 +58,12 @@ func TestNewImportTx(t *testing.T) {
 
 		for assetID, amt := range assets {
 			// #nosec G404
-			utxo := &avax.UTXO{
-				UTXOID: avax.UTXOID{
+			utxo := &lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        ids.GenerateTestID(),
 					OutputIndex: rand.Uint32(),
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amt,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -101,7 +101,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee - 1,
+					env.ctx.LUXAssetID: env.config.TxFee - 1,
 				},
 			),
 			sourceKeys: []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -113,7 +113,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:   []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -126,7 +126,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				cChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:   []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -135,12 +135,12 @@ func TestNewImportTx(t *testing.T) {
 			shouldVerify: true,
 		},
 		{
-			description:   "attempting to import non-avax from X-chain",
+			description:   "attempting to import non-lux from X-chain",
 			sourceChainID: env.ctx.XChainID,
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 					customAssetID:       1,
 				},
 			),

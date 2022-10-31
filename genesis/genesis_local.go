@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -37,21 +37,21 @@ var (
 	// LocalParams are the params used for local networks
 	LocalParams = Params{
 		TxFeeConfig: TxFeeConfig{
-			TxFee:                         units.MilliAvax,
-			CreateAssetTxFee:              units.MilliAvax,
-			CreateSubnetTxFee:             100 * units.MilliAvax,
-			TransformSubnetTxFee:          100 * units.MilliAvax,
-			CreateBlockchainTxFee:         100 * units.MilliAvax,
+			TxFee:                         units.MilliLux,
+			CreateAssetTxFee:              units.MilliLux,
+			CreateSubnetTxFee:             100 * units.MilliLux,
+			TransformSubnetTxFee:          100 * units.MilliLux,
+			CreateBlockchainTxFee:         100 * units.MilliLux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliAvax,
-			AddSubnetDelegatorFee:         units.MilliAvax,
+			AddSubnetValidatorFee:         units.MilliLux,
+			AddSubnetDelegatorFee:         units.MilliLux,
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
-			MinValidatorStake: 2 * units.KiloAvax,
-			MaxValidatorStake: 3 * units.MegaAvax,
-			MinDelegatorStake: 25 * units.Avax,
+			MinValidatorStake: 2 * units.KiloLux,
+			MaxValidatorStake: 3 * units.MegaLux,
+			MinDelegatorStake: 25 * units.Lux,
 			MinDelegationFee:  20000, // 2%
 			MinStakeDuration:  24 * time.Hour,
 			MaxStakeDuration:  365 * 24 * time.Hour,
@@ -59,7 +59,7 @@ var (
 				MaxConsumptionRate: .12 * reward.PercentDenominator,
 				MinConsumptionRate: .10 * reward.PercentDenominator,
 				MintingPeriod:      365 * 24 * time.Hour,
-				SupplyCap:          720 * units.MegaAvax,
+				SupplyCap:          720 * units.MegaLux,
 			},
 		},
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -23,7 +23,7 @@ import (
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/math"
 	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/keystore"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
@@ -72,7 +72,7 @@ var (
 // Service defines the API calls that can be made to the platform chain
 type Service struct {
 	vm          *VM
-	addrManager avax.AddressManager
+	addrManager lux.AddressManager
 }
 
 type GetHeightResponse struct {
@@ -109,7 +109,7 @@ type ExportKeyReply struct {
 func (service *Service) ExportKey(r *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	service.vm.ctx.Log.Debug("Platform: ExportKey called")
 
-	address, err := avax.ParseServiceAddress(service.addrManager, args.Address)
+	address, err := lux.ParseServiceAddress(service.addrManager, args.Address)
 	if err != nil {
 		return fmt.Errorf("couldn't parse %s to address: %w", args.Address, err)
 	}
@@ -175,10 +175,10 @@ type GetBalanceRequest struct {
 	Addresses []string `json:"addresses"`
 }
 
-// Note: We explicitly duplicate AVAX out of the maps to ensure backwards
+// Note: We explicitly duplicate LUX out of the maps to ensure backwards
 // compatibility.
 type GetBalanceResponse struct {
-	// Balance, in nAVAX, of the address
+	// Balance, in nLUX, of the address
 	Balance             json.Uint64            `json:"balance"`
 	Unlocked            json.Uint64            `json:"unlocked"`
 	LockedStakeable     json.Uint64            `json:"lockedStakeable"`
@@ -187,7 +187,7 @@ type GetBalanceResponse struct {
 	Unlockeds           map[ids.ID]json.Uint64 `json:"unlockeds"`
 	LockedStakeables    map[ids.ID]json.Uint64 `json:"lockedStakeables"`
 	LockedNotStakeables map[ids.ID]json.Uint64 `json:"lockedNotStakeables"`
-	UTXOIDs             []*avax.UTXOID         `json:"utxoIDs"`
+	UTXOIDs             []*lux.UTXOID         `json:"utxoIDs"`
 }
 
 // GetBalance gets the balance of an address
@@ -201,12 +201,12 @@ func (service *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, res
 	)
 
 	// Parse to address
-	addrs, err := avax.ParseServiceAddresses(service.addrManager, args.Addresses)
+	addrs, err := lux.ParseServiceAddresses(service.addrManager, args.Addresses)
 	if err != nil {
 		return err
 	}
 
-	utxos, err := avax.GetAllUTXOs(service.vm.state, addrs)
+	utxos, err := lux.GetAllUTXOs(service.vm.state, addrs)
 	if err != nil {
 		return fmt.Errorf("couldn't get UTXO set of %v: %w", args.Addresses, err)
 	}
@@ -299,10 +299,10 @@ utxoFor:
 	response.Unlockeds = newJSONBalanceMap(unlockeds)
 	response.LockedStakeables = newJSONBalanceMap(lockedStakeables)
 	response.LockedNotStakeables = newJSONBalanceMap(lockedNotStakeables)
-	response.Balance = response.Balances[service.vm.ctx.AVAXAssetID]
-	response.Unlocked = response.Unlockeds[service.vm.ctx.AVAXAssetID]
-	response.LockedStakeable = response.LockedStakeables[service.vm.ctx.AVAXAssetID]
-	response.LockedNotStakeable = response.LockedNotStakeables[service.vm.ctx.AVAXAssetID]
+	response.Balance = response.Balances[service.vm.ctx.LUXAssetID]
+	response.Unlocked = response.Unlockeds[service.vm.ctx.LUXAssetID]
+	response.LockedStakeable = response.LockedStakeables[service.vm.ctx.LUXAssetID]
+	response.LockedNotStakeable = response.LockedNotStakeables[service.vm.ctx.LUXAssetID]
 	return nil
 }
 
@@ -390,7 +390,7 @@ func (service *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, respon
 		sourceChain = chainID
 	}
 
-	addrSet, err := avax.ParseServiceAddresses(service.addrManager, args.Addresses)
+	addrSet, err := lux.ParseServiceAddresses(service.addrManager, args.Addresses)
 	if err != nil {
 		return err
 	}
@@ -398,7 +398,7 @@ func (service *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, respon
 	startAddr := ids.ShortEmpty
 	startUTXO := ids.Empty
 	if args.StartIndex.Address != "" || args.StartIndex.UTXO != "" {
-		startAddr, err = avax.ParseServiceAddress(service.addrManager, args.StartIndex.Address)
+		startAddr, err = lux.ParseServiceAddress(service.addrManager, args.StartIndex.Address)
 		if err != nil {
 			return fmt.Errorf("couldn't parse start index address %q: %w", args.StartIndex.Address, err)
 		}
@@ -409,7 +409,7 @@ func (service *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, respon
 	}
 
 	var (
-		utxos     []*avax.UTXO
+		utxos     []*lux.UTXO
 		endAddr   ids.ShortID
 		endUTXOID ids.ID
 	)
@@ -418,7 +418,7 @@ func (service *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, respon
 		limit = builder.MaxPageSize
 	}
 	if sourceChain == service.vm.ctx.ChainID {
-		utxos, endAddr, endUTXOID, err = avax.GetPaginatedUTXOs(
+		utxos, endAddr, endUTXOID, err = lux.GetPaginatedUTXOs(
 			service.vm.state,
 			addrSet,
 			startAddr,
@@ -621,7 +621,7 @@ func (service *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAsset
 	service.vm.ctx.Log.Debug("Platform: GetStakingAssetID called")
 
 	if args.SubnetID == constants.PrimaryNetworkID {
-		response.AssetID = service.vm.ctx.AVAXAssetID
+		response.AssetID = service.vm.ctx.LUXAssetID
 		return nil
 	}
 
@@ -954,7 +954,7 @@ type GetCurrentSupplyReply struct {
 	Supply json.Uint64 `json:"supply"`
 }
 
-// GetCurrentSupply returns an upper bound on the supply of AVAX in the system
+// GetCurrentSupply returns an upper bound on the supply of LUX in the system
 func (service *Service) GetCurrentSupply(_ *http.Request, args *GetCurrentSupplyArgs, reply *GetCurrentSupplyReply) error {
 	service.vm.ctx.Log.Debug("Platform: GetCurrentSupply called")
 
@@ -1056,13 +1056,13 @@ func (service *Service) AddValidator(_ *http.Request, args *AddValidatorArgs, re
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
 
 	// Parse the reward address
-	rewardAddress, err := avax.ParseServiceAddress(service.addrManager, args.RewardAddress)
+	rewardAddress, err := lux.ParseServiceAddress(service.addrManager, args.RewardAddress)
 	if err != nil {
 		return fmt.Errorf("problem while parsing reward address: %w", err)
 	}
@@ -1085,7 +1085,7 @@ func (service *Service) AddValidator(_ *http.Request, args *AddValidatorArgs, re
 	}
 	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1158,13 +1158,13 @@ func (service *Service) AddDelegator(_ *http.Request, args *AddDelegatorArgs, re
 	}
 
 	// Parse the reward address
-	rewardAddress, err := avax.ParseServiceAddress(service.addrManager, args.RewardAddress)
+	rewardAddress, err := lux.ParseServiceAddress(service.addrManager, args.RewardAddress)
 	if err != nil {
 		return fmt.Errorf("problem parsing 'rewardAddress': %w", err)
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1187,7 +1187,7 @@ func (service *Service) AddDelegator(_ *http.Request, args *AddDelegatorArgs, re
 	}
 	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1262,7 +1262,7 @@ func (service *Service) AddSubnetValidator(_ *http.Request, args *AddSubnetValid
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1284,7 +1284,7 @@ func (service *Service) AddSubnetValidator(_ *http.Request, args *AddSubnetValid
 	}
 	changeAddr := keys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1330,13 +1330,13 @@ func (service *Service) CreateSubnet(_ *http.Request, args *CreateSubnetArgs, re
 	service.vm.ctx.Log.Debug("Platform: CreateSubnet called")
 
 	// Parse the control keys
-	controlKeys, err := avax.ParseServiceAddresses(service.addrManager, args.ControlKeys)
+	controlKeys, err := lux.ParseServiceAddresses(service.addrManager, args.ControlKeys)
 	if err != nil {
 		return err
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1359,7 +1359,7 @@ func (service *Service) CreateSubnet(_ *http.Request, args *CreateSubnetArgs, re
 	}
 	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1388,26 +1388,26 @@ func (service *Service) CreateSubnet(_ *http.Request, args *CreateSubnetArgs, re
 	return errs.Err
 }
 
-// ExportAVAXArgs are the arguments to ExportAVAX
-type ExportAVAXArgs struct {
+// ExportLUXArgs are the arguments to ExportLUX
+type ExportLUXArgs struct {
 	// User, password, from addrs, change addr
 	api.JSONSpendHeader
 
-	// Amount of AVAX to send
+	// Amount of LUX to send
 	Amount json.Uint64 `json:"amount"`
 
 	// Chain the funds are going to. Optional. Used if To address does not include the chainID.
 	TargetChain string `json:"targetChain"`
 
-	// ID of the address that will receive the AVAX. This address may include the
+	// ID of the address that will receive the LUX. This address may include the
 	// chainID, which is used to determine what the destination chain is.
 	To string `json:"to"`
 }
 
-// ExportAVAX exports AVAX from the P-Chain to the X-Chain
+// ExportLUX exports LUX from the P-Chain to the X-Chain
 // It must be imported on the X-Chain to complete the transfer
-func (service *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, response *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("Platform: ExportAVAX called")
+func (service *Service) ExportLUX(_ *http.Request, args *ExportLUXArgs, response *api.JSONTxIDChangeAddr) error {
+	service.vm.ctx.Log.Debug("Platform: ExportLUX called")
 
 	if args.Amount == 0 {
 		return errNoAmount
@@ -1427,7 +1427,7 @@ func (service *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, respon
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1450,7 +1450,7 @@ func (service *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, respon
 	}
 	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1480,8 +1480,8 @@ func (service *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, respon
 	return errs.Err
 }
 
-// ImportAVAXArgs are the arguments to ImportAVAX
-type ImportAVAXArgs struct {
+// ImportLUXArgs are the arguments to ImportLUX
+type ImportLUXArgs struct {
 	// User, password, from addrs, change addr
 	api.JSONSpendHeader
 
@@ -1492,10 +1492,10 @@ type ImportAVAXArgs struct {
 	To string `json:"to"`
 }
 
-// ImportAVAX issues a transaction to import AVAX from the X-chain. The AVAX
+// ImportLUX issues a transaction to import LUX from the X-chain. The LUX
 // must have already been exported from the X-Chain.
-func (service *Service) ImportAVAX(_ *http.Request, args *ImportAVAXArgs, response *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("Platform: ImportAVAX called")
+func (service *Service) ImportLUX(_ *http.Request, args *ImportLUXArgs, response *api.JSONTxIDChangeAddr) error {
+	service.vm.ctx.Log.Debug("Platform: ImportLUX called")
 
 	// Parse the sourceCHain
 	chainID, err := service.vm.ctx.BCLookup.Lookup(args.SourceChain)
@@ -1504,13 +1504,13 @@ func (service *Service) ImportAVAX(_ *http.Request, args *ImportAVAXArgs, respon
 	}
 
 	// Parse the to address
-	to, err := avax.ParseServiceAddress(service.addrManager, args.To)
+	to, err := lux.ParseServiceAddress(service.addrManager, args.To)
 	if err != nil { // Parse address
 		return fmt.Errorf("couldn't parse argument 'to' to an address: %w", err)
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1533,7 +1533,7 @@ func (service *Service) ImportAVAX(_ *http.Request, args *ImportAVAXArgs, respon
 	}
 	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -1627,7 +1627,7 @@ func (service *Service) CreateBlockchain(_ *http.Request, args *CreateBlockchain
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(service.addrManager, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(service.addrManager, args.From)
 	if err != nil {
 		return err
 	}
@@ -1650,7 +1650,7 @@ func (service *Service) CreateBlockchain(_ *http.Request, args *CreateBlockchain
 	}
 	changeAddr := keys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
 	if args.ChangeAddr != "" {
-		changeAddr, err = avax.ParseServiceAddress(service.addrManager, args.ChangeAddr)
+		changeAddr, err = lux.ParseServiceAddress(service.addrManager, args.ChangeAddr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse changeAddr: %w", err)
 		}
@@ -2077,7 +2077,7 @@ type GetStakeReply struct {
 	Staked  json.Uint64            `json:"staked"`
 	Stakeds map[ids.ID]json.Uint64 `json:"stakeds"`
 	// String representation of staked outputs
-	// Each is of type avax.TransferableOutput
+	// Each is of type lux.TransferableOutput
 	Outputs []string `json:"stakedOutputs"`
 	// Encoding of [Outputs]
 	Encoding formatting.Encoding `json:"encoding"`
@@ -2087,14 +2087,14 @@ type GetStakeReply struct {
 // Returns:
 // 1) The total amount staked by addresses in [addrs]
 // 2) The staked outputs
-func (service *Service) getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
+func (service *Service) getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmountStaked map[ids.ID]uint64) []lux.TransferableOutput {
 	staker, ok := tx.Unsigned.(txs.PermissionlessStaker)
 	if !ok {
 		return nil
 	}
 
 	stake := staker.Stake()
-	stakedOuts := make([]avax.TransferableOutput, 0, len(stake))
+	stakedOuts := make([]lux.TransferableOutput, 0, len(stake))
 	// Go through all of the staked outputs
 	for _, output := range stake {
 		out := output.Out
@@ -2135,11 +2135,11 @@ func (service *Service) getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmou
 	return stakedOuts
 }
 
-// GetStake returns the amount of nAVAX that [args.Addresses] have cumulatively
+// GetStake returns the amount of nLUX that [args.Addresses] have cumulatively
 // staked on the Primary Network.
 //
 // This method assumes that each stake output has only owner
-// This method assumes only AVAX can be staked
+// This method assumes only LUX can be staked
 // This method only concerns itself with the Primary Network, not subnets
 // TODO: Improve the performance of this method by maintaining this data
 // in a data structure rather than re-calculating it by iterating over stakers
@@ -2150,7 +2150,7 @@ func (service *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *
 		return fmt.Errorf("%d addresses provided but this method can take at most %d", len(args.Addresses), maxGetStakeAddrs)
 	}
 
-	addrs, err := avax.ParseServiceAddresses(service.addrManager, args.Addresses)
+	addrs, err := lux.ParseServiceAddresses(service.addrManager, args.Addresses)
 	if err != nil {
 		return err
 	}
@@ -2163,7 +2163,7 @@ func (service *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *
 
 	var (
 		totalAmountStaked = make(map[ids.ID]uint64)
-		stakedOuts        []avax.TransferableOutput
+		stakedOuts        []lux.TransferableOutput
 	)
 	for currentStakerIterator.Next() { // Iterates over current stakers
 		staker := currentStakerIterator.Value()
@@ -2194,7 +2194,7 @@ func (service *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *
 	}
 
 	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
-	response.Staked = response.Stakeds[service.vm.ctx.AVAXAssetID]
+	response.Staked = response.Stakeds[service.vm.ctx.LUXAssetID]
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		bytes, err := txs.Codec.Marshal(txs.Version, output)
@@ -2220,11 +2220,11 @@ type GetMinStakeArgs struct {
 type GetMinStakeReply struct {
 	//  The minimum amount of tokens one must bond to be a validator
 	MinValidatorStake json.Uint64 `json:"minValidatorStake"`
-	// Minimum stake, in nAVAX, that can be delegated on the primary network
+	// Minimum stake, in nLUX, that can be delegated on the primary network
 	MinDelegatorStake json.Uint64 `json:"minDelegatorStake"`
 }
 
-// GetMinStake returns the minimum staking amount in nAVAX.
+// GetMinStake returns the minimum staking amount in nLUX.
 func (service *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
 	if args.SubnetID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = json.Uint64(service.vm.MinValidatorStake)
@@ -2293,7 +2293,7 @@ type GetMaxStakeAmountReply struct {
 	Amount json.Uint64 `json:"amount"`
 }
 
-// GetMaxStakeAmount returns the maximum amount of nAVAX staking to the named
+// GetMaxStakeAmount returns the maximum amount of nLUX staking to the named
 // node during the time period.
 func (service *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
 	startTime := time.Unix(int64(args.StartTime), 0)

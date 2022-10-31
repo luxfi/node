@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -217,7 +217,7 @@ func TestBuildGenesisReturnsSortedValidators(t *testing.T) {
 	}
 
 	args := BuildGenesisArgs{
-		AvaxAssetID: ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'},
+		LuxAssetID: ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'},
 		UTXOs: []UTXO{
 			utxo,
 		},

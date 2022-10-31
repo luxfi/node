@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -15,7 +15,7 @@ var _ Context = (*context)(nil)
 
 type Context interface {
 	NetworkID() uint32
-	AVAXAssetID() ids.ID
+	LUXAssetID() ids.ID
 	BaseTxFee() uint64
 	CreateSubnetTxFee() uint64
 	TransformSubnetTxFee() uint64
@@ -28,7 +28,7 @@ type Context interface {
 
 type context struct {
 	networkID                     uint32
-	avaxAssetID                   ids.ID
+	luxAssetID                   ids.ID
 	baseTxFee                     uint64
 	createSubnetTxFee             uint64
 	transformSubnetTxFee          uint64
@@ -55,7 +55,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "AVAX")
+	asset, err := xChainClient.GetAssetDescription(ctx, "LUX")
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func NewContextFromClients(
 
 func NewContext(
 	networkID uint32,
-	avaxAssetID ids.ID,
+	luxAssetID ids.ID,
 	baseTxFee uint64,
 	createSubnetTxFee uint64,
 	transformSubnetTxFee uint64,
@@ -93,7 +93,7 @@ func NewContext(
 ) Context {
 	return &context{
 		networkID:                     networkID,
-		avaxAssetID:                   avaxAssetID,
+		luxAssetID:                   luxAssetID,
 		baseTxFee:                     baseTxFee,
 		createSubnetTxFee:             createSubnetTxFee,
 		transformSubnetTxFee:          transformSubnetTxFee,
@@ -106,7 +106,7 @@ func NewContext(
 }
 
 func (c *context) NetworkID() uint32                     { return c.networkID }
-func (c *context) AVAXAssetID() ids.ID                   { return c.avaxAssetID }
+func (c *context) LUXAssetID() ids.ID                   { return c.luxAssetID }
 func (c *context) BaseTxFee() uint64                     { return c.baseTxFee }
 func (c *context) CreateSubnetTxFee() uint64             { return c.createSubnetTxFee }
 func (c *context) TransformSubnetTxFee() uint64          { return c.transformSubnetTxFee }

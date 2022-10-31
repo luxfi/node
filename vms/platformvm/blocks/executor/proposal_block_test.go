@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -18,7 +18,7 @@ import (
 	"github.com/luxdefi/luxd/snow/consensus/snowman"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/blocks"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
@@ -67,10 +67,10 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	utx := &txs.AddValidatorTx{
 		BaseTx:    txs.BaseTx{},
 		Validator: validator.Validator{End: uint64(chainTime.Unix())},
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
-					ID: env.ctx.AVAXAssetID,
+				Asset: lux.Asset{
+					ID: env.ctx.LUXAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,
@@ -195,10 +195,10 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	unsignedNextStakerTx := &txs.AddValidatorTx{
 		BaseTx:    txs.BaseTx{},
 		Validator: validator.Validator{End: uint64(nextStakerTime.Unix())},
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
-					ID: env.ctx.AVAXAssetID,
+				Asset: lux.Asset{
+					ID: env.ctx.LUXAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,

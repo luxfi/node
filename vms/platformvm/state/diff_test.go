@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils"
 	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
@@ -391,8 +391,8 @@ func TestDiffRewardUTXO(t *testing.T) {
 
 	// Put a reward UTXO
 	txID := ids.GenerateTestID()
-	rewardUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{TxID: txID},
+	rewardUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{TxID: txID},
 	}
 	d.AddRewardUTXO(txID, rewardUTXO)
 
@@ -408,10 +408,10 @@ func TestDiffRewardUTXO(t *testing.T) {
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
 		txID2 := ids.GenerateTestID()
-		parentRewardUTXO := &avax.UTXO{
-			UTXOID: avax.UTXOID{TxID: txID2},
+		parentRewardUTXO := &lux.UTXO{
+			UTXOID: lux.UTXOID{TxID: txID2},
 		}
-		state.EXPECT().GetRewardUTXOs(txID2).Return([]*avax.UTXO{parentRewardUTXO}, nil).Times(1)
+		state.EXPECT().GetRewardUTXOs(txID2).Return([]*lux.UTXO{parentRewardUTXO}, nil).Times(1)
 		gotParentRewardUTXOs, err := d.GetRewardUTXOs(txID2)
 		require.NoError(err)
 		require.Len(gotParentRewardUTXOs, 1)
@@ -436,8 +436,8 @@ func TestDiffUTXO(t *testing.T) {
 	require.NoError(err)
 
 	// Put a UTXO
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
 	}
 	d.AddUTXO(utxo)
 
@@ -451,8 +451,8 @@ func TestDiffUTXO(t *testing.T) {
 	{
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
-		parentUTXO := &avax.UTXO{
-			UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
+		parentUTXO := &lux.UTXO{
+			UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
 		}
 		state.EXPECT().GetUTXO(parentUTXO.InputID()).Return(parentUTXO, nil).Times(1)
 		gotParentUTXO, err := d.GetUTXO(parentUTXO.InputID())

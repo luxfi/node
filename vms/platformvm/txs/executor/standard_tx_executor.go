@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxdefi/luxd/chains/atomic"
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/verify"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
@@ -59,7 +59,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createBlockchainTxFee,
+			e.Ctx.LUXAssetID: createBlockchainTxFee,
 		},
 	); err != nil {
 		return err
@@ -96,7 +96,7 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createSubnetTxFee,
+			e.Ctx.LUXAssetID: createSubnetTxFee,
 		},
 	); err != nil {
 		return err
@@ -137,7 +137,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			return fmt.Errorf("failed to get shared memory: %w", err)
 		}
 
-		utxos := make([]*avax.UTXO, len(tx.Ins)+len(tx.ImportedInputs))
+		utxos := make([]*lux.UTXO, len(tx.Ins)+len(tx.ImportedInputs))
 		for index, input := range tx.Ins {
 			utxo, err := e.State.GetUTXO(input.InputID())
 			if err != nil {
@@ -146,14 +146,14 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			utxos[index] = utxo
 		}
 		for i, utxoBytes := range allUTXOBytes {
-			utxo := &avax.UTXO{}
+			utxo := &lux.UTXO{}
 			if _, err := txs.Codec.Unmarshal(utxoBytes, utxo); err != nil {
 				return fmt.Errorf("failed to unmarshal UTXO: %w", err)
 			}
 			utxos[i+len(tx.Ins)] = utxo
 		}
 
-		ins := make([]*avax.TransferableInput, len(tx.Ins)+len(tx.ImportedInputs))
+		ins := make([]*lux.TransferableInput, len(tx.Ins)+len(tx.ImportedInputs))
 		copy(ins, tx.Ins)
 		copy(ins[len(tx.Ins):], tx.ImportedInputs)
 
@@ -164,7 +164,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			tx.Outs,
 			e.Tx.Creds,
 			map[ids.ID]uint64{
-				e.Ctx.AVAXAssetID: e.Config.TxFee,
+				e.Ctx.LUXAssetID: e.Config.TxFee,
 			},
 		); err != nil {
 			return err
@@ -191,7 +191,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		return err
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.ExportedOutputs))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.ExportedOutputs))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.ExportedOutputs)
 
@@ -209,7 +209,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TxFee,
+			e.Ctx.LUXAssetID: e.Config.TxFee,
 		},
 	); err != nil {
 		return fmt.Errorf("failed verifySpend: %w", err)
@@ -224,12 +224,12 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 
 	elems := make([]*atomic.Element, len(tx.ExportedOutputs))
 	for i, out := range tx.ExportedOutputs {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(len(tx.Outs) + i),
 			},
-			Asset: avax.Asset{ID: out.AssetID()},
+			Asset: lux.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 
@@ -242,7 +242,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 			Key:   utxoID[:],
 			Value: utxoBytes,
 		}
-		if out, ok := utxo.Out.(avax.Addressable); ok {
+		if out, ok := utxo.Out.(lux.Addressable); ok {
 			elem.Traits = out.Addresses()
 		}
 
@@ -373,11 +373,11 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		tx.Ins,
 		tx.Outs,
 		baseTxCreds,
-		// Invariant: [tx.AssetID != e.Ctx.AVAXAssetID]. This prevents the first
+		// Invariant: [tx.AssetID != e.Ctx.LUXAssetID]. This prevents the first
 		//            entry in this map literal from being overwritten by the
 		//            second entry.
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TransformSubnetTxFee,
+			e.Ctx.LUXAssetID: e.Config.TransformSubnetTxFee,
 			tx.AssetID:        totalRewardAmount,
 		},
 	); err != nil {

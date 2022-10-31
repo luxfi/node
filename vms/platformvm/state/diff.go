@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/status"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
@@ -48,7 +48,7 @@ type diff struct {
 	cachedChains map[ids.ID][]*txs.Tx
 
 	// map of txID -> []*UTXO
-	addedRewardUTXOs map[ids.ID][]*avax.UTXO
+	addedRewardUTXOs map[ids.ID][]*lux.UTXO
 
 	// map of txID -> {*txs.Tx, Status}
 	addedTxs map[ids.ID]*txAndStatus
@@ -59,7 +59,7 @@ type diff struct {
 
 type utxoModification struct {
 	utxoID ids.ID
-	utxo   *avax.UTXO
+	utxo   *lux.UTXO
 }
 
 func NewDiff(
@@ -383,7 +383,7 @@ func (d *diff) AddTx(tx *txs.Tx, status status.Status) {
 	}
 }
 
-func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
+func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
 	if utxos, exists := d.addedRewardUTXOs[txID]; exists {
 		return utxos, nil
 	}
@@ -395,14 +395,14 @@ func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
 	return parentState.GetRewardUTXOs(txID)
 }
 
-func (d *diff) AddRewardUTXO(txID ids.ID, utxo *avax.UTXO) {
+func (d *diff) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
 	if d.addedRewardUTXOs == nil {
-		d.addedRewardUTXOs = make(map[ids.ID][]*avax.UTXO)
+		d.addedRewardUTXOs = make(map[ids.ID][]*lux.UTXO)
 	}
 	d.addedRewardUTXOs[txID] = append(d.addedRewardUTXOs[txID], utxo)
 }
 
-func (d *diff) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
+func (d *diff) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	utxo, modified := d.modifiedUTXOs[utxoID]
 	if !modified {
 		parentState, ok := d.stateVersions.GetState(d.parentID)
@@ -417,7 +417,7 @@ func (d *diff) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
 	return utxo.utxo, nil
 }
 
-func (d *diff) AddUTXO(utxo *avax.UTXO) {
+func (d *diff) AddUTXO(utxo *lux.UTXO) {
 	newUTXO := &utxoModification{
 		utxoID: utxo.InputID(),
 		utxo:   utxo,

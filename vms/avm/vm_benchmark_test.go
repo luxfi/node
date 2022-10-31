@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/components/keystore"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
@@ -78,12 +78,12 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 
 	// #nosec G404
 	for i := 0; i < utxoCount; i++ {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: rand.Uint32(),
 			},
-			Asset: avax.Asset{ID: ids.ID{'y', 'e', 'e', 't'}},
+			Asset: lux.Asset{ID: ids.ID{'y', 'e', 'e', 't'}},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 100000,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -104,14 +104,14 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 
 	var (
 		err               error
-		notPaginatedUTXOs []*avax.UTXO
+		notPaginatedUTXOs []*lux.UTXO
 	)
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		// Fetch all UTXOs older version
-		notPaginatedUTXOs, err = avax.GetAllUTXOs(vm.state, addrsSet)
+		notPaginatedUTXOs, err = lux.GetAllUTXOs(vm.state, addrsSet)
 		if err != nil {
 			b.Fatal(err)
 		}

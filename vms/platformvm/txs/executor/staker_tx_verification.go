@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/state"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
@@ -48,7 +48,7 @@ func verifyAddValidatorTx(
 	sTx *txs.Tx,
 	tx *txs.AddValidatorTx,
 ) (
-	[]*avax.TransferableOutput,
+	[]*lux.TransferableOutput,
 	error,
 ) {
 	// Verify the tx is well-formed
@@ -80,7 +80,7 @@ func verifyAddValidatorTx(
 		return nil, errStakeTooLong
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
@@ -123,7 +123,7 @@ func verifyAddValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: backend.Config.AddPrimaryNetworkValidatorFee,
+			backend.Ctx.LUXAssetID: backend.Config.AddPrimaryNetworkValidatorFee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -222,7 +222,7 @@ func verifyAddSubnetValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: backend.Config.AddSubnetValidatorFee,
+			backend.Ctx.LUXAssetID: backend.Config.AddSubnetValidatorFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -297,7 +297,7 @@ func removeSubnetValidatorValidation(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: backend.Config.TxFee,
+			backend.Ctx.LUXAssetID: backend.Config.TxFee,
 		},
 	); err != nil {
 		return nil, false, fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -315,7 +315,7 @@ func verifyAddDelegatorTx(
 	sTx *txs.Tx,
 	tx *txs.AddDelegatorTx,
 ) (
-	[]*avax.TransferableOutput,
+	[]*lux.TransferableOutput,
 	error,
 ) {
 	// Verify the tx is well-formed
@@ -338,7 +338,7 @@ func verifyAddDelegatorTx(
 		return nil, errWeightTooSmall
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
@@ -395,7 +395,7 @@ func verifyAddDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: backend.Config.AddPrimaryNetworkDelegatorFee,
+			backend.Ctx.LUXAssetID: backend.Config.AddPrimaryNetworkDelegatorFee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -518,7 +518,7 @@ func verifyAddPermissionlessValidatorTx(
 		txFee = backend.Config.AddPrimaryNetworkValidatorFee
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
@@ -530,7 +530,7 @@ func verifyAddPermissionlessValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: txFee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -562,7 +562,7 @@ func getValidatorRules(
 ) (*addValidatorRules, error) {
 	if subnetID == constants.PrimaryNetworkID {
 		return &addValidatorRules{
-			assetID:           backend.Ctx.AVAXAssetID,
+			assetID:           backend.Ctx.LUXAssetID,
 			minValidatorStake: backend.Config.MinValidatorStake,
 			maxValidatorStake: backend.Config.MaxValidatorStake,
 			minStakeDuration:  backend.Config.MinStakeDuration,
@@ -677,7 +677,7 @@ func verifyAddPermissionlessDelegatorTx(
 		return errOverDelegated
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
@@ -707,7 +707,7 @@ func verifyAddPermissionlessDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.AVAXAssetID: txFee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %s", errFlowCheckFailed, err)
@@ -739,7 +739,7 @@ func getDelegatorRules(
 ) (*addDelegatorRules, error) {
 	if subnetID == constants.PrimaryNetworkID {
 		return &addDelegatorRules{
-			assetID:                  backend.Ctx.AVAXAssetID,
+			assetID:                  backend.Ctx.LUXAssetID,
 			minDelegatorStake:        backend.Config.MinDelegatorStake,
 			maxValidatorStake:        backend.Config.MaxValidatorStake,
 			minStakeDuration:         backend.Config.MinStakeDuration,

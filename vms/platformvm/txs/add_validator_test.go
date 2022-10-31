@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
@@ -24,7 +24,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 
 	var (
@@ -41,19 +41,19 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 
 	validatorWeight := uint64(2022)
 	rewardAddress := preFundedKeys[0].PublicKey().Address()
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -62,8 +62,8 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -76,7 +76,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
@@ -142,11 +142,11 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	addValidatorTx.DelegationShares--
 }
 
-func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
+func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 
 	var (
@@ -158,19 +158,19 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 	assetID := ids.GenerateTestID()
 	validatorWeight := uint64(2022)
 	rewardAddress := preFundedKeys[0].PublicKey().Address()
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -179,8 +179,8 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -193,7 +193,7 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 		},
 	}}
 	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,

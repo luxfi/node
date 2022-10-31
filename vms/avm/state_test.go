@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/luxd/utils/crypto"
 	"github.com/luxdefi/luxd/utils/units"
 	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
@@ -25,7 +25,7 @@ func TestSetsAndGets(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&avax.TestVerifiable{})
+					return vm.CodecRegistry().RegisterType(&lux.TestVerifiable{})
 				},
 			},
 		}},
@@ -41,27 +41,27 @@ func TestSetsAndGets(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: avax.Asset{ID: ids.Empty},
-		Out:   &avax.TestVerifiable{},
+		Asset: lux.Asset{ID: ids.Empty},
+		Out:   &lux.TestVerifiable{},
 	}
 	utxoID := utxo.InputID()
 
-	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
+	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    networkID,
 		BlockchainID: chainID,
-		Ins: []*avax.TransferableInput{{
-			UTXOID: avax.UTXOID{
+		Ins: []*lux.TransferableInput{{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,
 				OutputIndex: 0,
 			},
-			Asset: avax.Asset{ID: assetID},
+			Asset: lux.Asset{ID: assetID},
 			In: &secp256k1fx.TransferInput{
-				Amt: 20 * units.KiloAvax,
+				Amt: 20 * units.KiloLux,
 				Input: secp256k1fx.Input{
 					SigIndices: []uint32{
 						0,
@@ -116,7 +116,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&avax.TestVerifiable{})
+					return vm.CodecRegistry().RegisterType(&lux.TestVerifiable{})
 				},
 			},
 		}},
@@ -132,13 +132,13 @@ func TestFundingNoAddresses(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: avax.Asset{ID: ids.Empty},
-		Out:   &avax.TestVerifiable{},
+		Asset: lux.Asset{ID: ids.Empty},
+		Out:   &lux.TestVerifiable{},
 	}
 
 	if err := state.PutUTXO(utxo); err != nil {
@@ -157,7 +157,7 @@ func TestFundingAddresses(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&avax.TestAddressable{})
+					return vm.CodecRegistry().RegisterType(&lux.TestAddressable{})
 				},
 			},
 		}},
@@ -173,13 +173,13 @@ func TestFundingAddresses(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: avax.Asset{ID: ids.Empty},
-		Out: &avax.TestAddressable{
+		Asset: lux.Asset{ID: ids.Empty},
+		Out: &lux.TestAddressable{
 			Addrs: [][]byte{{0}},
 		},
 	}
