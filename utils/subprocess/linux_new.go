@@ -3,7 +3,7 @@
 
 // ^ syscall.SysProcAttr only has field Pdeathsig on Linux
 
-// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subprocess
