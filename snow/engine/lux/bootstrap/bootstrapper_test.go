@@ -22,7 +22,7 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/common/tracker"
 	"github.com/luxdefi/luxd/snow/validators"
 
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 )
 
 var (
@@ -86,14 +86,14 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 		SharedCfg:                      &common.SharedConfig{},
 	}
 
-	avaGetHandler, err := avagetter.New(manager, commonConfig)
+	luxGetHandler, err := luxgetter.New(manager, commonConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	return Config{
 		Config:        commonConfig,
-		AllGetsServer: avaGetHandler,
+		AllGetsServer: luxGetHandler,
 		VtxBlocked:    vtxBlocker,
 		TxBlocked:     txBlocker,
 		Manager:       manager,
