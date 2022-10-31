@@ -21,7 +21,7 @@ import (
 	"github.com/luxdefi/luxd/database/prefixdb"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/avalanche"
+	"github.com/luxdefi/luxd/snow/engine/lux"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/engine/snowman"
 	"github.com/luxdefi/luxd/utils/constants"
@@ -277,7 +277,7 @@ func (i *indexer) RegisterChain(name string, engine common.Engine) {
 			return
 		}
 		i.blockIndices[chainID] = index
-	case avalanche.Engine:
+	case lux.Engine:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, name, "vtx", i.consensusAcceptorGroup)
 		if err != nil {
 			i.log.Fatal("couldn't create vertex index",

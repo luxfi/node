@@ -11,7 +11,7 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
 )

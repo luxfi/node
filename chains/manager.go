@@ -26,8 +26,8 @@ import (
 	"github.com/luxdefi/luxd/network"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/engine/avalanche/state"
-	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/lux/state"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/engine/common/queue"
 	"github.com/luxdefi/luxd/snow/engine/common/tracker"
@@ -51,10 +51,10 @@ import (
 	dbManager "github.com/luxdefi/luxd/database/manager"
 	timetracker "github.com/luxdefi/luxd/snow/networking/tracker"
 
-	avcon "github.com/luxdefi/luxd/snow/consensus/avalanche"
-	aveng "github.com/luxdefi/luxd/snow/engine/avalanche"
-	avbootstrap "github.com/luxdefi/luxd/snow/engine/avalanche/bootstrap"
-	avagetter "github.com/luxdefi/luxd/snow/engine/avalanche/getter"
+	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
+	aveng "github.com/luxdefi/luxd/snow/engine/lux"
+	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
+	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 
 	smcon "github.com/luxdefi/luxd/snow/consensus/snowman"
 	smeng "github.com/luxdefi/luxd/snow/engine/snowman"
@@ -69,7 +69,7 @@ const (
 
 var (
 	errUnknownChainID   = errors.New("unknown chain ID")
-	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
+	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
 	errCreatePlatformVM = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped  = errors.New("chains not bootstrapped")
 
@@ -499,7 +499,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 			sb,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error while creating new avalanche vm %w", err)
+			return nil, fmt.Errorf("error while creating new lux vm %w", err)
 		}
 	case block.ChainVM:
 		chain, err = m.createSnowmanChain(
@@ -675,7 +675,7 @@ func (m *manager) createLUXChain(
 
 	avaGetHandler, err := avagetter.New(vtxManager, commonCfg)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize avalanche base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize lux base message handler: %w", err)
 	}
 
 	// create bootstrap gear
@@ -694,7 +694,7 @@ func (m *manager) createLUXChain(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing avalanche bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -716,7 +716,7 @@ func (m *manager) createLUXChain(
 	}
 	engine, err := aveng.New(engineConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing avalanche engine: %w", err)
+		return nil, fmt.Errorf("error initializing lux engine: %w", err)
 	}
 
 	if m.TracingEnabled {

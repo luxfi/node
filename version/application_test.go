@@ -17,7 +17,7 @@ func TestNewDefaultApplication(t *testing.T) {
 		Patch: 3,
 	}
 
-	require.Equal(t, "avalanche/1.2.3", v.String())
+	require.Equal(t, "lux/1.2.3", v.String())
 	require.NoError(t, v.Compatible(v))
 	require.False(t, v.Before(v))
 }
