@@ -6,10 +6,10 @@ package prefixdb
 import (
 	"sync"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/nodb"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/hashing"
 )
 
 const (

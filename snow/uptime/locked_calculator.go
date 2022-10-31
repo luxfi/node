@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils"
 )
 
 var (

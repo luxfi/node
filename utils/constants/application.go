@@ -9,5 +9,5 @@ const (
 	PlatformName = "avalanche"
 
 	// AppName exports the name of the avalanche application
-	AppName = "avalanchego"
+	AppName = "luxd"
 )

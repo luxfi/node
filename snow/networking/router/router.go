@@ -9,13 +9,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
-	"github.com/ava-labs/avalanchego/snow/networking/handler"
-	"github.com/ava-labs/avalanchego/snow/networking/timeout"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/api/health"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/snow/networking/benchlist"
+	"github.com/luxdefi/luxd/snow/networking/handler"
+	"github.com/luxdefi/luxd/snow/networking/timeout"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 // Router routes consensus messages to the Handler of the consensus

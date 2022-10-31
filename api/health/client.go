@@ -7,12 +7,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/luxd/utils/rpc"
 )
 
 var _ Client = (*client)(nil)
 
-// Client interface for Avalanche Health API Endpoint
+// Client interface for LUX Health API Endpoint
 type Client interface {
 	// Readiness returns if the node has finished initialization
 	Readiness(context.Context, ...rpc.Option) (*APIHealthReply, error)
@@ -25,7 +25,7 @@ type Client interface {
 	AwaitHealthy(ctx context.Context, freq time.Duration, options ...rpc.Option) (bool, error)
 }
 
-// Client implementation for Avalanche Health API Endpoint
+// Client implementation for LUX Health API Endpoint
 type client struct {
 	requester rpc.EndpointRequester
 }

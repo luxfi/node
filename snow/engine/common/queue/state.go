@@ -8,13 +8,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/cache/metercacher"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/linkeddb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/cache"
+	"github.com/luxdefi/luxd/cache/metercacher"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/linkeddb"
+	"github.com/luxdefi/luxd/database/prefixdb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 const (

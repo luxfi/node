@@ -6,8 +6,8 @@ package txheap
 import (
 	"container/heap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 var _ Heap = (*txHeap)(nil)

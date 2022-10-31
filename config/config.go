@@ -19,36 +19,36 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/ava-labs/avalanchego/app/runner"
-	"github.com/ava-labs/avalanchego/chains"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/ipcs"
-	"github.com/ava-labs/avalanchego/nat"
-	"github.com/ava-labs/avalanchego/network"
-	"github.com/ava-labs/avalanchego/network/dialer"
-	"github.com/ava-labs/avalanchego/network/throttling"
-	"github.com/ava-labs/avalanchego/node"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
-	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/snow/networking/sender"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/staking"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/utils/dynamicip"
-	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/password"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/profiler"
-	"github.com/ava-labs/avalanchego/utils/storage"
-	"github.com/ava-labs/avalanchego/utils/timer"
-	"github.com/ava-labs/avalanchego/vms"
-	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/luxdefi/luxd/app/runner"
+	"github.com/luxdefi/luxd/chains"
+	"github.com/luxdefi/luxd/genesis"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/ipcs"
+	"github.com/luxdefi/luxd/nat"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/network/dialer"
+	"github.com/luxdefi/luxd/network/throttling"
+	"github.com/luxdefi/luxd/node"
+	"github.com/luxdefi/luxd/snow/consensus/avalanche"
+	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/luxd/snow/networking/benchlist"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/sender"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/staking"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto/bls"
+	"github.com/luxdefi/luxd/utils/dynamicip"
+	"github.com/luxdefi/luxd/utils/ips"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/utils/password"
+	"github.com/luxdefi/luxd/utils/perms"
+	"github.com/luxdefi/luxd/utils/profiler"
+	"github.com/luxdefi/luxd/utils/storage"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/vms"
+	"github.com/luxdefi/luxd/vms/platformvm/reward"
 )
 
 const (
@@ -88,7 +88,7 @@ func GetRunnerConfig(v *viper.Viper) (runner.Config, error) {
 	// Build directory should have this structure:
 	//
 	// build
-	// ├── avalanchego (the binary from compiling the app directory)
+	// ├── luxd (the binary from compiling the app directory)
 	// └── plugins
 	//     └── evm
 	validBuildDir := func(dir string) bool {
@@ -137,8 +137,8 @@ func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
 			MixedQueryNumPushVdr:    int(v.GetUint(SnowMixedQueryNumPushVdrKey)),
 			MixedQueryNumPushNonVdr: int(v.GetUint(SnowMixedQueryNumPushNonVdrKey)),
 		},
-		BatchSize: v.GetInt(SnowAvalancheBatchSizeKey),
-		Parents:   v.GetInt(SnowAvalancheNumParentsKey),
+		BatchSize: v.GetInt(SnowLUXBatchSizeKey),
+		Parents:   v.GetInt(SnowLUXNumParentsKey),
 	}
 }
 

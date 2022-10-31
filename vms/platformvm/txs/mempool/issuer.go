@@ -6,7 +6,7 @@ package mempool
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
 )
 
 var (

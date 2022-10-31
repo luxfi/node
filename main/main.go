@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/ava-labs/avalanchego/app/runner"
-	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/luxd/app/runner"
+	"github.com/luxdefi/luxd/config"
+	"github.com/luxdefi/luxd/version"
 )
 
 func main() {

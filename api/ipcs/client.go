@@ -6,9 +6,9 @@ package ipcs
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/luxd/api"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/rpc"
 )
 
 var _ Client = (*client)(nil)

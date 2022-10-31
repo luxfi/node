@@ -6,9 +6,9 @@ package p
 import (
 	stdcontext "context"
 
-	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/luxdefi/luxd/api/info"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/vms/avm"
 )
 
 var _ Context = (*context)(nil)

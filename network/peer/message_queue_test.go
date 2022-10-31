@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 func TestBlockingMessageQueue(t *testing.T) {

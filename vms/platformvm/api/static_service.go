@@ -10,21 +10,21 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
-	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs/txheap"
-	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/luxdefi/luxd/utils/formatting/address"
+	"github.com/luxdefi/luxd/utils/json"
+	"github.com/luxdefi/luxd/utils/math"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/platformvm/genesis"
+	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
+	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/luxdefi/luxd/vms/platformvm/txs/txheap"
+	"github.com/luxdefi/luxd/vms/platformvm/validator"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 )
 
-// Note that since an Avalanche network has exactly one Platform Chain,
+// Note that since an LUX network has exactly one Platform Chain,
 // and the Platform Chain defines the genesis state of the network
 // (who is staking, which chains exist, etc.), defining the genesis
 // state of the Platform Chain is the same as defining the genesis
@@ -168,7 +168,7 @@ func bech32ToID(addrStr string) (ids.ShortID, error) {
 	return ids.ToShortID(addrBytes)
 }
 
-// BuildGenesis build the genesis state of the Platform Chain (and thereby the Avalanche network.)
+// BuildGenesis build the genesis state of the Platform Chain (and thereby the LUX network.)
 func (ss *StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, reply *BuildGenesisReply) error {
 	// Specify the UTXOs on the Platform chain that exist at genesis.
 	utxos := make([]*genesis.UTXO, 0, len(args.UTXOs))

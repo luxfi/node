@@ -6,7 +6,7 @@ package api
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/luxd/utils/rpc"
 )
 
 var _ StaticClient = (*staticClient)(nil)

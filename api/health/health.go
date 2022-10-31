@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/luxd/utils/logging"
 )
 
 var _ Health = (*health)(nil)

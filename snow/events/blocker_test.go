@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/ids"
 )
 
 func TestBlocker(t *testing.T) {

@@ -6,8 +6,8 @@ package crypto
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/hashing"
 )
 
 // NumVerifies is the number of verifications to run per operation

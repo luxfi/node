@@ -8,10 +8,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/staking"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/staking"
+	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 var (

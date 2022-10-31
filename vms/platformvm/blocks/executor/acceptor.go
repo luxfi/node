@@ -8,13 +8,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/window"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/window"
+	"github.com/luxdefi/luxd/vms/platformvm/blocks"
+	"github.com/luxdefi/luxd/vms/platformvm/metrics"
+	"github.com/luxdefi/luxd/vms/platformvm/state"
 )
 
 var _ blocks.Visitor = (*acceptor)(nil)

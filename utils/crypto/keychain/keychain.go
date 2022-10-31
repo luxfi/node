@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/ids"
 
-	ledger "github.com/ava-labs/avalanche-ledger-go"
+	ledger "github.com/luxdefi/avalanche-ledger-go"
 )
 
 var (

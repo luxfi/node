@@ -6,9 +6,9 @@ package avax
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/luxd/chains/atomic"
+	"github.com/luxdefi/luxd/codec"
+	"github.com/luxdefi/luxd/ids"
 )
 
 var _ AtomicUTXOManager = (*atomicUTXOManager)(nil)

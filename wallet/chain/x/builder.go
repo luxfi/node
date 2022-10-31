@@ -9,15 +9,15 @@ import (
 
 	stdcontext "context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/propertyfx"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/math"
+	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/nftfx"
+	"github.com/luxdefi/luxd/vms/propertyfx"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
 )
 
 var (

@@ -4,10 +4,10 @@
 package message
 
 import (
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/luxd/codec"
+	"github.com/luxdefi/luxd/codec/linearcodec"
+	"github.com/luxdefi/luxd/utils/units"
+	"github.com/luxdefi/luxd/utils/wrappers"
 )
 
 const (

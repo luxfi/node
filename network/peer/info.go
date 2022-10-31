@@ -6,8 +6,8 @@ package peer
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/json"
 )
 
 type Info struct {

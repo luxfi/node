@@ -4,8 +4,8 @@
 package block
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/utils/hashing"
 )
 
 type option struct {

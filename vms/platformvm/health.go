@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/luxdefi/luxd/utils/constants"
 	"go.uber.org/zap"
 )
 

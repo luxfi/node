@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/staking"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/staking"
 )
 
 func TestBuild(t *testing.T) {

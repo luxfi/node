@@ -19,33 +19,33 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/versiondb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/pubsub"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/timer"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
-	"github.com/ava-labs/avalanchego/version"
-	"github.com/ava-labs/avalanchego/vms/avm/states"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/index"
-	"github.com/ava-labs/avalanchego/vms/components/keystore"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/luxd/cache"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/manager"
+	"github.com/luxdefi/luxd/database/versiondb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/pubsub"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+	"github.com/luxdefi/luxd/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/utils/json"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/utils/timer/mockable"
+	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/luxd/vms/avm/states"
+	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/luxdefi/luxd/vms/components/avax"
+	"github.com/luxdefi/luxd/vms/components/index"
+	"github.com/luxdefi/luxd/vms/components/keystore"
+	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/nftfx"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
 
-	safemath "github.com/ava-labs/avalanchego/utils/math"
-	extensions "github.com/ava-labs/avalanchego/vms/avm/fxs"
+	safemath "github.com/luxdefi/luxd/utils/math"
+	extensions "github.com/luxdefi/luxd/vms/avm/fxs"
 )
 
 const (
@@ -123,7 +123,7 @@ func (vm *VM) Disconnected(nodeID ids.NodeID) error {
 
 /*
  ******************************************************************************
- ******************************** Avalanche API *******************************
+ ******************************** LUX API *******************************
  ******************************************************************************
  */
 
