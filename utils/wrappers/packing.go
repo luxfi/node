@@ -247,6 +247,17 @@ func (p *Packer) UnpackLimitedStr(limit uint16) string {
 =======
 >>>>>>> 3c968fec6 (Add codec.Size (#2343))
 
+// UnpackLimitedStr unpacks a string. If the size of the string is greater than
+// [limit], adds [errOversized] to the packer and returns the empty string.
+func (p *Packer) UnpackLimitedStr(limit uint16) string {
+	strSize := p.UnpackShort()
+	if strSize > limit {
+		p.Add(errOversized)
+		return ""
+	}
+	return string(p.UnpackFixedBytes(int(strSize)))
+}
+
 // checkSpace requires that there is at least [bytes] of write space left in the
 // byte array. If this is not true, an error is added to the packer
 func (p *Packer) checkSpace(bytes int) {
