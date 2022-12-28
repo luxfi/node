@@ -117,11 +117,19 @@ func (p *parser) GenesisCodec() codec.Manager {
 	return p.gcm
 }
 
-func (p *parser) Parse(bytes []byte) (*Tx, error) {
+func (p *parser) CodecRegistry() codec.Registry {
+	return p.c
+}
+
+func (p *parser) GenesisCodecRegistry() codec.Registry {
+	return p.gc
+}
+
+func (p *parser) ParseTx(bytes []byte) (*Tx, error) {
 	return parse(p.cm, bytes)
 }
 
-func (p *parser) ParseGenesis(bytes []byte) (*Tx, error) {
+func (p *parser) ParseGenesisTx(bytes []byte) (*Tx, error) {
 	return parse(p.gcm, bytes)
 }
 
