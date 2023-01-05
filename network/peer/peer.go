@@ -258,8 +258,8 @@ func (p *peer) AwaitReady(ctx context.Context) error {
 
 func (p *peer) Info() Info {
 	publicIPStr := ""
-	if !p.ip.IP.IP.IsZero() {
-		publicIPStr = p.ip.IP.IP.String()
+	if !p.ip.IsZero() {
+		publicIPStr = p.ip.IPPort.String()
 	}
 
 	trackedSubnets := p.trackedSubnets.List()
@@ -516,9 +516,9 @@ func (p *peer) writeMessages() {
 	msg, err := p.MessageCreator.Version(
 		p.NetworkID,
 		p.Clock.Unix(),
-		mySignedIP.IP.IP,
+		mySignedIP.IPPort,
 		p.VersionCompatibility.Version().String(),
-		mySignedIP.IP.Timestamp,
+		mySignedIP.Timestamp,
 		mySignedIP.Signature,
 		p.MySubnets.List(),
 	)
@@ -924,8 +924,8 @@ func (p *peer) handleVersion(msg *p2p.Version) {
 	}
 
 	p.ip = &SignedIP{
-		IP: UnsignedIP{
-			IP: ips.IPPort{
+		UnsignedIP: UnsignedIP{
+			IPPort: ips.IPPort{
 				IP:   msg.IpAddr,
 				Port: uint16(msg.IpPort),
 			},
