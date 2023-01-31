@@ -446,6 +446,7 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 	ss.frontierSeeders = validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !ss.frontierSeeders.Contains(nodeID) {
 			// Invariant: We never use the TxID or BLS keys populated here.
@@ -468,14 +469,23 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 		vdrID := vdr.ID()
 		if !ss.frontierSeeders.Contains(vdrID) {
 			err = ss.frontierSeeders.Add(vdrID, 1)
+=======
+	for _, nodeID := range beaconIDs {
+		if !ss.frontierSeeders.Contains(nodeID) {
+			err = ss.frontierSeeders.Add(nodeID, 1)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 		} else {
-			err = ss.frontierSeeders.AddWeight(vdrID, 1)
+			err = ss.frontierSeeders.AddWeight(nodeID, 1)
 		}
 		if err != nil {
 			return err
 		}
+<<<<<<< HEAD
 		ss.targetSeeders.Add(vdrID)
 >>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
+=======
+		ss.targetSeeders.Add(nodeID)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	}
 
 	// list all beacons, to reach them for voting on frontier

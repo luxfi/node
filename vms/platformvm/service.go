@@ -1095,7 +1095,11 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 	if sample == nil {
 		reply.Validators = []ids.NodeID{}
 	} else {
+<<<<<<< HEAD
 		utils.Sort(sample)
+=======
+		ids.SortNodeIDs(sample)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 		reply.Validators = sample
 	}
 	return nil
