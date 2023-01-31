@@ -243,12 +243,18 @@ func (ts *Topological) IsPreferred(blk Block) bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 func (ts *Topological) LastAccepted() ids.ID {
 	return ts.head
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 func (ts *Topological) Preference() ids.ID {
 	return ts.tail
 }
