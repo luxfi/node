@@ -81,12 +81,16 @@ type Set interface {
 
 	// Get returns the validator tied to the specified ID.
 <<<<<<< HEAD
+<<<<<<< HEAD
 	Get(ids.NodeID) (*Validator, bool)
 
 	// SubsetWeight returns the sum of the weights of the validators.
 	SubsetWeight(set.Set[ids.NodeID]) uint64
 =======
 	Get(ids.NodeID) (Validator, bool)
+=======
+	Get(ids.NodeID) (*Validator, bool)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 
 	// SubsetWeight returns the sum of the weights of the validators.
 	SubsetWeight(ids.NodeIDSet) uint64
@@ -135,7 +139,11 @@ type SetCallbackListener interface {
 
 // NewSet returns a new, empty set of validators.
 func NewSet() Set {
+<<<<<<< HEAD
 	return &vdrSet{
+=======
+	return &set{
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 		vdrs:    make(map[ids.NodeID]*Validator),
 		sampler: sampler.NewWeightedWithoutReplacement(),
 	}
@@ -143,7 +151,11 @@ func NewSet() Set {
 
 // NewBestSet returns a new, empty set of validators.
 func NewBestSet(expectedSampleSize int) Set {
+<<<<<<< HEAD
 	return &vdrSet{
+=======
+	return &set{
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 		vdrs:    make(map[ids.NodeID]*Validator),
 		sampler: sampler.NewBestWeightedWithoutReplacement(expectedSampleSize),
 	}
@@ -217,6 +229,7 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vdr := &Validator{
 		NodeID:    nodeID,
 		PublicKey: pk,
@@ -230,6 +243,13 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 		weight: weight,
 		index:  len(s.vdrSlice),
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	vdr := &Validator{
+		NodeID:    nodeID,
+		PublicKey: pk,
+		Weight:    weight,
+		index:     len(s.vdrSlice),
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	}
 	s.vdrs[nodeID] = vdr
 	s.vdrSlice = append(s.vdrSlice, vdr)
@@ -282,16 +302,22 @@ func (s *set) addWeight(nodeID ids.NodeID, weight uint64) error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	oldWeight := vdr.Weight
 	vdr.Weight += weight
 =======
 	oldWeight := vdr.weight
 	vdr.weight += weight
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	oldWeight := vdr.Weight
+	vdr.Weight += weight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	s.weights[vdr.index] += weight
 	s.totalWeight = newTotalWeight
 	s.samplerInitialized = false
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	s.callWeightChangeCallbacks(nodeID, oldWeight, vdr.Weight)
 	return nil
@@ -300,6 +326,9 @@ func (s *set) addWeight(nodeID ids.NodeID, weight uint64) error {
 func (s *vdrSet) GetWeight(nodeID ids.NodeID) uint64 {
 =======
 	s.callWeightChangeCallbacks(nodeID, oldWeight, vdr.weight)
+=======
+	s.callWeightChangeCallbacks(nodeID, oldWeight, vdr.Weight)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	return nil
 }
 
@@ -318,8 +347,12 @@ func (s *vdrSet) getWeight(nodeID ids.NodeID) uint64 {
 =======
 func (s *set) getWeight(nodeID ids.NodeID) uint64 {
 	if vdr, ok := s.vdrs[nodeID]; ok {
+<<<<<<< HEAD
 		return vdr.weight
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		return vdr.Weight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	}
 	return 0
 }
@@ -375,10 +408,14 @@ func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	oldWeight := vdr.Weight
 =======
 	oldWeight := vdr.weight
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	oldWeight := vdr.Weight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	// We first calculate the new weight of the validator, as this guarantees
 	// that none of the following operations can underflow.
 	newWeight, err := math.Sub(oldWeight, weight)
@@ -395,10 +432,14 @@ func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 		vdrToSwap.index = vdr.index
 		s.vdrSlice[vdr.index] = vdrToSwap
 <<<<<<< HEAD
+<<<<<<< HEAD
 		s.weights[vdr.index] = vdrToSwap.Weight
 =======
 		s.weights[vdr.index] = vdrToSwap.weight
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		s.weights[vdr.index] = vdrToSwap.Weight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 
 		// Remove validator
 		delete(s.vdrs, nodeID)
@@ -409,10 +450,14 @@ func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 		s.callValidatorRemovedCallbacks(nodeID, oldWeight)
 	} else {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vdr.Weight = newWeight
 =======
 		vdr.weight = newWeight
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		vdr.Weight = newWeight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 		s.weights[vdr.index] = newWeight
 
 		s.callWeightChangeCallbacks(nodeID, oldWeight, newWeight)
@@ -423,10 +468,14 @@ func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) Get(nodeID ids.NodeID) (*Validator, bool) {
 =======
 func (s *set) Get(nodeID ids.NodeID) (Validator, bool) {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *set) Get(nodeID ids.NodeID) (*Validator, bool) {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -434,10 +483,14 @@ func (s *set) Get(nodeID ids.NodeID) (Validator, bool) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) get(nodeID ids.NodeID) (*Validator, bool) {
 =======
 func (s *set) get(nodeID ids.NodeID) (Validator, bool) {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *set) get(nodeID ids.NodeID) (*Validator, bool) {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	vdr, ok := s.vdrs[nodeID]
 	if !ok {
 		return nil, false
@@ -481,14 +534,22 @@ func (s *set) len() int {
 	return len(s.vdrSlice)
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) List() []*Validator {
+=======
+func (s *set) List() []*Validator {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	return s.list()
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) list() []*Validator {
+=======
+func (s *set) list() []*Validator {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	list := make([]*Validator, len(s.vdrSlice))
 	for i, vdr := range s.vdrSlice {
 		copiedVdr := *vdr
@@ -533,6 +594,7 @@ func (s *set) sample(size int) ([]ids.NodeID, error) {
 	for i, index := range indices {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		list[i] = s.vdrSlice[index].NodeID
 =======
 		copiedVdr := *s.vdrSlice[index]
@@ -541,6 +603,9 @@ func (s *set) sample(size int) ([]ids.NodeID, error) {
 =======
 		list[i] = s.vdrSlice[index].nodeID
 >>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
+=======
+		list[i] = s.vdrSlice[index].NodeID
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	}
 	return list, nil
 }
@@ -590,10 +655,14 @@ func (s *vdrSet) RegisterCallbackListener(callbackListener SetCallbackListener) 
 	s.callbackListeners = append(s.callbackListeners, callbackListener)
 	for _, vdr := range s.vdrSlice {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		callbackListener.OnValidatorAdded(vdr.NodeID, vdr.PublicKey, vdr.TxID, vdr.Weight)
 =======
 		callbackListener.OnValidatorAdded(vdr.nodeID, vdr.pk, vdr.weight)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		callbackListener.OnValidatorAdded(vdr.NodeID, vdr.PublicKey, vdr.Weight)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	}
 }
 
