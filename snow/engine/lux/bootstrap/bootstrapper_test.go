@@ -52,11 +52,19 @@ import (
 	"github.com/luxdefi/luxd/snow/validators"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 =======
 	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+=======
+	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+>>>>>>> 6ce5514cf (Update getters, constants)
+>>>>>>> 30c258f70 (Update getters, constants)
 )
 
 var (
@@ -151,10 +159,17 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	luxGetHandler, err := luxgetter.New(manager, commonConfig)
 =======
 	avaGetHandler, err := getter.New(manager, commonConfig)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	avaGetHandler, err := getter.New(manager, commonConfig)
+=======
+	luxGetHandler, err := luxgetter.New(manager, commonConfig)
+>>>>>>> 6ce5514cf (Update getters, constants)
+>>>>>>> 30c258f70 (Update getters, constants)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,10 +177,14 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 	return Config{
 		Config:        commonConfig,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		AllGetsServer: luxGetHandler,
 =======
 		AllGetsServer: avaGetHandler,
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+		AllGetsServer: luxGetHandler,
+>>>>>>> 30c258f70 (Update getters, constants)
 		VtxBlocked:    vtxBlocker,
 		TxBlocked:     txBlocker,
 		Manager:       manager,
