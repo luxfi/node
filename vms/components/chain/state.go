@@ -125,7 +125,11 @@ func (s *State) initialize(config *Config) {
 	s.unmarshalBlock = config.UnmarshalBlock
 	s.batchedUnmarshalBlock = config.BatchedUnmarshalBlock
 	if config.GetBlockIDAtHeight == nil {
+<<<<<<< HEAD
 		s.getStatus = func(_ context.Context, blk snowman.Block) (choices.Status, error) {
+=======
+		s.getStatus = func(blk snowman.Block) (choices.Status, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			return blk.Status(), nil
 		}
 	} else {

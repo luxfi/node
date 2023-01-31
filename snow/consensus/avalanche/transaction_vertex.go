@@ -65,12 +65,18 @@ func (tv *transactionVertex) Status() choices.Status {
 // Verify isn't called in the consensus code. So this implementation doesn't
 // really matter. However it's used to implement the tx interface.
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*transactionVertex) Verify(context.Context) error {
 	return nil
 }
 =======
 func (*transactionVertex) Verify() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*transactionVertex) Verify() error {
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 // Dependencies returns the currently processing transaction vertices of this
 // vertex's parents.
@@ -99,6 +105,11 @@ func (tv *transactionVertex) HasWhitelist() bool {
 	return tv.vtx.HasWhitelist()
 }
 
+<<<<<<< HEAD
 func (tv *transactionVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
 	return tv.vtx.Whitelist(ctx)
+=======
+func (tv *transactionVertex) Whitelist() (ids.Set, error) {
+	return tv.vtx.Whitelist()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 }

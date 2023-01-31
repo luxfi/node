@@ -923,6 +923,7 @@ func (b *blockClient) Height() uint64 {
 func (b *blockClient) Timestamp() time.Time {
 	return b.time
 }
+<<<<<<< HEAD
 
 func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {
 	return b.shouldVerifyWithCtx, nil
@@ -940,6 +941,8 @@ func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 	b.time, err = grpcutils.TimestampAsTime(resp.Timestamp)
 	return err
 }
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 type summaryClient struct {
 	vm *VMClient
@@ -952,6 +955,17 @@ type summaryClient struct {
 func (s *summaryClient) ID() ids.ID {
 	return s.id
 }
+<<<<<<< HEAD
+=======
+
+func (s *summaryClient) Height() uint64 {
+	return s.height
+}
+
+func (s *summaryClient) Bytes() []byte {
+	return s.bytes
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (s *summaryClient) Height() uint64 {
 	return s.height

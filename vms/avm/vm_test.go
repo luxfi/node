@@ -1159,6 +1159,12 @@ func TestTxNotCached(t *testing.T) {
 	db.OnPut = func([]byte, []byte) error {
 		return nil
 	}
+<<<<<<< HEAD
+=======
+	db.OnPut = func([]byte, []byte) error {
+		return nil
+	}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	registerer := prometheus.NewRegistry()
 	require.NoError(t, err)

@@ -31,7 +31,11 @@ type TestVertex struct {
 	BytesV        []byte
 }
 
+<<<<<<< HEAD
 func (v *TestVertex) Verify(context.Context) error {
+=======
+func (v *TestVertex) Verify() error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return v.VerifyErrV
 }
 
@@ -43,7 +47,11 @@ func (v *TestVertex) HasWhitelist() bool {
 	return v.HasWhitelistV
 }
 
+<<<<<<< HEAD
 func (v *TestVertex) Whitelist(context.Context) (set.Set[ids.ID], error) {
+=======
+func (v *TestVertex) Whitelist() (ids.Set, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return v.WhitelistV, v.WhitelistErrV
 }
 
@@ -51,7 +59,11 @@ func (v *TestVertex) Height() (uint64, error) {
 	return v.HeightV, v.HeightErrV
 }
 
+<<<<<<< HEAD
 func (v *TestVertex) Txs(context.Context) ([]snowstorm.Tx, error) {
+=======
+func (v *TestVertex) Txs() ([]snowstorm.Tx, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return v.TxsV, v.TxsErrV
 }
 

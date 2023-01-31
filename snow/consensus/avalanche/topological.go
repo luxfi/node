@@ -145,11 +145,23 @@ func (ta *Topological) NumProcessing() int {
 	return len(ta.nodes)
 }
 
+<<<<<<< HEAD
 func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
 	return ta.cg.IsVirtuous(tx)
 }
 
 func (ta *Topological) Add(ctx context.Context, vtx Vertex) error {
+=======
+func (ta *Topological) Parameters() Parameters {
+	return ta.params
+}
+
+func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
+	return ta.cg.IsVirtuous(tx)
+}
+
+func (ta *Topological) Add(vtx Vertex) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	if vtx.Status().Decided() {
 		return nil // Already decided this vertex
 	}
@@ -219,6 +231,7 @@ func (ta *Topological) TxIssued(tx snowstorm.Tx) bool {
 	return ta.cg.Issued(tx)
 }
 
+<<<<<<< HEAD
 func (ta *Topological) Orphans() set.Set[ids.ID] {
 	return ta.orphans
 }
@@ -228,6 +241,17 @@ func (ta *Topological) Virtuous() set.Set[ids.ID] {
 }
 
 func (ta *Topological) Preferences() set.Set[ids.ID] {
+=======
+func (ta *Topological) Orphans() ids.Set {
+	return ta.orphans
+}
+
+func (ta *Topological) Virtuous() ids.Set {
+	return ta.virtuous
+}
+
+func (ta *Topological) Preferences() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return ta.preferred
 }
 

@@ -55,6 +55,9 @@ func (tx *AddValidatorTx) InitCtx(ctx *snow.Context) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (*AddValidatorTx) SubnetID() ids.ID {
 	return constants.PrimaryNetworkID
 }
@@ -102,6 +105,7 @@ func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner {
 func (tx *AddValidatorTx) Shares() uint32 {
 	return tx.DelegationShares
 }
+<<<<<<< HEAD
 =======
 func (*AddValidatorTx) SubnetID() ids.ID                         { return constants.PrimaryNetworkID }
 func (tx *AddValidatorTx) NodeID() ids.NodeID                    { return tx.Validator.NodeID }
@@ -116,6 +120,8 @@ func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner      { return tx.Rew
 func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner      { return tx.RewardsOwner }
 func (tx *AddValidatorTx) Shares() uint32                        { return tx.DelegationShares }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 // SyntacticVerify returns nil iff [tx] is valid
 func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {

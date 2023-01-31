@@ -116,6 +116,13 @@ func (t *CreateAssetTx) SyntacticVerify(
 	return nil
 }
 
+<<<<<<< HEAD
+=======
+func (t *CreateAssetTx) Sort() {
+	SortInitialStates(t.States)
+}
+
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (t *CreateAssetTx) Visit(v Visitor) error {
 	return v.CreateAssetTx(t)
 }

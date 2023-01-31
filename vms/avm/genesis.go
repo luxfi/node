@@ -14,6 +14,29 @@ type Genesis struct {
 	Txs []*GenesisAsset `serialize:"true"`
 }
 
+<<<<<<< HEAD
+=======
+func (g *Genesis) Less(i, j int) bool {
+	return strings.Compare(g.Txs[i].Alias, g.Txs[j].Alias) == -1
+}
+
+func (g *Genesis) Len() int {
+	return len(g.Txs)
+}
+
+func (g *Genesis) Swap(i, j int) {
+	g.Txs[j], g.Txs[i] = g.Txs[i], g.Txs[j]
+}
+
+func (g *Genesis) Sort() {
+	sort.Sort(g)
+}
+
+func (g *Genesis) IsSortedAndUnique() bool {
+	return utils.IsSortedAndUnique(g)
+}
+
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 type GenesisAsset struct {
 	Alias             string `serialize:"true"`
 	txs.CreateAssetTx `serialize:"true"`

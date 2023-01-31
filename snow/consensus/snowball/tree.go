@@ -59,6 +59,13 @@ func (t *Tree) Initialize(params Parameters, choice ids.ID) {
 	}
 }
 
+<<<<<<< HEAD
+=======
+func (t *Tree) Parameters() Parameters {
+	return t.params
+}
+
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (t *Tree) Add(choice ids.ID) {
 	prefix := t.node.DecidedPrefix()
 	// Make sure that we haven't already decided against this new id

@@ -56,6 +56,9 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (*ApricotCommitBlock) InitCtx(*snow.Context) {}
 
 func (*ApricotCommitBlock) Txs() []*txs.Tx {
@@ -65,11 +68,14 @@ func (*ApricotCommitBlock) Txs() []*txs.Tx {
 func (b *ApricotCommitBlock) Visit(v Visitor) error {
 	return v.ApricotCommitBlock(b)
 }
+<<<<<<< HEAD
 =======
 func (*ApricotCommitBlock) InitCtx(*snow.Context)   {}
 func (*ApricotCommitBlock) Txs() []*txs.Tx          { return nil }
 func (b *ApricotCommitBlock) Visit(v Visitor) error { return v.ApricotCommitBlock(b) }
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func NewApricotCommitBlock(
 	parentID ids.ID,

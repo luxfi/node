@@ -110,6 +110,29 @@ func NewCustomParser(
 func (p *parser) Codec() codec.Manager {
 	return p.cm
 }
+<<<<<<< HEAD
+=======
+
+func (p *parser) GenesisCodec() codec.Manager {
+	return p.gcm
+}
+
+func (p *parser) Parse(bytes []byte) (*Tx, error) {
+	return parse(p.cm, bytes)
+}
+
+func (p *parser) ParseGenesis(bytes []byte) (*Tx, error) {
+	return parse(p.gcm, bytes)
+}
+
+func (p *parser) InitializeTx(tx *Tx) error {
+	return initializeTx(p.cm, tx)
+}
+
+func (p *parser) InitializeGenesisTx(tx *Tx) error {
+	return initializeTx(p.gcm, tx)
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (p *parser) GenesisCodec() codec.Manager {
 	return p.gcm

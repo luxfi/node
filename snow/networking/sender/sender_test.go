@@ -137,7 +137,16 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+=======
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.QueryFailedF = func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
+		failedVDRs.Add(nodeID)
+		wg.Done()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 	handler.SetBootstrapper(bootstrapper)
@@ -145,10 +154,17 @@ func TestTimeout(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	var (
 		wg           = sync.WaitGroup{}
@@ -396,7 +412,11 @@ func TestReliableMessages(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx2
 	}
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+=======
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 	queriesToSend := 1000
@@ -414,10 +434,17 @@ func TestReliableMessages(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {
@@ -522,7 +549,11 @@ func TestReliableMessagesToMyself(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx2
 	}
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+=======
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 	queriesToSend := 2
@@ -539,10 +570,17 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {

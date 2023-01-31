@@ -458,6 +458,15 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 	appSender.CantSendAppGossip = true
 	appSender.SendAppGossipF = func(context.Context, []byte) error {
 		return nil
+<<<<<<< HEAD
+=======
+	}
+	if err := vm.Initialize(ctx, chainDBManager, genesisBytes, nil, nil, msgChan, nil, appSender); err != nil {
+		t.Fatal(err)
+	}
+	if err := vm.SetState(snow.NormalOp); err != nil {
+		panic(err)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	}
 	err := vm.Initialize(
 		context.Background(),

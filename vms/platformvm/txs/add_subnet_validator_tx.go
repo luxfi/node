@@ -32,6 +32,9 @@ type AddSubnetValidatorTx struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (tx *AddSubnetValidatorTx) SubnetID() ids.ID {
 	return tx.Validator.Subnet
 }
@@ -55,6 +58,7 @@ func (tx *AddSubnetValidatorTx) EndTime() time.Time {
 func (tx *AddSubnetValidatorTx) Weight() uint64 {
 	return tx.Validator.Wght
 }
+<<<<<<< HEAD
 
 =======
 func (tx *AddSubnetValidatorTx) SubnetID() ids.ID                      { return tx.Validator.Subnet }
@@ -63,6 +67,8 @@ func (*AddSubnetValidatorTx) PublicKey() (*bls.PublicKey, bool, error) { return 
 func (tx *AddSubnetValidatorTx) StartTime() time.Time                  { return tx.Validator.StartTime() }
 func (tx *AddSubnetValidatorTx) EndTime() time.Time                    { return tx.Validator.EndTime() }
 func (tx *AddSubnetValidatorTx) Weight() uint64                        { return tx.Validator.Wght }
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 func (*AddSubnetValidatorTx) PendingPriority() Priority {
