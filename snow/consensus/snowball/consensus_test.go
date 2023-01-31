@@ -8,25 +8,27 @@ import (
 )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 var _ Consensus = (*Byzantine)(nil)
+=======
+var (
+	Red   = ids.Empty.Prefix(0)
+	Blue  = ids.Empty.Prefix(1)
+	Green = ids.Empty.Prefix(2)
+
+	_ Consensus = (*Byzantine)(nil)
+)
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 
 // Byzantine is a naive implementation of a multi-choice snowball instance
 type Byzantine struct {
-	// params contains all the configurations of a snowball instance
-	params Parameters
-
 	// Hardcode the preference
 	preference ids.ID
 }
 
-func (b *Byzantine) Initialize(params Parameters, choice ids.ID) {
-	b.params = params
+func (b *Byzantine) Initialize(_ Parameters, choice ids.ID) {
 	b.preference = choice
-}
-
-func (b *Byzantine) Parameters() Parameters {
-	return b.params
 }
 
 func (*Byzantine) Add(ids.ID) {}
@@ -48,6 +50,7 @@ func (*Byzantine) Finalized() bool {
 func (b *Byzantine) String() string {
 	return b.preference.String()
 }
+<<<<<<< HEAD
 
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 var (
@@ -87,3 +90,5 @@ func (*Byzantine) Finalized() bool {
 func (b *Byzantine) String() string {
 	return b.preference.String()
 }
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))

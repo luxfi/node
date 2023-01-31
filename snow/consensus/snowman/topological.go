@@ -148,6 +148,7 @@ func (ts *Topological) Initialize(ctx *snow.ConsensusContext, params snowball.Pa
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (ts *Topological) NumProcessing() int {
 	return len(ts.blocks) - 1
 }
@@ -158,6 +159,8 @@ func (ts *Topological) Parameters() snowball.Parameters {
 	return ts.params
 }
 
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func (ts *Topological) NumProcessing() int {
 	return len(ts.blocks) - 1
 }
