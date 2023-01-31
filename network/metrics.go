@@ -6,10 +6,11 @@ package network
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/network/peer"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 type metrics struct {
@@ -31,7 +32,7 @@ type metrics struct {
 	nodeSubnetUptimeRewardingStake  *prometheus.GaugeVec
 }
 
-func newMetrics(namespace string, registerer prometheus.Registerer, initialSubnetIDs ids.Set) (*metrics, error) {
+func newMetrics(namespace string, registerer prometheus.Registerer, initialSubnetIDs set.Set[ids.ID]) (*metrics, error) {
 	m := &metrics{
 		numPeers: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,

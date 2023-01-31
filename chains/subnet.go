@@ -7,10 +7,18 @@ import (
 	"sync"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/networking/sender"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/sender"
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 var _ Subnet = (*subnet)(nil)
@@ -45,8 +53,8 @@ type SubnetConfig struct {
 
 type subnet struct {
 	lock             sync.RWMutex
-	bootstrapping    ids.Set
-	bootstrapped     ids.Set
+	bootstrapping    set.Set[ids.ID]
+	bootstrapped     set.Set[ids.ID]
 	once             sync.Once
 	bootstrappedSema chan struct{}
 }

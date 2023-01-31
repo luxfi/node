@@ -8,11 +8,20 @@ import (
 
 	stdcontext "context"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
+=======
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 var _ Backend = (*backend)(nil)
@@ -84,7 +93,7 @@ func (b *backend) addUTXOs(ctx stdcontext.Context, destinationChainID ids.ID, ut
 	return nil
 }
 
-func (b *backend) removeUTXOs(ctx stdcontext.Context, sourceChain ids.ID, utxoIDs ids.Set) error {
+func (b *backend) removeUTXOs(ctx stdcontext.Context, sourceChain ids.ID, utxoIDs set.Set[ids.ID]) error {
 	for utxoID := range utxoIDs {
 		if err := b.RemoveUTXO(ctx, sourceChain, utxoID); err != nil {
 			return err

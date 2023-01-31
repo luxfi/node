@@ -47,10 +47,14 @@ func (tx *RewardValidatorTx) Bytes() []byte {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*RewardValidatorTx) InputIDs() set.Set[ids.ID] {
 =======
 func (*RewardValidatorTx) InputIDs() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (*RewardValidatorTx) InputIDs() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return nil
 }
 

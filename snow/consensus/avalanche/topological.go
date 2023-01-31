@@ -239,6 +239,7 @@ func (ta *Topological) TxIssued(tx snowstorm.Tx) bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (ta *Topological) Orphans() set.Set[ids.ID] {
 	return ta.orphans
 }
@@ -250,15 +251,22 @@ func (ta *Topological) Virtuous() set.Set[ids.ID] {
 func (ta *Topological) Preferences() set.Set[ids.ID] {
 =======
 func (ta *Topological) Orphans() ids.Set {
+=======
+func (ta *Topological) Orphans() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return ta.orphans
 }
 
-func (ta *Topological) Virtuous() ids.Set {
+func (ta *Topological) Virtuous() set.Set[ids.ID] {
 	return ta.virtuous
 }
 
+<<<<<<< HEAD
 func (ta *Topological) Preferences() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ta *Topological) Preferences() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return ta.preferred
 }
 

@@ -32,12 +32,16 @@ func testJob(t *testing.T, jobID ids.ID, executed *bool, parentID ids.ID, parent
 <<<<<<< HEAD
 =======
 		},
-		MissingDependenciesF: func(context.Context) (ids.Set, error) {
+		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			if parentID != ids.Empty && !*parentExecuted {
-				return ids.Set{parentID: struct{}{}}, nil
+				return set.Set[ids.ID]{parentID: struct{}{}}, nil
 			}
+<<<<<<< HEAD
 			return ids.Set{}, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+			return set.Set[ids.ID]{}, nil
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		},
 <<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
@@ -488,6 +492,7 @@ func TestInitializeNumJobs(t *testing.T) {
 		},
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
@@ -500,6 +505,9 @@ func TestInitializeNumJobs(t *testing.T) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 =======
 		MissingDependenciesF: func(context.Context) (ids.Set, error) {
+=======
+		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 			return nil, nil
 		},
 		HasMissingDependenciesF: func(context.Context) (bool, error) {
@@ -518,6 +526,7 @@ func TestInitializeNumJobs(t *testing.T) {
 		},
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
@@ -530,6 +539,9 @@ func TestInitializeNumJobs(t *testing.T) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 =======
 		MissingDependenciesF: func(context.Context) (ids.Set, error) {
+=======
+		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 			return nil, nil
 		},
 		HasMissingDependenciesF: func(context.Context) (bool, error) {

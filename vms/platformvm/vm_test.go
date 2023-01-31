@@ -582,8 +582,14 @@ func TestGenesis(t *testing.T) {
 		require.NoError(err)
 
 		addr, err := ids.ToShortID(addrBytes)
+<<<<<<< HEAD
 		require.NoError(err)
 
+=======
+		if err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		addrs := set.Set[ids.ShortID]{}
 		addrs.Add(addr)
 		utxos, err := avax.GetAllUTXOs(vm.state, addrs)
@@ -1932,6 +1938,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		timeoutManager,
 		time.Second,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		set.Set[ids.ID]{},
 		true,
 		set.Set[ids.ID]{},
@@ -1939,6 +1946,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		ids.Set{},
 		ids.Set{},
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
+=======
+		set.Set[ids.ID]{},
+		set.Set[ids.ID]{},
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		nil,
 		router.HealthConfig{},
 		"",
@@ -2090,6 +2101,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -2097,6 +2109,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		inMsg := inMsgIntf.Message().(*p2p.GetAccepted)
 =======
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+=======
+	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -2112,6 +2127,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -2119,6 +2135,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		inMsg := inMsgIntf.Message().(*p2p.GetAncestors)
 =======
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+=======
+	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())

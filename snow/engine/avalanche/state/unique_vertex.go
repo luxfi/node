@@ -362,10 +362,14 @@ func (vtx *uniqueVertex) Verify(ctx context.Context) error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	acceptedEdges := set.NewSet[ids.ID](0)
 =======
 	acceptedEdges := ids.NewSet(0)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	acceptedEdges := set.NewSet[ids.ID](0)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	acceptedEdges.Add(vtx.serializer.Edge(ctx)...)
 
 	// stop vertex should be able to reach all IDs
@@ -391,10 +395,14 @@ func (vtx *uniqueVertex) HasWhitelist() bool {
 // "uniqueVertex" itself implements "Whitelist" traversal iff its underlying
 // "vertex.StatelessVertex" is marked as a stop vertex.
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
 =======
 func (vtx *uniqueVertex) Whitelist(ctx context.Context) (ids.Set, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (vtx *uniqueVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if !vtx.v.vtx.StopVertex() {
 		return nil, nil
 	}
