@@ -18,5 +18,9 @@ COPY avalanchego avalanchego
 
 WORKDIR $GOPATH/src/github.com/ava-labs/avalanchego
 RUN ./scripts/build_avalanche.sh
+<<<<<<< HEAD
+=======
+RUN ./scripts/build_coreth.sh -c ../coreth -e $PWD/build/plugins/evm
+>>>>>>> 0d8e8458d (Add race detection to the e2e tests (#2299))
 
 RUN ln -sv $GOPATH/src/github.com/ava-labs/avalanche-byzantine/ /avalanchego
