@@ -208,8 +208,14 @@ type ManagerConfig struct {
 	Server                      server.Server              // Handles HTTP API calls
 	Keystore                    keystore.Keystore
 	AtomicMemory                *atomic.Memory
+<<<<<<< HEAD
 	LUXAssetID                 ids.ID
 	XChainID                    ids.ID
+=======
+	AVAXAssetID                 ids.ID
+	XChainID                    ids.ID          // ID of the X-Chain,
+	CChainID                    ids.ID          // ID of the C-Chain,
+>>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
 	CriticalChains              ids.Set         // Chains that can't exit gracefully
 	TimeoutManager              timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                      health.Registerer
@@ -460,7 +466,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 			NodeID:    m.NodeID,
 
 			XChainID:    m.XChainID,
+<<<<<<< HEAD
 			LUXAssetID: m.LUXAssetID,
+=======
+			CChainID:    m.CChainID,
+			AVAXAssetID: m.AVAXAssetID,
+>>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
 
 			Log:          chainLog,
 			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),
