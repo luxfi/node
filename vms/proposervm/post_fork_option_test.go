@@ -8,12 +8,16 @@ import (
 	"context"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"crypto"
 =======
 	"errors"
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 =======
 >>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
+=======
+	"crypto"
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	"testing"
 	"time"
 
@@ -835,6 +839,9 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	ctx := proVM.ctx
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM = New(
 		coreVM,
 		time.Time{},
@@ -843,9 +850,12 @@ func TestOptionTimestampValidity(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM = New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	coreVM.InitializeF = func(
 		context.Context,

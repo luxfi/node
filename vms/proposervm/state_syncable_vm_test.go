@@ -135,6 +135,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 =======
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -143,6 +144,8 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 >>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	vm := New(innerVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	ctx := snow.DefaultContextTest()
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)

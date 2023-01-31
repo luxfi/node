@@ -145,6 +145,9 @@ func initTestProposerVM(
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		proBlkStartTime,
@@ -153,9 +156,12 @@ func initTestProposerVM(
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, proBlkStartTime, minPChainHeight, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	valState := &validators.TestState{
 		T: t,
@@ -1175,6 +1181,9 @@ func TestExpiredBuildBlock(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -1183,9 +1192,12 @@ func TestExpiredBuildBlock(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	valState := &validators.TestState{
 		T: t,
@@ -1608,6 +1620,9 @@ func TestInnerVMRollback(t *testing.T) {
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -1616,9 +1631,12 @@ func TestInnerVMRollback(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	err := proVM.Initialize(
 		context.Background(),
@@ -1721,6 +1739,9 @@ func TestInnerVMRollback(t *testing.T) {
 	coreBlk.StatusV = choices.Processing
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM = New(
 		coreVM,
 		time.Time{},
@@ -1729,9 +1750,12 @@ func TestInnerVMRollback(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM = New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	err = proVM.Initialize(
 		context.Background(),
@@ -2423,6 +2447,9 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -2431,9 +2458,12 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	valState := &validators.TestState{
 		T: t,
@@ -2717,6 +2747,9 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -2725,9 +2758,12 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	valState := &validators.TestState{
 		T: t,
@@ -2939,10 +2975,15 @@ func TestVMInnerBlkCache(t *testing.T) {
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 =======
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -2983,6 +3024,9 @@ func TestVMInnerBlkCache(t *testing.T) {
 	blkNearTipInnerBytes := []byte{1}
 	blkNearTip, err := statelessblock.Build(
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 		ids.GenerateTestID(), // parent
 		time.Time{},          // timestamp
 		1,                    // pChainHeight,
@@ -2990,6 +3034,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		blkNearTipInnerBytes, // inner blk bytes
 		vm.ctx.ChainID,       // chain ID
 		vm.stakingLeafSigner, // key
+<<<<<<< HEAD
 =======
 		ids.GenerateTestID(),     // parent
 		time.Time{},              // timestamp
@@ -2999,6 +3044,8 @@ func TestVMInnerBlkCache(t *testing.T) {
 		vm.ctx.ChainID,           // chain ID
 		vm.ctx.StakingLeafSigner, // key
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	)
 	require.NoError(err)
 
@@ -3160,10 +3207,15 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 =======
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -3185,10 +3237,13 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	snowCtx := snow.DefaultContextTest()
 	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	snowCtx.StakingCertLeaf = pTestCert.Leaf
 	snowCtx.StakingLeafSigner = pTestCert.PrivateKey.(crypto.Signer)
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	err := vm.Initialize(
 		context.Background(),
