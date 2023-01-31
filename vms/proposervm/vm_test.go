@@ -130,6 +130,7 @@ func initTestProposerVM(
 		}
 	}
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		proBlkStartTime,
@@ -138,6 +139,9 @@ func initTestProposerVM(
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, proBlkStartTime, minPChainHeight, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	valState := &validators.TestState{
 		T: t,
@@ -931,6 +935,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -939,6 +944,9 @@ func TestExpiredBuildBlock(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	valState := &validators.TestState{
 		T: t,
@@ -1291,6 +1299,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -1299,6 +1308,9 @@ func TestInnerVMRollback(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	err := proVM.Initialize(
 		context.Background(),
@@ -1400,6 +1412,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	coreBlk.StatusV = choices.Processing
 
+<<<<<<< HEAD
 	proVM = New(
 		coreVM,
 		time.Time{},
@@ -1408,6 +1421,9 @@ func TestInnerVMRollback(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM = New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	err = proVM.Initialize(
 		context.Background(),
@@ -1961,6 +1977,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -1969,6 +1986,9 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	valState := &validators.TestState{
 		T: t,
@@ -2176,6 +2196,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		time.Time{},
@@ -2184,6 +2205,9 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	valState := &validators.TestState{
 		T: t,
@@ -2347,8 +2371,11 @@ func TestVMInnerBlkCache(t *testing.T) {
 		time.Time{}, // fork is active
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
+<<<<<<< HEAD
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
+=======
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
