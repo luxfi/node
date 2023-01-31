@@ -1290,6 +1290,7 @@ func initTestRemoteProposerVM(
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return coreGenBlk.Height(), nil
 	}
@@ -1317,12 +1318,15 @@ func initTestRemoteProposerVM(
 		}, nil
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return coreGenBlk.Height(), nil
 	}
-	valState.GetCurrentHeightF = func() (uint64, error) {
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		res := make(map[ids.NodeID]uint64)
 		res[proVM.ctx.NodeID] = uint64(10)
 		res[ids.NodeID{1}] = uint64(5)

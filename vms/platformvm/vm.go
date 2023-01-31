@@ -502,7 +502,11 @@ func (vm *VM) Disconnected(_ context.Context, vdrID ids.NodeID) error {
 
 // GetValidatorSet returns the validator set at the specified height for the
 // provided subnetID.
+<<<<<<< HEAD
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+=======
+func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
 	if !exists {
 		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
@@ -662,12 +666,18 @@ func (vm *VM) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 // in the case of a process restart, we default to the lastAccepted block's
 // height which is likely (but not guaranteed) to also be older than the
 // window's configured TTL.
+<<<<<<< HEAD
 //
 // If [UseCurrentHeight] is true, we will always return the last accepted block
 // height as the minimum. This is used to trigger the proposervm on recently
 // created subnets before [recentlyAcceptedWindowTTL].
 func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	if vm.Config.UseCurrentHeight {
+=======
+func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	oldest, ok := vm.recentlyAccepted.Oldest()
+	if !ok {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return vm.GetCurrentHeight(ctx)
 	}
 
@@ -694,10 +704,14 @@ func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 
 // GetCurrentHeight returns the height of the last accepted block
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
 =======
 func (vm *VM) GetCurrentHeight() (uint64, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	lastAccepted, err := vm.manager.GetBlock(vm.state.GetLastAccepted())
 	if err != nil {
 		return 0, err

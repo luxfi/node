@@ -93,10 +93,14 @@ func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -219,10 +223,14 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -435,10 +443,14 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -611,10 +623,14 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 	// proVM.SetStartTime(timer.MaxTime) // switch off scheduler for current test
@@ -837,10 +853,14 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -923,10 +943,14 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -1004,10 +1028,14 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	var minimumHeight uint64
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return minimumHeight, nil
 	}
 

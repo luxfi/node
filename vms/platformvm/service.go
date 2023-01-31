@@ -2438,11 +2438,15 @@ type GetValidatorsAtReply struct {
 // GetValidatorsAt returns the weights of the validator set of a provided subnet
 // at the specified height.
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	height := uint64(args.Height)
 	s.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
 =======
 func (service *Service) GetValidatorsAt(_ *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
+=======
+func (service *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	height := uint64(args.Height)
 	service.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
@@ -2450,6 +2454,7 @@ func (service *Service) GetValidatorsAt(_ *http.Request, args *GetValidatorsAtAr
 		zap.Stringer("subnetID", args.SubnetID),
 	)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	ctx := r.Context()
 	var err error
@@ -2461,8 +2466,11 @@ func (service *Service) GetValidatorsAt(_ *http.Request, args *GetValidatorsAtAr
 	for _, vdr := range vdrs {
 		reply.Validators[vdr.NodeID] = vdr.Weight
 =======
+=======
+	ctx := r.Context()
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	var err error
-	reply.Validators, err = service.vm.GetValidatorSet(height, args.SubnetID)
+	reply.Validators, err = service.vm.GetValidatorSet(ctx, height, args.SubnetID)
 	if err != nil {
 		return fmt.Errorf("couldn't get validator set: %w", err)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
