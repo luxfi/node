@@ -4,9 +4,14 @@
 package peer
 
 import (
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/message"
 	"github.com/luxdefi/luxd/utils/ips"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/ips"
+>>>>>>> 6fc3d3f7c (Remove `Version` from the `peer.Network` interface (#2320))
 )
 
 // Network defines the interface that is used by a peer to help establish a well
@@ -32,10 +37,6 @@ type Network interface {
 	// is guaranteed that [Connected] will not be called after [Disconnected]
 	// for a given [Peer] object.
 	Disconnected(ids.NodeID)
-
-	// Version provides the peer with the Version message to send to the peer
-	// during the handshake.
-	Version() (message.OutboundMessage, error)
 
 	// Peers returns peers that [peerID] might not know about.
 	Peers(peerID ids.NodeID) ([]ips.ClaimedIPPort, error)
