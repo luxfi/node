@@ -139,8 +139,7 @@ type ChainParameters struct {
 
 type chain struct {
 	Name    string
-	Context *snow.ConsensusContext
-	VM      common.VM
+	Engine  common.Engine
 	Handler handler.Handler
 	Beacons validators.Set
 }
@@ -374,7 +373,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	}
 
 	// Notify those that registered to be notified when a new chain is created
-	m.notifyRegistrants(chain.Name, chain.Context, chain.VM)
+	m.notifyRegistrants(chain.Name, chain.Engine)
 
 	// Allows messages to be routed to the new chain. If the handler hasn't been
 	// started and a message is forwarded, then the message will block until the
@@ -455,9 +454,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 		ConsensusAcceptor: m.ConsensusAcceptorGroup,
 		Registerer:        consensusMetrics,
 	}
+	// We set the state to Initializing here because failing to set the state
+	// before it's first access would cause a panic.
+	ctx.SetState(snow.Initializing)
 
 	if subnetConfig, ok := m.SubnetConfigs[chainParams.SubnetID]; ok {
-		ctx.ValidatorOnly.Set(subnetConfig.ValidatorOnly)
+		if subnetConfig.ValidatorOnly {
+			ctx.SetValidatorOnly()
+		}
 	}
 
 	// Get a factory for the vm we want to use on our chain
@@ -688,6 +692,7 @@ func (m *manager) createAvalancheChain(
 		msgChan,
 		sb.afterBootstrapped(),
 		m.ConsensusGossipFrequency,
+		p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 		m.ResourceTracker,
 		validators.UnhandledSubnetConnector, // avalanche chains don't use subnet connector
 	)
@@ -784,8 +789,7 @@ func (m *manager) createAvalancheChain(
 
 	return &chain{
 		Name:    chainAlias,
-		Context: ctx,
-		VM:      vm,
+		Engine:  engine,
 		Handler: handler,
 	}, nil
 }
@@ -965,6 +969,7 @@ func (m *manager) createSnowmanChain(
 		msgChan,
 		sb.afterBootstrapped(),
 		m.ConsensusGossipFrequency,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		m.ResourceTracker,
 		subnetConnector,
 	)
@@ -1077,8 +1082,7 @@ func (m *manager) createSnowmanChain(
 
 	return &chain{
 		Name:    chainAlias,
-		Context: ctx,
-		VM:      vm,
+		Engine:  engine,
 		Handler: handler,
 	}, nil
 }
@@ -1091,7 +1095,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	return chain.Context().State.Get().State == snow.NormalOp
+	return chain.Context().GetState() == snow.NormalOp
 }
 
 func (m *manager) subnetsNotBootstrapped() []ids.ID {
@@ -1184,9 +1188,9 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm common.VM) {
+func (m *manager) notifyRegistrants(name string, engine common.Engine) {
 	for _, registrant := range m.registrants {
-		registrant.RegisterChain(name, ctx, vm)
+		registrant.RegisterChain(name, engine)
 	}
 }
 

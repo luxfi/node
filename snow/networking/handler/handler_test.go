@@ -52,6 +52,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -79,10 +80,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		return nil
 	}
 	handler.SetBootstrapper(bootstrapper)
-	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
-	})
+	ctx.SetState(snow.Bootstrapping) // assumed bootstrapping is ongoing
 
 	pastTime := time.Now()
 	handler.clock.Set(pastTime)
@@ -136,6 +134,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -173,10 +172,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	// assume bootstrapping is ongoing so that InboundGetAcceptedFrontier
 	// should normally be handled
-	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping,
-	})
+	ctx.SetState(snow.Bootstrapping)
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
@@ -218,6 +214,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		nil,
 		nil,
 		1,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -243,10 +240,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		return nil
 	}
 	handler.SetBootstrapper(bootstrapper)
-	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
-	})
+	ctx.SetState(snow.Bootstrapping) // assumed bootstrapping is ongoing
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
@@ -290,6 +284,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		msgFromVMChan,
 		nil,
 		time.Second,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -316,10 +311,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return nil
 	}
 	handler.SetConsensus(engine)
-	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.NormalOp, // assumed bootstrap is done
-	})
+	ctx.SetState(snow.NormalOp) // assumed bootstrapping is done
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
@@ -361,6 +353,7 @@ func TestHandlerSubnetConnector(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		resourceTracker,
 		connector,
 	)
@@ -383,10 +376,7 @@ func TestHandlerSubnetConnector(t *testing.T) {
 		return ctx
 	}
 	handler.SetConsensus(engine)
-	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.NormalOp, // assumed bootstrap is done
-	})
+	ctx.SetState(snow.NormalOp) // assumed bootstrapping is done
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil

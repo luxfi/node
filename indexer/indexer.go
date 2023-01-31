@@ -21,9 +21,9 @@ import (
 	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/snow/engine/avalanche"
 	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
+	"github.com/luxdefi/node/snow/engine/snowman"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/hashing"
 	"github.com/luxdefi/node/utils/json"
@@ -145,21 +145,22 @@ type indexer struct {
 	consensusAcceptorGroup snow.AcceptorGroup
 }
 
-// Assumes [ctx.Lock] is not held
-func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+// Assumes [engine]'s context lock is not held
+func (i *indexer) RegisterChain(name string, engine common.Engine) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
+	ctx := engine.Context()
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",
 			zap.String("reason", "indexer is closed"),
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 		)
 		return
 	} else if ctx.SubnetID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
 			zap.String("reason", "not in the primary network"),
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 		)
 		return
 	}
@@ -176,7 +177,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 	isIncomplete, err := i.isIncomplete(chainID)
 	if err != nil {
 		i.log.Error("couldn't get whether chain is incomplete",
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 			zap.Error(err),
 		)
 		if err := i.close(); err != nil {
@@ -191,7 +192,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 	previouslyIndexed, err := i.previouslyIndexed(chainID)
 	if err != nil {
 		i.log.Error("couldn't get whether chain was previously indexed",
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 			zap.Error(err),
 		)
 		if err := i.close(); err != nil {
@@ -207,7 +208,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 			// We indexed this chain in a previous run but not in this run.
 			// This would create an incomplete index, which is not allowed, so exit.
 			i.log.Fatal("running would cause index to become incomplete but incomplete indices are disabled",
-				zap.String("chainName", chainName),
+				zap.String("chainName", name),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
@@ -223,7 +224,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 			return
 		}
 		i.log.Fatal("couldn't mark chain as incomplete",
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 			zap.Error(err),
 		)
 		if err := i.close(); err != nil {
@@ -236,7 +237,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 
 	if !i.allowIncompleteIndex && isIncomplete && (previouslyIndexed || i.hasRunBefore) {
 		i.log.Fatal("index is incomplete but incomplete indices are disabled. Shutting down",
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
@@ -249,7 +250,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 	// Mark that in this run, this chain was indexed
 	if err := i.markPreviouslyIndexed(chainID); err != nil {
 		i.log.Error("couldn't mark chain as indexed",
-			zap.String("chainName", chainName),
+			zap.String("chainName", name),
 			zap.Error(err),
 		)
 		if err := i.close(); err != nil {
@@ -260,13 +261,27 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 		return
 	}
 
-	switch vm.(type) {
-	case vertex.DAGVM:
-		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.consensusAcceptorGroup)
+	switch engine.(type) {
+	case snowman.Engine:
+		index, err := i.registerChainHelper(chainID, blockPrefix, name, "block", i.consensusAcceptorGroup)
 		if err != nil {
-			i.log.Fatal("couldn't create index",
-				zap.String("chainName", chainName),
-				zap.String("endpoint", "vtx"),
+			i.log.Fatal("failed to create block index",
+				zap.String("chainName", name),
+				zap.Error(err),
+			)
+			if err := i.close(); err != nil {
+				i.log.Error("failed to close indexer",
+					zap.Error(err),
+				)
+			}
+			return
+		}
+		i.blockIndices[chainID] = index
+	case avalanche.Engine:
+		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, name, "vtx", i.consensusAcceptorGroup)
+		if err != nil {
+			i.log.Fatal("couldn't create vertex index",
+				zap.String("chainName", name),
 				zap.Error(err),
 			)
 			if err := i.close(); err != nil {
@@ -278,47 +293,31 @@ func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm
 		}
 		i.vtxIndices[chainID] = vtxIndex
 
-		txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.decisionAcceptorGroup)
+		txIndex, err := i.registerChainHelper(chainID, txPrefix, name, "tx", i.decisionAcceptorGroup)
 		if err != nil {
-			i.log.Fatal("couldn't create index",
-				zap.String("chainName", chainName),
-				zap.String("endpoint", "tx"),
+			i.log.Fatal("couldn't create tx index for",
+				zap.String("chainName", name),
 				zap.Error(err),
 			)
 			if err := i.close(); err != nil {
-				i.log.Error("failed to close indexer",
+				i.log.Error("failed to close indexer:",
 					zap.Error(err),
 				)
 			}
 			return
 		}
 		i.txIndices[chainID] = txIndex
-	case block.ChainVM:
-		index, err := i.registerChainHelper(chainID, blockPrefix, chainName, "block", i.consensusAcceptorGroup)
-		if err != nil {
-			i.log.Fatal("failed to create index",
-				zap.String("chainName", chainName),
-				zap.String("endpoint", "block"),
-				zap.Error(err),
-			)
-			if err := i.close(); err != nil {
-				i.log.Error("failed to close indexer",
-					zap.Error(err),
-				)
-			}
-			return
-		}
-		i.blockIndices[chainID] = index
 	default:
-		vmType := fmt.Sprintf("%T", vm)
-		i.log.Error("got unexpected vm type",
-			zap.String("vmType", vmType),
+		engineType := fmt.Sprintf("%T", engine)
+		i.log.Error("got unexpected engine type",
+			zap.String("engineType", engineType),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
 				zap.Error(err),
 			)
 		}
+		return
 	}
 }
 

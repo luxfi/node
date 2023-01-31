@@ -19,12 +19,16 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
 	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxdefi/node/snow/engine/snowman"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/logging"
+
+	aveng "github.com/luxdefi/node/snow/engine/avalanche"
+	smblockmocks "github.com/luxdefi/node/snow/engine/snowman/block/mocks"
 )
 
 var (
@@ -161,8 +165,12 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := mocks.NewMockChainVM(ctrl)
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	chainVM := smblockmocks.NewMockChainVM(ctrl)
+	chainEngine := snowman.NewMockEngine(ctrl)
+	chainEngine.EXPECT().Context().AnyTimes().Return(chain1Ctx)
+	chainEngine.EXPECT().GetVM().AnyTimes().Return(chainVM)
+
+	idxr.RegisterChain("chain1", chainEngine)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -247,7 +255,7 @@ func TestIndexer(t *testing.T) {
 	require.False(isIncomplete)
 
 	// Register the same chain as before
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	idxr.RegisterChain("chain1", chainEngine)
 	blkIdx = idxr.blockIndices[chain1Ctx.ChainID]
 	require.NotNil(blkIdx)
 	container, err = blkIdx.GetLastAccepted()
@@ -264,7 +272,10 @@ func TestIndexer(t *testing.T) {
 	require.NoError(err)
 	require.False(previouslyIndexed)
 	dagVM := vertex.NewMockDAGVM(ctrl)
-	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
+	dagEngine := aveng.NewMockEngine(ctrl)
+	dagEngine.EXPECT().Context().AnyTimes().Return(chain2Ctx)
+	dagEngine.EXPECT().GetVM().AnyTimes().Return(dagVM)
+	idxr.RegisterChain("chain2", dagEngine)
 	require.NoError(err)
 	server = config.APIServer.(*apiServerMock)
 	require.EqualValues(3, server.timesCalled) // block index, vtx index, tx index
@@ -279,11 +290,21 @@ func TestIndexer(t *testing.T) {
 	vtxID, vtxBytes := ids.GenerateTestID(), utils.RandomBytes(32)
 	expectedVtx := Container{
 		ID:        vtxID,
-		Bytes:     vtxBytes,
+		Bytes:     blkBytes,
 		Timestamp: now.UnixNano(),
 	}
+	// Mocked VM knows about this block now
+	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
+		&avalanche.TestVertex{
+			TestDecidable: choices.TestDecidable{
+				StatusV: choices.Accepted,
+				IDV:     vtxID,
+			},
+			BytesV: vtxBytes,
+		}, nil,
+	).AnyTimes()
 
-	require.NoError(config.ConsensusAcceptorGroup.Accept(chain2Ctx, vtxID, vtxBytes))
+	require.NoError(config.ConsensusAcceptorGroup.Accept(chain2Ctx, vtxID, blkBytes))
 
 	vtxIdx := idxr.vtxIndices[chain2Ctx.ChainID]
 	require.NotNil(vtxIdx)
@@ -385,8 +406,8 @@ func TestIndexer(t *testing.T) {
 	require.NoError(err)
 	idxr, ok = idxrIntf.(*indexer)
 	require.True(ok)
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
-	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
+	idxr.RegisterChain("chain1", chainEngine)
+	idxr.RegisterChain("chain2", dagEngine)
 
 	// Verify state
 	lastAcceptedTx, err = idxr.txIndices[chain2Ctx.ChainID].GetLastAccepted()
@@ -433,8 +454,9 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := mocks.NewMockChainVM(ctrl)
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	chainEngine := snowman.NewMockEngine(ctrl)
+	chainEngine.EXPECT().Context().AnyTimes().Return(chain1Ctx)
+	idxr.RegisterChain("chain1", chainEngine)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.True(isIncomplete)
@@ -453,7 +475,7 @@ func TestIncompleteIndex(t *testing.T) {
 
 	// Register the chain again. Should die due to incomplete index.
 	require.NoError(config.DB.(*versiondb.Database).Commit())
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	idxr.RegisterChain("chain1", chainEngine)
 	require.True(idxr.closed)
 
 	// Close and re-open the indexer, this time with indexing enabled
@@ -468,7 +490,7 @@ func TestIncompleteIndex(t *testing.T) {
 	require.True(idxr.allowIncompleteIndex)
 
 	// Register the chain again. Should be OK
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	idxr.RegisterChain("chain1", chainEngine)
 	require.False(idxr.closed)
 
 	// Close the indexer and re-open with indexing disabled and
@@ -514,7 +536,10 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	chain1Ctx.SubnetID = ids.GenerateTestID()
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := mocks.NewMockChainVM(ctrl)
-	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	chainVM := smblockmocks.NewMockChainVM(ctrl)
+	chainEngine := snowman.NewMockEngine(ctrl)
+	chainEngine.EXPECT().Context().AnyTimes().Return(chain1Ctx)
+	chainEngine.EXPECT().GetVM().AnyTimes().Return(chainVM)
+	idxr.RegisterChain("chain1", chainEngine)
 	require.Len(idxr.blockIndices, 0)
 }

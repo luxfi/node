@@ -36,9 +36,7 @@ import (
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/timer"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/avm/blocks"
 	"github.com/luxdefi/node/vms/avm/states"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/components/avax"
@@ -83,7 +81,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	parser blocks.Parser
+	parser txs.Parser
 
 	pubsub *pubsub.Server
 
@@ -97,7 +95,7 @@ type VM struct {
 	feeAssetID ids.ID
 
 	// Asset ID --> Bit set with fx IDs the asset supports
-	assetToFxCache *cache.LRU[ids.ID, set.Bits64]
+	assetToFxCache *cache.LRU
 
 	// Transaction issuing
 	timer        *timer.Timer
@@ -115,7 +113,7 @@ type VM struct {
 
 	addressTxsIndexer index.AddressTxsIndexer
 
-	uniqueTxs cache.Deduplicator[ids.ID, *UniqueTx]
+	uniqueTxs cache.Deduplicator
 }
 
 func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
@@ -175,7 +173,7 @@ func (vm *VM) Initialize(
 	vm.toEngine = toEngine
 	vm.baseDB = db
 	vm.db = versiondb.New(db)
-	vm.assetToFxCache = &cache.LRU[ids.ID, set.Bits64]{Size: assetToFxCacheSize}
+	vm.assetToFxCache = &cache.LRU{Size: assetToFxCacheSize}
 
 	vm.pubsub = pubsub.New(ctx.Log)
 
@@ -197,7 +195,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.typeToFxIndex = map[reflect.Type]int{}
-	vm.parser, err = blocks.NewCustomParser(
+	vm.parser, err = txs.NewCustomParser(
 		vm.typeToFxIndex,
 		&vm.clock,
 		ctx.Log,
@@ -229,7 +227,7 @@ func (vm *VM) Initialize(
 	go ctx.Log.RecoverAndPanic(vm.timer.Dispatch)
 	vm.batchTimeout = batchTimeout
 
-	vm.uniqueTxs = &cache.EvictableLRU[ids.ID, *UniqueTx]{
+	vm.uniqueTxs = &cache.EvictableLRU{
 		Size: txDeduplicatorSize,
 	}
 	vm.walletService.vm = vm
@@ -250,7 +248,7 @@ func (vm *VM) Initialize(
 			return fmt.Errorf("failed to initialize disabled indexer: %w", err)
 		}
 	}
-	return vm.state.Commit()
+	return vm.db.Commit()
 }
 
 // onBootstrapStarted is called by the consensus engine when it starts bootstrapping this chain
@@ -295,12 +293,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.timer.Stop()
 	vm.ctx.Lock.Lock()
 
-	errs := wrappers.Errs{}
-	errs.Add(
-		vm.state.Close(),
-		vm.baseDB.Close(),
-	)
-	return errs.Err
+	return vm.baseDB.Close()
 }
 
 func (*VM) Version(context.Context) (string, error) {
@@ -380,9 +373,8 @@ func (*VM) LastAccepted(context.Context) (ids.ID, error) {
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID) error {
-	time := version.GetXChainMigrationTime(vm.ctx.NetworkID)
-	return vm.state.InitializeChainState(stopVertexID, time)
+func (*VM) Linearize(context.Context, ids.ID) error {
+	return errUnimplemented
 }
 
 func (vm *VM) PendingTxs(context.Context) []snowstorm.Tx {
@@ -486,10 +478,10 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 			return errGenesisAssetMustHaveState
 		}
 
-		tx := &txs.Tx{
+		tx := txs.Tx{
 			Unsigned: &genesisTx.CreateAssetTx,
 		}
-		if err := vm.parser.InitializeGenesisTx(tx); err != nil {
+		if err := vm.parser.InitializeGenesisTx(&tx); err != nil {
 			return err
 		}
 
@@ -499,7 +491,9 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		}
 
 		if !stateInitialized {
-			vm.initState(tx)
+			if err := vm.initState(tx); err != nil {
+				return err
+			}
 		}
 		if index == 0 {
 			vm.ctx.Log.Info("fee asset is established",
@@ -517,16 +511,23 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 	return nil
 }
 
-func (vm *VM) initState(tx *txs.Tx) {
+func (vm *VM) initState(tx txs.Tx) error {
 	txID := tx.ID()
 	vm.ctx.Log.Info("initializing genesis asset",
 		zap.Stringer("txID", txID),
 	)
-	vm.state.AddTx(tx)
-	vm.state.AddStatus(txID, choices.Accepted)
-	for _, utxo := range tx.UTXOs() {
-		vm.state.AddUTXO(utxo)
+	if err := vm.state.PutTx(txID, &tx); err != nil {
+		return err
 	}
+	if err := vm.state.PutStatus(txID, choices.Accepted); err != nil {
+		return err
+	}
+	for _, utxo := range tx.UTXOs() {
+		if err := vm.state.PutUTXO(utxo); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (vm *VM) parseTx(bytes []byte) (*UniqueTx, error) {
@@ -547,9 +548,13 @@ func (vm *VM) parseTx(bytes []byte) (*UniqueTx, error) {
 	}
 
 	if tx.Status() == choices.Unknown {
-		vm.state.AddTx(tx.Tx)
-		tx.setStatus(choices.Processing)
-		return tx, vm.state.Commit()
+		if err := vm.state.PutTx(tx.ID(), tx.Tx); err != nil {
+			return nil, err
+		}
+		if err := tx.setStatus(choices.Processing); err != nil {
+			return nil, err
+		}
+		return tx, vm.db.Commit()
 	}
 
 	return tx, nil
@@ -602,8 +607,9 @@ func (vm *VM) getFx(val interface{}) (int, error) {
 
 func (vm *VM) verifyFxUsage(fxID int, assetID ids.ID) bool {
 	// Check cache to see whether this asset supports this fx
-	if fxIDs, ok := vm.assetToFxCache.Get(assetID); ok {
-		return fxIDs.Contains(uint(fxID))
+	fxIDsIntf, assetInCache := vm.assetToFxCache.Get(assetID)
+	if assetInCache {
+		return fxIDsIntf.(set.Bits64).Contains(uint(fxID))
 	}
 	// Caches doesn't say whether this asset support this fx.
 	// Get the tx that created the asset and check.
@@ -1115,5 +1121,5 @@ func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
 
 // UniqueTx de-duplicates the transaction.
 func (vm *VM) DeduplicateTx(tx *UniqueTx) *UniqueTx {
-	return vm.uniqueTxs.Deduplicate(tx)
+	return vm.uniqueTxs.Deduplicate(tx).(*UniqueTx)
 }

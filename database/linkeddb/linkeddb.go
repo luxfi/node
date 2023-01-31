@@ -45,7 +45,7 @@ type linkedDB struct {
 	headKeyIsSynced, headKeyExists, headKeyIsUpdated, updatedHeadKeyExists bool
 	headKey, updatedHeadKey                                                []byte
 	// these variables provide caching for the nodes.
-	nodeCache    cache.Cacher[string, *node] // key -> *node
+	nodeCache    cache.Cacher // key -> *node
 	updatedNodes map[string]*node
 
 	// db is the underlying database that this list is stored in.
@@ -64,7 +64,7 @@ type node struct {
 
 func New(db database.Database, cacheSize int) LinkedDB {
 	return &linkedDB{
-		nodeCache:    &cache.LRU[string, *node]{Size: cacheSize},
+		nodeCache:    &cache.LRU{Size: cacheSize},
 		updatedNodes: make(map[string]*node),
 		db:           db,
 		batch:        db.NewBatch(),
@@ -300,7 +300,8 @@ func (ldb *linkedDB) getNode(key []byte) (node, error) {
 	defer ldb.cacheLock.Unlock()
 
 	keyStr := string(key)
-	if n, exists := ldb.nodeCache.Get(keyStr); exists {
+	if nodeIntf, exists := ldb.nodeCache.Get(keyStr); exists {
+		n := nodeIntf.(*node)
 		if n == nil {
 			return node{}, database.ErrNotFound
 		}
@@ -309,7 +310,9 @@ func (ldb *linkedDB) getNode(key []byte) (node, error) {
 
 	nodeBytes, err := ldb.db.Get(nodeKey(key))
 	if err == database.ErrNotFound {
-		ldb.nodeCache.Put(keyStr, nil)
+		// Passing [nil] without the pointer cast would result in a panic when
+		// performing the type assertion in the above cache check.
+		ldb.nodeCache.Put(keyStr, (*node)(nil))
 		return node{}, err
 	}
 	if err != nil {

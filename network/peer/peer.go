@@ -137,14 +137,14 @@ type peer struct {
 	// True if this peer has sent us a valid Version message and
 	// is running a compatible version.
 	// Only modified on the connection's reader routine.
-	gotVersion utils.Atomic[bool]
+	gotVersion utils.AtomicBool
 
 	// True if the peer:
 	// * Has sent us a Version message
 	// * Has sent us a PeerList message
 	// * Is running a compatible version
 	// Only modified on the connection's reader routine.
-	finishedHandshake utils.Atomic[bool]
+	finishedHandshake utils.AtomicBool
 
 	// onFinishHandshake is closed when the peer finishes the p2p handshake.
 	onFinishHandshake chan struct{}
@@ -226,7 +226,7 @@ func (p *peer) LastReceived() time.Time {
 }
 
 func (p *peer) Ready() bool {
-	return p.finishedHandshake.Get()
+	return p.finishedHandshake.GetValue()
 }
 
 func (p *peer) AwaitReady(ctx context.Context) error {
@@ -638,7 +638,7 @@ func (p *peer) sendNetworkMessages() {
 				return
 			}
 
-			if p.finishedHandshake.Get() {
+			if p.finishedHandshake.GetValue() {
 				if err := p.VersionCompatibility.Compatible(p.version); err != nil {
 					p.Log.Debug("disconnecting from peer",
 						zap.String("reason", "version not compatible"),
@@ -689,7 +689,7 @@ func (p *peer) handle(msg message.InboundMessage) {
 		msg.OnFinishedHandling()
 		return
 	}
-	if !p.finishedHandshake.Get() {
+	if !p.finishedHandshake.GetValue() {
 		p.Log.Debug(
 			"dropping message",
 			zap.String("reason", "handshake isn't finished"),
@@ -794,7 +794,7 @@ func (p *peer) observeUptime(subnetID ids.ID, uptime uint32) {
 }
 
 func (p *peer) handleVersion(msg *p2p.Version) {
-	if p.gotVersion.Get() {
+	if p.gotVersion.GetValue() {
 		// TODO: this should never happen, should we close the connection here?
 		p.Log.Verbo("dropping duplicated version message",
 			zap.Stringer("nodeID", p.id),
@@ -926,7 +926,7 @@ func (p *peer) handleVersion(msg *p2p.Version) {
 		return
 	}
 
-	p.gotVersion.Set(true)
+	p.gotVersion.SetValue(true)
 
 	peerIPs, err := p.Network.Peers(p.id)
 	if err != nil {
@@ -957,13 +957,13 @@ func (p *peer) handleVersion(msg *p2p.Version) {
 }
 
 func (p *peer) handlePeerList(msg *p2p.PeerList) {
-	if !p.finishedHandshake.Get() {
-		if !p.gotVersion.Get() {
+	if !p.finishedHandshake.GetValue() {
+		if !p.gotVersion.GetValue() {
 			return
 		}
 
 		p.Network.Connected(p.id)
-		p.finishedHandshake.Set(true)
+		p.finishedHandshake.SetValue(true)
 		close(p.onFinishHandshake)
 	}
 

@@ -66,6 +66,7 @@ var (
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
 
+	errWrongCacheType      = errors.New("unexpectedly cached type")
 	errMissingValidatorSet = errors.New("missing validator set")
 	errMissingValidator    = errors.New("missing validator")
 )
@@ -92,12 +93,12 @@ type VM struct {
 	codecRegistry codec.Registry
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
-	bootstrapped utils.Atomic[bool]
+	bootstrapped utils.AtomicBool
 
 	// Maps caches for each subnet that is currently tracked.
 	// Key: Subnet ID
 	// Value: cache mapping height -> validator set map
-	validatorSetCaches map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput]
+	validatorSetCaches map[ids.ID]cache.Cacher
 
 	// sliding window of blocks that were recently accepted
 	recentlyAccepted window.Window[ids.ID]
@@ -143,7 +144,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.validatorSetCaches = make(map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput])
+	vm.validatorSetCaches = make(map[ids.ID]cache.Cacher)
 	vm.recentlyAccepted = window.New[ids.ID](
 		window.Config{
 			Clock:   &vm.clock,
@@ -274,16 +275,16 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 
 // onBootstrapStarted marks this VM as bootstrapping
 func (vm *VM) onBootstrapStarted() error {
-	vm.bootstrapped.Set(false)
+	vm.bootstrapped.SetValue(false)
 	return vm.fx.Bootstrapping()
 }
 
 // onNormalOperationsStarted marks this VM as bootstrapped
 func (vm *VM) onNormalOperationsStarted() error {
-	if vm.bootstrapped.Get() {
+	if vm.bootstrapped.GetValue() {
 		return nil
 	}
-	vm.bootstrapped.Set(true)
+	vm.bootstrapped.SetValue(true)
 
 	if err := vm.fx.Bootstrapped(); err != nil {
 		return err
@@ -335,7 +336,7 @@ func (vm *VM) Shutdown(context.Context) error {
 
 	vm.Builder.Shutdown()
 
-	if vm.bootstrapped.Get() {
+	if vm.bootstrapped.GetValue() {
 		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 		if !exists {
 			return errMissingValidatorSet
@@ -424,9 +425,6 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 		&Service{
 			vm:          vm,
 			addrManager: avax.NewAddressManager(vm.ctx),
-			stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
-				Size: stakerAttributesCacheSize,
-			},
 		},
 		"platform",
 	); err != nil {
@@ -479,14 +477,18 @@ func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
 	if !exists {
-		validatorSetsCache = &cache.LRU[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{Size: validatorSetsCacheSize}
+		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
 		// Only cache tracked subnets
 		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
 			vm.validatorSetCaches[subnetID] = validatorSetsCache
 		}
 	}
 
-	if validatorSet, ok := validatorSetsCache.Get(height); ok {
+	if validatorSetIntf, ok := validatorSetsCache.Get(height); ok {
+		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.GetValidatorOutput)
+		if !ok {
+			return nil, errWrongCacheType
+		}
 		vm.metrics.IncValidatorSetsCached()
 		return validatorSet, nil
 	}

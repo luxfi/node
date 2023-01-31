@@ -111,7 +111,7 @@ type environment struct {
 	mempool    mempool.Mempool
 	sender     *common.SenderTest
 
-	isBootstrapped *utils.Atomic[bool]
+	isBootstrapped *utils.AtomicBool
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
@@ -132,16 +132,16 @@ func (*environment) ResetBlockTimer() {
 
 func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 	res := &environment{
-		isBootstrapped: &utils.Atomic[bool]{},
+		isBootstrapped: &utils.AtomicBool{},
 		config:         defaultConfig(),
 		clk:            defaultClock(),
 	}
-	res.isBootstrapped.Set(true)
+	res.isBootstrapped.SetValue(true)
 
 	baseDBManager := db_manager.NewMemDB(version.Semantic1_0_0)
 	res.baseDB = versiondb.New(baseDBManager.Current().Database)
 	res.ctx = defaultCtx(res.baseDB)
-	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
+	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.GetValue())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 	res.atomicUTXOs = avax.NewAtomicUTXOManager(res.ctx.SharedMemory, txs.Codec)
@@ -472,7 +472,7 @@ func shutdownEnvironment(t *environment) error {
 		return nil
 	}
 
-	if t.isBootstrapped.Get() {
+	if t.isBootstrapped.GetValue() {
 		primaryValidatorSet, exist := t.config.Validators.Get(constants.PrimaryNetworkID)
 		if !exist {
 			return errMissingPrimaryValidators

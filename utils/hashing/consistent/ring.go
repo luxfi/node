@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	_ Ring                     = (*hashRing)(nil)
-	_ btree.LessFunc[ringItem] = ringItem.Less
+	_ Ring       = (*hashRing)(nil)
+	_ btree.Item = (*ringItem)(nil)
 
 	errEmptyRing = errors.New("ring doesn't have any members")
 )
@@ -154,7 +154,7 @@ type hashRing struct {
 	virtualNodes int
 
 	lock sync.RWMutex
-	ring *btree.BTreeG[ringItem]
+	ring *btree.BTree
 }
 
 // RingConfig configures settings for a Ring.
@@ -172,7 +172,7 @@ func NewHashRing(config RingConfig) Ring {
 	return &hashRing{
 		hasher:       config.Hasher,
 		virtualNodes: config.VirtualNodes,
-		ring:         btree.NewG(config.Degree, ringItem.Less),
+		ring:         btree.New(config.Degree),
 	}
 }
 
@@ -200,7 +200,8 @@ func (h *hashRing) get(key Hashable) (Hashable, error) {
 			hash:  hash,
 			value: key,
 		},
-		func(item ringItem) bool {
+		func(itemIntf btree.Item) bool {
+			item := itemIntf.(ringItem)
 			if hash < item.hash {
 				result = item.value
 				return false
@@ -212,8 +213,7 @@ func (h *hashRing) get(key Hashable) (Hashable, error) {
 	// If found nothing ascending the tree, we need to wrap around the ring to
 	// the left-most (min) node.
 	if result == nil {
-		min, _ := h.ring.Min()
-		result = min.value
+		result = h.ring.Min().(ringItem).value
 	}
 	return result, nil
 }
@@ -260,7 +260,9 @@ func (h *hashRing) remove(key Hashable) bool {
 		item := ringItem{
 			hash: virtualNodeHash,
 		}
-		_, removed = h.ring.Delete(item)
+		if h.ring.Delete(item) != nil {
+			removed = true
+		}
 	}
 	return removed
 }
@@ -276,6 +278,6 @@ type ringItem struct {
 	value Hashable
 }
 
-func (r ringItem) Less(than ringItem) bool {
-	return r.hash < than.hash
+func (r ringItem) Less(than btree.Item) bool {
+	return r.hash < than.(ringItem).hash
 }

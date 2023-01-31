@@ -63,18 +63,18 @@ type heightIndexer struct {
 	server BlockServer
 	log    logging.Logger
 
-	jobDone utils.Atomic[bool]
+	jobDone utils.AtomicBool
 	state   state.State
 
 	commitFrequency int
 }
 
 func (hi *heightIndexer) IsRepaired() bool {
-	return hi.jobDone.Get()
+	return hi.jobDone.GetValue()
 }
 
 func (hi *heightIndexer) MarkRepaired(repaired bool) {
-	hi.jobDone.Set(repaired)
+	hi.jobDone.SetValue(repaired)
 }
 
 // RepairHeightIndex ensures the height -> proBlkID height block index is well formed.

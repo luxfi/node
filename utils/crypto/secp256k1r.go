@@ -56,9 +56,7 @@ var (
 	_ PrivateKey         = (*PrivateKeySECP256K1R)(nil)
 )
 
-type FactorySECP256K1R struct {
-	Cache cache.LRU[ids.ID, *PublicKeySECP256K1R]
-}
+type FactorySECP256K1R struct{ Cache cache.LRU }
 
 func (*FactorySECP256K1R) NewPrivateKey() (PrivateKey, error) {
 	k, err := secp256k1.GeneratePrivateKey()
@@ -93,7 +91,7 @@ func (f *FactorySECP256K1R) RecoverHashPublicKey(hash, sig []byte) (PublicKey, e
 	copy(cacheBytes[len(hash):], sig)
 	id := hashing.ComputeHash256Array(cacheBytes)
 	if cachedPublicKey, ok := f.Cache.Get(id); ok {
-		return cachedPublicKey, nil
+		return cachedPublicKey.(*PublicKeySECP256K1R), nil
 	}
 
 	if err := verifySECP256K1RSignatureFormat(sig); err != nil {

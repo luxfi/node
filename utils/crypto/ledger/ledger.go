@@ -6,7 +6,7 @@ package ledger
 import (
 	"fmt"
 
-	ledger "github.com/luxdefi/ledger-avalanche/go"
+	ledger "github.com/luxdefi/ledger/go"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/crypto/keychain"

@@ -350,9 +350,6 @@ func getNetworkConfig(v *viper.Viper, stakingEnabled bool, halflife time.Duratio
 			SendFailRateHalflife:         halflife,
 		},
 
-		ProxyEnabled:           v.GetBool(NetworkTCPProxyEnabledKey),
-		ProxyReadHeaderTimeout: v.GetDuration(NetworkTCPProxyReadTimeoutKey),
-
 		DialerConfig: dialer.Config{
 			ThrottleRps:       v.GetUint32(OutboundConnectionThrottlingRpsKey),
 			ConnectionTimeout: v.GetDuration(OutboundConnectionTimeoutKey),

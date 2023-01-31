@@ -14,7 +14,7 @@ import (
 	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
-var _ btree.LessFunc[*Staker] = (*Staker).Less
+var _ btree.Item = (*Staker)(nil)
 
 // StakerIterator defines an interface for iterating over a set of stakers.
 type StakerIterator interface {
@@ -33,7 +33,6 @@ type StakerIterator interface {
 
 // Staker contains all information required to represent a validator or
 // delegator in the current and pending validator sets.
-// Invariant: Staker's size is bounded to prevent OOM DoS attacks.
 type Staker struct {
 	TxID            ids.ID
 	NodeID          ids.NodeID
@@ -64,7 +63,11 @@ type Staker struct {
 //     lesser one.
 //  3. If the priorities are also the same, the one with the lesser txID is
 //     lesser.
-func (s *Staker) Less(than *Staker) bool {
+//
+// Invariant: [thanIntf] is a *Staker.
+func (s *Staker) Less(thanIntf btree.Item) bool {
+	than := thanIntf.(*Staker)
+
 	if s.NextTime.Before(than.NextTime) {
 		return true
 	}
