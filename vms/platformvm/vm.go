@@ -66,9 +66,15 @@ var (
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
 
+<<<<<<< HEAD
 	errWrongCacheType      = errors.New("unexpectedly cached type")
 	errMissingValidatorSet = errors.New("missing validator set")
 	errMissingValidator    = errors.New("missing validator")
+=======
+	errWrongCacheType        = errors.New("unexpectedly cached type")
+	errMissingValidatorSet   = errors.New("missing validator set")
+	errDuplicateValidatorSet = errors.New("duplicate validator set")
+>>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
 )
 
 type VM struct {
@@ -216,6 +222,13 @@ func (vm *VM) Initialize(
 		appSender,
 	)
 
+<<<<<<< HEAD
+=======
+	if err := vm.initValidators(); err != nil {
+		return fmt.Errorf("failed to initialize validator sets: %w", err)
+	}
+
+>>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
 	// Create all of the chains that the database says exist
 	if err := vm.initBlockchains(); err != nil {
 		return fmt.Errorf(
@@ -744,8 +757,38 @@ func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
 	return lastAccepted.Height(), nil
 }
 
+<<<<<<< HEAD
 func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
+=======
+func (vm *VM) initValidators() error {
+	newPrimaryValidators, err := vm.state.ValidatorSet(constants.PrimaryNetworkID)
+	if err != nil {
+		return err
+	}
+	primaryValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
+	if !ok {
+		return errMissingValidatorSet
+	}
+	if err := primaryValidators.Set(newPrimaryValidators.List()); err != nil {
+		return err
+	}
+
+	weight, _ := primaryValidators.GetWeight(vm.ctx.NodeID)
+	vm.metrics.SetLocalStake(weight)
+	vm.metrics.SetTotalStake(primaryValidators.Weight())
+
+	for subnetID := range vm.WhitelistedSubnets {
+		subnetValidators, err := vm.state.ValidatorSet(subnetID)
+		if err != nil {
+			return err
+		}
+		if !vm.Validators.Add(subnetID, subnetValidators) {
+			return fmt.Errorf("%w: %s", errDuplicateValidatorSet, subnetID)
+		}
+	}
+	return nil
+>>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
 }
 
 <<<<<<< HEAD
