@@ -299,8 +299,12 @@ func (b *bootstrapper) Startup(ctx context.Context) error {
 <<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !b.sampledBeacons.Contains(nodeID) {
+<<<<<<< HEAD
 			// Invariant: We never use the TxID or BLS keys populated here.
 			err = b.sampledBeacons.Add(nodeID, nil, ids.Empty, 1)
+=======
+			err = b.sampledBeacons.Add(nodeID, nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 		} else {
 			err = b.sampledBeacons.AddWeight(nodeID, 1)
 		}

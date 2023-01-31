@@ -25,6 +25,7 @@ import (
 
 	coreth "github.com/luxdefi/coreth/plugin/evm"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/admin"
 	"github.com/luxdefi/luxd/api/auth"
 	"github.com/luxdefi/luxd/api/health"
@@ -79,6 +80,63 @@ import (
 	"github.com/luxdefi/luxd/vms/propertyfx"
 	"github.com/luxdefi/luxd/vms/registry"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
+=======
+	"github.com/ava-labs/avalanchego/api/admin"
+	"github.com/ava-labs/avalanchego/api/auth"
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/api/info"
+	"github.com/ava-labs/avalanchego/api/keystore"
+	"github.com/ava-labs/avalanchego/api/metrics"
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/leveldb"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/indexer"
+	"github.com/ava-labs/avalanchego/ipcs"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/network/dialer"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/timeout"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/filesystem"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/math/meter"
+	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/ava-labs/avalanchego/utils/profiler"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/platformvm"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/registry"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 
 	ipcsapi "github.com/luxdefi/luxd/api/ipcs"
 )
@@ -252,9 +310,15 @@ func (n *Node) initNetworking(primaryNetVdrs validators.Set) error {
 
 	consensusRouter := n.Config.ConsensusRouter
 	if !n.Config.EnableStaking {
-		if err := primaryNetVdrs.Add(n.ID, n.Config.DisabledStakingWeight); err != nil {
+		err := primaryNetVdrs.Add(
+			n.ID,
+			bls.PublicFromSecretKey(n.Config.StakingSigningKey),
+			n.Config.DisabledStakingWeight,
+		)
+		if err != nil {
 			return err
 		}
+
 		consensusRouter = &insecureValidatorManager{
 			Router: consensusRouter,
 			vdrs:   primaryNetVdrs,
@@ -327,7 +391,7 @@ type insecureValidatorManager struct {
 
 func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *version.Application, subnetID ids.ID) {
 	if constants.PrimaryNetworkID == subnetID {
-		_ = i.vdrs.Add(vdrID, i.weight)
+		_ = i.vdrs.Add(vdrID, nil, i.weight)
 	}
 	i.Router.Connected(vdrID, nodeVersion, subnetID)
 }
@@ -507,7 +571,7 @@ func (n *Node) initDatabase() error {
 func (n *Node) initBeacons() error {
 	n.beacons = validators.NewSet()
 	for _, peerID := range n.Config.BootstrapIDs {
-		if err := n.beacons.Add(peerID, 1); err != nil {
+		if err := n.beacons.Add(peerID, nil, 1); err != nil {
 			return err
 		}
 	}

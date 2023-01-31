@@ -12,7 +12,10 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/ava-labs/avalanchego/ids"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils"
+=======
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 )
 
@@ -160,14 +163,19 @@ func (m *manager) String() string {
 // - [subnetID] does not have a registered validator set in [m]
 // - adding [nodeID] to the validator set returns an error
 <<<<<<< HEAD
+<<<<<<< HEAD
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 =======
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	vdrs, ok := m.Get(subnetID)
 	if !ok {
 		return fmt.Errorf("%w: %s", errMissingValidators, subnetID)
 	}
+<<<<<<< HEAD
 <<<<<<< HEAD
 	return vdrs.Add(nodeID, pk, txID, weight)
 }
@@ -176,6 +184,9 @@ func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 =======
 	return vdrs.Add(nodeID, weight)
+=======
+	return vdrs.Add(nodeID, pk, weight)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 }
 
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))

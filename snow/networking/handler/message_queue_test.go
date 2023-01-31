@@ -33,12 +33,17 @@ func TestQueue(t *testing.T) {
 	vdrs := validators.NewSet()
 	vdr1ID, vdr2ID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
 =======
 	require.NoError(vdrs.Add(vdr1ID, 1))
 	require.NoError(vdrs.Add(vdr2ID, 1))
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.NoError(vdrs.Add(vdr1ID, nil, 1))
+	require.NoError(vdrs.Add(vdr2ID, nil, 1))
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	mIntf, err := NewMessageQueue(logging.NoLog{}, vdrs, cpuTracker, "", prometheus.NewRegistry(), message.SynchronousOps)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)

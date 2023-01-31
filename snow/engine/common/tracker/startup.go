@@ -36,11 +36,19 @@ func NewStartup(peers Peers, startupWeight uint64) Startup {
 	}
 }
 
+<<<<<<< HEAD
 func (s *startup) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	s.Peers.OnValidatorAdded(nodeID, pk, txID, weight)
+=======
+func (s *startup) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.Peers.OnValidatorAdded(nodeID, pk, weight)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	s.shouldStart = s.shouldStart || s.Peers.ConnectedWeight() >= s.startupWeight
 }
 

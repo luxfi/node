@@ -31,6 +31,7 @@ func TestBenchlistAdd(t *testing.T) {
 	errs := wrappers.Errs{}
 	errs.Add(
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vdrs.Add(vdrID0, nil, ids.Empty, 50),
 		vdrs.Add(vdrID1, nil, ids.Empty, 50),
 		vdrs.Add(vdrID2, nil, ids.Empty, 50),
@@ -43,6 +44,13 @@ func TestBenchlistAdd(t *testing.T) {
 		vdrs.Add(vdrID3, 50),
 		vdrs.Add(vdrID4, 50),
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		vdrs.Add(vdrID0, nil, 50),
+		vdrs.Add(vdrID1, nil, 50),
+		vdrs.Add(vdrID2, nil, 50),
+		vdrs.Add(vdrID3, nil, 50),
+		vdrs.Add(vdrID4, nil, 50),
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -179,6 +187,7 @@ func TestBenchlistMaxStake(t *testing.T) {
 	errs := wrappers.Errs{}
 	errs.Add(
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vdrs.Add(vdrID0, nil, ids.Empty, 1000),
 		vdrs.Add(vdrID1, nil, ids.Empty, 1000),
 		vdrs.Add(vdrID2, nil, ids.Empty, 1000),
@@ -191,6 +200,13 @@ func TestBenchlistMaxStake(t *testing.T) {
 		vdrs.Add(vdrID3, 2000),
 		vdrs.Add(vdrID4, 100),
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		vdrs.Add(vdrID0, nil, 1000),
+		vdrs.Add(vdrID1, nil, 1000),
+		vdrs.Add(vdrID2, nil, 1000),
+		vdrs.Add(vdrID3, nil, 2000),
+		vdrs.Add(vdrID4, nil, 100),
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -319,6 +335,7 @@ func TestBenchlistRemove(t *testing.T) {
 	errs := wrappers.Errs{}
 	errs.Add(
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vdrs.Add(vdrID0, nil, ids.Empty, 1000),
 		vdrs.Add(vdrID1, nil, ids.Empty, 1000),
 		vdrs.Add(vdrID2, nil, ids.Empty, 1000),
@@ -331,6 +348,13 @@ func TestBenchlistRemove(t *testing.T) {
 		vdrs.Add(vdrID3, 1000),
 		vdrs.Add(vdrID4, 1000),
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		vdrs.Add(vdrID0, nil, 1000),
+		vdrs.Add(vdrID1, nil, 1000),
+		vdrs.Add(vdrID2, nil, 1000),
+		vdrs.Add(vdrID3, nil, 1000),
+		vdrs.Add(vdrID4, nil, 1000),
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
