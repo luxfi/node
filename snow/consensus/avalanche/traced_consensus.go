@@ -13,9 +13,13 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/trace"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 23402731f (Add consensus tracers (#2237))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 
 var _ Consensus = (*tracedConsensus)(nil)
@@ -43,10 +47,14 @@ func (c *tracedConsensus) Add(ctx context.Context, vtx Vertex) error {
 
 func (c *tracedConsensus) RecordPoll(ctx context.Context, votes ids.UniqueBag) error {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	var allVotes set.Bits64
 =======
 	var allVotes ids.BitSet64
 >>>>>>> 23402731f (Add consensus tracers (#2237))
+=======
+	var allVotes set.Bits64
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 	for _, vote := range votes {
 		allVotes.Union(vote)
 	}

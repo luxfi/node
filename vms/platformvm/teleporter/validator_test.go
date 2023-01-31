@@ -16,9 +16,13 @@ import (
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 
 func TestGetCanonicalValidatorSet(t *testing.T) {
@@ -192,10 +196,14 @@ func TestFilterValidators(t *testing.T) {
 	type test struct {
 		name         string
 <<<<<<< HEAD
+<<<<<<< HEAD
 		indices      set.Bits
 =======
 		indices      ids.BigBitSet
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+		indices      set.Bits
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		vdrs         []*Validator
 		expectedVdrs []*Validator
 		expectedErr  error
@@ -205,10 +213,14 @@ func TestFilterValidators(t *testing.T) {
 		{
 			name:         "empty",
 <<<<<<< HEAD
+<<<<<<< HEAD
 			indices:      set.NewBits(),
 =======
 			indices:      ids.NewBigBitSet(),
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			indices:      set.NewBits(),
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs:         []*Validator{},
 			expectedVdrs: []*Validator{},
 			expectedErr:  nil,
@@ -216,20 +228,28 @@ func TestFilterValidators(t *testing.T) {
 		{
 			name:        "unknown validator",
 <<<<<<< HEAD
+<<<<<<< HEAD
 			indices:     set.NewBits(2),
 =======
 			indices:     ids.NewBigBitSet(2),
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			indices:     set.NewBits(2),
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs:        []*Validator{vdr0, vdr1},
 			expectedErr: ErrUnknownValidator,
 		},
 		{
 			name:    "two filtered out",
 <<<<<<< HEAD
+<<<<<<< HEAD
 			indices: set.NewBits(),
 =======
 			indices: ids.NewBigBitSet(),
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			indices: set.NewBits(),
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,
@@ -240,10 +260,14 @@ func TestFilterValidators(t *testing.T) {
 		{
 			name:    "one filtered out",
 <<<<<<< HEAD
+<<<<<<< HEAD
 			indices: set.NewBits(1),
 =======
 			indices: ids.NewBigBitSet(1),
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			indices: set.NewBits(1),
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,
@@ -256,10 +280,14 @@ func TestFilterValidators(t *testing.T) {
 		{
 			name:    "none filtered out",
 <<<<<<< HEAD
+<<<<<<< HEAD
 			indices: set.NewBits(0, 1),
 =======
 			indices: ids.NewBigBitSet(0, 1),
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			indices: set.NewBits(0, 1),
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,

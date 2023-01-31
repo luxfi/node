@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/big"
 
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/set"
@@ -52,8 +53,11 @@ type BitSetSignature struct {
 	"math/big"
 
 	"github.com/ava-labs/avalanchego/ids"
+=======
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var (
@@ -115,10 +119,14 @@ func (s *BitSetSignature) Verify(
 
 	// Parse signer bit vector
 <<<<<<< HEAD
+<<<<<<< HEAD
 	signerIndices := set.BitsFromBytes(s.Signers)
 =======
 	signerIndices := ids.BigBitSetFromBytes(s.Signers)
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+	signerIndices := set.BitsFromBytes(s.Signers)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 	if len(signerIndices.Bytes()) != len(s.Signers) {
 		return ErrInvalidBitSet
 	}

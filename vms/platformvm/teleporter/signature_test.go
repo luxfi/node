@@ -18,9 +18,13 @@ import (
 	"github.com/ava-labs/avalanchego/utils"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 
 const pChainHeight uint64 = 1337
@@ -260,10 +264,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(3) // vdr oob
 
 				msg, err := NewMessage(
@@ -299,10 +307,14 @@ func TestSignatureVerification(t *testing.T) {
 				// [signers] has weight from [vdr[0], vdr[1]],
 				// which is 6, which is less than 9
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -345,10 +357,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -421,10 +437,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -469,10 +489,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -513,10 +537,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -564,10 +592,14 @@ func TestSignatureVerification(t *testing.T) {
 				// [signers] has weight from [vdr[1], vdr[2]],
 				// which is 6, which is greater than 4.5
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(1)
 				signers.Add(2)
 
@@ -612,10 +644,14 @@ func TestSignatureVerification(t *testing.T) {
 				// [signers] has weight from [vdr[1], vdr[2]],
 				// which is 6, which meets the minimum 6
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(1)
 				signers.Add(2)
 
@@ -676,10 +712,14 @@ func TestSignatureVerification(t *testing.T) {
 				// [signers] has weight from [vdr2, vdr3],
 				// which is 6, which is greater than 3
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				// Note: the bits are shifted because vdr[0]'s key was zeroed
 				signers.Add(0) // vdr[1]
 				signers.Add(1) // vdr[2]
@@ -741,10 +781,14 @@ func TestSignatureVerification(t *testing.T) {
 				// [signers] has weight from [vdr2, vdr3],
 				// which is 6, which meets the minimum 6
 <<<<<<< HEAD
+<<<<<<< HEAD
 				signers := set.NewBits()
 =======
 				signers := ids.NewBigBitSet()
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				signers := set.NewBits()
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				// Note: the bits are shifted because vdr[0]'s key was zeroed
 				// Note: vdr[1] and vdr[2] were combined because of a shared pk
 				signers.Add(0) // vdr[1] + vdr[2]
