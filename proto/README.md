@@ -3,6 +3,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Now Serving: **Protocol Version 22**
 =======
 Now Serving: **Protocol Version 19**
@@ -13,6 +14,9 @@ Now Serving: **Protocol Version 20**
 =======
 Now Serving: **Protocol Version 21**
 >>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
+=======
+Now Serving: **Protocol Version 22**
+>>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
 
 Protobuf files are hosted at [https://buf.build/ava-labs/avalanche](https://buf.build/ava-labs/avalanche) and can be used as dependencies in other projects.
 
