@@ -231,6 +231,7 @@ func (p *Packer) UnpackStr() string {
 	strSize := p.UnpackShort()
 	return string(p.UnpackFixedBytes(int(strSize)))
 }
+<<<<<<< HEAD
 
 // UnpackLimitedStr unpacks a string. If the size of the string is greater than
 // [limit], adds [errOversized] to the packer and returns the empty string.
@@ -275,3 +276,5 @@ func (p *Packer) expand(bytes int) {
 		p.Bytes = append(p.Bytes[:cap(p.Bytes)], make([]byte, neededSize-cap(p.Bytes))...)
 	}
 }
+=======
+>>>>>>> 6e97a5d32 (Add TxIDs to the peerlist message format (#2315))
