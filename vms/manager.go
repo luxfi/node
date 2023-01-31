@@ -14,6 +14,8 @@ import (
 =======
 >>>>>>> a3b878f4f (Remove global info API lock (#2262))
 
+	"golang.org/x/exp/maps"
+
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow"
 	"github.com/ava-labs/avalanchego/snow/engine/common"
@@ -142,6 +144,7 @@ func (m *manager) ListFactories() ([]ids.ID, error) {
 	defer m.lock.RUnlock()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return maps.Keys(m.factories), nil
 =======
 	vmIDs := make([]ids.ID, 0, len(m.factories))
@@ -150,6 +153,9 @@ func (m *manager) ListFactories() ([]ids.ID, error) {
 	}
 	return vmIDs, nil
 >>>>>>> a3b878f4f (Remove global info API lock (#2262))
+=======
+	return maps.Keys(m.factories), nil
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 }
 
 func (m *manager) Versions() (map[string]string, error) {
