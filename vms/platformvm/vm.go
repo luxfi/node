@@ -667,12 +667,16 @@ func (vm *VM) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 // height which is likely (but not guaranteed) to also be older than the
 // window's configured TTL.
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8a3460395 (Add flag to set the proposervm P-chain height to the last accepted height (#2247))
 //
 // If [UseCurrentHeight] is true, we will always return the last accepted block
 // height as the minimum. This is used to trigger the proposervm on recently
 // created subnets before [recentlyAcceptedWindowTTL].
 func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	if vm.Config.UseCurrentHeight {
+<<<<<<< HEAD
 =======
 func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	oldest, ok := vm.recentlyAccepted.Oldest()
@@ -682,6 +686,11 @@ func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	}
 
 <<<<<<< HEAD
+=======
+		return vm.GetCurrentHeight(ctx)
+	}
+
+>>>>>>> 8a3460395 (Add flag to set the proposervm P-chain height to the last accepted height (#2247))
 	oldest, ok := vm.recentlyAccepted.Oldest()
 	if !ok {
 		return vm.GetCurrentHeight(ctx)
