@@ -64,10 +64,15 @@ var (
 	_ vmpb.VMServer = (*VMServer)(nil)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	originalStderr = os.Stderr
 
 =======
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+	originalStderr = os.Stderr
+
+>>>>>>> 14f0575b2 (Populate reasonable rpcchainvm logger in vm server (#2408))
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
