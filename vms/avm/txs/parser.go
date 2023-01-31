@@ -134,6 +134,7 @@ func (p *parser) InitializeGenesisTx(tx *Tx) error {
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
+<<<<<<< HEAD
 func (p *parser) GenesisCodec() codec.Manager {
 	return p.gcm
 }
@@ -162,6 +163,8 @@ func (p *parser) InitializeGenesisTx(tx *Tx) error {
 	return initializeTx(p.gcm, tx)
 }
 
+=======
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 func parse(cm codec.Manager, signedBytes []byte) (*Tx, error) {
 	tx := &Tx{}
 	parsedVersion, err := cm.Unmarshal(signedBytes, tx)

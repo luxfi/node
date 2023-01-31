@@ -1585,8 +1585,14 @@ func TestOptimisticAtomicImport(t *testing.T) {
 			},
 		}},
 	}}
+<<<<<<< HEAD
 	err := tx.Initialize(txs.Codec)
 	require.NoError(err)
+=======
+	if err := tx.Initialize(txs.Codec); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 
 	preferred, err := vm.Builder.Preferred()
 	require.NoError(err)
