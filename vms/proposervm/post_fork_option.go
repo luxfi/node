@@ -89,10 +89,14 @@ func (b *postForkOption) Verify(ctx context.Context) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*postForkOption) verifyPreForkChild(context.Context, *preForkBlock) error {
 =======
 func (*postForkOption) verifyPreForkChild(child *preForkBlock) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*postForkOption) verifyPreForkChild(*preForkBlock) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// A *preForkBlock's parent must be a *preForkBlock
 	return errUnsignedChild
 }
@@ -112,10 +116,14 @@ func (b *postForkOption) verifyPostForkChild(ctx context.Context, child *postFor
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) error {
 =======
 func (*postForkOption) verifyPostForkOption(child *postForkOption) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*postForkOption) verifyPostForkOption(*postForkOption) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// A *postForkOption's parent can't be a *postForkOption
 	return errUnexpectedBlockType
 }

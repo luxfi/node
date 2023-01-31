@@ -8,6 +8,7 @@ import "github.com/ava-labs/avalanchego/snow"
 type TestVerifiable struct{ Err error }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*TestVerifiable) InitCtx(*snow.Context) {}
 
 func (v *TestVerifiable) Verify() error {
@@ -22,6 +23,11 @@ func (*TestVerifiable) InitCtx(ctx *snow.Context) {}
 func (v *TestVerifiable) Verify() error           { return v.Err }
 func (v *TestVerifiable) VerifyState() error      { return v.Err }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*TestVerifiable) InitCtx(*snow.Context) {}
+func (v *TestVerifiable) Verify() error       { return v.Err }
+func (v *TestVerifiable) VerifyState() error  { return v.Err }
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 type TestTransferable struct {
 	TestVerifiable

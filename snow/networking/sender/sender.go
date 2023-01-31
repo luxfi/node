@@ -1419,7 +1419,11 @@ func (s *sender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, request
 	return nil
 }
 
+<<<<<<< HEAD
 func (s *sender) SendAppGossipSpecific(_ context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+=======
+func (s *sender) SendAppGossipSpecific(_ context.Context, nodeIDs ids.NodeIDSet, appGossipBytes []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// Create the outbound message.
 	outMsg, err := s.msgCreator.AppGossip(s.ctx.ChainID, appGossipBytes)
 	if err != nil {
