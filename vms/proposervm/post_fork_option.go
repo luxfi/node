@@ -90,6 +90,7 @@ func (b *postForkOption) Verify(ctx context.Context) error {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*postForkOption) verifyPreForkChild(context.Context, *preForkBlock) error {
 =======
 func (*postForkOption) verifyPreForkChild(child *preForkBlock) error {
@@ -97,6 +98,9 @@ func (*postForkOption) verifyPreForkChild(child *preForkBlock) error {
 =======
 func (*postForkOption) verifyPreForkChild(*preForkBlock) error {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (*postForkOption) verifyPreForkChild(context.Context, *preForkBlock) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	// A *preForkBlock's parent must be a *preForkBlock
 	return errUnsignedChild
 }
@@ -117,6 +121,7 @@ func (b *postForkOption) verifyPostForkChild(ctx context.Context, child *postFor
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) error {
 =======
 func (*postForkOption) verifyPostForkOption(child *postForkOption) error {
@@ -124,6 +129,9 @@ func (*postForkOption) verifyPostForkOption(child *postForkOption) error {
 =======
 func (*postForkOption) verifyPostForkOption(*postForkOption) error {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	// A *postForkOption's parent can't be a *postForkOption
 	return errUnexpectedBlockType
 }

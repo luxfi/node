@@ -1536,7 +1536,11 @@ func TestIssueImportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+=======
+	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal(err)
 	}
 
@@ -1705,7 +1709,11 @@ func TestForceAcceptImportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+=======
+	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal(err)
 	}
 
@@ -1942,7 +1950,11 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+=======
+	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal(err)
 	}
 

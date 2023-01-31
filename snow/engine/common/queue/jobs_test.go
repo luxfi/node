@@ -32,19 +32,22 @@ func testJob(t *testing.T, jobID ids.ID, executed *bool, parentID ids.ID, parent
 <<<<<<< HEAD
 =======
 		},
-		MissingDependenciesF: func() (ids.Set, error) {
+		MissingDependenciesF: func(context.Context) (ids.Set, error) {
 			if parentID != ids.Empty && !*parentExecuted {
 				return ids.Set{parentID: struct{}{}}, nil
 			}
 			return ids.Set{}, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		},
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			if parentID != ids.Empty && !*parentExecuted {
 				return set.Set[ids.ID]{parentID: struct{}{}}, nil
 			}
 			return set.Set[ids.ID]{}, nil
 		},
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		HasMissingDependenciesF: func(context.Context) (bool, error) {
 			if parentID != ids.Empty && !*parentExecuted {
 				return true, nil
@@ -363,7 +366,7 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 =======
 
 	// job1 fails to execute the first time due to a closed database
-	job1.ExecuteF = func() error {
+	job1.ExecuteF = func(context.Context) error {
 		return database.ErrClosed
 	}
 	job1.BytesF = func() []byte {
@@ -371,6 +374,7 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 	}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
+<<<<<<< HEAD
 	// job1 fails to execute the first time due to a closed database
 	job1.ExecuteF = func(context.Context) error {
 		return database.ErrClosed
@@ -379,6 +383,8 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 		return []byte{1}
 	}
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	pushed, err := jobs.Push(context.Background(), job1)
 	require.True(pushed)
 	require.NoError(err)
@@ -416,10 +422,14 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 
 	executed0 = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	job1.ExecuteF = func(context.Context) error {
 =======
 	job1.ExecuteF = func() error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	job1.ExecuteF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		executed1 = true // job1 succeeds the second time
 		return nil
 	}
@@ -477,6 +487,7 @@ func TestInitializeNumJobs(t *testing.T) {
 			return job0ID
 		},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
@@ -487,6 +498,12 @@ func TestInitializeNumJobs(t *testing.T) {
 		},
 		HasMissingDependenciesF: func() (bool, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		MissingDependenciesF: func(context.Context) (ids.Set, error) {
+			return nil, nil
+		},
+		HasMissingDependenciesF: func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			return false, nil
 		},
 		BytesF: func() []byte {
@@ -500,6 +517,7 @@ func TestInitializeNumJobs(t *testing.T) {
 			return job1ID
 		},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
@@ -510,6 +528,12 @@ func TestInitializeNumJobs(t *testing.T) {
 		},
 		HasMissingDependenciesF: func() (bool, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		MissingDependenciesF: func(context.Context) (ids.Set, error) {
+			return nil, nil
+		},
+		HasMissingDependenciesF: func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			return false, nil
 		},
 		BytesF: func() []byte {

@@ -272,7 +272,11 @@ func (b *bootstrapper) GetAcceptedFailed(ctx context.Context, nodeID ids.NodeID,
 }
 
 func (b *bootstrapper) Startup(ctx context.Context) error {
+<<<<<<< HEAD
 	beaconIDs, err := b.Beacons.Sample(b.Config.SampleK)
+=======
+	beacons, err := b.Beacons.Sample(b.Config.SampleK)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return err
 	}
@@ -357,7 +361,11 @@ func (b *bootstrapper) sendGetAcceptedFrontiers(ctx context.Context) {
 // Ask up to [MaxOutstandingBroadcastRequests] bootstrap validators to send
 // their filtered accepted frontier
 func (b *bootstrapper) sendGetAccepted(ctx context.Context) {
+<<<<<<< HEAD
 	vdrs := set.NewSet[ids.NodeID](1)
+=======
+	vdrs := ids.NewNodeIDSet(1)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	for b.pendingSendAccepted.Len() > 0 && b.pendingReceiveAccepted.Len() < MaxOutstandingBroadcastRequests {
 		vdr, _ := b.pendingSendAccepted.Pop()
 		// Add the validator to the set to send the messages to

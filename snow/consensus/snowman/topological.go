@@ -165,8 +165,12 @@ func (ts *Topological) NumProcessing() int {
 	return len(ts.blocks) - 1
 }
 
+<<<<<<< HEAD
 func (ts *Topological) Add(blk Block) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ts *Topological) Add(ctx context.Context, blk Block) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	blkID := blk.ID()
 
 	// Make sure a block is not inserted twice. This enforces the invariant that

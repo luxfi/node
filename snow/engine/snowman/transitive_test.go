@@ -68,10 +68,14 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	vm.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -108,10 +112,14 @@ func TestEngineShutdown(t *testing.T) {
 	_, _, _, vm, transitive, _ := setupDefaultConfig(t)
 	vmShutdownCalled := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.ShutdownF = func(context.Context) error {
 =======
 	vm.ShutdownF = func() error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.ShutdownF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vmShutdownCalled = true
 		return nil
 	}
@@ -194,10 +202,14 @@ func TestEngineAdd(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 =======
 	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil, errUnknownBytes
 	}
 
@@ -466,6 +478,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -476,6 +489,12 @@ func TestEngineMultipleQuery(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -582,12 +601,17 @@ func TestEngineMultipleQuery(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 =======
 	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
 		vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			switch {
 			case blkID == blk0.ID():
 				return blk0, nil
@@ -885,6 +909,7 @@ func TestEngineBuildBlock(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return blk, nil
 	}
@@ -895,6 +920,12 @@ func TestEngineBuildBlock(t *testing.T) {
 	}
 	if err := te.Notify(common.PendingTxs); err != nil {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return blk, nil
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal(err)
 	}
 
@@ -977,6 +1008,7 @@ func TestVoteCanceling(t *testing.T) {
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -987,6 +1019,12 @@ func TestVoteCanceling(t *testing.T) {
 	}
 	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch id {
 		case gBlk.ID():
 			return gBlk, nil
@@ -1079,10 +1117,14 @@ func TestEngineNoQuery(t *testing.T) {
 	vm := &block.TestVM{}
 	vm.T = t
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	vm.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -1134,10 +1176,14 @@ func TestEngineNoRepollQuery(t *testing.T) {
 	vm := &block.TestVM{}
 	vm.T = t
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	vm.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -1610,6 +1656,7 @@ func TestEngineGossip(t *testing.T) {
 	_, _, sender, vm, te, gBlk := setupDefaultConfig(t)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -1620,6 +1667,12 @@ func TestEngineGossip(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -1884,6 +1937,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -1894,6 +1948,12 @@ func TestEngineAggressivePolling(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -2022,6 +2082,7 @@ func TestEngineDoubleChit(t *testing.T) {
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -2032,6 +2093,12 @@ func TestEngineDoubleChit(t *testing.T) {
 	}
 	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if id == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -2156,6 +2223,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	}}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
@@ -2166,6 +2234,12 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}

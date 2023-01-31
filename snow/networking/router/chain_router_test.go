@@ -109,6 +109,7 @@ func TestShutdown(t *testing.T) {
 		return ctx
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ShutdownF = func(context.Context) error {
 		shutdownCalled <- struct{}{}
 		return nil
@@ -119,14 +120,21 @@ func TestShutdown(t *testing.T) {
 	bootstrapper.HaltF = func(context.Context) {}
 =======
 	bootstrapper.ShutdownF = func() error {
+=======
+	bootstrapper.ShutdownF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		shutdownCalled <- struct{}{}
 		return nil
 	}
-	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
+<<<<<<< HEAD
 	bootstrapper.HaltF = func() {}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.HaltF = func(context.Context) {}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	handler.SetBootstrapper(bootstrapper)
 
 	engine := &common.EngineTest{T: t}
@@ -135,6 +143,7 @@ func TestShutdown(t *testing.T) {
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 <<<<<<< HEAD
 	engine.ShutdownF = func(context.Context) error {
 		shutdownCalled <- struct{}{}
@@ -146,19 +155,27 @@ func TestShutdown(t *testing.T) {
 	engine.HaltF = func(context.Context) {}
 =======
 	engine.ShutdownF = func() error {
+=======
+	engine.ShutdownF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		shutdownCalled <- struct{}{}
 		return nil
 	}
-	engine.ConnectedF = func(ids.NodeID, *version.Application) error {
+	engine.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
+<<<<<<< HEAD
 	engine.HaltF = func() {}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	engine.HaltF = func(context.Context) {}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	handler.SetConsensus(engine)
 	ctx.SetState(snow.NormalOp) // assumed bootstrap is done
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
@@ -170,6 +187,12 @@ func TestShutdown(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	chainRouter.Shutdown(context.Background())
 
@@ -262,6 +285,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		return ctx
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
@@ -272,6 +296,12 @@ func TestShutdownTimesOut(t *testing.T) {
 	}
 	bootstrapper.HaltF = func() {}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.HaltF = func(context.Context) {}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	bootstrapper.PullQueryF = func(context.Context, ids.NodeID, uint32, ids.ID) error {
 		// Ancestors blocks for two seconds
 		time.Sleep(2 * time.Second)
@@ -287,10 +317,14 @@ func TestShutdownTimesOut(t *testing.T) {
 	}
 	closed := new(int)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	engine.ShutdownF = func(context.Context) error {
 =======
 	engine.ShutdownF = func() error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	engine.ShutdownF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		*closed++
 		return nil
 	}
@@ -299,6 +333,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
@@ -310,6 +345,12 @@ func TestShutdownTimesOut(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	shutdownFinished := make(chan struct{}, 1)
 
@@ -424,6 +465,7 @@ func TestRouterTimeout(t *testing.T) {
 		return ctx
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
@@ -434,6 +476,12 @@ func TestRouterTimeout(t *testing.T) {
 	}
 	bootstrapper.HaltF = func() {}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.HaltF = func(context.Context) {}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	bootstrapper.GetStateSummaryFrontierFailedF = func(context.Context, ids.NodeID, uint32) error {
 		defer wg.Done()
@@ -486,6 +534,7 @@ func TestRouterTimeout(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -496,6 +545,12 @@ func TestRouterTimeout(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	nodeID := ids.GenerateTestNodeID()
 	requestID := uint32(0)
@@ -766,6 +821,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -776,6 +832,12 @@ func TestRouterClearTimeouts(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	nodeID := ids.GenerateTestNodeID()
 	requestID := uint32(0)
@@ -1052,6 +1114,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -1062,6 +1125,12 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	var inMsg message.InboundMessage
 	dummyContainerID := ids.GenerateTestID()

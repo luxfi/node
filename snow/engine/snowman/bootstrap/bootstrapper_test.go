@@ -159,6 +159,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	}
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -169,11 +170,18 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(blk0.ID(), blkID)
 		return blk0, nil
 	}
 
 	// create bootstrapper
+<<<<<<< HEAD
 <<<<<<< HEAD
 	dummyCallback := func(context.Context, uint32) error {
 		cfg.Ctx.SetState(snow.NormalOp)
@@ -187,15 +195,26 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	}
 	bs, err := New(cfg, dummyCallback)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	dummyCallback := func(context.Context, uint32) error {
+		cfg.Ctx.SetState(snow.NormalOp)
+		return nil
+	}
+	bs, err := New(context.Background(), cfg, dummyCallback)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 
 	vm.CantSetState = false
 	vm.CantConnected = true
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 =======
 	vm.ConnectedF = func(ids.NodeID, *version.Application) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -211,7 +230,11 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// attempt starting bootstrapper with not enough stake connected. Bootstrapper should stall.
 	vdr0 := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
+=======
+	require.NoError(peers.AddWeight(vdr0, startupAlpha/2))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(bs.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.NoError(bs.Start(context.Background(), 0))
@@ -219,7 +242,11 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr, nil, ids.Empty, startupAlpha))
+=======
+	require.NoError(peers.AddWeight(vdr, startupAlpha))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(bs.Connected(context.Background(), vdr, version.CurrentApp))
 	require.True(frontierRequested)
 }
@@ -254,6 +281,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -264,6 +292,12 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -272,10 +306,14 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -369,6 +407,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -379,6 +418,12 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -387,10 +432,14 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -541,6 +590,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -551,6 +601,12 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -559,10 +615,14 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -716,6 +776,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -726,6 +787,12 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -734,10 +801,14 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -913,6 +984,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -923,6 +995,12 @@ func TestBootstrapperAncestors(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -931,10 +1009,14 @@ func TestBootstrapperAncestors(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1068,6 +1150,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
@@ -1078,6 +1161,12 @@ func TestBootstrapperFinalized(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -1085,10 +1174,14 @@ func TestBootstrapperFinalized(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1235,10 +1328,14 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	vm.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return blk0.ID(), nil
 	}
 	parsedBlk1 := false
@@ -1303,10 +1400,14 @@ func TestRestartBootstrapping(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1419,6 +1520,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk1.ID(), nil
 	}
@@ -1429,6 +1531,12 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk1.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case blk0.ID():
 			return nil, database.ErrNotFound
@@ -1454,10 +1562,14 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1538,10 +1650,14 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	vm.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return blk0.ID(), nil
 	}
 
@@ -1549,10 +1665,14 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},

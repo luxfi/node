@@ -185,9 +185,15 @@ func (vm *VMClient) Initialize(
 	vm.keystore = gkeystore.NewServer(chainCtx.Keystore)
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, dbManager.Current().Database)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
+<<<<<<< HEAD
 	vm.appSender = appsender.NewServer(appSender)
 	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
 	vm.teleporterSignerServer = gteleporter.NewServer(chainCtx.TeleporterSigner)
+=======
+	vm.snLookup = gsubnetlookup.NewServer(chainCtx.SNLookup)
+	vm.appSender = appsender.NewServer(appSender)
+	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -206,9 +212,13 @@ func (vm *VMClient) Initialize(
 		ChainId:      chainCtx.ChainID[:],
 		NodeId:       chainCtx.NodeID.Bytes(),
 		XChainId:     chainCtx.XChainID[:],
+<<<<<<< HEAD
 		CChainId:     chainCtx.CChainID[:],
 		AvaxAssetId:  chainCtx.AVAXAssetID[:],
 		ChainDataDir: chainCtx.ChainDataDir,
+=======
+		AvaxAssetId:  chainCtx.AVAXAssetID[:],
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,
@@ -337,7 +347,11 @@ func (vm *VMClient) getInitServer(opts []grpc.ServerOption) *grpc.Server {
 
 func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
+<<<<<<< HEAD
 		State: vmpb.State(state),
+=======
+		State: uint32(state),
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	})
 	if err != nil {
 		return err
@@ -445,18 +459,24 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return err
 }
 
+<<<<<<< HEAD
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
+=======
+func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
+	resp, err := vm.client.BuildBlock(ctx, &emptypb.Empty{})
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return nil, err
 	}
 	return vm.newBlockFromBuildBlock(resp)
 }
 
+<<<<<<< HEAD
 func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
@@ -465,6 +485,8 @@ func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	return vm.newBlockFromBuildBlock(resp)
 }
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
@@ -527,6 +549,7 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
+<<<<<<< HEAD
 		vm:                  vm,
 		id:                  blkID,
 		parentID:            parentID,
@@ -535,6 +558,15 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
+=======
+		vm:       vm,
+		id:       blkID,
+		parentID: parentID,
+		status:   status,
+		bytes:    resp.Bytes,
+		height:   resp.Height,
+		time:     time,
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}, err
 }
 
@@ -672,7 +704,11 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
+<<<<<<< HEAD
 func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
+=======
+func (vm *VMClient) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -975,7 +1011,11 @@ func (s *summaryClient) Bytes() []byte {
 	return s.bytes
 }
 
+<<<<<<< HEAD
 func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error) {
+=======
+func (s *summaryClient) Accept(ctx context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	resp, err := s.vm.client.StateSummaryAccept(
 		ctx,
 		&vmpb.StateSummaryAcceptRequest{

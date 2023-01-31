@@ -6,8 +6,11 @@ package tree
 import (
 	"context"
 
+<<<<<<< HEAD
 	"golang.org/x/exp/maps"
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 )

@@ -74,8 +74,12 @@ func GetAncestors(
 	ancestorsBytesLen := len(blk.Bytes()) + wrappers.IntLen // length, in bytes, of all elements of ancestors
 
 	for numFetched := 1; numFetched < maxBlocksNum && time.Since(startTime) < maxBlocksRetrivalTime; numFetched++ {
+<<<<<<< HEAD
 		blk, err = vm.GetBlock(ctx, blk.Parent())
 		if err != nil {
+=======
+		if blk, err = vm.GetBlock(ctx, blk.Parent()); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			break
 		}
 		blkBytes := blk.Bytes()

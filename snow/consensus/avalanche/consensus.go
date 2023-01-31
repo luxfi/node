@@ -30,10 +30,14 @@ type Consensus interface {
 	// Assumes each element in the accepted frontier will return accepted from
 	// the join status map.
 <<<<<<< HEAD
+<<<<<<< HEAD
 	Initialize(context.Context, *snow.ConsensusContext, Parameters, []Vertex) error
 =======
 	Initialize(*snow.ConsensusContext, Parameters, []Vertex) error
 >>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
+=======
+	Initialize(context.Context, *snow.ConsensusContext, Parameters, []Vertex) error
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	// Returns the number of vertices processing
 	NumProcessing() int

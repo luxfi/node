@@ -191,10 +191,14 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be accepted before returning it
 <<<<<<< HEAD
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncStatic, nil
 =======
 					mockedSummary.AcceptF = func() (bool, error) {
+=======
+					mockedSummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 						return true, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
@@ -205,10 +209,14 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be skipped before returning it
 <<<<<<< HEAD
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncSkipped, nil
 =======
 					mockedSummary.AcceptF = func() (bool, error) {
+=======
+					mockedSummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 						return false, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
@@ -219,10 +227,14 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to fail accept
 <<<<<<< HEAD
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncSkipped, errBrokenConnectionOrSomething
 =======
 					mockedSummary.AcceptF = func() (bool, error) {
+=======
+					mockedSummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 						return false, errBrokenConnectionOrSomething
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
@@ -259,10 +271,14 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be accepted before returning it
 <<<<<<< HEAD
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncStatic, nil
 =======
 					mockedSummary.AcceptF = func() (bool, error) {
+=======
+					mockedSummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 						return true, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
@@ -472,13 +488,22 @@ func TestAcceptStateSummary(t *testing.T) {
 	summary, err := vm.GetStateSummary(context.Background(), mockedSummary.Height())
 	require.NoError(err)
 
+<<<<<<< HEAD
 	// test status Summary
 	status, err := summary.Accept(context.Background())
+=======
+	// test accepted Summary
+	accepted, err := summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 
 	// test skipped Summary
+<<<<<<< HEAD
 	status, err = summary.Accept(context.Background())
+=======
+	accepted, err = summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 
@@ -520,7 +545,11 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	summary, err := vm.ParseStateSummary(context.Background(), mockedSummary.Bytes())
 	require.NoError(err)
 
+<<<<<<< HEAD
 	status, err := summary.Accept(context.Background())
+=======
+	accepted, err := summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 

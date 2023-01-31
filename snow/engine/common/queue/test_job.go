@@ -28,7 +28,11 @@ type TestJob struct {
 	CantHasMissingDependencies bool
 
 	IDF                     func() ids.ID
+<<<<<<< HEAD
 	MissingDependenciesF    func(context.Context) (set.Set[ids.ID], error)
+=======
+	MissingDependenciesF    func(context.Context) (ids.Set, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	ExecuteF                func(context.Context) error
 	BytesF                  func() []byte
 	HasMissingDependenciesF func(context.Context) (bool, error)
@@ -52,7 +56,11 @@ func (j *TestJob) ID() ids.ID {
 	return ids.ID{}
 }
 
+<<<<<<< HEAD
 func (j *TestJob) MissingDependencies(ctx context.Context) (set.Set[ids.ID], error) {
+=======
+func (j *TestJob) MissingDependencies(ctx context.Context) (ids.Set, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if j.MissingDependenciesF != nil {
 		return j.MissingDependenciesF(ctx)
 	}

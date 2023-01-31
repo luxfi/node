@@ -153,6 +153,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	}
 
 	// Verify the inner block and track it as verified
+<<<<<<< HEAD
 	return b.vm.verifyAndRecordInnerBlk(ctx, nil, child)
 }
 
@@ -165,6 +166,12 @@ func (*preForkBlock) verifyPostForkOption(child *postForkOption) error {
 =======
 func (*preForkBlock) verifyPostForkOption(*postForkOption) error {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+	return b.vm.verifyAndRecordInnerBlk(ctx, child)
+}
+
+func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return errUnexpectedBlockType
 }
 
@@ -238,10 +245,14 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
 =======
 func (*preForkBlock) pChainHeight() (uint64, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return 0, nil
 }
 

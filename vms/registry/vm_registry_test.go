@@ -69,12 +69,16 @@ func TestReload_GetNewVMsFails(t *testing.T) {
 	resources.mockVMGetter.EXPECT().Get().Times(1).Return(nil, nil, errTest)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	installedVMs, failedVMs, err := resources.vmRegistry.Reload(context.Background())
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
 =======
 	installedVMs, failedVMs, err := resources.vmRegistry.Reload()
+=======
+	installedVMs, failedVMs, err := resources.vmRegistry.Reload(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errOops)
@@ -174,12 +178,16 @@ func TestReloadWithReadLock_GetNewVMsFails(t *testing.T) {
 	resources.mockVMGetter.EXPECT().Get().Times(1).Return(nil, nil, errTest)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock(context.Background())
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
 =======
 	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock()
+=======
+	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errOops)

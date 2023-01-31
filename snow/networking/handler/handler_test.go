@@ -111,10 +111,14 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	handler.Push(context.Background(), msg)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 =======
 	bootstrapper.StartF = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -195,10 +199,14 @@ func TestHandlerClosesOnError(t *testing.T) {
 	ctx.SetState(snow.Bootstrapping)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 =======
 	bootstrapper.StartF = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -271,10 +279,14 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	ctx.SetState(snow.Bootstrapping) // assumed bootstrapping is ongoing
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 =======
 	bootstrapper.StartF = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -339,10 +351,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return ctx
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	engine.NotifyF = func(context.Context, common.Message) error {
 =======
 	engine.NotifyF = func(common.Message) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	engine.NotifyF = func(context.Context, common.Message) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		calledNotify <- struct{}{}
 		return nil
 	}
@@ -350,10 +366,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	ctx.SetState(snow.NormalOp) // assumed bootstrapping is done
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 =======
 	bootstrapper.StartF = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 

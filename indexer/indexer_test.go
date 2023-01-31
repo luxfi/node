@@ -290,8 +290,13 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 	// Mocked VM knows about this block now
+<<<<<<< HEAD
 	dagEngine.EXPECT().GetVtx(vtxID).Return(
 		&lux.TestVertex{
+=======
+	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
+		&avalanche.TestVertex{
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			TestDecidable: choices.TestDecidable{
 				StatusV: choices.Accepted,
 				IDV:     vtxID,
@@ -339,7 +344,7 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 	// Mocked VM knows about this tx now
-	dagVM.EXPECT().GetTx(txID).Return(
+	dagVM.EXPECT().GetTx(gomock.Any(), txID).Return(
 		&snowstorm.TestTx{
 			TestDecidable: choices.TestDecidable{
 				IDV:     txID,

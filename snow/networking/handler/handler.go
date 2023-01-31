@@ -246,6 +246,7 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
+<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	dispatchSync := func() {
 		h.dispatchSync(detachedCtx)
@@ -255,6 +256,16 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	}
 	dispatchChans := func() {
 		h.dispatchChans(detachedCtx)
+=======
+	dispatchSync := func() {
+		h.dispatchSync(ctx)
+	}
+	dispatchAsync := func() {
+		h.dispatchAsync(ctx)
+	}
+	dispatchChans := func() {
+		h.dispatchChans(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	if recoverPanic {
 		go h.ctx.Log.RecoverAndExit(dispatchSync, func() {
@@ -691,9 +702,12 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	// Connection messages can be sent to the currently executing engine
 	case *message.Connected:
 		return engine.Connected(ctx, nodeID, msg.NodeVersion)
+<<<<<<< HEAD
 
 	case *message.ConnectedSubnet:
 		return h.subnetConnector.ConnectedSubnet(ctx, nodeID, msg.SubnetID)
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	case *message.Disconnected:
 		return engine.Disconnected(ctx, nodeID)

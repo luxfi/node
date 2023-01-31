@@ -92,9 +92,12 @@ func (m *manager) GetFactory(vmID ids.ID) (Factory, error) {
 }
 
 func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Factory) error {
+<<<<<<< HEAD
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if _, exists := m.factories[vmID]; exists {
 		return fmt.Errorf("%q was already registered as a vm", vmID)
 	}

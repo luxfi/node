@@ -24,7 +24,11 @@ func (vm *blockVM) GetAncestors(
 	}
 
 	start := vm.clock.Time()
+<<<<<<< HEAD
 	ancestors, err := vm.batchedVM.GetAncestors(
+=======
+	ancestors, err := vm.bVM.GetAncestors(
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		ctx,
 		blkID,
 		maxBlocksNum,
@@ -37,12 +41,20 @@ func (vm *blockVM) GetAncestors(
 }
 
 func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+<<<<<<< HEAD
 	if vm.batchedVM == nil {
+=======
+	if vm.bVM == nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil, block.ErrRemoteVMNotImplemented
 	}
 
 	start := vm.clock.Time()
+<<<<<<< HEAD
 	blocks, err := vm.batchedVM.BatchedParseBlock(ctx, blks)
+=======
+	blocks, err := vm.bVM.BatchedParseBlock(ctx, blks)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	end := vm.clock.Time()
 	vm.blockMetrics.batchedParseBlock.Observe(float64(end.Sub(start)))
 

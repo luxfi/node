@@ -6,7 +6,11 @@ package proposervm
 import (
 	"bytes"
 	"context"
+<<<<<<< HEAD
 	"crypto"
+=======
+	"errors"
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"testing"
 	"time"
 
@@ -72,6 +76,7 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
@@ -82,6 +87,12 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -158,10 +169,14 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 		TimestampV: oracleCoreBlk.opts[0].Timestamp().Add(proposer.MaxDelay),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 =======
 	coreVM.BuildBlockF = func() (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return childCoreBlk, nil
 	}
 	proVM.Set(childCoreBlk.Timestamp())
@@ -220,6 +235,7 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
@@ -230,6 +246,12 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -343,6 +365,7 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
@@ -353,6 +376,12 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -470,6 +499,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
@@ -480,6 +510,12 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -587,6 +623,7 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
@@ -597,6 +634,12 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk, nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -764,10 +807,14 @@ func TestOptionTimestampValidity(t *testing.T) {
 		return nil, nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 =======
 	coreVM.ParseBlockF = func([]byte) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}
@@ -811,10 +858,14 @@ func TestOptionTimestampValidity(t *testing.T) {
 		return nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 =======
 	coreVM.LastAcceptedF = func() (ids.ID, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreOracleBlk.opts[0].ID(), nil
 	}
 
@@ -876,10 +927,14 @@ func TestOptionTimestampValidity(t *testing.T) {
 		return nil, nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 =======
 	coreVM.ParseBlockF = func([]byte) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}
