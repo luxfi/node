@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -6,7 +10,11 @@ package lux
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/utils/wrappers"
+=======
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 type metrics struct {

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -14,6 +18,31 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	"golang.org/x/exp/slices"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
+
+	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/consensus/lux"
@@ -29,13 +58,19 @@ import (
 	"github.com/luxdefi/luxd/utils/wrappers"
 	"github.com/luxdefi/luxd/version"
 
+<<<<<<< HEAD
 	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+=======
+	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
 	errUnknownVertex = errors.New("unknown vertex")
 	errFailedParsing = errors.New("failed parsing")
 	errMissing       = errors.New("missing")
+<<<<<<< HEAD
 )
 
 type dummyHandler struct {
@@ -45,6 +80,18 @@ type dummyHandler struct {
 func (dh *dummyHandler) onDoneBootstrapping(lastReqID uint32) error {
 	lastReqID++
 	return dh.startEngineF(lastReqID)
+=======
+	errTest          = errors.New("non-nil error")
+)
+
+type dummyHandler struct {
+	startEngineF func(ctx context.Context, startReqID uint32) error
+}
+
+func (dh *dummyHandler) onDoneBootstrapping(ctx context.Context, lastReqID uint32) error {
+	lastReqID++
+	return dh.startEngineF(ctx, lastReqID)
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 func TestEngineShutdown(t *testing.T) {
@@ -53,14 +100,33 @@ func TestEngineShutdown(t *testing.T) {
 	vmShutdownCalled := false
 	vm := &vertex.TestVM{}
 	vm.T = t
+<<<<<<< HEAD
 	vm.ShutdownF = func() error { vmShutdownCalled = true; return nil }
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.ShutdownF = func(context.Context) error {
+=======
+	vm.ShutdownF = func() error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.ShutdownF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+		vmShutdownCalled = true
+		return nil
+	}
+>>>>>>> 53a8245a8 (Update consensus)
 	engCfg.VM = vm
 
 	transitive, err := newTransitive(engCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+<<<<<<< HEAD
 	if err := transitive.Shutdown(); err != nil {
+=======
+	if err := transitive.Shutdown(context.Background()); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if !vmShutdownCalled {
@@ -75,7 +141,23 @@ func TestEngineAdd(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -97,7 +179,11 @@ func TestEngineAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -135,7 +221,15 @@ func TestEngineAdd(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !bytes.Equal(b, vtx.Bytes()) {
 			t.Fatalf("Wrong bytes")
 		}
@@ -156,7 +250,28 @@ func TestEngineAdd(t *testing.T) {
 		t.Fatalf("Should have been blocking on request")
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) { return nil, errFailedParsing }
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.ParseVtxF = func(context.Context, []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.ParseVtxF = func(context.Context, []byte) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+		return nil, errFailedParsing
+	}
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) { return nil, errFailedParsing }
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 
 	if err := te.Put(context.Background(), vdr, *reqID, nil); err != nil {
 		t.Fatal(err)
@@ -176,7 +291,23 @@ func TestEngineQuery(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -220,8 +351,39 @@ func TestEngineQuery(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -238,12 +400,24 @@ func TestEngineQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vertexed := new(bool)
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if *vertexed {
 			t.Fatalf("Sent multiple requests")
 		}
@@ -255,7 +429,11 @@ func TestEngineQuery(t *testing.T) {
 	}
 
 	chitted := new(bool)
+<<<<<<< HEAD
 	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, prefs []ids.ID) {
+=======
+	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, prefs []ids.ID, _ []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if *chitted {
 			t.Fatalf("Sent multiple chits")
 		}
@@ -294,13 +472,21 @@ func TestEngineQuery(t *testing.T) {
 
 	queried := new(bool)
 	queryRequestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if *queried {
 			t.Fatalf("Asked multiple times")
 		}
 		*queried = true
 		*queryRequestID = requestID
+<<<<<<< HEAD
 		vdrSet := ids.NodeIDSet{}
+=======
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr)
 		if !inVdrs.Equals(vdrSet) {
 			t.Fatalf("Asking wrong validator for preference")
@@ -310,7 +496,15 @@ func TestEngineQuery(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !bytes.Equal(b, vtx0.Bytes()) {
 			t.Fatalf("Wrong bytes")
 		}
@@ -342,7 +536,15 @@ func TestEngineQuery(t *testing.T) {
 		BytesV:   []byte{5, 4, 3, 2, 1, 9},
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtx0.ID() {
 			return &lux.TestVertex{
 				TestDecidable: choices.TestDecidable{
@@ -373,18 +575,30 @@ func TestEngineQuery(t *testing.T) {
 
 	// The peer returned [vtx1] from our query for [vtx0], which means we will
 	// need to request the missing [vtx1].
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx1.ID()}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx1.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	*queried = false
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if *queried {
 			t.Fatalf("Asked multiple times")
 		}
 		*queried = true
 		*queryRequestID = requestID
+<<<<<<< HEAD
 		vdrSet := ids.NodeIDSet{}
+=======
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr)
 		if !inVdrs.Equals(vdrSet) {
 			t.Fatalf("Asking wrong validator for preference")
@@ -394,12 +608,28 @@ func TestEngineQuery(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !bytes.Equal(b, vtx1.Bytes()) {
 			t.Fatalf("Wrong bytes")
 		}
 
+<<<<<<< HEAD
 		manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+		manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+		manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			if vtxID == vtx0.ID() {
 				return &lux.TestVertex{
 					TestDecidable: choices.TestDecidable{
@@ -482,9 +712,33 @@ func TestEngineMultipleQuery(t *testing.T) {
 
 	errs := wrappers.Errs{}
 	errs.Add(
+<<<<<<< HEAD
 		vals.AddWeight(vdr0, 1),
 		vals.AddWeight(vdr1, 1),
 		vals.AddWeight(vdr2, 1),
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+		vals.Add(vdr0, nil, ids.Empty, 1),
+		vals.Add(vdr1, nil, ids.Empty, 1),
+		vals.Add(vdr2, nil, ids.Empty, 1),
+=======
+		vals.Add(vdr0, 1),
+		vals.Add(vdr1, 1),
+		vals.Add(vdr2, 1),
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		vals.Add(vdr0, nil, 1),
+		vals.Add(vdr1, nil, 1),
+		vals.Add(vdr2, nil, 1),
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		vals.Add(vdr0, nil, ids.Empty, 1),
+		vals.Add(vdr1, nil, ids.Empty, 1),
+		vals.Add(vdr2, nil, ids.Empty, 1),
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -511,8 +765,39 @@ func TestEngineMultipleQuery(t *testing.T) {
 	vts := []lux.Vertex{gVtx, mVtx}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -544,19 +829,31 @@ func TestEngineMultipleQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	queried := new(bool)
 	queryRequestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if *queried {
 			t.Fatalf("Asked multiple times")
 		}
 		*queried = true
 		*queryRequestID = requestID
+<<<<<<< HEAD
 		vdrSet := ids.NodeIDSet{}
+=======
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr0, vdr1, vdr2)
 		if !inVdrs.Equals(vdrSet) {
 			t.Fatalf("Asking wrong validator for preference")
@@ -580,7 +877,15 @@ func TestEngineMultipleQuery(t *testing.T) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -615,18 +920,30 @@ func TestEngineMultipleQuery(t *testing.T) {
 
 	s2 := []ids.ID{vtx0.ID()}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr0, *queryRequestID, s0); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr0, *queryRequestID, s0, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if err := te.QueryFailed(context.Background(), vdr1, *queryRequestID); err != nil {
 		t.Fatal(err)
 	}
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr2, *queryRequestID, s2); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr2, *queryRequestID, s2, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	// Should be dropped because the query was marked as failed
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr1, *queryRequestID, s0); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr1, *queryRequestID, s0, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -649,7 +966,23 @@ func TestEngineBlockedIssue(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -704,7 +1037,11 @@ func TestEngineBlockedIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -729,7 +1066,23 @@ func TestEngineAbandonResponse(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -769,14 +1122,39 @@ func TestEngineAbandonResponse(t *testing.T) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) { return nil, errUnknownVertex }
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.GetVtxF = func(context.Context, ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.GetVtxF = func(context.Context, ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+		return nil, errUnknownVertex
+	}
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) { return nil, errUnknownVertex }
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 
 	te, err := newTransitive(engCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -805,7 +1183,23 @@ func TestEngineScheduleRepoll(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -854,12 +1248,20 @@ func TestEngineScheduleRepoll(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	requestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, reqID uint32, _ []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], reqID uint32, _ []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		*requestID = reqID
 	}
 
@@ -870,7 +1272,11 @@ func TestEngineScheduleRepoll(t *testing.T) {
 	sender.SendPushQueryF = nil
 
 	repolled := new(bool)
+<<<<<<< HEAD
 	sender.SendPullQueryF = func(_ context.Context, _ ids.NodeIDSet, _ uint32, vtxID ids.ID) {
+=======
+	sender.SendPullQueryF = func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, vtxID ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		*repolled = true
 		if vtxID != vtx.ID() {
 			t.Fatalf("Wrong vertex queried")
@@ -901,7 +1307,23 @@ func TestEngineRejectDoubleSpendTx(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -909,7 +1331,11 @@ func TestEngineRejectDoubleSpendTx(t *testing.T) {
 	engCfg.Manager = manager
 	manager.Default(true)
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	engCfg.VM = vm
 	vm.Default(true)
 
@@ -947,8 +1373,39 @@ func TestEngineRejectDoubleSpendTx(t *testing.T) {
 	}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[0])
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -958,8 +1415,18 @@ func TestEngineRejectDoubleSpendTx(t *testing.T) {
 		t.Fatalf("Unknown vertex")
 		panic("Should have errored")
 	}
+<<<<<<< HEAD
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		return &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		return &avalanche.TestVertex{
+=======
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		return &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -977,14 +1444,39 @@ func TestEngineRejectDoubleSpendTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
 	sender.CantSendPushQuery = false
+<<<<<<< HEAD
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx0, tx1} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 }
@@ -1003,7 +1495,23 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1011,7 +1519,11 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 	engCfg.Manager = manager
 	manager.Default(true)
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	engCfg.VM = vm
 	vm.Default(true)
 
@@ -1049,8 +1561,39 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 	}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[0])
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1067,13 +1610,27 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
+<<<<<<< HEAD
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		return &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		return &avalanche.TestVertex{
+=======
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		return &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -1087,6 +1644,7 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 
 	sender.CantSendPushQuery = false
 
+<<<<<<< HEAD
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx0} }
 	if err := te.Notify(common.PendingTxs); err != nil {
 		t.Fatal(err)
@@ -1094,6 +1652,41 @@ func TestEngineRejectDoubleSpendIssuedTx(t *testing.T) {
 
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx1} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+		t.Fatal(err)
+	}
+
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+		return []snowstorm.Tx{tx0}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+		t.Fatal(err)
+	}
+
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx1}
+	}
+<<<<<<< HEAD
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 }
@@ -1112,7 +1705,23 @@ func TestEngineIssueRepoll(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1129,8 +1738,39 @@ func TestEngineIssueRepoll(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1146,12 +1786,21 @@ func TestEngineIssueRepoll(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
 		t.Fatal(err)
 	}
 
 	sender.SendPullQueryF = func(_ context.Context, vdrs ids.NodeIDSet, _ uint32, vtxID ids.ID) {
 		vdrSet := ids.NodeIDSet{}
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	sender.SendPullQueryF = func(_ context.Context, vdrs set.Set[ids.NodeID], _ uint32, vtxID ids.ID) {
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr)
 		if !vdrs.Equals(vdrSet) {
 			t.Fatalf("Wrong query recipients")
@@ -1183,7 +1832,23 @@ func TestEngineReissue(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1191,7 +1856,11 @@ func TestEngineReissue(t *testing.T) {
 	manager.Default(true)
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	engCfg.VM = vm
 
@@ -1258,8 +1927,39 @@ func TestEngineReissue(t *testing.T) {
 		BytesV:   []byte{42},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1278,14 +1978,30 @@ func TestEngineReissue(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
+<<<<<<< HEAD
 	lastVtx := new(lux.TestVertex)
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		lastVtx = &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	lastVtx := new(avalanche.TestVertex)
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		lastVtx = &avalanche.TestVertex{
+=======
+	lastVtx := new(lux.TestVertex)
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		lastVtx = &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -1298,7 +2014,11 @@ func TestEngineReissue(t *testing.T) {
 		return lastVtx, nil
 	}
 
+<<<<<<< HEAD
 	vm.GetTxF = func(id ids.ID) (snowstorm.Tx, error) {
+=======
+	vm.GetTxF = func(_ context.Context, id ids.ID) (snowstorm.Tx, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if id != tx0.ID() {
 			t.Fatalf("Wrong tx")
 		}
@@ -1306,6 +2026,7 @@ func TestEngineReissue(t *testing.T) {
 	}
 
 	queryRequestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, requestID uint32, _ []byte) {
 		*queryRequestID = requestID
 	}
@@ -1316,6 +2037,38 @@ func TestEngineReissue(t *testing.T) {
 	}
 
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], requestID uint32, _ []byte) {
+		*queryRequestID = requestID
+	}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+		t.Fatal(err)
+	}
+
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !bytes.Equal(b, vtx.Bytes()) {
 			t.Fatalf("Wrong bytes")
 		}
@@ -1324,7 +2077,11 @@ func TestEngineReissue(t *testing.T) {
 
 	// must vote on the first poll for the second one to settle
 	// *queryRequestID is 1
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx.ID()}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1333,13 +2090,38 @@ func TestEngineReissue(t *testing.T) {
 	}
 	manager.ParseVtxF = nil
 
+<<<<<<< HEAD
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx3} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx3}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx3}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx3}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	// vote on second poll, *queryRequestID is 2
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx.ID()}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{vtx.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1365,7 +2147,23 @@ func TestEngineLargeIssue(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1373,7 +2171,11 @@ func TestEngineLargeIssue(t *testing.T) {
 	manager.Default(true)
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	engCfg.VM = vm
 
@@ -1411,8 +2213,39 @@ func TestEngineLargeIssue(t *testing.T) {
 	}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[1])
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1429,14 +2262,30 @@ func TestEngineLargeIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
+<<<<<<< HEAD
 	lastVtx := new(lux.TestVertex)
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		lastVtx = &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	lastVtx := new(avalanche.TestVertex)
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		lastVtx = &avalanche.TestVertex{
+=======
+	lastVtx := new(lux.TestVertex)
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		lastVtx = &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -1451,8 +2300,29 @@ func TestEngineLargeIssue(t *testing.T) {
 
 	sender.CantSendPushQuery = false
 
+<<<<<<< HEAD
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx0, tx1} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1474,11 +2344,19 @@ func TestEngineGetVertex(t *testing.T) {
 	manager := vertex.NewTestManager(t)
 	manager.Default(true)
 	engCfg.Manager = manager
+<<<<<<< HEAD
 	luxGetHandler, err := luxgetter.New(manager, commonCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	engCfg.AllGetsServer = luxGetHandler
+=======
+	avaGetHandler, err := avagetter.New(manager, commonCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	engCfg.AllGetsServer = avaGetHandler
+>>>>>>> 53a8245a8 (Update consensus)
 
 	gVtx := &lux.TestVertex{TestDecidable: choices.TestDecidable{
 		IDV:     ids.GenerateTestID(),
@@ -1489,8 +2367,39 @@ func TestEngineGetVertex(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1506,7 +2415,11 @@ func TestEngineGetVertex(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1560,8 +2473,39 @@ func TestEngineInsufficientValidators(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1577,12 +2521,20 @@ func TestEngineInsufficientValidators(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	queried := new(bool)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
+=======
+	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		*queried = true
 	}
 
@@ -1602,7 +2554,23 @@ func TestEnginePushGossip(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1636,8 +2604,39 @@ func TestEnginePushGossip(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1655,7 +2654,11 @@ func TestEnginePushGossip(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1664,7 +2667,15 @@ func TestEnginePushGossip(t *testing.T) {
 		*requested = true
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx.BytesV) {
 			return vtx, nil
 		}
@@ -1690,7 +2701,23 @@ func TestEngineSingleQuery(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1724,8 +2751,39 @@ func TestEngineSingleQuery(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1743,7 +2801,11 @@ func TestEngineSingleQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1762,7 +2824,23 @@ func TestEngineParentBlockingInsert(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1816,8 +2894,39 @@ func TestEngineParentBlockingInsert(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1833,7 +2942,11 @@ func TestEngineParentBlockingInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1869,7 +2982,23 @@ func TestEngineAbandonChit(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err := vals.AddWeight(vdr, 1)
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+=======
+	err := vals.Add(vdr, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vals.Add(vdr, nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(err)
 
 	sender := &common.SenderTest{T: t}
@@ -1902,8 +3031,39 @@ func TestEngineAbandonChit(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -1917,11 +3077,19 @@ func TestEngineAbandonChit(t *testing.T) {
 	te, err := newTransitive(engCfg)
 	require.NoError(err)
 
+<<<<<<< HEAD
 	err = te.Start(0)
 	require.NoError(err)
 
 	var reqID uint32
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, requestID uint32, _ []byte) {
+=======
+	err = te.Start(context.Background(), 0)
+	require.NoError(err)
+
+	var reqID uint32
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], requestID uint32, _ []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		reqID = requestID
 	}
 
@@ -1929,7 +3097,15 @@ func TestEngineAbandonChit(t *testing.T) {
 	require.NoError(err)
 
 	fakeVtxID := ids.GenerateTestID()
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		require.Equal(fakeVtxID, id)
 		return nil, errMissing
 	}
@@ -1939,7 +3115,11 @@ func TestEngineAbandonChit(t *testing.T) {
 	}
 
 	// Register a voter dependency on an unknown vertex.
+<<<<<<< HEAD
 	err = te.Chits(context.Background(), vdr, reqID, []ids.ID{fakeVtxID})
+=======
+	err = te.Chits(context.Background(), vdr, reqID, []ids.ID{fakeVtxID}, nil)
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(err)
 	require.Len(te.vtxBlocked, 1)
 
@@ -1959,7 +3139,23 @@ func TestEngineAbandonChitWithUnexpectedPutVertex(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err := vals.AddWeight(vdr, 1)
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+=======
+	err := vals.Add(vdr, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vals.Add(vdr, nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(err)
 
 	sender := &common.SenderTest{T: t}
@@ -1998,8 +3194,39 @@ func TestEngineAbandonChitWithUnexpectedPutVertex(t *testing.T) {
 		BytesV:   []byte{0, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -2013,11 +3240,19 @@ func TestEngineAbandonChitWithUnexpectedPutVertex(t *testing.T) {
 	te, err := newTransitive(engCfg)
 	require.NoError(err)
 
+<<<<<<< HEAD
 	err = te.Start(0)
 	require.NoError(err)
 
 	var reqID uint32
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, requestID uint32, _ []byte) {
+=======
+	err = te.Start(context.Background(), 0)
+	require.NoError(err)
+
+	var reqID uint32
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], requestID uint32, _ []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		reqID = requestID
 	}
 
@@ -2025,7 +3260,15 @@ func TestEngineAbandonChitWithUnexpectedPutVertex(t *testing.T) {
 	require.NoError(err)
 
 	fakeVtxID := ids.GenerateTestID()
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		require.Equal(fakeVtxID, id)
 		return nil, errMissing
 	}
@@ -2035,14 +3278,26 @@ func TestEngineAbandonChitWithUnexpectedPutVertex(t *testing.T) {
 	}
 
 	// Register a voter dependency on an unknown vertex.
+<<<<<<< HEAD
 	err = te.Chits(context.Background(), vdr, reqID, []ids.ID{fakeVtxID})
+=======
+	err = te.Chits(context.Background(), vdr, reqID, []ids.ID{fakeVtxID}, nil)
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(err)
 	require.Len(te.vtxBlocked, 1)
 
 	sender.CantSendPullQuery = false
 
 	gVtxBytes := gVtx.Bytes()
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		require.Equal(gVtxBytes, b)
 		return gVtx, nil
 	}
@@ -2061,7 +3316,23 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2115,8 +3386,39 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 		BytesV:   []byte{2, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -2132,7 +3434,11 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2140,14 +3446,30 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == blockingVtx.ID() {
 			return blockingVtx, nil
 		}
 		t.Fatalf("Unknown vertex")
 		panic("Should have errored")
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, blockingVtx.Bytes()) {
 			return blockingVtx, nil
 		}
@@ -2183,7 +3505,23 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2237,8 +3575,39 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		BytesV:   []byte{2, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -2254,7 +3623,11 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2263,9 +3636,15 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	}
 
 	queryRequestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
 		*queryRequestID = requestID
 		vdrSet := ids.NodeIDSet{}
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+		*queryRequestID = requestID
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr)
 		if !inVdrs.Equals(vdrSet) {
 			t.Fatalf("Asking wrong validator for preference")
@@ -2279,7 +3658,15 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if id == blockingVtx.ID() {
 			return blockingVtx, nil
 		}
@@ -2287,7 +3674,11 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		panic("Should have errored")
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{blockingVtx.ID()}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{blockingVtx.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2316,7 +3707,23 @@ func TestEngineMissingTx(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2370,8 +3777,39 @@ func TestEngineMissingTx(t *testing.T) {
 		BytesV:   []byte{2, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -2387,7 +3825,11 @@ func TestEngineMissingTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2396,9 +3838,15 @@ func TestEngineMissingTx(t *testing.T) {
 	}
 
 	queryRequestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
 		*queryRequestID = requestID
 		vdrSet := ids.NodeIDSet{}
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+		*queryRequestID = requestID
+		vdrSet := set.Set[ids.NodeID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 		vdrSet.Add(vdr)
 		if !inVdrs.Equals(vdrSet) {
 			t.Fatalf("Asking wrong validator for preference")
@@ -2412,7 +3860,15 @@ func TestEngineMissingTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if id == blockingVtx.ID() {
 			return blockingVtx, nil
 		}
@@ -2420,7 +3876,11 @@ func TestEngineMissingTx(t *testing.T) {
 		panic("Should have errored")
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{blockingVtx.ID()}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, *queryRequestID, []ids.ID{blockingVtx.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2449,7 +3909,23 @@ func TestEngineIssueBlockingTx(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2494,7 +3970,11 @@ func TestEngineIssueBlockingTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2514,7 +3994,23 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2525,6 +4021,10 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 
 	manager := vertex.NewTestManager(t)
 	manager.Default(true)
+<<<<<<< HEAD
+=======
+	manager.TestStorage.CantEdge = false
+>>>>>>> 53a8245a8 (Update consensus)
 	engCfg.Manager = manager
 
 	gVtx := &lux.TestVertex{TestDecidable: choices.TestDecidable{
@@ -2559,11 +4059,23 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 		BytesV:   vtxBytes1,
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID {
 		return []ids.ID{gVtx.ID()}
 	}
 
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID()}
+	}
+
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == gVtx.ID() {
 			return gVtx, nil
 		}
@@ -2576,7 +4088,11 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2588,14 +4104,30 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 		*requestID = reqID
 	}
 	sender.CantSendChits = false
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtxBytes1) {
 			return vtx1, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID1 {
 			return vtx1, nil
 		}
@@ -2620,7 +4152,15 @@ func TestEngineReissueAbortedVertex(t *testing.T) {
 			*requested = true
 		}
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID1 {
 			return vtx1, nil
 		}
@@ -2642,7 +4182,23 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 
 	vals := validators.NewSet()
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2664,10 +4220,18 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 
 	manager := vertex.NewTestManager(t)
 	manager.Default(true)
+<<<<<<< HEAD
 	bootCfg.Manager = manager
 	engCfg.Manager = manager
 
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	manager.TestStorage.CantEdge = false
+	bootCfg.Manager = manager
+	engCfg.Manager = manager
+
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	bootCfg.VM = vm
 	engCfg.VM = vm
@@ -2730,7 +4294,11 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 
 	requested := new(bool)
 	requestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32) {
+=======
+	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
@@ -2743,6 +4311,10 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 
 	dh := &dummyHandler{}
 	bootstrapper, err := bootstrap.New(
+<<<<<<< HEAD
+=======
+		context.Background(),
+>>>>>>> 53a8245a8 (Update consensus)
 		bootCfg,
 		dh.onDoneBootstrapping,
 	)
@@ -2756,11 +4328,19 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 	}
 	dh.startEngineF = te.Start
 
+<<<<<<< HEAD
 	if err := bootstrapper.Start(0); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := bootstrapper.Connected(vdr, version.CurrentApp); err != nil {
+=======
+	if err := bootstrapper.Start(context.Background(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := bootstrapper.Connected(context.Background(), vdr, version.CurrentApp); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2773,14 +4353,22 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 	acceptedFrontier := []ids.ID{vtxID0}
 
 	*requested = false
+<<<<<<< HEAD
 	sender.SendGetAcceptedF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32, proposedAccepted []ids.ID) {
+=======
+	sender.SendGetAcceptedF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32, proposedAccepted []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
 		if !vdrs.Contains(vdr) {
 			t.Fatalf("Should have requested from %s", vdr)
 		}
+<<<<<<< HEAD
 		if !ids.Equals(acceptedFrontier, proposedAccepted) {
+=======
+		if !slices.Equal(acceptedFrontier, proposedAccepted) {
+>>>>>>> 53a8245a8 (Update consensus)
 			t.Fatalf("Wrong proposedAccepted vertices.\nExpected: %s\nGot: %s", acceptedFrontier, proposedAccepted)
 		}
 		*requested = true
@@ -2795,7 +4383,15 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 		t.Fatalf("Should have requested from the validators during AcceptedFrontier")
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID0 {
 			return nil, errMissing
 		}
@@ -2820,24 +4416,47 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 	manager.GetVtxF = nil
 	sender.SendGetF = nil
 
+<<<<<<< HEAD
 	vm.ParseTxF = func(b []byte) (snowstorm.Tx, error) {
+=======
+	vm.ParseTxF = func(_ context.Context, b []byte) (snowstorm.Tx, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, txBytes0) {
 			return tx0, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtxBytes0) {
 			return vtx0, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID {
 		return []ids.ID{vtxID0}
 	}
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vtxID0}
+	}
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID0 {
 			return vtx0, nil
 		}
@@ -2861,25 +4480,45 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 		t.Fatalf("Should have accepted %s", vtxID0)
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtxBytes1) {
 			return vtx1, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, chits []ids.ID) {
+=======
+	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, chits []ids.ID, _ []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if inVdr != vdr {
 			t.Fatalf("Sent to the wrong validator")
 		}
 
 		expected := []ids.ID{vtxID0}
 
+<<<<<<< HEAD
 		if !ids.Equals(expected, chits) {
 			t.Fatalf("Returned wrong chits")
 		}
 	}
 	sender.SendPushQueryF = func(_ context.Context, vdrs ids.NodeIDSet, _ uint32, vtx []byte) {
+=======
+		if !slices.Equal(expected, chits) {
+			t.Fatalf("Returned wrong chits")
+		}
+	}
+	sender.SendPushQueryF = func(_ context.Context, vdrs set.Set[ids.NodeID], _ uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
@@ -2891,7 +4530,15 @@ func TestEngineBootstrappingIntoConsensus(t *testing.T) {
 			t.Fatalf("Sent wrong query bytes")
 		}
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID1 {
 			return vtx1, nil
 		}
@@ -2917,7 +4564,23 @@ func TestEngineReBootstrapFails(t *testing.T) {
 
 	vals := validators.NewSet()
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2942,7 +4605,11 @@ func TestEngineReBootstrapFails(t *testing.T) {
 	bootCfg.Manager = manager
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	bootCfg.VM = vm
 	engCfg.VM = vm
@@ -2978,7 +4645,11 @@ func TestEngineReBootstrapFails(t *testing.T) {
 
 	requested := new(bool)
 	requestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32) {
+=======
+	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32) {
+>>>>>>> 53a8245a8 (Update consensus)
 		// instead of triggering the timeout here, we'll just invoke the GetAcceptedFrontierFailed func
 		//
 		// s.router.GetAcceptedFrontierFailed(context.Background(), vID, s.ctx.ChainID, requestID)
@@ -3004,6 +4675,10 @@ func TestEngineReBootstrapFails(t *testing.T) {
 
 	dh := &dummyHandler{}
 	bootstrapper, err := bootstrap.New(
+<<<<<<< HEAD
+=======
+		context.Background(),
+>>>>>>> 53a8245a8 (Update consensus)
 		bootCfg,
 		dh.onDoneBootstrapping,
 	)
@@ -3011,7 +4686,11 @@ func TestEngineReBootstrapFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := bootstrapper.Start(0); err != nil {
+=======
+	if err := bootstrapper.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3021,7 +4700,11 @@ func TestEngineReBootstrapFails(t *testing.T) {
 
 	// reset requested
 	*requested = false
+<<<<<<< HEAD
 	sender.SendGetAcceptedF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32, proposedAccepted []ids.ID) {
+=======
+	sender.SendGetAcceptedF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32, proposedAccepted []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
@@ -3048,6 +4731,10 @@ func TestEngineReBootstrapFails(t *testing.T) {
 
 	// re-register the Transitive
 	bootstrapper2, err := bootstrap.New(
+<<<<<<< HEAD
+=======
+		context.Background(),
+>>>>>>> 53a8245a8 (Update consensus)
 		bootCfg,
 		dh.onDoneBootstrapping,
 	)
@@ -3055,7 +4742,11 @@ func TestEngineReBootstrapFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := bootstrapper2.Start(0); err != nil {
+=======
+	if err := bootstrapper2.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3080,7 +4771,23 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 
 	vals := validators.NewSet()
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3105,7 +4812,11 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 	bootCfg.Manager = manager
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	bootCfg.VM = vm
 	engCfg.VM = vm
@@ -3168,7 +4879,11 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 
 	requested := new(bool)
 	requestID := new(uint32)
+<<<<<<< HEAD
 	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32) {
+=======
+	sender.SendGetAcceptedFrontierF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
@@ -3181,6 +4896,10 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 
 	dh := &dummyHandler{}
 	bootstrapper, err := bootstrap.New(
+<<<<<<< HEAD
+=======
+		context.Background(),
+>>>>>>> 53a8245a8 (Update consensus)
 		bootCfg,
 		dh.onDoneBootstrapping,
 	)
@@ -3194,11 +4913,19 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 	}
 	dh.startEngineF = te.Start
 
+<<<<<<< HEAD
 	if err := bootstrapper.Start(0); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := bootstrapper.Connected(vdr, version.CurrentApp); err != nil {
+=======
+	if err := bootstrapper.Start(context.Background(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := bootstrapper.Connected(context.Background(), vdr, version.CurrentApp); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3219,14 +4946,22 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 	acceptedFrontier := []ids.ID{vtxID0}
 
 	*requested = false
+<<<<<<< HEAD
 	sender.SendGetAcceptedF = func(_ context.Context, vdrs ids.NodeIDSet, reqID uint32, proposedAccepted []ids.ID) {
+=======
+	sender.SendGetAcceptedF = func(_ context.Context, vdrs set.Set[ids.NodeID], reqID uint32, proposedAccepted []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
 		if !vdrs.Contains(vdr) {
 			t.Fatalf("Should have requested from %s", vdr)
 		}
+<<<<<<< HEAD
 		if !ids.Equals(acceptedFrontier, proposedAccepted) {
+=======
+		if !slices.Equal(acceptedFrontier, proposedAccepted) {
+>>>>>>> 53a8245a8 (Update consensus)
 			t.Fatalf("Wrong proposedAccepted vertices.\nExpected: %s\nGot: %s", acceptedFrontier, proposedAccepted)
 		}
 		*requested = true
@@ -3241,7 +4976,15 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 		t.Fatalf("Should have requested from the validators during AcceptedFrontier")
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID0 {
 			return nil, errMissing
 		}
@@ -3265,24 +5008,47 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 
 	manager.GetVtxF = nil
 
+<<<<<<< HEAD
 	vm.ParseTxF = func(b []byte) (snowstorm.Tx, error) {
+=======
+	vm.ParseTxF = func(_ context.Context, b []byte) (snowstorm.Tx, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, txBytes0) {
 			return tx0, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtxBytes0) {
 			return vtx0, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID {
 		return []ids.ID{vtxID0}
 	}
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vtxID0}
+	}
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID0 {
 			return vtx0, nil
 		}
@@ -3308,25 +5074,45 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 		t.Fatalf("Should have accepted %s", vtxID0)
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtxBytes1) {
 			return vtx1, nil
 		}
 		t.Fatalf("Unknown bytes provided")
 		panic("Unknown bytes provided")
 	}
+<<<<<<< HEAD
 	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, chits []ids.ID) {
+=======
+	sender.SendChitsF = func(_ context.Context, inVdr ids.NodeID, _ uint32, chits []ids.ID, _ []ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if inVdr != vdr {
 			t.Fatalf("Sent to the wrong validator")
 		}
 
 		expected := []ids.ID{vtxID1}
 
+<<<<<<< HEAD
 		if !ids.Equals(expected, chits) {
 			t.Fatalf("Returned wrong chits")
 		}
 	}
 	sender.SendPushQueryF = func(_ context.Context, vdrs ids.NodeIDSet, _ uint32, vtx []byte) {
+=======
+		if !slices.Equal(expected, chits) {
+			t.Fatalf("Returned wrong chits")
+		}
+	}
+	sender.SendPushQueryF = func(_ context.Context, vdrs set.Set[ids.NodeID], _ uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if vdrs.Len() != 1 {
 			t.Fatalf("Should have requested from the validators")
 		}
@@ -3338,7 +5124,15 @@ func TestEngineReBootstrappingIntoConsensus(t *testing.T) {
 			t.Fatalf("Sent wrong query bytes")
 		}
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == vtxID1 {
 			return vtx1, nil
 		}
@@ -3363,7 +5157,23 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3389,7 +5199,11 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 			IDV:     ids.GenerateTestID(),
 			StatusV: choices.Processing,
 		},
+<<<<<<< HEAD
 		VerifyV: errors.New(""),
+=======
+		VerifyV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[1])
 
@@ -3417,7 +5231,11 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3425,7 +5243,11 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 	te.Sender = sender
 
 	reqID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, requestID uint32, _ []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], requestID uint32, _ []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		*reqID = requestID
 	}
 
@@ -3433,7 +5255,11 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
+=======
+	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("should have failed verification")
 	}
 
@@ -3441,17 +5267,32 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtx0.ID():
 			return vtx0, nil
 		case vtx1.ID():
 			return vtx1, nil
 		}
+<<<<<<< HEAD
 		return nil, errors.New("Unknown vtx")
 	}
 
 	if err := te.Chits(context.Background(), vdr, *reqID, []ids.ID{vtx1.ID()}); err != nil {
+=======
+		return nil, errUnknownVertex
+	}
+
+	if err := te.Chits(context.Background(), vdr, *reqID, []ids.ID{vtx1.ID()}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3467,7 +5308,23 @@ func TestEnginePartiallyValidVertex(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3493,7 +5350,11 @@ func TestEnginePartiallyValidVertex(t *testing.T) {
 			IDV:     ids.GenerateTestID(),
 			StatusV: choices.Processing,
 		},
+<<<<<<< HEAD
 		VerifyV: errors.New(""),
+=======
+		VerifyV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[1])
 
@@ -3512,13 +5373,27 @@ func TestEnginePartiallyValidVertex(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	expectedVtxBytes := []byte{1}
+<<<<<<< HEAD
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		return &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		return &avalanche.TestVertex{
+=======
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		return &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -3533,7 +5408,11 @@ func TestEnginePartiallyValidVertex(t *testing.T) {
 	sender := &common.SenderTest{T: t}
 	te.Sender = sender
 
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, _ uint32, vtx []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		if !bytes.Equal(expectedVtxBytes, vtx) {
 			t.Fatalf("wrong vertex queried")
 		}
@@ -3564,12 +5443,47 @@ func TestEngineGossip(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
 		t.Fatal(err)
 	}
 
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID()} }
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID()}
+	}
+	manager.GetVtxF = func(vtxID ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID()} }
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if vtxID == gVtx.ID() {
 			return gVtx, nil
 		}
@@ -3585,7 +5499,11 @@ func TestEngineGossip(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	if err := te.Gossip(); err != nil {
+=======
+	if err := te.Gossip(context.Background()); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3603,10 +5521,38 @@ func TestEngineInvalidVertexIgnoredFromUnexpectedPeer(t *testing.T) {
 	vdr := ids.GenerateTestNodeID()
 	secondVdr := ids.GenerateTestNodeID()
 
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := vals.AddWeight(secondVdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(secondVdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(secondVdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(secondVdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(secondVdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3665,12 +5611,24 @@ func TestEngineInvalidVertexIgnoredFromUnexpectedPeer(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	parsed := new(bool)
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx1.Bytes()) {
 			*parsed = true
 			return vtx1, nil
@@ -3678,7 +5636,15 @@ func TestEngineInvalidVertexIgnoredFromUnexpectedPeer(t *testing.T) {
 		return nil, errUnknownVertex
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !*parsed {
 			return nil, errUnknownVertex
 		}
@@ -3709,7 +5675,15 @@ func TestEngineInvalidVertexIgnoredFromUnexpectedPeer(t *testing.T) {
 	}
 
 	*parsed = false
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx0.Bytes()) {
 			*parsed = true
 			return vtx0, nil
@@ -3717,7 +5691,15 @@ func TestEngineInvalidVertexIgnoredFromUnexpectedPeer(t *testing.T) {
 		return nil, errUnknownVertex
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !*parsed {
 			return nil, errUnknownVertex
 		}
@@ -3749,7 +5731,23 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3809,12 +5807,24 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	parsed := new(bool)
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx1.Bytes()) {
 			*parsed = true
 			return vtx1, nil
@@ -3822,7 +5832,15 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 		return nil, errUnknownVertex
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !*parsed {
 			return nil, errUnknownVertex
 		}
@@ -3856,7 +5874,15 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 	}
 
 	*parsed = false
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx0.Bytes()) {
 			*parsed = true
 			return vtx0, nil
@@ -3864,7 +5890,15 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 		return nil, errUnknownVertex
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !*parsed {
 			return nil, errUnknownVertex
 		}
@@ -3899,7 +5933,23 @@ func TestEngineAggressivePolling(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -3909,7 +5959,11 @@ func TestEngineAggressivePolling(t *testing.T) {
 	manager := vertex.NewTestManager(t)
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	engCfg.VM = vm
 
@@ -3953,13 +6007,25 @@ func TestEngineAggressivePolling(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
 	parsed := new(bool)
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx.Bytes()) {
 			*parsed = true
 			return vtx, nil
@@ -3967,7 +6033,15 @@ func TestEngineAggressivePolling(t *testing.T) {
 		return nil, errUnknownVertex
 	}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if !*parsed {
 			return nil, errUnknownVertex
 		}
@@ -3979,10 +6053,37 @@ func TestEngineAggressivePolling(t *testing.T) {
 	}
 
 	numPushQueries := new(int)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) { *numPushQueries++ }
 
 	numPullQueries := new(int)
 	sender.SendPullQueryF = func(context.Context, ids.NodeIDSet, uint32, ids.ID) { *numPullQueries++ }
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+=======
+	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+		*numPushQueries++
+	}
+
+	numPullQueries := new(int)
+<<<<<<< HEAD
+<<<<<<< HEAD
+	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
+=======
+	sender.SendPullQueryF = func(context.Context, ids.NodeIDSet, uint32, ids.ID) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+		*numPullQueries++
+	}
+>>>>>>> 53a8245a8 (Update consensus)
 
 	vm.CantPendingTxs = false
 
@@ -4013,7 +6114,23 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4022,7 +6139,11 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 
 	manager.Default(true)
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	engCfg.VM = vm
 
@@ -4051,8 +6172,39 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 	}
 	tx.InputIDsV = append(tx.InputIDsV, utxos[0])
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -4069,14 +6221,30 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
+<<<<<<< HEAD
 	lastVtx := new(lux.TestVertex)
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
 		lastVtx = &lux.TestVertex{
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	lastVtx := new(avalanche.TestVertex)
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+		lastVtx = &avalanche.TestVertex{
+=======
+	lastVtx := new(lux.TestVertex)
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+		lastVtx = &lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				IDV:     ids.GenerateTestID(),
 				StatusV: choices.Processing,
@@ -4091,8 +6259,29 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 
 	sender.CantSendPushQuery = false
 
+<<<<<<< HEAD
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4100,12 +6289,24 @@ func TestEngineDuplicatedIssuance(t *testing.T) {
 		t.Fatalf("Should have issued txs differently")
 	}
 
+<<<<<<< HEAD
 	manager.BuildVtxF = func([]ids.ID, []snowstorm.Tx) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.BuildVtxF = func(context.Context, []ids.ID, []snowstorm.Tx) (avalanche.Vertex, error) {
+=======
+	manager.BuildVtxF = func([]ids.ID, []snowstorm.Tx) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("shouldn't have attempted to issue a duplicated tx")
 		return nil, nil
 	}
 
+<<<<<<< HEAD
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 }
@@ -4123,10 +6324,38 @@ func TestEngineDoubleChit(t *testing.T) {
 	vdr0 := ids.GenerateTestNodeID()
 	vdr1 := ids.GenerateTestNodeID()
 
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr0, 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := vals.AddWeight(vdr1, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(vdr1, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr0, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(vdr1, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr0, nil, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(vdr1, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(vdr1, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4168,8 +6397,39 @@ func TestEngineDoubleChit(t *testing.T) {
 		BytesV:   []byte{1, 1, 2, 3},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{vts[0].ID(), vts[1].ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{vts[0].ID(), vts[1].ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -4185,12 +6445,20 @@ func TestEngineDoubleChit(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	reqID := new(uint32)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtxBytes []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtxBytes []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		*reqID = requestID
 		if inVdrs.Len() != 2 {
 			t.Fatalf("Wrong number of validators")
@@ -4199,7 +6467,15 @@ func TestEngineDoubleChit(t *testing.T) {
 			t.Fatalf("Wrong vertex requested")
 		}
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if id == vtx.ID() {
 			return vtx, nil
 		}
@@ -4217,7 +6493,11 @@ func TestEngineDoubleChit(t *testing.T) {
 		t.Fatalf("Wrong tx status: %s ; expected: %s", status, choices.Processing)
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr0, *reqID, votes); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr0, *reqID, votes, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4225,7 +6505,11 @@ func TestEngineDoubleChit(t *testing.T) {
 		t.Fatalf("Wrong tx status: %s ; expected: %s", status, choices.Processing)
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr0, *reqID, votes); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr0, *reqID, votes, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4233,7 +6517,11 @@ func TestEngineDoubleChit(t *testing.T) {
 		t.Fatalf("Wrong tx status: %s ; expected: %s", status, choices.Processing)
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr1, *reqID, votes); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr1, *reqID, votes, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4249,7 +6537,23 @@ func TestEngineBubbleVotes(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err := vals.AddWeight(vdr, 1)
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+=======
+	err := vals.Add(vdr, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vals.Add(vdr, nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vals.Add(vdr, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(t, err)
 
 	sender := &common.SenderTest{T: t}
@@ -4326,8 +6630,39 @@ func TestEngineBubbleVotes(t *testing.T) {
 		BytesV:   []byte{2},
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return nil }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return nil
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return nil
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return nil
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return nil }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case vtx.ID():
 			return vtx, nil
@@ -4347,13 +6682,21 @@ func TestEngineBubbleVotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	queryReqID := new(uint32)
 	queried := new(bool)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtxBytes []byte) {
+=======
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtxBytes []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 		require.Len(t, inVdrs, 1, "wrong number of validators")
 		*queryReqID = requestID
 		require.Equal(t, vtx.Bytes(), vtxBytes, "wrong vertex requested")
@@ -4377,7 +6720,11 @@ func TestEngineBubbleVotes(t *testing.T) {
 
 	// can't apply votes yet because pendingVtx0 isn't issued because missingVtx
 	// is missing
+<<<<<<< HEAD
 	err = te.Chits(context.Background(), vdr, *queryReqID, []ids.ID{pendingVtx1.ID()})
+=======
+	err = te.Chits(context.Background(), vdr, *queryReqID, []ids.ID{pendingVtx1.ID()}, nil)
+>>>>>>> 53a8245a8 (Update consensus)
 	require.NoError(t, err)
 	require.Equal(t, choices.Processing, tx0.Status(), "wrong tx status")
 	require.Equal(t, choices.Processing, tx1.Status(), "wrong tx status")
@@ -4405,7 +6752,23 @@ func TestEngineIssue(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := vals.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := vals.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := vals.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4413,7 +6776,11 @@ func TestEngineIssue(t *testing.T) {
 	manager.Default(true)
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	engCfg.VM = vm
 
@@ -4450,8 +6817,39 @@ func TestEngineIssue(t *testing.T) {
 		InputIDsV:     utxos[1:],
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
 	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+<<<<<<< HEAD
+<<<<<<< HEAD
+========
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+<<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.EdgeF = func() []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+========
+	manager.EdgeF = func() []ids.ID { return []ids.ID{gVtx.ID(), mVtx.ID()} }
+	manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>>> 53a8245a8 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch id {
 		case gVtx.ID():
 			return gVtx, nil
@@ -4468,14 +6866,26 @@ func TestEngineIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = true
 	numBuilt := 0
 	vtxID := ids.GenerateTestID()
+<<<<<<< HEAD
 	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.BuildVtxF = func(_ context.Context, _ []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error) {
+=======
+	manager.BuildVtxF = func(_ []ids.ID, txs []snowstorm.Tx) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		numBuilt++
 		vtx := &lux.TestVertex{
 			TestDecidable: choices.TestDecidable{
@@ -4488,7 +6898,15 @@ func TestEngineIssue(t *testing.T) {
 			BytesV:   []byte{1},
 		}
 
+<<<<<<< HEAD
 		manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+		manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+=======
+		manager.GetVtxF = func(id ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 			switch id {
 			case gVtx.ID():
 				return gVtx, nil
@@ -4505,12 +6923,37 @@ func TestEngineIssue(t *testing.T) {
 	}
 
 	var queryRequestID uint32
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(_ context.Context, _ ids.NodeIDSet, requestID uint32, _ []byte) {
 		queryRequestID = requestID
 	}
 
 	vm.PendingTxsF = func() []snowstorm.Tx { return []snowstorm.Tx{tx0, tx1} }
 	if err := te.Notify(common.PendingTxs); err != nil {
+=======
+	sender.SendPushQueryF = func(_ context.Context, _ set.Set[ids.NodeID], requestID uint32, _ []byte) {
+		queryRequestID = requestID
+	}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.PendingTxsF = func() []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.PendingTxsF = func(context.Context) []snowstorm.Tx {
+		return []snowstorm.Tx{tx0, tx1}
+	}
+	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4518,7 +6961,11 @@ func TestEngineIssue(t *testing.T) {
 		t.Fatalf("Should have issued txs differently")
 	}
 
+<<<<<<< HEAD
 	if err := te.Chits(context.Background(), vdr, queryRequestID, []ids.ID{vtxID}); err != nil {
+=======
+	if err := te.Chits(context.Background(), vdr, queryRequestID, []ids.ID{vtxID}, nil); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4547,7 +6994,23 @@ func TestAbandonTx(t *testing.T) {
 
 	engCfg.Validators = validators.NewSet()
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := engCfg.Validators.AddWeight(vdr, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := engCfg.Validators.Add(vdr, nil, ids.Empty, 1); err != nil {
+=======
+	if err := engCfg.Validators.Add(vdr, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := engCfg.Validators.Add(vdr, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := engCfg.Validators.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4557,7 +7020,11 @@ func TestAbandonTx(t *testing.T) {
 	manager.CantGetVtx = false
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> 53a8245a8 (Update consensus)
 	vm.Default(true)
 	vm.CantSetState = false
 
@@ -4568,7 +7035,11 @@ func TestAbandonTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	if err := te.Start(0); err != nil {
+=======
+	if err := te.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -4590,7 +7061,11 @@ func TestAbandonTx(t *testing.T) {
 		DependenciesV: []snowstorm.Tx{gTx},
 		InputIDsV:     []ids.ID{gTx.ID()},
 		BytesV:        utils.RandomBytes(32),
+<<<<<<< HEAD
 		VerifyV:       errors.New(""),
+=======
+		VerifyV:       errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 
 	tx1 := &snowstorm.TestTx{ // Depends on tx0
@@ -4637,13 +7112,25 @@ func TestAbandonTx(t *testing.T) {
 
 	// Give the engine vtx1. It should wait to issue vtx1
 	// until tx0 is issued, because tx1 depends on tx0.
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx1.BytesV) {
 			vtx1.StatusV = choices.Processing
 			return vtx1, nil
 		}
 		require.FailNow("should have asked to parse vtx1")
+<<<<<<< HEAD
 		return nil, errors.New("should have asked to parse vtx1")
+=======
+		return nil, nil
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 	err = te.Put(context.Background(), vdr, 0, vtx1.Bytes())
 	require.NoError(err)
@@ -4653,13 +7140,25 @@ func TestAbandonTx(t *testing.T) {
 
 	// Give the engine vtx0. It should try to issue vtx0
 	// but then abandon it because tx0 fails verification.
+<<<<<<< HEAD
 	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+	manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		if bytes.Equal(b, vtx0.BytesV) {
 			vtx0.StatusV = choices.Processing
 			return vtx0, nil
 		}
 		require.FailNow("should have asked to parse vtx0")
+<<<<<<< HEAD
 		return nil, errors.New("should have asked to parse vtx0")
+=======
+		return nil, nil
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 	err = te.Put(context.Background(), vdr, 0, vtx0.Bytes())
 	require.NoError(err)
@@ -4687,7 +7186,10 @@ func TestSendMixedQuery(t *testing.T) {
 				sender := &common.SenderTest{T: t}
 				engCfg.Sender = sender
 				sender.Default(true)
+<<<<<<< HEAD
 				vdrSet := engCfg.Validators
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 				manager := vertex.NewTestManager(t)
 				engCfg.Manager = manager
 				// Override the parameters k, MixedQueryNumPushVdr, MixedQueryNumPushNonVdr,
@@ -4701,6 +7203,7 @@ func TestSendMixedQuery(t *testing.T) {
 					t.Fatal(err)
 				}
 				startReqID := uint32(0)
+<<<<<<< HEAD
 				if err := te.Start(startReqID); err != nil {
 					t.Fatal(err)
 				}
@@ -4718,6 +7221,71 @@ func TestSendMixedQuery(t *testing.T) {
 				}
 				if err := vdrSet.Set(vdrsList); err != nil {
 					t.Fatal(err)
+=======
+				if err := te.Start(context.Background(), startReqID); err != nil {
+					t.Fatal(err)
+				}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+				vdrs := set.Set[ids.NodeID]{}
+				te.Validators = validators.NewSet()
+				for i := 0; i < engCfg.Params.K; i++ {
+					vdrID := ids.GenerateTestNodeID()
+					vdrs.Add(vdrID)
+					err := te.Validators.Add(vdrID, nil, ids.Empty, 1)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				if tt.isVdr {
+					vdrs.Add(engCfg.Ctx.NodeID)
+					err := te.Validators.Add(engCfg.Ctx.NodeID, nil, ids.Empty, 1)
+=======
+				vdrsList := []validators.Validator{}
+=======
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+				vdrs := ids.NodeIDSet{}
+				te.Validators = validators.NewSet()
+				for i := 0; i < engCfg.Params.K; i++ {
+					vdrID := ids.GenerateTestNodeID()
+					vdrs.Add(vdrID)
+					err := te.Validators.Add(vdrID, nil, ids.Empty, 1)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				if tt.isVdr {
+					vdrs.Add(engCfg.Ctx.NodeID)
+<<<<<<< HEAD
+<<<<<<< HEAD
+					vdrsList = append(vdrsList, validators.NewValidator(engCfg.Ctx.NodeID, nil, 1))
+				}
+				te.Validators = validators.NewSet()
+				for _, vdr := range vdrsList {
+<<<<<<< HEAD
+<<<<<<< HEAD
+					err := te.Validators.AddWeight(vdr.ID(), vdr.Weight())
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+					err := te.Validators.Add(vdr.ID(), vdr.Weight())
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+					err := te.Validators.Add(vdr.ID(), nil, vdr.Weight())
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+					err := te.Validators.Add(engCfg.Ctx.NodeID, nil, 1)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+					err := te.Validators.Add(engCfg.Ctx.NodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+					if err != nil {
+						t.Fatal(err)
+					}
+>>>>>>> 53a8245a8 (Update consensus)
 				}
 
 				// [blk1] is a child of [gBlk] and passes verification
@@ -4735,7 +7303,15 @@ func TestSendMixedQuery(t *testing.T) {
 					BytesV: []byte{1},
 				}
 
+<<<<<<< HEAD
 				manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/transitive_test.go
+				manager.ParseVtxF = func(_ context.Context, b []byte) (avalanche.Vertex, error) {
+=======
+				manager.ParseVtxF = func(b []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 					switch {
 					case bytes.Equal(b, vtx1.Bytes()):
 						return vtx1, nil
@@ -4747,8 +7323,13 @@ func TestSendMixedQuery(t *testing.T) {
 
 				pullQuerySent := new(bool)
 				pullQueryReqID := new(uint32)
+<<<<<<< HEAD
 				pullQueriedVdrs := ids.NodeIDSet{}
 				sender.SendPullQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtxID ids.ID) {
+=======
+				pullQueriedVdrs := set.Set[ids.NodeID]{}
+				sender.SendPullQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtxID ids.ID) {
+>>>>>>> 53a8245a8 (Update consensus)
 					switch {
 					case *pullQuerySent:
 						t.Fatalf("Asked multiple times")
@@ -4762,8 +7343,13 @@ func TestSendMixedQuery(t *testing.T) {
 
 				pushQuerySent := new(bool)
 				pushQueryReqID := new(uint32)
+<<<<<<< HEAD
 				pushQueriedVdrs := ids.NodeIDSet{}
 				sender.SendPushQueryF = func(_ context.Context, inVdrs ids.NodeIDSet, requestID uint32, vtx []byte) {
+=======
+				pushQueriedVdrs := set.Set[ids.NodeID]{}
+				sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtx []byte) {
+>>>>>>> 53a8245a8 (Update consensus)
 					switch {
 					case *pushQuerySent:
 						t.Fatal("Asked multiple times")
@@ -4777,7 +7363,19 @@ func TestSendMixedQuery(t *testing.T) {
 
 				// Give the engine vtx1. It should insert it into consensus and send a mixed query
 				// consisting of 12 pull queries and 8 push queries.
+<<<<<<< HEAD
 				if err := te.Put(context.Background(), vdrSet.List()[0].ID(), constants.GossipMsgRequestID, vtx1.Bytes()); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, vtx1.Bytes()); err != nil {
+=======
+				if err := te.Put(context.Background(), te.Validators.List()[0].ID(), constants.GossipMsgRequestID, vtx1.Bytes()); err != nil {
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, vtx1.Bytes()); err != nil {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+>>>>>>> 53a8245a8 (Update consensus)
 					t.Fatal(err)
 				}
 
@@ -4805,3 +7403,136 @@ func TestSendMixedQuery(t *testing.T) {
 			})
 	}
 }
+<<<<<<< HEAD
+=======
+
+func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
+	require := require.New(t)
+
+	_, _, engCfg := DefaultConfig()
+	engCfg.Params.BatchSize = 1
+	engCfg.Params.BetaVirtuous = 2
+	engCfg.Params.BetaRogue = 2
+	engCfg.Params.OptimalProcessing = 1
+
+	sender := &common.SenderTest{T: t}
+	sender.Default(true)
+	sender.CantSendGetAcceptedFrontier = false
+	engCfg.Sender = sender
+
+	vals := validators.NewSet()
+	engCfg.Validators = vals
+
+	vdr := ids.GenerateTestNodeID()
+	require.NoError(vals.Add(vdr, nil, ids.Empty, 1))
+
+	manager := vertex.NewTestManager(t)
+	manager.Default(true)
+	engCfg.Manager = manager
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+=======
+	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+>>>>>>> 007ea3cdf (Apply accepted frontier rather than failing a query (#2135))
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
+	vm.Default(true)
+	engCfg.VM = vm
+
+	gVtx := &avalanche.TestVertex{TestDecidable: choices.TestDecidable{
+		IDV:     ids.GenerateTestID(),
+		StatusV: choices.Accepted,
+	}}
+	mVtx := &avalanche.TestVertex{TestDecidable: choices.TestDecidable{
+		IDV:     ids.GenerateTestID(),
+		StatusV: choices.Accepted,
+	}}
+
+	gTx := &snowstorm.TestTx{TestDecidable: choices.TestDecidable{
+		IDV:     ids.GenerateTestID(),
+		StatusV: choices.Accepted,
+	}}
+
+	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
+
+	tx := &snowstorm.TestTx{
+		TestDecidable: choices.TestDecidable{
+			IDV:     ids.GenerateTestID(),
+			StatusV: choices.Processing,
+		},
+		DependenciesV: []snowstorm.Tx{gTx},
+		InputIDsV:     utxos[:1],
+	}
+
+	manager.EdgeF = func(context.Context) []ids.ID {
+		return []ids.ID{gVtx.ID(), mVtx.ID()}
+	}
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+		switch id {
+		case gVtx.ID():
+			return gVtx, nil
+		case mVtx.ID():
+			return mVtx, nil
+		}
+		t.Fatalf("Unknown vertex")
+		panic("Should have errored")
+	}
+
+	vm.CantSetState = false
+	te, err := newTransitive(engCfg)
+	require.NoError(err)
+	require.NoError(te.Start(context.Background(), 0))
+
+	vtx := &avalanche.TestVertex{
+		TestDecidable: choices.TestDecidable{
+			IDV:     ids.GenerateTestID(),
+			StatusV: choices.Processing,
+		},
+		ParentsV: []avalanche.Vertex{gVtx, mVtx},
+		TxsV:     []snowstorm.Tx{tx},
+		BytesV:   utils.RandomBytes(32),
+	}
+
+	queryRequestID := new(uint32)
+	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtxBytes []byte) {
+		require.Contains(inVdrs, vdr)
+		require.Equal(vtx.Bytes(), vtxBytes)
+		*queryRequestID = requestID
+	}
+
+	require.NoError(te.issue(context.Background(), vtx))
+
+	manager.GetVtxF = func(_ context.Context, id ids.ID) (avalanche.Vertex, error) {
+		switch id {
+		case gVtx.ID():
+			return gVtx, nil
+		case mVtx.ID():
+			return mVtx, nil
+		case vtx.ID():
+			return vtx, nil
+		}
+		t.Fatalf("unknown vertex")
+		panic("Should have errored")
+	}
+
+	require.Equal(choices.Processing, vtx.Status())
+
+	sender.SendPullQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, vtxID ids.ID) {
+		require.Contains(inVdrs, vdr)
+		require.Equal(vtx.ID(), vtxID)
+		*queryRequestID = requestID
+	}
+
+	vtxIDs := []ids.ID{vtx.ID()}
+	require.NoError(te.Chits(context.Background(), vdr, *queryRequestID, vtxIDs, vtxIDs))
+
+	require.Equal(choices.Processing, vtx.Status())
+
+	require.NoError(te.QueryFailed(context.Background(), vdr, *queryRequestID))
+
+	require.Equal(choices.Accepted, vtx.Status())
+}
+>>>>>>> 53a8245a8 (Update consensus)

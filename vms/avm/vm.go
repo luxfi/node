@@ -19,6 +19,7 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/cache"
 	"github.com/ava-labs/avalanchego/database"
 	"github.com/ava-labs/avalanchego/database/manager"
@@ -45,6 +46,32 @@ import (
 	"github.com/ava-labs/avalanchego/vms/components/verify"
 	"github.com/ava-labs/avalanchego/vms/nftfx"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+=======
+	"github.com/luxdefi/luxd/cache"
+	"github.com/luxdefi/luxd/database"
+	"github.com/luxdefi/luxd/database/manager"
+	"github.com/luxdefi/luxd/database/versiondb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/pubsub"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/luxdefi/luxd/utils/json"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/utils/timer/mockable"
+	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/luxd/vms/avm/states"
+	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/luxdefi/luxd/vms/components/index"
+	"github.com/luxdefi/luxd/vms/components/keystore"
+	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/luxd/vms/nftfx"
+	"github.com/luxdefi/luxd/vms/secp256k1fx"
+>>>>>>> 04d685aa2 (Update consensus)
 
 	safemath "github.com/ava-labs/avalanchego/utils/math"
 	extensions "github.com/ava-labs/avalanchego/vms/avm/fxs"

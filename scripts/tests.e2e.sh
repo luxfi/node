@@ -35,6 +35,7 @@ fi
 echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
 
 #################################
+<<<<<<< HEAD
 # download avalanche-network-runner
 # https://github.com/ava-labs/avalanche-network-runner
 # TODO: migrate to upstream avalanche-network-runner
@@ -51,16 +52,30 @@ NETWORK_RUNNER_VERSION=1.3.5-rc.0
 >>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
 DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
 DOWNLOAD_URL="https://github.com/ava-labs/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+=======
+# download lux-network-runner
+# https://github.com/luxdefi/lux-network-runner
+# TODO: migrate to upstream lux-network-runner
+GOARCH=$(go env GOARCH)
+GOOS=$(go env GOOS)
+NETWORK_RUNNER_VERSION=1.2.2
+DOWNLOAD_PATH=/tmp/lux-network-runner.tar.gz
+DOWNLOAD_URL="https://github.com/luxdefi/lux-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/lux-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+>>>>>>> 04d685aa2 (Update consensus)
 
 rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/avalanche-network-runner
+rm -f /tmp/lux-network-runner
 
+<<<<<<< HEAD
 echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
+=======
+echo "downloading lux-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL}"
+>>>>>>> 04d685aa2 (Update consensus)
 curl --fail -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
 
-echo "extracting downloaded avalanche-network-runner"
+echo "extracting downloaded lux-network-runner"
 tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/avalanche-network-runner -h
+/tmp/lux-network-runner -h
 
 GOPATH="$(go env GOPATH)"
 PATH="${GOPATH}/bin:${PATH}"
@@ -73,9 +88,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "avalanche-network-runner" server
-echo "launch avalanche-network-runner in the background"
-/tmp/avalanche-network-runner \
+# run "lux-network-runner" server
+echo "launch lux-network-runner in the background"
+/tmp/lux-network-runner \
 server \
 --log-level debug \
 --port=":12342" \

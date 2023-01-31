@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/health"
 	"github.com/luxdefi/luxd/api/keystore"
 	"github.com/luxdefi/luxd/api/metrics"
@@ -52,6 +53,8 @@ import (
 	"github.com/luxdefi/luxd/vms/metervm"
 	"github.com/luxdefi/luxd/vms/proposervm"
 =======
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/ava-labs/avalanchego/api/health"
 	"github.com/ava-labs/avalanchego/api/keystore"
 	"github.com/ava-labs/avalanchego/api/metrics"
@@ -89,15 +92,66 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/teleporter"
 	"github.com/ava-labs/avalanchego/vms/proposervm"
 	"github.com/ava-labs/avalanchego/vms/tracedvm"
+<<<<<<< HEAD
 >>>>>>> c7cc22f98 (Add VM tracer (#2225))
+=======
+=======
+	"github.com/luxdefi/luxd/api/health"
+	"github.com/luxdefi/luxd/api/keystore"
+	"github.com/luxdefi/luxd/api/metrics"
+	"github.com/luxdefi/luxd/api/server"
+	"github.com/luxdefi/luxd/chains/atomic"
+	"github.com/luxdefi/luxd/database/prefixdb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/message"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/luxd/snow/engine/lux/state"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/engine/common/queue"
+	"github.com/luxdefi/luxd/snow/engine/common/tracker"
+	"github.com/luxdefi/luxd/snow/engine/snowman/block"
+	"github.com/luxdefi/luxd/snow/engine/snowman/syncer"
+	"github.com/luxdefi/luxd/snow/networking/handler"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/sender"
+	"github.com/luxdefi/luxd/snow/networking/timeout"
+	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/buffer"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto/bls"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/luxd/vms"
+	"github.com/luxdefi/luxd/vms/metervm"
+	"github.com/luxdefi/luxd/vms/proposervm"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	dbManager "github.com/luxdefi/luxd/database/manager"
 	timetracker "github.com/luxdefi/luxd/snow/networking/tracker"
 
+<<<<<<< HEAD
 	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
 	aveng "github.com/luxdefi/luxd/snow/engine/lux"
 	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
 	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+=======
+<<<<<<< HEAD
+	avcon "github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
+	avbootstrap "github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
+	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+=======
+	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
+	aveng "github.com/luxdefi/luxd/snow/engine/lux"
+	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
+	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	smcon "github.com/luxdefi/luxd/snow/consensus/snowman"
 	smeng "github.com/luxdefi/luxd/snow/engine/snowman"
@@ -112,11 +166,19 @@ const (
 
 var (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	errUnknownChainID   = errors.New("unknown chain ID")
 	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
 =======
 	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
 >>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
+=======
+	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
+=======
+	errUnknownChainID   = errors.New("unknown chain ID")
+	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 	errCreatePlatformVM = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped  = errors.New("subnets not bootstrapped")
 

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -12,10 +16,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/linkedhashmap"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/metric"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/metric"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
@@ -91,7 +102,11 @@ func NewSet(
 
 // Add to the current set of polls
 // Returns true if the poll was registered correctly and the network sample
+<<<<<<< HEAD
 //         should be made.
+=======
+// should be made.
+>>>>>>> 53a8245a8 (Update consensus)
 func (s *set) Add(requestID uint32, vdrs ids.NodeIDBag) bool {
 	if _, exists := s.polls.Get(requestID); exists {
 		s.log.Debug("dropping poll",
@@ -132,7 +147,11 @@ func (s *set) Vote(requestID uint32, vdr ids.NodeID, votes []ids.ID) []ids.Uniqu
 	s.log.Verbo("processing votes",
 		zap.Stringer("validator", vdr),
 		zap.Uint32("requestID", requestID),
+<<<<<<< HEAD
 		zap.Stringer("votes", ids.SliceStringer(votes)),
+=======
+		zap.Stringers("votes", votes),
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 
 	p.Vote(vdr, votes)
@@ -170,7 +189,13 @@ func (s *set) Vote(requestID uint32, vdr ids.NodeID, votes []ids.ID) []ids.Uniqu
 }
 
 // Len returns the number of outstanding polls
+<<<<<<< HEAD
 func (s *set) Len() int { return s.polls.Len() }
+=======
+func (s *set) Len() int {
+	return s.polls.Len()
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (s *set) String() string {
 	sb := strings.Builder{}

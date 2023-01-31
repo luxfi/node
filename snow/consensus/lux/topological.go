@@ -1,20 +1,37 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
+<<<<<<< HEAD
+=======
+	"context"
+>>>>>>> 53a8245a8 (Update consensus)
 	"errors"
 	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/consensus/metrics"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/metrics"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const minMapSize = 16
@@ -29,7 +46,13 @@ var (
 // TopologicalFactory implements Factory by returning a topological struct
 type TopologicalFactory struct{}
 
+<<<<<<< HEAD
 func (TopologicalFactory) New() Consensus { return &Topological{} }
+=======
+func (TopologicalFactory) New() Consensus {
+	return &Topological{}
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 // TODO: Implement pruning of decisions.
 // To perfectly preserve the protocol, this implementation will need to store
@@ -59,6 +82,7 @@ type Topological struct {
 	cg snowstorm.Consensus
 
 	// preferred is the frontier of vtxIDs that are strongly preferred
+<<<<<<< HEAD
 	preferred ids.Set
 
 	// virtuous is the frontier of vtxIDs that are strongly virtuous
@@ -66,11 +90,24 @@ type Topological struct {
 
 	// orphans are the txIDs that are virtuous, but not preferred
 	orphans ids.Set
+=======
+	preferred set.Set[ids.ID]
+
+	// virtuous is the frontier of vtxIDs that are strongly virtuous
+	virtuous set.Set[ids.ID]
+
+	// orphans are the txIDs that are virtuous, but not preferred
+	orphans set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// virtuousVoting are the txIDs that are virtuous and still awaiting
 	// additional votes before acceptance. transactionVertices whose vertices
 	// are not considered virtuous are removed from this set.
+<<<<<<< HEAD
 	virtuousVoting ids.Set
+=======
+	virtuousVoting set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// frontier is the set of vts that have no descendents
 	frontier map[ids.ID]Vertex
@@ -80,9 +117,15 @@ type Topological struct {
 
 	// Used in [calculateInDegree] and [markAncestorInDegrees].
 	// Should only be accessed in those methods.
+<<<<<<< HEAD
 	// We use this one instance of ids.Set instead of creating a
 	// new ids.Set during each call to [calculateInDegree].
 	leaves ids.Set
+=======
+	// We use this one instance of set.Set instead of creating a
+	// new set.Set during each call to [calculateInDegree].
+	leaves set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// Kahn nodes used in [calculateInDegree] and [markAncestorInDegrees].
 	// Should only be accessed in those methods.
@@ -98,11 +141,20 @@ type Topological struct {
 
 type kahnNode struct {
 	inDegree int
+<<<<<<< HEAD
 	votes    ids.BitSet64
 }
 
 func (ta *Topological) Initialize(
 	ctx *snow.ConsensusContext,
+=======
+	votes    set.Bits64
+}
+
+func (ta *Topological) Initialize(
+	ctx context.Context,
+	chainCtx *snow.ConsensusContext,
+>>>>>>> 53a8245a8 (Update consensus)
 	params Parameters,
 	frontier []Vertex,
 ) error {
@@ -110,6 +162,7 @@ func (ta *Topological) Initialize(
 		return err
 	}
 
+<<<<<<< HEAD
 	ta.ctx = ctx
 	ta.params = params
 	ta.leaves = ids.Set{}
@@ -117,6 +170,15 @@ func (ta *Topological) Initialize(
 	ta.kahnNodes = make(map[ids.ID]kahnNode)
 
 	latencyMetrics, err := metrics.NewLatency("vtx", "vertex/vertices", ctx.Log, "", ctx.Registerer)
+=======
+	ta.ctx = chainCtx
+	ta.params = params
+	ta.leaves = set.Set[ids.ID]{}
+	ta.votes = ids.UniqueBag{}
+	ta.kahnNodes = make(map[ids.ID]kahnNode)
+
+	latencyMetrics, err := metrics.NewLatency("vtx", "vertex/vertices", chainCtx.Log, "", chainCtx.Registerer)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		return err
 	}
@@ -125,7 +187,11 @@ func (ta *Topological) Initialize(
 	ta.nodes = make(map[ids.ID]*transactionVertex, minMapSize)
 
 	ta.cg = &snowstorm.Directed{}
+<<<<<<< HEAD
 	if err := ta.cg.Initialize(ctx, params.Parameters); err != nil {
+=======
+	if err := ta.cg.Initialize(chainCtx, params.Parameters); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return err
 	}
 
@@ -133,6 +199,7 @@ func (ta *Topological) Initialize(
 	for _, vtx := range frontier {
 		ta.frontier[vtx.ID()] = vtx
 	}
+<<<<<<< HEAD
 	return ta.updateFrontiers()
 }
 
@@ -143,6 +210,39 @@ func (ta *Topological) Parameters() Parameters { return ta.params }
 func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool { return ta.cg.IsVirtuous(tx) }
 
 func (ta *Topological) Add(vtx Vertex) error {
+=======
+	return ta.updateFrontiers(ctx)
+}
+
+func (ta *Topological) NumProcessing() int {
+	return len(ta.nodes)
+}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
+	return ta.cg.IsVirtuous(tx)
+}
+
+func (ta *Topological) Add(ctx context.Context, vtx Vertex) error {
+=======
+func (ta *Topological) Parameters() Parameters {
+	return ta.params
+}
+
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
+func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
+	return ta.cg.IsVirtuous(tx)
+}
+
+<<<<<<< HEAD
+func (ta *Topological) Add(vtx Vertex) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ta *Topological) Add(ctx context.Context, vtx Vertex) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+>>>>>>> 53a8245a8 (Update consensus)
 	if vtx.Status().Decided() {
 		return nil // Already decided this vertex
 	}
@@ -152,14 +252,22 @@ func (ta *Topological) Add(vtx Vertex) error {
 		return nil // Already inserted this vertex
 	}
 
+<<<<<<< HEAD
 	txs, err := vtx.Txs()
+=======
+	txs, err := vtx.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		return err
 	}
 	for _, tx := range txs {
 		if !tx.Status().Decided() {
 			// Add the consumers to the conflict graph.
+<<<<<<< HEAD
 			if err := ta.cg.Add(tx); err != nil {
+=======
+			if err := ta.cg.Add(ctx, tx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 				return err
 			}
 
@@ -177,7 +285,11 @@ func (ta *Topological) Add(vtx Vertex) error {
 	ta.nodes[vtxID] = txv
 
 	// Also add the transaction vertex to the conflict graph to track conflicts.
+<<<<<<< HEAD
 	if err := ta.cg.Add(txv); err != nil {
+=======
+	if err := ta.cg.Add(ctx, txv); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return err
 	}
 
@@ -193,11 +305,19 @@ func (ta *Topological) Add(vtx Vertex) error {
 	// Because we don't call [updateFrontiers], previous vertices that were
 	// marked as virtuous will not be updated to no longer being virtuous. Even
 	// if this newly added vertex conflicts with them. This is an optimization
+<<<<<<< HEAD
 	// to avoid a retraversal of the DAG in the issuance path. Their virtuous
 	// status will be updated during a future poll. This is safe because the
 	// virtuous frontier is only used optimistically to control when it is valid
 	// to quiesce.
 	return ta.update(vtx) // Update the vertices preference and virtuous status
+=======
+	// to avoid a re-traversal of the DAG in the issuance path. Their virtuous
+	// status will be updated during a future poll. This is safe because the
+	// virtuous frontier is only used optimistically to control when it is valid
+	// to quiesce.
+	return ta.update(ctx, vtx) // Update the vertices preference and virtuous status
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 func (ta *Topological) VertexIssued(vtx Vertex) bool {
@@ -208,6 +328,7 @@ func (ta *Topological) VertexIssued(vtx Vertex) bool {
 	return ok
 }
 
+<<<<<<< HEAD
 func (ta *Topological) TxIssued(tx snowstorm.Tx) bool { return ta.cg.Issued(tx) }
 
 func (ta *Topological) Orphans() ids.Set { return ta.orphans }
@@ -217,13 +338,56 @@ func (ta *Topological) Virtuous() ids.Set { return ta.virtuous }
 func (ta *Topological) Preferences() ids.Set { return ta.preferred }
 
 func (ta *Topological) RecordPoll(responses ids.UniqueBag) error {
+=======
+func (ta *Topological) TxIssued(tx snowstorm.Tx) bool {
+	return ta.cg.Issued(tx)
+}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (ta *Topological) Orphans() set.Set[ids.ID] {
+	return ta.orphans
+}
+
+func (ta *Topological) Virtuous() set.Set[ids.ID] {
+	return ta.virtuous
+}
+
+func (ta *Topological) Preferences() set.Set[ids.ID] {
+=======
+func (ta *Topological) Orphans() ids.Set {
+=======
+func (ta *Topological) Orphans() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+	return ta.orphans
+}
+
+func (ta *Topological) Virtuous() set.Set[ids.ID] {
+	return ta.virtuous
+}
+
+<<<<<<< HEAD
+func (ta *Topological) Preferences() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ta *Topological) Preferences() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+	return ta.preferred
+}
+
+func (ta *Topological) RecordPoll(ctx context.Context, responses ids.UniqueBag) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	// Register a new poll call
 	ta.pollNumber++
 
 	// If it isn't possible to have alpha votes for any transaction, then we can
 	// just reset the confidence values in the conflict graph and not perform
 	// any traversals.
+<<<<<<< HEAD
 	partialVotes := ids.BitSet64(0)
+=======
+	partialVotes := set.Bits64(0)
+>>>>>>> 53a8245a8 (Update consensus)
 	for vote := range responses {
 		votes := responses.GetSet(vote)
 		partialVotes.Union(votes)
@@ -234,7 +398,11 @@ func (ta *Topological) RecordPoll(responses ids.UniqueBag) error {
 	if partialVotes.Len() < ta.params.Alpha {
 		// Because there were less than alpha total returned votes, we can skip
 		// the traversals and fail the poll.
+<<<<<<< HEAD
 		_, err := ta.cg.RecordPoll(ids.Bag{})
+=======
+		_, err := ta.cg.RecordPoll(ctx, ids.Bag{})
+>>>>>>> 53a8245a8 (Update consensus)
 		return err
 	}
 
@@ -244,19 +412,28 @@ func (ta *Topological) RecordPoll(responses ids.UniqueBag) error {
 	}
 
 	// Collect the votes for each transaction: O(|Live Set|)
+<<<<<<< HEAD
 	votes, err := ta.pushVotes()
+=======
+	votes, err := ta.pushVotes(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		return err
 	}
 
 	// Update the conflict graph: O(|Transactions|)
+<<<<<<< HEAD
 	if updated, err := ta.cg.RecordPoll(votes); !updated || err != nil {
+=======
+	if updated, err := ta.cg.RecordPoll(ctx, votes); !updated || err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		// If the transaction statuses weren't changed, there is no need to
 		// perform a traversal.
 		return err
 	}
 
 	// Update the dag: O(|Live Set|)
+<<<<<<< HEAD
 	return ta.updateFrontiers()
 }
 
@@ -266,6 +443,21 @@ func (ta *Topological) Finalized() bool { return ta.cg.Finalized() }
 
 // HealthCheck returns information about the consensus health.
 func (ta *Topological) HealthCheck() (interface{}, error) {
+=======
+	return ta.updateFrontiers(ctx)
+}
+
+func (ta *Topological) Quiesce() bool {
+	return ta.virtuousVoting.Len() == 0
+}
+
+func (ta *Topological) Finalized() bool {
+	return ta.cg.Finalized()
+}
+
+// HealthCheck returns information about the consensus health.
+func (ta *Topological) HealthCheck(ctx context.Context) (interface{}, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 	numOutstandingVtx := ta.Latency.NumProcessing()
 	isOutstandingVtx := numOutstandingVtx <= ta.params.MaxOutstandingItems
 	healthy := isOutstandingVtx
@@ -273,7 +465,11 @@ func (ta *Topological) HealthCheck() (interface{}, error) {
 		"outstandingVertices": numOutstandingVtx,
 	}
 
+<<<<<<< HEAD
 	snowstormReport, err := ta.cg.HealthCheck()
+=======
+	snowstormReport, err := ta.cg.HealthCheck(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	healthy = healthy && err == nil
 	details["snowstorm"] = snowstormReport
 
@@ -380,9 +576,15 @@ func (ta *Topological) markAncestorInDegrees(
 
 // Count the number of votes for each operation by pushing votes upwards through
 // vertex ancestors.
+<<<<<<< HEAD
 func (ta *Topological) pushVotes() (ids.Bag, error) {
 	ta.votes.Clear()
 	txConflicts := make(map[ids.ID]ids.Set, minMapSize)
+=======
+func (ta *Topological) pushVotes(ctx context.Context) (ids.Bag, error) {
+	ta.votes.Clear()
+	txConflicts := make(map[ids.ID]set.Set[ids.ID], minMapSize)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// A leaf is a node with no inbound edges. This removes each leaf and pushes
 	// the votes upwards, potentially creating new leaves, until there are no
@@ -400,7 +602,11 @@ func (ta *Topological) pushVotes() (ids.Bag, error) {
 
 		if tv := ta.nodes[leaf]; tv != nil {
 			vtx := tv.vtx
+<<<<<<< HEAD
 			txs, err := vtx.Txs()
+=======
+			txs, err := vtx.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 			if err != nil {
 				return ids.Bag{}, err
 			}
@@ -466,9 +672,15 @@ func (ta *Topological) pushVotes() (ids.Bag, error) {
 // I now update all my ancestors
 // If any of my parents are rejected, reject myself
 // If I'm preferred, remove all my ancestors from the preferred frontier, add
+<<<<<<< HEAD
 //     myself to the preferred frontier
 // If all my parents are accepted and I'm acceptable, accept myself
 func (ta *Topological) update(vtx Vertex) error {
+=======
+// myself to the preferred frontier
+// If all my parents are accepted and I'm acceptable, accept myself
+func (ta *Topological) update(ctx context.Context, vtx Vertex) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	vtxID := vtx.ID()
 	if _, cached := ta.preferenceCache[vtxID]; cached {
 		return nil // This vertex has already been updated
@@ -495,7 +707,11 @@ func (ta *Topological) update(vtx Vertex) error {
 		return nil
 	}
 
+<<<<<<< HEAD
 	txs, err := vtx.Txs()
+=======
+	txs, err := vtx.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		return err
 	}
@@ -545,7 +761,11 @@ func (ta *Topological) update(vtx Vertex) error {
 	}
 	// Update all of my dependencies
 	for _, dep := range deps {
+<<<<<<< HEAD
 		if err := ta.update(dep); err != nil {
+=======
+		if err := ta.update(ctx, dep); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			return err
 		}
 
@@ -565,12 +785,20 @@ func (ta *Topological) update(vtx Vertex) error {
 				zap.Stringer("parentID", dep.ID()),
 			)
 			if !txv.Status().Decided() {
+<<<<<<< HEAD
 				if err := ta.cg.Remove(vtxID); err != nil {
+=======
+				if err := ta.cg.Remove(ctx, vtxID); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 					return fmt.Errorf("failed to remove transaction vertex %s from snowstorm before rejecting vertex itself", vtxID)
 				}
 				ta.virtuousVoting.Remove(vtxID)
 			}
+<<<<<<< HEAD
 			if err := vtx.Reject(); err != nil {
+=======
+			if err := vtx.Reject(ctx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 				return err
 			}
 			delete(ta.nodes, vtxID)
@@ -646,7 +874,11 @@ func (ta *Topological) update(vtx Vertex) error {
 			return err
 		}
 
+<<<<<<< HEAD
 		if err := vtx.Accept(); err != nil {
+=======
+		if err := vtx.Accept(ctx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			return err
 		}
 		delete(ta.nodes, vtxID)
@@ -658,12 +890,20 @@ func (ta *Topological) update(vtx Vertex) error {
 			zap.Stringer("vtxID", vtxID),
 		)
 		if !txv.Status().Decided() {
+<<<<<<< HEAD
 			if err := ta.cg.Remove(vtxID); err != nil {
+=======
+			if err := ta.cg.Remove(ctx, vtxID); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 				return fmt.Errorf("failed to remove transaction vertex %s from snowstorm before rejecting vertex itself", vtxID)
 			}
 			ta.virtuousVoting.Remove(vtxID)
 		}
+<<<<<<< HEAD
 		if err := vtx.Reject(); err != nil {
+=======
+		if err := vtx.Reject(ctx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			return err
 		}
 		delete(ta.nodes, vtxID)
@@ -673,7 +913,11 @@ func (ta *Topological) update(vtx Vertex) error {
 }
 
 // Update the frontier sets
+<<<<<<< HEAD
 func (ta *Topological) updateFrontiers() error {
+=======
+func (ta *Topological) updateFrontiers(ctx context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	vts := ta.frontier
 
 	ta.preferred.Clear()
@@ -690,7 +934,11 @@ func (ta *Topological) updateFrontiers() error {
 
 	for _, vtx := range vts {
 		// Update all the vertices that were in my previous frontier
+<<<<<<< HEAD
 		if err := ta.update(vtx); err != nil {
+=======
+		if err := ta.update(ctx, vtx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			return err
 		}
 	}

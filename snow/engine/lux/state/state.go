@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package state
@@ -6,6 +10,19 @@ package state
 import (
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/state.go
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/cache"
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
@@ -14,6 +31,10 @@ import (
 	"github.com/luxdefi/luxd/utils/hashing"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/wrappers"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/state.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 type state struct {
@@ -28,6 +49,7 @@ type state struct {
 // Returns nil if it's not found.
 // TODO this should return an error
 func (s *state) Vertex(id ids.ID) vertex.StatelessVertex {
+<<<<<<< HEAD
 	var (
 		vtx   vertex.StatelessVertex
 		bytes []byte
@@ -40,6 +62,15 @@ func (s *state) Vertex(id ids.ID) vertex.StatelessVertex {
 	}
 
 	if bytes, err = s.db.Get(id[:]); err != nil {
+=======
+	if vtxIntf, found := s.dbCache.Get(id); found {
+		vtx, _ := vtxIntf.(vertex.StatelessVertex)
+		return vtx
+	}
+
+	bytes, err := s.db.Get(id[:])
+	if err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		s.log.Verbo("failed to get vertex from database",
 			zap.Binary("key", id[:]),
 			zap.Error(err),
@@ -48,7 +79,12 @@ func (s *state) Vertex(id ids.ID) vertex.StatelessVertex {
 		return nil
 	}
 
+<<<<<<< HEAD
 	if vtx, err = s.serializer.parseVertex(bytes); err != nil {
+=======
+	vtx, err := s.serializer.parseVertex(bytes)
+	if err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		s.log.Error("failed parsing saved vertex",
 			zap.Binary("key", id[:]),
 			zap.Binary("vertex", bytes),

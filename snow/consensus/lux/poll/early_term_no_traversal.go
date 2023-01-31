@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -6,7 +10,13 @@ package poll
 import (
 	"fmt"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+
+	sets "github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
@@ -70,7 +80,11 @@ func (p *earlyTermNoTraversalPoll) Finished() bool {
 	// votes will be applied to a single shared ancestor. In this case, the poll
 	// can terminate early, iff there are not enough pending votes for this
 	// ancestor to receive alpha votes.
+<<<<<<< HEAD
 	partialVotes := ids.BitSet64(0)
+=======
+	partialVotes := sets.Bits64(0)
+>>>>>>> 53a8245a8 (Update consensus)
 	for _, vote := range p.votes.List() {
 		if voters := p.votes.GetSet(vote); voters.Len() < p.alpha {
 			partialVotes.Union(voters)
@@ -80,7 +94,13 @@ func (p *earlyTermNoTraversalPoll) Finished() bool {
 }
 
 // Result returns the result of this poll
+<<<<<<< HEAD
 func (p *earlyTermNoTraversalPoll) Result() ids.UniqueBag { return p.votes }
+=======
+func (p *earlyTermNoTraversalPoll) Result() ids.UniqueBag {
+	return p.votes
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (p *earlyTermNoTraversalPoll) PrefixedString(prefix string) string {
 	return fmt.Sprintf(
@@ -91,4 +111,10 @@ func (p *earlyTermNoTraversalPoll) PrefixedString(prefix string) string {
 	)
 }
 
+<<<<<<< HEAD
 func (p *earlyTermNoTraversalPoll) String() string { return p.PrefixedString("") }
+=======
+func (p *earlyTermNoTraversalPoll) String() string {
+	return p.PrefixedString("")
+}
+>>>>>>> 53a8245a8 (Update consensus)

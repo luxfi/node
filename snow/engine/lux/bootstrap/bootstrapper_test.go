@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -9,6 +13,24 @@ import (
 	"errors"
 	"testing"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/database/memdb"
 	"github.com/luxdefi/luxd/database/prefixdb"
 	"github.com/luxdefi/luxd/ids"
@@ -22,12 +44,21 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/common/tracker"
 	"github.com/luxdefi/luxd/snow/validators"
 
+<<<<<<< HEAD
 	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+=======
+	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
 	errUnknownVertex       = errors.New("unknown vertex")
 	errParsedUnknownVertex = errors.New("parsed unknown vertex")
+<<<<<<< HEAD
+=======
+	errUnknownTx           = errors.New("unknown tx")
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.TestManager, *vertex.TestVM) {
@@ -42,9 +73,19 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 
 	isBootstrapped := false
 	subnet := &common.SubnetTest{
+<<<<<<< HEAD
 		T:               t,
 		IsBootstrappedF: func() bool { return isBootstrapped },
 		BootstrappedF:   func(ids.ID) { isBootstrapped = true },
+=======
+		T: t,
+		IsBootstrappedF: func() bool {
+			return isBootstrapped
+		},
+		BootstrappedF: func(ids.ID) {
+			isBootstrapped = true
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 
 	sender.Default(true)
@@ -54,7 +95,23 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 	sender.CantSendGetAcceptedFrontier = false
 
 	peer := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := peers.AddWeight(peer, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+=======
+	if err := peers.Add(peer, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := peers.Add(peer, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -86,14 +143,22 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 		SharedCfg:                      &common.SharedConfig{},
 	}
 
+<<<<<<< HEAD
 	luxGetHandler, err := luxgetter.New(manager, commonConfig)
+=======
+	avaGetHandler, err := getter.New(manager, commonConfig)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	return Config{
 		Config:        commonConfig,
+<<<<<<< HEAD
 		AllGetsServer: luxGetHandler,
+=======
+		AllGetsServer: avaGetHandler,
+>>>>>>> 53a8245a8 (Update consensus)
 		VtxBlocked:    vtxBlocker,
 		TxBlocked:     txBlocker,
 		Manager:       manager,
@@ -139,21 +204,50 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	acceptedIDs := []ids.ID{vtxID0, vtxID1, vtxID2}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID0:
 			return vtx0, nil
@@ -167,7 +261,15 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			return vtx0, nil
@@ -238,21 +340,50 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	acceptedIDs := []ids.ID{vtxID1}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -278,7 +409,15 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		reqVtxID = vtxID
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -312,7 +451,15 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	}
 
 	oldReqID = *requestID
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -380,14 +527,22 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 
 	vtxBytes0 := []byte{2}
 	vtxBytes1 := []byte{3}
+<<<<<<< HEAD
 	vm.ParseTxF = func(b []byte) (snowstorm.Tx, error) {
+=======
+	vm.ParseTxF = func(_ context.Context, b []byte) (snowstorm.Tx, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(b, txBytes0):
 			return tx0, nil
 		case bytes.Equal(b, txBytes1):
 			return tx1, nil
 		default:
+<<<<<<< HEAD
 			return nil, errors.New("wrong tx")
+=======
+			return nil, errUnknownTx
+>>>>>>> 53a8245a8 (Update consensus)
 		}
 	}
 
@@ -412,21 +567,50 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	acceptedIDs := []ids.ID{vtxID1}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -436,7 +620,15 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		t.Fatal(errParsedUnknownVertex)
 		return nil, errParsedUnknownVertex
 	}
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -466,7 +658,15 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -552,21 +752,50 @@ func TestBootstrapperMissingTxDependency(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	acceptedIDs := []ids.ID{vtxID1}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -577,7 +806,15 @@ func TestBootstrapperMissingTxDependency(t *testing.T) {
 			panic(errUnknownVertex)
 		}
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -669,21 +906,50 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	acceptedIDs := []ids.ID{vtxID2}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case vtxID == vtxID0:
 			return nil, errUnknownVertex
@@ -696,7 +962,15 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 			panic(errUnknownVertex)
 		}
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -785,15 +1059,36 @@ func TestBootstrapperFinalized(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -801,7 +1096,15 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	parsedVtx0 := false
 	parsedVtx1 := false
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID0:
 			if parsedVtx0 {
@@ -818,7 +1121,15 @@ func TestBootstrapperFinalized(t *testing.T) {
 			panic(errUnknownVertex)
 		}
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -912,15 +1223,36 @@ func TestBootstrapperAcceptsAncestorsParents(t *testing.T) {
 	}
 
 	bs, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -929,7 +1261,15 @@ func TestBootstrapperAcceptsAncestorsParents(t *testing.T) {
 	parsedVtx0 := false
 	parsedVtx1 := false
 	parsedVtx2 := false
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID0:
 			if parsedVtx0 {
@@ -951,7 +1291,15 @@ func TestBootstrapperAcceptsAncestorsParents(t *testing.T) {
 		}
 		return nil, errUnknownVertex
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -1075,8 +1423,25 @@ func TestRestartBootstrapping(t *testing.T) {
 	}
 
 	bsIntf, err := New(
+<<<<<<< HEAD
 		config,
 		func(lastReqID uint32) error { config.Ctx.SetState(snow.NormalOp); return nil },
+=======
+		context.Background(),
+		config,
+<<<<<<< HEAD
+<<<<<<< HEAD
+		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+			config.Ctx.SetState(snow.NormalOp)
+			return nil
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1087,7 +1452,11 @@ func TestRestartBootstrapping(t *testing.T) {
 	}
 
 	vm.CantSetState = false
+<<<<<<< HEAD
 	if err := bs.Start(0); err != nil {
+=======
+	if err := bs.Start(context.Background(), 0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1097,7 +1466,15 @@ func TestRestartBootstrapping(t *testing.T) {
 	parsedVtx3 := false
 	parsedVtx4 := false
 	parsedVtx5 := false
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID0:
 			if parsedVtx0 {
@@ -1131,7 +1508,15 @@ func TestRestartBootstrapping(t *testing.T) {
 		}
 		return nil, errUnknownVertex
 	}
+<<<<<<< HEAD
 	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper_test.go
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (avalanche.Vertex, error) {
+=======
+	manager.ParseVtxF = func(vtxBytes []byte) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -10,9 +14,15 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/wrappers"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 func TestNewSetErrorOnMetrics(t *testing.T) {
@@ -70,11 +80,19 @@ func TestCreateAndFinishPoll(t *testing.T) {
 		t.Fatalf("Should only have one active poll")
 	} else if results := s.Vote(1, vdr1, votes); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish a non-existent poll")
+<<<<<<< HEAD
 	} else if results = s.Vote(0, vdr1, votes); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish an ongoing poll")
 	} else if results = s.Vote(0, vdr1, votes); len(results) > 0 {
 		t.Fatalf("Should have dropped a duplicated poll")
 	} else if results = s.Vote(0, vdr2, votes); len(results) == 0 {
+=======
+	} else if results := s.Vote(0, vdr1, votes); len(results) > 0 {
+		t.Fatalf("Shouldn't have been able to finish an ongoing poll")
+	} else if results := s.Vote(0, vdr1, votes); len(results) > 0 {
+		t.Fatalf("Should have dropped a duplicated poll")
+	} else if results := s.Vote(0, vdr2, votes); len(results) == 0 {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have finished the poll")
 	} else if len(results) != 1 {
 		t.Fatalf("Wrong number of results returned")

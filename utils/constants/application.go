@@ -6,8 +6,13 @@ package constants
 // Const variables to be exported
 const (
 	// PlatformName exports the name of the platform
-	PlatformName = "avalanche"
+	PlatformName = "lux"
 
+<<<<<<< HEAD
 	// AppName exports the name of the avalanche application
 	AppName = "avalanchego"
+=======
+	// AppName exports the name of the lux application
+	AppName = "luxd"
+>>>>>>> 04d685aa2 (Update consensus)
 )

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -12,6 +16,20 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/bootstrap/bootstrapper.go
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/version"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/cache"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
@@ -20,6 +38,10 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/version"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (
@@ -40,7 +62,11 @@ var (
 	errUnexpectedTimeout = errors.New("unexpected timeout fired")
 )
 
+<<<<<<< HEAD
 func New(config Config, onFinished func(lastReqID uint32) error) (common.BootstrapableEngine, error) {
+=======
+func New(ctx context.Context, config Config, onFinished func(ctx context.Context, lastReqID uint32) error) (common.BootstrapableEngine, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 	b := &bootstrapper{
 		Config: config,
 
@@ -60,7 +86,11 @@ func New(config Config, onFinished func(lastReqID uint32) error) (common.Bootstr
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	if err := b.VtxBlocked.SetParser(&vtxParser{
+=======
+	if err := b.VtxBlocked.SetParser(ctx, &vtxParser{
+>>>>>>> 53a8245a8 (Update consensus)
 		log:         config.Ctx.Log,
 		numAccepted: b.numAcceptedVts,
 		numDropped:  b.numDroppedVts,
@@ -102,7 +132,11 @@ type bootstrapper struct {
 
 	// IDs of vertices that we will send a GetAncestors request for once we are
 	// not at the max number of outstanding requests
+<<<<<<< HEAD
 	needToFetch ids.Set
+=======
+	needToFetch set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// Contains IDs of vertices that have recently been processed
 	processedCache *cache.LRU
@@ -148,7 +182,11 @@ func (b *bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 	}
 
 	requestedVtxID, requested := b.OutstandingRequests.Remove(nodeID, requestID)
+<<<<<<< HEAD
 	vtx, err := b.Manager.ParseVtx(vtxs[0]) // first vertex should be the one we requested in GetAncestors request
+=======
+	vtx, err := b.Manager.ParseVtx(ctx, vtxs[0]) // first vertex should be the one we requested in GetAncestors request
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		if !requested {
 			b.Ctx.Log.Debug("failed to parse unrequested vertex",
@@ -205,13 +243,21 @@ func (b *bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 	if err != nil {
 		return err
 	}
+<<<<<<< HEAD
 	eligibleVertices := ids.NewSet(len(parents))
+=======
+	eligibleVertices := set.NewSet[ids.ID](len(parents))
+>>>>>>> 53a8245a8 (Update consensus)
 	for _, parent := range parents {
 		eligibleVertices.Add(parent.ID())
 	}
 
 	for _, vtxBytes := range vtxs[1:] { // Parse/persist all the vertices
+<<<<<<< HEAD
 		vtx, err := b.Manager.ParseVtx(vtxBytes) // Persists the vtx
+=======
+		vtx, err := b.Manager.ParseVtx(ctx, vtxBytes) // Persists the vtx
+>>>>>>> 53a8245a8 (Update consensus)
 		if err != nil {
 			b.Ctx.Log.Debug("failed to parse vertex",
 				zap.Stringer("nodeID", nodeID),
@@ -264,12 +310,25 @@ func (b *bootstrapper) GetAncestorsFailed(ctx context.Context, nodeID ids.NodeID
 	return b.fetch(ctx, vtxID)
 }
 
+<<<<<<< HEAD
 func (b *bootstrapper) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error {
 	if err := b.VM.Connected(nodeID, nodeVersion); err != nil {
 		return err
 	}
 
 	if err := b.StartupTracker.Connected(nodeID, nodeVersion); err != nil {
+=======
+func (b *bootstrapper) Connected(
+	ctx context.Context,
+	nodeID ids.NodeID,
+	nodeVersion *version.Application,
+) error {
+	if err := b.VM.Connected(ctx, nodeID, nodeVersion); err != nil {
+		return err
+	}
+
+	if err := b.StartupTracker.Connected(ctx, nodeID, nodeVersion); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return err
 	}
 
@@ -278,6 +337,7 @@ func (b *bootstrapper) Connected(nodeID ids.NodeID, nodeVersion *version.Applica
 	}
 
 	b.started = true
+<<<<<<< HEAD
 	return b.Startup()
 }
 
@@ -290,12 +350,27 @@ func (b *bootstrapper) Disconnected(nodeID ids.NodeID) error {
 }
 
 func (b *bootstrapper) Timeout() error {
+=======
+	return b.Startup(ctx)
+}
+
+func (b *bootstrapper) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	if err := b.VM.Disconnected(ctx, nodeID); err != nil {
+		return err
+	}
+
+	return b.StartupTracker.Disconnected(ctx, nodeID)
+}
+
+func (b *bootstrapper) Timeout(ctx context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	if !b.awaitingTimeout {
 		return errUnexpectedTimeout
 	}
 	b.awaitingTimeout = false
 
 	if !b.Config.Subnet.IsBootstrapped() {
+<<<<<<< HEAD
 		return b.Restart(true)
 	}
 	return b.OnFinished(b.Config.SharedCfg.RequestID)
@@ -315,6 +390,59 @@ func (b *bootstrapper) Start(startReqID uint32) error {
 
 	b.Ctx.SetState(snow.Bootstrapping)
 	if err := b.VM.SetState(snow.Bootstrapping); err != nil {
+=======
+		return b.Restart(ctx, true)
+	}
+	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
+}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (*bootstrapper) Gossip(context.Context) error {
+	return nil
+}
+=======
+func (*bootstrapper) Gossip() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*bootstrapper) Gossip() error {
+=======
+func (*bootstrapper) Gossip(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+
+func (b *bootstrapper) Shutdown(ctx context.Context) error {
+	b.Ctx.Log.Info("shutting down bootstrapper")
+	return b.VM.Shutdown(ctx)
+}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (*bootstrapper) Notify(context.Context, common.Message) error {
+	return nil
+}
+=======
+func (*bootstrapper) Notify(common.Message) error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*bootstrapper) Notify(common.Message) error {
+=======
+func (*bootstrapper) Notify(context.Context, common.Message) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+
+func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
+	b.Ctx.Log.Info("starting bootstrap")
+
+	b.Ctx.SetState(snow.Bootstrapping)
+	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w",
 			err)
 	}
@@ -326,11 +454,19 @@ func (b *bootstrapper) Start(startReqID uint32) error {
 	}
 
 	b.started = true
+<<<<<<< HEAD
 	return b.Startup()
 }
 
 func (b *bootstrapper) HealthCheck() (interface{}, error) {
 	vmIntf, vmErr := b.VM.HealthCheck()
+=======
+	return b.Startup(ctx)
+}
+
+func (b *bootstrapper) HealthCheck(ctx context.Context) (interface{}, error) {
+	vmIntf, vmErr := b.VM.HealthCheck(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	intf := map[string]interface{}{
 		"consensus": struct{}{},
 		"vm":        vmIntf,
@@ -338,7 +474,13 @@ func (b *bootstrapper) HealthCheck() (interface{}, error) {
 	return intf, vmErr
 }
 
+<<<<<<< HEAD
 func (b *bootstrapper) GetVM() common.VM { return b.VM }
+=======
+func (b *bootstrapper) GetVM() common.VM {
+	return b.VM
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 // Add the vertices in [vtxIDs] to the set of vertices that we need to fetch,
 // and then fetch vertices (and their ancestors) until either there are no more
@@ -355,6 +497,7 @@ func (b *bootstrapper) fetch(ctx context.Context, vtxIDs ...ids.ID) error {
 		}
 
 		// Make sure we don't already have this vertex
+<<<<<<< HEAD
 		if _, err := b.Manager.GetVtx(vtxID); err == nil {
 			continue
 		}
@@ -364,12 +507,27 @@ func (b *bootstrapper) fetch(ctx context.Context, vtxIDs ...ids.ID) error {
 			return fmt.Errorf("dropping request for %s as there are no validators", vtxID)
 		}
 		validatorID := validators[0].ID()
+=======
+		if _, err := b.Manager.GetVtx(ctx, vtxID); err == nil {
+			continue
+		}
+
+		validatorIDs, err := b.Config.Beacons.Sample(1) // validator to send request to
+		if err != nil {
+			return fmt.Errorf("dropping request for %s as there are no validators", vtxID)
+		}
+		validatorID := validatorIDs[0]
+>>>>>>> 53a8245a8 (Update consensus)
 		b.Config.SharedCfg.RequestID++
 
 		b.OutstandingRequests.Add(validatorID, b.Config.SharedCfg.RequestID, vtxID)
 		b.Config.Sender.SendGetAncestors(ctx, validatorID, b.Config.SharedCfg.RequestID, vtxID) // request vertex and ancestors
 	}
+<<<<<<< HEAD
 	return b.checkFinish()
+=======
+	return b.checkFinish(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 // Process the vertices in [vtxs].
@@ -387,7 +545,11 @@ func (b *bootstrapper) process(ctx context.Context, vtxs ...lux.Vertex) error {
 		}
 	}
 
+<<<<<<< HEAD
 	vtxHeightSet := ids.Set{}
+=======
+	vtxHeightSet := set.Set[ids.ID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 	prevHeight := uint64(0)
 
 	for toProcess.Len() > 0 { // While there are unprocessed vertices
@@ -409,19 +571,32 @@ func (b *bootstrapper) process(ctx context.Context, vtxs ...lux.Vertex) error {
 			b.VtxBlocked.RemoveMissingID(vtxID)
 
 			// Add to queue of vertices to execute when bootstrapping finishes.
+<<<<<<< HEAD
 			if pushed, err := b.VtxBlocked.Push(&vertexJob{
+=======
+			pushed, err := b.VtxBlocked.Push(ctx, &vertexJob{
+>>>>>>> 53a8245a8 (Update consensus)
 				log:         b.Ctx.Log,
 				numAccepted: b.numAcceptedVts,
 				numDropped:  b.numDroppedVts,
 				vtx:         vtx,
+<<<<<<< HEAD
 			}); err != nil {
 				return err
 			} else if !pushed {
+=======
+			})
+			if err != nil {
+				return err
+			}
+			if !pushed {
+>>>>>>> 53a8245a8 (Update consensus)
 				// If the vertex is already on the queue, then we have already
 				// pushed [vtx]'s transactions and traversed into its parents.
 				continue
 			}
 
+<<<<<<< HEAD
 			txs, err := vtx.Txs()
 			if err != nil {
 				return err
@@ -429,13 +604,31 @@ func (b *bootstrapper) process(ctx context.Context, vtxs ...lux.Vertex) error {
 			for _, tx := range txs {
 				// Add to queue of txs to execute when bootstrapping finishes.
 				if pushed, err := b.TxBlocked.Push(&txJob{
+=======
+			txs, err := vtx.Txs(ctx)
+			if err != nil {
+				return err
+			}
+
+			for _, tx := range txs {
+				// Add to queue of txs to execute when bootstrapping finishes.
+				pushed, err := b.TxBlocked.Push(ctx, &txJob{
+>>>>>>> 53a8245a8 (Update consensus)
 					log:         b.Ctx.Log,
 					numAccepted: b.numAcceptedTxs,
 					numDropped:  b.numDroppedTxs,
 					tx:          tx,
+<<<<<<< HEAD
 				}); err != nil {
 					return err
 				} else if pushed {
+=======
+				})
+				if err != nil {
+					return err
+				}
+				if pushed {
+>>>>>>> 53a8245a8 (Update consensus)
 					b.numFetchedTxs.Inc()
 				}
 			}
@@ -507,7 +700,11 @@ func (b *bootstrapper) ForceAccepted(ctx context.Context, acceptedContainerIDs [
 	)
 	toProcess := make([]lux.Vertex, 0, len(pendingContainerIDs))
 	for _, vtxID := range pendingContainerIDs {
+<<<<<<< HEAD
 		if vtx, err := b.Manager.GetVtx(vtxID); err == nil {
+=======
+		if vtx, err := b.Manager.GetVtx(ctx, vtxID); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			if vtx.Status() == choices.Accepted {
 				b.VtxBlocked.RemoveMissingID(vtxID)
 			} else {
@@ -523,7 +720,11 @@ func (b *bootstrapper) ForceAccepted(ctx context.Context, acceptedContainerIDs [
 
 // checkFinish repeatedly executes pending transactions and requests new frontier blocks until there aren't any new ones
 // after which it finishes the bootstrap process
+<<<<<<< HEAD
 func (b *bootstrapper) checkFinish() error {
+=======
+func (b *bootstrapper) checkFinish(ctx context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	// If there are outstanding requests for vertices or we still need to fetch vertices, we can't finish
 	pendingJobs := b.VtxBlocked.MissingIDs()
 	if b.IsBootstrapped() || len(pendingJobs) > 0 || b.awaitingTimeout {
@@ -536,7 +737,17 @@ func (b *bootstrapper) checkFinish() error {
 		b.Ctx.Log.Debug("executing transactions")
 	}
 
+<<<<<<< HEAD
 	_, err := b.TxBlocked.ExecuteAll(b.Config.Ctx, b, b.Config.SharedCfg.Restarted, b.Ctx.DecisionAcceptor)
+=======
+	_, err := b.TxBlocked.ExecuteAll(
+		ctx,
+		b.Config.Ctx,
+		b,
+		b.Config.SharedCfg.Restarted,
+		b.Ctx.DecisionAcceptor,
+	)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil || b.Halted() {
 		return err
 	}
@@ -547,7 +758,17 @@ func (b *bootstrapper) checkFinish() error {
 		b.Ctx.Log.Debug("executing vertices")
 	}
 
+<<<<<<< HEAD
 	executedVts, err := b.VtxBlocked.ExecuteAll(b.Config.Ctx, b, b.Config.SharedCfg.Restarted, b.Ctx.ConsensusAcceptor)
+=======
+	executedVts, err := b.VtxBlocked.ExecuteAll(
+		ctx,
+		b.Config.Ctx,
+		b,
+		b.Config.SharedCfg.Restarted,
+		b.Ctx.ConsensusAcceptor,
+	)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil || b.Halted() {
 		return err
 	}
@@ -560,7 +781,11 @@ func (b *bootstrapper) checkFinish() error {
 	// issued.
 	if executedVts > 0 && executedVts < previouslyExecuted/2 && b.Config.RetryBootstrap {
 		b.Ctx.Log.Debug("checking for more vertices before finishing bootstrapping")
+<<<<<<< HEAD
 		return b.Restart(true)
+=======
+		return b.Restart(ctx, true)
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 
 	// Notify the subnet that this chain is synced
@@ -581,5 +806,9 @@ func (b *bootstrapper) checkFinish() error {
 		b.awaitingTimeout = true
 		return nil
 	}
+<<<<<<< HEAD
 	return b.OnFinished(b.Config.SharedCfg.RequestID)
+=======
+	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
+>>>>>>> 53a8245a8 (Update consensus)
 }

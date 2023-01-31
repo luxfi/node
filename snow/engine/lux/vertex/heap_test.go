@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -6,9 +10,21 @@ package vertex
 import (
 	"testing"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/consensus/lux"
+=======
+<<<<<<< HEAD:snow/engine/avalanche/vertex/heap_test.go
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+=======
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/heap_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 // This example inserts several ints into an IntHeap, checks the minimum,

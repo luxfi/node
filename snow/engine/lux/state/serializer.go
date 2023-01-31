@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 // Package state manages the meta-data required by consensus for an lux
@@ -6,9 +10,29 @@
 package state
 
 import (
+<<<<<<< HEAD
 	"errors"
 	"time"
 
+=======
+	"context"
+	"errors"
+	"time"
+
+<<<<<<< HEAD:snow/engine/avalanche/state/serializer.go
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/cache"
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/database/versiondb"
@@ -19,6 +43,10 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/math"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/serializer.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (
@@ -38,7 +66,11 @@ type Serializer struct {
 	SerializerConfig
 	versionDB *versiondb.Database
 	state     *prefixedState
+<<<<<<< HEAD
 	edge      ids.Set
+=======
+	edge      set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 type SerializerConfig struct {
@@ -70,6 +102,28 @@ func NewSerializer(config SerializerConfig) vertex.Manager {
 	return &s
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/serializer.go
+func (s *Serializer) ParseVtx(ctx context.Context, b []byte) (avalanche.Vertex, error) {
+	return newUniqueVertex(ctx, s, b)
+}
+
+func (s *Serializer) BuildVtx(
+	ctx context.Context,
+	parentIDs []ids.ID,
+	txs []snowstorm.Tx,
+) (avalanche.Vertex, error) {
+	return s.buildVtx(ctx, parentIDs, txs, false)
+}
+
+func (s *Serializer) BuildStopVtx(
+	ctx context.Context,
+	parentIDs []ids.ID,
+) (avalanche.Vertex, error) {
+	return s.buildVtx(ctx, parentIDs, nil, true)
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 func (s *Serializer) ParseVtx(b []byte) (lux.Vertex, error) {
 	return newUniqueVertex(s, b)
 }
@@ -80,9 +134,17 @@ func (s *Serializer) BuildVtx(parentIDs []ids.ID, txs []snowstorm.Tx) (lux.Verte
 
 func (s *Serializer) BuildStopVtx(parentIDs []ids.ID) (lux.Vertex, error) {
 	return s.buildVtx(parentIDs, nil, true)
+<<<<<<< HEAD
 }
 
 func (s *Serializer) buildVtx(
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/serializer.go
+}
+
+func (s *Serializer) buildVtx(
+	ctx context.Context,
+>>>>>>> 53a8245a8 (Update consensus)
 	parentIDs []ids.ID,
 	txs []snowstorm.Tx,
 	stopVtx bool,
@@ -133,6 +195,7 @@ func (s *Serializer) buildVtx(
 	}
 	// setVertex handles the case where this vertex already exists even
 	// though we just made it
+<<<<<<< HEAD
 	return uVtx, uVtx.setVertex(vtx)
 }
 
@@ -141,6 +204,30 @@ func (s *Serializer) GetVtx(vtxID ids.ID) (lux.Vertex, error) {
 }
 
 func (s *Serializer) Edge() []ids.ID { return s.edge.List() }
+=======
+	return uVtx, uVtx.setVertex(ctx, vtx)
+}
+
+<<<<<<< HEAD:snow/engine/avalanche/state/serializer.go
+func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+func (s *Serializer) GetVtx(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/serializer.go
+	return s.getUniqueVertex(vtxID)
+}
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (s *Serializer) Edge(context.Context) []ids.ID {
+=======
+func (s *Serializer) Edge() []ids.ID {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (s *Serializer) Edge(context.Context) []ids.ID {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+	return s.edge.List()
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (s *Serializer) parseVertex(b []byte) (vertex.StatelessVertex, error) {
 	vtx, err := vertex.Parse(b)
@@ -164,8 +251,13 @@ func (s *Serializer) getUniqueVertex(vtxID ids.ID) (*uniqueVertex, error) {
 	return vtx, nil
 }
 
+<<<<<<< HEAD
 func (s *Serializer) StopVertexAccepted() (bool, error) {
 	edge := s.Edge()
+=======
+func (s *Serializer) StopVertexAccepted(ctx context.Context) (bool, error) {
+	edge := s.Edge(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if len(edge) != 1 {
 		return false, nil
 	}

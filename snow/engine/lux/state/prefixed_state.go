@@ -1,13 +1,30 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/prefixed_state.go
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/cache"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/prefixed_state.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (
@@ -87,7 +104,13 @@ func (s *prefixedState) SetStatus(id ids.ID, status choices.Status) error {
 	return s.state.SetStatus(sID, status)
 }
 
+<<<<<<< HEAD
 func (s *prefixedState) Edge() []ids.ID { return s.state.Edge(uniqueEdgeID) }
+=======
+func (s *prefixedState) Edge() []ids.ID {
+	return s.state.Edge(uniqueEdgeID)
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (s *prefixedState) SetEdge(frontier []ids.ID) error {
 	return s.state.SetEdge(uniqueEdgeID, frontier)
