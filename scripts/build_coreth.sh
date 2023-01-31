@@ -36,6 +36,11 @@ while getopts 'rc:e:' flag; do
   esac
 done
 
+<<<<<<< HEAD
+=======
+echo "coreth:"$coreth_path evm:$evm_path""
+
+>>>>>>> 0d8e8458d (Add race detection to the e2e tests (#2299))
 # Sanity-check the user's overrides for coreth path/version if they supplied a flag
 if [[ -z $coreth_path ]] || [[ -z $evm_path ]]; then
   echo "Invalid arguments to build coreth. Coreth path (-c) must be provided with EVM path (-e)."
