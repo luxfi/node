@@ -5,14 +5,18 @@ package tracedvm
 
 import (
 	"context"
+<<<<<<< HEAD
 	"errors"
 	"fmt"
+=======
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 
 	"go.opentelemetry.io/otel/attribute"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
 )
 
@@ -22,6 +26,13 @@ var (
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
+=======
+)
+
+var (
+	_ snowman.Block       = (*tracedBlock)(nil)
+	_ snowman.OracleBlock = (*tracedBlock)(nil)
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 )
 
 type tracedBlock struct {
@@ -87,6 +98,7 @@ func (b *tracedBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 		},
 	}, nil
 }
+<<<<<<< HEAD
 
 func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
 	blkWithCtx, ok := b.Block.(block.WithVerifyContext)
@@ -118,3 +130,5 @@ func (b *tracedBlock) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 
 	return blkWithCtx.VerifyWithContext(ctx, blockCtx)
 }
+=======
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))

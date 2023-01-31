@@ -18,7 +18,11 @@ func (vm *blockVM) StateSyncEnabled(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
+<<<<<<< HEAD
 	ctx, span := vm.tracer.Start(ctx, vm.stateSyncEnabledTag)
+=======
+	ctx, span := vm.tracer.Start(ctx, "blockVM.StateSyncEnabled")
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 	defer span.End()
 
 	return vm.ssVM.StateSyncEnabled(ctx)
@@ -29,7 +33,11 @@ func (vm *blockVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateS
 		return nil, block.ErrStateSyncableVMNotImplemented
 	}
 
+<<<<<<< HEAD
 	ctx, span := vm.tracer.Start(ctx, vm.getOngoingSyncStateSummaryTag)
+=======
+	ctx, span := vm.tracer.Start(ctx, "blockVM.GetOngoingSyncStateSummary")
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 	defer span.End()
 
 	return vm.ssVM.GetOngoingSyncStateSummary(ctx)
@@ -40,7 +48,11 @@ func (vm *blockVM) GetLastStateSummary(ctx context.Context) (block.StateSummary,
 		return nil, block.ErrStateSyncableVMNotImplemented
 	}
 
+<<<<<<< HEAD
 	ctx, span := vm.tracer.Start(ctx, vm.getLastStateSummaryTag)
+=======
+	ctx, span := vm.tracer.Start(ctx, "blockVM.GetLastStateSummary")
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 	defer span.End()
 
 	return vm.ssVM.GetLastStateSummary(ctx)
@@ -51,7 +63,11 @@ func (vm *blockVM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (
 		return nil, block.ErrStateSyncableVMNotImplemented
 	}
 
+<<<<<<< HEAD
 	ctx, span := vm.tracer.Start(ctx, vm.parseStateSummaryTag, oteltrace.WithAttributes(
+=======
+	ctx, span := vm.tracer.Start(ctx, "blockVM.ParseStateSummary", oteltrace.WithAttributes(
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 		attribute.Int("summaryLen", len(summaryBytes)),
 	))
 	defer span.End()
@@ -64,7 +80,11 @@ func (vm *blockVM) GetStateSummary(ctx context.Context, height uint64) (block.St
 		return nil, block.ErrStateSyncableVMNotImplemented
 	}
 
+<<<<<<< HEAD
 	ctx, span := vm.tracer.Start(ctx, vm.getStateSummaryTag, oteltrace.WithAttributes(
+=======
+	ctx, span := vm.tracer.Start(ctx, "blockVM.GetStateSummary", oteltrace.WithAttributes(
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 		attribute.Int64("height", int64(height)),
 	))
 	defer span.End()
