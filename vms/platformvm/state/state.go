@@ -1148,6 +1148,33 @@ func (s *state) loadCurrentValidators() error {
 			return err
 		}
 
+<<<<<<< HEAD
+=======
+		// Permissioned validators originally wrote their values as nil,
+		// then with Banff we started writing the potential reward.
+		// We will write the uptime and reward together. We handle this format
+		// now for forward-compatibility.
+		var potentialReward uint64
+		storedBytes := subnetValidatorIt.Value()
+		switch len(storedBytes) {
+		// no uptime or potential reward stored
+		case 0:
+		// potential reward was stored and uptime was not
+		case database.Uint64Size:
+			potentialReward, err = database.ParseUInt64(storedBytes)
+			if err != nil {
+				return err
+			}
+		// both uptime and potential reward were stored
+		default:
+			uptimeReward := &uptimeAndReward{}
+			if _, err := txs.Codec.Unmarshal(storedBytes, uptimeReward); err != nil {
+				return err
+			}
+			potentialReward = uptimeReward.PotentialReward
+		}
+
+>>>>>>> 4064106f1 (Add forward-compatibility for future subnet uptime tracking (#2255))
 		stakerTx, ok := tx.Unsigned.(txs.Staker)
 		if !ok {
 			return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
