@@ -445,6 +445,7 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 
 	ss.frontierSeeders = validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !ss.frontierSeeders.Contains(nodeID) {
 			// Invariant: We never use the TxID or BLS keys populated here.
@@ -461,8 +462,13 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 		return err
 	}
 
+=======
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	for _, vdr := range beacons {
 		vdrID := vdr.ID()
+		if err := ss.frontierSeeders.AddWeight(vdrID, 1); err != nil {
+			return err
+		}
 		ss.targetSeeders.Add(vdrID)
 >>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 	}
