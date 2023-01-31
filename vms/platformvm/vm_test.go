@@ -164,7 +164,11 @@ func defaultContext() *snow.Context {
 				cChainID:                  constants.PrimaryNetworkID,
 			}[chainID]
 			if !ok {
+<<<<<<< HEAD
 				return ids.Empty, errMissing
+=======
+				return ids.Empty, errors.New("missing")
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 			}
 			return subnetID, nil
 		},

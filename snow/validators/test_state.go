@@ -72,6 +72,9 @@ func (vm *TestState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (vm *TestState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	if vm.GetSubnetIDF != nil {
 		return vm.GetSubnetIDF(ctx, chainID)
@@ -82,8 +85,11 @@ func (vm *TestState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, e
 	return ids.Empty, errSubnetID
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (vm *TestState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,

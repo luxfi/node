@@ -28,6 +28,7 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
@@ -45,6 +46,9 @@ require (
 =======
 	github.com/ava-labs/coreth v0.11.4
 >>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
+=======
+	github.com/ava-labs/coreth v0.11.5-0.20221213204439-7bd1eeaeaa9c
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))

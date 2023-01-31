@@ -2014,6 +2014,7 @@ type ValidatedByResponse struct {
 
 // ValidatedBy returns the ID of the Subnet that validates [args.BlockchainID]
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
 	s.vm.ctx.Log.Debug("Platform: ValidatedBy called")
 
@@ -2040,6 +2041,15 @@ func (s *Service) ValidatedBy(_ *http.Request, args *ValidatedByArgs, response *
 	response.SubnetID = chain.SubnetID
 	return nil
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
+	s.vm.ctx.Log.Debug("Platform: ValidatedBy called")
+
+	var err error
+	ctx := r.Context()
+	response.SubnetID, err = s.vm.GetSubnetID(ctx, args.BlockchainID)
+	return err
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 }
 
 // ValidatesArgs are the arguments to Validates

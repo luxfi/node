@@ -70,7 +70,22 @@ func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 
+<<<<<<< HEAD
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+func (s *Server) GetSubnetID(ctx context.Context, req *pb.GetSubnetIDRequest) (*pb.GetSubnetIDResponse, error) {
+	chainID, err := ids.ToID(req.ChainId)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetID, err := s.state.GetSubnetID(ctx, chainID)
+	return &pb.GetSubnetIDResponse{
+		SubnetId: subnetID[:],
+	}, err
+}
+
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (s *Server) GetValidatorSet(ctx context.Context, req *pb.GetValidatorSetRequest) (*pb.GetValidatorSetResponse, error) {
 	subnetID, err := ids.ToID(req.SubnetId)
 	if err != nil {
