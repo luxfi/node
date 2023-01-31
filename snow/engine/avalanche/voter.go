@@ -58,13 +58,19 @@ func (v *voter) Update(ctx context.Context) {
 
 	for _, result := range results {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4cf818ef3 (Log poll responses before bubbling (#2357))
 		result := result
 		v.t.Ctx.Log.Debug("filtering poll results",
 			zap.Stringer("result", &result),
 		)
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 4cf818ef3 (Log poll responses before bubbling (#2357))
 		_, err := v.bubbleVotes(ctx, result)
 		if err != nil {
 			v.t.errs.Add(err)
