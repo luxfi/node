@@ -446,5 +446,9 @@ message StateSummaryAcceptResponse {
     MODE_DYNAMIC = 3;
   }
   Mode mode = 1;
+<<<<<<< HEAD
   Error err = 2;
+=======
+  uint32 err = 2;
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }

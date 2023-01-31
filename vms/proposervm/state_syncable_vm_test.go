@@ -582,6 +582,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	// test Accept accepted
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
@@ -598,10 +599,17 @@ func TestStateSummaryAccept(t *testing.T) {
 	}
 	accepted, err := summary.Accept(context.Background())
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+		return block.StateSyncStatic, nil
+	}
+	status, err := summary.Accept(context.Background())
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 
 	// test Accept skipped
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
@@ -620,6 +628,12 @@ func TestStateSummaryAccept(t *testing.T) {
 	}
 	accepted, err = summary.Accept(context.Background())
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+		return block.StateSyncSkipped, nil
+	}
+	status, err = summary.Accept(context.Background())
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }
@@ -684,6 +698,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	// test Accept skipped
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
@@ -700,6 +715,12 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	}
 	accepted, err := summary.Accept(context.Background())
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+		return block.StateSyncStatic, nil
+	}
+	status, err := summary.Accept(context.Background())
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }

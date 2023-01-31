@@ -223,11 +223,15 @@ func (b *bootstrapper) Accepted(ctx context.Context, nodeID ids.NodeID, requestI
 	size := len(accepted)
 	if size == 0 && b.Beacons.Len() > 0 {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		// if we had too many timeouts when asking for validator votes, we
 		// should restart bootstrap hoping for the network problems to go away;
 		// otherwise, we received enough (>= b.Alpha) responses, but no frontier
 		// was supported by a majority of validators (i.e. votes are split
 		// between minorities supporting different frontiers).
+<<<<<<< HEAD
 		failedBeaconWeight := b.Beacons.SubsetWeight(b.failedAccepted)
 		votingStakes := b.Beacons.Weight() - failedBeaconWeight
 		if b.Config.RetryBootstrap && votingStakes < b.Alpha {
@@ -238,6 +242,11 @@ func (b *bootstrapper) Accepted(ctx context.Context, nodeID ids.NodeID, requestI
 		// in a zero network there will be no accepted votes but the voting weight will be greater than the failed weight
 		if b.Config.RetryBootstrap && b.Beacons.Weight()-b.Alpha < failedBeaconWeight {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		failedBeaconWeight := b.Beacons.SubsetWeight(b.failedAccepted)
+		votingStakes := b.Beacons.Weight() - failedBeaconWeight
+		if b.Config.RetryBootstrap && votingStakes < b.Alpha {
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 			b.Ctx.Log.Debug("restarting bootstrap",
 				zap.String("reason", "not enough votes received"),
 				zap.Int("numBeacons", b.Beacons.Len()),
