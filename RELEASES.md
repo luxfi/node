@@ -1,8 +1,292 @@
 # Release Notes
 
-## [v1.9.1](https://github.com/luxdefi/luxd/releases/tag/v1.9.1)
+## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
-This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/luxd/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `18`.
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
+
+### Fixes
+
+- Fixed subnet validator lookup regression
+
+## [v1.9.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.6)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
+
+### Consensus
+
+- Added `StateSyncMode` to the return of `StateSummary#Accept` to support syncing chain state while tracking the chain as a light client
+- Added `AcceptedFrontier` to `Chits` messages
+- Reduced unnecessary confidence resets during consensus by applying `AcceptedFrontier`s during `QueryFailed` handling
+- Added EngineType for consensus messages in the p2p message definitions
+- Updated `vertex.DAGVM` interface to support linearization
+
+### Configs
+
+- Added `--plugin-dir` flag. The default value is `[DATADIR]/plugins`
+- Removed `--build-dir` flag. The location of the avalanchego binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
+- Changed the default value of `--api-keystore-enabled` to `false`
+- Added `--track-subnets` flag as a replacement of `--whitelisted-subnets`
+
+### Fixes
+
+- Fixed NAT-PMP router discovery and port mapping
+- Fixed `--staking-enabled=false` setting to correctly start subnet chains and report healthy
+- Fixed message logging in the consensus handler
+
+### VMs
+
+- Populated non-trivial logger in the `rpcchainvm` `Server`'s `snow.Context`
+- Updated `rpcchainvm` proto definitions to use enums
+- Added `Block` format and definition to the `AVM`
+- Removed `proposervm` height index reset
+
+### Metrics
+
+- Added `avalanche_network_peer_connected_duration_average` metric
+- Added `avalanche_api_calls_processing` metric
+- Added `avalanche_api_calls` metric
+- Added `avalanche_api_calls_duration` metric
+
+### Documentation
+
+- Added wallet example to create `stakeable.LockOut` outputs
+- Improved ubuntu deb install instructions
+
+### Miscellaneous
+
+- Updated ledger-avalanche to v0.6.5
+- Added linter to ban the usage of `fmt.Errorf` without format directives
+- Added `List` to the `buffer#Deque` interface
+- Added `Index` to the `buffer#Deque` interface
+- Added `SetLevel` to the `Logger` interface
+- Updated `auth` API to use the new `jwt` standard
+
+## [v1.9.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.5)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
+
+### Subnet Messaging
+
+- Added subnet message serialization format
+- Added subnet message signing
+- Replaced `bls.SecretKey` with a `teleporter.Signer` in the `snow.Context`
+- Moved `SNLookup` into the `validators.State` interface to support non-whitelisted chainID to subnetID lookups
+- Added support for non-whitelisted subnetIDs for fetching the validator set at a given height
+- Added subnet message verification
+- Added `teleporter.AnycastID` to denote a subnet message not intended for a specific chain
+
+### Fixes
+
+- Added re-gossip of updated validator IPs
+- Fixed `rpcchainvm.BatchedParseBlock` to correctly wrap returned blocks
+- Removed incorrect `uintptr` handling in the generic codec
+- Removed message latency tracking on messages being sent to itself
+
+### Coreth
+
+- Added support for eth_call over VM2VM messaging
+- Added config flags for tx pool behavior
+
+### Miscellaneous
+
+- Added networking package README.md
+- Removed pagination of large db messages over gRPC
+- Added `Size` to the generic codec to reduce allocations
+- Added `UnpackLimitedBytes` and `UnpackLimitedStr` to the manual packer
+- Added SECURITY.md
+- Exposed proposer list from the `proposervm`'s `Windower` interface
+- Added health and bootstrapping client helpers that block until the node is healthy
+- Moved bit sets from the `ids` package to the `set` package
+- Added more wallet examples
+
+## [v1.9.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.4)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
+
+**This version modifies the db format. The db format is compatible with v1.9.3, but not v1.9.2 or earlier. After running a node with v1.9.4 attempting to run a node with a version earlier than v1.9.3 may report a fatal error on startup.**
+
+### PeerList Gossip Optimization
+
+- Added gossip tracking to the `peer` instance to only gossip new `IP`s to a connection
+- Added `PeerListAck` message to report which `TxID`s provided by the `PeerList` message were tracked
+- Added `TxID`s to the `PeerList` message to unique-ify nodeIDs across validation periods
+- Added `TxID` mappings to the gossip tracker
+
+### Validator Set Tracking
+
+- Renamed `GetValidators` to `Get` on the `validators.Manager` interface
+- Removed `Set`, `AddWeight`, `RemoveWeight`, and `Contains` from the `validators.Manager` interface
+- Added `Add` to the `validators.Manager` interface
+- Removed `Set` from the `validators.Set` interface
+- Added `Add` and `Get` to the `validators.Set` interface
+- Modified `validators.Set#Sample` to return `ids.NodeID` rather than `valdiators.Validator`
+- Replaced the `validators.Validator` interface with a struct
+- Added a `BLS` public key field to `validators.Validator`
+- Added a `TxID` field to `validators.Validator`
+- Improved and documented error handling within the `validators.Set` interface
+- Added `BLS` public keys to the result of `GetValidatorSet`
+- Added `BuildBlockWithContext` as an optional VM method to build blocks at a specific P-chain height
+- Added `VerifyWithContext` as an optional block method to verify blocks at a specific P-chain height
+
+### Uptime Tracking
+
+- Added ConnectedSubnet message handling to the chain handler
+- Added SubnetConnector interface and implemented it in the platformvm
+- Added subnet uptimes to p2p `pong` messages
+- Added subnet uptimes to `platform.getCurrentValidators`
+- Added `subnetID` as an argument to `info.Uptime`
+
+### Fixes
+
+- Fixed incorrect context cancellation of escaped contexts from grpc servers
+- Fixed race condition between API initialization and shutdown
+- Fixed race condition between NAT traversal initialization and shutdown
+- Fixed race condition during beacon connection tracking
+- Added race detection to the E2E tests
+- Added additional message and sender tests
+
+### Coreth
+
+- Improved header and logs caching using maximum accepted depth cache
+- Added config option to perform database inspection on startup
+- Added configurable transaction indexing to reduce disk usage
+- Added special case to allow transactions using Nick's Method to bypass API level replay protection
+- Added counter metrics for number of accepted/processed logs
+
+### APIs
+
+- Added indices to the return values of `GetLastAccepted` and `GetContainerByID` on the `indexer` API client
+- Removed unnecessary locking from the `info` API
+
+### Chain Data
+
+- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside avalanchego's database
+- Added `--chain-data-dir` as a CLI flag to specify the base directory for all `ChainDataDir`s
+
+### Miscellaneous
+
+- Removed `Version` from the `peer.Network` interface
+- Removed `Pong` from the `peer.Network` interface
+- Reduced memory allocations inside the system throttler
+- Added `CChainID` to the `snow.Context`
+- Converted all sorting to utilize generics
+- Converted all set management to utilize generics
+
+## [v1.9.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.3)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
+
+### Tracing
+
+- Added `context.Context` to all `VM` interface functions
+- Added `context.Context` to the `validators.State` interface
+- Added additional message fields to `tracedRouter#HandleInbound`
+- Added `tracedVM` implementations for `block.ChainVM` and `vertex.DAGVM`
+- Added `tracedState` implementation for `validators.State`
+- Added `tracedHandler` implementation for `http.Handler`
+- Added `tracedConsensus` implementations for `snowman.Consensus` and `avalanche.Consensus`
+
+### Fixes
+
+- Fixed incorrect `NodeID` used in registered `AppRequest` timeouts
+- Fixed panic when calling `encdb#NewBatch` after `encdb#Close`
+- Fixed panic when calling `prefixdb#NewBatch` after `prefixdb#Close`
+
+### Configs
+
+- Added `proposerMinBlockDelay` support to subnet configs
+- Added `providedFlags` field to the `initializing node` for easily observing custom node configs
+- Added `--chain-aliases-file` and `--chain-aliases-file-content` CLI flags
+- Added `--proposervm-use-current-height` CLI flag
+
+### Coreth
+
+- Added metric for number of processed and accepted transactions
+- Added wait for state sync goroutines to complete on shutdown
+- Increased go-ethereum dependency to v1.10.26
+- Increased soft cap on transaction size limits
+- Added back isForkIncompatible checks for all existing forks
+- Cleaned up Apricot Phase 6 code
+
+### Linting
+
+- Added `unused-receiver` linter
+- Added `unused-parameter` linter
+- Added `useless-break` linter
+- Added `unhandled-error` linter
+- Added `unexported-naming` linter
+- Added `struct-tag` linter
+- Added `bool-literal-in-expr` linter
+- Added `early-return` linter
+- Added `empty-lines` linter
+- Added `error-lint` linter
+
+### Testing
+
+- Added `scripts/build_fuzz.sh` and initial fuzz tests
+- Added additional `Fx` tests
+- Added additional `messageQueue` tests
+- Fixed `vmRegisterer` tests
+
+### Documentation
+
+- Documented `Database.Put` invariant for `nil` and empty slices
+- Documented avalanchego's versioning scheme
+- Improved `vm.proto` docs
+
+### Miscellaneous
+
+- Added peer gossip tracker
+- Added `avalanche_P_vm_time_until_unstake` and `avalanche_P_vm_time_until_unstake_subnet` metrics
+- Added `keychain.NewLedgerKeychainFromIndices`
+- Removed usage of `Temporary` error handling after `listener#Accept`
+- Removed `Parameters` from all `Consensus` interfaces
+- Updated `avalanche-network-runner` to `v1.3.0`
+- Added `ids.BigBitSet` to extend `ids.BitSet64` for arbitrarily large sets
+- Added support for parsing future subnet uptime tracking data to the P-chain's state implementation
+- Increased validator set cache size
+- Added `avax.UTXOIDFromString` helper for managing `UTXOID`s more easily
+
+## [v1.9.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.2)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
+
+### Coreth
+
+- Added trie clean cache journaling to disk to improve processing time after restart
+- Fixed regression where a snapshot could be marked as stale by the async acceptor during block processing
+- Added fine-grained block processing metrics
+
+### RPCChainVM
+
+- Added `validators.State` to the rpcchainvm server's `snow.Context`
+- Added `rpcProtocolVersion` to the output of `info.getNodeVersion`
+- Added `rpcchainvm` protocol version to the output of the `--version` flag
+- Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against avalanchego versions
+
+### Builds
+
+- Downgraded `ubuntu` release binaries from `jammy` to `focal`
+- Updated macos github runners to `macos-12`
+- Added workflow dispatch to build release binaries
+
+### BLS
+
+- Added bls proof of possession to `platform.getCurrentValidators` and `platform.getPendingValidators`
+- Added bls public key to in-memory staker objects
+- Improved memory clearing of bls secret keys
+
+### Cleanup
+
+- Fixed issue where the chain manager would attempt to start chain creation multiple times
+- Fixed race that caused the P-chain to finish bootstrapping before the primary network finished bootstrapping
+- Converted inbound message handling to expect usage of types rather than maps of fields
+- Simplified the `validators.Set` implementation
+- Added a warning if synchronous consensus messages take too long
+
+## [v1.9.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.1)
+
+This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `18`.
 
 ### Features
 
@@ -31,14 +315,14 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/luxd
 - Fixed ProposerVM inner block caching after verification
 - Fixed PlatformVM mempool verification to use an updated chain time
 - Removed deprecated CLI flags: `--dynamic-update-duration`, `--dynamic-public-ip`
-- Added unexpected Put bytes tests to the LUX and Snowman consensus engines
+- Added unexpected Put bytes tests to the Avalanche and Snowman consensus engines
 - Removed mockery generated mock implementations
 - Converted safe math functions to use generics where possible
 - Added linting to prevent usage of `assert` in unit tests
 - Converted empty struct usage to `nil` for interface compliance checks
 - Added CODEOWNERs to own first rounds of PR review
 
-## [v1.9.0](https://github.com/luxdefi/luxd/releases/tag/v1.9.0)
+## [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0)
 
 This upgrade adds support for creating Proof-of-Stake Subnets.
 
@@ -51,7 +335,7 @@ The supported plugin version is `17`.
 ### Upgrades
 
 - Activated P2P serialization format change to Protobuf
-- Activated non-LUX `ImportTx`/`ExportTx`s to/from the P-chain
+- Activated non-AVAX `ImportTx`/`ExportTx`s to/from the P-chain
 - Activated `Banff*` blocks on the P-chain
 - Deactivated `Apricot*` blocks on the P-chain
 - Activated `RemoveSubnetValidatorTx`s on the P-chain
@@ -75,9 +359,9 @@ The supported plugin version is `17`.
 - Improved isolation and execution of the E2E tests
 - Updated the linked hashmap implementation to use generics
 
-## [v1.8.6](https://github.com/luxdefi/luxd/releases/tag/v1.8.6)
+## [v1.8.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.6)
 
-This version is backwards compatible to [v1.8.0](https://github.com/luxdefi/luxd/releases/tag/v1.8.0). It is optional, but encouraged. The supported plugin version is `16`.
+This version is backwards compatible to [v1.8.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0). It is optional, but encouraged. The supported plugin version is `16`.
 
 ### BLS
 
@@ -85,7 +369,7 @@ This version is backwards compatible to [v1.8.0](https://github.com/luxdefi/luxd
 - Exposed BLS proof of possession in the `info.getNodeID` API
 - Added BLS proof of possession to `AddPermissionlessValidatorTx`s for the Primary Network
 
-The default value of `--staking-signer-key-file` is `~/.luxd/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
+The default value of `--staking-signer-key-file` is `~/.avalanchego/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
 
 ### Networking
 
@@ -107,7 +391,7 @@ The default value of `--staking-signer-key-file` is `~/.luxd/staking/signer.key`
 
 - Added failure reason to bad block API
 
-## [v1.8.5](https://github.com/luxdefi/luxd/releases/tag/v1.8.5)
+## [v1.8.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.5)
 
 Please upgrade your node as soon as possible.
 
@@ -117,11 +401,11 @@ The supported plugin version is `16`.
 
 - Fixed stale block reference by evicting blocks upon successful verification
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
-## [v1.8.4](https://github.com/luxdefi/luxd/releases/tag/v1.8.4)
+## [v1.8.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.4)
 
 Please upgrade your node as soon as possible.
 
@@ -132,12 +416,12 @@ The supported plugin version is `16`.
 - Added temporarily invalid block caching to reduce repeated network requests
 - Added caching to the proposervm's inner block parsing
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
 
-## [v1.8.2](https://github.com/luxdefi/luxd/releases/tag/v1.8.2)
+## [v1.8.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.2)
 
 Please upgrade your node as soon as possible.
 
@@ -145,13 +429,13 @@ The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on bot
 
 The supported plugin version is `16`.
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Fixed live-lock in bootstrapping, after performing state-sync, by properly reporting `database.ErrNotFound` in `GetBlockIDAtHeight` rather than a formatted error
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
 - Fixed typo in Chain Config `String` function
 
-## [v1.8.1](https://github.com/luxdefi/luxd/releases/tag/v1.8.1)
+## [v1.8.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.1)
 
 Please upgrade your node as soon as possible.
 
@@ -163,12 +447,12 @@ The supported plugin version is `16`.
 
 - Reduced the severity of not quickly connecting to bootstrap nodes from `FATAL` to `WARN`
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
 
-## [v1.8.0](https://github.com/luxdefi/luxd/releases/tag/v1.8.0)
+## [v1.8.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0)
 
 This is a mandatory security upgrade. Please upgrade your node **as soon as possible.**
 
@@ -246,7 +530,7 @@ The supported plugin version is `16`.
 
 - Defined `p2p.proto` to be used for future network messages
 - Added `--network-tls-key-log-file-unsafe` to support inspecting p2p messages
-- Added `lux_network_accept_failed` metrics to track networking `Accept` errors
+- Added `avalanche_network_accept_failed` metrics to track networking `Accept` errors
 
 ### Miscellaneous
 
@@ -260,15 +544,15 @@ The supported plugin version is `16`.
   - `timer.NewStagedTimer`
   - `timer.TimedMeter`
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Incorrectly deprecated Native Asset Call
 - Migrated to go-ethereum v1.10.23
 - Added API to fetch Chain Config
 
-## [v1.7.18](https://github.com/luxdefi/luxd/releases/tag/v1.7.18)
+## [v1.7.18](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.18)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### Fixes
 
@@ -304,9 +588,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Added retries to windows CI installations
 - Removed useless ID aliasing during chain creation
 
-## [v1.7.17](https://github.com/luxdefi/luxd/releases/tag/v1.7.17)
+## [v1.7.17](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.17)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### VMs
 
@@ -340,17 +624,17 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Improved Snowman++ oracle block verification error messages
 - Removed deprecated or unused scripts
 
-## [v1.7.16](https://github.com/luxdefi/luxd/releases/tag/v1.7.16)
+## [v1.7.16](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.16)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### LevelDB
 
 - Fix rapid disk growth by manually specifying the maximum manifest file size
 
-## [v1.7.15](https://github.com/luxdefi/luxd/releases/tag/v1.7.15)
+## [v1.7.15](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.15)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### PlatformVM
 
@@ -363,7 +647,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 ### Coreth
 
 - Bumped go-ethereum dependency to v1.10.20
-- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.lux.network/nodes/maintain/chain-config-flags#c-chain-configs)
+- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.avax.network/nodes/maintain/chain-config-flags#c-chain-configs)
 - Optimized state sync by parallelizing trie syncing
 - Added `eth_syncing` API for compatibility. Note: This API is only accessible after bootstrapping and always returns `"false"`, since the node will no longer be syncing at that point
 - Added metrics to the atomic transaction mempool
@@ -371,7 +655,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 ### Fixes
 
-- Updated Snowman and LUX consensus engines to report original container preferences before processing the provided container
+- Updated Snowman and Avalanche consensus engines to report original container preferences before processing the provided container
 - Fixed inbound message byte throttler context cancellation cleanup
 - Removed case sensitivity of IP resolver services
 - Added failing health check when a whitelisted subnet fails to initialize a chain
@@ -385,13 +669,13 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Cleaned up various dead parameters
 - Improved various tests
 
-## [v1.7.14](https://github.com/luxdefi/luxd/releases/tag/v1.7.14)
+## [v1.7.14](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.14)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using LUXGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/luxd/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using AvalancheGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/avalanchego/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -424,14 +708,14 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Fixed `--public-ip-resolution-frequency` invalid overwrite of the resolution service
 - Added additional metrics to distinguish between virtuous and rogue currently processing transactions
-- Suppressed the super cool `luxd` banner when `stdout` is not directed to a terminal
+- Suppressed the super cool `avalanchego` banner when `stdout` is not directed to a terminal
 - Updated linter version
 - Improved various comments and documentation
 - Standardized primary network handling across subnet maps
 
-## [v1.7.13](https://github.com/luxdefi/luxd/releases/tag/v1.7.13)
+## [v1.7.13](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.13)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### State Sync
 
@@ -441,7 +725,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Improved `coreth` state sync request retry logic
 - Improved `coreth` state sync handler metrics
 - Improved `coreth` state sync ETA
-- Added `lux_{chainID}_handler_async_expired` metric
+- Added `avalanche_{chainID}_handler_async_expired` metric
 
 ### Miscellaneous
 
@@ -455,9 +739,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Deprecated `--dynamic-update-duration` and `--dynamic-public-ip` CLI flags
 - Added `--public-ip-resolution-frequency` and `--public-ip-resolution-service` to replace `--dynamic-update-duration` and `--dynamic-public-ip`, respectively
 
-## [v1.7.12](https://github.com/luxdefi/luxd/releases/tag/v1.7.12)
+## [v1.7.12](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.12)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### State Sync
 
@@ -474,7 +758,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 ### Metrics
 
 - Added leveldb metrics
-- Added process and golang metrics for the luxd binary
+- Added process and golang metrics for the avalanchego binary
 - Added available disk space health check
   - Ensured that the disk space will not be fully utilized by shutting down the node if there is a critically low amount of free space remaining
 - Improved C-chain state sync metrics
@@ -498,9 +782,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Standardized json imports
 - Added vm factory interface checks
 
-## [v1.7.11](https://github.com/luxdefi/luxd/releases/tag/v1.7.11)
+## [v1.7.11](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.11)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 **The first startup of the C-Chain will cause an increase in CPU and IO usage due to an index update. This index update runs in the background and does not impact restart time.**
 
@@ -556,8 +840,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 ### Logging
 
-- Replaced LUXGo's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
-- Replaced LUXGo's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
+- Replaced AvalancheGo's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced AvalancheGo's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.
 
@@ -568,8 +852,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
 - Increased `coreth` trie tip buffer size to 32
-- Added CPU usage metrics for LUXGo and all sub-processes
-- Added Disk IO usage metrics for LUXGo and all sub-processes
+- Added CPU usage metrics for AvalancheGo and all sub-processes
+- Added Disk IO usage metrics for AvalancheGo and all sub-processes
 
 ### Cleanup
 
@@ -585,9 +869,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Updated issue template
 - Documented additional `snowman.Block` invariants
 
-## [v1.7.10](https://github.com/luxdefi/luxd/releases/tag/v1.7.10)
+## [v1.7.10](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.10)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -617,14 +901,14 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
-- Added LUXGo custom log formatting to the logs.
+- Added AvalancheGo custom log formatting to the logs.
 - Removed support for the JS Tracer.
 
 ### Logging
 
 - Added piping of subnet logs to stdout.
 - Lazily initialized logs to avoid opening files that are never written to.
-- Added support for arbitrarily deleted log files while luxd is running.
+- Added support for arbitrarily deleted log files while avalanchego is running.
 - Removed redundant logging configs.
 
 ### Miscellaneous
@@ -638,9 +922,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Simplified consensus engine `Shutdown` notification dispatching.
 - Removed `Sleep` call in the inbound connection throttler.
 
-## [v1.7.9](https://github.com/luxdefi/luxd/releases/tag/v1.7.9)
+## [v1.7.9](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.9)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Updates
 
@@ -650,9 +934,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Removed dead code from network packer.
 - Improved logging of invalid hash length errors.
 
-## [v1.7.8](https://github.com/luxdefi/luxd/releases/tag/v1.7.8)
+## [v1.7.8](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.8)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -681,9 +965,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Optimized various queue removals for improved memory freeing.
 - Added a basic X-chain E2E usage test to the new testing framework.
 
-## [v1.7.7](https://github.com/luxdefi/luxd/releases/tag/v1.7.7)
+## [v1.7.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.7)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -725,18 +1009,18 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 ### Miscellaneous
 
-- Fixed error reporting when making LUX chains that did not manually specify a primary alias.
+- Fixed error reporting when making Avalanche chains that did not manually specify a primary alias.
 - Added beacon utils for easier programmatic handling of beacon nodes.
 - Resolved the default log directory on initialization to avoid additional error handling.
 - Added support to the chain state module to specify an arbitrary new accepted block.
 
-## [v1.7.6](https://github.com/luxdefi/luxd/releases/tag/v1.7.6)
+## [v1.7.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.6)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
-- Introduced a new vertex type to support future `LUX` based network upgrades.
+- Introduced a new vertex type to support future `Avalanche` based network upgrades.
 - Added pending message metrics to the chain message queues.
 - Refactored event dispatchers to simplify dependencies and remove dead code.
 
@@ -765,9 +1049,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Extended chain shutdown timeout.
 - Performed various cleanup passes.
 
-## [v1.7.5](https://github.com/luxdefi/luxd/releases/tag/v1.7.5)
+## [v1.7.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.5)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
@@ -796,9 +1080,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Fixed bug in BLOCKHASH opcode during traceBlock.
 - Fixed bug in handling updated chain config on startup.
 
-## [v1.7.4](https://github.com/luxdefi/luxd/releases/tag/v1.7.4)
+## [v1.7.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.4)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 **The first startup of the C-Chain will take a few minutes longer due to an index update.**
 
@@ -834,7 +1118,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Added `--stake-max-consumption-rate` which defaults to `120,000`.
 - Added `--stake-min-consumption-rate` which defaults to `100,000`.
-- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nLUX.
+- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nAVAX.
 - Renamed `--bootstrap-multiput-max-containers-sent` to `--bootstrap-ancestors-max-containers-sent`.
 - Renamed `--bootstrap-multiput-max-containers-received` to `--bootstrap-ancestors-max-containers-received`.
 - Enforced that `--staking-enabled=false` can not be specified on public networks (`Fuji` and `Mainnet`).
@@ -850,9 +1134,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 - Separated health checks into `readiness`, `healthiness`, and `liveness` checks to support more fine-grained monitoring.
 - Refactored API client utilities to use a `Context` rather than an explicit timeout.
 
-## [v1.7.3](https://github.com/luxdefi/luxd/releases/tag/v1.7.3)
+## [v1.7.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.3)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
@@ -878,11 +1162,11 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for LUXGo (not Coreth).
+- Fixed 32-bit architecture builds for AvalancheGo (not Coreth).
 
-## [v1.7.2](https://github.com/luxdefi/luxd/releases/tag/v1.7.2)
+## [v1.7.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.2)
 
-This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Coreth
 
@@ -912,9 +1196,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/luxd
 
 - Fixed panic bug in logging library when importing from external projects.
 
-## [v1.7.1](https://github.com/luxdefi/luxd/releases/tag/v1.7.1)
+## [v1.7.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.1)
 
-This update is backwards compatible with [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
+This update is backwards compatible with [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
 
 ### Coreth
 
@@ -924,7 +1208,7 @@ This update is backwards compatible with [v1.7.0](https://github.com/luxdefi/lux
 
 - Fixed vote bubbling for unverified block chits.
 
-## [v1.7.0](https://github.com/luxdefi/luxd/releases/tag/v1.7.0)
+## [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0)
 
 This upgrade adds support for issuing multiple atomic transactions into a single block and directly transferring assets between the P-chain and the C-chain.
 
@@ -940,12 +1224,12 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 ### PlatformVM
 
 - Enabled `AtomicTx`s to be issued into `StandardBlock`s and deprecated `AtomicBlock`s.
-- Added the ability to export/import LUX to/from the C-chain.
+- Added the ability to export/import AVAX to/from the C-chain.
 
 ### Coreth
 
 - Enabled multiple `AtomicTx`s to be issued per block.
-- Added the ability to export/import LUX to/from the P-chain.
+- Added the ability to export/import AVAX to/from the P-chain.
 - Updated dynamic fee calculations.
 
 ### ProposerVM
@@ -960,9 +1244,9 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 
 - Removed `--snow-epoch-first-transition` and `snow-epoch-duration` as command line arguments.
 
-## [v1.6.5](https://github.com/luxdefi/luxd/releases/tag/v1.6.5)
+## [v1.6.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.5)
 
-This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Bootstrapping
 
@@ -971,7 +1255,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd
 
 ### Metrics
 
-- Added `lux_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
+- Added `avalanche_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
 
 ### APIs
 
@@ -983,9 +1267,9 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd
 - Added reported uptime to pong messages to be able to better track a local node's uptime as viewed by the network.
 - Refactored request timeout registry to avoid a potential race condition.
 
-## [v1.6.4](https://github.com/luxdefi/luxd/releases/tag/v1.6.4)
+## [v1.6.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.4)
 
-This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Config
 
@@ -999,16 +1283,16 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd
 
 ### Metrics
 
-- Updated `lux_{ChainID}_handler_gossip_{count,sum}` to `lux_{ChainID}_handler_gossip_request_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_{count,sum}` to `lux_{ChainID}_lat_accepted_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `lux_{ChainID}_lat_accepted_frontier_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_ancestors_{count,sum}` to `lux_{ChainID}_lat_multi_put_{count,sum}`.
-- Combined `lux_{ChainID}_lat_pull_query_{count,sum}` and `lux_{ChainID}_lat_push_query_{count,sum}` to `lux_{ChainID}_lat_chits_{count,sum}`.
-- Added `lux_{ChainID}_app_response_{count,sum}`.
-- Added `lux_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
-- Added `lux_network_bandwidth_throttler_inbound_awaiting_acquire`
-- Added `lux_P_vm_votes_won`
-- Added `lux_P_vm_votes_lost`
+- Updated `avalanche_{ChainID}_handler_gossip_{count,sum}` to `avalanche_{ChainID}_handler_gossip_request_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_{count,sum}` to `avalanche_{ChainID}_lat_accepted_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `avalanche_{ChainID}_lat_accepted_frontier_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_ancestors_{count,sum}` to `avalanche_{ChainID}_lat_multi_put_{count,sum}`.
+- Combined `avalanche_{ChainID}_lat_pull_query_{count,sum}` and `avalanche_{ChainID}_lat_push_query_{count,sum}` to `avalanche_{ChainID}_lat_chits_{count,sum}`.
+- Added `avalanche_{ChainID}_app_response_{count,sum}`.
+- Added `avalanche_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
+- Added `avalanche_network_bandwidth_throttler_inbound_awaiting_acquire`
+- Added `avalanche_P_vm_votes_won`
+- Added `avalanche_P_vm_votes_lost`
 
 ### Indexer
 
@@ -1027,9 +1311,9 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd
 
 ---
 
-## [v1.6.3](https://github.com/luxdefi/luxd/releases/tag/v1.6.3)
+## [v1.6.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.3)
 
-This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Config Options
 
@@ -1039,22 +1323,22 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/luxd
 
 ### Metrics
 
-- Changed the behavior of `lux_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
-- Changed the behavior of `lux_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
 - Added `Block/Tx` metrics on `meterVM`s.
-  - Added `lux_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_reject_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_reject_{count,sum}`.
 
 ### Coreth
 
