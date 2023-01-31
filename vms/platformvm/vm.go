@@ -67,6 +67,7 @@ var (
 	_ validators.SubnetConnector = (*VM)(nil)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	errWrongCacheType      = errors.New("unexpectedly cached type")
 	errMissingValidatorSet = errors.New("missing validator set")
 	errMissingValidator    = errors.New("missing validator")
@@ -75,6 +76,12 @@ var (
 	errMissingValidatorSet   = errors.New("missing validator set")
 	errDuplicateValidatorSet = errors.New("duplicate validator set")
 >>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
+=======
+	errWrongCacheType               = errors.New("unexpectedly cached type")
+	errMissingValidatorSet          = errors.New("missing validator set")
+	errValidatorSetAlreadyPopulated = errors.New("validator set already populated")
+	errDuplicateValidatorSet        = errors.New("duplicate validator set")
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 )
 
 type VM struct {
@@ -762,15 +769,17 @@ func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 =======
 func (vm *VM) initValidators() error {
-	newPrimaryValidators, err := vm.state.ValidatorSet(constants.PrimaryNetworkID)
-	if err != nil {
-		return err
-	}
 	primaryValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
 	if !ok {
 		return errMissingValidatorSet
 	}
-	if err := primaryValidators.Set(newPrimaryValidators.List()); err != nil {
+	if primaryValidators.Len() != 0 {
+		// Enforce the invariant that the validator set is empty before the call
+		// to VM.Initialize.
+		return errValidatorSetAlreadyPopulated
+	}
+	err := vm.state.ValidatorSet(constants.PrimaryNetworkID, primaryValidators)
+	if err != nil {
 		return err
 	}
 
@@ -779,10 +788,12 @@ func (vm *VM) initValidators() error {
 	vm.metrics.SetTotalStake(primaryValidators.Weight())
 
 	for subnetID := range vm.WhitelistedSubnets {
-		subnetValidators, err := vm.state.ValidatorSet(subnetID)
+		subnetValidators := validators.NewSet()
+		err := vm.state.ValidatorSet(subnetID, subnetValidators)
 		if err != nil {
 			return err
 		}
+
 		if !vm.Validators.Add(subnetID, subnetValidators) {
 			return fmt.Errorf("%w: %s", errDuplicateValidatorSet, subnetID)
 		}

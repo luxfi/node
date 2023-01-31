@@ -283,6 +283,7 @@ func (b *bootstrapper) Startup(ctx context.Context) error {
 
 	b.sampledBeacons = validators.NewSet()
 	b.pendingSendAcceptedFrontier.Clear()
+<<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !b.sampledBeacons.Contains(nodeID) {
 			// Invariant: We never use the TxID or BLS keys populated here.
@@ -294,6 +295,14 @@ func (b *bootstrapper) Startup(ctx context.Context) error {
 			return err
 		}
 		b.pendingSendAcceptedFrontier.Add(nodeID)
+=======
+	for _, vdr := range beacons {
+		vdrID := vdr.ID()
+		if err := b.sampledBeacons.AddWeight(vdrID, 1); err != nil {
+			return err
+		}
+		b.pendingSendAcceptedFrontier.Add(vdrID)
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	}
 
 	b.pendingReceiveAcceptedFrontier.Clear()
