@@ -23,7 +23,11 @@ func TestPeers(t *testing.T) {
 	require.Zero(p.ConnectedWeight())
 	require.Empty(p.PreferredPeers())
 
+<<<<<<< HEAD
 	p.OnValidatorAdded(nodeID, nil, ids.Empty, 5)
+=======
+	p.OnValidatorAdded(nodeID, nil, 5)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.Zero(p.ConnectedWeight())
 	require.Empty(p.PreferredPeers())
 
@@ -40,7 +44,11 @@ func TestPeers(t *testing.T) {
 	require.Zero(p.ConnectedWeight())
 	require.Contains(p.PreferredPeers(), nodeID)
 
+<<<<<<< HEAD
 	p.OnValidatorAdded(nodeID, nil, ids.Empty, 5)
+=======
+	p.OnValidatorAdded(nodeID, nil, 5)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.EqualValues(5, p.ConnectedWeight())
 	require.Contains(p.PreferredPeers(), nodeID)
 

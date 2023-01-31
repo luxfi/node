@@ -24,10 +24,14 @@ func testSetup(t *testing.T) (*vertex.TestManager, *common.SenderTest, common.Co
 	peers := validators.NewSet()
 	peer := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
 =======
 	if err := peers.Add(peer, 1); err != nil {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := peers.Add(peer, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 		t.Fatal(err)
 	}
 

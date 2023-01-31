@@ -173,6 +173,7 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(vdrs.AddWeight(vdr0, startupAlpha/2))
@@ -180,6 +181,9 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(vdrs.Add(vdr0, startupAlpha/2))
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.NoError(vdrs.Add(vdr0, nil, startupAlpha/2))
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(syncer.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.False(commonCfg.StartupTracker.ShouldStart())
@@ -190,6 +194,7 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr, nil, ids.Empty, startupAlpha))
 =======
 	require.NoError(vdrs.AddWeight(vdr, startupAlpha))
@@ -197,6 +202,9 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(vdrs.Add(vdr, startupAlpha))
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.NoError(vdrs.Add(vdr, nil, startupAlpha))
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(syncer.Connected(context.Background(), vdr, version.CurrentApp))
 
 	require.True(commonCfg.StartupTracker.ShouldStart())

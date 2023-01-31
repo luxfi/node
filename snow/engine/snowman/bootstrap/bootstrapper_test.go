@@ -61,10 +61,14 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 
 	peer := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
 =======
 	if err := peers.Add(peer, 1); err != nil {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := peers.Add(peer, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 		t.Fatal(err)
 	}
 
@@ -236,6 +240,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(peers.AddWeight(vdr0, startupAlpha/2))
@@ -243,6 +248,9 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(peers.Add(vdr0, startupAlpha/2))
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.NoError(peers.Add(vdr0, nil, startupAlpha/2))
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(bs.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.NoError(bs.Start(context.Background(), 0))
@@ -252,6 +260,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr, nil, ids.Empty, startupAlpha))
 =======
 	require.NoError(peers.AddWeight(vdr, startupAlpha))
@@ -259,6 +268,9 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(peers.Add(vdr, startupAlpha))
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.NoError(peers.Add(vdr, nil, startupAlpha))
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(bs.Connected(context.Background(), vdr, version.CurrentApp))
 	require.True(frontierRequested)
 }

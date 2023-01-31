@@ -38,6 +38,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(vdr0, 1)
@@ -45,6 +46,9 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 =======
 	err := vdrs.Add(vdr0, 1)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vdrs.Add(vdr0, nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -144,6 +148,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
@@ -151,6 +156,9 @@ func TestHandlerClosesOnError(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -243,10 +251,14 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -325,10 +337,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	msgFromVMChan := make(chan common.Message)
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
