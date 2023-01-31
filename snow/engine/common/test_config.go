@@ -1,21 +1,25 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/common/tracker"
-	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
 )
 
 // DefaultConfigTest returns a test configuration
 func DefaultConfigTest() Config {
 	isBootstrapped := false
 	subnet := &SubnetTest{
-		IsBootstrappedF: func() bool { return isBootstrapped },
-		BootstrappedF:   func(ids.ID) { isBootstrapped = true },
+		IsBootstrappedF: func() bool {
+			return isBootstrapped
+		},
+		BootstrappedF: func(ids.ID) {
+			isBootstrapped = true
+		},
 	}
 
 	beacons := validators.NewSet()

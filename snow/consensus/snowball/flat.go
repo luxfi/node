@@ -1,10 +1,10 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
 
 import (
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 var (
@@ -15,7 +15,9 @@ var (
 // FlatFactory implements Factory by returning a flat struct
 type FlatFactory struct{}
 
-func (FlatFactory) New() Consensus { return &Flat{} }
+func (FlatFactory) New() Consensus {
+	return &Flat{}
+}
 
 // Flat is a naive implementation of a multi-choice snowball instance
 type Flat struct {
@@ -30,8 +32,6 @@ func (f *Flat) Initialize(params Parameters, choice ids.ID) {
 	f.nnarySnowball.Initialize(params.BetaVirtuous, params.BetaRogue, choice)
 	f.params = params
 }
-
-func (f *Flat) Parameters() Parameters { return f.params }
 
 func (f *Flat) RecordPoll(votes ids.Bag) bool {
 	if pollMode, numVotes := votes.Mode(); numVotes >= f.params.Alpha {

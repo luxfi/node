@@ -1,14 +1,15 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
 
 import (
+	"context"
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowman"
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
 )
 
 var (
@@ -22,7 +23,7 @@ type EngineTest struct {
 	common.EngineTest
 
 	CantGetBlock bool
-	GetBlockF    func(ids.ID) (snowman.Block, error)
+	GetBlockF    func(context.Context, ids.ID) (snowman.Block, error)
 }
 
 func (e *EngineTest) Default(cant bool) {
@@ -30,9 +31,9 @@ func (e *EngineTest) Default(cant bool) {
 	e.CantGetBlock = false
 }
 
-func (e *EngineTest) GetBlock(blkID ids.ID) (snowman.Block, error) {
+func (e *EngineTest) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
 	if e.GetBlockF != nil {
-		return e.GetBlockF(blkID)
+		return e.GetBlockF(ctx, blkID)
 	}
 	if e.CantGetBlock && e.T != nil {
 		e.T.Fatalf("Unexpectedly called GetBlock")

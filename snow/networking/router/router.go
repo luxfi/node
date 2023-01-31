@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -9,13 +9,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/snow/networking/handler"
-	"github.com/luxdefi/luxd/snow/networking/timeout"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/networking/handler"
+	"github.com/ava-labs/avalanchego/snow/networking/timeout"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 // Router routes consensus messages to the Handler of the consensus
@@ -27,18 +28,18 @@ type Router interface {
 	Initialize(
 		nodeID ids.NodeID,
 		log logging.Logger,
-		msgCreator message.InternalMsgBuilder,
 		timeouts timeout.Manager,
 		shutdownTimeout time.Duration,
-		criticalChains ids.Set,
-		whiteListedSubnets ids.Set,
+		criticalChains set.Set[ids.ID],
+		stakingEnabled bool,
+		trackedSubnets set.Set[ids.ID],
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
 		metricsNamespace string,
 		metricsRegisterer prometheus.Registerer,
 	) error
-	Shutdown()
-	AddChain(chain handler.Handler)
+	Shutdown(context.Context)
+	AddChain(ctx context.Context, chain handler.Handler)
 	health.Checker
 }
 
@@ -53,5 +54,6 @@ type InternalHandler interface {
 		destinationChainID ids.ID,
 		requestID uint32,
 		op message.Op,
+		failedMsg message.InboundMessage,
 	)
 }

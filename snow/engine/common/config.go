@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -6,9 +6,9 @@ package common
 import (
 	"time"
 
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/common/tracker"
-	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
 )
 
 // Config wraps the common configurations that are needed by a Snow consensus
@@ -46,12 +46,16 @@ type Config struct {
 	SharedCfg *SharedConfig
 }
 
-func (c *Config) Context() *snow.ConsensusContext { return c.Ctx }
+func (c *Config) Context() *snow.ConsensusContext {
+	return c.Ctx
+}
 
 // IsBootstrapped returns true iff this chain is done bootstrapping
-func (c *Config) IsBootstrapped() bool { return c.Ctx.GetState() == snow.NormalOp }
+func (c *Config) IsBootstrapped() bool {
+	return c.Ctx.GetState() == snow.NormalOp
+}
 
-// Shared among common.bootstrapper and snowman/lux bootstrapper
+// Shared among common.bootstrapper and snowman/avalanche bootstrapper
 type SharedConfig struct {
 	// Tracks the last requestID that was used in a request
 	RequestID uint32

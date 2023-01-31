@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -9,15 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/sampler"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/sampler"
 )
 
 const (
 	initialUnaryDescription = "SB(NumSuccessfulPolls = 0, SF(Confidence = 0, Finalized = false)) Bits = [0, 256)"
 )
-
-func TestTreeParams(t *testing.T) { ParamsTest(t, TreeFactory{}) }
 
 func TestSnowballSingleton(t *testing.T) {
 	require := require.New(t)

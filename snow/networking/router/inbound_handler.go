@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -6,9 +6,9 @@ package router
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/version"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var _ InboundHandler = InboundHandlerFunc(nil)

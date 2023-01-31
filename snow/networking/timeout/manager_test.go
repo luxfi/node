@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timeout
@@ -10,10 +10,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/utils/timer"
 )
 
 func TestManagerFire(t *testing.T) {
@@ -38,7 +38,13 @@ func TestManagerFire(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	manager.RegisterRequest(ids.NodeID{}, ids.ID{}, message.PullQuery, ids.RequestID{}, wg.Done)
+	manager.RegisterRequest(
+		ids.NodeID{},
+		ids.ID{},
+		true,
+		ids.RequestID{},
+		wg.Done,
+	)
 
 	wg.Wait()
 }
@@ -68,11 +74,13 @@ func TestManagerCancel(t *testing.T) {
 	fired := new(bool)
 
 	id := ids.RequestID{}
-	manager.RegisterRequest(ids.NodeID{}, ids.ID{}, message.PullQuery, id, func() { *fired = true })
+	manager.RegisterRequest(ids.NodeID{}, ids.ID{}, true, id, func() {
+		*fired = true
+	})
 
-	manager.RegisterResponse(ids.NodeID{}, ids.ID{}, id, message.Get, 1*time.Second)
+	manager.RegisterResponse(ids.NodeID{}, ids.ID{}, id, message.PutOp, 1*time.Second)
 
-	manager.RegisterRequest(ids.NodeID{}, ids.ID{}, message.PullQuery, ids.RequestID{}, wg.Done)
+	manager.RegisterRequest(ids.NodeID{}, ids.ID{}, true, ids.RequestID{}, wg.Done)
 
 	wg.Wait()
 
