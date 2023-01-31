@@ -4,8 +4,33 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+<<<<<<< HEAD
 # Changes to the minimum golang version must also be replicated in
 # scripts/build_lux.sh (here)
+=======
+print_usage() {
+  printf "Usage: build_avalanche [OPTIONS]
+
+  Build avalanchego
+
+  Options:
+
+    -r  Build with race detector
+"
+}
+
+race=''
+while getopts 'r' flag; do
+  case "${flag}" in
+    r) race='-race' ;;
+    *) print_usage
+      exit 1 ;;
+  esac
+done
+
+# Changes to the minimum golang version must also be replicated in
+# scripts/build_avalanche.sh (here)
+>>>>>>> 1bad4e38e (Update spec)
 # scripts/local.Dockerfile
 # Dockerfile
 # README.md
@@ -29,6 +54,7 @@ version_lt() {
 }
 
 if version_lt "$(go_version)" "$go_version_minimum"; then
+<<<<<<< HEAD
     echo "LUXGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1
 fi
@@ -42,3 +68,17 @@ source "$LUX_PATH"/scripts/constants.sh
 
 echo "Building LUXGo..."
 go build -ldflags "-X github.com/luxdefi/luxd/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$LUX_PATH/main/"*.go
+=======
+    echo "AvalancheGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
+    exit 1
+fi
+
+# Avalanchego root folder
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+# Load the constants
+source "$AVALANCHE_PATH"/scripts/constants.sh
+
+build_args="$race"
+echo "Building AvalancheGo..."
+go build $build_args -ldflags "-X github.com/ava-labs/avalanchego/version.GitCommit=$git_commit $static_ld_flags" -o "$avalanchego_path" "$AVALANCHE_PATH/main/"*.go
+>>>>>>> 1bad4e38e (Update spec)
