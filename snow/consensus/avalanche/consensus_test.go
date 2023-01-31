@@ -27,6 +27,9 @@ import (
 type testFunc func(*testing.T, Factory)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 var (
 	testFuncs = []testFunc{
 		MetricsTest,
@@ -59,6 +62,7 @@ var (
 
 	errTest = errors.New("non-nil error")
 )
+<<<<<<< HEAD
 =======
 var testFuncs = []testFunc{
 	MetricsTest,
@@ -89,6 +93,8 @@ var testFuncs = []testFunc{
 	SilenceTransactionVertexEventsTest,
 }
 >>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 
 func runConsensusTests(t *testing.T, factory Factory) {
 	for _, test := range testFuncs {

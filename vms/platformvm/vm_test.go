@@ -164,10 +164,14 @@ func defaultContext() *snow.Context {
 			}[chainID]
 			if !ok {
 <<<<<<< HEAD
+<<<<<<< HEAD
 				return ids.Empty, errMissing
 =======
 				return ids.Empty, errors.New("missing")
 >>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
+=======
+				return ids.Empty, errMissing
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 			}
 			return subnetID, nil
 		},

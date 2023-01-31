@@ -40,6 +40,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
 <<<<<<< HEAD
+<<<<<<< HEAD
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
 				return state
 			},
@@ -50,6 +51,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			},
 			expectedErr: errMock,
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
+				return state
+			},
+			expectedErr: errTest,
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "all validators have public keys; no duplicate pub keys",

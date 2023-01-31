@@ -27,8 +27,13 @@ import (
 )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 var errUnknownSummary = errors.New("unknown summary")
 =======
+=======
+var errUnknownSummary = errors.New("unknown summary")
+
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
 	rawDB := dbMan.Current().Database
 	prefixDB := prefixdb.New(dbPrefix, rawDB)

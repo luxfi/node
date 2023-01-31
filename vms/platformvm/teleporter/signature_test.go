@@ -33,10 +33,14 @@ var (
 	_ utils.Sortable[*testValidator] = (*testValidator)(nil)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	errTest       = errors.New("non-nil error")
 =======
 	errMock       = errors.New("")
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+	errTest       = errors.New("non-nil error")
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	sourceChainID = ids.GenerateTestID()
 	subnetID      = ids.GenerateTestID()
 
@@ -122,10 +126,14 @@ func TestSignatureVerification(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
 <<<<<<< HEAD
+<<<<<<< HEAD
 				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errTest)
 =======
 				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errMock)
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 				return state
 			},
 			quorumNum: 1,
@@ -146,10 +154,14 @@ func TestSignatureVerification(t *testing.T) {
 				return msg
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			err: errTest,
 =======
 			err: errMock,
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			err: errTest,
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "can't get validator set",
@@ -157,10 +169,14 @@ func TestSignatureVerification(t *testing.T) {
 				state := validators.NewMockState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, nil)
 <<<<<<< HEAD
+<<<<<<< HEAD
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
 =======
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errMock)
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 				return state
 			},
 			quorumNum: 1,
@@ -181,10 +197,14 @@ func TestSignatureVerification(t *testing.T) {
 				return msg
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			err: errTest,
 =======
 			err: errMock,
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			err: errTest,
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "weight overflow",
