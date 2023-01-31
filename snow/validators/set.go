@@ -473,7 +473,11 @@ func (s *vdrSet) list() []*Validator {
 	return list
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) Sample(size int) ([]ids.NodeID, error) {
+=======
+func (s *set) Sample(size int) ([]ids.NodeID, error) {
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	if size == 0 {
 		return nil, nil
 	}
@@ -484,7 +488,11 @@ func (s *vdrSet) Sample(size int) ([]ids.NodeID, error) {
 	return s.sample(size)
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) sample(size int) ([]ids.NodeID, error) {
+=======
+func (s *set) sample(size int) ([]ids.NodeID, error) {
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	if !s.samplerInitialized {
 		if err := s.sampler.Initialize(s.weights); err != nil {
 			return nil, err
@@ -500,11 +508,15 @@ func (s *vdrSet) sample(size int) ([]ids.NodeID, error) {
 	list := make([]ids.NodeID, size)
 	for i, index := range indices {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		list[i] = s.vdrSlice[index].NodeID
 =======
 		copiedVdr := *s.vdrSlice[index]
 		list[i] = &copiedVdr
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		list[i] = s.vdrSlice[index].nodeID
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	}
 	return list, nil
 }
