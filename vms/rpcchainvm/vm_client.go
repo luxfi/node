@@ -272,9 +272,13 @@ func (vm *VMClient) Initialize(
 			GetBlock:              vm.getBlock,
 			UnmarshalBlock:        vm.parseBlock,
 <<<<<<< HEAD
+<<<<<<< HEAD
 			BatchedUnmarshalBlock: vm.batchedParseBlock,
 =======
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+			BatchedUnmarshalBlock: vm.batchedParseBlock,
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 			BuildBlock:            vm.buildBlock,
 			BuildBlockWithContext: vm.buildBlockWithContext,
 		},
@@ -734,10 +738,14 @@ func (vm *VMClient) GetAncestors(
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
 =======
 func (vm *VMClient) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})

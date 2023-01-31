@@ -30,9 +30,13 @@ const (
 	lastAcceptedBlockPostStateSummaryAcceptTestKey = "lastAcceptedBlockPostStateSummaryAcceptTest"
 	contextTestKey                                 = "contextTest"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
 =======
 >>>>>>> 53e970f42 (Support block.WithVerifyContext in chain.BlockWrapper (#2341))
+=======
+	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 )
 
 var (
@@ -57,9 +61,13 @@ var (
 		lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
 		contextTestKey:                                 contextEnabledTestPlugin,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 =======
 >>>>>>> 53e970f42 (Support block.WithVerifyContext in chain.BlockWrapper (#2341))
+=======
+		batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 	}
 )
 
