@@ -1886,10 +1886,14 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	peerID := ids.NodeID{1, 2, 3, 4, 5, 4, 3, 2, 1}
 	beacons := validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(beacons.Add(peerID, nil, ids.Empty, 1))
 =======
 	require.NoError(beacons.AddWeight(peerID, 1))
 >>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
+=======
+	require.NoError(beacons.Add(peerID, 1))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 
 	benchlist := benchlist.NewNoBenchlist()
 	timeoutManager, err := timeout.NewManager(

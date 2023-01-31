@@ -60,7 +60,11 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 	sender.CantSendGetAcceptedFrontier = false
 
 	peer := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+=======
+	if err := peers.Add(peer, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 		t.Fatal(err)
 	}
 
@@ -231,10 +235,14 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// attempt starting bootstrapper with not enough stake connected. Bootstrapper should stall.
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(peers.AddWeight(vdr0, startupAlpha/2))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.NoError(peers.Add(vdr0, startupAlpha/2))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(bs.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.NoError(bs.Start(context.Background(), 0))
@@ -243,10 +251,14 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr, nil, ids.Empty, startupAlpha))
 =======
 	require.NoError(peers.AddWeight(vdr, startupAlpha))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.NoError(peers.Add(vdr, startupAlpha))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(bs.Connected(context.Background(), vdr, version.CurrentApp))
 	require.True(frontierRequested)
 }

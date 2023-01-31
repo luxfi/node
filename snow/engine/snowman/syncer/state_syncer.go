@@ -466,7 +466,12 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	for _, vdr := range beacons {
 		vdrID := vdr.ID()
-		if err := ss.frontierSeeders.AddWeight(vdrID, 1); err != nil {
+		if !ss.frontierSeeders.Contains(vdrID) {
+			err = ss.frontierSeeders.Add(vdrID, 1)
+		} else {
+			err = ss.frontierSeeders.AddWeight(vdrID, 1)
+		}
+		if err != nil {
 			return err
 		}
 		ss.targetSeeders.Add(vdrID)

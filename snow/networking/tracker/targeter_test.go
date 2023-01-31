@@ -50,10 +50,17 @@ func TestTarget(t *testing.T) {
 	totalVdrWeight := uint64(10)
 	nonVdr := ids.NodeID{2}
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	if err := vdrs.Add(vdr, nil, ids.Empty, 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, totalVdrWeight-vdrWeight); err != nil {
+=======
+	if err := vdrs.Add(vdr, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vdrs.Add(ids.GenerateTestNodeID(), totalVdrWeight-vdrWeight); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 		t.Fatal(err)
 	}
 

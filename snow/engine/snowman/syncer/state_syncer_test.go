@@ -172,10 +172,14 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// attempt starting bootstrapper with not enough stake connected. Bootstrapper should stall.
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(vdrs.AddWeight(vdr0, startupAlpha/2))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.NoError(vdrs.Add(vdr0, startupAlpha/2))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(syncer.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.False(commonCfg.StartupTracker.ShouldStart())
@@ -185,10 +189,14 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr, nil, ids.Empty, startupAlpha))
 =======
 	require.NoError(vdrs.AddWeight(vdr, startupAlpha))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.NoError(vdrs.Add(vdr, startupAlpha))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(syncer.Connected(context.Background(), vdr, version.CurrentApp))
 
 	require.True(commonCfg.StartupTracker.ShouldStart())
