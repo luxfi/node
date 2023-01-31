@@ -227,10 +227,14 @@ func TestBaseTxSemanticVerifyUnauthorizedFx(t *testing.T) {
 	vm.batchTimeout = 0
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 =======
 	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 
@@ -650,10 +654,14 @@ func TestBaseTxSemanticVerifyPendingUnauthorizedFx(t *testing.T) {
 	vm.batchTimeout = 0
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 =======
 	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 
@@ -802,10 +810,14 @@ func TestBaseTxSemanticVerifyPendingInvalidSignature(t *testing.T) {
 	vm.batchTimeout = 0
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 =======
 	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 

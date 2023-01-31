@@ -554,10 +554,14 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := bBlock.Verify(context.Background()); err != nil {
 =======
 	if err = bBlock.Verify(context.Background()); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := bBlock.Verify(context.Background()); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 

@@ -660,12 +660,17 @@ func (t *Transitive) issueWithAncestors(ctx context.Context, blk snowman.Block) 
 		}
 		blkID = blk.Parent()
 <<<<<<< HEAD
+<<<<<<< HEAD
 		blk, err = t.GetBlock(ctx, blkID)
 		if err != nil {
 =======
 		var err error
 		if blk, err = t.GetBlock(ctx, blkID); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		blk, err = t.GetBlock(ctx, blkID)
+		if err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 			status = choices.Unknown
 			break
 		}
