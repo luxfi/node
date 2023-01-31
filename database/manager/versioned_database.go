@@ -4,9 +4,9 @@
 package manager
 
 import (
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/version"
 )
 
 var _ utils.Sortable[*VersionedDatabase] = (*VersionedDatabase)(nil)

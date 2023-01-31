@@ -6,7 +6,7 @@ package avalanche
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/luxdefi/node/snow/consensus/snowball"
 )
 
 // Parameters the avalanche parameters include the snowball parameters and the

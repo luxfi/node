@@ -6,7 +6,7 @@ package peer
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/utils/wrappers"
 )
 
 type gossipTrackerMetrics struct {

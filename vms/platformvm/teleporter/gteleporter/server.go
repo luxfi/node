@@ -6,10 +6,10 @@ package gteleporter
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/teleporter"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/vms/platformvm/teleporter"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/teleporter"
+	pb "github.com/luxdefi/node/proto/pb/teleporter"
 )
 
 var _ pb.SignerServer = (*Server)(nil)

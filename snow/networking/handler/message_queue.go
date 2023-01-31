@@ -11,12 +11,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/message"
+	"github.com/luxdefi/node/snow/networking/tracker"
+	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/timer/mockable"
 )
 
 var _ MessageQueue = (*messageQueue)(nil)

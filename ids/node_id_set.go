@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/node/utils"
 )
 =======
 import "strings"

@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/rpc"
-	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/rpc"
+	"github.com/luxdefi/node/vms/platformvm/signer"
 )
 
 var _ Client = (*client)(nil)

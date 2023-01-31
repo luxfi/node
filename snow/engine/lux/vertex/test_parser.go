@@ -26,7 +26,7 @@ import (
 	"testing"
 
 <<<<<<< HEAD:snow/engine/avalanche/vertex/test_parser.go
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
 =======
 	"github.com/luxdefi/luxd/snow/consensus/lux"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/test_parser.go

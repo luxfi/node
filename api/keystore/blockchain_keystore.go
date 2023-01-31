@@ -6,10 +6,10 @@ package keystore
 import (
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/encdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/encdb"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/logging"
 )
 
 var _ BlockchainKeystore = (*blockchainKeystore)(nil)

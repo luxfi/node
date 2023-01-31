@@ -10,9 +10,9 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/nodb"
+	"github.com/luxdefi/node/utils"
 )
 
 const (

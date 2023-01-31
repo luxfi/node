@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/crypto"
 )
 
 const defaultWeight = 10000

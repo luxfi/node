@@ -4,9 +4,9 @@
 package bootstrap
 
 import (
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/engine/common/queue"
+	"github.com/luxdefi/node/snow/engine/snowman/block"
 )
 
 type Config struct {

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils"
 )
 
 func TestUnsignedMessage(t *testing.T) {

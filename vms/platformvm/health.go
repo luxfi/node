@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/utils/constants"
 )
 
 const fallbackMinPercentConnected = 0.8

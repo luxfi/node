@@ -8,8 +8,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/hashing"
 )
 
 const NodeIDPrefix = "NodeID-"

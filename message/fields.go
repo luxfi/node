@@ -7,9 +7,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/proto/pb/p2p"
-	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
+	"github.com/luxdefi/node/utils/constants"
 )
 
 var (

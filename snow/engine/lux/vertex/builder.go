@@ -20,11 +20,11 @@ import (
 <<<<<<< HEAD:snow/engine/avalanche/vertex/builder.go
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/hashing"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/ids"

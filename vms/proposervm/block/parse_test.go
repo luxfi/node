@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/staking"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/staking"
 )
 
 func TestParse(t *testing.T) {

@@ -15,9 +15,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/proto/pb/p2p"
-	"github.com/ava-labs/avalanchego/staking"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
+	"github.com/luxdefi/node/staking"
 )
 
 func TestMessage(t *testing.T) {

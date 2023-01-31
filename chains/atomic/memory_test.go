@@ -6,8 +6,8 @@ package atomic
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/ids"
 )
 
 var (

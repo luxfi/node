@@ -25,10 +25,10 @@ import (
 	"github.com/luxdefi/luxd/codec/reflectcodec"
 	"github.com/luxdefi/luxd/utils/units"
 =======
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/codec/reflectcodec"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxdefi/node/codec"
+	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxdefi/node/codec/reflectcodec"
+	"github.com/luxdefi/node/utils/units"
 >>>>>>> 53a8245a8 (Update consensus)
 )
 

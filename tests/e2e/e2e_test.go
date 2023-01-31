@@ -11,15 +11,15 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/luxdefi/node/tests/e2e"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/ava-labs/avalanchego/tests/e2e/banff"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/p"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/ping"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/static-handlers"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/x/transfer"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/x/whitelist-vtx"
+	_ "github.com/luxdefi/node/tests/e2e/banff"
+	_ "github.com/luxdefi/node/tests/e2e/p"
+	_ "github.com/luxdefi/node/tests/e2e/ping"
+	_ "github.com/luxdefi/node/tests/e2e/static-handlers"
+	_ "github.com/luxdefi/node/tests/e2e/x/transfer"
+	_ "github.com/luxdefi/node/tests/e2e/x/whitelist-vtx"
 )
 
 func TestE2E(t *testing.T) {
@@ -56,15 +56,15 @@ func init() {
 	)
 	flag.StringVar(
 		&networkRunnerAvalancheGoExecPath,
-		"network-runner-avalanchego-path",
+		"network-runner-node-path",
 		"",
-		"[optional] avalanchego executable path (only required for local network-runner tests)",
+		"[optional] node executable path (only required for local network-runner tests)",
 	)
 	flag.StringVar(
 		&networkRunnerAvalancheGoLogLevel,
-		"network-runner-avalanchego-log-level",
+		"network-runner-node-log-level",
 		"INFO",
-		"[optional] avalanchego log-level (only required for local network-runner tests)",
+		"[optional] node log-level (only required for local network-runner tests)",
 	)
 
 	// e.g., custom network HTTP RPC endpoints

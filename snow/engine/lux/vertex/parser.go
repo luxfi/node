@@ -22,8 +22,8 @@ import (
 <<<<<<< HEAD:snow/engine/avalanche/vertex/parser.go
 	"context"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/utils/hashing"
 =======
 	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/utils/hashing"

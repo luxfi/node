@@ -11,7 +11,7 @@ set -o pipefail
 print_usage() {
   printf "Usage: build_avalanche [OPTIONS]
 
-  Build avalanchego
+  Build node
 
   Options:
 
@@ -80,5 +80,5 @@ source "$AVALANCHE_PATH"/scripts/constants.sh
 
 build_args="$race"
 echo "Building AvalancheGo..."
-go build $build_args -ldflags "-X github.com/ava-labs/avalanchego/version.GitCommit=$git_commit $static_ld_flags" -o "$avalanchego_path" "$AVALANCHE_PATH/main/"*.go
+go build $build_args -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$AVALANCHE_PATH/main/"*.go
 >>>>>>> 1bad4e38e (Update spec)

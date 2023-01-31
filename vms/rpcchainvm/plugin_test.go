@@ -13,8 +13,8 @@ import (
 
 	plugin "github.com/hashicorp/go-plugin"
 
-	"github.com/ava-labs/avalanchego/version"
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/luxdefi/node/version"
+	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
 )
 
 // plugin_test collects objects and helpers generally helpful for various rpc tests

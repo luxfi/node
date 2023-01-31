@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/node/utils/rpc"
 )
 
 var _ Client = (*client)(nil)

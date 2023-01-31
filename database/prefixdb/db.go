@@ -7,10 +7,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/nodb"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/hashing"
 )
 
 const (

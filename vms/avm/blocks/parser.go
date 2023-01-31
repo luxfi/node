@@ -6,10 +6,10 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/avm/fxs"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/luxdefi/node/codec"
+	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/vms/avm/fxs"
+	"github.com/luxdefi/node/vms/avm/txs"
 )
 
 // CodecVersion is the current default codec version

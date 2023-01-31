@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/vms/components/verify"
 )
 
 const (

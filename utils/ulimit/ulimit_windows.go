@@ -6,7 +6,7 @@
 
 package ulimit
 
-import "github.com/ava-labs/avalanchego/utils/logging"
+import "github.com/luxdefi/node/utils/logging"
 
 const DefaultFDLimit = 16384
 

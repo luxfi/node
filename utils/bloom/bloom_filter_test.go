@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxdefi/node/utils/units"
 )
 
 func TestNew(t *testing.T) {

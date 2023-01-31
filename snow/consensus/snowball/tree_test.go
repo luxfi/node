@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/sampler"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/sampler"
 )
 
 const (

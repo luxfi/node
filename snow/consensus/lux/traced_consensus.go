@@ -10,15 +10,15 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/trace"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/trace"
 <<<<<<< HEAD
 <<<<<<< HEAD
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/set"
 =======
 >>>>>>> 23402731f (Add consensus tracers (#2237))
 =======
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/set"
 >>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 

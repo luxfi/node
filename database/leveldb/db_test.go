@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/utils/logging"
 )
 
 func TestInterface(t *testing.T) {

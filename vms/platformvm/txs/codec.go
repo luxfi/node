@@ -6,12 +6,12 @@ package txs
 import (
 	"math"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
-	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/node/codec"
+	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/vms/platformvm/signer"
+	"github.com/luxdefi/node/vms/platformvm/stakeable"
+	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
 // Version is the current default codec version

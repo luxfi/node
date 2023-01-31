@@ -4,8 +4,8 @@
 package chains
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/networking/router"
 )
 
 var _ Manager = (*MockManager)(nil)

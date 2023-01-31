@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/memdb"
 )
 
 var errTest = errors.New("non-nil error")

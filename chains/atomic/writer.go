@@ -4,7 +4,7 @@
 package atomic
 
 import (
-	"github.com/ava-labs/avalanchego/database"
+	"github.com/luxdefi/node/database"
 )
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.

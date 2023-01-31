@@ -9,9 +9,9 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/crypto/bls"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
 var _ btree.Item = (*Staker)(nil)

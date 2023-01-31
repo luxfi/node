@@ -4,14 +4,14 @@
 package executor
 
 import (
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/uptime"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
-	"github.com/ava-labs/avalanchego/vms/platformvm/config"
-	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
-	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
-	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/uptime"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxdefi/node/vms/platformvm/config"
+	"github.com/luxdefi/node/vms/platformvm/fx"
+	"github.com/luxdefi/node/vms/platformvm/reward"
+	"github.com/luxdefi/node/vms/platformvm/utxo"
 )
 
 type Backend struct {

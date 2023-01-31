@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/node/utils"
 )
 
 func TestAggregation(t *testing.T) {

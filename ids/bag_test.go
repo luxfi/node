@@ -6,7 +6,7 @@ package ids
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/set"
 )
 
 func TestBagAdd(t *testing.T) {

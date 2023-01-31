@@ -6,11 +6,11 @@ package ledger
 import (
 	"fmt"
 
-	ledger "github.com/ava-labs/ledger-avalanche/go"
+	ledger "github.com/luxdefi/ledger-avalanche/go"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/crypto/keychain"
+	"github.com/luxdefi/node/version"
 )
 
 const rootPath = "m/44'/9000'/0'"

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
 )
 
 var (

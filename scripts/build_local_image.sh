@@ -14,6 +14,6 @@ source "$AVALANCHE_PATH"/scripts/constants.sh
 full_commit_hash="$(git --git-dir="$AVALANCHE_PATH/.git" rev-parse HEAD)"
 commit_hash="${full_commit_hash::8}"
 
-echo "Building Docker Image with tags: $avalanchego_dockerhub_repo:$commit_hash , $avalanchego_dockerhub_repo:$current_branch"
-docker build -t "$avalanchego_dockerhub_repo:$commit_hash" \
-        -t "$avalanchego_dockerhub_repo:$current_branch" "$AVALANCHE_PATH" -f "$AVALANCHE_PATH/Dockerfile"
+echo "Building Docker Image with tags: $node_dockerhub_repo:$commit_hash , $node_dockerhub_repo:$current_branch"
+docker build -t "$node_dockerhub_repo:$commit_hash" \
+        -t "$node_dockerhub_repo:$current_branch" "$AVALANCHE_PATH" -f "$AVALANCHE_PATH/Dockerfile"
