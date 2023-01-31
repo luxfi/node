@@ -69,7 +69,11 @@ func NewLedgerKeychain(l Ledger, numToDerive int) (Keychain, error) {
 }
 
 // NewLedgerKeychainFromIndices creates a new Ledger with addresses taken from the given [indices].
+<<<<<<< HEAD
 func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) {
+=======
+func NewLedgerKeychainFromIndices(l ledger.Ledger, indices []uint32) (Keychain, error) {
+>>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
 	if len(indices) == 0 {
 		return nil, ErrInvalidIndicesLength
 	}
@@ -88,7 +92,11 @@ func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) 
 		)
 	}
 
+<<<<<<< HEAD
 	addrsSet := set.NewSet[ids.ShortID](len(addrs))
+=======
+	addrsSet := ids.ShortSet{}
+>>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
 	addrsSet.Add(addrs...)
 
 	addrToIdx := map[ids.ShortID]uint32{}
