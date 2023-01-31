@@ -111,6 +111,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			for index, vdr := range subnetVdrs.List() {
 				err := vm.ConnectedSubnet(context.Background(), vdr.NodeID, subnetID)
 =======
@@ -120,6 +121,10 @@ func TestHealthCheckSubnet(t *testing.T) {
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 				err := vm.Connected(context.Background(), validator.ID(), version.CurrentApp)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+			for index, vdr := range subnetVdrs.List() {
+				err := vm.Connected(context.Background(), vdr.NodeID, version.CurrentApp)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 				require.NoError(err)
 				details, err := vm.HealthCheck(context.Background())
 				connectedPerc := float64((index + 1) * (100 / testVdrCount))

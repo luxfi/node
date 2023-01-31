@@ -23,6 +23,7 @@ type Validator struct {
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 )
 
+<<<<<<< HEAD
 var _ Validator = (*validator)(nil)
 
 // Validator is the minimal description of someone that can be sampled.
@@ -46,12 +47,21 @@ type validator struct {
 	pk     *bls.PublicKey
 	weight uint64
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+// Validator is a struct that contains the base values representing a validator
+// of the Avalanche Network.
+type Validator struct {
+	NodeID    ids.NodeID
+	PublicKey *bls.PublicKey
+	Weight    uint64
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 
 	// index is used to efficiently remove validators from the validator set. It
 	// represents the index of this validator in the vdrSlice and weights
 	// arrays.
 	index int
 }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 // GetValidatorOutput is a struct that contains the publicly relevant values of
@@ -87,3 +97,5 @@ func NewValidator(
 	}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 }
+=======
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
