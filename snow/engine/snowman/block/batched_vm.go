@@ -75,11 +75,16 @@ func GetAncestors(
 
 	for numFetched := 1; numFetched < maxBlocksNum && time.Since(startTime) < maxBlocksRetrivalTime; numFetched++ {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		blk, err = vm.GetBlock(ctx, blk.Parent())
 		if err != nil {
 =======
 		if blk, err = vm.GetBlock(ctx, blk.Parent()); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		blk, err = vm.GetBlock(ctx, blk.Parent())
+		if err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 			break
 		}
 		blkBytes := blk.Bytes()

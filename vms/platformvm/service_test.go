@@ -111,10 +111,19 @@ func TestCreateBlockchainArgsParsing(t *testing.T) {
 	jsonString := `{"vmID":"lol","fxIDs":["secp256k1"], "name":"awesome", "username":"bob loblaw", "password":"yeet", "genesisData":"SkB92YpWm4Q2iPnLGCuDPZPgUQMxajqQQuz91oi3xD984f8r"}`
 	args := CreateBlockchainArgs{}
 	err := stdjson.Unmarshal([]byte(jsonString), &args)
+<<<<<<< HEAD
 	require.NoError(t, err)
 
 	_, err = stdjson.Marshal(args.GenesisData)
 	require.NoError(t, err)
+=======
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := stdjson.Marshal(args.GenesisData); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 }
 
 func TestExportKey(t *testing.T) {
