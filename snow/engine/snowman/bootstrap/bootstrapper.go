@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
@@ -122,10 +121,7 @@ func New(ctx context.Context, config Config, onFinished func(ctx context.Context
 func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrapper")
 
-	b.Ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping,
-	})
+	b.Ctx.SetState(snow.Bootstrapping)
 	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w",
 			err)
@@ -304,7 +300,7 @@ func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 		return nil
 	}
 
-	b.Ctx.StateSyncing.Set(false)
+	b.Ctx.RunningStateSync(false)
 	return nil
 }
 

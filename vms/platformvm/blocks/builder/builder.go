@@ -273,7 +273,7 @@ func (b *builder) setNextBuildBlockTime() {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	if !b.txExecutorBackend.Bootstrapped.Get() {
+	if !b.txExecutorBackend.Bootstrapped.GetValue() {
 		ctx.Log.Verbo("skipping block timer reset",
 			zap.String("reason", "not bootstrapped"),
 		)

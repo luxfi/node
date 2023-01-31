@@ -11,7 +11,6 @@ import (
 	reflect "reflect"
 	sync "sync"
 
-	snow "github.com/luxdefi/node/snow"
 	common "github.com/luxdefi/node/snow/engine/common"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -134,15 +133,15 @@ func (mr *MockServerMockRecorder) DispatchTLS(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // RegisterChain mocks base method.
-func (m *MockServer) RegisterChain(arg0 string, arg1 *snow.ConsensusContext, arg2 common.VM) {
+func (m *MockServer) RegisterChain(arg0 string, arg1 common.Engine) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
+	m.ctrl.Call(m, "RegisterChain", arg0, arg1)
 }
 
 // RegisterChain indicates an expected call of RegisterChain.
-func (mr *MockServerMockRecorder) RegisterChain(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockServerMockRecorder) RegisterChain(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterChain", reflect.TypeOf((*MockServer)(nil).RegisterChain), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterChain", reflect.TypeOf((*MockServer)(nil).RegisterChain), arg0, arg1)
 }
 
 // Shutdown mocks base method.

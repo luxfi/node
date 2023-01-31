@@ -28,7 +28,7 @@ var (
 type DatabaseClient struct {
 	client rpcdbpb.DatabaseClient
 
-	closed utils.Atomic[bool]
+	closed utils.AtomicBool
 }
 
 // NewClient returns a database instance connected to a remote database instance
@@ -127,7 +127,7 @@ func (db *DatabaseClient) Compact(start, limit []byte) error {
 
 // Close attempts to close the database
 func (db *DatabaseClient) Close() error {
-	db.closed.Set(true)
+	db.closed.SetValue(true)
 	resp, err := db.client.Close(context.Background(), &rpcdbpb.CloseRequest{})
 	if err != nil {
 		return err
@@ -239,7 +239,7 @@ type iterator struct {
 // Next attempts to move the iterator to the next element and returns if this
 // succeeded
 func (it *iterator) Next() bool {
-	if it.db.closed.Get() {
+	if it.db.closed.GetValue() {
 		it.data = nil
 		it.errs.Add(database.ErrClosed)
 		return false

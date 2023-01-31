@@ -63,39 +63,39 @@ type utxoState struct {
 	codec codec.Manager
 
 	// UTXO ID -> *UTXO. If the *UTXO is nil the UTXO doesn't exist
-	utxoCache cache.Cacher[ids.ID, *UTXO]
+	utxoCache cache.Cacher
 	utxoDB    database.Database
 
 	indexDB    database.Database
-	indexCache cache.Cacher[string, linkeddb.LinkedDB]
+	indexCache cache.Cacher
 }
 
 func NewUTXOState(db database.Database, codec codec.Manager) UTXOState {
 	return &utxoState{
 		codec: codec,
 
-		utxoCache: &cache.LRU[ids.ID, *UTXO]{Size: utxoCacheSize},
+		utxoCache: &cache.LRU{Size: utxoCacheSize},
 		utxoDB:    prefixdb.New(utxoPrefix, db),
 
 		indexDB:    prefixdb.New(indexPrefix, db),
-		indexCache: &cache.LRU[string, linkeddb.LinkedDB]{Size: indexCacheSize},
+		indexCache: &cache.LRU{Size: indexCacheSize},
 	}
 }
 
 func NewMeteredUTXOState(db database.Database, codec codec.Manager, metrics prometheus.Registerer) (UTXOState, error) {
-	utxoCache, err := metercacher.New[ids.ID, *UTXO](
+	utxoCache, err := metercacher.New(
 		"utxo_cache",
 		metrics,
-		&cache.LRU[ids.ID, *UTXO]{Size: utxoCacheSize},
+		&cache.LRU{Size: utxoCacheSize},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	indexCache, err := metercacher.New[string, linkeddb.LinkedDB](
+	indexCache, err := metercacher.New(
 		"index_cache",
 		metrics,
-		&cache.LRU[string, linkeddb.LinkedDB]{
+		&cache.LRU{
 			Size: indexCacheSize,
 		},
 	)
@@ -111,11 +111,11 @@ func NewMeteredUTXOState(db database.Database, codec codec.Manager, metrics prom
 }
 
 func (s *utxoState) GetUTXO(utxoID ids.ID) (*UTXO, error) {
-	if utxo, found := s.utxoCache.Get(utxoID); found {
-		if utxo == nil {
+	if utxoIntf, found := s.utxoCache.Get(utxoID); found {
+		if utxoIntf == nil {
 			return nil, database.ErrNotFound
 		}
-		return utxo, nil
+		return utxoIntf.(*UTXO), nil
 	}
 
 	bytes, err := s.utxoDB.Get(utxoID[:])
@@ -214,7 +214,7 @@ func (s *utxoState) UTXOIDs(addr []byte, start ids.ID, limit int) ([]ids.ID, err
 func (s *utxoState) getIndexDB(addr []byte) linkeddb.LinkedDB {
 	addrStr := string(addr)
 	if indexList, exists := s.indexCache.Get(addrStr); exists {
-		return indexList
+		return indexList.(linkeddb.LinkedDB)
 	}
 
 	indexDB := prefixdb.NewNested(addr, s.indexDB)

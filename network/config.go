@@ -109,9 +109,6 @@ type Config struct {
 	DelayConfig          `json:"delayConfig"`
 	ThrottlerConfig      ThrottlerConfig `json:"throttlerConfig"`
 
-	ProxyEnabled           bool          `json:"proxyEnabled"`
-	ProxyReadHeaderTimeout time.Duration `json:"proxyReadHeaderTimeout"`
-
 	DialerConfig dialer.Config `json:"dialerConfig"`
 	TLSConfig    *tls.Config   `json:"-"`
 

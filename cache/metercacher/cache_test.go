@@ -9,13 +9,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/ids"
 )
 
 func TestInterface(t *testing.T) {
 	for _, test := range cache.CacherTests {
-		cache := &cache.LRU[ids.ID, int]{Size: test.Size}
-		c, err := New[ids.ID, int]("", prometheus.NewRegistry(), cache)
+		cache := &cache.LRU{Size: test.Size}
+		c, err := New("", prometheus.NewRegistry(), cache)
 		if err != nil {
 			t.Fatal(err)
 		}

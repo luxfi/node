@@ -75,17 +75,55 @@ type ConsensusContext struct {
 	// accepted.
 	ConsensusAcceptor Acceptor
 
-	// State indicates the current state of this consensus instance.
-	State utils.Atomic[EngineState]
+	// Non-zero iff this chain bootstrapped.
+	state utils.AtomicInterface
 
 	// True iff this chain is executing transactions as part of bootstrapping.
-	Executing utils.Atomic[bool]
+	executing utils.AtomicBool
 
 	// True iff this chain is currently state-syncing
-	StateSyncing utils.Atomic[bool]
+	stateSyncing utils.AtomicBool
 
 	// Indicates this chain is available to only validators.
-	ValidatorOnly utils.Atomic[bool]
+	validatorOnly utils.AtomicBool
+}
+
+func (ctx *ConsensusContext) SetState(newState State) {
+	ctx.state.SetValue(newState)
+}
+
+func (ctx *ConsensusContext) GetState() State {
+	stateInf := ctx.state.GetValue()
+	return stateInf.(State)
+}
+
+// IsExecuting returns true iff this chain is still executing transactions.
+func (ctx *ConsensusContext) IsExecuting() bool {
+	return ctx.executing.GetValue()
+}
+
+// Executing marks this chain as executing or not.
+// Set to "true" if there's an ongoing transaction.
+func (ctx *ConsensusContext) Executing(b bool) {
+	ctx.executing.SetValue(b)
+}
+
+func (ctx *ConsensusContext) IsRunningStateSync() bool {
+	return ctx.stateSyncing.GetValue()
+}
+
+func (ctx *ConsensusContext) RunningStateSync(b bool) {
+	ctx.stateSyncing.SetValue(b)
+}
+
+// IsValidatorOnly returns true iff this chain is available only to validators
+func (ctx *ConsensusContext) IsValidatorOnly() bool {
+	return ctx.validatorOnly.GetValue()
+}
+
+// SetValidatorOnly  marks this chain as available only to validators
+func (ctx *ConsensusContext) SetValidatorOnly() {
+	ctx.validatorOnly.SetValue(true)
 }
 
 func DefaultContextTest() *Context {

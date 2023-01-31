@@ -8,33 +8,33 @@ import (
 	"sync"
 )
 
-var _ Deduplicator[struct{}, Evictable[struct{}]] = (*EvictableLRU[struct{}, Evictable[struct{}]])(nil)
+var _ Deduplicator = (*EvictableLRU)(nil)
 
 // EvictableLRU is an LRU cache that notifies the objects when they are evicted.
-type EvictableLRU[K comparable, _ Evictable[K]] struct {
+type EvictableLRU struct {
 	lock      sync.Mutex
-	entryMap  map[K]*list.Element
+	entryMap  map[interface{}]*list.Element
 	entryList *list.List
 	Size      int
 }
 
-func (c *EvictableLRU[_, V]) Deduplicate(value V) V {
+func (c *EvictableLRU) Deduplicate(value Evictable) Evictable {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	return c.deduplicate(value)
 }
 
-func (c *EvictableLRU[_, _]) Flush() {
+func (c *EvictableLRU) Flush() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	c.flush()
 }
 
-func (c *EvictableLRU[K, _]) init() {
+func (c *EvictableLRU) init() {
 	if c.entryMap == nil {
-		c.entryMap = make(map[K]*list.Element)
+		c.entryMap = make(map[interface{}]*list.Element)
 	}
 	if c.entryList == nil {
 		c.entryList = list.New()
@@ -44,18 +44,18 @@ func (c *EvictableLRU[K, _]) init() {
 	}
 }
 
-func (c *EvictableLRU[_, V]) resize() {
+func (c *EvictableLRU) resize() {
 	for c.entryList.Len() > c.Size {
 		e := c.entryList.Front()
 		c.entryList.Remove(e)
 
-		val := e.Value.(V)
+		val := e.Value.(Evictable)
 		delete(c.entryMap, val.Key())
 		val.Evict()
 	}
 }
 
-func (c *EvictableLRU[_, V]) deduplicate(value V) V {
+func (c *EvictableLRU) deduplicate(value Evictable) Evictable {
 	c.init()
 	c.resize()
 
@@ -65,7 +65,7 @@ func (c *EvictableLRU[_, V]) deduplicate(value V) V {
 			e = c.entryList.Front()
 			c.entryList.MoveToBack(e)
 
-			val := e.Value.(V)
+			val := e.Value.(Evictable)
 			delete(c.entryMap, val.Key())
 			val.Evict()
 
@@ -77,13 +77,13 @@ func (c *EvictableLRU[_, V]) deduplicate(value V) V {
 	} else {
 		c.entryList.MoveToBack(e)
 
-		val := e.Value.(V)
+		val := e.Value.(Evictable)
 		value = val
 	}
 	return value
 }
 
-func (c *EvictableLRU[_, _]) flush() {
+func (c *EvictableLRU) flush() {
 	c.init()
 
 	size := c.Size

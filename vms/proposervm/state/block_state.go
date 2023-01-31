@@ -33,7 +33,7 @@ type BlockState interface {
 type blockState struct {
 	// Caches BlockID -> Block. If the Block is nil, that means the block is not
 	// in storage.
-	blkCache cache.Cacher[ids.ID, *blockWrapper]
+	blkCache cache.Cacher
 
 	db database.Database
 }
@@ -47,16 +47,16 @@ type blockWrapper struct {
 
 func NewBlockState(db database.Database) BlockState {
 	return &blockState{
-		blkCache: &cache.LRU[ids.ID, *blockWrapper]{Size: blockCacheSize},
+		blkCache: &cache.LRU{Size: blockCacheSize},
 		db:       db,
 	}
 }
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
-	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
+	blkCache, err := metercacher.New(
 		fmt.Sprintf("%s_block_cache", namespace),
 		metrics,
-		&cache.LRU[ids.ID, *blockWrapper]{Size: blockCacheSize},
+		&cache.LRU{Size: blockCacheSize},
 	)
 
 	return &blockState{
@@ -66,8 +66,12 @@ func NewMeteredBlockState(db database.Database, namespace string, metrics promet
 }
 
 func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error) {
-	if blk, found := s.blkCache.Get(blkID); found {
-		if blk == nil {
+	if blkIntf, found := s.blkCache.Get(blkID); found {
+		if blkIntf == nil {
+			return nil, choices.Unknown, database.ErrNotFound
+		}
+		blk, ok := blkIntf.(*blockWrapper)
+		if !ok {
 			return nil, choices.Unknown, database.ErrNotFound
 		}
 		return blk.block, blk.Status, nil

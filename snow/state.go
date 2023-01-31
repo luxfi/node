@@ -3,11 +3,7 @@
 
 package snow
 
-import (
-	"errors"
-
-	"github.com/luxdefi/node/proto/pb/p2p"
-)
+import "errors"
 
 const (
 	Initializing = iota
@@ -33,9 +29,4 @@ func (st State) String() string {
 	default:
 		return "Unknown state"
 	}
-}
-
-type EngineState struct {
-	Type  p2p.EngineType
-	State State
 }

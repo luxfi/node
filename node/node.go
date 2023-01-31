@@ -163,10 +163,10 @@ type Node struct {
 	shutdownOnce sync.Once
 
 	// True if node is shutting down or is done shutting down
-	shuttingDown utils.Atomic[bool]
+	shuttingDown utils.AtomicBool
 
 	// Sets the exit code
-	shuttingDownExitCode utils.Atomic[int]
+	shuttingDownExitCode utils.AtomicInterface
 
 	// Incremented only once on initialization.
 	// Decremented when node is done shutting down.
@@ -285,7 +285,7 @@ func (n *Node) initNetworking(primaryNetVdrs validators.Set) error {
 		// shutdown.
 		timer := timer.NewTimer(func() {
 			// If the timeout fires and we're already shutting down, nothing to do.
-			if !n.shuttingDown.Get() {
+			if !n.shuttingDown.GetValue() {
 				n.Log.Warn("failed to connect to bootstrap nodes",
 					zap.Stringer("beacons", n.beacons),
 					zap.Duration("duration", n.Config.BootstrapBeaconConnectionTimeout),
@@ -362,7 +362,7 @@ func (n *Node) Dispatch() error {
 		// When [n].Shutdown() is called, [n.APIServer].Close() is called.
 		// This causes [n.APIServer].Dispatch() to return an error.
 		// If that happened, don't log/return an error here.
-		if !n.shuttingDown.Get() {
+		if !n.shuttingDown.GetValue() {
 			n.Log.Fatal("API server dispatch failed",
 				zap.Error(err),
 			)
@@ -1338,10 +1338,10 @@ func (n *Node) Initialize(
 // Shutdown this node
 // May be called multiple times
 func (n *Node) Shutdown(exitCode int) {
-	if !n.shuttingDown.Get() { // only set the exit code once
-		n.shuttingDownExitCode.Set(exitCode)
+	if !n.shuttingDown.GetValue() { // only set the exit code once
+		n.shuttingDownExitCode.SetValue(exitCode)
 	}
-	n.shuttingDown.Set(true)
+	n.shuttingDown.SetValue(true)
 	n.shutdownOnce.Do(n.shutdown)
 }
 
@@ -1425,5 +1425,8 @@ func (n *Node) shutdown() {
 }
 
 func (n *Node) ExitCode() int {
-	return n.shuttingDownExitCode.Get()
+	if exitCode, ok := n.shuttingDownExitCode.GetValue().(int); ok {
+		return exitCode
+	}
+	return 0
 }

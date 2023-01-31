@@ -31,7 +31,7 @@ func TestTreeIterator(t *testing.T) {
 		},
 	}
 
-	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
+	tree := btree.New(defaultTreeDegree)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}
@@ -68,7 +68,7 @@ func TestTreeIteratorEarlyRelease(t *testing.T) {
 		},
 	}
 
-	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
+	tree := btree.New(defaultTreeDegree)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}

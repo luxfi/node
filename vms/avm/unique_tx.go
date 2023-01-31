@@ -27,8 +27,8 @@ var (
 )
 
 var (
-	_ snowstorm.Tx            = (*UniqueTx)(nil)
-	_ cache.Evictable[ids.ID] = (*UniqueTx)(nil)
+	_ snowstorm.Tx    = (*UniqueTx)(nil)
+	_ cache.Evictable = (*UniqueTx)(nil)
 )
 
 // UniqueTx provides a de-duplication service for txs. This only provides a
@@ -104,12 +104,13 @@ func (tx *UniqueTx) Evict() {
 	tx.deps = nil
 }
 
-func (tx *UniqueTx) setStatus(status choices.Status) {
+func (tx *UniqueTx) setStatus(status choices.Status) error {
 	tx.refresh()
-	if tx.status != status {
-		tx.status = status
-		tx.vm.state.AddStatus(tx.ID(), status)
+	if tx.status == status {
+		return nil
 	}
+	tx.status = status
+	return tx.vm.state.PutStatus(tx.ID(), status)
 }
 
 // ID returns the wrapped txID
@@ -117,7 +118,7 @@ func (tx *UniqueTx) ID() ids.ID {
 	return tx.txID
 }
 
-func (tx *UniqueTx) Key() ids.ID {
+func (tx *UniqueTx) Key() interface{} {
 	return tx.txID
 }
 
@@ -128,6 +129,7 @@ func (tx *UniqueTx) Accept(context.Context) error {
 	}
 
 	txID := tx.ID()
+	defer tx.vm.db.Abort()
 
 	// Fetch the input UTXOs
 	inputUTXOIDs := tx.InputUTXOs()
@@ -160,20 +162,26 @@ func (tx *UniqueTx) Accept(context.Context) error {
 			continue
 		}
 		utxoID := utxo.InputID()
-		tx.vm.state.DeleteUTXO(utxoID)
+		if err := tx.vm.state.DeleteUTXO(utxoID); err != nil {
+			return fmt.Errorf("couldn't delete UTXO %s: %w", utxoID, err)
+		}
 	}
 	// Add new utxos
 	for _, utxo := range outputUTXOs {
-		tx.vm.state.AddUTXO(utxo)
+		if err := tx.vm.state.PutUTXO(utxo); err != nil {
+			return fmt.Errorf("couldn't put UTXO %s: %w", utxo.InputID(), err)
+		}
 	}
-	tx.setStatus(choices.Accepted)
 
-	commitBatch, err := tx.vm.state.CommitBatch()
+	if err := tx.setStatus(choices.Accepted); err != nil {
+		return fmt.Errorf("couldn't set status of tx %s: %w", txID, err)
+	}
+
+	commitBatch, err := tx.vm.db.CommitBatch()
 	if err != nil {
 		return fmt.Errorf("couldn't create commitBatch while processing tx %s: %w", txID, err)
 	}
 
-	defer tx.vm.state.Abort()
 	err = tx.Tx.Unsigned.Visit(&executeTx{
 		tx:           tx.Tx,
 		batch:        commitBatch,
@@ -193,14 +201,22 @@ func (tx *UniqueTx) Accept(context.Context) error {
 
 // Reject is called when the transaction was finalized as rejected by consensus
 func (tx *UniqueTx) Reject(context.Context) error {
-	tx.setStatus(choices.Rejected)
+	defer tx.vm.db.Abort()
+
+	if err := tx.setStatus(choices.Rejected); err != nil {
+		tx.vm.ctx.Log.Error("failed to reject tx",
+			zap.Stringer("txID", tx.txID),
+			zap.Error(err),
+		)
+		return err
+	}
 
 	txID := tx.ID()
 	tx.vm.ctx.Log.Debug("rejecting tx",
 		zap.Stringer("txID", txID),
 	)
 
-	if err := tx.vm.state.Commit(); err != nil {
+	if err := tx.vm.db.Commit(); err != nil {
 		tx.vm.ctx.Log.Error("failed to commit reject",
 			zap.Stringer("txID", tx.txID),
 			zap.Error(err),
@@ -211,6 +227,7 @@ func (tx *UniqueTx) Reject(context.Context) error {
 	tx.vm.walletService.decided(txID)
 
 	tx.deps = nil // Needed to prevent a memory leak
+
 	return nil
 }
 

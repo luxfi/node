@@ -54,7 +54,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node
 
 ### Miscellaneous
 
-- Updated ledger-avalanche to v0.6.5
+- Updated ledger to v0.6.5
 - Added linter to ban the usage of `fmt.Errorf` without format directives
 - Added `List` to the `buffer#Deque` interface
 - Added `Index` to the `buffer#Deque` interface

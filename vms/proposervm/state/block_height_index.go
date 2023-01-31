@@ -59,7 +59,7 @@ type heightIndex struct {
 	versiondb.Commitable
 
 	// Caches block height -> proposerVMBlockID.
-	heightsCache cache.Cacher[uint64, ids.ID]
+	heightsCache cache.Cacher
 
 	heightDB   database.Database
 	metadataDB database.Database
@@ -69,15 +69,16 @@ func NewHeightIndex(db database.Database, commitable versiondb.Commitable) Heigh
 	return &heightIndex{
 		Commitable: commitable,
 
-		heightsCache: &cache.LRU[uint64, ids.ID]{Size: cacheSize},
+		heightsCache: &cache.LRU{Size: cacheSize},
 		heightDB:     prefixdb.New(heightPrefix, db),
 		metadataDB:   prefixdb.New(metadataPrefix, db),
 	}
 }
 
 func (hi *heightIndex) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
-	if blkID, found := hi.heightsCache.Get(height); found {
-		return blkID, nil
+	if blkIDIntf, found := hi.heightsCache.Get(height); found {
+		res, _ := blkIDIntf.(ids.ID)
+		return res, nil
 	}
 
 	key := database.PackUInt64(height)

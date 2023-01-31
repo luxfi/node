@@ -16,7 +16,6 @@ import (
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
@@ -169,10 +168,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// create bootstrapper
 	dummyCallback := func(context.Context, uint32) error {
-		cfg.Ctx.State.Set(snow.EngineState{
-			Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-			State: snow.NormalOp,
-		})
+		cfg.Ctx.SetState(snow.NormalOp)
 		return nil
 	}
 	bs, err := New(context.Background(), cfg, dummyCallback)
@@ -250,10 +246,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -294,7 +287,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	switch {
 	case err != nil: // should finish
 		t.Fatal(err)
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk1.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -357,10 +350,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -447,7 +437,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	switch {
 	case err != nil: // respond with right block
 		t.Fatal(err)
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -521,10 +511,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -613,7 +600,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -688,10 +675,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -799,7 +783,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -877,10 +861,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -962,7 +943,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -1023,10 +1004,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -1099,7 +1077,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -1236,10 +1214,7 @@ func TestRestartBootstrapping(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -1305,7 +1280,7 @@ func TestRestartBootstrapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if config.Ctx.State.Get().State == snow.NormalOp {
+	if config.Ctx.GetState() == snow.NormalOp {
 		t.Fatal("Bootstrapping should not have finished with outstanding request for blk4")
 	}
 
@@ -1314,7 +1289,7 @@ func TestRestartBootstrapping(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Accepted:
 		t.Fatalf("Block should be accepted")
@@ -1379,10 +1354,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
@@ -1422,7 +1394,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	}
 
 	switch {
-	case config.Ctx.State.Get().State != snow.NormalOp:
+	case config.Ctx.GetState() != snow.NormalOp:
 		t.Fatalf("Bootstrapping should have finished")
 	case blk0.Status() != choices.Processing:
 		t.Fatalf("Block should be processing")
@@ -1469,10 +1441,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		context.Background(),
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.NormalOp,
-			})
+			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
 	)
