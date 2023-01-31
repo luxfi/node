@@ -323,7 +323,10 @@ func defaultVM() (*VM, database.Database, *mutableSharedMemory) {
 		Config: config.Config{
 			Chains:                 chains.MockManager{},
 			UptimeLockedCalculator: uptime.NewLockedCalculator(),
+<<<<<<< HEAD
 			StakingEnabled:         true,
+=======
+>>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
 			Validators:             vdrs,
 			TxFee:                  defaultTxFee,
 			CreateSubnetTxFee:      100 * defaultTxFee,
@@ -1882,7 +1885,11 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	peerID := ids.NodeID{1, 2, 3, 4, 5, 4, 3, 2, 1}
 	beacons := validators.NewSet()
+<<<<<<< HEAD
 	require.NoError(beacons.Add(peerID, nil, ids.Empty, 1))
+=======
+	require.NoError(beacons.AddWeight(peerID, 1))
+>>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
 
 	benchlist := benchlist.NewNoBenchlist()
 	timeoutManager, err := timeout.NewManager(
