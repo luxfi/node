@@ -106,6 +106,7 @@ func IsSortedAndUnique(data sort.Interface) bool {
 	return true
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 type innerSortUint32 []uint32
@@ -186,3 +187,5 @@ func IsSorted2DBytes(arr [][]byte) bool {
 	return sort.IsSorted(innerSortBytes(arr))
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))

@@ -5,7 +5,6 @@ package versiondb
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"sync"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/luxdefi/luxd/utils"
 =======
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"github.com/ava-labs/avalanchego/database"
 	"github.com/ava-labs/avalanchego/database/memdb"
@@ -145,7 +145,7 @@ func (db *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database
 			keys = append(keys, key)
 		}
 	}
-	sort.Strings(keys) // Keys need to be in sorted order
+	slices.Sort(keys) // Keys need to be in sorted order
 	values := make([]valueDelete, len(keys))
 	for i, key := range keys {
 		values[i] = db.mem[key]

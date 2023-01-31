@@ -60,12 +60,18 @@ func (is *InitialState) Verify(c codec.Manager, numFxs int) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 func (is *InitialState) Less(other *InitialState) bool {
 	return is.FxIndex < other.FxIndex
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 func (is *InitialState) Sort(c codec.Manager) {
 	sortState(is.Outs, c)
 }
@@ -107,6 +113,7 @@ func isSortedState(vers []verify.State, c codec.Manager) bool {
 	return sort.IsSorted(&innerSortState{vers: vers, codec: c})
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 type innerSortInitialState []*InitialState
@@ -131,3 +138,5 @@ func IsSortedAndUniqueInitialStates(iss []*InitialState) bool {
 	return utils.IsSortedAndUnique(innerSortInitialState(iss))
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))

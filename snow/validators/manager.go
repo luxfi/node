@@ -13,9 +13,13 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils"
 =======
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	"github.com/ava-labs/avalanchego/utils"
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 )
 
@@ -131,10 +135,14 @@ func (m *manager) String() string {
 
 	subnets := maps.Keys(m.subnetToVdrs)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	utils.Sort(subnets)
 =======
 	ids.SortIDs(subnets)
 >>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
+=======
+	utils.Sort(subnets)
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 
 	sb := strings.Builder{}
 
