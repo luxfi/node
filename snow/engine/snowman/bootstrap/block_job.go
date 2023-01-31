@@ -57,10 +57,14 @@ func (b *blockJob) ID() ids.ID {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (b *blockJob) MissingDependencies(ctx context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
 =======
 func (b *blockJob) MissingDependencies() (ids.Set, error) {
+=======
+func (b *blockJob) MissingDependencies(ctx context.Context) (ids.Set, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	missing := ids.Set{}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	parentID := b.blk.Parent()

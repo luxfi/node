@@ -87,10 +87,14 @@ func buildTestsObjects(t *testing.T, commonCfg *common.Config) (
 	cfg, err := NewConfig(*commonCfg, nil, dummyGetter, fullVM)
 	require.NoError(t, err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	commonSyncer := New(cfg, func(context.Context, uint32) error {
 =======
 	commonSyncer := New(cfg, func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	commonSyncer := New(cfg, func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	})
 	syncer, ok := commonSyncer.(*stateSyncer)

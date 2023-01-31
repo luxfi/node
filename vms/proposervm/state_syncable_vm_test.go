@@ -45,7 +45,7 @@ func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
 		t.Fatal("could not commit preloaded key")
 	}
 
-	coreVM.VerifyHeightIndexF = func() error {
+	coreVM.VerifyHeightIndexF = func(context.Context) error {
 		return nil
 	}
 }
@@ -86,6 +86,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		return nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerVM.VerifyHeightIndexF = func(context.Context) error {
 		return nil
 	}
@@ -95,13 +96,20 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
 =======
 	innerVM.VerifyHeightIndexF = func() error {
+=======
+	innerVM.VerifyHeightIndexF = func(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
-	innerVM.LastAcceptedF = func() (ids.ID, error) {
+	innerVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return innerGenesisBlk.ID(), nil
 	}
+<<<<<<< HEAD
 	innerVM.GetBlockF = func(ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return innerGenesisBlk, nil
 	}
 
@@ -151,6 +159,7 @@ func TestStateSyncEnabled(t *testing.T) {
 	// ProposerVM State Sync disabled if innerVM State sync is disabled
 	vm.hIndexer.MarkRepaired(true)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
@@ -161,10 +170,17 @@ func TestStateSyncEnabled(t *testing.T) {
 	}
 	enabled, err := vm.StateSyncEnabled()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
+		return false, nil
+	}
+	enabled, err := vm.StateSyncEnabled(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.False(enabled)
 
 	// ProposerVM State Sync enabled if innerVM State sync is enabled
+<<<<<<< HEAD
 <<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return true, nil
@@ -176,6 +192,12 @@ func TestStateSyncEnabled(t *testing.T) {
 	}
 	enabled, err = vm.StateSyncEnabled()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
+		return true, nil
+	}
+	enabled, err = vm.StateSyncEnabled(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.True(enabled)
 }
@@ -559,6 +581,7 @@ func TestStateSummaryAccept(t *testing.T) {
 
 	// test Accept accepted
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
@@ -569,10 +592,17 @@ func TestStateSummaryAccept(t *testing.T) {
 	}
 	accepted, err := summary.Accept()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerSummary.AcceptF = func(context.Context) (bool, error) {
+		return true, nil
+	}
+	accepted, err := summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 
 	// test Accept skipped
+<<<<<<< HEAD
 <<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncSkipped, nil
@@ -584,6 +614,12 @@ func TestStateSummaryAccept(t *testing.T) {
 	}
 	accepted, err = summary.Accept()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerSummary.AcceptF = func(context.Context) (bool, error) {
+		return false, nil
+	}
+	accepted, err = summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }
@@ -647,6 +683,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 
 	// test Accept skipped
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
@@ -657,6 +694,12 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	}
 	accepted, err := summary.Accept()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	innerSummary.AcceptF = func(context.Context) (bool, error) {
+		return true, nil
+	}
+	accepted, err := summary.Accept(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }

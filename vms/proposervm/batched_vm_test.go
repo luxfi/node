@@ -64,6 +64,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -74,6 +75,12 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 
 	// prepare build of next block
@@ -98,6 +105,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 		TimestampV: coreBlk1.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -108,6 +116,12 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	// prepare build of next block
@@ -132,6 +146,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 		TimestampV: coreBlk2.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -142,6 +157,12 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	// ...Call GetAncestors on them ...
@@ -228,6 +249,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -238,6 +260,12 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 
 	// prepare build of next block
@@ -256,6 +284,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxDelay),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -266,6 +295,12 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	// prepare build of next block
@@ -284,6 +319,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 		TimestampV: coreBlk2.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -294,6 +330,12 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	require.NoError(builtBlk3.Verify(context.Background()))
@@ -404,6 +446,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: preForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -414,6 +457,12 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 	_, ok := builtBlk1.(*preForkBlock)
 	require.True(ok, "Block should be a pre-fork one")
@@ -440,6 +489,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -450,6 +500,12 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk2.(*preForkBlock)
 	require.True(ok, "Block should be a pre-fork one")
@@ -478,6 +534,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime.Add(proposer.MaxDelay),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -488,6 +545,12 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk3.(*postForkBlock)
 	require.True(ok, "Block should be a post-fork one")
@@ -508,6 +571,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk4, nil
 	}
@@ -518,6 +582,12 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk4, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk4, nil
+	}
+	builtBlk4, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk4.(*postForkBlock)
 	require.True(ok, "Block should be a post-fork one")
@@ -614,6 +684,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -624,6 +695,12 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 
 	// prepare build of next block
@@ -648,6 +725,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		TimestampV: coreBlk1.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -658,6 +736,12 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	// prepare build of next block
@@ -682,6 +766,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		TimestampV: coreBlk2.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -692,6 +777,12 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
@@ -753,6 +844,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -763,6 +855,12 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 
 	// prepare build of next block
@@ -781,6 +879,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxDelay),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -791,6 +890,12 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	// prepare build of next block
@@ -809,6 +914,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 		TimestampV: coreBlk2.Timestamp(),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -819,6 +925,12 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
@@ -886,6 +998,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: preForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -896,6 +1009,12 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk1, nil
+	}
+	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build preFork block")
 	_, ok := builtBlk1.(*preForkBlock)
 	require.True(ok, "Block should be a pre-fork one")
@@ -922,6 +1041,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -932,6 +1052,12 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk2, nil
+	}
+	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk2.(*preForkBlock)
 	require.True(ok, "Block should be a pre-fork one")
@@ -960,6 +1086,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime.Add(proposer.MaxDelay),
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -970,6 +1097,12 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk3, nil
+	}
+	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk3.(*postForkBlock)
 	require.True(ok, "Block should be a post-fork one")
@@ -990,6 +1123,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		TimestampV: postForkTime,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk4, nil
 	}
@@ -1000,6 +1134,12 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	}
 	builtBlk4, err := proRemoteVM.BuildBlock()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+		return coreBlk4, nil
+	}
+	builtBlk4, err := proRemoteVM.BuildBlock(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err, "Could not build proposer block")
 	_, ok = builtBlk4.(*postForkBlock)
 	require.True(ok, "Block should be a post-fork one")
@@ -1100,6 +1240,7 @@ func initTestRemoteProposerVM(
 		return nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return coreGenBlk.ID(), nil
 	}
@@ -1110,6 +1251,12 @@ func initTestRemoteProposerVM(
 	}
 	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return coreGenBlk.ID(), nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch {
 		case blkID == coreGenBlk.ID():
 			return coreGenBlk, nil

@@ -142,9 +142,13 @@ func TestTimeout(t *testing.T) {
 		return ctx
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 =======
 	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+=======
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 <<<<<<< HEAD
@@ -162,6 +166,7 @@ func TestTimeout(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -172,6 +177,12 @@ func TestTimeout(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	var (
 		wg           = sync.WaitGroup{}
@@ -506,10 +517,14 @@ func TestReliableMessages(t *testing.T) {
 		return ctx2
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 =======
 	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 	queriesToSend := 1000
@@ -528,6 +543,7 @@ func TestReliableMessages(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -538,6 +554,12 @@ func TestReliableMessages(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {
@@ -643,10 +665,14 @@ func TestReliableMessagesToMyself(t *testing.T) {
 		return ctx2
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 =======
 	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 	queriesToSend := 2
@@ -664,6 +690,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 	chainRouter.AddChain(context.Background(), handler)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
@@ -674,6 +701,12 @@ func TestReliableMessagesToMyself(t *testing.T) {
 	}
 	handler.Start(false)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	bootstrapper.StartF = func(context.Context, uint32) error {
+		return nil
+	}
+	handler.Start(context.Background(), false)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {

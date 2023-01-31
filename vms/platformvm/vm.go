@@ -368,6 +368,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errs.Err
 }
 
+<<<<<<< HEAD
 func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	validatorSet, exist := vm.Validators.Get(subnetID)
 	if !exist {
@@ -383,6 +384,8 @@ func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	return validatorIDs, true
 }
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
@@ -409,10 +412,14 @@ func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
 =======
 func (*VM) Version() (string, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) Version(context.Context) (string, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return version.Current.String(), nil
 }
 
@@ -446,10 +453,14 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 // * keys are API endpoint extensions
 // * values are API handlers
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
 =======
 func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
@@ -465,6 +476,7 @@ func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
 	}, nil
 }
 
+<<<<<<< HEAD
 func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
 	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
 }
@@ -475,6 +487,14 @@ func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids
 
 func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
+=======
+func (vm *VM) Connected(_ context.Context, vdrID ids.NodeID, _ *version.Application) error {
+	return vm.uptimeManager.Connect(vdrID)
+}
+
+func (vm *VM) Disconnected(_ context.Context, vdrID ids.NodeID) error {
+	if err := vm.uptimeManager.Disconnect(vdrID); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return err
 	}
 	return vm.state.Commit()
@@ -651,11 +671,14 @@ func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 		return vm.GetCurrentHeight(ctx)
 	}
 
+<<<<<<< HEAD
 	oldest, ok := vm.recentlyAccepted.Oldest()
 	if !ok {
 		return vm.GetCurrentHeight(ctx)
 	}
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	blk, err := vm.manager.GetBlock(oldest)
 	if err != nil {
 		return 0, err
@@ -670,7 +693,11 @@ func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 }
 
 // GetCurrentHeight returns the height of the last accepted block
+<<<<<<< HEAD
 func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
+=======
+func (vm *VM) GetCurrentHeight() (uint64, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	lastAccepted, err := vm.manager.GetBlock(vm.state.GetLastAccepted())
 	if err != nil {
 		return 0, err

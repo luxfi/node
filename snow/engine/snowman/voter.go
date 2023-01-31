@@ -56,6 +56,15 @@ func (v *voter) Update(ctx context.Context) {
 		return
 	}
 
+<<<<<<< HEAD
+=======
+	// To prevent any potential deadlocks with un-disclosed dependencies, votes
+	// must be bubbled to the nearest valid block
+	for i, result := range results {
+		results[i] = v.bubbleVotes(ctx, result)
+	}
+
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	for _, result := range results {
 		result := result
 		v.t.Ctx.Log.Debug("filtering poll results",

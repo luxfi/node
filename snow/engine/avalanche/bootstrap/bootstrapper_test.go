@@ -146,10 +146,14 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -253,10 +257,14 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -435,10 +443,14 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -583,10 +595,14 @@ func TestBootstrapperMissingTxDependency(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -708,10 +724,14 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -832,10 +852,14 @@ func TestBootstrapperFinalized(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -967,10 +991,14 @@ func TestBootstrapperAcceptsAncestorsParents(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1138,10 +1166,14 @@ func TestRestartBootstrapping(t *testing.T) {
 		context.Background(),
 		config,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
 =======
 		func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},

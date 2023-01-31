@@ -20,7 +20,11 @@ type Whitelister interface {
 	// Whitelist returns the set of transaction IDs that are explicitly
 	// whitelisted. Transactions that are not explicitly whitelisted are
 	// considered conflicting.
+<<<<<<< HEAD
 	Whitelist(context.Context) (set.Set[ids.ID], error)
+=======
+	Whitelist(context.Context) (ids.Set, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Tx consumes state.

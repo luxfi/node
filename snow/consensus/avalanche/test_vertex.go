@@ -32,10 +32,14 @@ type TestVertex struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (v *TestVertex) Verify(context.Context) error {
 =======
 func (v *TestVertex) Verify() error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (v *TestVertex) Verify(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return v.VerifyErrV
 }
 
@@ -48,10 +52,14 @@ func (v *TestVertex) HasWhitelist() bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (v *TestVertex) Whitelist(context.Context) (set.Set[ids.ID], error) {
 =======
 func (v *TestVertex) Whitelist() (ids.Set, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (v *TestVertex) Whitelist(context.Context) (ids.Set, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return v.WhitelistV, v.WhitelistErrV
 }
 
@@ -60,10 +68,14 @@ func (v *TestVertex) Height() (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (v *TestVertex) Txs(context.Context) ([]snowstorm.Tx, error) {
 =======
 func (v *TestVertex) Txs() ([]snowstorm.Tx, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (v *TestVertex) Txs(context.Context) ([]snowstorm.Tx, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return v.TxsV, v.TxsErrV
 }
 

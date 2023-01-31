@@ -344,6 +344,7 @@ func (t *Transitive) Disconnected(ctx context.Context, nodeID ids.NodeID) error 
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*Transitive) Timeout(context.Context) error {
 	return nil
 }
@@ -352,6 +353,9 @@ func (*Transitive) Timeout() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 =======
 func (*Transitive) Timeout() error {
+=======
+func (*Transitive) Timeout(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -379,10 +383,14 @@ func (t *Transitive) Gossip(ctx context.Context) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*Transitive) Halt(context.Context) {}
 =======
 func (*Transitive) Halt() {}
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*Transitive) Halt(context.Context) {}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 func (t *Transitive) Shutdown(ctx context.Context) error {
 	t.Ctx.Log.Info("shutting down consensus engine")
@@ -390,6 +398,7 @@ func (t *Transitive) Shutdown(ctx context.Context) error {
 }
 
 func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
+<<<<<<< HEAD
 	switch msg {
 	case common.PendingTxs:
 		// the pending txs message means we should attempt to build a block.
@@ -399,11 +408,21 @@ func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 		t.Ctx.RunningStateSync(false)
 		return nil
 	default:
+=======
+	if msg != common.PendingTxs {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Ctx.Log.Warn("received an unexpected message from the VM",
 			zap.Stringer("messageString", msg),
 		)
 		return nil
 	}
+<<<<<<< HEAD
+=======
+
+	// the pending txs message means we should attempt to build a block.
+	t.pendingBuildBlocks++
+	return t.buildBlocks(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 func (t *Transitive) Context() *snow.ConsensusContext {
@@ -497,6 +516,7 @@ func (t *Transitive) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 	}
 
 	return t.VM.GetBlock(ctx, blkID)
+<<<<<<< HEAD
 }
 
 func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32) {
@@ -506,6 +526,8 @@ func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID
 	} else {
 		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{t.Consensus.Preference()}, []ids.ID{lastAccepted})
 	}
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Build blocks if they have been requested and the number of processing blocks
@@ -637,8 +659,13 @@ func (t *Transitive) issueWithAncestors(ctx context.Context, blk snowman.Block) 
 			return false, err
 		}
 		blkID = blk.Parent()
+<<<<<<< HEAD
 		blk, err = t.GetBlock(ctx, blkID)
 		if err != nil {
+=======
+		var err error
+		if blk, err = t.GetBlock(ctx, blkID); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			status = choices.Unknown
 			break
 		}

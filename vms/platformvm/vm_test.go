@@ -461,10 +461,23 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 <<<<<<< HEAD
 =======
 	}
-	if err := vm.Initialize(ctx, chainDBManager, genesisBytes, nil, nil, msgChan, nil, appSender); err != nil {
+	err := vm.Initialize(
+		context.Background(),
+		ctx,
+		chainDBManager,
+		genesisBytes,
+		nil,
+		nil,
+		msgChan,
+		nil,
+		appSender,
+	)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := vm.SetState(snow.NormalOp); err != nil {
+
+	err = vm.SetState(context.Background(), snow.NormalOp)
+	if err != nil {
 		panic(err)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	}
@@ -492,6 +505,7 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 		[]*crypto.PrivateKeySECP256K1R{keys[0]}, // pays tx fee
 		keys[0].PublicKey().Address(),           // change addr
 	)
+<<<<<<< HEAD
 	require.NoError(err)
 
 	err = vm.Builder.AddUnverifiedTx(testSubnet1)
@@ -505,6 +519,19 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 
 	err = blk.Accept(context.Background())
 	require.NoError(err)
+=======
+	if err != nil {
+		panic(err)
+	} else if err := vm.Builder.AddUnverifiedTx(testSubnet1); err != nil {
+		panic(err)
+	} else if blk, err := vm.Builder.BuildBlock(context.Background()); err != nil {
+		panic(err)
+	} else if err := blk.Verify(context.Background()); err != nil {
+		panic(err)
+	} else if err := blk.Accept(context.Background()); err != nil {
+		panic(err)
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	return genesisBytes, msgChan, vm, m
 }
@@ -515,18 +542,35 @@ func TestGenesis(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
 	// Ensure the genesis block has been accepted and stored
 	genesisBlockID, err := vm.LastAccepted(context.Background()) // lastAccepted should be ID of genesis block
+<<<<<<< HEAD
 	require.NoError(err)
 
 	genesisBlock, err := vm.manager.GetBlock(genesisBlockID)
 	require.NoError(err)
 	require.Equal(choices.Accepted, genesisBlock.Status())
+=======
+	if err != nil {
+		t.Fatal(err)
+	}
+	if genesisBlock, err := vm.manager.GetBlock(genesisBlockID); err != nil {
+		t.Fatalf("couldn't get genesis block: %v", err)
+	} else if genesisBlock.Status() != choices.Accepted {
+		t.Fatal("genesis block should be accepted")
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	genesisState, _ := defaultGenesis()
 	// Ensure all the genesis UTXOs are there
@@ -624,8 +668,14 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -666,11 +716,21 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 	blkBytes := blk.Bytes()
 
 	parsedBlock, err := vm.ParseBlock(context.Background(), blkBytes)
+<<<<<<< HEAD
 	require.NoError(err)
 
 	err = parsedBlock.Verify(context.Background())
 	require.Error(err)
 
+=======
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := parsedBlock.Verify(context.Background()); err == nil {
+		t.Fatalf("Should have errored during verification")
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	txID := statelessBlk.Txs()[0].ID()
 	_, dropped := vm.Builder.GetDropReason(txID)
 	require.True(dropped)
@@ -726,8 +786,14 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1142,12 +1208,23 @@ func TestUnneededBuildBlock(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 		vm.ctx.Lock.Unlock()
 	}()
 	_, err := vm.Builder.BuildBlock(context.Background())
 	require.Error(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		vm.ctx.Lock.Unlock()
+	}()
+	if _, err := vm.Builder.BuildBlock(context.Background()); err == nil {
+		t.Fatalf("Should have errored on BuildBlock")
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // test acceptance of proposal to create a new chain
@@ -1156,8 +1233,14 @@ func TestCreateChain(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1170,6 +1253,7 @@ func TestCreateChain(t *testing.T) {
 		[]*crypto.PrivateKeySECP256K1R{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 		ids.ShortEmpty, // change addr
 	)
+<<<<<<< HEAD
 	require.NoError(err)
 
 	err = vm.Builder.AddUnverifiedTx(tx)
@@ -1187,6 +1271,23 @@ func TestCreateChain(t *testing.T) {
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
+=======
+	if err != nil {
+		t.Fatal(err)
+	} else if err := vm.Builder.AddUnverifiedTx(tx); err != nil {
+		t.Fatal(err)
+	} else if blk, err := vm.Builder.BuildBlock(context.Background()); err != nil { // should contain proposal to create chain
+		t.Fatal(err)
+	} else if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	} else if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	} else if _, txStatus, err := vm.state.GetTx(tx.ID()); err != nil {
+		t.Fatal(err)
+	} else if txStatus != status.Committed {
+		t.Fatalf("status should be Committed but is %s", txStatus)
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	// Verify chain was created
 	chains, err := vm.state.GetChains(testSubnet1.ID())
@@ -1322,8 +1423,14 @@ func TestAtomicImport(t *testing.T) {
 	vm, baseDB, mutableSharedMemory := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1404,6 +1511,22 @@ func TestAtomicImport(t *testing.T) {
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
 
+<<<<<<< HEAD
+=======
+	if err := vm.Builder.AddUnverifiedTx(tx); err != nil {
+		t.Fatal(err)
+	} else if blk, err := vm.Builder.BuildBlock(context.Background()); err != nil {
+		t.Fatal(err)
+	} else if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	} else if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	} else if _, txStatus, err := vm.state.GetTx(tx.ID()); err != nil {
+		t.Fatal(err)
+	} else if txStatus != status.Committed {
+		t.Fatalf("status should be Committed but is %s", txStatus)
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	inputID = utxoID.InputID()
 	_, err = vm.ctx.SharedMemory.Get(vm.ctx.XChainID, [][]byte{inputID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
@@ -1415,8 +1538,14 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1455,6 +1584,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 
 	blk := vm.manager.NewBlock(statelessBlk)
 
+<<<<<<< HEAD
 	err = blk.Verify(context.Background())
 	require.Error(err, "should have erred due to missing UTXOs")
 
@@ -1469,6 +1599,27 @@ func TestOptimisticAtomicImport(t *testing.T) {
 
 	err = vm.SetState(context.Background(), snow.NormalOp)
 	require.NoError(err)
+=======
+	if err := blk.Verify(context.Background()); err == nil {
+		t.Fatalf("Block should have failed verification due to missing UTXOs")
+	}
+
+	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := vm.SetState(context.Background(), snow.NormalOp); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1594,8 +1745,14 @@ func TestRestartFullyAccepted(t *testing.T) {
 	secondVM.clock.Set(initialClkTime)
 	secondCtx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		err := secondVM.Shutdown(context.Background())
 		require.NoError(err)
+=======
+		if err := secondVM.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		secondCtx.Lock.Unlock()
 	}()
 
@@ -1898,8 +2055,14 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	handler.Start(context.Background(), false)
 
 	ctx.Lock.Lock()
+<<<<<<< HEAD
 	err = bootstrapper.Connected(context.Background(), peerID, version.CurrentApp)
 	require.NoError(err)
+=======
+	if err := bootstrapper.Connected(context.Background(), peerID, version.CurrentApp); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 <<<<<<< HEAD
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
@@ -1964,7 +2127,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	require.Equal(advanceTimeBlk.ID(), preferred.ID())
 
+<<<<<<< HEAD
 	ctx.Lock.Unlock()
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	chainRouter.Shutdown(context.Background())
 }
 
@@ -2086,7 +2252,13 @@ func TestMaxStakeAmount(t *testing.T) {
 	vm, _, _ := defaultVM()
 	vm.ctx.Lock.Lock()
 	defer func() {
+<<<<<<< HEAD
 		require.NoError(t, vm.Shutdown(context.Background()))
+=======
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vm.ctx.Lock.Unlock()
 	}()
 

@@ -163,8 +163,12 @@ func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
 	return ta.cg.IsVirtuous(tx)
 }
 
+<<<<<<< HEAD
 func (ta *Topological) Add(vtx Vertex) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ta *Topological) Add(ctx context.Context, vtx Vertex) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if vtx.Status().Decided() {
 		return nil // Already decided this vertex
 	}

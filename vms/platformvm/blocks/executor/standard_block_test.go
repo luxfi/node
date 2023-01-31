@@ -343,7 +343,11 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 
 	// Test VM validators
 	require.NoError(block.Accept(context.Background()))
+<<<<<<< HEAD
 	require.True(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, nodeID))
+=======
+	require.True(env.config.Validators.Contains(constants.PrimaryNetworkID, nodeID))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Ensure semantic verification updates the current and pending staker sets correctly.
@@ -672,8 +676,13 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 
 	// Check VM Validators are removed successfully
 	require.NoError(block.Accept(context.Background()))
+<<<<<<< HEAD
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+=======
+	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetVdr2NodeID))
+	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
@@ -737,7 +746,11 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 			// update staker set
 			require.NoError(block.Verify(context.Background()))
 			require.NoError(block.Accept(context.Background()))
+<<<<<<< HEAD
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+=======
+			require.Equal(whitelist, env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		})
 	}
 }

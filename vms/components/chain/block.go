@@ -5,8 +5,11 @@ package chain
 
 import (
 	"context"
+<<<<<<< HEAD
 	"errors"
 	"fmt"
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
@@ -18,6 +21,8 @@ var (
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
+
+var _ snowman.Block = (*BlockWrapper)(nil)
 
 // BlockWrapper wraps a snowman Block while adding a smart caching layer to improve
 // VM performance.
@@ -34,6 +39,7 @@ type BlockWrapper struct {
 // on [bw] removing it from [verifiedBlocks].
 func (bw *BlockWrapper) Verify(ctx context.Context) error {
 	if err := bw.Block.Verify(ctx); err != nil {
+<<<<<<< HEAD
 		// Note: we cannot cache blocks failing verification in case
 		// the error is temporary and the block could become valid in
 		// the future.
@@ -76,6 +82,8 @@ func (bw *BlockWrapper) VerifyWithContext(ctx context.Context, blockCtx *block.C
 	}
 
 	if err := blkWithCtx.VerifyWithContext(ctx, blockCtx); err != nil {
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		// Note: we cannot cache blocks failing verification in case
 		// the error is temporary and the block could become valid in
 		// the future.

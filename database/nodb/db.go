@@ -4,7 +4,9 @@
 package nodb
 
 import (
-	"github.com/luxdefi/luxd/database"
+	"context"
+
+	"github.com/ava-labs/avalanchego/database"
 )
 
 var (
@@ -72,7 +74,7 @@ func (*Database) Close() error {
 }
 
 // HealthCheck returns error
-func (*Database) HealthCheck() (interface{}, error) {
+func (*Database) HealthCheck(context.Context) (interface{}, error) {
 	return nil, database.ErrClosed
 }
 

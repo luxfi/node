@@ -5,6 +5,10 @@ package snowman
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"sort"
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"
@@ -42,7 +46,7 @@ func (b *TestBlock) Timestamp() time.Time {
 	return b.TimestampV
 }
 
-func (b *TestBlock) Verify() error {
+func (b *TestBlock) Verify(context.Context) error {
 	return b.VerifyV
 }
 

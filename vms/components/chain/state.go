@@ -25,16 +25,23 @@ type State struct {
 	// a nil error, then the returned block must not have the status Unknown
 	getBlock func(context.Context, ids.ID) (snowman.Block, error)
 	// unmarshals [b] into a block
+<<<<<<< HEAD
 	unmarshalBlock        func(context.Context, []byte) (snowman.Block, error)
 	batchedUnmarshalBlock func(context.Context, [][]byte) ([]snowman.Block, error)
+=======
+	unmarshalBlock func(context.Context, []byte) (snowman.Block, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	// buildBlock attempts to build a block on top of the currently preferred block
 	// buildBlock should always return a block with status Processing since it should never
 	// create an unknown block, and building on top of the preferred block should never yield
 	// a block that has already been decided.
 	buildBlock func(context.Context) (snowman.Block, error)
+<<<<<<< HEAD
 
 	// If nil, [BuildBlockWithContext] returns [BuildBlock].
 	buildBlockWithContext func(context.Context, *block.Context) (snowman.Block, error)
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	// getStatus returns the status of the block
 	getStatus func(context.Context, snowman.Block) (choices.Status, error)
@@ -62,6 +69,7 @@ type Config struct {
 	// Cache configuration:
 	DecidedCacheSize, MissingCacheSize, UnverifiedCacheSize, BytesToIDCacheSize int
 
+<<<<<<< HEAD
 	LastAcceptedBlock     snowman.Block
 	GetBlock              func(context.Context, ids.ID) (snowman.Block, error)
 	UnmarshalBlock        func(context.Context, []byte) (snowman.Block, error)
@@ -69,6 +77,13 @@ type Config struct {
 	BuildBlock            func(context.Context) (snowman.Block, error)
 	BuildBlockWithContext func(context.Context, *block.Context) (snowman.Block, error)
 	GetBlockIDAtHeight    func(context.Context, uint64) (ids.ID, error)
+=======
+	LastAcceptedBlock  snowman.Block
+	GetBlock           func(context.Context, ids.ID) (snowman.Block, error)
+	UnmarshalBlock     func(context.Context, []byte) (snowman.Block, error)
+	BuildBlock         func(context.Context) (snowman.Block, error)
+	GetBlockIDAtHeight func(context.Context, uint64) (ids.ID, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Block is an interface wrapping the normal snowman.Block interface to be used in
@@ -126,10 +141,14 @@ func (s *State) initialize(config *Config) {
 	s.batchedUnmarshalBlock = config.BatchedUnmarshalBlock
 	if config.GetBlockIDAtHeight == nil {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		s.getStatus = func(_ context.Context, blk snowman.Block) (choices.Status, error) {
 =======
 		s.getStatus = func(blk snowman.Block) (choices.Status, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		s.getStatus = func(_ context.Context, blk snowman.Block) (choices.Status, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			return blk.Status(), nil
 		}
 	} else {
@@ -289,8 +308,13 @@ func (s *State) GetBlockInternal(ctx context.Context, blkID ids.ID) (snowman.Blo
 	return wrappedBlk.(*BlockWrapper).Block, nil
 }
 
+<<<<<<< HEAD
 // ParseBlock attempts to parse [b] into an internal Block and adds it to the
 // appropriate caching layer if successful.
+=======
+// ParseBlock attempts to parse [b] into an internal Block and adds it to the appropriate
+// caching layer if successful.
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (s *State) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
 	// See if we've cached this block's ID by its byte repr.
 	blkIDIntf, blkIDCached := s.bytesToIDCache.Get(string(b))
@@ -328,6 +352,7 @@ func (s *State) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error)
 	return s.addBlockOutsideConsensus(ctx, blk)
 }
 
+<<<<<<< HEAD
 // BatchedParseBlock implements part of the block.BatchedChainVM interface. In
 // addition to performing all the caching as the ParseBlock function, it
 // performs at most one call to the underlying VM if [batchedUnmarshalBlock] was
@@ -419,6 +444,12 @@ func (s *State) BuildBlockWithContext(ctx context.Context, blockCtx *block.Conte
 	}
 
 	blk, err := s.buildBlockWithContext(ctx, blockCtx)
+=======
+// BuildBlock attempts to build a new internal Block, wraps it, and adds it
+// to the appropriate caching layer if successful.
+func (s *State) BuildBlock(ctx context.Context) (snowman.Block, error) {
+	blk, err := s.buildBlock(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return nil, err
 	}

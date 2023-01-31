@@ -827,8 +827,13 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 	// Check VM Validators are removed successfully
 	require.NoError(propBlk.Accept(context.Background()))
 	require.NoError(commitBlk.Accept(context.Background()))
+<<<<<<< HEAD
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+=======
+	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetVdr2NodeID))
+	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
@@ -932,7 +937,11 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 
 			require.NoError(propBlk.Accept(context.Background()))
 			require.NoError(commitBlk.Accept(context.Background()))
+<<<<<<< HEAD
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+=======
+			require.Equal(whitelist, env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		})
 	}
 }

@@ -2644,7 +2644,11 @@ func TestSendMultiple(t *testing.T) {
 				t.Fatal("Transaction ID returned by SendMultiple does not match the transaction found in vm's pending transactions")
 			}
 
+<<<<<<< HEAD
 			if _, err := vm.GetTx(context.Background(), reply.TxID); err != nil {
+=======
+			if _, err = vm.GetTx(context.Background(), reply.TxID); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 				t.Fatalf("Failed to retrieve created transaction: %s", err)
 			}
 		})

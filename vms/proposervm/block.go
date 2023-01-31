@@ -164,6 +164,7 @@ func (p *postForkCommonComponents) Verify(
 		)
 	}
 
+<<<<<<< HEAD
 	return p.vm.verifyAndRecordInnerBlk(
 		ctx,
 		&smblock.Context{
@@ -171,6 +172,9 @@ func (p *postForkCommonComponents) Verify(
 		},
 		child,
 	)
+=======
+	return p.vm.verifyAndRecordInnerBlk(ctx, child)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Return the child (a *postForkBlock) of this block
@@ -221,6 +225,7 @@ func (p *postForkCommonComponents) buildChild(
 		}
 	}
 
+<<<<<<< HEAD
 	var innerBlock snowman.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
@@ -229,6 +234,9 @@ func (p *postForkCommonComponents) buildChild(
 	} else {
 		innerBlock, err = p.vm.ChainVM.BuildBlock(ctx)
 	}
+=======
+	innerBlock, err := p.vm.ChainVM.BuildBlock(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return nil, err
 	}

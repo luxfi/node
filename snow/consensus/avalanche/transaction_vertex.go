@@ -66,6 +66,7 @@ func (tv *transactionVertex) Status() choices.Status {
 // really matter. However it's used to implement the tx interface.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*transactionVertex) Verify(context.Context) error {
 	return nil
 }
@@ -74,6 +75,9 @@ func (*transactionVertex) Verify() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 =======
 func (*transactionVertex) Verify() error {
+=======
+func (*transactionVertex) Verify(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -106,10 +110,15 @@ func (tv *transactionVertex) HasWhitelist() bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (tv *transactionVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
 	return tv.vtx.Whitelist(ctx)
 =======
 func (tv *transactionVertex) Whitelist() (ids.Set, error) {
 	return tv.vtx.Whitelist()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (tv *transactionVertex) Whitelist(ctx context.Context) (ids.Set, error) {
+	return tv.vtx.Whitelist(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }

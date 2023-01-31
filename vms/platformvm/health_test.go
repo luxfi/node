@@ -93,8 +93,13 @@ func TestHealthCheckSubnet(t *testing.T) {
 					subnetID: expectedMinStake,
 				}
 			}
+<<<<<<< HEAD
 			for index, vdr := range subnetVdrs.List() {
 				err := vm.ConnectedSubnet(context.Background(), vdr.NodeID, subnetID)
+=======
+			for index, validator := range vals.List() {
+				err := vm.Connected(context.Background(), validator.ID(), version.CurrentApp)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 				require.NoError(err)
 				details, err := vm.HealthCheck(context.Background())
 				connectedPerc := float64((index + 1) * (100 / testVdrCount))

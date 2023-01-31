@@ -432,7 +432,11 @@ func (dg *Directed) addEdge(src, dst *directedTx) {
 }
 
 func (dg *Directed) Remove(ctx context.Context, txID ids.ID) error {
+<<<<<<< HEAD
 	err := dg.reject(ctx, set.Set[ids.ID]{
+=======
+	err := dg.reject(ctx, ids.Set{
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		txID: struct{}{},
 	})
 
@@ -565,7 +569,11 @@ func (dg *Directed) accept(ctx context.Context, txID ids.ID) error {
 }
 
 // reject all the named txIDs and remove them from the graph
+<<<<<<< HEAD
 func (dg *Directed) reject(ctx context.Context, conflictIDs set.Set[ids.ID]) error {
+=======
+func (dg *Directed) reject(ctx context.Context, conflictIDs ids.Set) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	for conflictKey := range conflictIDs {
 		conflict := dg.txs[conflictKey]
 		// This tx is no longer an option for consuming the UTXOs from its

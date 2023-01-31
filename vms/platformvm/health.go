@@ -12,7 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/database"
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"github.com/ava-labs/avalanchego/utils/constants"
 )
 
