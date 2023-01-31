@@ -557,7 +557,11 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 			env.config.BanffTime = time.Time{} // activate Banff
 
 			subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 			env.config.TrackedSubnets.Add(subnetID)
+=======
+			env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 			env.config.Validators.Add(subnetID, validators.NewSet())
 
 			for _, staker := range test.stakers {
@@ -704,7 +708,11 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 	env.config.BanffTime = time.Time{} // activate Banff
 
 	subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 	env.config.TrackedSubnets.Add(subnetID)
+=======
+	env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 	env.config.Validators.Add(subnetID, validators.NewSet())
 
 	// Add a subnet validator to the staker set
@@ -828,12 +836,17 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 	require.NoError(propBlk.Accept(context.Background()))
 	require.NoError(commitBlk.Accept(context.Background()))
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
 =======
 	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetVdr2NodeID))
 	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
+	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
 func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
@@ -847,8 +860,13 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 			env.config.BanffTime = time.Time{} // activate Banff
 
 			subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 			if tracked {
 				env.config.TrackedSubnets.Add(subnetID)
+=======
+			if whitelist {
+				env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 				env.config.Validators.Add(subnetID, validators.NewSet())
 			}
 
@@ -938,10 +956,14 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 			require.NoError(propBlk.Accept(context.Background()))
 			require.NoError(commitBlk.Accept(context.Background()))
 <<<<<<< HEAD
+<<<<<<< HEAD
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
 =======
 			require.Equal(whitelist, env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+			require.Equal(whitelist, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 		})
 	}
 }

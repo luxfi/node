@@ -33,6 +33,7 @@ type Manager interface {
 	Add(subnetID ids.ID, set Set) bool
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// Get returns the validator set for the given subnet
 	// Returns false if the subnet doesn't exist
 	Get(ids.ID) (Set, bool)
@@ -51,6 +52,11 @@ type Manager interface {
 	// currently in the set.
 	Contains(ids.ID, ids.NodeID) bool
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
+=======
+	// Get returns the validator set for the given subnet
+	// Returns false if the subnet doesn't exist
+	Get(ids.ID) (Set, bool)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
 // NewManager returns a new, empty manager
@@ -81,6 +87,7 @@ func (m *manager) Add(subnetID ids.ID, set Set) bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 func (m *manager) AddWeight(subnetID ids.ID, vdrID ids.NodeID, weight uint64) error {
 	m.lock.Lock()
@@ -105,6 +112,8 @@ func (m *manager) RemoveWeight(subnetID ids.ID, vdrID ids.NodeID, weight uint64)
 }
 
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
+=======
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 func (m *manager) Get(subnetID ids.ID) (Set, bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -141,6 +150,7 @@ func (m *manager) String() string {
 	return sb.String()
 }
 
+<<<<<<< HEAD
 // Add is a helper that fetches the validator set of [subnetID] from [m] and
 // adds [nodeID] to the validator set.
 // Returns an error if:
@@ -154,6 +164,8 @@ func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID 
 	return vdrs.Add(nodeID, pk, txID, weight)
 }
 
+=======
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 // AddWeight is a helper that fetches the validator set of [subnetID] from [m]
 // and adds [weight] to [nodeID] in the validator set.
 // Returns an error if:
