@@ -1311,6 +1311,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nil, nID, engineType)
 =======
 	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nID)
@@ -1318,6 +1319,9 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 =======
 	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nID, engineType)
 >>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
+=======
+	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nil, nID, engineType)
+>>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 	chainRouter.HandleInbound(context.Background(), inMsg)
 
 	// shouldn't clear out timed request, as the request should be cleared when

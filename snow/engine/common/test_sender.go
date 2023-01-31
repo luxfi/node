@@ -54,10 +54,14 @@ type SenderTest struct {
 	SendPushQueryF               func(context.Context, set.Set[ids.NodeID], uint32, []byte)
 	SendPullQueryF               func(context.Context, set.Set[ids.NodeID], uint32, ids.ID)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	SendChitsF                   func(context.Context, ids.NodeID, uint32, []ids.ID, []ids.ID)
 =======
 	SendChitsF                   func(context.Context, ids.NodeID, uint32, []ids.ID)
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	SendChitsF                   func(context.Context, ids.NodeID, uint32, []ids.ID, []ids.ID)
+>>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 	SendGossipF                  func(context.Context, []byte)
 	SendAppRequestF              func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendAppResponseF             func(context.Context, ids.NodeID, uint32, []byte) error
