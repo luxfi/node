@@ -62,10 +62,14 @@ type VM interface {
 	Shutdown(context.Context) error
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// Version returns the version of the VM.
 =======
 	// Version returns the version of the VM this node is running.
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	// Version returns the version of the VM.
+>>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
 	Version(context.Context) (string, error)
 
 	// Creates the HTTP handlers for custom VM network calls.
@@ -81,13 +85,19 @@ type VM interface {
 	// For example, it might make sense to have an extension for creating
 	// genesis bytes this VM can interpret.
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
 	//
 	// Note: If this method is called, no other method will be called on this VM.
 	// Each registered VM will have a single instance created to handle static
 	// APIs. This instance will be handled separately from instances created to
 	// service an instance of a chain.
+<<<<<<< HEAD
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
 	CreateStaticHandlers(context.Context) (map[string]*HTTPHandler, error)
 
 	// Creates the HTTP handlers for custom chain network calls.
