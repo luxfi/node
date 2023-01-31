@@ -14,6 +14,7 @@ import (
 	"github.com/ava-labs/avalanchego/utils/set"
 )
 
+<<<<<<< HEAD
 func TestSetAddZeroWeight(t *testing.T) {
 	require := require.New(t)
 
@@ -24,6 +25,11 @@ func TestSetAddZeroWeight(t *testing.T) {
 
 func TestSetAddDuplicate(t *testing.T) {
 	require := require.New(t)
+=======
+func TestSamplerSample(t *testing.T) {
+	vdr0 := ids.GenerateTestNodeID()
+	vdr1 := ids.GenerateTestNodeID()
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 
 	s := NewSet()
 
@@ -581,7 +587,13 @@ func TestSetValidatorRemovedCallback(t *testing.T) {
 			callCount++
 		},
 	})
+<<<<<<< HEAD
 	err = s.RemoveWeight(nodeID0, weight0)
 	require.NoError(err)
 	require.Equal(2, callCount)
+=======
+	err = s.RemoveWeight(vdr0, weight0)
+	require.NoError(t, err)
+	require.Equal(t, 2, callcount)
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 }

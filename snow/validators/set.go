@@ -17,6 +17,7 @@ import (
 	"github.com/ava-labs/avalanchego/utils/set"
 )
 
+<<<<<<< HEAD
 var (
 	_ Set = (*vdrSet)(nil)
 
@@ -24,11 +25,15 @@ var (
 	errDuplicateValidator = errors.New("duplicate validator")
 	errMissingValidator   = errors.New("missing validator")
 )
+=======
+var _ Set = (*set)(nil)
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 
 // Set of validators that can be sampled
 type Set interface {
 	formatting.PrefixedStringer
 
+<<<<<<< HEAD
 	// Add a new staker to the set.
 	// Returns an error if:
 	// - [weight] is 0
@@ -44,6 +49,10 @@ type Set interface {
 	// - the total weight of the validator set would overflow uint64
 	// If an error is returned, the set will be unmodified.
 	AddWeight(nodeID ids.NodeID, weight uint64) error
+=======
+	// AddWeight to a staker.
+	AddWeight(ids.NodeID, uint64) error
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 
 	// GetWeight retrieves the validator weight from the set.
 	GetWeight(ids.NodeID) uint64
@@ -120,7 +129,11 @@ type vdrSet struct {
 	callbackListeners []SetCallbackListener
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+=======
+func (s *set) AddWeight(vdrID ids.NodeID, weight uint64) error {
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	if weight == 0 {
 		return errZeroWeight
 	}

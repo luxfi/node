@@ -24,14 +24,20 @@ type Config struct {
 	// Node's validator set maps subnetID -> validators of the subnet
 	//
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
 	// Invariant: The primary network's validator set should be empty before
 	//            calling VM.Initialize.
+<<<<<<< HEAD
 =======
 	// Invariant: The primary network's validator set should be populated
 	//            externally to the vm.
 >>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
+=======
+>>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	Validators validators.Manager
 
 	// Provides access to the uptime manager as a thread safe data structure
