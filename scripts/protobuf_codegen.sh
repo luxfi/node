@@ -10,10 +10,14 @@ fi
 # ref. https://docs.buf.build/installation
 # ref. https://github.com/bufbuild/buf/releases
 <<<<<<< HEAD
+<<<<<<< HEAD
 BUF_VERSION='1.11.0'
 =======
 BUF_VERSION='1.9.0'
 >>>>>>> 51f21a85b (Update buf to v1.9.0 (#2239))
+=======
+BUF_VERSION='1.10.0'
+>>>>>>> 1c0e00460 (Bump buf dependency to v1.10.0 (#2339))
 if [[ $(buf --version | cut -f2 -d' ') != "${BUF_VERSION}" ]]; then
   echo "could not find buf ${BUF_VERSION}, is it installed + in PATH?"
   exit 255
