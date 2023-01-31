@@ -32,10 +32,14 @@ service VM {
   rpc Disconnected(DisconnectedRequest) returns (google.protobuf.Empty);
   // Attempt to create a new block from data contained in the VM.
 <<<<<<< HEAD
+<<<<<<< HEAD
   rpc BuildBlock(BuildBlockRequest) returns (BuildBlockResponse);
 =======
   rpc BuildBlock(google.protobuf.Empty) returns (BuildBlockResponse);
 >>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
+=======
+  rpc BuildBlock(BuildBlockRequest) returns (BuildBlockResponse);
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
   // Attempt to create a block from a stream of bytes.
   rpc ParseBlock(ParseBlockRequest) returns (ParseBlockResponse);
   // Attempt to load a block.
@@ -183,7 +187,10 @@ message BuildBlockRequest {
   optional uint64 p_chain_height = 1;
 }
 
+<<<<<<< HEAD
 // Note: The status of a freshly built block is assumed to be Processing.
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 message BuildBlockResponse {
   bytes id = 1;
   bytes parent_id = 2;

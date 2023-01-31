@@ -265,7 +265,10 @@ func (vm *VMClient) Initialize(
 			LastAcceptedBlock:     lastAcceptedBlk,
 			GetBlock:              vm.getBlock,
 			UnmarshalBlock:        vm.parseBlock,
+<<<<<<< HEAD
 			BatchedUnmarshalBlock: vm.batchedParseBlock,
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 			BuildBlock:            vm.buildBlock,
 			BuildBlockWithContext: vm.buildBlockWithContext,
 		},
@@ -460,16 +463,30 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
+<<<<<<< HEAD
 =======
 func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &emptypb.Empty{})
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err != nil {
+		return nil, err
+	}
+	return vm.newBlockFromBuildBlock(resp)
+}
+
+func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
+	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
@@ -885,6 +902,7 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
+<<<<<<< HEAD
 		vm:                  vm,
 		id:                  id,
 		parentID:            parentID,
@@ -893,6 +911,15 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
+=======
+		vm:       vm,
+		id:       id,
+		parentID: parentID,
+		status:   choices.Processing,
+		bytes:    resp.Bytes,
+		height:   resp.Height,
+		time:     time,
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	}, err
 }
 

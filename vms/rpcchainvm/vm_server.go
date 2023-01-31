@@ -402,6 +402,9 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
@@ -416,14 +419,18 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 			PChainHeight: *req.PChainHeight,
 		})
 	}
+<<<<<<< HEAD
 =======
 func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.BuildBlockResponse, error) {
 	blk, err := vm.vm.BuildBlock(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	blkWithCtx, verifyWithCtx := blk.(block.WithVerifyContext)
 	if verifyWithCtx {
 		verifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
@@ -436,6 +443,10 @@ func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.Bui
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
+=======
+	blkID := blk.ID()
+	parentID := blk.Parent()
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	return &vmpb.BuildBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
