@@ -62,6 +62,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 	peer := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
 =======
 	if err := peers.Add(peer, 1); err != nil {
@@ -69,6 +70,9 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 =======
 	if err := peers.Add(peer, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -241,6 +245,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(peers.AddWeight(vdr0, startupAlpha/2))
@@ -251,6 +256,9 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(peers.Add(vdr0, nil, startupAlpha/2))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(bs.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.NoError(bs.Start(context.Background(), 0))
@@ -258,6 +266,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -271,6 +280,9 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(peers.Add(vdr, nil, startupAlpha))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(peers.Add(vdr, nil, ids.Empty, startupAlpha))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(bs.Connected(context.Background(), vdr, version.CurrentApp))
 	require.True(frontierRequested)
 }

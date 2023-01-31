@@ -62,14 +62,19 @@ type Validator struct {
 	index int
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
+=======
+
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 // GetValidatorOutput is a struct that contains the publicly relevant values of
 // a validator of the Avalanche Network for the output of GetValidator.
 type GetValidatorOutput struct {
 	NodeID    ids.NodeID
 	PublicKey *bls.PublicKey
 	Weight    uint64
+<<<<<<< HEAD
 =======
 func (v *validator) ID() ids.NodeID {
 	return v.nodeID
@@ -99,3 +104,6 @@ func NewValidator(
 }
 =======
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+}
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))

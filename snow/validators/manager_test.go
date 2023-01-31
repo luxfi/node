@@ -25,6 +25,7 @@ func TestAdd(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
 =======
 	err := Add(m, subnetID, nodeID, 1)
@@ -32,11 +33,15 @@ func TestAdd(t *testing.T) {
 =======
 	err := Add(m, subnetID, nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.ErrorIs(err, errMissingValidators)
 
 	s := NewSet()
 	m.Add(subnetID, s)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
@@ -46,6 +51,9 @@ func TestAdd(t *testing.T) {
 =======
 	err = Add(m, subnetID, nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	weight := s.Weight()
@@ -93,7 +101,7 @@ func TestAddWeight(t *testing.T) {
 =======
 	require.ErrorIs(err, errMissingValidator)
 
-	err = Add(m, subnetID, nodeID, nil, 1)
+	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
 	require.NoError(err)
 
 	err = AddWeight(m, subnetID, nodeID, 1)
@@ -121,6 +129,7 @@ func TestRemoveWeight(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
 =======
 	err = AddWeight(m, subnetID, nodeID, 2)
@@ -131,6 +140,9 @@ func TestRemoveWeight(t *testing.T) {
 =======
 	err = Add(m, subnetID, nodeID, nil, 2)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = RemoveWeight(m, subnetID, nodeID, 1)
@@ -166,6 +178,7 @@ func TestContains(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
 =======
 	err := AddWeight(m, subnetID, nodeID, 1)
@@ -176,6 +189,9 @@ func TestContains(t *testing.T) {
 =======
 	err := Add(m, subnetID, nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	contains = Contains(m, subnetID, nodeID)

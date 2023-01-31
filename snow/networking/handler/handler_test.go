@@ -39,6 +39,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(vdr0, 1)
@@ -49,6 +50,9 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 =======
 	err := vdrs.Add(vdr0, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -149,6 +153,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
@@ -159,6 +164,9 @@ func TestHandlerClosesOnError(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -252,6 +260,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
@@ -259,6 +268,9 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -338,6 +350,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
@@ -345,6 +358,9 @@ func TestHandlerDispatchInternal(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -423,10 +439,14 @@ func TestHandlerSubnetConnector(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(

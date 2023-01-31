@@ -48,6 +48,7 @@ func TestTimeout(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
@@ -58,6 +59,9 @@ func TestTimeout(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -432,6 +436,7 @@ func TestReliableMessages(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.NodeID{1}, nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.NodeID{1}, 1)
@@ -439,6 +444,9 @@ func TestReliableMessages(t *testing.T) {
 =======
 	err := vdrs.Add(ids.NodeID{1}, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.NodeID{1}, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -597,6 +605,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
@@ -604,6 +613,9 @@ func TestReliableMessagesToMyself(t *testing.T) {
 =======
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 	tm, err := timeout.NewManager(
 		&timer.AdaptiveTimeoutConfig{

@@ -52,6 +52,7 @@ func TestTarget(t *testing.T) {
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vdrs.Add(vdr, nil, ids.Empty, 1); err != nil {
 		t.Fatal(err)
 	}
@@ -68,6 +69,12 @@ func TestTarget(t *testing.T) {
 	}
 	if err := vdrs.Add(ids.GenerateTestNodeID(), nil, totalVdrWeight-vdrWeight); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vdrs.Add(vdr, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, totalVdrWeight-vdrWeight); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 

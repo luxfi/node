@@ -62,6 +62,7 @@ func buildTestPeers(t *testing.T) validators.Set {
 		beaconID := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(t, vdrs.Add(beaconID, nil, ids.Empty, 1))
 =======
 		require.NoError(t, vdrs.Add(beaconID, uint64(1)))
@@ -69,6 +70,9 @@ func buildTestPeers(t *testing.T) validators.Set {
 =======
 		require.NoError(t, vdrs.Add(beaconID, nil, 1))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		require.NoError(t, vdrs.Add(beaconID, nil, ids.Empty, 1))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 	return vdrs
 }

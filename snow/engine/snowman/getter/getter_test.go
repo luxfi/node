@@ -63,6 +63,7 @@ func testSetup(
 	peer := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
 =======
 	if err := peers.Add(peer, 1); err != nil {
@@ -70,6 +71,9 @@ func testSetup(
 =======
 	if err := peers.Add(peer, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 

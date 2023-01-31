@@ -50,7 +50,7 @@ func TestSetAddZeroWeight(t *testing.T) {
 	require := require.New(t)
 
 	s := NewSet()
-	err := s.Add(ids.GenerateTestNodeID(), nil, 0)
+	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 0)
 	require.ErrorIs(err, errZeroWeight)
 }
 
@@ -60,10 +60,10 @@ func TestSetAddDuplicate(t *testing.T) {
 	s := NewSet()
 
 	nodeID := ids.GenerateTestNodeID()
-	err := s.Add(nodeID, nil, 1)
+	err := s.Add(nodeID, nil, ids.Empty, 1)
 	require.NoError(err)
 
-	err = s.Add(nodeID, nil, 1)
+	err = s.Add(nodeID, nil, ids.Empty, 1)
 	require.ErrorIs(err, errDuplicateValidator)
 }
 
@@ -72,6 +72,7 @@ func TestSetAddOverflow(t *testing.T) {
 	require := require.New(t)
 
 	s := NewSet()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
@@ -90,6 +91,12 @@ func TestSetAddOverflow(t *testing.T) {
 
 	err = s.Add(ids.GenerateTestNodeID(), nil, math.MaxUint64)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+	require.NoError(err)
+
+	err = s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, math.MaxUint64)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.Error(err)
 
 	weight := s.Weight()
@@ -104,6 +111,7 @@ func TestSetAddWeightZeroWeight(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID, nil, ids.Empty, 1)
 =======
 	err := s.Add(nodeID, 1)
@@ -111,6 +119,9 @@ func TestSetAddWeightZeroWeight(t *testing.T) {
 =======
 	err := s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = s.AddWeight(nodeID, 0)
@@ -122,6 +133,7 @@ func TestSetAddWeightOverflow(t *testing.T) {
 
 	s := NewSet()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
@@ -143,6 +155,13 @@ func TestSetAddWeightOverflow(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	err = s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+	require.NoError(err)
+
+	nodeID := ids.GenerateTestNodeID()
+	err = s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = s.AddWeight(nodeID, math.MaxUint64-1)
@@ -163,6 +182,7 @@ func TestSetGetWeight(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID, nil, ids.Empty, 1)
 =======
 	err := s.Add(nodeID, 1)
@@ -170,6 +190,9 @@ func TestSetGetWeight(t *testing.T) {
 =======
 	err := s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	weight = s.GetWeight(nodeID)
@@ -199,6 +222,7 @@ func TestSetSubsetWeight(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID0, nil, ids.Empty, weight0)
 	require.NoError(err)
 
@@ -211,17 +235,24 @@ func TestSetSubsetWeight(t *testing.T) {
 =======
 	err := s.Add(nodeID0, nil, weight0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID0, nil, ids.Empty, weight0)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
-	err = s.Add(nodeID1, nil, weight1)
+	err = s.Add(nodeID1, nil, ids.Empty, weight1)
 	require.NoError(err)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	err = s.Add(nodeID2, weight2)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 =======
 	err = s.Add(nodeID2, nil, weight2)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID2, nil, ids.Empty, weight2)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	expectedWeight := weight0 + weight1
@@ -237,6 +268,7 @@ func TestSetRemoveWeightZeroWeight(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID, nil, ids.Empty, 1)
 =======
 	err := s.Add(nodeID, 1)
@@ -244,6 +276,9 @@ func TestSetRemoveWeightZeroWeight(t *testing.T) {
 =======
 	err := s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = s.RemoveWeight(nodeID, 0)
@@ -257,6 +292,7 @@ func TestSetRemoveWeightMissingValidator(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := s.Add(ids.GenerateTestNodeID(), 1)
@@ -264,6 +300,9 @@ func TestSetRemoveWeightMissingValidator(t *testing.T) {
 =======
 	err := s.Add(ids.GenerateTestNodeID(), nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = s.RemoveWeight(ids.GenerateTestNodeID(), 1)
@@ -275,6 +314,7 @@ func TestSetRemoveWeightUnderflow(t *testing.T) {
 
 	s := NewSet()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
@@ -296,6 +336,13 @@ func TestSetRemoveWeightUnderflow(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	err = s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+	require.NoError(err)
+
+	nodeID := ids.GenerateTestNodeID()
+	err = s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = s.RemoveWeight(nodeID, 2)
@@ -323,6 +370,7 @@ func TestSetGet(t *testing.T) {
 
 	pk := bls.PublicFromSecretKey(sk)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err = s.Add(nodeID, pk, ids.Empty, 1)
 =======
 	err := s.Add(nodeID, 1)
@@ -330,6 +378,9 @@ func TestSetGet(t *testing.T) {
 =======
 	err = s.Add(nodeID, pk, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID, pk, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	vdr0, ok := s.Get(nodeID)
@@ -389,6 +440,7 @@ func TestSetContains(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID, nil, ids.Empty, 1)
 =======
 	err := s.Add(nodeID, 1)
@@ -396,6 +448,9 @@ func TestSetContains(t *testing.T) {
 =======
 	err := s.Add(nodeID, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	contains = s.Contains(nodeID)
@@ -419,6 +474,7 @@ func TestSetLen(t *testing.T) {
 	nodeID0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID0, nil, ids.Empty, 1)
 =======
 	err := s.Add(nodeID0, 1)
@@ -426,12 +482,16 @@ func TestSetLen(t *testing.T) {
 =======
 	err := s.Add(nodeID0, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID0, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	len = s.Len()
 	require.Equal(1, len)
 
 	nodeID1 := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err = s.Add(nodeID1, nil, ids.Empty, 1)
@@ -441,6 +501,9 @@ func TestSetLen(t *testing.T) {
 =======
 	err = s.Add(nodeID1, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID1, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	len = s.Len()
@@ -484,8 +547,12 @@ func TestSetList(t *testing.T) {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 =======
 	nodeID0 := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err = s.Add(nodeID0, pk, 2)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID0, pk, ids.Empty, 2)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	list = s.List()
@@ -500,6 +567,7 @@ func TestSetList(t *testing.T) {
 
 	nodeID1 := ids.GenerateTestNodeID()
 	err = s.Add(nodeID1, nil, ids.Empty, 1)
+<<<<<<< HEAD
 =======
 	require.Equal(nodeID0, node0.ID())
 	require.Equal(pk, node0.PublicKey())
@@ -517,6 +585,8 @@ func TestSetList(t *testing.T) {
 =======
 	err = s.Add(nodeID1, nil, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	list = s.List()
@@ -643,6 +713,7 @@ func TestSetWeight(t *testing.T) {
 	s := NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(vdr0, nil, ids.Empty, weight0)
 	require.NoError(err)
 
@@ -659,6 +730,12 @@ func TestSetWeight(t *testing.T) {
 
 	err = s.Add(vdr1, nil, weight1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(vdr0, nil, ids.Empty, weight0)
+	require.NoError(err)
+
+	err = s.Add(vdr1, nil, ids.Empty, weight1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	setWeight := s.Weight()
@@ -693,8 +770,12 @@ func TestSetSample(t *testing.T) {
 
 	nodeID0 := ids.GenerateTestNodeID()
 	pk := bls.PublicFromSecretKey(sk)
+<<<<<<< HEAD
 	err = s.Add(nodeID0, pk, 1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID0, pk, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	sampled, err = s.Sample(1)
@@ -719,6 +800,7 @@ func TestSetSample(t *testing.T) {
 	nodeID1 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err = s.Add(nodeID1, nil, ids.Empty, math.MaxInt64-1)
 =======
 	err = s.Add(nodeID1, math.MaxInt64-1)
@@ -726,6 +808,9 @@ func TestSetSample(t *testing.T) {
 =======
 	err = s.Add(nodeID1, nil, math.MaxInt64-1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID1, nil, ids.Empty, math.MaxInt64-1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	sampled, err = s.Sample(1)
@@ -789,6 +874,7 @@ func TestSetString(t *testing.T) {
 	s := NewSet()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.Add(nodeID0, nil, ids.Empty, 1)
 	require.NoError(err)
 
@@ -805,6 +891,12 @@ func TestSetString(t *testing.T) {
 
 	err = s.Add(nodeID1, nil, math.MaxInt64-1)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID0, nil, ids.Empty, 1)
+	require.NoError(err)
+
+	err = s.Add(nodeID1, nil, ids.Empty, math.MaxInt64-1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	expected := "Validator Set: (Size = 2, Weight = 9223372036854775807)\n" +
@@ -820,6 +912,7 @@ type callbackListener struct {
 	t         *testing.T
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	onAdd     func(ids.NodeID, *bls.PublicKey, ids.ID, uint64)
 =======
 	onAdd     func(ids.NodeID, uint64)
@@ -827,10 +920,14 @@ type callbackListener struct {
 =======
 	onAdd     func(ids.NodeID, *bls.PublicKey, uint64)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	onAdd     func(ids.NodeID, *bls.PublicKey, ids.ID, uint64)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	onWeight  func(ids.NodeID, uint64, uint64)
 	onRemoved func(ids.NodeID, uint64)
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (c *callbackListener) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
 	if c.onAdd != nil {
@@ -840,6 +937,11 @@ func (c *callbackListener) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey
 	if c.onAdd != nil {
 		c.onAdd(nodeID, pk, weight)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+func (c *callbackListener) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+	if c.onAdd != nil {
+		c.onAdd(nodeID, pk, txID, weight)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	} else {
 		c.t.Fail()
 	}
@@ -871,6 +973,7 @@ func TestSetAddCallback(t *testing.T) {
 	require.NoError(err)
 	pk0 := bls.PublicFromSecretKey(sk0)
 	txID0 := ids.GenerateTestID()
+<<<<<<< HEAD
 =======
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 =======
@@ -878,12 +981,15 @@ func TestSetAddCallback(t *testing.T) {
 	require.NoError(err)
 	pk0 := bls.PublicFromSecretKey(sk0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	weight0 := uint64(1)
 
 	s := NewSet()
 	callCount := 0
 	s.RegisterCallbackListener(&callbackListener{
 		t: t,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
@@ -899,10 +1005,17 @@ func TestSetAddCallback(t *testing.T) {
 			require.Equal(nodeID0, nodeID)
 			require.Equal(pk0, pk)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+			require.Equal(nodeID0, nodeID)
+			require.Equal(pk0, pk)
+			require.Equal(txID0, txID)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			require.Equal(weight0, weight)
 			callCount++
 		},
 	})
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err = s.Add(nodeID0, pk0, txID0, weight0)
@@ -912,6 +1025,9 @@ func TestSetAddCallback(t *testing.T) {
 =======
 	err = s.Add(nodeID0, pk0, weight0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err = s.Add(nodeID0, pk0, txID0, weight0)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 	require.Equal(1, callCount)
 }
@@ -921,13 +1037,18 @@ func TestSetAddWeightCallback(t *testing.T) {
 
 	nodeID0 := ids.NodeID{1}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	txID0 := ids.GenerateTestID()
 =======
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	txID0 := ids.GenerateTestID()
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	weight0 := uint64(1)
 	weight1 := uint64(93)
 
 	s := NewSet()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err := s.Add(nodeID0, nil, txID0, weight0)
@@ -937,11 +1058,15 @@ func TestSetAddWeightCallback(t *testing.T) {
 =======
 	err := s.Add(nodeID0, nil, weight0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID0, nil, txID0, weight0)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	callCount := 0
 	s.RegisterCallbackListener(&callbackListener{
 		t: t,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
@@ -957,6 +1082,12 @@ func TestSetAddWeightCallback(t *testing.T) {
 			require.Equal(nodeID0, nodeID)
 			require.Nil(pk)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+			require.Equal(nodeID0, nodeID)
+			require.Nil(pk)
+			require.Equal(txID0, txID)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			require.Equal(weight0, weight)
 			callCount++
 		},
@@ -977,13 +1108,18 @@ func TestSetRemoveWeightCallback(t *testing.T) {
 
 	nodeID0 := ids.NodeID{1}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	txID0 := ids.GenerateTestID()
 =======
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	txID0 := ids.GenerateTestID()
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	weight0 := uint64(93)
 	weight1 := uint64(92)
 
 	s := NewSet()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	err := s.Add(nodeID0, nil, txID0, weight0)
@@ -993,11 +1129,15 @@ func TestSetRemoveWeightCallback(t *testing.T) {
 =======
 	err := s.Add(nodeID0, nil, weight0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	err := s.Add(nodeID0, nil, txID0, weight0)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	callCount := 0
 	s.RegisterCallbackListener(&callbackListener{
 		t: t,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
@@ -1013,6 +1153,12 @@ func TestSetRemoveWeightCallback(t *testing.T) {
 			require.Equal(nodeID0, nodeID)
 			require.Nil(pk)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+			require.Equal(nodeID0, nodeID)
+			require.Nil(pk)
+			require.Equal(txID0, txID)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			require.Equal(weight0, weight)
 			callCount++
 		},
@@ -1033,11 +1179,15 @@ func TestSetValidatorRemovedCallback(t *testing.T) {
 
 	nodeID0 := ids.NodeID{1}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	txID0 := ids.GenerateTestID()
 	weight0 := uint64(93)
 
 	s := NewSet()
 	err := s.Add(nodeID0, nil, txID0, weight0)
+<<<<<<< HEAD
 =======
 	weight0 := uint64(93)
 
@@ -1048,11 +1198,14 @@ func TestSetValidatorRemovedCallback(t *testing.T) {
 =======
 	err := s.Add(nodeID0, nil, weight0)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	callCount := 0
 	s.RegisterCallbackListener(&callbackListener{
 		t: t,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
@@ -1068,6 +1221,12 @@ func TestSetValidatorRemovedCallback(t *testing.T) {
 			require.Equal(nodeID0, nodeID)
 			require.Nil(pk)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		onAdd: func(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+			require.Equal(nodeID0, nodeID)
+			require.Nil(pk)
+			require.Equal(txID0, txID)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			require.Equal(weight0, weight)
 			callCount++
 		},

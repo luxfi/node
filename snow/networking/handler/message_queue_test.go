@@ -34,6 +34,7 @@ func TestQueue(t *testing.T) {
 	vdr1ID, vdr2ID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
 =======
@@ -44,6 +45,10 @@ func TestQueue(t *testing.T) {
 	require.NoError(vdrs.Add(vdr1ID, nil, 1))
 	require.NoError(vdrs.Add(vdr2ID, nil, 1))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	mIntf, err := NewMessageQueue(logging.NoLog{}, vdrs, cpuTracker, "", prometheus.NewRegistry(), message.SynchronousOps)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)
