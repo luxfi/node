@@ -37,6 +37,7 @@ var (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		Patch: 7,
 =======
 		Patch: 3,
@@ -50,6 +51,9 @@ var (
 =======
 		Patch: 6,
 >>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
+=======
+		Patch: 7,
+>>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 	}
 	CurrentApp = &Application{
 		Major: Current.Major,

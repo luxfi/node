@@ -4,6 +4,9 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 ## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -12,8 +15,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 
 - Fixed subnet validator lookup regression
 
+<<<<<<< HEAD
 =======
 >>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
+=======
+>>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 ## [v1.9.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.6)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
