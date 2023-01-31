@@ -10,6 +10,7 @@ import (
 
 	stdcontext "context"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/math"
@@ -20,6 +21,19 @@ import (
 	"github.com/luxdefi/luxd/vms/platformvm/validator"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 )
 
 var (
@@ -341,7 +355,7 @@ func (b *builder) NewAddValidatorTx(
 		return nil, err
 	}
 
-	ids.SortShortIDs(rewardsOwner.Addrs)
+	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -441,7 +455,7 @@ func (b *builder) NewAddDelegatorTx(
 		return nil, err
 	}
 
-	ids.SortShortIDs(rewardsOwner.Addrs)
+	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -479,7 +493,7 @@ func (b *builder) NewCreateChainTx(
 		return nil, err
 	}
 
-	ids.SortIDs(fxIDs)
+	utils.Sort(fxIDs)
 	return &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -511,7 +525,7 @@ func (b *builder) NewCreateSubnetTx(
 		return nil, err
 	}
 
-	ids.SortShortIDs(owner.Addrs)
+	utils.Sort(owner.Addrs)
 	return &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -575,7 +589,11 @@ func (b *builder) NewImportTx(
 		}
 		importedAmounts[assetID] = newImportedAmount
 	}
+<<<<<<< HEAD
 	lux.SortTransferableInputs(importedInputs) // sort imported inputs
+=======
+	utils.Sort(importedInputs) // sort imported inputs
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 
 	if len(importedInputs) == 0 {
 		return nil, fmt.Errorf(
@@ -752,8 +770,8 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 		return nil, err
 	}
 
-	ids.SortShortIDs(validationRewardsOwner.Addrs)
-	ids.SortShortIDs(delegationRewardsOwner.Addrs)
+	utils.Sort(validationRewardsOwner.Addrs)
+	utils.Sort(delegationRewardsOwner.Addrs)
 	return &txs.AddPermissionlessValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -794,7 +812,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 		return nil, err
 	}
 
-	ids.SortShortIDs(rewardsOwner.Addrs)
+	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddPermissionlessDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.NetworkID(),
@@ -1080,9 +1098,15 @@ func (b *builder) spend(
 		}
 	}
 
+<<<<<<< HEAD
 	lux.SortTransferableInputs(inputs)                    // sort inputs
 	lux.SortTransferableOutputs(changeOutputs, txs.Codec) // sort the change outputs
 	lux.SortTransferableOutputs(stakeOutputs, txs.Codec)  // sort stake outputs
+=======
+	utils.Sort(inputs)                                     // sort inputs
+	avax.SortTransferableOutputs(changeOutputs, txs.Codec) // sort the change outputs
+	avax.SortTransferableOutputs(stakeOutputs, txs.Codec)  // sort stake outputs
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	return inputs, changeOutputs, stakeOutputs, nil
 }
 

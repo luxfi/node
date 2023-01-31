@@ -4,9 +4,10 @@
 package atomic
 
 import (
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
 )
 
 var _ SharedMemory = (*sharedMemory)(nil)
@@ -123,7 +124,7 @@ func (sm *sharedMemory) Apply(requests map[ids.ID]*Requests, batches ...database
 		request.peerChainID = peerChainID
 		sharedOperations[sharedID] = request
 	}
-	ids.SortIDs(sharedIDs)
+	utils.Sort(sharedIDs)
 
 	// Make sure all operations are committed atomically
 	vdb := versiondb.New(sm.m.db)

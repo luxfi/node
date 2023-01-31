@@ -286,6 +286,7 @@ func verifySECP256K1RSignatureFormat(sig []byte) error {
 	return nil
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 type innerSortSECP2561RSigs [][SECP256K1RSigLen]byte
@@ -312,3 +313,5 @@ func IsSortedAndUniqueSECP2561RSigs(sigs [][SECP256K1RSigLen]byte) bool {
 	return utils.IsSortedAndUnique(innerSortSECP2561RSigs(sigs))
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))

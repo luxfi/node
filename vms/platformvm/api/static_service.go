@@ -380,6 +380,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 	return nil
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 type innerSortUTXO []UTXO
@@ -422,3 +423,5 @@ func sortUTXOs(utxos []UTXO) {
 	sort.Sort(innerSortUTXO(utxos))
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))

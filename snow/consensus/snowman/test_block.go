@@ -6,9 +6,12 @@ package snowman
 import (
 	"context"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"sort"
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"
@@ -55,6 +58,7 @@ func (b *TestBlock) Bytes() []byte {
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
+<<<<<<< HEAD
 func (b *TestBlock) Height() uint64 {
 	return b.HeightV
 }
@@ -91,4 +95,8 @@ func (sb sortBlocks) Swap(i, j int) {
 func SortTestBlocks(blocks []*TestBlock) {
 	sort.Sort(sortBlocks(blocks))
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (b *TestBlock) Less(other *TestBlock) bool {
+	return b.HeightV < other.HeightV
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 }

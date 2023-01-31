@@ -10,7 +10,10 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow"
 	"github.com/ava-labs/avalanchego/utils"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"github.com/ava-labs/avalanchego/vms/components/avax"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )

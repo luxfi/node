@@ -25,6 +25,7 @@ require (
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
@@ -33,6 +34,9 @@ require (
 =======
 	github.com/ava-labs/coreth v0.11.3-rc.1
 >>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
+=======
+	github.com/ava-labs/coreth v0.11.4-0.20221128181836-2d60c6abab59
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))

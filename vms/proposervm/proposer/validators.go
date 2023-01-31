@@ -16,6 +16,7 @@ type validatorData struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (d validatorData) Less(other validatorData) bool {
 	return d.id.Less(other.id)
 =======
@@ -34,4 +35,8 @@ func (d validatorsSlice) Less(i, j int) bool {
 	jID := d[j].id
 	return bytes.Compare(iID[:], jID[:]) == -1
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (d validatorData) Less(other validatorData) bool {
+	return d.id.Less(other.id)
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 }

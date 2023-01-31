@@ -11,13 +11,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/formatting/address"
-	"github.com/luxdefi/luxd/utils/wrappers"
-
-	safemath "github.com/luxdefi/luxd/utils/math"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
+
+var _ utils.Sortable[Allocation] = Allocation{}
 
 type LockedAmount struct {
 	Amount   uint64 `json:"amount"`
@@ -44,6 +46,11 @@ func (a Allocation) Unparse(networkID uint32) (UnparsedAllocation, error) {
 	)
 	ua.LUXAddr = luxAddr
 	return ua, err
+}
+
+func (a Allocation) Less(other Allocation) bool {
+	return a.InitialAmount < other.InitialAmount ||
+		(a.InitialAmount == other.InitialAmount && a.AVAXAddr.Less(other.AVAXAddr))
 }
 
 type Staker struct {
@@ -126,12 +133,12 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 func (c *Config) InitialSupply() (uint64, error) {
 	initialSupply := uint64(0)
 	for _, allocation := range c.Allocations {
-		newInitialSupply, err := safemath.Add64(initialSupply, allocation.InitialAmount)
+		newInitialSupply, err := math.Add64(initialSupply, allocation.InitialAmount)
 		if err != nil {
 			return 0, err
 		}
 		for _, unlock := range allocation.UnlockSchedule {
-			newInitialSupply, err = safemath.Add64(newInitialSupply, unlock.Amount)
+			newInitialSupply, err = math.Add64(newInitialSupply, unlock.Amount)
 			if err != nil {
 				return 0, err
 			}
