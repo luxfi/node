@@ -5,12 +5,12 @@ set -o nounset
 set -o pipefail
 
 # Testing specific variables
-avalanche_testing_repo="avaplatform/avalanche-testing"
-avalanchego_byzantine_repo="avaplatform/avalanche-byzantine"
+lux_testing_repo="luxdefi/lux-testing"
+node_byzantine_repo="luxdefi/lux-byzantine"
 
-# Define avalanche-testing and avalanche-byzantine versions to use
-avalanche_testing_image="avaplatform/avalanche-testing:master"
-avalanchego_byzantine_image="avaplatform/avalanche-byzantine:master"
+# Define lux-testing and lux-byzantine versions to use
+lux_testing_image="luxdefi/lux-testing:master"
+node_byzantine_image="luxdefi/lux-byzantine:master"
 
 # Fetch the images
 # If Docker Credentials are not available fail
@@ -34,38 +34,38 @@ shift 1
 
 echo "Running Test Batch: ${testBatch}"
 
-# pulling the avalanche-testing image
-docker pull $avalanche_testing_image
-docker pull $avalanchego_byzantine_image
+# pulling the lux-testing image
+docker pull $lux_testing_image
+docker pull $node_byzantine_image
 
 # Setting the build ID
 git_commit_id=$( git rev-list -1 HEAD )
 
-# Build current avalanchego
+# Build current node
 source "$AVALANCHE_PATH"/scripts/build_image.sh -r
 
-# Target built version to use in avalanche-testing
-avalanche_image="$avalanchego_dockerhub_repo:$current_branch"
+# Target built version to use in lux-testing
+lux_image="$node_dockerhub_repo:$current_branch"
 
 echo "Execution Summary:"
 echo ""
-echo "Running Avalanche Image: ${avalanche_image}"
+echo "Running Avalanche Image: ${lux_image}"
 echo "Running Avalanche Image Tag: $current_branch"
-echo "Running Avalanche Testing Image: ${avalanche_testing_image}"
-echo "Running Avalanche Byzantine Image: ${avalanchego_byzantine_image}"
+echo "Running Avalanche Testing Image: ${lux_testing_image}"
+echo "Running Avalanche Byzantine Image: ${node_byzantine_image}"
 echo "Git Commit ID : ${git_commit_id}"
 echo ""
 
-# >>>>>>>> avalanche-testing custom parameters <<<<<<<<<<<<<
+# >>>>>>>> lux-testing custom parameters <<<<<<<<<<<<<
 custom_params_json="{
     \"isKurtosisCoreDevMode\": false,
-    \"avalanchegoImage\":\"${avalanche_image}\",
-    \"avalanchegoByzantineImage\":\"${avalanchego_byzantine_image}\",
+    \"nodeImage\":\"${lux_image}\",
+    \"nodeByzantineImage\":\"${node_byzantine_image}\",
     \"testBatch\":\"${testBatch}\"
 }"
-# >>>>>>>> avalanche-testing custom parameters <<<<<<<<<<<<<
+# >>>>>>>> lux-testing custom parameters <<<<<<<<<<<<<
 
 bash "$AVALANCHE_PATH/.kurtosis/kurtosis.sh" \
     --custom-params "${custom_params_json}" \
     ${1+"${@}"} \
-    "${avalanche_testing_image}"
+    "${lux_testing_image}"

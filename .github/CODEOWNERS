@@ -1,23 +1,23 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax
 
-* @StephenButtolph
-/app/ @danlaine
-/codec/ @danlaine
-/database/corruptabledb/ @ceyonur
-/ids/ @danlaine @joshua-kim
-/indexer/ @danlaine
-/message/ @gyuho
-/network/ @danlaine @joshua-kim @StephenButtolph
-/network/throttling/ @danlaine @dboehm-avalabs @StephenButtolph
-/proto/ @gyuho @hexfusion
-/snow/ @danlaine @StephenButtolph
-/snow/consensus/ @gyuho @StephenButtolph
-/snow/engine/snowman/syncer/ @abi87
-/snow/uptime/ @ceyonur
-/utils/logging/ @ceyonur
-/vms/avm/ @coffeeavax @StephenButtolph
-/vms/platformvm/ @abi87 @danlaine @StephenButtolph
-/vms/proposervm/ @abi87 @StephenButtolph
-/vms/rpcchainvm/ @hexfusion @StephenButtolph
+* @zeekay
+/app/ @zeekay
+/codec/ @zeekay
+/database/corruptabledb/ @zeekay
+/ids/ @zeekay
+/indexer/ @zeekay
+/message/ @zeekay
+/network/ @zeekay
+/network/throttling/ @zeekay
+/proto/ @zeekay
+/snow/ @zeekay
+/snow/consensus/ @zeekay
+/snow/engine/snowman/syncer/ @zeekay
+/snow/uptime/ @zeekay
+/utils/logging/ @zeekay
+/vms/avm/ @zeekay
+/vms/platformvm/ @zeekay
+/vms/proposervm/ @zeekay
+/vms/rpcchainvm/ @zeekay
 /vms/registry/ @joshua-kim
-/tests/ @abi87 @gyuho
+/tests/ @zeekay

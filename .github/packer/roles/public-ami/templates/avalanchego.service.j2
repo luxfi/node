@@ -3,10 +3,10 @@ Description=Avalanche go client
 After=syslog.target network.target
 
 [Service]
-User=avalanche
+User=lux
 Type=simple
-Environment=HOME=/home/avalanche
-ExecStart=/usr/local/bin/avalanchego --config-file /etc/avalanchego/conf.json
+Environment=HOME=/home/lux
+ExecStart=/usr/local/bin/node --config-file /etc/node/conf.json
 KillMode=process
 KillSignal=SIGINT
 TimeoutStopSec=90

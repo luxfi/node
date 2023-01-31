@@ -7,7 +7,7 @@
     {
       "type": "amazon-ebs",
       "region": "us-east-1",
-      "ami_name": "public-avalanche-ubuntu-{{user `version` }}-{{timestamp}}",
+      "ami_name": "public-lux-ubuntu-{{user `version` }}-{{timestamp}}",
       "source_ami_filter": {
         "filters": {
           "virtualization-type": "hvm",
@@ -24,7 +24,7 @@
       "instance_type": "t2.micro",
       "ami_groups": "all",
       "tags": {
-        "Name": "public-avalanche-ubuntu-{{user `version`}}-{{ isotime | clean_resource_name }}",
+        "Name": "public-lux-ubuntu-{{user `version`}}-{{ isotime | clean_resource_name }}",
         "Release": "{{ user `version` }}",
         "Base_AMI_Name": "{{ .SourceAMIName }}"
       }

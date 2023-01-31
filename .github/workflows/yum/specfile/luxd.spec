@@ -1,10 +1,10 @@
 %define _build_id_links none
 
-Name:           avalanchego
+Name:           node
 Version:        %{version}
 Release:        %{release}
 Summary:        The Avalanche platform binaries
-URL:            https://github.com/ava-labs/%{name}
+URL:            https://github.com/luxdefi/%{name}
 License:        BSD-3
 AutoReqProv:    no
 
@@ -12,11 +12,11 @@ AutoReqProv:    no
 Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 
 %files
-/usr/local/bin/avalanchego
-/usr/local/lib/avalanchego
-/usr/local/lib/avalanchego/evm
+/usr/local/bin/node
+/usr/local/lib/node
+/usr/local/lib/node/evm
 
 %changelog
-* Mon Oct 26 2020 Charlie Wyse <charlie@avalabs.org>
+* Mon Oct 26 2020 Charlie Wyse <charlie@luxlabs.org>
 - First creation of package
 

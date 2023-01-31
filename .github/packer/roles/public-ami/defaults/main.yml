@@ -1,10 +1,10 @@
 ---
-ava_user: avalanche
-ava_group: admin
+lux_user: lux
+lux_group: admin
 network: mainnet
-db_dir: /data/avalanchego
-log_dir: /var/log/avalanchego
-config_dir: /etc/avalanchego
-plugin_dir: /usr/local/lib/avalanchego/plugins
-repo_url: https://github.com/ava-labs/avalanchego
-repo_folder: /tmp/avalanchego
+db_dir: /data/node
+log_dir: /var/log/node
+config_dir: /etc/node
+plugin_dir: /usr/local/lib/node/plugins
+repo_url: https://github.com/luxdefi/node
+repo_folder: /tmp/node

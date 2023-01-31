@@ -1,4 +1,4 @@
-# Build a windows release from the avalanchego repo
+# Build a windows release from the node repo
 
 name: build-win-release
 
@@ -37,14 +37,14 @@ jobs:
           aws --version
 
       # Runs a single command using the runners shell
-      - name: Build the avalanchego binary
+      - name: Build the node binary
         run: ./scripts/build.sh
         shell: bash
 
       - name: Create zip
         run: |
-          mv .\build\avalanchego .\build\avalanchego.exe
-          Compress-Archive -Path .\build\avalanchego.exe -DestinationPath .\build\avalanchego-win-${{ env.VERSION }}-experimental.zip
+          mv .\build\node .\build\node.exe
+          Compress-Archive -Path .\build\node.exe -DestinationPath .\build\node-win-${{ env.VERSION }}-experimental.zip
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -54,4 +54,4 @@ jobs:
           aws-region: us-east-1
 
       - name: Copy to s3
-        run: aws s3 cp .\build\avalanchego-win-${{ env.VERSION }}-experimental.zip s3://${{ secrets.BUCKET }}/windows/avalanchego-win-${{ env.VERSION }}-experimental.zip
+        run: aws s3 cp .\build\node-win-${{ env.VERSION }}-experimental.zip s3://${{ secrets.BUCKET }}/windows/node-win-${{ env.VERSION }}-experimental.zip
