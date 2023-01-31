@@ -75,9 +75,13 @@ func (fx *Fx) InitializeVM(vmIntf interface{}) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*Fx) Bootstrapping() error {
 	return nil
 }
+=======
+func (*Fx) Bootstrapping() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (fx *Fx) Bootstrapped() error {
 	fx.bootstrapped = true

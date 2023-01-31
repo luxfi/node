@@ -116,11 +116,19 @@ type VM struct {
 	uniqueTxs cache.Deduplicator
 }
 
+<<<<<<< HEAD
 func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
 	return nil
 }
 
 func (*VM) Disconnected(context.Context, ids.NodeID) error {
+=======
+func (*VM) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error {
+	return nil
+}
+
+func (*VM) Disconnected(nodeID ids.NodeID) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
@@ -296,7 +304,11 @@ func (vm *VM) Shutdown(context.Context) error {
 	return vm.baseDB.Close()
 }
 
+<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
+=======
+func (*VM) Version() (string, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return version.Current.String(), nil
 }
 
@@ -328,7 +340,11 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 	}, err
 }
 
+<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+=======
+func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	newServer := rpc.NewServer()
 	codec := json.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
@@ -1087,6 +1103,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
 }
 
+<<<<<<< HEAD
 func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	return nil
 }
@@ -1096,26 +1113,53 @@ func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 }
 
 func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+=======
+func (*VM) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+	return nil
+}
+
+func (*VM) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
+	return nil
+}
+
+func (*VM) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+=======
+func (*VM) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+=======
+func (*VM) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
+=======
+func (*VM) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
+=======
+func (*VM) AppGossip(_ context.Context, nodeID ids.NodeID, msg []byte) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 

@@ -288,9 +288,13 @@ func (t *Transitive) Disconnected(ctx context.Context, nodeID ids.NodeID) error 
 	return t.VM.Disconnected(ctx, nodeID)
 }
 
+<<<<<<< HEAD
 func (*Transitive) Timeout(context.Context) error {
 	return nil
 }
+=======
+func (*Transitive) Timeout() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (t *Transitive) Gossip(ctx context.Context) error {
 	edge := t.Manager.Edge(ctx)
@@ -324,7 +328,11 @@ func (t *Transitive) Gossip(ctx context.Context) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*Transitive) Halt(context.Context) {}
+=======
+func (*Transitive) Halt() {}
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (t *Transitive) Shutdown(ctx context.Context) error {
 	t.Ctx.Log.Info("shutting down consensus engine")
