@@ -219,9 +219,12 @@ func (vm *VMClient) Initialize(
 		CChainId:     chainCtx.CChainID[:],
 		AvaxAssetId:  chainCtx.AVAXAssetID[:],
 		ChainDataDir: chainCtx.ChainDataDir,
+<<<<<<< HEAD
 =======
 		AvaxAssetId:  chainCtx.AVAXAssetID[:],
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,

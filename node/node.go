@@ -764,6 +764,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		StateSyncBeacons:                        n.Config.StateSyncIDs,
 		TracingEnabled:                          n.Config.TraceConfig.Enabled,
 		Tracer:                                  n.tracer,
+		ChainDataDir:                            n.Config.ChainDataDir,
 	})
 
 	// Notify the API server when new chains are created
