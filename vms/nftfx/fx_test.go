@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -61,7 +61,7 @@ func TestFxVerifyMintOperation(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -99,7 +99,7 @@ func TestFxVerifyMintOperationWrongTx(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -134,7 +134,7 @@ func TestFxVerifyMintOperationWrongNumberUTXOs(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -166,7 +166,7 @@ func TestFxVerifyMintOperationWrongCredential(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -199,7 +199,7 @@ func TestFxVerifyMintOperationInvalidUTXO(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -231,7 +231,7 @@ func TestFxVerifyMintOperationFailingVerification(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -270,7 +270,7 @@ func TestFxVerifyMintOperationInvalidGroupID(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -309,7 +309,7 @@ func TestFxVerifyTransferOperation(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -361,7 +361,7 @@ func TestFxVerifyTransferOperationWrongUTXO(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -403,7 +403,7 @@ func TestFxVerifyTransferOperationFailedVerify(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -452,7 +452,7 @@ func TestFxVerifyTransferOperationWrongGroupID(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -504,7 +504,7 @@ func TestFxVerifyTransferOperationWrongBytes(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -556,7 +556,7 @@ func TestFxVerifyTransferOperationTooSoon(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -574,7 +574,7 @@ func TestFxVerifyTransferOperationTooSoon(t *testing.T) {
 		GroupID: 1,
 		Payload: []byte{2},
 		OutputOwners: secp256k1fx.OutputOwners{
-			Locktime:  vm.CLK.Unix() + 1,
+			Locktime:  vm.Clk.Unix() + 1,
 			Threshold: 1,
 			Addrs: []ids.ShortID{
 				addr,
@@ -609,7 +609,7 @@ func TestFxVerifyOperationUnknownOperation(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {
@@ -646,7 +646,7 @@ func TestFxVerifyTransfer(t *testing.T) {
 		Log:   logging.NoLog{},
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
-	vm.CLK.Set(date)
+	vm.Clk.Set(date)
 
 	fx := Fx{}
 	if err := fx.Initialize(&vm); err != nil {

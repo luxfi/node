@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gconn
@@ -12,9 +12,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 
-	connpb "github.com/luxdefi/luxd/proto/pb/net/conn"
+	connpb "github.com/ava-labs/avalanchego/proto/pb/net/conn"
 )
 
 var _ net.Conn = (*Client)(nil)
@@ -47,8 +47,8 @@ func (c *Client) Read(p []byte) (int, error) {
 
 	copy(p, resp.Read)
 
-	if resp.Errored {
-		err = errors.New(resp.Error)
+	if resp.Error != nil {
+		err = errors.New(*resp.Error)
 	}
 	return len(resp.Read), err
 }
@@ -61,8 +61,8 @@ func (c *Client) Write(b []byte) (int, error) {
 		return 0, err
 	}
 
-	if resp.Errored {
-		err = errors.New(resp.Error)
+	if resp.Error != nil {
+		err = errors.New(*resp.Error)
 	}
 	return int(resp.Length), err
 }
@@ -77,8 +77,13 @@ func (c *Client) Close() error {
 	return errs.Err
 }
 
-func (c *Client) LocalAddr() net.Addr  { return c.local }
-func (c *Client) RemoteAddr() net.Addr { return c.remote }
+func (c *Client) LocalAddr() net.Addr {
+	return c.local
+}
+
+func (c *Client) RemoteAddr() net.Addr {
+	return c.remote
+}
 
 func (c *Client) SetDeadline(t time.Time) error {
 	bytes, err := t.MarshalBinary()

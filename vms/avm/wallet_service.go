@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -8,14 +8,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/luxdefi/luxd/api"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"golang.org/x/exp/maps"
+
+	"github.com/ava-labs/avalanchego/api"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 type WalletService struct {
@@ -35,7 +37,7 @@ func (w *WalletService) decided(txID ids.ID) {
 }
 
 func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
-	tx, err := w.vm.parser.Parse(txBytes)
+	tx, err := w.vm.parser.ParseTx(txBytes)
 	if err != nil {
 		return ids.ID{}, err
 	}
@@ -53,8 +55,8 @@ func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
 	return txID, nil
 }
 
-func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
-	utxoMap := make(map[ids.ID]*lux.UTXO, len(utxos))
+func (w *WalletService) update(utxos []*avax.UTXO) ([]*avax.UTXO, error) {
+	utxoMap := make(map[ids.ID]*avax.UTXO, len(utxos))
 	for _, utxo := range utxos {
 		utxoMap[utxo.InputID()] = utxo
 	}
@@ -76,18 +78,11 @@ func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
 			utxoMap[utxo.InputID()] = utxo
 		}
 	}
-
-	newUTXOs := make([]*lux.UTXO, len(utxoMap))
-	i := 0
-	for _, utxo := range utxoMap {
-		newUTXOs[i] = utxo
-		i++
-	}
-	return newUTXOs, nil
+	return maps.Values(utxoMap), nil
 }
 
 // IssueTx attempts to issue a transaction into consensus
-func (w *WalletService) IssueTx(r *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
+func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	w.vm.ctx.Log.Debug("AVM Wallet: IssueTx called",
 		logging.UserString("tx", args.Tx),
 	)
@@ -111,23 +106,23 @@ func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxI
 }
 
 // SendMultiple sends a transaction with multiple outputs.
-func (w *WalletService) SendMultiple(r *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
+func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
 	w.vm.ctx.Log.Debug("AVM Wallet: SendMultiple",
 		logging.UserString("username", args.Username),
 	)
 
 	// Validate the memo field
 	memoBytes := []byte(args.Memo)
-	if l := len(memoBytes); l > lux.MaxMemoSize {
+	if l := len(memoBytes); l > avax.MaxMemoSize {
 		return fmt.Errorf("max memo length is %d but provided memo field is length %d",
-			lux.MaxMemoSize,
+			avax.MaxMemoSize,
 			l)
 	} else if len(args.Outputs) == 0 {
 		return errNoOutputs
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(w.vm, args.From)
+	fromAddrs, err := avax.ParseServiceAddresses(w.vm, args.From)
 	if err != nil {
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
@@ -158,7 +153,7 @@ func (w *WalletService) SendMultiple(r *http.Request, args *SendMultipleArgs, re
 	// Asset ID --> amount of that asset being sent
 	amounts := make(map[ids.ID]uint64)
 	// Outputs of our tx
-	outs := []*lux.TransferableOutput{}
+	outs := []*avax.TransferableOutput{}
 	for _, output := range args.Outputs {
 		if output.Amount == 0 {
 			return errZeroAmount
@@ -179,14 +174,14 @@ func (w *WalletService) SendMultiple(r *http.Request, args *SendMultipleArgs, re
 		amounts[assetID] = newAmount
 
 		// Parse the to address
-		to, err := lux.ParseServiceAddress(w.vm, output.To)
+		to, err := avax.ParseServiceAddress(w.vm, output.To)
 		if err != nil {
 			return fmt.Errorf("problem parsing to address %q: %w", output.To, err)
 		}
 
 		// Create the Output
-		outs = append(outs, &lux.TransferableOutput{
-			Asset: lux.Asset{ID: assetID},
+		outs = append(outs, &avax.TransferableOutput{
+			Asset: avax.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(output.Amount),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -223,8 +218,8 @@ func (w *WalletService) SendMultiple(r *http.Request, args *SendMultipleArgs, re
 		amountSpent := amountsSpent[assetID]
 
 		if amountSpent > amountWithFee {
-			outs = append(outs, &lux.TransferableOutput{
-				Asset: lux.Asset{ID: assetID},
+			outs = append(outs, &avax.TransferableOutput{
+				Asset: avax.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amountSpent - amountWithFee,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -238,9 +233,9 @@ func (w *WalletService) SendMultiple(r *http.Request, args *SendMultipleArgs, re
 	}
 
 	codec := w.vm.parser.Codec()
-	lux.SortTransferableOutputs(outs, codec)
+	avax.SortTransferableOutputs(outs, codec)
 
-	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
 		NetworkID:    w.vm.ctx.NetworkID,
 		BlockchainID: w.vm.ctx.ChainID,
 		Outs:         outs,

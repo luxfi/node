@@ -1,16 +1,17 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestTransferableOutputVerifyNil(t *testing.T) {
@@ -244,11 +245,11 @@ func TestTransferableInputSorting(t *testing.T) {
 		},
 	}
 
-	if IsSortedAndUniqueTransferableInputs(ins) {
+	if utils.IsSortedAndUniqueSortable(ins) {
 		t.Fatalf("Shouldn't be sorted")
 	}
-	SortTransferableInputs(ins)
-	if !IsSortedAndUniqueTransferableInputs(ins) {
+	utils.Sort(ins)
+	if !utils.IsSortedAndUniqueSortable(ins) {
 		t.Fatalf("Should be sorted")
 	}
 
@@ -261,7 +262,7 @@ func TestTransferableInputSorting(t *testing.T) {
 		In:    &TestTransferable{},
 	})
 
-	if IsSortedAndUniqueTransferableInputs(ins) {
+	if utils.IsSortedAndUniqueSortable(ins) {
 		t.Fatalf("Shouldn't be unique")
 	}
 }

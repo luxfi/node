@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -7,17 +7,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/luxd/api"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/formatting/address"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/rpc"
-	"github.com/luxdefi/luxd/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/api"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
 
-	platformapi "github.com/luxdefi/luxd/vms/platformvm/api"
+	platformapi "github.com/ava-labs/avalanchego/vms/platformvm/api"
 )
 
 var _ Client = (*client)(nil)
@@ -65,7 +65,7 @@ type Client interface {
 	GetCurrentValidators(ctx context.Context, subnetID ids.ID, nodeIDs []ids.NodeID, options ...rpc.Option) ([]ClientPermissionlessValidator, error)
 	// GetPendingValidators returns the list of pending validators for subnet with ID [subnetID]
 	GetPendingValidators(ctx context.Context, subnetID ids.ID, nodeIDs []ids.NodeID, options ...rpc.Option) ([]interface{}, []interface{}, error)
-	// GetCurrentSupply returns an upper bound on the supply of LUX in the system
+	// GetCurrentSupply returns an upper bound on the supply of AVAX in the system
 	GetCurrentSupply(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, error)
 	// SampleValidators returns the nodeIDs of a sample of [sampleSize] validators from the current validator set for subnet with ID [subnetID]
 	SampleValidators(ctx context.Context, subnetID ids.ID, sampleSize uint16, options ...rpc.Option) ([]ids.NodeID, error)
@@ -122,8 +122,8 @@ type Client interface {
 		threshold uint32,
 		options ...rpc.Option,
 	) (ids.ID, error)
-	// ExportLUX issues an ExportTx transaction and returns the txID
-	ExportLUX(
+	// ExportAVAX issues an ExportTx transaction and returns the txID
+	ExportAVAX(
 		ctx context.Context,
 		user api.UserPass,
 		from []ids.ShortID,
@@ -133,8 +133,8 @@ type Client interface {
 		amount uint64,
 		options ...rpc.Option,
 	) (ids.ID, error)
-	// ImportLUX issues an ImportTx transaction and returns the txID
-	ImportLUX(
+	// ImportAVAX issues an ImportTx transaction and returns the txID
+	ImportAVAX(
 		ctx context.Context,
 		user api.UserPass,
 		from []ids.ShortID,
@@ -178,15 +178,15 @@ type Client interface {
 		freq time.Duration,
 		options ...rpc.Option,
 	) (*GetTxStatusResponse, error)
-	// GetStake returns the amount of nLUX that [addrs] have cumulatively
+	// GetStake returns the amount of nAVAX that [addrs] have cumulatively
 	// staked on the Primary Network.
 	GetStake(ctx context.Context, addrs []ids.ShortID, options ...rpc.Option) (map[ids.ID]uint64, [][]byte, error)
-	// GetMinStake returns the minimum staking amount in nLUX for validators
+	// GetMinStake returns the minimum staking amount in nAVAX for validators
 	// and delegators respectively
 	GetMinStake(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, uint64, error)
-	// GetTotalStake returns the total amount (in nLUX) staked on the network
+	// GetTotalStake returns the total amount (in nAVAX) staked on the network
 	GetTotalStake(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, error)
-	// GetMaxStakeAmount returns the maximum amount of nLUX staking to the named
+	// GetMaxStakeAmount returns the maximum amount of nAVAX staking to the named
 	// node during the time period.
 	GetMaxStakeAmount(
 		ctx context.Context,
@@ -533,7 +533,7 @@ func (c *client) CreateSubnet(
 	return res.TxID, err
 }
 
-func (c *client) ExportLUX(
+func (c *client) ExportAVAX(
 	ctx context.Context,
 	user api.UserPass,
 	from []ids.ShortID,
@@ -544,7 +544,7 @@ func (c *client) ExportLUX(
 	options ...rpc.Option,
 ) (ids.ID, error) {
 	res := &api.JSONTxID{}
-	err := c.requester.SendRequest(ctx, "platform.exportLUX", &ExportLUXArgs{
+	err := c.requester.SendRequest(ctx, "platform.exportAVAX", &ExportAVAXArgs{
 		JSONSpendHeader: api.JSONSpendHeader{
 			UserPass:       user,
 			JSONFromAddrs:  api.JSONFromAddrs{From: ids.ShortIDsToStrings(from)},
@@ -557,7 +557,7 @@ func (c *client) ExportLUX(
 	return res.TxID, err
 }
 
-func (c *client) ImportLUX(
+func (c *client) ImportAVAX(
 	ctx context.Context,
 	user api.UserPass,
 	from []ids.ShortID,
@@ -567,7 +567,7 @@ func (c *client) ImportLUX(
 	options ...rpc.Option,
 ) (ids.ID, error) {
 	res := &api.JSONTxID{}
-	err := c.requester.SendRequest(ctx, "platform.importLUX", &ImportLUXArgs{
+	err := c.requester.SendRequest(ctx, "platform.importAVAX", &ImportAVAXArgs{
 		JSONSpendHeader: api.JSONSpendHeader{
 			UserPass:       user,
 			JSONFromAddrs:  api.JSONFromAddrs{From: ids.ShortIDsToStrings(from)},

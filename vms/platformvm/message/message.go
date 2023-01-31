@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -6,7 +6,7 @@ package message
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 var (
@@ -30,8 +30,13 @@ type Message interface {
 
 type message []byte
 
-func (m *message) initialize(bytes []byte) { *m = bytes }
-func (m *message) Bytes() []byte           { return *m }
+func (m *message) initialize(bytes []byte) {
+	*m = bytes
+}
+
+func (m *message) Bytes() []byte {
+	return *m
+}
 
 type Tx struct {
 	message

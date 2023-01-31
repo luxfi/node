@@ -1,13 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 // UnsignedTx is an unsigned transaction
@@ -16,12 +17,12 @@ type UnsignedTx interface {
 	// avm.
 	snow.ContextInitializable
 	secp256k1fx.UnsignedTx
-	Initialize(unsignedBytes []byte)
+	SetBytes(unsignedBytes []byte)
 
 	// InputIDs returns the set of inputs this transaction consumes
-	InputIDs() ids.Set
+	InputIDs() set.Set[ids.ID]
 
-	Outputs() []*lux.TransferableOutput
+	Outputs() []*avax.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
 	SyntacticVerify(ctx *snow.Context) error

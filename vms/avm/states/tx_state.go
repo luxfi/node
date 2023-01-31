@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package states
@@ -6,11 +6,11 @@ package states
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/cache/metercacher"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
 )
 
 const txCacheSize = 8192
@@ -71,7 +71,7 @@ func (s *txState) GetTx(txID ids.ID) (*txs.Tx, error) {
 	}
 
 	// The key was in the database
-	tx, err := s.parser.ParseGenesis(txBytes)
+	tx, err := s.parser.ParseGenesisTx(txBytes)
 	if err != nil {
 		return nil, err
 	}

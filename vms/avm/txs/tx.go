@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,16 +7,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/propertyfx"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var errNilTx = errors.New("nil tx is not valid")
@@ -24,14 +25,14 @@ var errNilTx = errors.New("nil tx is not valid")
 type UnsignedTx interface {
 	snow.ContextInitializable
 
-	Initialize(unsignedBytes []byte)
+	SetBytes(unsignedBytes []byte)
 	Bytes() []byte
 
-	ConsumedAssetIDs() ids.Set
-	AssetIDs() ids.Set
+	ConsumedAssetIDs() set.Set[ids.ID]
+	AssetIDs() set.Set[ids.ID]
 
 	NumCredentials() int
-	InputUTXOs() []*lux.UTXOID
+	InputUTXOs() []*avax.UTXOID
 
 	SyntacticVerify(
 		ctx *snow.Context,
@@ -58,20 +59,40 @@ type Tx struct {
 	bytes []byte
 }
 
-func (t *Tx) Initialize(unsignedBytes, signedBytes []byte) {
+func (t *Tx) Initialize(c codec.Manager) error {
+	signedBytes, err := c.Marshal(CodecVersion, t)
+	if err != nil {
+		return fmt.Errorf("problem creating transaction: %w", err)
+	}
+
+	unsignedBytesLen, err := c.Size(CodecVersion, &t.Unsigned)
+	if err != nil {
+		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
+	}
+
+	unsignedBytes := signedBytes[:unsignedBytesLen]
+	t.SetBytes(unsignedBytes, signedBytes)
+	return nil
+}
+
+func (t *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 	t.id = hashing.ComputeHash256Array(signedBytes)
 	t.bytes = signedBytes
-	t.Unsigned.Initialize(unsignedBytes)
+	t.Unsigned.SetBytes(unsignedBytes)
 }
 
 // ID returns the unique ID of this tx
-func (t *Tx) ID() ids.ID { return t.id }
+func (t *Tx) ID() ids.ID {
+	return t.id
+}
 
 // Bytes returns the binary representation of this tx
-func (t *Tx) Bytes() []byte { return t.bytes }
+func (t *Tx) Bytes() []byte {
+	return t.bytes
+}
 
 // UTXOs returns the UTXOs transaction is producing.
-func (t *Tx) UTXOs() []*lux.UTXO {
+func (t *Tx) UTXOs() []*avax.UTXO {
 	u := utxoGetter{tx: t}
 	// The visit error is explicitly dropped here because no error is ever
 	// returned from the utxoGetter.
@@ -136,7 +157,7 @@ func (t *Tx) SignSECP256K1Fx(c codec.Manager, signers [][]*crypto.PrivateKeySECP
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-	t.Initialize(unsignedBytes, signedBytes)
+	t.SetBytes(unsignedBytes, signedBytes)
 	return nil
 }
 
@@ -165,7 +186,7 @@ func (t *Tx) SignPropertyFx(c codec.Manager, signers [][]*crypto.PrivateKeySECP2
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-	t.Initialize(unsignedBytes, signedBytes)
+	t.SetBytes(unsignedBytes, signedBytes)
 	return nil
 }
 
@@ -194,6 +215,6 @@ func (t *Tx) SignNFTFx(c codec.Manager, signers [][]*crypto.PrivateKeySECP256K1R
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-	t.Initialize(unsignedBytes, signedBytes)
+	t.SetBytes(unsignedBytes, signedBytes)
 	return nil
 }

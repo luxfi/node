@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,23 +12,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/blocks"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/txs/mempool"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/mempool"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
-	blockexecutor "github.com/luxdefi/luxd/vms/platformvm/blocks/executor"
-	txbuilder "github.com/luxdefi/luxd/vms/platformvm/txs/builder"
-	txexecutor "github.com/luxdefi/luxd/vms/platformvm/txs/executor"
+	blockexecutor "github.com/ava-labs/avalanchego/vms/platformvm/blocks/executor"
+	txbuilder "github.com/ava-labs/avalanchego/vms/platformvm/txs/builder"
+	txexecutor "github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
 )
 
 // shows that a locally generated CreateChainTx can be added to mempool and then
@@ -39,33 +39,33 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	env := newEnvironment(t)
 	env.ctx.Lock.Lock()
 	defer func() {
-		if err := shutdownEnvironment(env); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(shutdownEnvironment(env))
 	}()
 
 	// add a tx to it
 	tx := getValidTx(env.txBuilder, t)
 	txID := tx.ID()
 
-	env.sender.SendAppGossipF = func(_ context.Context, b []byte) error { return nil }
+	env.sender.SendAppGossipF = func(context.Context, []byte) error {
+		return nil
+	}
 	err := env.Builder.AddUnverifiedTx(tx)
-	require.NoError(err, "couldn't add tx to mempool")
+	require.NoError(err)
 
 	has := env.mempool.Has(txID)
-	require.True(has, "valid tx not recorded into mempool")
+	require.True(has)
 
 	// show that build block include that tx and removes it from mempool
-	blkIntf, err := env.Builder.BuildBlock()
-	require.NoError(err, "couldn't build block out of mempool")
+	blkIntf, err := env.Builder.BuildBlock(context.Background())
+	require.NoError(err)
 
 	blk, ok := blkIntf.(*blockexecutor.Block)
-	require.True(ok, "expected standard block")
-	require.Len(blk.Txs(), 1, "standard block should include a single transaction")
-	require.Equal(txID, blk.Txs()[0].ID(), "standard block does not include expected transaction")
+	require.True(ok)
+	require.Len(blk.Txs(), 1)
+	require.Equal(txID, blk.Txs()[0].ID())
 
 	has = env.mempool.Has(txID)
-	require.False(has, "tx included in block is still recorded into mempool")
+	require.False(has)
 }
 
 func TestPreviouslyDroppedTxsCanBeReAddedToMempool(t *testing.T) {
@@ -74,9 +74,7 @@ func TestPreviouslyDroppedTxsCanBeReAddedToMempool(t *testing.T) {
 	env := newEnvironment(t)
 	env.ctx.Lock.Lock()
 	defer func() {
-		if err := shutdownEnvironment(env); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(shutdownEnvironment(env))
 	}()
 
 	// create candidate tx
@@ -111,9 +109,7 @@ func TestNoErrorOnUnexpectedSetPreferenceDuringBootstrapping(t *testing.T) {
 	env.isBootstrapped.SetValue(false)
 	env.ctx.Log = logging.NoWarn{}
 	defer func() {
-		if err := shutdownEnvironment(env); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, shutdownEnvironment(env))
 	}()
 
 	env.Builder.SetPreference(ids.GenerateTestID()) // should not panic
@@ -290,8 +286,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 			defer ctrl.Finish()
 
 			state := tt.stateF(ctrl)
-			b := builder{}
-			txID, shouldReward, err := b.getNextStakerToReward(tt.timestamp, state)
+			txID, shouldReward, err := getNextStakerToReward(tt.timestamp, state)
 			if tt.expectedErr != nil {
 				require.Equal(tt.expectedErr, err)
 				return
@@ -307,8 +302,8 @@ func TestBuildBlock(t *testing.T) {
 	var (
 		parentID = ids.GenerateTestID()
 		height   = uint64(1337)
-		output   = &lux.TransferableOutput{
-			Asset: lux.Asset{ID: ids.GenerateTestID()},
+		output   = &avax.TransferableOutput{
+			Asset: avax.Asset{ID: ids.GenerateTestID()},
 			Out: &secp256k1fx.TransferOutput{
 				OutputOwners: secp256k1fx.OutputOwners{
 					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
@@ -319,22 +314,22 @@ func TestBuildBlock(t *testing.T) {
 		parentTimestamp = now.Add(-2 * time.Second)
 		transactions    = []*txs.Tx{{
 			Unsigned: &txs.AddValidatorTx{
-				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-					Ins: []*lux.TransferableInput{{
-						Asset: lux.Asset{ID: ids.GenerateTestID()},
+				BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+					Ins: []*avax.TransferableInput{{
+						Asset: avax.Asset{ID: ids.GenerateTestID()},
 						In: &secp256k1fx.TransferInput{
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{0},
 							},
 						},
 					}},
-					Outs: []*lux.TransferableOutput{output},
+					Outs: []*avax.TransferableOutput{output},
 				}},
 				Validator: validator.Validator{
 					// Shouldn't be dropped
 					Start: uint64(now.Add(2 * txexecutor.SyncBound).Unix()),
 				},
-				StakeOuts: []*lux.TransferableOutput{output},
+				StakeOuts: []*avax.TransferableOutput{output},
 				RewardsOwner: &secp256k1fx.OutputOwners{
 					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
 				},
@@ -494,7 +489,7 @@ func TestBuildBlock(t *testing.T) {
 				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
 				return s
 			},
-			expectedBlkF: func(require *require.Assertions) blocks.Block {
+			expectedBlkF: func(*require.Assertions) blocks.Block {
 				return nil
 			},
 			expectedErr: errNoPendingBlocks,

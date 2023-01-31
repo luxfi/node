@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package stakeable
@@ -6,7 +6,7 @@ package stakeable
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 var (
@@ -16,11 +16,11 @@ var (
 
 type LockOut struct {
 	Locktime             uint64 `serialize:"true" json:"locktime"`
-	lux.TransferableOut `serialize:"true" json:"output"`
+	avax.TransferableOut `serialize:"true" json:"output"`
 }
 
 func (s *LockOut) Addresses() [][]byte {
-	if addressable, ok := s.TransferableOut.(lux.Addressable); ok {
+	if addressable, ok := s.TransferableOut.(avax.Addressable); ok {
 		return addressable.Addresses()
 	}
 	return nil
@@ -38,7 +38,7 @@ func (s *LockOut) Verify() error {
 
 type LockIn struct {
 	Locktime            uint64 `serialize:"true" json:"locktime"`
-	lux.TransferableIn `serialize:"true" json:"input"`
+	avax.TransferableIn `serialize:"true" json:"input"`
 }
 
 func (s *LockIn) Verify() error {

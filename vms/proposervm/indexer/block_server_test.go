@@ -1,14 +1,15 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
 
 import (
+	"context"
 	"errors"
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 )
 
 var (
@@ -25,13 +26,13 @@ type TestBlockServer struct {
 	CantGetFullPostForkBlock bool
 	CantCommit               bool
 
-	GetFullPostForkBlockF func(blkID ids.ID) (snowman.Block, error)
+	GetFullPostForkBlockF func(ctx context.Context, blkID ids.ID) (snowman.Block, error)
 	CommitF               func() error
 }
 
-func (tsb *TestBlockServer) GetFullPostForkBlock(blkID ids.ID) (snowman.Block, error) {
+func (tsb *TestBlockServer) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
 	if tsb.GetFullPostForkBlockF != nil {
-		return tsb.GetFullPostForkBlockF(blkID)
+		return tsb.GetFullPostForkBlockF(ctx, blkID)
 	}
 	if tsb.CantGetFullPostForkBlock && tsb.T != nil {
 		tsb.T.Fatal(errGetWrappingBlk)

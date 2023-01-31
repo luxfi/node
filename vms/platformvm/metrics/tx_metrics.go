@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 var _ txs.Visitor = (*txMetrics)(nil)
@@ -93,12 +93,12 @@ func (m *txMetrics) CreateSubnetTx(*txs.CreateSubnetTx) error {
 	return nil
 }
 
-func (m *txMetrics) ImportTx(tx *txs.ImportTx) error {
+func (m *txMetrics) ImportTx(*txs.ImportTx) error {
 	m.numImportTxs.Inc()
 	return nil
 }
 
-func (m *txMetrics) ExportTx(tx *txs.ExportTx) error {
+func (m *txMetrics) ExportTx(*txs.ExportTx) error {
 	m.numExportTxs.Inc()
 	return nil
 }

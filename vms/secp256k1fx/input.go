@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -6,8 +6,8 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/math"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/math"
 )
 
 const (
@@ -36,7 +36,7 @@ func (in *Input) Verify() error {
 	switch {
 	case in == nil:
 		return errNilInput
-	case !utils.IsSortedAndUniqueUint32(in.SigIndices):
+	case !utils.IsSortedAndUniqueOrdered(in.SigIndices):
 		return errNotSortedUnique
 	default:
 		return nil

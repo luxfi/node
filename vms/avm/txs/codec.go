@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,11 +6,11 @@ package txs
 import (
 	"reflect"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -43,6 +43,14 @@ type fxVM struct {
 	codecRegistry codec.Registry
 }
 
-func (vm *fxVM) Clock() *mockable.Clock        { return vm.clock }
-func (vm *fxVM) CodecRegistry() codec.Registry { return vm.codecRegistry }
-func (vm *fxVM) Logger() logging.Logger        { return vm.log }
+func (vm *fxVM) Clock() *mockable.Clock {
+	return vm.clock
+}
+
+func (vm *fxVM) CodecRegistry() codec.Registry {
+	return vm.codecRegistry
+}
+
+func (vm *fxVM) Logger() logging.Logger {
+	return vm.log
+}

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,11 +6,12 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -38,9 +39,11 @@ func (t *OperationTx) InitCtx(ctx *snow.Context) {
 
 // Operations track which ops this transaction is performing. The returned array
 // should not be modified.
-func (t *OperationTx) Operations() []*Operation { return t.Ops }
+func (t *OperationTx) Operations() []*Operation {
+	return t.Ops
+}
 
-func (t *OperationTx) InputUTXOs() []*lux.UTXOID {
+func (t *OperationTx) InputUTXOs() []*avax.UTXOID {
 	utxos := t.BaseTx.InputUTXOs()
 	for _, op := range t.Ops {
 		utxos = append(utxos, op.UTXOIDs...)
@@ -49,7 +52,7 @@ func (t *OperationTx) InputUTXOs() []*lux.UTXOID {
 }
 
 // ConsumedAssetIDs returns the IDs of the assets this transaction consumes
-func (t *OperationTx) ConsumedAssetIDs() ids.Set {
+func (t *OperationTx) ConsumedAssetIDs() set.Set[ids.ID] {
 	assets := t.AssetIDs()
 	for _, op := range t.Ops {
 		if len(op.UTXOIDs) > 0 {
@@ -60,7 +63,7 @@ func (t *OperationTx) ConsumedAssetIDs() ids.Set {
 }
 
 // AssetIDs returns the IDs of the assets this transaction depends on
-func (t *OperationTx) AssetIDs() ids.Set {
+func (t *OperationTx) AssetIDs() set.Set[ids.ID] {
 	assets := t.BaseTx.AssetIDs()
 	for _, op := range t.Ops {
 		assets.Add(op.AssetID())
@@ -93,13 +96,13 @@ func (t *OperationTx) SyntacticVerify(
 		return err
 	}
 
-	inputs := ids.NewSet(len(t.Ins))
+	inputs := set.NewSet[ids.ID](len(t.Ins))
 	for _, in := range t.Ins {
 		inputs.Add(in.InputID())
 	}
 
 	for _, op := range t.Ops {
-		if err := op.Verify(c); err != nil {
+		if err := op.Verify(); err != nil {
 			return err
 		}
 		for _, utxoID := range op.UTXOIDs {

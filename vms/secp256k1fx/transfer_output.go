@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var (
@@ -36,7 +36,9 @@ func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 }
 
 // Amount returns the quantity of the asset this output consumes
-func (out *TransferOutput) Amount() uint64 { return out.Amt }
+func (out *TransferOutput) Amount() uint64 {
+	return out.Amt
+}
 
 func (out *TransferOutput) Verify() error {
 	switch {
@@ -49,6 +51,10 @@ func (out *TransferOutput) Verify() error {
 	}
 }
 
-func (out *TransferOutput) VerifyState() error { return out.Verify() }
+func (out *TransferOutput) VerifyState() error {
+	return out.Verify()
+}
 
-func (out *TransferOutput) Owners() interface{} { return &out.OutputOwners }
+func (out *TransferOutput) Owners() interface{} {
+	return &out.OutputOwners
+}

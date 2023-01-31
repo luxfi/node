@@ -1,18 +1,18 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/cache/metercacher"
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/linkeddb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/linkeddb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 const (

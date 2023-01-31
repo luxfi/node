@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,11 +6,11 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -28,7 +28,7 @@ type ExportTx struct {
 	DestinationChain ids.ID `serialize:"true" json:"destinationChain"`
 
 	// The outputs this transaction is sending to the other chain
-	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
+	ExportedOuts []*avax.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
 func (t *ExportTx) InitCtx(ctx *snow.Context) {
@@ -61,11 +61,11 @@ func (t *ExportTx) SyntacticVerify(
 		return err
 	}
 
-	return lux.VerifyTx(
+	return avax.VerifyTx(
 		txFee,
 		txFeeAssetID,
-		[][]*lux.TransferableInput{t.Ins},
-		[][]*lux.TransferableOutput{
+		[][]*avax.TransferableInput{t.Ins},
+		[][]*avax.TransferableOutput{
 			t.Outs,
 			t.ExportedOuts,
 		},

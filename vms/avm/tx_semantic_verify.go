@@ -1,12 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"context"
+
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var _ txs.Visitor = (*txSemanticVerify)(nil)
@@ -49,7 +51,7 @@ func (t *txSemanticVerify) ImportTx(tx *txs.ImportTx) error {
 		return nil
 	}
 
-	if err := verify.SameSubnet(t.vm.ctx, tx.SourceChain); err != nil {
+	if err := verify.SameSubnet(context.TODO(), t.vm.ctx, tx.SourceChain); err != nil {
 		return err
 	}
 
@@ -67,7 +69,7 @@ func (t *txSemanticVerify) ImportTx(tx *txs.ImportTx) error {
 	codec := t.vm.parser.Codec()
 	offset := tx.BaseTx.NumCredentials()
 	for i, in := range tx.ImportedIns {
-		utxo := lux.UTXO{}
+		utxo := avax.UTXO{}
 		if _, err := codec.Unmarshal(allUTXOBytes[i], &utxo); err != nil {
 			return err
 		}
@@ -84,7 +86,7 @@ func (t *txSemanticVerify) ImportTx(tx *txs.ImportTx) error {
 
 func (t *txSemanticVerify) ExportTx(tx *txs.ExportTx) error {
 	if t.vm.bootstrapped {
-		if err := verify.SameSubnet(t.vm.ctx, tx.DestinationChain); err != nil {
+		if err := verify.SameSubnet(context.TODO(), t.vm.ctx, tx.DestinationChain); err != nil {
 			return err
 		}
 	}

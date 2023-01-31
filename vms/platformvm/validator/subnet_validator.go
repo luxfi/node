@@ -1,14 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validator
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
 )
 
-// SubnetValidator validates a subnet on the LUX network.
+// SubnetValidator validates a subnet on the Avalanche network.
 type SubnetValidator struct {
 	Validator `serialize:"true"`
 
@@ -17,7 +17,9 @@ type SubnetValidator struct {
 }
 
 // SubnetID is the ID of the subnet this validator is validating
-func (v *SubnetValidator) SubnetID() ids.ID { return v.Subnet }
+func (v *SubnetValidator) SubnetID() ids.ID {
+	return v.Subnet
+}
 
 // Verify this validator is valid
 func (v *SubnetValidator) Verify() error {

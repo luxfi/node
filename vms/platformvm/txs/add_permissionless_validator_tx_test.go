@@ -1,10 +1,9 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"errors"
 	"math"
 	"testing"
 
@@ -12,16 +11,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/fx"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
-	"github.com/luxdefi/luxd/vms/platformvm/signer"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
@@ -48,7 +47,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
-		BaseTx: lux.BaseTx{
+		BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
@@ -61,8 +60,6 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that fails syntactic verification.
 	invalidBaseTx := BaseTx{}
-
-	errCustom := errors.New("custom error")
 
 	tests := []test{
 		{
@@ -114,9 +111,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					Validator: validator.Validator{
 						NodeID: ids.GenerateTestNodeID(),
 					},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -142,9 +139,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -172,9 +169,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: constants.PrimaryNetworkID,
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -195,7 +192,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fx.NewMockOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := lux.NewMockTransferableOut(ctrl)
+				stakeOut := avax.NewMockTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -205,9 +202,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: stakeOut,
@@ -233,9 +230,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -243,7 +240,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: ids.GenerateTestID(),
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -272,9 +269,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -282,7 +279,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -311,9 +308,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -321,7 +318,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -350,9 +347,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: ids.GenerateTestID(),
 					Signer: &signer.Empty{},
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -360,7 +357,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -389,9 +386,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 					Subnet: constants.PrimaryNetworkID,
 					Signer: blsPOP,
-					StakeOuts: []*lux.TransferableOutput{
+					StakeOuts: []*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -399,7 +396,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 							},
 						},
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -418,26 +415,24 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)
-			require.ErrorIs(err, tt.err)
+			require.ErrorIs(t, err, tt.err)
 		})
 	}
 
 	t.Run("invalid BaseTx", func(t *testing.T) {
-		require := require.New(t)
 		tx := &AddPermissionlessValidatorTx{
 			BaseTx: invalidBaseTx,
 			Validator: validator.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 			},
-			StakeOuts: []*lux.TransferableOutput{
+			StakeOuts: []*avax.TransferableOutput{
 				{
-					Asset: lux.Asset{
+					Asset: avax.Asset{
 						ID: ids.GenerateTestID(),
 					},
 					Out: &secp256k1fx.TransferOutput{
@@ -448,11 +443,10 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			DelegationShares: reward.PercentDenominator,
 		}
 		err := tx.SyntacticVerify(ctx)
-		require.Error(err)
+		require.Error(t, err)
 	})
 
 	t.Run("stake overflow", func(t *testing.T) {
-		require := require.New(t)
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -467,9 +461,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			},
 			Subnet: ids.GenerateTestID(),
 			Signer: &signer.Empty{},
-			StakeOuts: []*lux.TransferableOutput{
+			StakeOuts: []*avax.TransferableOutput{
 				{
-					Asset: lux.Asset{
+					Asset: avax.Asset{
 						ID: assetID,
 					},
 					Out: &secp256k1fx.TransferOutput{
@@ -477,7 +471,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					},
 				},
 				{
-					Asset: lux.Asset{
+					Asset: avax.Asset{
 						ID: assetID,
 					},
 					Out: &secp256k1fx.TransferOutput{
@@ -490,7 +484,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			DelegationShares:      reward.PercentDenominator,
 		}
 		err := tx.SyntacticVerify(ctx)
-		require.Error(err)
+		require.Error(t, err)
 	})
 }
 

@@ -1,20 +1,21 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
+	"context"
 	"math"
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestSetsAndGets(t *testing.T) {
@@ -25,7 +26,7 @@ func TestSetsAndGets(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestVerifiable{})
+					return vm.CodecRegistry().RegisterType(&avax.TestVerifiable{})
 				},
 			},
 		}},
@@ -33,7 +34,7 @@ func TestSetsAndGets(t *testing.T) {
 	)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -41,27 +42,27 @@ func TestSetsAndGets(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	utxo := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: lux.Asset{ID: ids.Empty},
-		Out:   &lux.TestVerifiable{},
+		Asset: avax.Asset{ID: ids.Empty},
+		Out:   &avax.TestVerifiable{},
 	}
 	utxoID := utxo.InputID()
 
-	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
 		NetworkID:    networkID,
 		BlockchainID: chainID,
-		Ins: []*lux.TransferableInput{{
-			UTXOID: lux.UTXOID{
+		Ins: []*avax.TransferableInput{{
+			UTXOID: avax.UTXOID{
 				TxID:        ids.Empty,
 				OutputIndex: 0,
 			},
-			Asset: lux.Asset{ID: assetID},
+			Asset: avax.Asset{ID: assetID},
 			In: &secp256k1fx.TransferInput{
-				Amt: 20 * units.KiloLux,
+				Amt: 20 * units.KiloAvax,
 				Input: secp256k1fx.Input{
 					SigIndices: []uint32{
 						0,
@@ -116,7 +117,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestVerifiable{})
+					return vm.CodecRegistry().RegisterType(&avax.TestVerifiable{})
 				},
 			},
 		}},
@@ -124,7 +125,7 @@ func TestFundingNoAddresses(t *testing.T) {
 	)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -132,13 +133,13 @@ func TestFundingNoAddresses(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	utxo := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: lux.Asset{ID: ids.Empty},
-		Out:   &lux.TestVerifiable{},
+		Asset: avax.Asset{ID: ids.Empty},
+		Out:   &avax.TestVerifiable{},
 	}
 
 	if err := state.PutUTXO(utxo); err != nil {
@@ -157,7 +158,7 @@ func TestFundingAddresses(t *testing.T) {
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
 					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestAddressable{})
+					return vm.CodecRegistry().RegisterType(&avax.TestAddressable{})
 				},
 			},
 		}},
@@ -165,7 +166,7 @@ func TestFundingAddresses(t *testing.T) {
 	)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -173,13 +174,13 @@ func TestFundingAddresses(t *testing.T) {
 
 	state := vm.state
 
-	utxo := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	utxo := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
-		Asset: lux.Asset{ID: ids.Empty},
-		Out: &lux.TestAddressable{
+		Asset: avax.Asset{ID: ids.Empty},
+		Out: &avax.TestAddressable{
 			Addrs: [][]byte{{0}},
 		},
 	}

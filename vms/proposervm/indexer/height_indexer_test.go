@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -11,15 +11,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowman"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/vms/proposervm/block"
-	"github.com/luxdefi/luxd/vms/proposervm/state"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/vms/proposervm/block"
+	"github.com/ava-labs/avalanchego/vms/proposervm/state"
 )
 
 func TestHeightBlockIndexPostFork(t *testing.T) {
@@ -68,14 +68,16 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(blkID ids.ID) (snowman.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
 			}
 			return blk, nil
 		},
-		CommitF: func() error { return nil },
+		CommitF: func() error {
+			return nil
+		},
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
@@ -146,14 +148,16 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(blkID ids.ID) (snowman.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
 			}
 			return blk, nil
 		},
-		CommitF: func() error { return nil },
+		CommitF: func() error {
+			return nil
+		},
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
@@ -228,14 +232,16 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(blkID ids.ID) (snowman.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
 			}
 			return blk, nil
 		},
-		CommitF: func() error { return nil },
+		CommitF: func() error {
+			return nil
+		},
 	}
 
 	hIndex := newHeightIndexer(blkSrv,

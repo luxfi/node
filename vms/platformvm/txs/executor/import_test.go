@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,22 +10,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestNewImportTx(t *testing.T) {
 	env := newEnvironment( /*postBanff*/ false)
 	defer func() {
-		if err := shutdownEnvironment(env); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, shutdownEnvironment(env))
 	}()
 
 	type test struct {
@@ -40,9 +38,8 @@ func TestNewImportTx(t *testing.T) {
 
 	factory := crypto.FactorySECP256K1R{}
 	sourceKeyIntf, err := factory.NewPrivateKey()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	sourceKey := sourceKeyIntf.(*crypto.PrivateKeySECP256K1R)
 
 	cnt := new(byte)
@@ -58,12 +55,12 @@ func TestNewImportTx(t *testing.T) {
 
 		for assetID, amt := range assets {
 			// #nosec G404
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        ids.GenerateTestID(),
 					OutputIndex: rand.Uint32(),
 				},
-				Asset: lux.Asset{ID: assetID},
+				Asset: avax.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amt,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -74,19 +71,24 @@ func TestNewImportTx(t *testing.T) {
 				},
 			}
 			utxoBytes, err := txs.Codec.Marshal(txs.Version, utxo)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			inputID := utxo.InputID()
-			if err := peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{env.ctx.ChainID: {PutRequests: []*atomic.Element{{
-				Key:   inputID[:],
-				Value: utxoBytes,
-				Traits: [][]byte{
-					sourceKey.PublicKey().Address().Bytes(),
+			err = peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
+				env.ctx.ChainID: {
+					PutRequests: []*atomic.Element{
+						{
+							Key:   inputID[:],
+							Value: utxoBytes,
+							Traits: [][]byte{
+								sourceKey.PublicKey().Address().Bytes(),
+							},
+						},
+					},
 				},
-			}}}}); err != nil {
-				t.Fatal(err)
-			}
+			},
+			)
+			require.NoError(t, err)
 		}
 
 		return sm
@@ -101,7 +103,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.TxFee - 1,
+					env.ctx.AVAXAssetID: env.config.TxFee - 1,
 				},
 			),
 			sourceKeys: []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -113,7 +115,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.TxFee,
+					env.ctx.AVAXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:   []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -126,7 +128,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				cChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.TxFee,
+					env.ctx.AVAXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:   []*crypto.PrivateKeySECP256K1R{sourceKey},
@@ -135,12 +137,12 @@ func TestNewImportTx(t *testing.T) {
 			shouldVerify: true,
 		},
 		{
-			description:   "attempting to import non-lux from X-chain",
+			description:   "attempting to import non-avax from X-chain",
 			sourceChainID: env.ctx.XChainID,
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.TxFee,
+					env.ctx.AVAXAssetID: env.config.TxFee,
 					customAssetID:       1,
 				},
 			),
@@ -185,7 +187,7 @@ func TestNewImportTx(t *testing.T) {
 				totalOut += out.Out.Amount()
 			}
 
-			require.Equal(env.config.TxFee, totalIn-totalOut, "burned too much")
+			require.Equal(env.config.TxFee, totalIn-totalOut)
 
 			fakedState, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)

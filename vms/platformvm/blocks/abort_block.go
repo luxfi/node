@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -6,9 +6,9 @@ package blocks
 import (
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 var (
@@ -21,8 +21,13 @@ type BanffAbortBlock struct {
 	ApricotAbortBlock `serialize:"true"`
 }
 
-func (b *BanffAbortBlock) Timestamp() time.Time  { return time.Unix(int64(b.Time), 0) }
-func (b *BanffAbortBlock) Visit(v Visitor) error { return v.BanffAbortBlock(b) }
+func (b *BanffAbortBlock) Timestamp() time.Time {
+	return time.Unix(int64(b.Time), 0)
+}
+
+func (b *BanffAbortBlock) Visit(v Visitor) error {
+	return v.BanffAbortBlock(b)
+}
 
 func NewBanffAbortBlock(
 	timestamp time.Time,
@@ -50,10 +55,15 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(ctx *snow.Context) {}
+func (*ApricotAbortBlock) InitCtx(*snow.Context) {}
 
-func (*ApricotAbortBlock) Txs() []*txs.Tx          { return nil }
-func (b *ApricotAbortBlock) Visit(v Visitor) error { return v.ApricotAbortBlock(b) }
+func (*ApricotAbortBlock) Txs() []*txs.Tx {
+	return nil
+}
+
+func (b *ApricotAbortBlock) Visit(v Visitor) error {
+	return v.ApricotAbortBlock(b)
+}
 
 // NewApricotAbortBlock is kept for testing purposes only.
 // Following Banff activation and subsequent code cleanup, Apricot Abort blocks

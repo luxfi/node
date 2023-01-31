@@ -1,19 +1,19 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
 	"bytes"
 	"errors"
 	"sort"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var (
@@ -25,8 +25,9 @@ var (
 	errNilTransferableFxInput = errors.New("nil transferable feature extension input is not valid")
 	errInputsNotSortedUnique  = errors.New("inputs not sorted and unique")
 
-	_ verify.Verifiable = (*TransferableOutput)(nil)
-	_ verify.Verifiable = (*TransferableInput)(nil)
+	_ verify.Verifiable                  = (*TransferableOutput)(nil)
+	_ verify.Verifiable                  = (*TransferableInput)(nil)
+	_ utils.Sortable[*TransferableInput] = (*TransferableInput)(nil)
 )
 
 // Amounter is a data structure that has an amount of something associated with it
@@ -72,7 +73,9 @@ func (out *TransferableOutput) InitCtx(ctx *snow.Context) {
 }
 
 // Output returns the feature extension output that this Output is using.
-func (out *TransferableOutput) Output() TransferableOut { return out.Out }
+func (out *TransferableOutput) Output() TransferableOut {
+	return out.Out
+}
 
 func (out *TransferableOutput) Verify() error {
 	switch {
@@ -114,8 +117,15 @@ func (outs *innerSortTransferableOutputs) Less(i, j int) bool {
 	}
 	return bytes.Compare(iBytes, jBytes) == -1
 }
-func (outs *innerSortTransferableOutputs) Len() int      { return len(outs.outs) }
-func (outs *innerSortTransferableOutputs) Swap(i, j int) { o := outs.outs; o[j], o[i] = o[i], o[j] }
+
+func (outs *innerSortTransferableOutputs) Len() int {
+	return len(outs.outs)
+}
+
+func (outs *innerSortTransferableOutputs) Swap(i, j int) {
+	o := outs.outs
+	o[j], o[i] = o[i], o[j]
+}
 
 // SortTransferableOutputs sorts output objects
 func SortTransferableOutputs(outs []*TransferableOutput, c codec.Manager) {
@@ -136,7 +146,9 @@ type TransferableInput struct {
 }
 
 // Input returns the feature extension input that this Input is using.
-func (in *TransferableInput) Input() TransferableIn { return in.In }
+func (in *TransferableInput) Input() TransferableIn {
+	return in.In
+}
 
 func (in *TransferableInput) Verify() error {
 	switch {
@@ -149,28 +161,8 @@ func (in *TransferableInput) Verify() error {
 	}
 }
 
-type innerSortTransferableInputs []*TransferableInput
-
-func (ins innerSortTransferableInputs) Less(i, j int) bool {
-	iID, iIndex := ins[i].InputSource()
-	jID, jIndex := ins[j].InputSource()
-
-	switch bytes.Compare(iID[:], jID[:]) {
-	case -1:
-		return true
-	case 0:
-		return iIndex < jIndex
-	default:
-		return false
-	}
-}
-func (ins innerSortTransferableInputs) Len() int      { return len(ins) }
-func (ins innerSortTransferableInputs) Swap(i, j int) { ins[j], ins[i] = ins[i], ins[j] }
-
-func SortTransferableInputs(ins []*TransferableInput) { sort.Sort(innerSortTransferableInputs(ins)) }
-
-func IsSortedAndUniqueTransferableInputs(ins []*TransferableInput) bool {
-	return utils.IsSortedAndUnique(innerSortTransferableInputs(ins))
+func (in *TransferableInput) Less(other *TransferableInput) bool {
+	return in.UTXOID.Less(&other.UTXOID)
 }
 
 type innerSortTransferableInputsWithSigners struct {
@@ -191,7 +183,11 @@ func (ins *innerSortTransferableInputsWithSigners) Less(i, j int) bool {
 		return false
 	}
 }
-func (ins *innerSortTransferableInputsWithSigners) Len() int { return len(ins.ins) }
+
+func (ins *innerSortTransferableInputsWithSigners) Len() int {
+	return len(ins.ins)
+}
+
 func (ins *innerSortTransferableInputsWithSigners) Swap(i, j int) {
 	ins.ins[j], ins.ins[i] = ins.ins[i], ins.ins[j]
 	ins.signers[j], ins.signers[i] = ins.signers[i], ins.signers[j]
@@ -201,12 +197,6 @@ func (ins *innerSortTransferableInputsWithSigners) Swap(i, j int) {
 // input's utxo ID
 func SortTransferableInputsWithSigners(ins []*TransferableInput, signers [][]*crypto.PrivateKeySECP256K1R) {
 	sort.Sort(&innerSortTransferableInputsWithSigners{ins: ins, signers: signers})
-}
-
-// IsSortedAndUniqueTransferableInputsWithSigners returns true if the inputs are
-// sorted and unique
-func IsSortedAndUniqueTransferableInputsWithSigners(ins []*TransferableInput, signers [][]*crypto.PrivateKeySECP256K1R) bool {
-	return utils.IsSortedAndUnique(&innerSortTransferableInputsWithSigners{ins: ins, signers: signers})
 }
 
 // VerifyTx verifies that the inputs and outputs flowcheck, including a fee.
@@ -243,7 +233,7 @@ func VerifyTx(
 			}
 			fc.Consume(in.AssetID(), in.Input().Amount())
 		}
-		if !IsSortedAndUniqueTransferableInputs(ins) {
+		if !utils.IsSortedAndUniqueSortable(ins) {
 			return errInputsNotSortedUnique
 		}
 	}

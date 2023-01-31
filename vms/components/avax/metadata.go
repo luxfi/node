@@ -1,14 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var (
@@ -33,13 +33,19 @@ func (md *Metadata) Initialize(unsignedBytes, bytes []byte) {
 }
 
 // ID returns the unique ID of this data
-func (md *Metadata) ID() ids.ID { return md.id }
+func (md *Metadata) ID() ids.ID {
+	return md.id
+}
 
 // UnsignedBytes returns the unsigned binary representation of this data
-func (md *Metadata) Bytes() []byte { return md.unsignedBytes }
+func (md *Metadata) Bytes() []byte {
+	return md.unsignedBytes
+}
 
 // Bytes returns the binary representation of this data
-func (md *Metadata) SignedBytes() []byte { return md.bytes }
+func (md *Metadata) SignedBytes() []byte {
+	return md.bytes
+}
 
 func (md *Metadata) Verify() error {
 	switch {

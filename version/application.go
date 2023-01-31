@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -24,7 +24,7 @@ type Application struct {
 }
 
 // The only difference here between Application and Semantic is that Application
-// prepends "lux/" rather than "v".
+// prepends "avalanche/" rather than "v".
 func (a *Application) String() string {
 	strIntf := a.str.Load()
 	if strIntf != nil {
@@ -32,7 +32,7 @@ func (a *Application) String() string {
 	}
 
 	str := fmt.Sprintf(
-		"lux/%d.%d.%d",
+		"avalanche/%d.%d.%d",
 		a.Major,
 		a.Minor,
 		a.Patch,

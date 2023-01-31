@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/status"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 var (
@@ -48,18 +48,13 @@ type diff struct {
 	cachedChains map[ids.ID][]*txs.Tx
 
 	// map of txID -> []*UTXO
-	addedRewardUTXOs map[ids.ID][]*lux.UTXO
+	addedRewardUTXOs map[ids.ID][]*avax.UTXO
 
 	// map of txID -> {*txs.Tx, Status}
 	addedTxs map[ids.ID]*txAndStatus
 
 	// map of modified UTXOID -> *UTXO if the UTXO is nil, it has been removed
-	modifiedUTXOs map[ids.ID]*utxoModification
-}
-
-type utxoModification struct {
-	utxoID ids.ID
-	utxo   *lux.UTXO
+	modifiedUTXOs map[ids.ID]*avax.UTXO
 }
 
 func NewDiff(
@@ -383,7 +378,7 @@ func (d *diff) AddTx(tx *txs.Tx, status status.Status) {
 	}
 }
 
-func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
+func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error) {
 	if utxos, exists := d.addedRewardUTXOs[txID]; exists {
 		return utxos, nil
 	}
@@ -395,14 +390,14 @@ func (d *diff) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
 	return parentState.GetRewardUTXOs(txID)
 }
 
-func (d *diff) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
+func (d *diff) AddRewardUTXO(txID ids.ID, utxo *avax.UTXO) {
 	if d.addedRewardUTXOs == nil {
-		d.addedRewardUTXOs = make(map[ids.ID][]*lux.UTXO)
+		d.addedRewardUTXOs = make(map[ids.ID][]*avax.UTXO)
 	}
 	d.addedRewardUTXOs[txID] = append(d.addedRewardUTXOs[txID], utxo)
 }
 
-func (d *diff) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
+func (d *diff) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
 	utxo, modified := d.modifiedUTXOs[utxoID]
 	if !modified {
 		parentState, ok := d.stateVersions.GetState(d.parentID)
@@ -411,36 +406,29 @@ func (d *diff) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 		}
 		return parentState.GetUTXO(utxoID)
 	}
-	if utxo.utxo == nil {
+	if utxo == nil {
 		return nil, database.ErrNotFound
 	}
-	return utxo.utxo, nil
+	return utxo, nil
 }
 
-func (d *diff) AddUTXO(utxo *lux.UTXO) {
-	newUTXO := &utxoModification{
-		utxoID: utxo.InputID(),
-		utxo:   utxo,
-	}
+func (d *diff) AddUTXO(utxo *avax.UTXO) {
 	if d.modifiedUTXOs == nil {
-		d.modifiedUTXOs = map[ids.ID]*utxoModification{
-			utxo.InputID(): newUTXO,
+		d.modifiedUTXOs = map[ids.ID]*avax.UTXO{
+			utxo.InputID(): utxo,
 		}
 	} else {
-		d.modifiedUTXOs[utxo.InputID()] = newUTXO
+		d.modifiedUTXOs[utxo.InputID()] = utxo
 	}
 }
 
 func (d *diff) DeleteUTXO(utxoID ids.ID) {
-	newUTXO := &utxoModification{
-		utxoID: utxoID,
-	}
 	if d.modifiedUTXOs == nil {
-		d.modifiedUTXOs = map[ids.ID]*utxoModification{
-			utxoID: newUTXO,
+		d.modifiedUTXOs = map[ids.ID]*avax.UTXO{
+			utxoID: nil,
 		}
 	} else {
-		d.modifiedUTXOs[utxoID] = newUTXO
+		d.modifiedUTXOs[utxoID] = nil
 	}
 }
 
@@ -510,11 +498,11 @@ func (d *diff) Apply(baseState State) {
 			baseState.AddRewardUTXO(txID, utxo)
 		}
 	}
-	for _, utxo := range d.modifiedUTXOs {
-		if utxo.utxo != nil {
-			baseState.AddUTXO(utxo.utxo)
+	for utxoID, utxo := range d.modifiedUTXOs {
+		if utxo != nil {
+			baseState.AddUTXO(utxo)
 		} else {
-			baseState.DeleteUTXO(utxo.utxoID)
+			baseState.DeleteUTXO(utxoID)
 		}
 	}
 }

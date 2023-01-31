@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // TODO: consider moving the network implementation to a separate package
@@ -12,12 +12,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/vms/platformvm/message"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/vms/platformvm/message"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 const (
@@ -57,37 +57,37 @@ func NewNetwork(
 	}
 }
 
-func (n *network) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
+func (*network) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-func (n *network) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+func (*network) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-func (n *network) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+func (*network) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-func (n *network) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (*network) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-func (n *network) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msgBytes []byte) error {
+func (*network) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-func (n *network) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, msgBytes []byte) error {
+func (*network) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
@@ -138,7 +138,7 @@ func (n *network) AppGossip(_ context.Context, nodeID ids.NodeID, msgBytes []byt
 	}
 
 	// add to mempool
-	if err = n.blkBuilder.AddUnverifiedTx(tx); err != nil {
+	if err := n.blkBuilder.AddUnverifiedTx(tx); err != nil {
 		n.ctx.Log.Debug("tx failed verification",
 			zap.Stringer("nodeID", nodeID),
 			zap.Error(err),

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,13 +8,13 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var (
@@ -24,19 +24,19 @@ var (
 )
 
 type Operation struct {
-	lux.Asset `serialize:"true"`
-	UTXOIDs    []*lux.UTXOID  `serialize:"true" json:"inputIDs"`
+	avax.Asset `serialize:"true"`
+	UTXOIDs    []*avax.UTXOID  `serialize:"true" json:"inputIDs"`
 	FxID       ids.ID          `serialize:"false" json:"fxID"`
 	Op         fxs.FxOperation `serialize:"true" json:"operation"`
 }
 
-func (op *Operation) Verify(c codec.Manager) error {
+func (op *Operation) Verify() error {
 	switch {
 	case op == nil:
 		return errNilOperation
 	case op.Op == nil:
 		return errNilFxOperation
-	case !lux.IsSortedAndUniqueUTXOIDs(op.UTXOIDs):
+	case !utils.IsSortedAndUniqueSortable(op.UTXOIDs):
 		return errNotSortedAndUniqueUTXOIDs
 	default:
 		return verify.All(&op.Asset, op.Op)
@@ -62,8 +62,15 @@ func (ops *innerSortOperation) Less(i, j int) bool {
 	}
 	return bytes.Compare(iBytes, jBytes) == -1
 }
-func (ops *innerSortOperation) Len() int      { return len(ops.ops) }
-func (ops *innerSortOperation) Swap(i, j int) { o := ops.ops; o[j], o[i] = o[i], o[j] }
+
+func (ops *innerSortOperation) Len() int {
+	return len(ops.ops)
+}
+
+func (ops *innerSortOperation) Swap(i, j int) {
+	o := ops.ops
+	o[j], o[i] = o[i], o[j]
+}
 
 func SortOperations(ops []*Operation, c codec.Manager) {
 	sort.Sort(&innerSortOperation{ops: ops, codec: c})
@@ -93,7 +100,11 @@ func (ops *innerSortOperationsWithSigners) Less(i, j int) bool {
 	}
 	return bytes.Compare(iBytes, jBytes) == -1
 }
-func (ops *innerSortOperationsWithSigners) Len() int { return len(ops.ops) }
+
+func (ops *innerSortOperationsWithSigners) Len() int {
+	return len(ops.ops)
+}
+
 func (ops *innerSortOperationsWithSigners) Swap(i, j int) {
 	ops.ops[j], ops.ops[i] = ops.ops[i], ops.ops[j]
 	ops.signers[j], ops.signers[i] = ops.signers[i], ops.signers[j]

@@ -1,22 +1,21 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 )
 
 func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
@@ -27,15 +26,14 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 	}
 
 	var (
-		networkID            = uint32(1337)
-		chainID              = ids.GenerateTestID()
-		errInvalidSubnetAuth = errors.New("invalid subnet auth")
+		networkID = uint32(1337)
+		chainID   = ids.GenerateTestID()
 	)
 
 	ctx := &snow.Context{
 		ChainID:     chainID,
 		NetworkID:   networkID,
-		LUXAssetID: ids.GenerateTestID(),
+		AVAXAssetID: ids.GenerateTestID(),
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -45,7 +43,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
-		BaseTx: lux.BaseTx{
+		BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
@@ -93,15 +91,15 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			err: errEmptyAssetID,
 		},
 		{
-			name: "LUX assetID",
+			name: "AVAX assetID",
 			txFunc: func(*gomock.Controller) *TransformSubnetTx {
 				return &TransformSubnetTx{
 					BaseTx:  validBaseTx,
 					Subnet:  ids.GenerateTestID(),
-					AssetID: ctx.LUXAssetID,
+					AssetID: ctx.AVAXAssetID,
 				}
 			},
-			err: errAssetIDCantBeLUX,
+			err: errAssetIDCantBeAVAX,
 		},
 		{
 			name: "initialSupply == 0",
@@ -405,18 +403,16 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)
-			require.ErrorIs(err, tt.err)
+			require.ErrorIs(t, err, tt.err)
 		})
 	}
 
 	t.Run("invalid BaseTx", func(t *testing.T) {
-		require := require.New(t)
 		tx := &TransformSubnetTx{
 			BaseTx:                   invalidBaseTx,
 			Subnet:                   ids.GenerateTestID(),
@@ -435,6 +431,6 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			UptimeRequirement:        reward.PercentDenominator,
 		}
 		err := tx.SyntacticVerify(ctx)
-		require.Error(err)
+		require.Error(t, err)
 	})
 }

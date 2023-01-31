@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package summary
@@ -6,7 +6,7 @@ package summary
 import (
 	"fmt"
 
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 func Parse(bytes []byte) (StateSummary, error) {

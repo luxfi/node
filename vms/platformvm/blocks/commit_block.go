@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -6,9 +6,9 @@ package blocks
 import (
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 var (
@@ -21,8 +21,13 @@ type BanffCommitBlock struct {
 	ApricotCommitBlock `serialize:"true"`
 }
 
-func (b *BanffCommitBlock) Timestamp() time.Time  { return time.Unix(int64(b.Time), 0) }
-func (b *BanffCommitBlock) Visit(v Visitor) error { return v.BanffCommitBlock(b) }
+func (b *BanffCommitBlock) Timestamp() time.Time {
+	return time.Unix(int64(b.Time), 0)
+}
+
+func (b *BanffCommitBlock) Visit(v Visitor) error {
+	return v.BanffCommitBlock(b)
+}
 
 func NewBanffCommitBlock(
 	timestamp time.Time,
@@ -50,10 +55,15 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotCommitBlock) InitCtx(ctx *snow.Context) {}
+func (*ApricotCommitBlock) InitCtx(*snow.Context) {}
 
-func (*ApricotCommitBlock) Txs() []*txs.Tx          { return nil }
-func (b *ApricotCommitBlock) Visit(v Visitor) error { return v.ApricotCommitBlock(b) }
+func (*ApricotCommitBlock) Txs() []*txs.Tx {
+	return nil
+}
+
+func (b *ApricotCommitBlock) Visit(v Visitor) error {
+	return v.ApricotCommitBlock(b)
+}
 
 func NewApricotCommitBlock(
 	parentID ids.ID,

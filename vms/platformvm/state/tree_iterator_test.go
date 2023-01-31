@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 func TestTreeIterator(t *testing.T) {
@@ -46,9 +46,8 @@ func TestTreeIterator(t *testing.T) {
 }
 
 func TestTreeIteratorNil(t *testing.T) {
-	require := require.New(t)
 	it := NewTreeIterator(nil)
-	require.False(it.Next())
+	require.False(t, it.Next())
 	it.Release()
 }
 

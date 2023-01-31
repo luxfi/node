@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ghttp
@@ -13,11 +13,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxdefi/luxd/proto/pb/http"
-	responsewriterpb "github.com/luxdefi/luxd/proto/pb/http/responsewriter"
+	httppb "github.com/ava-labs/avalanchego/proto/pb/http"
+	responsewriterpb "github.com/ava-labs/avalanchego/proto/pb/http/responsewriter"
 )
 
 var (
@@ -191,8 +191,7 @@ func (w *ResponseWriter) Header() http.Header {
 }
 
 func (w *ResponseWriter) Write(buf []byte) (int, error) {
-	w.body.Write(buf)
-	return len(buf), nil
+	return w.body.Write(buf)
 }
 
 func (w *ResponseWriter) WriteHeader(code int) {

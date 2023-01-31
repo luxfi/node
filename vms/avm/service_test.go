@@ -1,10 +1,11 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -16,37 +17,37 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/api"
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database/manager"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/formatting/address"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/sampler"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/index"
-	"github.com/luxdefi/luxd/vms/components/keystore"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/propertyfx"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/api"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/sampler"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/index"
+	"github.com/ava-labs/avalanchego/vms/components/keystore"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var testChangeAddr = ids.GenerateTestShortID()
 
 var testCases = []struct {
 	name      string
-	luxAsset bool
+	avaxAsset bool
 }{
-	{"genesis asset is LUX", true},
+	{"genesis asset is AVAX", true},
 	{"genesis asset is TEST", false},
 }
 
@@ -55,14 +56,14 @@ var testCases = []struct {
 // 2) the VM
 // 3) The service that wraps the VM
 // 4) atomic memory to use in tests
-func setup(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
+func setup(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
 	var genesisBytes []byte
 	var vm *VM
 	var m *atomic.Memory
 	var genesisTx *txs.Tx
-	if isLUXAsset {
+	if isAVAXAsset {
 		genesisBytes, _, vm, m = GenesisVM(t)
-		genesisTx = GetLUXTxFromGenesisTest(genesisBytes, t)
+		genesisTx = GetAVAXTxFromGenesisTest(genesisBytes, t)
 	} else {
 		genesisBytes, _, vm, m = setupTxFeeAssets(t)
 		genesisTx = GetCreateTxFromGenesisTest(t, genesisBytes, feeAssetName)
@@ -77,11 +78,11 @@ func setup(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, *atomic.Memory
 // 3) The service that wraps the VM
 // 4) Issuer channel
 // 5) atomic memory to use in tests
-func setupWithIssuer(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, chan common.Message) {
+func setupWithIssuer(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, chan common.Message) {
 	var genesisBytes []byte
 	var vm *VM
 	var issuer chan common.Message
-	if isLUXAsset {
+	if isAVAXAsset {
 		genesisBytes, issuer, vm, _ = GenesisVM(t)
 	} else {
 		genesisBytes, issuer, vm, _ = setupTxFeeAssets(t)
@@ -95,8 +96,8 @@ func setupWithIssuer(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, chan
 // 2) the VM
 // 3) The service that wraps the VM
 // 4) atomic memory to use in tests
-func setupWithKeys(t *testing.T, isLUXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
-	genesisBytes, vm, s, m, tx := setup(t, isLUXAsset)
+func setupWithKeys(t *testing.T, isAVAXAsset bool) ([]byte, *VM, *Service, *atomic.Memory, *txs.Tx) {
+	genesisBytes, vm, s, m, tx := setup(t, isAVAXAsset)
 
 	// Import the initially funded private keys
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, username, password)
@@ -151,7 +152,7 @@ func verifyTxFeeDeducted(t *testing.T, s *Service, fromAddrs []ids.ShortID, numT
 	fromAddrsStartBalance := startBalance * uint64(len(fromAddrs))
 
 	// Key: Address
-	// Value: LUX balance
+	// Value: AVAX balance
 	balances := map[ids.ShortID]uint64{}
 
 	for _, addr := range addrs { // get balances for all addresses
@@ -190,7 +191,7 @@ func verifyTxFeeDeducted(t *testing.T, s *Service, fromAddrs []ids.ShortID, numT
 func TestServiceIssueTx(t *testing.T) {
 	genesisBytes, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -220,7 +221,7 @@ func TestServiceIssueTx(t *testing.T) {
 func TestServiceGetTxStatus(t *testing.T) {
 	genesisBytes, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -273,7 +274,7 @@ func TestServiceGetTxStatus(t *testing.T) {
 func TestServiceGetBalanceStrict(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -288,12 +289,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 
 	// A UTXO with a 2 out of 2 multisig
 	// where one of the addresses is [addr]
-	twoOfTwoUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	twoOfTwoUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -333,12 +334,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
-	oneOfTwoUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	oneOfTwoUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -379,12 +380,12 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
 	now := vm.clock.Time()
-	futureUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	futureUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -430,7 +431,7 @@ func TestServiceGetTxs(t *testing.T) {
 	vm.addressTxsIndexer, err = index.NewIndexer(vm.db, vm.ctx.Log, "", prometheus.NewRegistry(), false)
 	require.NoError(t, err)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -470,7 +471,7 @@ func TestServiceGetTxs(t *testing.T) {
 func TestServiceGetAllBalances(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -484,12 +485,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 	}
 	// A UTXO with a 2 out of 2 multisig
 	// where one of the addresses is [addr]
-	twoOfTwoUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	twoOfTwoUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -526,12 +527,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
-	oneOfTwoUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	oneOfTwoUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -570,12 +571,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
 	now := vm.clock.Time()
-	futureUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	futureUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: assetID},
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -614,12 +615,12 @@ func TestServiceGetAllBalances(t *testing.T) {
 
 	// A UTXO for a different asset
 	otherAssetID := ids.GenerateTestID()
-	otherAssetUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{
+	otherAssetUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 0,
 		},
-		Asset: lux.Asset{ID: otherAssetID},
+		Asset: avax.Asset{ID: otherAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1337,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -663,7 +664,7 @@ func TestServiceGetAllBalances(t *testing.T) {
 func TestServiceGetTx(t *testing.T) {
 	_, vm, s, _, genesisTx := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -690,13 +691,13 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 	genesisBytes, vm, s, issuer := setupWithIssuer(t, true)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
 	}()
 
-	newTx := newLuxBaseTxWithOutputs(t, genesisBytes, vm)
+	newTx := newAvaxBaseTxWithOutputs(t, genesisBytes, vm)
 
 	txID, err := vm.IssueTx(newTx.Bytes())
 	if err != nil {
@@ -713,7 +714,8 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 1 {
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 1 {
 		t.Fatalf("Should have returned %d tx(s)", 1)
 	}
 
@@ -738,13 +740,13 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 	genesisBytes, vm, s, issuer := setupWithIssuer(t, true)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
 	}()
 
-	newTx := newLuxExportTxWithOutputs(t, genesisBytes, vm)
+	newTx := newAvaxExportTxWithOutputs(t, genesisBytes, vm)
 
 	txID, err := vm.IssueTx(newTx.Bytes())
 	if err != nil {
@@ -761,7 +763,8 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 1 {
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 1 {
 		t.Fatalf("Should have returned %d tx(s)", 1)
 	}
 
@@ -786,7 +789,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -795,6 +798,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -822,17 +826,17 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	txID, err := vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -849,7 +853,8 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 1 {
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 1 {
 		t.Fatalf("Should have returned %d tx(s)", 1)
 	}
 
@@ -876,7 +881,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -885,6 +890,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -912,19 +918,19 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -950,8 +956,9 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -981,7 +988,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -990,6 +997,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -1017,19 +1025,19 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1058,8 +1066,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -1088,7 +1097,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -1097,6 +1106,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -1124,19 +1134,19 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1162,8 +1172,9 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -1195,7 +1206,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -1204,6 +1215,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -1231,19 +1243,19 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1272,8 +1284,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -1303,7 +1316,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -1312,6 +1325,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -1339,19 +1353,19 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1376,8 +1390,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -1408,7 +1423,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	ctx := NewContext(t)
 	ctx.Lock.Lock()
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -1417,6 +1432,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	genesisBytes := BuildGenesisTest(t)
 	issuer := make(chan common.Message, 1)
 	err := vm.Initialize(
+		context.Background(),
 		ctx,
 		manager.NewMemDB(version.Semantic1_0_0),
 		genesisBytes,
@@ -1444,19 +1460,19 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	}
 	vm.batchTimeout = 0
 
-	err = vm.SetState(snow.Bootstrapping)
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = vm.SetState(snow.NormalOp)
+	err = vm.SetState(context.Background(), snow.NormalOp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	key := keys[0]
 
-	createAssetTx := newLuxCreateAssetTxWithOutputs(t, vm)
+	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, vm)
 	_, err = vm.IssueTx(createAssetTx.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -1485,8 +1501,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	}
 	ctx.Lock.Lock()
 
-	if txs := vm.PendingTxs(); len(txs) != 2 {
-		t.Fatalf("Should have returned %d tx(s)", 1)
+	txs := vm.PendingTxs(context.Background())
+	if len(txs) != 2 {
+		t.Fatalf("Should have returned %d tx(s)", 2)
 	}
 
 	reply := api.GetTxReply{}
@@ -1510,27 +1527,27 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	require.Contains(t, jsonString, "\"credentials\":[{\"fxID\":\"2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w\",\"credential\":{\"signatures\":[\"0x25b7ca14df108d4a32877bda4f10d84eda6d653c620f4c8d124265bdcf0ac91f45712b58b33f4b62a19698325a3c89adff214b77f772d9f311742860039abb5601\"]}},{\"fxID\":\"2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w\",\"credential\":{\"signatures\":[\"0x25b7ca14df108d4a32877bda4f10d84eda6d653c620f4c8d124265bdcf0ac91f45712b58b33f4b62a19698325a3c89adff214b77f772d9f311742860039abb5601\"]}}]")
 }
 
-func newLuxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	luxTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+func newAvaxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
+	avaxTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
 	key := keys[0]
-	tx := buildBaseTx(luxTx, vm, key)
+	tx := buildBaseTx(avaxTx, vm, key)
 	if err := tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*crypto.PrivateKeySECP256K1R{{key}}); err != nil {
 		t.Fatal(err)
 	}
 	return tx
 }
 
-func newLuxExportTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	luxTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+func newAvaxExportTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
+	avaxTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
 	key := keys[0]
-	tx := buildExportTx(luxTx, vm, key)
+	tx := buildExportTx(avaxTx, vm, key)
 	if err := tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*crypto.PrivateKeySECP256K1R{{key}}); err != nil {
 		t.Fatal(err)
 	}
 	return tx
 }
 
-func newLuxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
+func newAvaxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
 	key := keys[0]
 	tx := buildCreateAssetTx(key)
 	if err := vm.parser.InitializeTx(tx); err != nil {
@@ -1539,18 +1556,18 @@ func newLuxCreateAssetTxWithOutputs(t *testing.T, vm *VM) *txs.Tx {
 	return tx
 }
 
-func buildBaseTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
+func buildBaseTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.BaseTx{
-		BaseTx: lux.BaseTx{
+		BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Ins: []*lux.TransferableInput{{
-				UTXOID: lux.UTXOID{
-					TxID:        luxTx.ID(),
+			Ins: []*avax.TransferableInput{{
+				UTXOID: avax.UTXOID{
+					TxID:        avaxTx.ID(),
 					OutputIndex: 2,
 				},
-				Asset: lux.Asset{ID: luxTx.ID()},
+				Asset: avax.Asset{ID: avaxTx.ID()},
 				In: &secp256k1fx.TransferInput{
 					Amt: startBalance,
 					Input: secp256k1fx.Input{
@@ -1560,8 +1577,8 @@ func buildBaseTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.T
 					},
 				},
 			}},
-			Outs: []*lux.TransferableOutput{{
-				Asset: lux.Asset{ID: luxTx.ID()},
+			Outs: []*avax.TransferableOutput{{
+				Asset: avax.Asset{ID: avaxTx.ID()},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: startBalance - vm.TxFee,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1574,18 +1591,18 @@ func buildBaseTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.T
 	}}
 }
 
-func buildExportTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
+func buildExportTx(avaxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: lux.BaseTx{
+			BaseTx: avax.BaseTx{
 				NetworkID:    networkID,
 				BlockchainID: chainID,
-				Ins: []*lux.TransferableInput{{
-					UTXOID: lux.UTXOID{
-						TxID:        luxTx.ID(),
+				Ins: []*avax.TransferableInput{{
+					UTXOID: avax.UTXOID{
+						TxID:        avaxTx.ID(),
 						OutputIndex: 2,
 					},
-					Asset: lux.Asset{ID: luxTx.ID()},
+					Asset: avax.Asset{ID: avaxTx.ID()},
 					In: &secp256k1fx.TransferInput{
 						Amt:   startBalance,
 						Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -1594,8 +1611,8 @@ func buildExportTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs
 			},
 		},
 		DestinationChain: constants.PlatformChainID,
-		ExportedOuts: []*lux.TransferableOutput{{
-			Asset: lux.Asset{ID: luxTx.ID()},
+		ExportedOuts: []*avax.TransferableOutput{{
+			Asset: avax.Asset{ID: avaxTx.ID()},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: startBalance - vm.TxFee,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1609,7 +1626,7 @@ func buildExportTx(luxTx *txs.Tx, vm *VM, key *crypto.PrivateKeySECP256K1R) *txs
 
 func buildCreateAssetTx(key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.CreateAssetTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -1675,8 +1692,8 @@ func buildCreateAssetTx(key *crypto.PrivateKeySECP256K1R) *txs.Tx {
 
 func buildNFTxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex, groupID uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: lux.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*lux.UTXOID{{
+		Asset: avax.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*avax.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1696,8 +1713,8 @@ func buildNFTxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, ou
 
 func buildPropertyFxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: lux.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*lux.UTXOID{{
+		Asset: avax.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*avax.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1717,8 +1734,8 @@ func buildPropertyFxMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K
 
 func buildSecpMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, outputIndex uint32) *txs.Operation {
 	return &txs.Operation{
-		Asset: lux.Asset{ID: createAssetTx.ID()},
-		UTXOIDs: []*lux.UTXOID{{
+		Asset: avax.Asset{ID: createAssetTx.ID()},
+		UTXOIDs: []*avax.UTXOID{{
 			TxID:        createAssetTx.ID(),
 			OutputIndex: outputIndex,
 		}},
@@ -1748,7 +1765,7 @@ func buildSecpMintOp(createAssetTx *txs.Tx, key *crypto.PrivateKeySECP256K1R, ou
 
 func buildOperationTxWithOp(op ...*txs.Operation) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.OperationTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		}},
@@ -1759,7 +1776,7 @@ func buildOperationTxWithOp(op ...*txs.Operation) *txs.Tx {
 func TestServiceGetNilTx(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -1773,7 +1790,7 @@ func TestServiceGetNilTx(t *testing.T) {
 func TestServiceGetUnknownTx(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -1787,7 +1804,7 @@ func TestServiceGetUnknownTx(t *testing.T) {
 func TestServiceGetUTXOs(t *testing.T) {
 	_, vm, s, m, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -1799,11 +1816,11 @@ func TestServiceGetUTXOs(t *testing.T) {
 	numUTXOs := 10
 	// Put a bunch of UTXOs
 	for i := 0; i < numUTXOs; i++ {
-		utxo := &lux.UTXO{
-			UTXOID: lux.UTXOID{
+		utxo := &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+			Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1822,11 +1839,11 @@ func TestServiceGetUTXOs(t *testing.T) {
 	elems := make([]*atomic.Element, numUTXOs)
 	codec := vm.parser.Codec()
 	for i := range elems {
-		utxo := &lux.UTXO{
-			UTXOID: lux.UTXOID{
+		utxo := &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+			Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -2054,23 +2071,23 @@ func TestServiceGetUTXOs(t *testing.T) {
 func TestGetAssetDescription(t *testing.T) {
 	_, vm, s, _, genesisTx := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
 	}()
 
-	luxAssetID := genesisTx.ID()
+	avaxAssetID := genesisTx.ID()
 
 	reply := GetAssetDescriptionReply{}
 	err := s.GetAssetDescription(nil, &GetAssetDescriptionArgs{
-		AssetID: luxAssetID.String(),
+		AssetID: avaxAssetID.String(),
 	}, &reply)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if reply.Name != "LUX" {
+	if reply.Name != "AVAX" {
 		t.Fatalf("Wrong name returned from GetAssetDescription %s", reply.Name)
 	}
 	if reply.Symbol != "SYMB" {
@@ -2081,13 +2098,13 @@ func TestGetAssetDescription(t *testing.T) {
 func TestGetBalance(t *testing.T) {
 	_, vm, s, _, genesisTx := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
 	}()
 
-	luxAssetID := genesisTx.ID()
+	avaxAssetID := genesisTx.ID()
 
 	reply := GetBalanceReply{}
 	addrStr, err := vm.FormatLocalAddress(keys[0].PublicKey().Address())
@@ -2096,7 +2113,7 @@ func TestGetBalance(t *testing.T) {
 	}
 	err = s.GetBalance(nil, &GetBalanceArgs{
 		Address: addrStr,
-		AssetID: luxAssetID.String(),
+		AssetID: avaxAssetID.String(),
 	}, &reply)
 	if err != nil {
 		t.Fatal(err)
@@ -2110,9 +2127,9 @@ func TestGetBalance(t *testing.T) {
 func TestCreateFixedCapAsset(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
 			defer func() {
-				if err := vm.Shutdown(); err != nil {
+				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 				vm.ctx.Lock.Unlock()
@@ -2159,9 +2176,9 @@ func TestCreateFixedCapAsset(t *testing.T) {
 func TestCreateVariableCapAsset(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
 			defer func() {
-				if err := vm.Shutdown(); err != nil {
+				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 				vm.ctx.Lock.Unlock()
@@ -2211,7 +2228,7 @@ func TestCreateVariableCapAsset(t *testing.T) {
 			if status := createAssetTx.Status(); status != choices.Processing {
 				t.Fatalf("CreateVariableCapAssetTx status should have been Processing, but was %s", status)
 			}
-			if err := createAssetTx.Accept(); err != nil {
+			if err := createAssetTx.Accept(context.Background()); err != nil {
 				t.Fatalf("Failed to accept CreateVariableCapAssetTx due to: %s", err)
 			}
 
@@ -2244,7 +2261,7 @@ func TestCreateVariableCapAsset(t *testing.T) {
 			if status := mintTx.Status(); status != choices.Processing {
 				t.Fatalf("MintTx status should have been Processing, but was %s", status)
 			}
-			if err := mintTx.Accept(); err != nil {
+			if err := mintTx.Accept(context.Background()); err != nil {
 				t.Fatalf("Failed to accept MintTx due to: %s", err)
 			}
 
@@ -2276,9 +2293,9 @@ func TestCreateVariableCapAsset(t *testing.T) {
 func TestNFTWorkflow(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, _ := setupWithKeys(t, tc.luxAsset)
+			_, vm, s, _, _ := setupWithKeys(t, tc.avaxAsset)
 			defer func() {
-				if err := vm.Shutdown(); err != nil {
+				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 				vm.ctx.Lock.Unlock()
@@ -2328,7 +2345,7 @@ func TestNFTWorkflow(t *testing.T) {
 			if createNFTTx.Status() != choices.Processing {
 				t.Fatalf("CreateNFTTx should have been processing after creating the NFT")
 			}
-			if err := createNFTTx.Accept(); err != nil {
+			if err := createNFTTx.Accept(context.Background()); err != nil {
 				t.Fatalf("Failed to accept CreateNFT transaction: %s", err)
 			} else if err := verifyTxFeeDeducted(t, s, fromAddrs, 1); err != nil {
 				t.Fatal(err)
@@ -2369,7 +2386,7 @@ func TestNFTWorkflow(t *testing.T) {
 			}
 
 			// Accept the transaction so that we can send the newly minted NFT
-			if err := mintNFTTx.Accept(); err != nil {
+			if err := mintNFTTx.Accept(context.Background()); err != nil {
 				t.Fatalf("Failed to accept MintNFTTx: %s", err)
 			}
 
@@ -2399,7 +2416,7 @@ func TestNFTWorkflow(t *testing.T) {
 func TestImportExportKey(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -2420,7 +2437,7 @@ func TestImportExportKey(t *testing.T) {
 		PrivateKey: sk,
 	}
 	importReply := &api.JSONAddress{}
-	if err = s.ImportKey(nil, importArgs, importReply); err != nil {
+	if err := s.ImportKey(nil, importArgs, importReply); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2436,7 +2453,7 @@ func TestImportExportKey(t *testing.T) {
 		Address: addrStr,
 	}
 	exportReply := &ExportKeyReply{}
-	if err = s.ExportKey(nil, exportArgs, exportReply); err != nil {
+	if err := s.ExportKey(nil, exportArgs, exportReply); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2449,7 +2466,7 @@ func TestImportAVMKeyNoDuplicates(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -2469,7 +2486,7 @@ func TestImportAVMKeyNoDuplicates(t *testing.T) {
 		PrivateKey: sk,
 	}
 	reply := api.JSONAddress{}
-	if err = s.ImportKey(nil, &args, &reply); err != nil {
+	if err := s.ImportKey(nil, &args, &reply); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2483,7 +2500,7 @@ func TestImportAVMKeyNoDuplicates(t *testing.T) {
 	}
 
 	reply2 := api.JSONAddress{}
-	if err = s.ImportKey(nil, &args, &reply2); err != nil {
+	if err := s.ImportKey(nil, &args, &reply2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2512,7 +2529,7 @@ func TestImportAVMKeyNoDuplicates(t *testing.T) {
 func TestSend(t *testing.T) {
 	_, vm, s, _, genesisTx := setupWithKeys(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -2567,9 +2584,9 @@ func TestSend(t *testing.T) {
 func TestSendMultiple(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, _, genesisTx := setupWithKeys(t, tc.luxAsset)
+			_, vm, s, _, genesisTx := setupWithKeys(t, tc.avaxAsset)
 			defer func() {
-				if err := vm.Shutdown(); err != nil {
+				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 				vm.ctx.Lock.Unlock()
@@ -2627,7 +2644,7 @@ func TestSendMultiple(t *testing.T) {
 				t.Fatal("Transaction ID returned by SendMultiple does not match the transaction found in vm's pending transactions")
 			}
 
-			if _, err = vm.GetTx(reply.TxID); err != nil {
+			if _, err := vm.GetTx(context.Background(), reply.TxID); err != nil {
 				t.Fatalf("Failed to retrieve created transaction: %s", err)
 			}
 		})
@@ -2637,7 +2654,7 @@ func TestSendMultiple(t *testing.T) {
 func TestCreateAndListAddresses(t *testing.T) {
 	_, vm, s, _, _ := setup(t, true)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -2676,9 +2693,9 @@ func TestCreateAndListAddresses(t *testing.T) {
 func TestImport(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, vm, s, m, genesisTx := setupWithKeys(t, tc.luxAsset)
+			_, vm, s, m, genesisTx := setupWithKeys(t, tc.avaxAsset)
 			defer func() {
-				if err := vm.Shutdown(); err != nil {
+				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 				vm.ctx.Lock.Unlock()
@@ -2686,9 +2703,9 @@ func TestImport(t *testing.T) {
 			assetID := genesisTx.ID()
 			addr0 := keys[0].PublicKey().Address()
 
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{TxID: ids.Empty},
-				Asset:  lux.Asset{ID: assetID},
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{TxID: ids.Empty},
+				Asset:  avax.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 7,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -2728,7 +2745,7 @@ func TestImport(t *testing.T) {
 			}
 			reply := &api.JSONTxID{}
 			if err := s.Import(nil, args, reply); err != nil {
-				t.Fatalf("Failed to import LUX due to %s", err)
+				t.Fatalf("Failed to import AVAX due to %s", err)
 			}
 		})
 	}
