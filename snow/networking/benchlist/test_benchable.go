@@ -6,7 +6,7 @@ package benchlist
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/ids"
 )
 
 type TestBenchable struct {

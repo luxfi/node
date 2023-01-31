@@ -18,11 +18,11 @@ import (
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD:snow/engine/avalanche/config.go
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/validators"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/snow"

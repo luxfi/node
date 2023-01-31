@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/set"
 )
 
 // Voter records chits received from [vdr] once its dependencies are met.

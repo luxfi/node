@@ -6,8 +6,8 @@ package common
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/set"
 )
 
 // Send a query composed partially of push queries and partially of pull queries.

@@ -6,7 +6,7 @@ package common
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/trace"
+	"github.com/luxdefi/node/trace"
 )
 
 var _ StateSyncer = (*tracedStateSyncer)(nil)

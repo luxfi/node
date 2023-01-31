@@ -6,15 +6,15 @@ package primary
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
-	"github.com/ava-labs/avalanchego/vms/avm"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/wallet/chain/p"
-	"github.com/ava-labs/avalanchego/wallet/chain/x"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/crypto/keychain"
+	"github.com/luxdefi/node/vms/avm"
+	"github.com/luxdefi/node/vms/platformvm"
+	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxdefi/node/wallet/chain/p"
+	"github.com/luxdefi/node/wallet/chain/x"
+	"github.com/luxdefi/node/wallet/subnet/primary/common"
 )
 
 var _ Wallet = (*wallet)(nil)

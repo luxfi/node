@@ -6,18 +6,18 @@ package primary
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/rpc"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/vms/avm"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/wallet/chain/p"
-	"github.com/ava-labs/avalanchego/wallet/chain/x"
+	"github.com/luxdefi/node/api/info"
+	"github.com/luxdefi/node/codec"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/rpc"
+	"github.com/luxdefi/node/utils/set"
+	"github.com/luxdefi/node/vms/avm"
+	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/platformvm"
+	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxdefi/node/wallet/chain/p"
+	"github.com/luxdefi/node/wallet/chain/x"
 )
 
 const (

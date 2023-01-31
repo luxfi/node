@@ -4,8 +4,8 @@
 package blocks
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/hashing"
 )
 
 // CommonBlock contains fields and methods common to all blocks in this VM.

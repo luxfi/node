@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/crypto/bls"
 )
 
 func TestMessage(t *testing.T) {

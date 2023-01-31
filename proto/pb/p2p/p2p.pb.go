@@ -636,8 +636,8 @@ func (x *Pong) GetSubnetUptimes() []*SubnetUptime {
 // tracked as a valid peer by the remote peer, the fields must be valid.
 // For instance, the network ID must be matched and timestamp should be in-sync.
 // Otherwise, the remote peer closes the connection.
-// ref. "avalanchego/network/peer#handleVersion"
-// ref. https://pkg.go.dev/github.com/ava-labs/avalanchego/network#Network "Dispatch"
+// ref. "node/network/peer#handleVersion"
+// ref. https://pkg.go.dev/github.com/luxdefi/node/network#Network "Dispatch"
 type Version struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -741,7 +741,7 @@ func (x *Version) GetTrackedSubnets() [][]byte {
 	return nil
 }
 
-// ref. https://pkg.go.dev/github.com/ava-labs/avalanchego/utils/ips#ClaimedIPPort
+// ref. https://pkg.go.dev/github.com/luxdefi/node/utils/ips#ClaimedIPPort
 type ClaimedIpPort struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -832,7 +832,7 @@ func (x *ClaimedIpPort) GetTxId() []byte {
 // Message that contains a list of peer information (IP, certs, etc.)
 // in response to "version" message, and sent periodically to a set of
 // validators.
-// ref. "avalanchego/network/network#Dispatch.runtTimers"
+// ref. "node/network/network#Dispatch.runtTimers"
 //
 // On receiving "peer_list", the engine starts/updates the tracking information
 // of the remote peer.
@@ -1259,7 +1259,7 @@ func (x *AcceptedStateSummary) GetSummaryIds() [][]byte {
 // accepted vertices that do not have any accepted descendants (i.e., frontier).
 //
 // During bootstrap, the local node sends out "get_accepted_frontier" to validators
-// (see "avalanchego/snow/engine/common/bootstrapper.Startup").
+// (see "node/snow/engine/common/bootstrapper.Startup").
 // And the expected response is "accepted_frontier".
 //
 // See "snow/engine/common/bootstrapper.go#AcceptedFrontier".
@@ -1415,7 +1415,7 @@ func (x *AcceptedFrontier) GetEngineType() EngineType {
 // Basically, sending the list of the accepted frontier and expects the response of
 // the accepted IDs from the remote peer.
 //
-// See "avalanchego/snow/engine/common/bootstrapper.Startup" and "sendGetAccepted".
+// See "node/snow/engine/common/bootstrapper.Startup" and "sendGetAccepted".
 // See "snow/engine/common/bootstrapper.go#AcceptedFrontier".
 type GetAccepted struct {
 	state         protoimpl.MessageState
@@ -1896,7 +1896,7 @@ func (x *Put) GetEngineType() EngineType {
 // in order to query other peers for their preferences of the container.
 // For example, when a new container is issued, the engine sends out
 // "push_query" and "pull_query" queries to ask other peers their preferences.
-// See "avalanchego/snow/engine/common#SendMixedQuery".
+// See "node/snow/engine/common#SendMixedQuery".
 //
 // On receiving the "push_query", the engine parses the incoming container
 // and tries to issue the container and all of its parents to the consensus,
@@ -1984,7 +1984,7 @@ func (x *PushQuery) GetEngineType() EngineType {
 // for their preferences of the container.
 // For example, when a new container is issued, the engine sends out
 // "push_query" and "pull_query" queries to ask other peers their preferences.
-// See "avalanchego/snow/engine/common#SendMixedQuery".
+// See "node/snow/engine/common#SendMixedQuery".
 type PullQuery struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

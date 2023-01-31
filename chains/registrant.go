@@ -4,7 +4,7 @@
 package chains
 
 import (
-	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/luxdefi/node/snow/engine/common"
 )
 
 // Registrant can register the existence of a chain

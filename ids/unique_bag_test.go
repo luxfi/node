@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/set"
 )
 
 func TestUniqueBag(t *testing.T) {

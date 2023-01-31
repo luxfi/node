@@ -10,8 +10,8 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/engine/snowman/block"
 )
 
 func (vm *blockVM) VerifyHeightIndex(ctx context.Context) error {

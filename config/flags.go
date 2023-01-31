@@ -13,13 +13,13 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/ava-labs/avalanchego/database/leveldb"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/ulimit"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxdefi/node/database/leveldb"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/genesis"
+	"github.com/luxdefi/node/trace"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/ulimit"
+	"github.com/luxdefi/node/utils/units"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 
 var (
 	// [defaultUnexpandedDataDir] will be expanded when reading the flags
-	defaultDataDir              = filepath.Join("$HOME", ".avalanchego")
+	defaultDataDir              = filepath.Join("$HOME", ".node")
 	defaultDBDir                = filepath.Join(defaultUnexpandedDataDir, "db")
 	defaultLogDir               = filepath.Join(defaultUnexpandedDataDir, "logs")
 	defaultProfileDir           = filepath.Join(defaultUnexpandedDataDir, "profiles")
@@ -356,7 +356,7 @@ func addNodeFlags(fs *flag.FlagSet) {
 	// TODO add flag to take in headers to send from exporter
 }
 
-// BuildFlagSet returns a complete set of flags for avalanchego
+// BuildFlagSet returns a complete set of flags for node
 func BuildFlagSet() *flag.FlagSet {
 	// TODO parse directly into a *pflag.FlagSet instead of into a *flag.FlagSet
 	// and then putting those into a *plag.FlagSet

@@ -11,14 +11,14 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/proto/pb/p2p"
-	"github.com/ava-labs/avalanchego/utils/compression"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/metric"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
+	"github.com/luxdefi/node/utils/compression"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/math"
+	"github.com/luxdefi/node/utils/metric"
+	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxdefi/node/utils/wrappers"
 )
 
 var (

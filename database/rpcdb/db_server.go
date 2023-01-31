@@ -11,10 +11,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/utils/units"
 
-	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxdefi/node/proto/pb/rpcdb"
 )
 
 const iterationBatchSize = 128 * units.KiB

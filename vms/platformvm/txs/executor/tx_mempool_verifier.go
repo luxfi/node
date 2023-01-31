@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/vms/platformvm/state"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
 var _ txs.Visitor = (*MempoolTxVerifier)(nil)

@@ -6,7 +6,7 @@ package snowman
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/luxdefi/node/snow/consensus/snowman"
 )
 
 var _ snowman.Block = (*memoryBlock)(nil)

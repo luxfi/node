@@ -9,10 +9,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/cb58"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/cb58"
+	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxdefi/node/utils/wrappers"
 )
 
 const nullStr = "null"

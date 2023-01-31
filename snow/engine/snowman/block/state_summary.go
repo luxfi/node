@@ -6,7 +6,7 @@ package block
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/ids"
 )
 
 // StateSummary represents all the information needed to download, verify, and

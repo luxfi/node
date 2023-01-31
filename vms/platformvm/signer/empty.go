@@ -4,7 +4,7 @@
 package signer
 
 import (
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/luxdefi/node/utils/crypto/bls"
 )
 
 var _ Signer = (*Empty)(nil)

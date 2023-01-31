@@ -6,9 +6,9 @@ package avalanche
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/engine/common"
 )
 
 // Engine describes the events that can occur on a consensus instance

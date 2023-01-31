@@ -10,14 +10,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/api/server"
-	"github.com/ava-labs/avalanchego/chains"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/ipcs"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/node/api"
+	"github.com/luxdefi/node/api/server"
+	"github.com/luxdefi/node/chains"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/ipcs"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/utils/json"
+	"github.com/luxdefi/node/utils/logging"
 )
 
 // IPCServer maintains the IPCs

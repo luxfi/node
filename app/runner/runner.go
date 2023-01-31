@@ -12,17 +12,17 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/ava-labs/avalanchego/app"
-	"github.com/ava-labs/avalanchego/app/process"
-	"github.com/ava-labs/avalanchego/node"
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/luxdefi/node/app"
+	"github.com/luxdefi/node/app/process"
+	"github.com/luxdefi/node/node"
+	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
 
-	appplugin "github.com/ava-labs/avalanchego/app/plugin"
+	appplugin "github.com/luxdefi/node/app/plugin"
 )
 
 // Run an AvalancheGo node.
 // If specified in the config, serves a hashicorp plugin that can be consumed by
-// the daemon (see avalanchego/main).
+// the daemon (see node/main).
 func Run(config Config, nodeConfig node.Config) {
 	nodeApp := process.NewApp(nodeConfig) // Create node wrapper
 	if config.PluginMode {                // Serve as a plugin

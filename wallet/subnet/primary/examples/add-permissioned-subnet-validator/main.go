@@ -8,13 +8,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/luxdefi/node/api/info"
+	"github.com/luxdefi/node/genesis"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/units"
+	"github.com/luxdefi/node/vms/platformvm/validator"
+	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxdefi/node/wallet/subnet/primary"
 )
 
 func main() {

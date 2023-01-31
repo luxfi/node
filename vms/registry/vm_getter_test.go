@@ -13,10 +13,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/filesystem"
-	"github.com/ava-labs/avalanchego/utils/resource"
-	"github.com/ava-labs/avalanchego/vms"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/filesystem"
+	"github.com/luxdefi/node/utils/resource"
+	"github.com/luxdefi/node/vms"
 )
 
 var (

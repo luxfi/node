@@ -12,7 +12,7 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 
 ./tests/e2e/e2e.test \
 --network-runner-grpc-endpoint="0.0.0.0:12340" \
---avalanchego-path=./build/avalanchego
+--node-path=./build/node
 ```
 
 See [`tests.e2e.sh`](../../scripts/tests.e2e.sh) for an example.

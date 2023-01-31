@@ -10,17 +10,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/vms/avm/fxs"
-	"github.com/ava-labs/avalanchego/vms/avm/txs"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/propertyfx"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/units"
+	"github.com/luxdefi/node/vms/avm/fxs"
+	"github.com/luxdefi/node/vms/avm/txs"
+	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/nftfx"
+	"github.com/luxdefi/node/vms/propertyfx"
+	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
 var (

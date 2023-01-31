@@ -6,7 +6,7 @@ package choices
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/utils/wrappers"
 )
 
 var errUnknownStatus = errors.New("unknown status")

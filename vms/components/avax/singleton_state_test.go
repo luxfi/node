@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/luxdefi/node/database/memdb"
 )
 
 func TestSingletonState(t *testing.T) {

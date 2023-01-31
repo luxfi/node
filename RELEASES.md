@@ -1,16 +1,16 @@
 # Release Notes
 
-## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
+## [v1.9.7](https://github.com/luxdefi/node/releases/tag/v1.9.7)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
 
 ### Fixes
 
 - Fixed subnet validator lookup regression
 
-## [v1.9.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.6)
+## [v1.9.6](https://github.com/luxdefi/node/releases/tag/v1.9.6)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
 
 ### Consensus
 
@@ -23,7 +23,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 ### Configs
 
 - Added `--plugin-dir` flag. The default value is `[DATADIR]/plugins`
-- Removed `--build-dir` flag. The location of the avalanchego binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
+- Removed `--build-dir` flag. The location of the node binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
 - Changed the default value of `--api-keystore-enabled` to `false`
 - Added `--track-subnets` flag as a replacement of `--whitelisted-subnets`
 
@@ -61,9 +61,9 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Added `SetLevel` to the `Logger` interface
 - Updated `auth` API to use the new `jwt` standard
 
-## [v1.9.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.5)
+## [v1.9.5](https://github.com/luxdefi/node/releases/tag/v1.9.5)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
 
 ### Subnet Messaging
 
@@ -99,9 +99,9 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Moved bit sets from the `ids` package to the `set` package
 - Added more wallet examples
 
-## [v1.9.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.4)
+## [v1.9.4](https://github.com/luxdefi/node/releases/tag/v1.9.4)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
 
 **This version modifies the db format. The db format is compatible with v1.9.3, but not v1.9.2 or earlier. After running a node with v1.9.4 attempting to run a node with a version earlier than v1.9.3 may report a fatal error on startup.**
 
@@ -160,7 +160,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 
 ### Chain Data
 
-- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside avalanchego's database
+- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside node's database
 - Added `--chain-data-dir` as a CLI flag to specify the base directory for all `ChainDataDir`s
 
 ### Miscellaneous
@@ -172,9 +172,9 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Converted all sorting to utilize generics
 - Converted all set management to utilize generics
 
-## [v1.9.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.3)
+## [v1.9.3](https://github.com/luxdefi/node/releases/tag/v1.9.3)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
 
 ### Tracing
 
@@ -231,7 +231,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 ### Documentation
 
 - Documented `Database.Put` invariant for `nil` and empty slices
-- Documented avalanchego's versioning scheme
+- Documented node's versioning scheme
 - Improved `vm.proto` docs
 
 ### Miscellaneous
@@ -241,15 +241,15 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Added `keychain.NewLedgerKeychainFromIndices`
 - Removed usage of `Temporary` error handling after `listener#Accept`
 - Removed `Parameters` from all `Consensus` interfaces
-- Updated `avalanche-network-runner` to `v1.3.0`
+- Updated `netrunner` to `v1.3.0`
 - Added `ids.BigBitSet` to extend `ids.BitSet64` for arbitrarily large sets
 - Added support for parsing future subnet uptime tracking data to the P-chain's state implementation
 - Increased validator set cache size
 - Added `avax.UTXOIDFromString` helper for managing `UTXOID`s more easily
 
-## [v1.9.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.2)
+## [v1.9.2](https://github.com/luxdefi/node/releases/tag/v1.9.2)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
 
 ### Coreth
 
@@ -262,7 +262,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Added `validators.State` to the rpcchainvm server's `snow.Context`
 - Added `rpcProtocolVersion` to the output of `info.getNodeVersion`
 - Added `rpcchainvm` protocol version to the output of the `--version` flag
-- Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against avalanchego versions
+- Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against node versions
 
 ### Builds
 
@@ -284,9 +284,9 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Simplified the `validators.Set` implementation
 - Added a warning if synchronous consensus messages take too long
 
-## [v1.9.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.1)
+## [v1.9.1](https://github.com/luxdefi/node/releases/tag/v1.9.1)
 
-This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `18`.
+This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `18`.
 
 ### Features
 
@@ -322,7 +322,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Converted empty struct usage to `nil` for interface compliance checks
 - Added CODEOWNERs to own first rounds of PR review
 
-## [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0)
+## [v1.9.0](https://github.com/luxdefi/node/releases/tag/v1.9.0)
 
 This upgrade adds support for creating Proof-of-Stake Subnets.
 
@@ -359,9 +359,9 @@ The supported plugin version is `17`.
 - Improved isolation and execution of the E2E tests
 - Updated the linked hashmap implementation to use generics
 
-## [v1.8.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.6)
+## [v1.8.6](https://github.com/luxdefi/node/releases/tag/v1.8.6)
 
-This version is backwards compatible to [v1.8.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0). It is optional, but encouraged. The supported plugin version is `16`.
+This version is backwards compatible to [v1.8.0](https://github.com/luxdefi/node/releases/tag/v1.8.0). It is optional, but encouraged. The supported plugin version is `16`.
 
 ### BLS
 
@@ -369,7 +369,7 @@ This version is backwards compatible to [v1.8.0](https://github.com/ava-labs/ava
 - Exposed BLS proof of possession in the `info.getNodeID` API
 - Added BLS proof of possession to `AddPermissionlessValidatorTx`s for the Primary Network
 
-The default value of `--staking-signer-key-file` is `~/.avalanchego/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
+The default value of `--staking-signer-key-file` is `~/.node/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
 
 ### Networking
 
@@ -391,7 +391,7 @@ The default value of `--staking-signer-key-file` is `~/.avalanchego/staking/sign
 
 - Added failure reason to bad block API
 
-## [v1.8.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.5)
+## [v1.8.5](https://github.com/luxdefi/node/releases/tag/v1.8.5)
 
 Please upgrade your node as soon as possible.
 
@@ -405,7 +405,7 @@ The supported plugin version is `16`.
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
-## [v1.8.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.4)
+## [v1.8.4](https://github.com/luxdefi/node/releases/tag/v1.8.4)
 
 Please upgrade your node as soon as possible.
 
@@ -421,7 +421,7 @@ The supported plugin version is `16`.
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
 
-## [v1.8.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.2)
+## [v1.8.2](https://github.com/luxdefi/node/releases/tag/v1.8.2)
 
 Please upgrade your node as soon as possible.
 
@@ -435,7 +435,7 @@ The supported plugin version is `16`.
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
 - Fixed typo in Chain Config `String` function
 
-## [v1.8.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.1)
+## [v1.8.1](https://github.com/luxdefi/node/releases/tag/v1.8.1)
 
 Please upgrade your node as soon as possible.
 
@@ -452,7 +452,7 @@ The supported plugin version is `16`.
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
 
-## [v1.8.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0)
+## [v1.8.0](https://github.com/luxdefi/node/releases/tag/v1.8.0)
 
 This is a mandatory security upgrade. Please upgrade your node **as soon as possible.**
 
@@ -550,9 +550,9 @@ The supported plugin version is `16`.
 - Migrated to go-ethereum v1.10.23
 - Added API to fetch Chain Config
 
-## [v1.7.18](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.18)
+## [v1.7.18](https://github.com/luxdefi/node/releases/tag/v1.7.18)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### Fixes
 
@@ -588,9 +588,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Added retries to windows CI installations
 - Removed useless ID aliasing during chain creation
 
-## [v1.7.17](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.17)
+## [v1.7.17](https://github.com/luxdefi/node/releases/tag/v1.7.17)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### VMs
 
@@ -624,17 +624,17 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Improved Snowman++ oracle block verification error messages
 - Removed deprecated or unused scripts
 
-## [v1.7.16](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.16)
+## [v1.7.16](https://github.com/luxdefi/node/releases/tag/v1.7.16)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### LevelDB
 
 - Fix rapid disk growth by manually specifying the maximum manifest file size
 
-## [v1.7.15](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.15)
+## [v1.7.15](https://github.com/luxdefi/node/releases/tag/v1.7.15)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged. The supported plugin version is `15`.
 
 ### PlatformVM
 
@@ -669,13 +669,13 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Cleaned up various dead parameters
 - Improved various tests
 
-## [v1.7.14](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.14)
+## [v1.7.14](https://github.com/luxdefi/node/releases/tag/v1.7.14)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using AvalancheGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/avalanchego/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using AvalancheGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -708,14 +708,14 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 
 - Fixed `--public-ip-resolution-frequency` invalid overwrite of the resolution service
 - Added additional metrics to distinguish between virtuous and rogue currently processing transactions
-- Suppressed the super cool `avalanchego` banner when `stdout` is not directed to a terminal
+- Suppressed the super cool `node` banner when `stdout` is not directed to a terminal
 - Updated linter version
 - Improved various comments and documentation
 - Standardized primary network handling across subnet maps
 
-## [v1.7.13](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.13)
+## [v1.7.13](https://github.com/luxdefi/node/releases/tag/v1.7.13)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### State Sync
 
@@ -739,9 +739,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Deprecated `--dynamic-update-duration` and `--dynamic-public-ip` CLI flags
 - Added `--public-ip-resolution-frequency` and `--public-ip-resolution-service` to replace `--dynamic-update-duration` and `--dynamic-public-ip`, respectively
 
-## [v1.7.12](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.12)
+## [v1.7.12](https://github.com/luxdefi/node/releases/tag/v1.7.12)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### State Sync
 
@@ -758,7 +758,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 ### Metrics
 
 - Added leveldb metrics
-- Added process and golang metrics for the avalanchego binary
+- Added process and golang metrics for the node binary
 - Added available disk space health check
   - Ensured that the disk space will not be fully utilized by shutting down the node if there is a critically low amount of free space remaining
 - Improved C-chain state sync metrics
@@ -782,9 +782,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Standardized json imports
 - Added vm factory interface checks
 
-## [v1.7.11](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.11)
+## [v1.7.11](https://github.com/luxdefi/node/releases/tag/v1.7.11)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 **The first startup of the C-Chain will cause an increase in CPU and IO usage due to an index update. This index update runs in the background and does not impact restart time.**
 
@@ -869,9 +869,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Updated issue template
 - Documented additional `snowman.Block` invariants
 
-## [v1.7.10](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.10)
+## [v1.7.10](https://github.com/luxdefi/node/releases/tag/v1.7.10)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -908,7 +908,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 
 - Added piping of subnet logs to stdout.
 - Lazily initialized logs to avoid opening files that are never written to.
-- Added support for arbitrarily deleted log files while avalanchego is running.
+- Added support for arbitrarily deleted log files while node is running.
 - Removed redundant logging configs.
 
 ### Miscellaneous
@@ -922,9 +922,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Simplified consensus engine `Shutdown` notification dispatching.
 - Removed `Sleep` call in the inbound connection throttler.
 
-## [v1.7.9](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.9)
+## [v1.7.9](https://github.com/luxdefi/node/releases/tag/v1.7.9)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Updates
 
@@ -934,9 +934,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Removed dead code from network packer.
 - Improved logging of invalid hash length errors.
 
-## [v1.7.8](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.8)
+## [v1.7.8](https://github.com/luxdefi/node/releases/tag/v1.7.8)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -965,9 +965,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Optimized various queue removals for improved memory freeing.
 - Added a basic X-chain E2E usage test to the new testing framework.
 
-## [v1.7.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.7)
+## [v1.7.7](https://github.com/luxdefi/node/releases/tag/v1.7.7)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Networking
 
@@ -1014,9 +1014,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Resolved the default log directory on initialization to avoid additional error handling.
 - Added support to the chain state module to specify an arbitrary new accepted block.
 
-## [v1.7.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.6)
+## [v1.7.6](https://github.com/luxdefi/node/releases/tag/v1.7.6)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
@@ -1049,9 +1049,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Extended chain shutdown timeout.
 - Performed various cleanup passes.
 
-## [v1.7.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.5)
+## [v1.7.5](https://github.com/luxdefi/node/releases/tag/v1.7.5)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
@@ -1080,9 +1080,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Fixed bug in BLOCKHASH opcode during traceBlock.
 - Fixed bug in handling updated chain config on startup.
 
-## [v1.7.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.4)
+## [v1.7.4](https://github.com/luxdefi/node/releases/tag/v1.7.4)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 **The first startup of the C-Chain will take a few minutes longer due to an index update.**
 
@@ -1134,9 +1134,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Separated health checks into `readiness`, `healthiness`, and `liveness` checks to support more fine-grained monitoring.
 - Refactored API client utilities to use a `Context` rather than an explicit timeout.
 
-## [v1.7.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.3)
+## [v1.7.3](https://github.com/luxdefi/node/releases/tag/v1.7.3)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Consensus
 
@@ -1164,9 +1164,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Fixed acceptance broadcasting over IPC.
 - Fixed 32-bit architecture builds for AvalancheGo (not Coreth).
 
-## [v1.7.2](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.2)
+## [v1.7.2](https://github.com/luxdefi/node/releases/tag/v1.7.2)
 
-This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
 ### Coreth
 
@@ -1196,9 +1196,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 
 - Fixed panic bug in logging library when importing from external projects.
 
-## [v1.7.1](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.1)
+## [v1.7.1](https://github.com/luxdefi/node/releases/tag/v1.7.1)
 
-This update is backwards compatible with [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
+This update is backwards compatible with [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
 
 ### Coreth
 
@@ -1208,7 +1208,7 @@ This update is backwards compatible with [v1.7.0](https://github.com/ava-labs/av
 
 - Fixed vote bubbling for unverified block chits.
 
-## [v1.7.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0)
+## [v1.7.0](https://github.com/luxdefi/node/releases/tag/v1.7.0)
 
 This upgrade adds support for issuing multiple atomic transactions into a single block and directly transferring assets between the P-chain and the C-chain.
 
@@ -1244,9 +1244,9 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 
 - Removed `--snow-epoch-first-transition` and `snow-epoch-duration` as command line arguments.
 
-## [v1.6.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.5)
+## [v1.6.5](https://github.com/luxdefi/node/releases/tag/v1.6.5)
 
-This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/node/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Bootstrapping
 
@@ -1267,9 +1267,9 @@ This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/ava
 - Added reported uptime to pong messages to be able to better track a local node's uptime as viewed by the network.
 - Refactored request timeout registry to avoid a potential race condition.
 
-## [v1.6.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.4)
+## [v1.6.4](https://github.com/luxdefi/node/releases/tag/v1.6.4)
 
-This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/node/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Config
 
@@ -1311,9 +1311,9 @@ This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/ava
 
 ---
 
-## [v1.6.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.3)
+## [v1.6.3](https://github.com/luxdefi/node/releases/tag/v1.6.3)
 
-This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0). It is optional, but encouraged.
+This version is backwards compatible to [v1.6.0](https://github.com/luxdefi/node/releases/tag/v1.6.0). It is optional, but encouraged.
 
 ### Config Options
 

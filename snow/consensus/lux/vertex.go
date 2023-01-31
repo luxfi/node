@@ -26,8 +26,8 @@ import (
 =======
 	"context"
 
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
 >>>>>>> 53a8245a8 (Update consensus)
 )
 

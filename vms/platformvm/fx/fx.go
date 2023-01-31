@@ -4,9 +4,9 @@
 package fx
 
 import (
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
 var _ Fx = (*secp256k1fx.Fx)(nil)

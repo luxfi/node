@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/set"
+	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond

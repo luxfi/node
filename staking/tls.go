@@ -17,8 +17,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/perms"
+	"github.com/luxdefi/node/utils/set"
 )
 
 var errDuplicateExtension = errors.New("duplicate certificate extension")

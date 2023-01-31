@@ -27,15 +27,15 @@ import (
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD:snow/engine/avalanche/state/unique_vertex_test.go
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/utils/compare"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/utils/compare"
+	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxdefi/node/version"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/database/memdb"

@@ -24,9 +24,9 @@ import (
 <<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 =======
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/ids"
 
-	sets "github.com/ava-labs/avalanchego/utils/set"
+	sets "github.com/luxdefi/node/utils/set"
 >>>>>>> 53a8245a8 (Update consensus)
 )
 

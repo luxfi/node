@@ -7,12 +7,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/sampler"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/math"
+	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxdefi/node/utils/wrappers"
 )
 
 // Proposer list constants

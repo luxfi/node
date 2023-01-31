@@ -4,8 +4,8 @@
 package sampler
 
 import (
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/math"
 )
 
 var (

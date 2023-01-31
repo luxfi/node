@@ -10,10 +10,10 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/trace"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/trace"
 )
 
 var _ Engine = (*tracedEngine)(nil)

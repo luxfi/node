@@ -9,10 +9,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/luxdefi/node/message"
+	"github.com/luxdefi/node/snow/networking/router"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/ips"
 )
 
 func ExampleStartTestPeer() {

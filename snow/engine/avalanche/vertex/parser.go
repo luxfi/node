@@ -6,8 +6,8 @@ package vertex
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/utils/hashing"
 )
 
 // Parser parses bytes into a vertex.

@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/luxdefi/node/api"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/json"
+	"github.com/luxdefi/node/utils/rpc"
 )
 
 type mockClient struct {

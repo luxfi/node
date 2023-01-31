@@ -4,9 +4,9 @@
 package network
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/networking/router"
+	"github.com/luxdefi/node/version"
 )
 
 var _ router.ExternalHandler = (*testHandler)(nil)

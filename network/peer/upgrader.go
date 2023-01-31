@@ -9,7 +9,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/ids"
 )
 
 var (

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/utils/set"
 )
 
 const (

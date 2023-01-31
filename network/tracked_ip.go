@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/luxdefi/node/utils/ips"
 )
 
 func init() {

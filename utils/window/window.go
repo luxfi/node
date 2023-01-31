@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/buffer"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/buffer"
+	"github.com/luxdefi/node/utils/timer/mockable"
 )
 
 var _ Window[struct{}] = (*window[struct{}])(nil)

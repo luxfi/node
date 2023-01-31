@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/database"
+	"github.com/luxdefi/node/database"
 )
 
 var (

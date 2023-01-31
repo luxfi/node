@@ -1,4 +1,4 @@
-module github.com/ava-labs/avalanchego
+module github.com/luxdefi/node
 
 // Changes to the minimum golang version must also be replicated in
 // scripts/build_avalanche.sh
@@ -11,9 +11,9 @@ go 1.18
 require (
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
-	github.com/ava-labs/coreth v0.11.6-rc.0
-	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
+	github.com/luxdefi/netrunner-sdk v0.3.0
+	github.com/luxdefi/coreth v0.11.6-rc.0
+	github.com/luxdefi/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837
 	github.com/golang-jwt/jwt/v4 v4.3.0

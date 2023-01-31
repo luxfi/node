@@ -27,8 +27,8 @@ import (
 	"testing"
 
 <<<<<<< HEAD:snow/engine/avalanche/vertex/test_storage.go
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
 =======
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/consensus/lux"

@@ -14,7 +14,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/utils/bloom"
+	"github.com/luxdefi/node/utils/bloom"
 )
 
 var (

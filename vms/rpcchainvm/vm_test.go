@@ -33,13 +33,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp"
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/utils/json"
+	"github.com/luxdefi/node/vms/rpcchainvm/ghttp"
+	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/ava-labs/avalanchego/proto/pb/http"
-	vmpb "github.com/ava-labs/avalanchego/proto/pb/vm"
+	httppb "github.com/luxdefi/node/proto/pb/http"
+	vmpb "github.com/luxdefi/node/proto/pb/vm"
 )
 
 var (

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/keychain"
+	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxdefi/node/utils/set"
+	"github.com/luxdefi/node/vms/components/verify"
 )
 
 var (

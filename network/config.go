@@ -8,15 +8,15 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/network/dialer"
-	"github.com/ava-labs/avalanchego/network/peer"
-	"github.com/ava-labs/avalanchego/network/throttling"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/uptime"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/network/dialer"
+	"github.com/luxdefi/node/network/peer"
+	"github.com/luxdefi/node/network/throttling"
+	"github.com/luxdefi/node/snow/networking/tracker"
+	"github.com/luxdefi/node/snow/uptime"
+	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxdefi/node/utils/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.

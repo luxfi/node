@@ -6,12 +6,12 @@ package node
 import (
 	"sync/atomic"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/networking/router"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/timer"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/networking/router"
+	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/timer"
+	"github.com/luxdefi/node/version"
 )
 
 var _ router.Router = (*beaconManager)(nil)

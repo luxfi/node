@@ -4,8 +4,8 @@
 package state
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/vms/components/avax"
 )
 
 type UTXOGetter interface {

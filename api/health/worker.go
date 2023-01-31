@@ -12,7 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/luxdefi/node/utils"
 )
 
 var errDuplicateCheck = errors.New("duplicated check")

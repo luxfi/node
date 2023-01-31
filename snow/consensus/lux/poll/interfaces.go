@@ -25,8 +25,8 @@ import (
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/formatting"
 =======
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/formatting"
 >>>>>>> 53a8245a8 (Update consensus)
 )
 

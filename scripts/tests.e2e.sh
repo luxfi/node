@@ -5,8 +5,8 @@ set -o pipefail
 
 # e.g.,
 # ./scripts/build.sh
-# ./scripts/tests.e2e.sh ./build/avalanchego
-# ENABLE_WHITELIST_VTX_TESTS=true ./scripts/tests.e2e.sh ./build/avalanchego
+# ./scripts/tests.e2e.sh ./build/node
+# ENABLE_WHITELIST_VTX_TESTS=true ./scripts/tests.e2e.sh ./build/node
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -35,24 +35,24 @@ fi
 echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
 
 #################################
-# download avalanche-network-runner
-# https://github.com/ava-labs/avalanche-network-runner
-# TODO: migrate to upstream avalanche-network-runner
+# download netrunner
+# https://github.com/luxdefi/netrunner
+# TODO: migrate to upstream netrunner
 GOARCH=$(go env GOARCH)
 GOOS=$(go env GOOS)
 NETWORK_RUNNER_VERSION=1.3.5-rc.0
-DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
-DOWNLOAD_URL="https://github.com/ava-labs/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+DOWNLOAD_PATH=/tmp/netrunner.tar.gz
+DOWNLOAD_URL="https://github.com/luxdefi/netrunner/releases/download/v${NETWORK_RUNNER_VERSION}/netrunner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
 
 rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/avalanche-network-runner
+rm -f /tmp/netrunner
 
-echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
+echo "downloading netrunner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
 curl --fail -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
 
-echo "extracting downloaded avalanche-network-runner"
+echo "extracting downloaded netrunner"
 tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/avalanche-network-runner -h
+/tmp/netrunner -h
 
 GOPATH="$(go env GOPATH)"
 PATH="${GOPATH}/bin:${PATH}"
@@ -65,9 +65,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "avalanche-network-runner" server
-echo "launch avalanche-network-runner in the background"
-/tmp/avalanche-network-runner \
+# run "netrunner" server
+echo "launch netrunner in the background"
+/tmp/netrunner \
 server \
 --log-level debug \
 --port=":12342" \
@@ -80,8 +80,8 @@ echo "running e2e tests against the local cluster with ${AVALANCHEGO_PATH}"
 --ginkgo.v \
 --log-level debug \
 --network-runner-grpc-endpoint="0.0.0.0:12342" \
---network-runner-avalanchego-path=${AVALANCHEGO_PATH} \
---network-runner-avalanchego-log-level="WARN" \
+--network-runner-node-path=${AVALANCHEGO_PATH} \
+--network-runner-node-log-level="WARN" \
 --test-keys-file=tests/test.insecure.secp256k1.keys --ginkgo.label-filter="${GINKGO_LABEL_FILTER}" \
 && EXIT_CODE=$? || EXIT_CODE=$?
 

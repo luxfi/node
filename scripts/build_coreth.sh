@@ -44,14 +44,14 @@ if [[ -z $coreth_path ]] || [[ -z $evm_path ]]; then
 fi
 
 if [[ ! -d "$coreth_path" ]]; then
-  go get "github.com/ava-labs/coreth@$coreth_version"
+  go get "github.com/luxdefi/coreth@$coreth_version"
 fi
 
 # Build Coreth
 build_args="$race"
 echo "Building Coreth @ ${coreth_version} ..."
 cd "$coreth_path"
-go build $build_args -ldflags "-X github.com/ava-labs/coreth/plugin/evm.Version=$coreth_version $static_ld_flags" -o "$evm_path" "plugin/"*.go
+go build $build_args -ldflags "-X github.com/luxdefi/coreth/plugin/evm.Version=$coreth_version $static_ld_flags" -o "$evm_path" "plugin/"*.go
 cd "$AVALANCHE_PATH"
 
 # Building coreth + using go get can mess with the go.mod file.

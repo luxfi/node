@@ -22,11 +22,11 @@ import (
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD:snow/engine/avalanche/issuer.go
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/utils/set"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/ids"

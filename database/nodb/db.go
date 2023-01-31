@@ -6,7 +6,7 @@ package nodb
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/database"
+	"github.com/luxdefi/node/database"
 )
 
 var (

@@ -6,10 +6,10 @@ package common
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/luxdefi/node/api/health"
+	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/validators"
 )
 
 // VM describes the interface that all consensus VMs must implement

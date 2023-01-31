@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/proto/pb/p2p"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
+	"github.com/luxdefi/node/utils/timer/mockable"
 )
 
 func Test_newMsgBuilder(t *testing.T) {

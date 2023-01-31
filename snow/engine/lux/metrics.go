@@ -24,7 +24,7 @@ import (
 <<<<<<< HEAD
 	"github.com/luxdefi/luxd/utils/wrappers"
 =======
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/luxdefi/node/utils/wrappers"
 >>>>>>> 53a8245a8 (Update consensus)
 )
 

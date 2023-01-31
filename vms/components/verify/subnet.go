@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
 )
 
 var (

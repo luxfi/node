@@ -6,9 +6,9 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
 var _ Block = (*ApricotAtomicBlock)(nil)

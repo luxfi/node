@@ -21,9 +21,9 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/common/queue"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/bootstrap/config.go
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
+	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/engine/common/queue"
 =======
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"

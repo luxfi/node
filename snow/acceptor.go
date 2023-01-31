@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/logging"
 )
 
 var (

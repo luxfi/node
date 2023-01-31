@@ -6,9 +6,9 @@ package poll
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/luxdefi/node/ids"
 
-	sets "github.com/ava-labs/avalanchego/utils/set"
+	sets "github.com/luxdefi/node/utils/set"
 )
 
 var (

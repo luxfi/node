@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/luxdefi/node/api"
+	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/version"
 )
 
 type service struct {

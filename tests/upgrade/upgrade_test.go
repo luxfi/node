@@ -15,8 +15,8 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
-	"github.com/ava-labs/avalanchego/tests"
+	runner_sdk "github.com/luxdefi/netrunner-sdk"
+	"github.com/luxdefi/node/tests"
 )
 
 func TestUpgrade(t *testing.T) {
@@ -47,21 +47,21 @@ func init() {
 	)
 	flag.StringVar(
 		&networkRunnerAvalancheGoExecPath,
-		"network-runner-avalanchego-path",
+		"network-runner-node-path",
 		"",
-		"avalanchego executable path",
+		"node executable path",
 	)
 	flag.StringVar(
 		&networkRunnerAvalancheGoExecPathToUpgrade,
-		"network-runner-avalanchego-path-to-upgrade",
+		"network-runner-node-path-to-upgrade",
 		"",
-		"avalanchego executable path (to upgrade to, only required for upgrade tests with local network-runner)",
+		"node executable path (to upgrade to, only required for upgrade tests with local network-runner)",
 	)
 	flag.StringVar(
 		&networkRunnerAvalancheGoLogLevel,
-		"network-runner-avalanchego-log-level",
+		"network-runner-node-log-level",
 		"INFO",
-		"avalanchego log-level",
+		"node log-level",
 	)
 }
 
