@@ -612,6 +612,7 @@ func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 // provided subnetID.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 =======
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
@@ -619,6 +620,9 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 =======
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.Validator, error) {
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
 	if !exists {
 		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
@@ -635,10 +639,14 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 
 	if validatorSetIntf, ok := validatorSetsCache.Get(height); ok {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.GetValidatorOutput)
 =======
 		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.Validator)
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.GetValidatorOutput)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		if !ok {
 			return nil, errWrongCacheType
 		}
@@ -690,8 +698,12 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	}
 
 	currentSubnetValidatorList := currentSubnetValidators.List()
+<<<<<<< HEAD
 	vdrSet := make(map[ids.NodeID]*validators.Validator, len(currentSubnetValidatorList))
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+	vdrSet := make(map[ids.NodeID]*validators.GetValidatorOutput, len(currentSubnetValidatorList))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	for _, vdr := range currentSubnetValidatorList {
 		primaryVdr, ok := currentPrimaryNetworkValidators.Get(vdr.NodeID)
 		if !ok {
@@ -699,11 +711,15 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 			return nil, fmt.Errorf("%w: %s", errMissingValidator, vdr.NodeID)
 		}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		vdrSet[vdr.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    vdr.NodeID,
 			PublicKey: primaryVdr.PublicKey,
 			Weight:    vdr.Weight,
 		}
+<<<<<<< HEAD
 =======
 	vdrSet := make(map[ids.NodeID]uint64, len(currentValidatorList))
 	for _, vdr := range currentValidatorList {
@@ -713,6 +729,8 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 		vdr.PublicKey = primaryVdr.PublicKey
 		vdrSet[vdr.NodeID] = vdr
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 
 	for i := lastAcceptedHeight; i > height; i-- {
@@ -726,10 +744,14 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 			if !ok {
 				// This node isn't in the current validator set.
 <<<<<<< HEAD
+<<<<<<< HEAD
 				vdr = &validators.GetValidatorOutput{
 =======
 				vdr = &validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+				vdr = &validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: nodeID,
 				}
 				vdrSet[nodeID] = vdr

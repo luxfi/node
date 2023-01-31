@@ -53,6 +53,7 @@ type Set interface {
 	// If an error is returned, the set will be unmodified.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
 =======
 	Add(nodeID ids.NodeID, weight uint64) error
@@ -60,6 +61,9 @@ type Set interface {
 =======
 	Add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 
 	// AddWeight to an existing staker.
 	// Returns an error if:
@@ -129,10 +133,14 @@ type Set interface {
 
 type SetCallbackListener interface {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	OnValidatorAdded(validatorID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64)
 =======
 	OnValidatorAdded(validatorID ids.NodeID, pk *bls.PublicKey, weight uint64)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	OnValidatorAdded(validatorID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	OnValidatorRemoved(validatorID ids.NodeID, weight uint64)
 	OnValidatorWeightChanged(validatorID ids.NodeID, oldWeight, newWeight uint64)
 }
@@ -181,6 +189,7 @@ type set struct {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 =======
 func (s *set) AddWeight(vdrID ids.NodeID, weight uint64) error {
@@ -191,6 +200,9 @@ func (s *set) Add(nodeID ids.NodeID, weight uint64) error {
 =======
 func (s *set) Add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+func (s *set) Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	if weight == 0 {
 		return errZeroWeight
 	}
@@ -198,6 +210,7 @@ func (s *set) Add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	return s.add(nodeID, pk, txID, weight)
@@ -216,6 +229,12 @@ func (s *set) add(nodeID ids.NodeID, weight uint64) error {
 
 func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	return s.add(nodeID, pk, txID, weight)
+}
+
+func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	_, nodeExists := s.vdrs[nodeID]
 	if nodeExists {
 		return errDuplicateValidator
@@ -247,6 +266,7 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 	vdr := &Validator{
 		NodeID:    nodeID,
 		PublicKey: pk,
+		TxID:      txID,
 		Weight:    weight,
 		index:     len(s.vdrSlice),
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
@@ -259,6 +279,7 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	s.callValidatorAddedCallbacks(nodeID, pk, txID, weight)
 	return nil
 }
@@ -269,6 +290,9 @@ func (s *vdrSet) AddWeight(nodeID ids.NodeID, weight uint64) error {
 =======
 	s.callValidatorAddedCallbacks(nodeID, pk, weight)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	s.callValidatorAddedCallbacks(nodeID, pk, txID, weight)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	return nil
 }
 
@@ -656,6 +680,7 @@ func (s *vdrSet) RegisterCallbackListener(callbackListener SetCallbackListener) 
 	for _, vdr := range s.vdrSlice {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		callbackListener.OnValidatorAdded(vdr.NodeID, vdr.PublicKey, vdr.TxID, vdr.Weight)
 =======
 		callbackListener.OnValidatorAdded(vdr.nodeID, vdr.pk, vdr.weight)
@@ -663,6 +688,9 @@ func (s *vdrSet) RegisterCallbackListener(callbackListener SetCallbackListener) 
 =======
 		callbackListener.OnValidatorAdded(vdr.NodeID, vdr.PublicKey, vdr.Weight)
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+		callbackListener.OnValidatorAdded(vdr.NodeID, vdr.PublicKey, vdr.TxID, vdr.Weight)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 }
 
@@ -675,6 +703,7 @@ func (s *vdrSet) callWeightChangeCallbacks(node ids.NodeID, oldWeight, newWeight
 
 // Assumes [s.lock] is held
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
 	for _, callbackListener := range s.callbackListeners {
 		callbackListener.OnValidatorAdded(node, pk, txID, weight)
@@ -683,6 +712,11 @@ func (s *set) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, we
 	for _, callbackListener := range s.callbackListeners {
 		callbackListener.OnValidatorAdded(node, pk, weight)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+func (s *set) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+	for _, callbackListener := range s.callbackListeners {
+		callbackListener.OnValidatorAdded(node, pk, txID, weight)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 }
 

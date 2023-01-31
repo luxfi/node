@@ -1888,6 +1888,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(beacons.Add(peerID, nil, ids.Empty, 1))
 =======
 	require.NoError(beacons.AddWeight(peerID, 1))
@@ -1898,6 +1899,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 =======
 	require.NoError(beacons.Add(peerID, nil, 1))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(beacons.Add(peerID, nil, ids.Empty, 1))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 
 	benchlist := benchlist.NewNoBenchlist()
 	timeoutManager, err := timeout.NewManager(
@@ -2716,10 +2720,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 		// This must have [height] - [lastAcceptedHeight] elements
 		pkDiffs        []map[ids.NodeID]*bls.PublicKey
 <<<<<<< HEAD
+<<<<<<< HEAD
 		expectedVdrSet map[ids.NodeID]*validators.GetValidatorOutput
 =======
 		expectedVdrSet map[ids.NodeID]*validators.Validator
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		expectedVdrSet map[ids.NodeID]*validators.GetValidatorOutput
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		expectedErr    error
 	}
 
@@ -2729,10 +2737,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			height:             1,
 			lastAcceptedHeight: 0,
 <<<<<<< HEAD
+<<<<<<< HEAD
 			expectedVdrSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 =======
 			expectedVdrSet:     map[ids.NodeID]*validators.Validator{},
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+			expectedVdrSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			expectedErr:        database.ErrNotFound,
 		},
 		{
@@ -2746,16 +2758,22 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				copySubnetValidator(vdrs[0]),
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
 					Weight:    vdrs[0].Weight,
 				},
+<<<<<<< HEAD
 =======
 			expectedVdrSet: map[ids.NodeID]*validators.Validator{
 				vdrs[0].NodeID: vdrs[0],
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			},
 			expectedErr: nil,
 		},
@@ -2796,10 +2814,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				},
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 =======
 			expectedVdrSet: map[ids.NodeID]*validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2872,10 +2894,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				{},
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 =======
 			expectedVdrSet: map[ids.NodeID]*validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2924,10 +2950,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				{},
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 =======
 			expectedVdrSet: map[ids.NodeID]*validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2982,10 +3012,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				{},
 			},
 <<<<<<< HEAD
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 =======
 			expectedVdrSet: map[ids.NodeID]*validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,

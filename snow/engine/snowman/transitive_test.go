@@ -41,6 +41,7 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
 =======
 	if err := vals.Add(vdr, 1); err != nil {
@@ -48,6 +49,9 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 =======
 	if err := vals.Add(vdr, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -462,6 +466,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 	errs.Add(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vals.Add(vdr0, nil, ids.Empty, 1),
 		vals.Add(vdr1, nil, ids.Empty, 1),
 		vals.Add(vdr2, nil, ids.Empty, 1),
@@ -475,6 +480,11 @@ func TestEngineMultipleQuery(t *testing.T) {
 		vals.Add(vdr1, nil, 1),
 		vals.Add(vdr2, nil, 1),
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		vals.Add(vdr0, nil, ids.Empty, 1),
+		vals.Add(vdr1, nil, ids.Empty, 1),
+		vals.Add(vdr2, nil, ids.Empty, 1),
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -1004,6 +1014,7 @@ func TestVoteCanceling(t *testing.T) {
 	errs.Add(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vals.Add(vdr0, nil, ids.Empty, 1),
 		vals.Add(vdr1, nil, ids.Empty, 1),
 		vals.Add(vdr2, nil, ids.Empty, 1),
@@ -1017,6 +1028,11 @@ func TestVoteCanceling(t *testing.T) {
 		vals.Add(vdr1, nil, 1),
 		vals.Add(vdr2, nil, 1),
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+		vals.Add(vdr0, nil, ids.Empty, 1),
+		vals.Add(vdr1, nil, ids.Empty, 1),
+		vals.Add(vdr2, nil, ids.Empty, 1),
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -1735,6 +1751,7 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 	secondVdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vdrs.Add(secondVdr, nil, ids.Empty, 1); err != nil {
 =======
 	if err := vdrs.Add(secondVdr, 1); err != nil {
@@ -1742,6 +1759,9 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 =======
 	if err := vdrs.Add(secondVdr, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vdrs.Add(secondVdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -1957,6 +1977,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
 =======
 	if err := vals.Add(vdr, 1); err != nil {
@@ -1964,6 +1985,9 @@ func TestEngineAggressivePolling(t *testing.T) {
 =======
 	if err := vals.Add(vdr, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -2106,6 +2130,7 @@ func TestEngineDoubleChit(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
 		t.Fatal(err)
 	}
@@ -2122,6 +2147,12 @@ func TestEngineDoubleChit(t *testing.T) {
 	}
 	if err := vals.Add(vdr1, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := vals.Add(vdr1, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -2265,6 +2296,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	vdr := ids.GenerateTestNodeID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
 =======
 	if err := vals.Add(vdr, 1); err != nil {
@@ -2272,6 +2304,9 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 =======
 	if err := vals.Add(vdr, nil, 1); err != nil {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -3397,13 +3432,14 @@ func TestSendMixedQuery(t *testing.T) {
 				for i := 0; i < te.Params.K; i++ {
 					vdrID := ids.GenerateTestNodeID()
 					vdrs.Add(vdrID)
-					err := te.Validators.Add(vdrID, nil, 1)
+					err := te.Validators.Add(vdrID, nil, ids.Empty, 1)
 					if err != nil {
 						t.Fatal(err)
 					}
 				}
 				if tt.isVdr {
 					vdrs.Add(te.Ctx.NodeID)
+<<<<<<< HEAD
 <<<<<<< HEAD
 					vdrsList = append(vdrsList, validators.NewValidator(te.Ctx.NodeID, nil, 1))
 				}
@@ -3422,6 +3458,9 @@ func TestSendMixedQuery(t *testing.T) {
 =======
 					err := te.Validators.Add(te.Ctx.NodeID, nil, 1)
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+					err := te.Validators.Add(te.Ctx.NodeID, nil, ids.Empty, 1)
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					if err != nil {
 						t.Fatal(err)
 					}
