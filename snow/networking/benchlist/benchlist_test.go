@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
@@ -11,10 +11,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 var minimumFailingDuration = 5 * time.Minute
@@ -30,11 +30,11 @@ func TestBenchlistAdd(t *testing.T) {
 
 	errs := wrappers.Errs{}
 	errs.Add(
-		vdrs.AddWeight(vdrID0, 50),
-		vdrs.AddWeight(vdrID1, 50),
-		vdrs.AddWeight(vdrID2, 50),
-		vdrs.AddWeight(vdrID3, 50),
-		vdrs.AddWeight(vdrID4, 50),
+		vdrs.Add(vdrID0, nil, ids.Empty, 50),
+		vdrs.Add(vdrID1, nil, ids.Empty, 50),
+		vdrs.Add(vdrID2, nil, ids.Empty, 50),
+		vdrs.Add(vdrID3, nil, ids.Empty, 50),
+		vdrs.Add(vdrID4, nil, ids.Empty, 50),
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -170,11 +170,11 @@ func TestBenchlistMaxStake(t *testing.T) {
 	// Total weight is 5100
 	errs := wrappers.Errs{}
 	errs.Add(
-		vdrs.AddWeight(vdrID0, 1000),
-		vdrs.AddWeight(vdrID1, 1000),
-		vdrs.AddWeight(vdrID2, 1000),
-		vdrs.AddWeight(vdrID3, 2000),
-		vdrs.AddWeight(vdrID4, 100),
+		vdrs.Add(vdrID0, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID1, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID2, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID3, nil, ids.Empty, 2000),
+		vdrs.Add(vdrID4, nil, ids.Empty, 100),
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -302,11 +302,11 @@ func TestBenchlistRemove(t *testing.T) {
 	// Total weight is 5000
 	errs := wrappers.Errs{}
 	errs.Add(
-		vdrs.AddWeight(vdrID0, 1000),
-		vdrs.AddWeight(vdrID1, 1000),
-		vdrs.AddWeight(vdrID2, 1000),
-		vdrs.AddWeight(vdrID3, 1000),
-		vdrs.AddWeight(vdrID4, 1000),
+		vdrs.Add(vdrID0, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID1, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID2, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID3, nil, ids.Empty, 1000),
+		vdrs.Add(vdrID4, nil, ids.Empty, 1000),
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)

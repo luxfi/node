@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -6,14 +6,16 @@ package poll
 import (
 	"fmt"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 type noEarlyTermFactory struct{}
 
 // NewNoEarlyTermFactory returns a factory that returns polls with no early
 // termination
-func NewNoEarlyTermFactory() Factory { return noEarlyTermFactory{} }
+func NewNoEarlyTermFactory() Factory {
+	return noEarlyTermFactory{}
+}
 
 func (noEarlyTermFactory) New(vdrs ids.NodeIDBag) Poll {
 	return &noEarlyTermPoll{polled: vdrs}
@@ -37,7 +39,9 @@ func (p *noEarlyTermPoll) Vote(vdr ids.NodeID, vote ids.ID) {
 }
 
 // Drop any future response for this poll
-func (p *noEarlyTermPoll) Drop(vdr ids.NodeID) { p.polled.Remove(vdr) }
+func (p *noEarlyTermPoll) Drop(vdr ids.NodeID) {
+	p.polled.Remove(vdr)
+}
 
 // Finished returns true when all validators have voted
 func (p *noEarlyTermPoll) Finished() bool {
@@ -45,7 +49,9 @@ func (p *noEarlyTermPoll) Finished() bool {
 }
 
 // Result returns the result of this poll
-func (p *noEarlyTermPoll) Result() ids.Bag { return p.votes }
+func (p *noEarlyTermPoll) Result() ids.Bag {
+	return p.votes
+}
 
 func (p *noEarlyTermPoll) PrefixedString(prefix string) string {
 	return fmt.Sprintf(
@@ -56,4 +62,6 @@ func (p *noEarlyTermPoll) PrefixedString(prefix string) string {
 	)
 }
 
-func (p *noEarlyTermPoll) String() string { return p.PrefixedString("") }
+func (p *noEarlyTermPoll) String() string {
+	return p.PrefixedString("")
+}

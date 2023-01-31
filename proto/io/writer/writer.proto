@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package io.writer;
 
-option go_package = "github.com/luxdefi/luxd/proto/pb/io/writer";
+option go_package = "github.com/ava-labs/avalanchego/proto/pb/io/writer";
 
 // Writer see: io.Writer https://pkg.go.dev/io#Writer
 service Writer {
@@ -19,7 +19,5 @@ message WriteResponse {
   // written is the length of payload in bytes
   int32 written = 1;
   // error is an error message
-  string error = 2;
-  // errored is true if an error has been set
-  bool errored = 3;
+  optional string error = 2;
 }

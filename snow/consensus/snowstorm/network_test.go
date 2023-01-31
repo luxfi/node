@@ -1,15 +1,17 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowstorm
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/utils/sampler"
+	"context"
 
-	sbcon "github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/utils/sampler"
+
+	sbcon "github.com/ava-labs/avalanchego/snow/consensus/snowball"
 )
 
 type Network struct {
@@ -109,7 +111,7 @@ func (n *Network) AddNode(cg Consensus) error {
 		}
 		txs[newTx.ID()] = newTx
 
-		if err := cg.Add(newTx); err != nil {
+		if err := cg.Add(context.Background(), newTx); err != nil {
 			return err
 		}
 	}
@@ -155,7 +157,7 @@ func (n *Network) Round() error {
 		}
 	}
 
-	if _, err := running.RecordPoll(sampledColors); err != nil {
+	if _, err := running.RecordPoll(context.Background(), sampledColors); err != nil {
 		return err
 	}
 

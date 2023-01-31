@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -6,7 +6,7 @@ package snowball
 import (
 	"fmt"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 // Consensus represents a general snow instance that can be used directly to
@@ -16,9 +16,6 @@ type Consensus interface {
 
 	// Takes in alpha, beta1, beta2, and the initial choice
 	Initialize(params Parameters, initialPreference ids.ID)
-
-	// Returns the parameters that describe this snowball instance
-	Parameters() Parameters
 
 	// Adds a new choice to vote on
 	Add(newChoice ids.ID)

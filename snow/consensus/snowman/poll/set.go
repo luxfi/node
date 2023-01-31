@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/linkedhashmap"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/metric"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/metric"
 )
 
 type pollHolder interface {
@@ -86,7 +86,7 @@ func NewSet(
 
 // Add to the current set of polls
 // Returns true if the poll was registered correctly and the network sample
-//         should be made.
+// should be made.
 func (s *set) Add(requestID uint32, vdrs ids.NodeIDBag) bool {
 	if _, exists := s.polls.Get(requestID); exists {
 		s.log.Debug("dropping poll",
@@ -154,7 +154,7 @@ func (s *set) processFinishedPolls() []ids.Bag {
 		}
 
 		s.log.Verbo("poll finished",
-			zap.Any("requestID", iter.Key()),
+			zap.Uint32("requestID", iter.Key()),
 			zap.Stringer("poll", holder.GetPoll()),
 		)
 		s.durPolls.Observe(float64(time.Since(holder.StartTime())))
@@ -198,7 +198,9 @@ func (s *set) Drop(requestID uint32, vdr ids.NodeID) []ids.Bag {
 }
 
 // Len returns the number of outstanding polls
-func (s *set) Len() int { return s.polls.Len() }
+func (s *set) Len() int {
+	return s.polls.Len()
+}
 
 func (s *set) String() string {
 	sb := strings.Builder{}

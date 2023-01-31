@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package events
@@ -6,14 +6,15 @@ package events
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 // Blockable defines what an object must implement to be able to block on
 // dependent events being completed.
 type Blockable interface {
 	// IDs that this object is blocking on
-	Dependencies() ids.Set
+	Dependencies() set.Set[ids.ID]
 	// Notify this object that an event has been fulfilled
 	Fulfill(context.Context, ids.ID)
 	// Notify this object that an event has been abandoned

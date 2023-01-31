@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package appsender
@@ -6,10 +6,11 @@ package appsender
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/set"
 
-	appsenderpb "github.com/luxdefi/luxd/proto/pb/appsender"
+	appsenderpb "github.com/ava-labs/avalanchego/proto/pb/appsender"
 )
 
 var _ common.AppSender = (*Client)(nil)
@@ -47,7 +48,7 @@ func (c *Client) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, 
 	return err
 }
 
-func (c *Client) SendAppRequest(ctx context.Context, nodeIDs ids.NodeIDSet, requestID uint32, request []byte) error {
+func (c *Client) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	nodeIDsBytes := make([][]byte, nodeIDs.Len())
 	i := 0
 	for nodeID := range nodeIDs {
@@ -88,7 +89,7 @@ func (c *Client) SendAppGossip(ctx context.Context, msg []byte) error {
 	return err
 }
 
-func (c *Client) SendAppGossipSpecific(ctx context.Context, nodeIDs ids.NodeIDSet, msg []byte) error {
+func (c *Client) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
 	nodeIDsBytes := make([][]byte, nodeIDs.Len())
 	i := 0
 	for nodeID := range nodeIDs {

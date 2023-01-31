@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracker
@@ -10,11 +10,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/linkedhashmap"
-	"github.com/luxdefi/luxd/utils/math/meter"
-	"github.com/luxdefi/luxd/utils/resource"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
+	"github.com/ava-labs/avalanchego/utils/math/meter"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const epsilon = 1e-9

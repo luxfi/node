@@ -1,11 +1,11 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
 
 import (
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
 )
 
 // Engine describes the events that can occur to a Snowman instance.

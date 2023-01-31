@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -49,9 +49,13 @@ func (sf *binarySnowflake) RecordSuccessfulPoll(choice int) {
 	sf.binarySlush.RecordSuccessfulPoll(choice)
 }
 
-func (sf *binarySnowflake) RecordUnsuccessfulPoll() { sf.confidence = 0 }
+func (sf *binarySnowflake) RecordUnsuccessfulPoll() {
+	sf.confidence = 0
+}
 
-func (sf *binarySnowflake) Finalized() bool { return sf.finalized }
+func (sf *binarySnowflake) Finalized() bool {
+	return sf.finalized
+}
 
 func (sf *binarySnowflake) String() string {
 	return fmt.Sprintf("SF(Confidence = %d, Finalized = %v, %s)",

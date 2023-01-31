@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snow
@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 var (
@@ -34,7 +34,9 @@ type Acceptor interface {
 
 type noOpAcceptor struct{}
 
-func (noOpAcceptor) Accept(*ConsensusContext, ids.ID, []byte) error { return nil }
+func (noOpAcceptor) Accept(*ConsensusContext, ids.ID, []byte) error {
+	return nil
+}
 
 // AcceptorTracker tracks the dispatched accept events by its ID and counts.
 // Useful for testing.
@@ -49,7 +51,7 @@ func NewAcceptorTracker() *AcceptorTracker {
 	}
 }
 
-func (a *AcceptorTracker) Accept(ctx *ConsensusContext, containerID ids.ID, container []byte) error {
+func (a *AcceptorTracker) Accept(_ *ConsensusContext, containerID ids.ID, _ []byte) error {
 	a.lock.Lock()
 	a.accepted[containerID]++
 	a.lock.Unlock()

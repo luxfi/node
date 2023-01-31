@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
 )
 
 var (
@@ -120,10 +120,10 @@ func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
 		ok   bool
 	)
 	if m.config.StakingEnabled {
-		vdrs, ok = m.config.Validators.GetValidators(ctx.SubnetID)
+		vdrs, ok = m.config.Validators.Get(ctx.SubnetID)
 	} else {
 		// If staking is disabled, everyone validates every chain
-		vdrs, ok = m.config.Validators.GetValidators(constants.PrimaryNetworkID)
+		vdrs, ok = m.config.Validators.Get(constants.PrimaryNetworkID)
 	}
 	if !ok {
 		return errUnknownValidators
@@ -173,10 +173,22 @@ func (m *manager) RegisterFailure(chainID ids.ID, nodeID ids.NodeID) {
 type noBenchlist struct{}
 
 // NewNoBenchlist returns an empty benchlist that will never stop any queries
-func NewNoBenchlist() Manager { return &noBenchlist{} }
+func NewNoBenchlist() Manager {
+	return &noBenchlist{}
+}
 
-func (noBenchlist) RegisterChain(*snow.ConsensusContext) error { return nil }
-func (noBenchlist) RegisterResponse(ids.ID, ids.NodeID)        {}
-func (noBenchlist) RegisterFailure(ids.ID, ids.NodeID)         {}
-func (noBenchlist) IsBenched(ids.NodeID, ids.ID) bool          { return false }
-func (noBenchlist) GetBenched(ids.NodeID) []ids.ID             { return []ids.ID{} }
+func (noBenchlist) RegisterChain(*snow.ConsensusContext) error {
+	return nil
+}
+
+func (noBenchlist) RegisterResponse(ids.ID, ids.NodeID) {}
+
+func (noBenchlist) RegisterFailure(ids.ID, ids.NodeID) {}
+
+func (noBenchlist) IsBenched(ids.NodeID, ids.ID) bool {
+	return false
+}
+
+func (noBenchlist) GetBenched(ids.NodeID) []ids.ID {
+	return []ids.ID{}
+}

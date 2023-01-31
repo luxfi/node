@@ -1,28 +1,31 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 )
+
+var errTest = errors.New("non-nil error")
 
 func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 	vm := &TestVM{}
 	someID := ids.GenerateTestID()
-	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
 		require.Equal(t, someID, id)
 		return nil, database.ErrNotFound
 	}
-	containers, err := GetAncestors(vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), vm, someID, 10, 10, 1*time.Second)
 	require.NoError(t, err)
 	require.Len(t, containers, 0)
 }
@@ -32,12 +35,11 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 func TestGetAncestorsPropagatesErrors(t *testing.T) {
 	vm := &TestVM{}
 	someID := ids.GenerateTestID()
-	someError := errors.New("some error that is not ErrNotFound")
-	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
 		require.Equal(t, someID, id)
-		return nil, someError
+		return nil, errTest
 	}
-	containers, err := GetAncestors(vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), vm, someID, 10, 10, 1*time.Second)
 	require.Nil(t, containers)
-	require.ErrorIs(t, err, someError)
+	require.ErrorIs(t, err, errTest)
 }

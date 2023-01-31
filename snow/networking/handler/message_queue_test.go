@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -14,12 +14,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
+
+const engineType = p2p.EngineType_ENGINE_TYPE_SNOWMAN
 
 func TestQueue(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -29,24 +32,21 @@ func TestQueue(t *testing.T) {
 	cpuTracker := tracker.NewMockTracker(ctrl)
 	vdrs := validators.NewSet()
 	vdr1ID, vdr2ID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-	require.NoError(vdrs.AddWeight(vdr1ID, 1))
-	require.NoError(vdrs.AddWeight(vdr2ID, 1))
+	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
 	mIntf, err := NewMessageQueue(logging.NoLog{}, vdrs, cpuTracker, "", prometheus.NewRegistry(), message.SynchronousOps)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)
 	currentTime := time.Now()
 	u.clock.Set(currentTime)
 
-	metrics := prometheus.NewRegistry()
-	mc, err := message.NewCreator(metrics, "dummyNamespace", true, 10*time.Second)
-	require.NoError(err)
-
-	mc.SetTime(currentTime)
-	msg1 := mc.InboundPut(
+	msg1 := message.InboundPullQuery(
 		ids.Empty,
 		0,
-		nil,
+		time.Second,
+		ids.GenerateTestID(),
 		vdr1ID,
+		engineType,
 	)
 
 	// Push then pop should work regardless of usage when there are no other
@@ -96,7 +96,14 @@ func TestQueue(t *testing.T) {
 	require.EqualValues(1, u.nodeToUnprocessedMsgs[vdr1ID])
 	require.EqualValues(1, u.Len())
 
-	msg2 := mc.InboundGet(ids.Empty, 0, 0, ids.Empty, vdr2ID)
+	msg2 := message.InboundPullQuery(
+		ids.Empty,
+		0,
+		time.Second,
+		ids.GenerateTestID(),
+		vdr2ID,
+		engineType,
+	)
 
 	// Push msg2 from vdr2ID
 	u.Push(context.Background(), msg2)
@@ -119,8 +126,8 @@ func TestQueue(t *testing.T) {
 	// u is now empty
 	// Non-validators should be able to put messages onto [u]
 	nonVdrNodeID1, nonVdrNodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-	msg3 := mc.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1)
-	msg4 := mc.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2)
+	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
+	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
 	u.Push(context.Background(), msg3)
 	u.Push(context.Background(), msg4)
 	u.Push(context.Background(), msg1)

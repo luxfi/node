@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -6,7 +6,8 @@ package common
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 // Send a query composed partially of push queries and partially of pull queries.
@@ -28,12 +29,12 @@ func SendMixedQuery(
 		numPushTo = len(vdrs)
 	}
 	if numPushTo > 0 {
-		sendPushQueryTo := ids.NewNodeIDSet(numPushTo)
+		sendPushQueryTo := set.NewSet[ids.NodeID](numPushTo)
 		sendPushQueryTo.Add(vdrs[:numPushTo]...)
 		sender.SendPushQuery(ctx, sendPushQueryTo, reqID, container)
 	}
 	if numPullTo := len(vdrs) - numPushTo; numPullTo > 0 {
-		sendPullQueryTo := ids.NewNodeIDSet(numPullTo)
+		sendPullQueryTo := set.NewSet[ids.NodeID](numPullTo)
 		sendPullQueryTo.Add(vdrs[numPushTo:]...)
 		sender.SendPullQuery(ctx, sendPullQueryTo, reqID, containerID)
 	}
