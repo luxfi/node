@@ -12,6 +12,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1
 <<<<<<< HEAD
+<<<<<<< HEAD
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 	github.com/ava-labs/coreth v0.11.6-rc.0
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
@@ -19,6 +20,10 @@ require (
 =======
 	github.com/ava-labs/avalanche-ledger-go v0.0.12
 	github.com/ava-labs/avalanche-network-runner-sdk v0.2.0
+=======
+	github.com/ava-labs/avalanche-ledger-go v0.0.13
+	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
+>>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
@@ -57,9 +62,16 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.11.0
 	go.opentelemetry.io/otel/sdk v1.11.0
 	go.opentelemetry.io/otel/trace v1.11.0
+<<<<<<< HEAD
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
+=======
+	go.uber.org/zap v1.23.0
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
+	golang.org/x/net v0.1.0
+>>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	golang.org/x/sync v0.1.0
 	golang.org/x/term v0.1.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
@@ -72,6 +84,10 @@ require (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.10.0 // indirect
+<<<<<<< HEAD
+=======
+	github.com/aead/siphash v1.0.1 // indirect
+>>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
@@ -120,6 +136,10 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969 // indirect
+<<<<<<< HEAD
+=======
+	github.com/stretchr/objx v0.5.0 // indirect
+>>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
@@ -131,7 +151,10 @@ require (
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
+<<<<<<< HEAD
 	golang.org/x/net v0.1.0 // indirect
+=======
+>>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
