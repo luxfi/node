@@ -1591,7 +1591,113 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 	// Node ID --> BLS public key of node before it left the validator set.
 	pkDiffs := make(map[ids.NodeID]*bls.PublicKey)
 
+<<<<<<< HEAD
 	for subnetID, validatorDiffs := range s.currentStakers.validatorDiffs {
+=======
+	prefixStruct := heightWithSubnet{
+		Height:   height,
+		SubnetID: constants.PrimaryNetworkID,
+	}
+	prefixBytes, err := blocks.GenesisCodec.Marshal(blocks.Version, prefixStruct)
+	if err != nil {
+		return fmt.Errorf("failed to create prefix bytes: %w", err)
+	}
+	rawDiffDB := prefixdb.New(prefixBytes, s.validatorDiffsDB)
+	diffDB := linkeddb.NewDefault(rawDiffDB)
+
+	weightDiffs := make(map[ids.NodeID]*ValidatorWeightDiff)
+	for nodeID, validatorDiff := range validatorDiffs {
+		weightDiff := &ValidatorWeightDiff{}
+		if validatorDiff.validatorModified {
+			staker := validatorDiff.validator
+
+			weightDiff.Decrease = validatorDiff.validatorDeleted
+			weightDiff.Amount = staker.Weight
+
+			if validatorDiff.validatorDeleted {
+				if err := s.currentValidatorList.Delete(staker.TxID[:]); err != nil {
+					return fmt.Errorf("failed to delete current staker: %w", err)
+				}
+
+				delete(s.uptimes, nodeID)
+				delete(s.updatedUptimes, nodeID)
+			} else {
+				vdr := &uptimeAndReward{
+					txID:        staker.TxID,
+					lastUpdated: staker.StartTime,
+
+					UpDuration:      0,
+					LastUpdated:     uint64(staker.StartTime.Unix()),
+					PotentialReward: staker.PotentialReward,
+				}
+
+				vdrBytes, err := blocks.GenesisCodec.Marshal(blocks.Version, vdr)
+				if err != nil {
+					return fmt.Errorf("failed to serialize current validator: %w", err)
+				}
+
+				if err := s.currentValidatorList.Put(staker.TxID[:], vdrBytes); err != nil {
+					return fmt.Errorf("failed to write current validator to list: %w", err)
+				}
+
+				s.uptimes[nodeID] = vdr
+			}
+		}
+
+		err := writeCurrentDelegatorDiff(
+			s.currentDelegatorList,
+			weightDiff,
+			validatorDiff,
+		)
+		if err != nil {
+			return err
+		}
+
+		if weightDiff.Amount == 0 {
+			continue
+		}
+		weightDiffs[nodeID] = weightDiff
+
+		weightDiffBytes, err := blocks.GenesisCodec.Marshal(blocks.Version, weightDiff)
+		if err != nil {
+			return fmt.Errorf("failed to serialize validator weight diff: %w", err)
+		}
+
+		// Copy so value passed into [Put] doesn't get overwritten next
+		// iteration
+		nodeID := nodeID
+		if err := diffDB.Put(nodeID[:], weightDiffBytes); err != nil {
+			return err
+		}
+
+		// TODO: Move the validator set management out of the state package
+		if weightDiff.Decrease {
+			err = s.cfg.Validators.RemoveWeight(constants.PrimaryNetworkID, nodeID, weightDiff.Amount)
+		} else {
+			err = s.cfg.Validators.AddWeight(constants.PrimaryNetworkID, nodeID, weightDiff.Amount)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to update validator weight: %w", err)
+		}
+	}
+	s.validatorDiffsCache.Put(string(prefixBytes), weightDiffs)
+
+	// TODO: Move validator set management out of the state package
+	//
+	// Attempt to update the stake metrics
+	primaryValidators, ok := s.cfg.Validators.GetValidators(constants.PrimaryNetworkID)
+	if !ok {
+		return nil
+	}
+	weight, _ := primaryValidators.GetWeight(s.ctx.NodeID)
+	s.metrics.SetLocalStake(weight)
+	s.metrics.SetTotalStake(primaryValidators.Weight())
+	return nil
+}
+
+func (s *state) writeCurrentSubnetStakers(height uint64) error {
+	for subnetID, subnetValidatorDiffs := range s.currentStakers.validatorDiffs {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		delete(s.currentStakers.validatorDiffs, subnetID)
 
 		// Select db to write to

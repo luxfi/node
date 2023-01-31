@@ -803,10 +803,14 @@ func TestTwoProBlocksWithSameParentCanBothVerify(t *testing.T) {
 		t.Fatal("Could not build block")
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := builtBlk.Verify(context.Background()); err != nil {
 =======
 	if err = builtBlk.Verify(context.Background()); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := builtBlk.Verify(context.Background()); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal("Built block does not verify")
 	}
 
@@ -856,10 +860,14 @@ func TestTwoProBlocksWithSameParentCanBothVerify(t *testing.T) {
 
 	// prove that also block from network verifies
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := netProBlk.Verify(context.Background()); err != nil {
 =======
 	if err = netProBlk.Verify(context.Background()); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := netProBlk.Verify(context.Background()); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal("block from network does not verify")
 	}
 }
@@ -1058,10 +1066,14 @@ func TestPreFork_SetPreference(t *testing.T) {
 		}
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := proVM.SetPreference(context.Background(), builtBlk.ID()); err != nil {
 =======
 	if err = proVM.SetPreference(context.Background(), builtBlk.ID()); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := proVM.SetPreference(context.Background(), builtBlk.ID()); err != nil {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal("Could not set preference on proposer Block")
 	}
 
@@ -2059,10 +2071,14 @@ func TestTooFarAdvanced(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := bBlock.Verify(context.Background()); err != errProposerWindowNotStarted {
 =======
 	if err = bBlock.Verify(context.Background()); err != errProposerWindowNotStarted {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := bBlock.Verify(context.Background()); err != errProposerWindowNotStarted {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal("should have errored errProposerWindowNotStarted")
 	}
 
@@ -2087,10 +2103,14 @@ func TestTooFarAdvanced(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := bBlock.Verify(context.Background()); err != errTimeTooAdvanced {
 =======
 	if err = bBlock.Verify(context.Background()); err != errTimeTooAdvanced {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := bBlock.Verify(context.Background()); err != errTimeTooAdvanced {
+>>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal("should have errored errTimeTooAdvanced")
 	}
 }
