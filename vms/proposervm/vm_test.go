@@ -161,6 +161,7 @@ func initTestProposerVM(
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return coreGenBlk.HeightV, nil
 	}
@@ -188,12 +189,15 @@ func initTestProposerVM(
 		}, nil
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return coreGenBlk.HeightV, nil
 	}
-	valState.GetCurrentHeightF = func() (uint64, error) {
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		res := make(map[ids.NodeID]uint64)
 		res[proVM.ctx.NodeID] = uint64(10)
 		res[ids.NodeID{1}] = uint64(5)
@@ -1162,6 +1166,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return coreGenBlk.Height(), nil
 	}
@@ -1176,12 +1181,15 @@ func TestExpiredBuildBlock(t *testing.T) {
 			},
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return coreGenBlk.Height(), nil
 	}
-	valState.GetCurrentHeightF = func() (uint64, error) {
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		return map[ids.NodeID]uint64{
 			{1}: 100,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -1467,6 +1475,7 @@ func TestInnerVMRollback(t *testing.T) {
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
@@ -1478,9 +1487,12 @@ func TestInnerVMRollback(t *testing.T) {
 			},
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		return map[ids.NodeID]uint64{
 			{1}: 100,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -1708,6 +1720,7 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			proVM.ctx.NodeID: {
@@ -1716,6 +1729,9 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 			},
 =======
 	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return map[ids.NodeID]uint64{
 			proVM.ctx.NodeID: 10,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -2351,6 +2367,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return coreGenBlk.HeightV, nil
 	}
@@ -2378,12 +2395,15 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		}, nil
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return coreGenBlk.HeightV, nil
 	}
-	valState.GetCurrentHeightF = func() (uint64, error) {
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		res := make(map[ids.NodeID]uint64)
 		res[proVM.ctx.NodeID] = uint64(10)
 		res[ids.NodeID{1}] = uint64(5)
@@ -2628,6 +2648,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		T: t,
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return coreGenBlk.HeightV, nil
 	}
@@ -2655,12 +2676,15 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		}, nil
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return coreGenBlk.HeightV, nil
 	}
-	valState.GetCurrentHeightF = func() (uint64, error) {
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 		res := make(map[ids.NodeID]uint64)
 		res[proVM.ctx.NodeID] = uint64(10)
 		res[ids.NodeID{1}] = uint64(5)

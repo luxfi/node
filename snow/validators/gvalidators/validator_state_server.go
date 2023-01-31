@@ -27,6 +27,7 @@ func NewServer(state validators.State) *Server {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Server) GetMinimumHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetMinimumHeightResponse, error) {
 	height, err := s.state.GetMinimumHeight(ctx)
 	return &pb.GetMinimumHeightResponse{Height: height}, err
@@ -58,6 +59,18 @@ func (s *Server) GetSubnetID(ctx context.Context, req *pb.GetSubnetIDRequest) (*
 	}, err
 }
 
+=======
+func (s *Server) GetMinimumHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetMinimumHeightResponse, error) {
+	height, err := s.state.GetMinimumHeight(ctx)
+	return &pb.GetMinimumHeightResponse{Height: height}, err
+}
+
+func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetCurrentHeightResponse, error) {
+	height, err := s.state.GetCurrentHeight(ctx)
+	return &pb.GetCurrentHeightResponse{Height: height}, err
+}
+
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 func (s *Server) GetValidatorSet(ctx context.Context, req *pb.GetValidatorSetRequest) (*pb.GetValidatorSetResponse, error) {
 	subnetID, err := ids.ToID(req.SubnetId)
 	if err != nil {

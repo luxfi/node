@@ -41,6 +41,7 @@ func (c *Client) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return resp.Height, nil
 }
 
+<<<<<<< HEAD
 func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	resp, err := c.client.GetSubnetID(ctx, &pb.GetSubnetIDRequest{
 		ChainId: chainID[:],
@@ -56,6 +57,9 @@ func (c *Client) GetValidatorSet(
 	height uint64,
 	subnetID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+=======
+func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	resp, err := c.client.GetValidatorSet(ctx, &pb.GetValidatorSetRequest{
 		Height:   height,
 		SubnetId: subnetID[:],

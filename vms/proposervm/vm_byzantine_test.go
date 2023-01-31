@@ -720,6 +720,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 
 	// Make sure that we will be sampled to perform the proposals.
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			proVM.ctx.NodeID: {
@@ -729,6 +730,9 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 		}, nil
 =======
 	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		res := make(map[ids.NodeID]uint64)
 		res[proVM.ctx.NodeID] = uint64(10)
 		return res, nil

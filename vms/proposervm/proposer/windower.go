@@ -5,6 +5,10 @@ package proposer
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"sort"
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"
@@ -64,7 +68,15 @@ func New(state validators.State, subnetID, chainID ids.ID) Windower {
 	}
 }
 
+<<<<<<< HEAD
 func (w *windower) Proposers(ctx context.Context, chainHeight, pChainHeight uint64) ([]ids.NodeID, error) {
+=======
+func (w *windower) Delay(ctx context.Context, chainHeight, pChainHeight uint64, validatorID ids.NodeID) (time.Duration, error) {
+	if validatorID == ids.EmptyNodeID {
+		return MaxDelay, nil
+	}
+
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	// get the validator set by the p-chain height
 	validatorsMap, err := w.state.GetValidatorSet(ctx, pChainHeight, w.subnetID)
 	if err != nil {
