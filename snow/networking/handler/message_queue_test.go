@@ -126,8 +126,13 @@ func TestQueue(t *testing.T) {
 	// u is now empty
 	// Non-validators should be able to put messages onto [u]
 	nonVdrNodeID1, nonVdrNodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
 	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
+=======
+	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1)
+	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	u.Push(context.Background(), msg3)
 	u.Push(context.Background(), msg4)
 	u.Push(context.Background(), msg1)

@@ -36,7 +36,11 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	vdrs := validators.NewSet()
 	vdr0 := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
+=======
+	err := vdrs.AddWeight(vdr0, 1)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -88,14 +92,22 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	nodeID := ids.EmptyNodeID
 	reqID := uint32(1)
 	chainID := ids.ID{}
+<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
+=======
+	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	handler.Push(context.Background(), msg)
 
 	currentTime := time.Now().Add(time.Second)
 	handler.clock.Set(currentTime)
 
 	reqID++
+<<<<<<< HEAD
 	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
+=======
+	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	handler.Push(context.Background(), msg)
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -118,7 +130,11 @@ func TestHandlerClosesOnError(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -183,7 +199,11 @@ func TestHandlerClosesOnError(t *testing.T) {
 	nodeID := ids.EmptyNodeID
 	reqID := uint32(1)
 	deadline := time.Nanosecond
+<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID, 0)
+=======
+	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	handler.Push(context.Background(), msg)
 
 	ticker := time.NewTicker(time.Second)

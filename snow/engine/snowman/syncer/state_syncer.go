@@ -571,20 +571,30 @@ func (ss *stateSyncer) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 	return ss.StartupTracker.Disconnected(ctx, nodeID)
 }
 
+<<<<<<< HEAD
 func (*stateSyncer) Gossip(context.Context) error {
 	return nil
 }
+=======
+func (*stateSyncer) Gossip() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (ss *stateSyncer) Shutdown(ctx context.Context) error {
 	ss.Config.Ctx.Log.Info("shutting down state syncer")
 	return ss.VM.Shutdown(ctx)
 }
 
+<<<<<<< HEAD
 func (*stateSyncer) Halt(context.Context) {}
 
 func (*stateSyncer) Timeout(context.Context) error {
 	return nil
 }
+=======
+func (*stateSyncer) Halt() {}
+
+func (*stateSyncer) Timeout() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (ss *stateSyncer) HealthCheck(ctx context.Context) (interface{}, error) {
 	vmIntf, vmErr := ss.VM.HealthCheck(ctx)

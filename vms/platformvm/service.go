@@ -2048,19 +2048,32 @@ type GetStakeReply struct {
 // This method only concerns itself with the Primary Network, not subnets
 // TODO: Improve the performance of this method by maintaining this data
 // in a data structure rather than re-calculating it by iterating over stakers
+<<<<<<< HEAD
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetStake called")
+=======
+func (service *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
+	service.vm.ctx.Log.Debug("Platform: GetStake called")
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 	if len(args.Addresses) > maxGetStakeAddrs {
 		return fmt.Errorf("%d addresses provided but this method can take at most %d", len(args.Addresses), maxGetStakeAddrs)
 	}
 
+<<<<<<< HEAD
 	addrs, err := avax.ParseServiceAddresses(s.addrManager, args.Addresses)
+=======
+	addrs, err := avax.ParseServiceAddresses(service.addrManager, args.Addresses)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
+=======
+	currentStakerIterator, err := service.vm.state.GetCurrentStakerIterator()
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return err
 	}
@@ -2073,7 +2086,11 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	for currentStakerIterator.Next() { // Iterates over current stakers
 		staker := currentStakerIterator.Value()
 
+<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
+=======
+		tx, _, err := service.vm.state.GetTx(staker.TxID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		if err != nil {
 			return err
 		}
@@ -2081,7 +2098,11 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 		stakedOuts = append(stakedOuts, getStakeHelper(tx, addrs, totalAmountStaked)...)
 	}
 
+<<<<<<< HEAD
 	pendingStakerIterator, err := s.vm.state.GetPendingStakerIterator()
+=======
+	pendingStakerIterator, err := service.vm.state.GetPendingStakerIterator()
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return err
 	}
@@ -2090,7 +2111,11 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	for pendingStakerIterator.Next() { // Iterates over pending stakers
 		staker := pendingStakerIterator.Value()
 
+<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
+=======
+		tx, _, err := service.vm.state.GetTx(staker.TxID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		if err != nil {
 			return err
 		}
@@ -2099,7 +2124,11 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	}
 
 	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
+<<<<<<< HEAD
 	response.Staked = response.Stakeds[s.vm.ctx.AVAXAssetID]
+=======
+	response.Staked = response.Stakeds[service.vm.ctx.AVAXAssetID]
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		bytes, err := txs.Codec.Marshal(txs.Version, output)
@@ -2130,6 +2159,7 @@ type GetMinStakeReply struct {
 }
 
 // GetMinStake returns the minimum staking amount in nAVAX.
+<<<<<<< HEAD
 func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
 	if args.SubnetID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = json.Uint64(s.vm.MinValidatorStake)
@@ -2138,6 +2168,16 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	}
 
 	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
+=======
+func (service *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
+	if args.SubnetID == constants.PrimaryNetworkID {
+		reply.MinValidatorStake = json.Uint64(service.vm.MinValidatorStake)
+		reply.MinDelegatorStake = json.Uint64(service.vm.MinDelegatorStake)
+		return nil
+	}
+
+	transformSubnetIntf, err := service.vm.state.GetSubnetTransformation(args.SubnetID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching subnet transformation for %s: %w",
@@ -2174,10 +2214,17 @@ type GetTotalStakeReply struct {
 }
 
 // GetTotalStake returns the total amount staked on the Primary Network
+<<<<<<< HEAD
 func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
 	vdrs, ok := s.vm.Validators.Get(args.SubnetID)
 	if !ok {
 		return errMissingValidatorSet
+=======
+func (service *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
+	vdrs, ok := service.vm.Validators.GetValidators(args.SubnetID)
+	if !ok {
+		return errNoValidators
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	}
 	weight := json.Uint64(vdrs.Weight())
 	reply.Weight = weight
@@ -2200,19 +2247,31 @@ type GetMaxStakeAmountReply struct {
 
 // GetMaxStakeAmount returns the maximum amount of nAVAX staking to the named
 // node during the time period.
+<<<<<<< HEAD
 func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
+=======
+func (service *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	startTime := time.Unix(int64(args.StartTime), 0)
 	endTime := time.Unix(int64(args.EndTime), 0)
 
 	if startTime.After(endTime) {
 		return errStartAfterEndTime
 	}
+<<<<<<< HEAD
 	now := s.vm.state.GetTimestamp()
+=======
+	now := service.vm.state.GetTimestamp()
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if startTime.Before(now) {
 		return errStartTimeInThePast
 	}
 
+<<<<<<< HEAD
 	staker, err := executor.GetValidator(s.vm.state, args.SubnetID, args.NodeID)
+=======
+	staker, err := executor.GetValidator(service.vm.state, args.SubnetID, args.NodeID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err == database.ErrNotFound {
 		return nil
 	}
@@ -2227,7 +2286,11 @@ func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs
 		return nil
 	}
 
+<<<<<<< HEAD
 	maxStakeAmount, err := executor.GetMaxWeight(s.vm.state, staker, startTime, endTime)
+=======
+	maxStakeAmount, err := executor.GetMaxWeight(service.vm.state, staker, startTime, endTime)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	reply.Amount = json.Uint64(maxStakeAmount)
 	return err
 }
@@ -2244,10 +2307,17 @@ type GetRewardUTXOsReply struct {
 
 // GetRewardUTXOs returns the UTXOs that were rewarded after the provided
 // transaction's staking period ended.
+<<<<<<< HEAD
 func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetRewardUTXOs called")
 
 	utxos, err := s.vm.state.GetRewardUTXOs(args.TxID)
+=======
+func (service *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
+	service.vm.ctx.Log.Debug("Platform: GetRewardUTXOs called")
+
+	utxos, err := service.vm.state.GetRewardUTXOs(args.TxID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return fmt.Errorf("couldn't get reward UTXOs: %w", err)
 	}
@@ -2277,10 +2347,17 @@ type GetTimestampReply struct {
 }
 
 // GetTimestamp returns the current timestamp on chain.
+<<<<<<< HEAD
 func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetTimestamp called")
 
 	reply.Timestamp = s.vm.state.GetTimestamp()
+=======
+func (service *Service) GetTimestamp(_ *http.Request, args *struct{}, reply *GetTimestampReply) error {
+	service.vm.ctx.Log.Debug("Platform: GetTimestamp called")
+
+	reply.Timestamp = service.vm.state.GetTimestamp()
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil
 }
 
@@ -2292,20 +2369,30 @@ type GetValidatorsAtArgs struct {
 
 // GetValidatorsAtReply is the response from GetValidatorsAt
 type GetValidatorsAtReply struct {
+<<<<<<< HEAD
 	// TODO should we change this to map[ids.NodeID]*validators.Validator?
 	// We'd have to add a MarshalJSON method to validators.Validator.
+=======
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	Validators map[ids.NodeID]uint64 `json:"validators"`
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided subnet
 // at the specified height.
+<<<<<<< HEAD
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	height := uint64(args.Height)
 	s.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
+=======
+func (service *Service) GetValidatorsAt(_ *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
+	height := uint64(args.Height)
+	service.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		zap.Uint64("height", height),
 		zap.Stringer("subnetID", args.SubnetID),
 	)
 
+<<<<<<< HEAD
 	ctx := r.Context()
 	var err error
 	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
@@ -2315,24 +2402,43 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	reply.Validators = make(map[ids.NodeID]uint64, len(vdrs))
 	for _, vdr := range vdrs {
 		reply.Validators[vdr.NodeID] = vdr.Weight
+=======
+	var err error
+	reply.Validators, err = service.vm.GetValidatorSet(height, args.SubnetID)
+	if err != nil {
+		return fmt.Errorf("couldn't get validator set: %w", err)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	}
 	return nil
 }
 
+<<<<<<< HEAD
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlock called",
+=======
+func (service *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
+	service.vm.ctx.Log.Debug("Platform: GetBlock called",
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		zap.Stringer("blkID", args.BlockID),
 		zap.Stringer("encoding", args.Encoding),
 	)
 
+<<<<<<< HEAD
 	block, err := s.vm.manager.GetStatelessBlock(args.BlockID)
+=======
+	block, err := service.vm.manager.GetStatelessBlock(args.BlockID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	if err != nil {
 		return fmt.Errorf("couldn't get block with id %s: %w", args.BlockID, err)
 	}
 	response.Encoding = args.Encoding
 
 	if args.Encoding == formatting.JSON {
+<<<<<<< HEAD
 		block.InitCtx(s.vm.ctx)
+=======
+		block.InitCtx(service.vm.ctx)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		response.Block = block
 		return nil
 	}
@@ -2345,6 +2451,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 	return nil
 }
 
+<<<<<<< HEAD
 func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
 	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
@@ -2374,11 +2481,17 @@ func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Own
 	return apiOwner, nil
 }
 
+=======
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 // Takes in a staker and a set of addresses
 // Returns:
 // 1) The total amount staked by addresses in [addrs]
 // 2) The staked outputs
+<<<<<<< HEAD
 func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
+=======
+func getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	staker, ok := tx.Unsigned.(txs.PermissionlessStaker)
 	if !ok {
 		return nil

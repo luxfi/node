@@ -6,6 +6,10 @@ package avm
 import "context"
 
 // TODO: add health checks
+<<<<<<< HEAD
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
+=======
+func (*VM) HealthCheck() (interface{}, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil, nil
 }

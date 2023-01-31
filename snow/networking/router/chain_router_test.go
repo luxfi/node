@@ -268,7 +268,11 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	go func() {
 		chainID := ids.ID{}
+<<<<<<< HEAD
 		msg := message.InboundPullQuery(chainID, 1, time.Hour, ids.GenerateTestID(), nodeID, engineType)
+=======
+		msg := message.InboundPullQuery(chainID, 1, time.Hour, ids.GenerateTestID(), nodeID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		handler.Push(context.Background(), msg)
 
 		time.Sleep(50 * time.Millisecond) // Pause to ensure message gets processed
@@ -992,11 +996,15 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	nID := ids.GenerateTestNodeID()
 
 	calledF = false
+<<<<<<< HEAD
 	inMsg = message.InboundPullQuery(
 		ctx.ChainID,
 		reqID,
 		time.Hour,
 		dummyContainerID,
+=======
+	inMsg = message.InboundPullQuery(ctx.ChainID, reqID, time.Hour, dummyContainerID,
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		nID,
 		engineType,
 	)
@@ -1007,11 +1015,15 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	// Validator case
 	calledF = false
 	reqID++
+<<<<<<< HEAD
 	inMsg = message.InboundPullQuery(
 		ctx.ChainID,
 		reqID,
 		time.Hour,
 		dummyContainerID,
+=======
+	inMsg = message.InboundPullQuery(ctx.ChainID, reqID, time.Hour, dummyContainerID,
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 		vID,
 		engineType,
 	)
@@ -1038,7 +1050,11 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	err = vdrs.RemoveWeight(vID, 1)
 	require.NoError(t, err)
 
+<<<<<<< HEAD
 	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nil, nID, engineType)
+=======
+	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nID)
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	chainRouter.HandleInbound(context.Background(), inMsg)
 
 	// shouldn't clear out timed request, as the request should be cleared when

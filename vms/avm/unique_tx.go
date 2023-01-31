@@ -294,7 +294,11 @@ func (*UniqueTx) HasWhitelist() bool {
 }
 
 // Whitelist is not supported by this transaction type, so [false] is returned.
+<<<<<<< HEAD
 func (*UniqueTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
+=======
+func (*UniqueTx) Whitelist() (ids.Set, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return nil, nil
 }
 

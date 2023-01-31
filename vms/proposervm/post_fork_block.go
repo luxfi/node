@@ -121,7 +121,11 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 }
 
 // A post-fork block can never have a pre-fork child
+<<<<<<< HEAD
 func (*postForkBlock) verifyPreForkChild(context.Context, *preForkBlock) error {
+=======
+func (*postForkBlock) verifyPreForkChild(child *preForkBlock) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return errUnsignedChild
 }
 

@@ -408,7 +408,11 @@ func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
+=======
+func (*VM) Version() (string, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return version.Current.String(), nil
 }
 
@@ -441,7 +445,11 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 // CreateStaticHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
+<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+=======
+func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")

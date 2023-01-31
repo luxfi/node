@@ -51,10 +51,13 @@ func (tx *AddPermissionlessDelegatorTx) SubnetID() ids.ID {
 	return tx.Subnet
 }
 
+<<<<<<< HEAD
 func (tx *AddPermissionlessDelegatorTx) NodeID() ids.NodeID {
 	return tx.Validator.NodeID
 }
 
+=======
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 func (*AddPermissionlessDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 	return nil, false, nil
 }

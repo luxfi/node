@@ -1,7 +1,7 @@
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//nolint:revive,stylecheck // proto generates interfaces that fail linting
+//nolint:stylecheck // proto generates interfaces that fail linting
 package message
 
 import (
