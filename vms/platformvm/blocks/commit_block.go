@@ -55,6 +55,7 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*ApricotCommitBlock) InitCtx(*snow.Context) {}
 
 func (*ApricotCommitBlock) Txs() []*txs.Tx {
@@ -64,6 +65,11 @@ func (*ApricotCommitBlock) Txs() []*txs.Tx {
 func (b *ApricotCommitBlock) Visit(v Visitor) error {
 	return v.ApricotCommitBlock(b)
 }
+=======
+func (*ApricotCommitBlock) InitCtx(*snow.Context)   {}
+func (*ApricotCommitBlock) Txs() []*txs.Tx          { return nil }
+func (b *ApricotCommitBlock) Visit(v Visitor) error { return v.ApricotCommitBlock(b) }
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 func NewApricotCommitBlock(
 	parentID ids.ID,

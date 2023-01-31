@@ -14,6 +14,7 @@ type BurnOperation struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*BurnOperation) InitCtx(*snow.Context) {}
 
 func (*BurnOperation) Outs() []verify.State {
@@ -24,3 +25,7 @@ func (*BurnOperation) InitCtx(ctx *snow.Context) {}
 
 func (*BurnOperation) Outs() []verify.State { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*BurnOperation) InitCtx(*snow.Context) {}
+func (*BurnOperation) Outs() []verify.State  { return nil }
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))

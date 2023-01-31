@@ -299,8 +299,13 @@ type GetTxFeeResponse struct {
 	AddSubnetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
+<<<<<<< HEAD
 // GetTxFee returns the transaction fee in nLUX.
 func (service *Info) GetTxFee(_ *http.Request, args *struct{}, reply *GetTxFeeResponse) error {
+=======
+// GetTxFee returns the transaction fee in nAVAX.
+func (service *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	reply.TxFee = json.Uint64(service.TxFee)
 	reply.CreationTxFee = json.Uint64(service.CreateAssetTxFee)
 	reply.CreateAssetTxFee = json.Uint64(service.CreateAssetTxFee)

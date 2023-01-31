@@ -26,6 +26,7 @@ func NewServer(state validators.State) *Server {
 	return &Server{state: state}
 }
 
+<<<<<<< HEAD
 func (s *Server) GetMinimumHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetMinimumHeightResponse, error) {
 	height, err := s.state.GetMinimumHeight(ctx)
 	return &pb.GetMinimumHeightResponse{Height: height}, err
@@ -33,6 +34,15 @@ func (s *Server) GetMinimumHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 
 func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetCurrentHeightResponse, error) {
 	height, err := s.state.GetCurrentHeight(ctx)
+=======
+func (s *Server) GetMinimumHeight(context.Context, *emptypb.Empty) (*pb.GetMinimumHeightResponse, error) {
+	height, err := s.state.GetMinimumHeight()
+	return &pb.GetMinimumHeightResponse{Height: height}, err
+}
+
+func (s *Server) GetCurrentHeight(context.Context, *emptypb.Empty) (*pb.GetCurrentHeightResponse, error) {
+	height, err := s.state.GetCurrentHeight()
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 

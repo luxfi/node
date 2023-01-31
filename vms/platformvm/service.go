@@ -83,9 +83,14 @@ type GetHeightResponse struct {
 }
 
 // GetHeight returns the height of the last accepted block
+<<<<<<< HEAD
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
 	ctx := r.Context()
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
+=======
+func (service *Service) GetHeight(_ *http.Request, _ *struct{}, response *GetHeightResponse) error {
+	lastAcceptedID, err := service.vm.LastAccepted()
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	if err != nil {
 		return fmt.Errorf("couldn't get last accepted block ID: %w", err)
 	}
@@ -110,8 +115,13 @@ type ExportKeyReply struct {
 }
 
 // ExportKey returns a private key from the provided user
+<<<<<<< HEAD
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	s.vm.ctx.Log.Debug("Platform: ExportKey called")
+=======
+func (service *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
+	service.vm.ctx.Log.Debug("Platform: ExportKey called")
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 	address, err := avax.ParseServiceAddress(s.addrManager, args.Address)
 	if err != nil {
@@ -140,8 +150,13 @@ type ImportKeyArgs struct {
 }
 
 // ImportKey adds a private key to the provided user
+<<<<<<< HEAD
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
 	s.vm.ctx.Log.Debug("Platform: ImportKey called",
+=======
+func (service *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
+	service.vm.ctx.Log.Debug("Platform: ImportKey called",
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1844,8 +1859,13 @@ type GetBlockchainsResponse struct {
 }
 
 // GetBlockchains returns all of the blockchains that exist
+<<<<<<< HEAD
 func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlockchains called")
+=======
+func (service *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
+	service.vm.ctx.Log.Debug("Platform: GetBlockchains called")
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 	subnets, err := s.vm.state.GetSubnets()
 	if err != nil {
@@ -2348,12 +2368,16 @@ type GetTimestampReply struct {
 
 // GetTimestamp returns the current timestamp on chain.
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetTimestamp called")
 
 	reply.Timestamp = s.vm.state.GetTimestamp()
 =======
 func (service *Service) GetTimestamp(_ *http.Request, args *struct{}, reply *GetTimestampReply) error {
+=======
+func (service *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	service.vm.ctx.Log.Debug("Platform: GetTimestamp called")
 
 	reply.Timestamp = service.vm.state.GetTimestamp()

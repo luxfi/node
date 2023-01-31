@@ -117,6 +117,7 @@ type VM struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
 	return nil
 }
@@ -129,6 +130,13 @@ func (*VM) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error 
 
 func (*VM) Disconnected(nodeID ids.NodeID) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) Connected(ids.NodeID, *version.Application) error {
+	return nil
+}
+
+func (*VM) Disconnected(ids.NodeID) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
@@ -1104,6 +1112,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	return nil
 }
@@ -1115,51 +1124,74 @@ func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
 =======
 func (*VM) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+=======
+func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
-func (*VM) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
+func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*VM) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
 =======
 func (*VM) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
 =======
 func (*VM) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
 =======
 func (*VM) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
 =======
 func (*VM) AppGossip(_ context.Context, nodeID ids.NodeID, msg []byte) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
