@@ -168,8 +168,13 @@ func initTestProposerVM(
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			proVM.ctx.NodeID: {
 				NodeID: proVM.ctx.NodeID,
 				Weight: 10,
@@ -187,6 +192,7 @@ func initTestProposerVM(
 				Weight: 7,
 			},
 		}, nil
+<<<<<<< HEAD
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
 =======
@@ -205,6 +211,8 @@ func initTestProposerVM(
 		res[ids.NodeID{3}] = uint64(7)
 		return res, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 
 	ctx := snow.DefaultContextTest()
@@ -1185,12 +1193,18 @@ func TestExpiredBuildBlock(t *testing.T) {
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			{1}: {
 				NodeID: ids.NodeID{1},
 				Weight: 100,
 			},
+<<<<<<< HEAD
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
 =======
@@ -1205,6 +1219,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		return map[ids.NodeID]uint64{
 			{1}: 100,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 		}, nil
 	}
 
@@ -1491,12 +1507,18 @@ func TestInnerVMRollback(t *testing.T) {
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			{1}: {
 				NodeID: ids.NodeID{1},
 				Weight: 100,
 			},
+<<<<<<< HEAD
 =======
 	valState.GetCurrentHeightF = func() (uint64, error) {
 =======
@@ -1508,6 +1530,8 @@ func TestInnerVMRollback(t *testing.T) {
 		return map[ids.NodeID]uint64{
 			{1}: 100,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 		}, nil
 	}
 
@@ -1733,12 +1757,18 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			proVM.ctx.NodeID: {
 				NodeID: proVM.ctx.NodeID,
 				Weight: 10,
 			},
+<<<<<<< HEAD
 =======
 	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 =======
@@ -1747,6 +1777,8 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 		return map[ids.NodeID]uint64{
 			proVM.ctx.NodeID: 10,
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 		}, nil
 	}
 
@@ -2394,8 +2426,13 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			proVM.ctx.NodeID: {
 				NodeID: proVM.ctx.NodeID,
 				Weight: 10,
@@ -2413,6 +2450,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 				Weight: 7,
 			},
 		}, nil
+<<<<<<< HEAD
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
 =======
@@ -2431,6 +2469,8 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		res[ids.NodeID{3}] = uint64(7)
 		return res, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 
 	ctx := snow.DefaultContextTest()
@@ -2675,8 +2715,13 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
+		return map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			proVM.ctx.NodeID: {
 				NodeID: proVM.ctx.NodeID,
 				Weight: 10,
@@ -2694,6 +2739,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 				Weight: 7,
 			},
 		}, nil
+<<<<<<< HEAD
 =======
 	valState.GetMinimumHeightF = func() (uint64, error) {
 =======
@@ -2712,6 +2758,8 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		res[ids.NodeID{3}] = uint64(7)
 		return res, nil
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 
 	ctx := snow.DefaultContextTest()

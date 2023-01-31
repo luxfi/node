@@ -2725,10 +2725,15 @@ type GetValidatorsAtArgs struct {
 // GetValidatorsAtReply is the response from GetValidatorsAt
 type GetValidatorsAtReply struct {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// TODO should we change this to map[ids.NodeID]*validators.Validator?
 	// We'd have to add a MarshalJSON method to validators.Validator.
 =======
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	// TODO should we change this to map[ids.NodeID]*validators.Validator?
+	// We'd have to add a MarshalJSON method to validators.Validator.
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	Validators map[ids.NodeID]uint64 `json:"validators"`
 }
 
@@ -2762,6 +2767,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	ctx := r.Context()
 	var err error
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
@@ -2781,6 +2787,15 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	if err != nil {
 		return fmt.Errorf("couldn't get validator set: %w", err)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
+	if err != nil {
+		return fmt.Errorf("failed to get validator set: %w", err)
+	}
+	reply.Validators = make(map[ids.NodeID]uint64, len(vdrs))
+	for _, vdr := range vdrs {
+		reply.Validators[vdr.NodeID] = vdr.Weight
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 	return nil
 }

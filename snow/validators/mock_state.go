@@ -93,11 +93,15 @@ func (m *MockState) GetValidatorSet(arg0 context.Context, arg1 uint64, arg2 ids.
 }
 
 // GetValidatorSet mocks base method.
-func (m *MockState) GetValidatorSet(arg0 context.Context, arg1 uint64, arg2 ids.ID) (map[ids.NodeID]uint64, error) {
+func (m *MockState) GetValidatorSet(arg0 context.Context, arg1 uint64, arg2 ids.ID) (map[ids.NodeID]*Validator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidatorSet", arg0, arg1, arg2)
+<<<<<<< HEAD
 	ret0, _ := ret[0].(map[ids.NodeID]uint64)
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+	ret0, _ := ret[0].(map[ids.NodeID]*Validator)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

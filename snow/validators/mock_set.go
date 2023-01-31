@@ -10,7 +10,10 @@ package validators
 import (
 	reflect "reflect"
 
+<<<<<<< HEAD
 	set "github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	ids "github.com/ava-labs/avalanchego/ids"
 	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
 	gomock "github.com/golang/mock/gomock"
@@ -40,17 +43,29 @@ func (m *MockSet) EXPECT() *MockSetMockRecorder {
 }
 
 // Add mocks base method.
+<<<<<<< HEAD
 func (m *MockSet) Add(arg0 ids.NodeID, arg1 *bls.PublicKey, arg2 ids.ID, arg3 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", arg0, arg1, arg2, arg3)
+=======
+func (m *MockSet) Add(arg0 ids.NodeID, arg1 *bls.PublicKey, arg2 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Add", arg0, arg1, arg2)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
+<<<<<<< HEAD
 func (mr *MockSetMockRecorder) Add(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockSet)(nil).Add), arg0, arg1, arg2, arg3)
+=======
+func (mr *MockSetMockRecorder) Add(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockSet)(nil).Add), arg0, arg1, arg2)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 }
 
 // AddWeight mocks base method.
@@ -208,7 +223,11 @@ func (mr *MockSetMockRecorder) String() *gomock.Call {
 }
 
 // SubsetWeight mocks base method.
+<<<<<<< HEAD
 func (m *MockSet) SubsetWeight(arg0 set.Set[ids.NodeID]) uint64 {
+=======
+func (m *MockSet) SubsetWeight(arg0 ids.NodeIDSet) uint64 {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubsetWeight", arg0)
 	ret0, _ := ret[0].(uint64)

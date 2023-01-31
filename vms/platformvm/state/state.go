@@ -129,6 +129,7 @@ type State interface {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// Returns a map of node ID --> BLS Public Key for all validators
 	// that left the Primary Network validator set.
 	GetValidatorPublicKeyDiffs(height uint64) (map[ids.NodeID]*bls.PublicKey, error)
@@ -139,6 +140,12 @@ type State interface {
 
 =======
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	// Returns a map of node ID --> BLS Public Key for all validators
+	// that left the Primary Network validator set.
+	GetValidatorPublicKeyDiffs(height uint64) (map[ids.NodeID]*bls.PublicKey, error)
+
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	SetHeight(height uint64)
 
 	// Discard uncommitted changes to the database.
@@ -968,6 +975,9 @@ func (s *state) GetValidatorWeightDiffs(height uint64, subnetID ids.ID) (map[ids
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (s *state) GetValidatorPublicKeyDiffs(height uint64) (map[ids.NodeID]*bls.PublicKey, error) {
 	if publicKeyDiffsIntf, ok := s.validatorPublicKeyDiffsCache.Get(height); ok {
 		return publicKeyDiffsIntf.(map[ids.NodeID]*bls.PublicKey), nil
@@ -990,6 +1000,7 @@ func (s *state) GetValidatorPublicKeyDiffs(height uint64) (map[ids.NodeID]*bls.P
 		pk, err := bls.PublicKeyFromBytes(pkBytes)
 		if err != nil {
 			return nil, err
+<<<<<<< HEAD
 =======
 func (s *state) ValidatorSet(subnetID ids.ID, vdrs validators.Set) error {
 	for nodeID, validator := range s.currentStakers.validators[subnetID] {
@@ -1022,6 +1033,16 @@ func (s *state) ValidatorSet(subnetID ids.ID, vdrs validators.Set) error {
 
 =======
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		}
+		pkDiffs[nodeID] = pk
+	}
+
+	s.validatorPublicKeyDiffsCache.Put(height, pkDiffs)
+	return pkDiffs, diffIter.Error()
+}
+
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (s *state) syncGenesis(genesisBlk blocks.Block, genesis *genesis.State) error {
 	genesisBlkID := genesisBlk.ID()
 	s.SetLastAccepted(genesisBlkID)
@@ -1814,6 +1835,12 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 >>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 =======
 func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error {
+	heightBytes := database.PackUInt64(height)
+	rawPublicKeyDiffDB := prefixdb.New(heightBytes, s.validatorPublicKeyDiffsDB)
+	pkDiffDB := linkeddb.NewDefault(rawPublicKeyDiffDB)
+	// Node ID --> BLS public key of node before it left the validator set.
+	pkDiffs := make(map[ids.NodeID]*bls.PublicKey)
+
 	for subnetID, validatorDiffs := range s.currentStakers.validatorDiffs {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		delete(s.currentStakers.validatorDiffs, subnetID)
@@ -1839,12 +1866,16 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 		weightDiffs := make(map[ids.NodeID]*ValidatorWeightDiff)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 
 		// Record the change in weight and/or public key for each validator.
 		for nodeID, validatorDiff := range validatorDiffs {
 			// Copy [nodeID] so it doesn't get overwritten next iteration.
 			nodeID := nodeID
 
+<<<<<<< HEAD
 			var (
 				weightDiff     = &ValidatorWeightDiff{}
 				isNewValidator bool
@@ -1859,6 +1890,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 =======
 		for nodeID, validatorDiff := range validatorDiffs {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			var (
 				weightDiff     = &ValidatorWeightDiff{}
 				isNewValidator bool
@@ -1874,6 +1907,9 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 
 				if validatorDiff.validatorDeleted {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 					// Invariant: Only the Primary Network contains non-nil
 					//            public keys.
 					if staker.PublicKey != nil {
@@ -1886,8 +1922,11 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 						}
 					}
 
+<<<<<<< HEAD
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 					if err := validatorDB.Delete(staker.TxID[:]); err != nil {
 						return fmt.Errorf("failed to delete current staker: %w", err)
 					}
@@ -1896,9 +1935,13 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 				} else {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 					// The validator is being added.
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+					// The validator is being added.
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 					vdr := &uptimeAndReward{
 						txID:        staker.TxID,
 						lastUpdated: staker.StartTime,
@@ -2027,9 +2070,13 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 		s.validatorWeightDiffsCache.Put(string(prefixBytes), weightDiffs)
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	s.validatorPublicKeyDiffsCache.Put(height, pkDiffs)
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	s.validatorPublicKeyDiffsCache.Put(height, pkDiffs)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 
 	// TODO: Move validator set management out of the state package
 	//

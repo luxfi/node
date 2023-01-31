@@ -21,6 +21,7 @@ type State interface {
 	// GetCurrentHeight returns the current height of the P-chain.
 	GetCurrentHeight(context.Context) (uint64, error)
 
+<<<<<<< HEAD
 	// GetSubnetID returns the subnetID of the provided chain.
 	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 
@@ -28,14 +29,23 @@ type State interface {
 	// requested P-chain height.
 	// The returned map should not be modified.
 <<<<<<< HEAD
+=======
+	// GetValidatorSet returns the validators of the provided subnet at the
+	// requested P-chain height.
+	// The returned map should not be modified.
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	GetValidatorSet(
 		ctx context.Context,
 		height uint64,
 		subnetID ids.ID,
+<<<<<<< HEAD
 	) (map[ids.NodeID]*GetValidatorOutput, error)
 =======
 	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error)
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+	) (map[ids.NodeID]*Validator, error)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 }
 
 type lockedState struct {
@@ -65,6 +75,7 @@ func (s *lockedState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *lockedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -72,16 +83,22 @@ func (s *lockedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, 
 	return s.s.GetSubnetID(ctx, chainID)
 }
 
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (s *lockedState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	subnetID ids.ID,
+<<<<<<< HEAD
 ) (map[ids.NodeID]*GetValidatorOutput, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 =======
 func (s *lockedState) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+=======
+) (map[ids.NodeID]*Validator, error) {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -100,9 +117,13 @@ func NewNoValidatorsState(state State) State {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*noValidators) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*GetValidatorOutput, error) {
 =======
 func (*noValidators) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+func (*noValidators) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*Validator, error) {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	return nil, nil
 }

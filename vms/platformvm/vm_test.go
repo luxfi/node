@@ -2622,6 +2622,10 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 }
 
 func TestVM_GetValidatorSet(t *testing.T) {
+<<<<<<< HEAD
+=======
+	r := require.New(t)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -2649,18 +2653,29 @@ func TestVM_GetValidatorSet(t *testing.T) {
 
 	msgChan := make(chan common.Message, 1)
 	appSender := &common.SenderTest{T: t}
+<<<<<<< HEAD
 	err := vm.Initialize(context.Background(), ctx, db, genesisBytes, nil, nil, msgChan, nil, appSender)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, vm.Shutdown(context.Background()))
+=======
+	r.NoError(vm.Initialize(context.Background(), ctx, db, genesisBytes, nil, nil, msgChan, nil, appSender))
+	defer func() {
+		r.NoError(vm.Shutdown(context.Background()))
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 		ctx.Lock.Unlock()
 	}()
 
 	vm.clock.Set(defaultGenesisTime)
 	vm.uptimeManager.(uptime.TestManager).SetTime(defaultGenesisTime)
 
+<<<<<<< HEAD
 	require.NoError(t, vm.SetState(context.Background(), snow.Bootstrapping))
 	require.NoError(t, vm.SetState(context.Background(), snow.NormalOp))
+=======
+	r.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	r.NoError(vm.SetState(context.Background(), snow.NormalOp))
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 
 	var (
 		oldVdrs       = vm.Validators
@@ -2672,7 +2687,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 	// Populate the validator set to use below
 	for i := 0; i < numVdrs; i++ {
 		sk, err := bls.NewSecretKey()
+<<<<<<< HEAD
 		require.NoError(t, err)
+=======
+		r.NoError(err)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 
 		vdrs = append(vdrs, &validators.Validator{
 			NodeID:    ids.GenerateTestNodeID(),
@@ -2696,7 +2715,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 		// Diff at tip, block before tip, etc.
 		// This must have [height] - [lastAcceptedHeight] elements
 		pkDiffs        []map[ids.NodeID]*bls.PublicKey
+<<<<<<< HEAD
 		expectedVdrSet map[ids.NodeID]*validators.GetValidatorOutput
+=======
+		expectedVdrSet map[ids.NodeID]*validators.Validator
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 		expectedErr    error
 	}
 
@@ -2705,7 +2728,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			name:               "after tip",
 			height:             1,
 			lastAcceptedHeight: 0,
+<<<<<<< HEAD
 			expectedVdrSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
+=======
+			expectedVdrSet:     map[ids.NodeID]*validators.Validator{},
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			expectedErr:        database.ErrNotFound,
 		},
 		{
@@ -2718,12 +2745,17 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			currentSubnetValidators: []*validators.Validator{
 				copySubnetValidator(vdrs[0]),
 			},
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
 					Weight:    vdrs[0].Weight,
 				},
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.Validator{
+				vdrs[0].NodeID: vdrs[0],
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			},
 			expectedErr: nil,
 		},
@@ -2763,7 +2795,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 					vdrs[2].NodeID: vdrs[2].PublicKey,
 				},
 			},
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2835,7 +2871,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 				},
 				{},
 			},
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2883,7 +2923,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			pkDiffs: []map[ids.NodeID]*bls.PublicKey{
 				{},
 			},
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2937,7 +2981,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			pkDiffs: []map[ids.NodeID]*bls.PublicKey{
 				{},
 			},
+<<<<<<< HEAD
 			expectedVdrSet: map[ids.NodeID]*validators.GetValidatorOutput{
+=======
+			expectedVdrSet: map[ids.NodeID]*validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 				vdrs[0].NodeID: {
 					NodeID:    vdrs[0].NodeID,
 					PublicKey: vdrs[0].PublicKey,
@@ -2955,6 +3003,7 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+<<<<<<< HEAD
 		{
 			name:               "unrelated primary network key removal on subnet lookup",
 			height:             4,
@@ -2983,6 +3032,8 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 
 	for _, tt := range tests {
