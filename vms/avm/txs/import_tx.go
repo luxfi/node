@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,11 +6,12 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -28,11 +29,11 @@ type ImportTx struct {
 	SourceChain ids.ID `serialize:"true" json:"sourceChain"`
 
 	// The inputs to this transaction
-	ImportedIns []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
+	ImportedIns []*avax.TransferableInput `serialize:"true" json:"importedInputs"`
 }
 
 // InputUTXOs track which UTXOs this transaction is consuming.
-func (t *ImportTx) InputUTXOs() []*lux.UTXOID {
+func (t *ImportTx) InputUTXOs() []*avax.UTXOID {
 	utxos := t.BaseTx.InputUTXOs()
 	for _, in := range t.ImportedIns {
 		in.Symbol = true
@@ -42,7 +43,7 @@ func (t *ImportTx) InputUTXOs() []*lux.UTXOID {
 }
 
 // ConsumedAssetIDs returns the IDs of the assets this transaction consumes
-func (t *ImportTx) ConsumedAssetIDs() ids.Set {
+func (t *ImportTx) ConsumedAssetIDs() set.Set[ids.ID] {
 	assets := t.BaseTx.AssetIDs()
 	for _, in := range t.ImportedIns {
 		assets.Add(in.AssetID())
@@ -51,7 +52,7 @@ func (t *ImportTx) ConsumedAssetIDs() ids.Set {
 }
 
 // AssetIDs returns the IDs of the assets this transaction depends on
-func (t *ImportTx) AssetIDs() ids.Set {
+func (t *ImportTx) AssetIDs() set.Set[ids.ID] {
 	assets := t.BaseTx.AssetIDs()
 	for _, in := range t.ImportedIns {
 		assets.Add(in.AssetID())
@@ -71,7 +72,7 @@ func (t *ImportTx) SyntacticVerify(
 	txFeeAssetID ids.ID,
 	txFee uint64,
 	_ uint64,
-	numFxs int,
+	_ int,
 ) error {
 	switch {
 	case t == nil:
@@ -86,14 +87,14 @@ func (t *ImportTx) SyntacticVerify(
 		return err
 	}
 
-	return lux.VerifyTx(
+	return avax.VerifyTx(
 		txFee,
 		txFeeAssetID,
-		[][]*lux.TransferableInput{
+		[][]*avax.TransferableInput{
 			t.Ins,
 			t.ImportedIns,
 		},
-		[][]*lux.TransferableOutput{t.Outs},
+		[][]*avax.TransferableOutput{t.Outs},
 		c,
 	)
 }

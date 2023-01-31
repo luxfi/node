@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,14 +9,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 // TODO use table tests here
@@ -40,19 +40,19 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
+	inputs := []*avax.TransferableInput{{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*avax.TransferableOutput{{
+		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -65,7 +65,7 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
@@ -151,19 +151,19 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	// create a valid tx
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
+	inputs := []*avax.TransferableInput{{
+		UTXOID: avax.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*avax.TransferableOutput{{
+		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -176,7 +176,7 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,

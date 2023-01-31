@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gresponsewriter
@@ -11,15 +11,15 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gconn"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gwriter"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gconn"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/greader"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gwriter"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	responsewriterpb "github.com/luxdefi/luxd/proto/pb/http/responsewriter"
-	readerpb "github.com/luxdefi/luxd/proto/pb/io/reader"
-	writerpb "github.com/luxdefi/luxd/proto/pb/io/writer"
-	connpb "github.com/luxdefi/luxd/proto/pb/net/conn"
+	responsewriterpb "github.com/ava-labs/avalanchego/proto/pb/http/responsewriter"
+	readerpb "github.com/ava-labs/avalanchego/proto/pb/io/reader"
+	writerpb "github.com/ava-labs/avalanchego/proto/pb/io/writer"
+	connpb "github.com/ava-labs/avalanchego/proto/pb/net/conn"
 )
 
 var (
@@ -42,7 +42,9 @@ func NewClient(header http.Header, client responsewriterpb.WriterClient) *Client
 	}
 }
 
-func (c *Client) Header() http.Header { return c.header }
+func (c *Client) Header() http.Header {
+	return c.header
+}
 
 func (c *Client) Write(payload []byte) (int, error) {
 	req := &responsewriterpb.WriteRequest{
@@ -87,8 +89,13 @@ type addr struct {
 	str     string
 }
 
-func (a *addr) Network() string { return a.network }
-func (a *addr) String() string  { return a.str }
+func (a *addr) Network() string {
+	return a.network
+}
+
+func (a *addr) String() string {
+	return a.str
+}
 
 func (c *Client) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	resp, err := c.client.Hijack(context.Background(), &emptypb.Empty{})

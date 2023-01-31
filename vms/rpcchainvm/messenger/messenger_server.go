@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package messenger
@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
 
-	messengerpb "github.com/luxdefi/luxd/proto/pb/messenger"
+	messengerpb "github.com/ava-labs/avalanchego/proto/pb/messenger"
 )
 
 var (

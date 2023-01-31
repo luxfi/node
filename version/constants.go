@@ -1,20 +1,27 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/luxdefi/luxd/utils/constants"
+	_ "embed"
+
+	"github.com/ava-labs/avalanchego/utils/constants"
 )
+
+// RPCChainVMProtocol should be bumped anytime changes are made which require
+// the plugin vm to upgrade to latest avalanchego release to be compatible.
+const RPCChainVMProtocol uint = 22
 
 // These are globals that describe network upgrades and node versions
 var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 9,
-		Patch: 1,
+		Patch: 7,
 	}
 	CurrentApp = &Application{
 		Major: Current.Major,
@@ -45,6 +52,13 @@ var (
 		Minor: 0,
 		Patch: 0,
 	}
+
+	//go:embed compatibility.json
+	rpcChainVMProtocolCompatibilityBytes []byte
+	// RPCChainVMProtocolCompatibility maps RPCChainVMProtocol versions to the
+	// set of avalanchego versions that supported that version. This is not used
+	// by avalanchego, but is useful for downstream libraries.
+	RPCChainVMProtocolCompatibility map[uint][]*Semantic
 
 	ApricotPhase3Times = map[uint32]time.Time{
 		constants.MainnetID: time.Date(2021, time.August, 24, 14, 0, 0, 0, time.UTC),
@@ -88,6 +102,27 @@ var (
 	}
 	XChainMigrationDefaultTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC)
 )
+
+func init() {
+	var parsedRPCChainVMCompatibility map[uint][]string
+	err := json.Unmarshal(rpcChainVMProtocolCompatibilityBytes, &parsedRPCChainVMCompatibility)
+	if err != nil {
+		panic(err)
+	}
+
+	RPCChainVMProtocolCompatibility = make(map[uint][]*Semantic)
+	for rpcChainVMProtocol, versionStrings := range parsedRPCChainVMCompatibility {
+		versions := make([]*Semantic, len(versionStrings))
+		for i, versionString := range versionStrings {
+			version, err := Parse(versionString)
+			if err != nil {
+				panic(err)
+			}
+			versions[i] = version
+		}
+		RPCChainVMProtocolCompatibility[rpcChainVMProtocol] = versions
+	}
+}
 
 func GetApricotPhase3Time(networkID uint32) time.Time {
 	if upgradeTime, exists := ApricotPhase3Times[networkID]; exists {

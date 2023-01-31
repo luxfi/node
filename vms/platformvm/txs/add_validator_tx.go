@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,16 +7,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/fx"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -32,7 +33,7 @@ type AddValidatorTx struct {
 	// Describes the delegatee
 	Validator validator.Validator `serialize:"true" json:"validator"`
 	// Where to send staked tokens when done validating
-	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
+	StakeOuts []*avax.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send staking rewards when done validating
 	RewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
 	// Fee this validator charges delegators as a percentage, times 10,000
@@ -53,17 +54,53 @@ func (tx *AddValidatorTx) InitCtx(ctx *snow.Context) {
 	tx.RewardsOwner.InitCtx(ctx)
 }
 
-func (tx *AddValidatorTx) SubnetID() ids.ID                  { return constants.PrimaryNetworkID }
-func (tx *AddValidatorTx) NodeID() ids.NodeID                { return tx.Validator.NodeID }
-func (tx *AddValidatorTx) StartTime() time.Time              { return tx.Validator.StartTime() }
-func (tx *AddValidatorTx) EndTime() time.Time                { return tx.Validator.EndTime() }
-func (tx *AddValidatorTx) Weight() uint64                    { return tx.Validator.Wght }
-func (tx *AddValidatorTx) PendingPriority() Priority         { return PrimaryNetworkValidatorPendingPriority }
-func (tx *AddValidatorTx) CurrentPriority() Priority         { return PrimaryNetworkValidatorCurrentPriority }
-func (tx *AddValidatorTx) Stake() []*lux.TransferableOutput { return tx.StakeOuts }
-func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner  { return tx.RewardsOwner }
-func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner  { return tx.RewardsOwner }
-func (tx *AddValidatorTx) Shares() uint32                    { return tx.DelegationShares }
+func (*AddValidatorTx) SubnetID() ids.ID {
+	return constants.PrimaryNetworkID
+}
+
+func (tx *AddValidatorTx) NodeID() ids.NodeID {
+	return tx.Validator.NodeID
+}
+
+func (*AddValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	return nil, false, nil
+}
+
+func (tx *AddValidatorTx) StartTime() time.Time {
+	return tx.Validator.StartTime()
+}
+
+func (tx *AddValidatorTx) EndTime() time.Time {
+	return tx.Validator.EndTime()
+}
+
+func (tx *AddValidatorTx) Weight() uint64 {
+	return tx.Validator.Wght
+}
+
+func (*AddValidatorTx) PendingPriority() Priority {
+	return PrimaryNetworkValidatorPendingPriority
+}
+
+func (*AddValidatorTx) CurrentPriority() Priority {
+	return PrimaryNetworkValidatorCurrentPriority
+}
+
+func (tx *AddValidatorTx) Stake() []*avax.TransferableOutput {
+	return tx.StakeOuts
+}
+
+func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner {
+	return tx.RewardsOwner
+}
+
+func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner {
+	return tx.RewardsOwner
+}
+
+func (tx *AddValidatorTx) Shares() uint32 {
+	return tx.DelegationShares
+}
 
 // SyntacticVerify returns nil iff [tx] is valid
 func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {
@@ -95,13 +132,13 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		if assetID != ctx.LUXAssetID {
-			return fmt.Errorf("stake output must be LUX but is %q", assetID)
+		if assetID != ctx.AVAXAssetID {
+			return fmt.Errorf("stake output must be AVAX but is %q", assetID)
 		}
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !avax.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
 		return errOutputsNotSorted
 	case totalStakeWeight != tx.Validator.Wght:
 		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Validator.Wght, totalStakeWeight)

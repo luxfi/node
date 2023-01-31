@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/api"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/rpc"
+	"github.com/ava-labs/avalanchego/api"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/rpc"
 )
 
 type mockClient struct {
@@ -21,11 +21,11 @@ type mockClient struct {
 }
 
 func (mc *mockClient) SendRequest(
-	ctx context.Context,
-	method string,
+	_ context.Context,
+	_ string,
 	inData interface{},
-	reply interface{},
-	options ...rpc.Option,
+	_ interface{},
+	_ ...rpc.Option,
 ) error {
 	mc.require.Equal(inData, mc.expectedInData)
 	return nil

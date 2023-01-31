@@ -1,12 +1,12 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms"
 )
 
 var (
@@ -18,4 +18,6 @@ var (
 
 type Factory struct{}
 
-func (f *Factory) New(*snow.Context) (interface{}, error) { return &Fx{}, nil }
+func (*Factory) New(*snow.Context) (interface{}, error) {
+	return &Fx{}, nil
+}

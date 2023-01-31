@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -8,19 +8,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/config"
-	"github.com/luxdefi/luxd/vms/platformvm/fx"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/utxo"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 // Max number of items allowed in a page
@@ -174,7 +175,7 @@ func New(
 	clk *mockable.Clock,
 	fx fx.Fx,
 	state state.Chain,
-	atomicUTXOManager lux.AtomicUTXOManager,
+	atomicUTXOManager avax.AtomicUTXOManager,
 	utxoSpender utxo.Spender,
 ) Builder {
 	return &builder{
@@ -189,7 +190,7 @@ func New(
 }
 
 type builder struct {
-	lux.AtomicUTXOManager
+	avax.AtomicUTXOManager
 	utxo.Spender
 	state state.Chain
 
@@ -212,7 +213,7 @@ func (b *builder) NewImportTx(
 		return nil, fmt.Errorf("problem retrieving atomic UTXOs: %w", err)
 	}
 
-	importedInputs := []*lux.TransferableInput{}
+	importedInputs := []*avax.TransferableInput{}
 	signers := [][]*crypto.PrivateKeySECP256K1R{}
 
 	importedAmounts := make(map[ids.ID]uint64)
@@ -222,7 +223,7 @@ func (b *builder) NewImportTx(
 		if err != nil {
 			continue
 		}
-		input, ok := inputIntf.(lux.TransferableIn)
+		input, ok := inputIntf.(avax.TransferableIn)
 		if !ok {
 			continue
 		}
@@ -231,41 +232,41 @@ func (b *builder) NewImportTx(
 		if err != nil {
 			return nil, err
 		}
-		importedInputs = append(importedInputs, &lux.TransferableInput{
+		importedInputs = append(importedInputs, &avax.TransferableInput{
 			UTXOID: utxo.UTXOID,
 			Asset:  utxo.Asset,
 			In:     input,
 		})
 		signers = append(signers, utxoSigners)
 	}
-	lux.SortTransferableInputsWithSigners(importedInputs, signers)
+	avax.SortTransferableInputsWithSigners(importedInputs, signers)
 
 	if len(importedAmounts) == 0 {
 		return nil, errNoFunds // No imported UTXOs were spendable
 	}
 
-	importedLUX := importedAmounts[b.ctx.LUXAssetID]
+	importedAVAX := importedAmounts[b.ctx.AVAXAssetID]
 
-	ins := []*lux.TransferableInput{}
-	outs := []*lux.TransferableOutput{}
+	ins := []*avax.TransferableInput{}
+	outs := []*avax.TransferableOutput{}
 	switch {
-	case importedLUX < b.cfg.TxFee: // imported amount goes toward paying tx fee
+	case importedAVAX < b.cfg.TxFee: // imported amount goes toward paying tx fee
 		var baseSigners [][]*crypto.PrivateKeySECP256K1R
-		ins, outs, _, baseSigners, err = b.Spend(keys, 0, b.cfg.TxFee-importedLUX, changeAddr)
+		ins, outs, _, baseSigners, err = b.Spend(keys, 0, b.cfg.TxFee-importedAVAX, changeAddr)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 		}
 		signers = append(baseSigners, signers...)
-		delete(importedAmounts, b.ctx.LUXAssetID)
-	case importedLUX == b.cfg.TxFee:
-		delete(importedAmounts, b.ctx.LUXAssetID)
+		delete(importedAmounts, b.ctx.AVAXAssetID)
+	case importedAVAX == b.cfg.TxFee:
+		delete(importedAmounts, b.ctx.AVAXAssetID)
 	default:
-		importedAmounts[b.ctx.LUXAssetID] -= b.cfg.TxFee
+		importedAmounts[b.ctx.AVAXAssetID] -= b.cfg.TxFee
 	}
 
 	for assetID, amount := range importedAmounts {
-		outs = append(outs, &lux.TransferableOutput{
-			Asset: lux.Asset{ID: assetID},
+		outs = append(outs, &avax.TransferableOutput{
+			Asset: avax.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -277,11 +278,11 @@ func (b *builder) NewImportTx(
 		})
 	}
 
-	lux.SortTransferableOutputs(outs, txs.Codec) // sort imported outputs
+	avax.SortTransferableOutputs(outs, txs.Codec) // sort imported outputs
 
 	// Create the transaction
 	utx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Outs:         outs,
@@ -297,7 +298,7 @@ func (b *builder) NewImportTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-// TODO: should support other assets than LUX
+// TODO: should support other assets than AVAX
 func (b *builder) NewExportTx(
 	amount uint64,
 	chainID ids.ID,
@@ -316,15 +317,15 @@ func (b *builder) NewExportTx(
 
 	// Create the transaction
 	utx := &txs.ExportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
 			Outs:         outs, // Non-exported outputs
 		}},
 		DestinationChain: chainID,
-		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
-			Asset: lux.Asset{ID: b.ctx.LUXAssetID},
+		ExportedOutputs: []*avax.TransferableOutput{{ // Exported to X-Chain
+			Asset: avax.Asset{ID: b.ctx.AVAXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -365,11 +366,11 @@ func (b *builder) NewCreateChainTx(
 	signers = append(signers, subnetSigners)
 
 	// Sort the provided fxIDs
-	ids.SortIDs(fxIDs)
+	utils.Sort(fxIDs)
 
 	// Create the tx
 	utx := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -403,11 +404,11 @@ func (b *builder) NewCreateSubnetTx(
 	}
 
 	// Sort control addresses
-	ids.SortShortIDs(ownerAddrs)
+	utils.Sort(ownerAddrs)
 
 	// Create the tx
 	utx := &txs.CreateSubnetTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -441,7 +442,7 @@ func (b *builder) NewAddValidatorTx(
 	}
 	// Create the tx
 	utx := &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -483,7 +484,7 @@ func (b *builder) NewAddDelegatorTx(
 	}
 	// Create the tx
 	utx := &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -531,7 +532,7 @@ func (b *builder) NewAddSubnetValidatorTx(
 
 	// Create the tx
 	utx := &txs.AddSubnetValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -574,7 +575,7 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 
 	// Create the tx
 	utx := &txs.RemoveSubnetValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,

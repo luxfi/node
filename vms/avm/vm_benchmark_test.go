@@ -1,17 +1,19 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/keystore"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/keystore"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func BenchmarkLoadUser(b *testing.B) {
@@ -20,7 +22,7 @@ func BenchmarkLoadUser(b *testing.B) {
 		_, _, vm, _ := GenesisVM(nil)
 		ctx := vm.ctx
 		defer func() {
-			if err := vm.Shutdown(); err != nil {
+			if err := vm.Shutdown(context.Background()); err != nil {
 				b.Fatal(err)
 			}
 			ctx.Lock.Unlock()
@@ -38,7 +40,7 @@ func BenchmarkLoadUser(b *testing.B) {
 
 		b.ResetTimer()
 
-		fromAddrs := ids.ShortSet{}
+		fromAddrs := set.Set[ids.ShortID]{}
 		for n := 0; n < b.N; n++ {
 			addrIndex := n % numKeys
 			fromAddrs.Clear()
@@ -68,7 +70,7 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 	_, _, vm, _ := GenesisVM(b)
 	ctx := vm.ctx
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			b.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -78,12 +80,12 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 
 	// #nosec G404
 	for i := 0; i < utxoCount; i++ {
-		utxo := &lux.UTXO{
-			UTXOID: lux.UTXOID{
+		utxo := &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: rand.Uint32(),
 			},
-			Asset: lux.Asset{ID: ids.ID{'y', 'e', 'e', 't'}},
+			Asset: avax.Asset{ID: ids.ID{'y', 'e', 'e', 't'}},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 100000,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -99,19 +101,19 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 		}
 	}
 
-	addrsSet := ids.ShortSet{}
+	addrsSet := set.Set[ids.ShortID]{}
 	addrsSet.Add(addr)
 
 	var (
 		err               error
-		notPaginatedUTXOs []*lux.UTXO
+		notPaginatedUTXOs []*avax.UTXO
 	)
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		// Fetch all UTXOs older version
-		notPaginatedUTXOs, err = lux.GetAllUTXOs(vm.state, addrsSet)
+		notPaginatedUTXOs, err = avax.GetAllUTXOs(vm.state, addrsSet)
 		if err != nil {
 			b.Fatal(err)
 		}

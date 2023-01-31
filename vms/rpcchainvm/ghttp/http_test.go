@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ghttp
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	httppb "github.com/luxdefi/luxd/proto/pb/http"
+	httppb "github.com/ava-labs/avalanchego/proto/pb/http"
 )
 
 func Test_convertWriteResponse(t *testing.T) {

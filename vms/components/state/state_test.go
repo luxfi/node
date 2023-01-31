@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -6,10 +6,10 @@ package state
 import (
 	"testing"
 
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 // toy example of a block, just used for testing
@@ -205,7 +205,7 @@ func TestGetWrongTypeID(t *testing.T) {
 		value:    5,
 	}
 	blockID := ids.ID{1, 2, 3}
-	if err = state.Put(db, blockTypeID, blockID, block); err != nil {
+	if err := state.Put(db, blockTypeID, blockID, block); err != nil {
 		t.Fatal(err)
 	}
 
@@ -251,7 +251,7 @@ func TestSameKeyDifferentTypeID(t *testing.T) {
 	}
 
 	// put it using sharedKey
-	if err = state.Put(db, accountTypeID, sharedKey, acc); err != nil {
+	if err := state.Put(db, accountTypeID, sharedKey, acc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -262,7 +262,7 @@ func TestSameKeyDifferentTypeID(t *testing.T) {
 	}
 
 	// put it using sharedKey
-	if err = state.Put(db, blockTypeID, sharedKey, block1); err != nil {
+	if err := state.Put(db, blockTypeID, sharedKey, block1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -328,7 +328,7 @@ func TestOverwrite(t *testing.T) {
 	key := ids.ID{1, 2, 3}
 
 	// put it
-	if err = state.Put(db, blockTypeID, key, block1); err != nil {
+	if err := state.Put(db, blockTypeID, key, block1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -339,7 +339,7 @@ func TestOverwrite(t *testing.T) {
 	}
 
 	// put it with the same key
-	if err = state.Put(db, blockTypeID, key, block2); err != nil {
+	if err := state.Put(db, blockTypeID, key, block2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -389,7 +389,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	// put it
-	if err = state.Put(db, accountTypeID, acc1.id, acc1); err != nil {
+	if err := state.Put(db, accountTypeID, acc1.id, acc1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -419,7 +419,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	// put it
-	if err = state.Put(db, accountTypeID, acc2.id, acc2); err != nil {
+	if err := state.Put(db, accountTypeID, acc2.id, acc2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -455,7 +455,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	// put it
-	if err = state.Put(db, blockTypeID, block1ID, block1); err != nil {
+	if err := state.Put(db, blockTypeID, block1ID, block1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -483,7 +483,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	// put it
-	if err = state.Put(db, blockTypeID, block2ID, block2); err != nil {
+	if err := state.Put(db, blockTypeID, block2ID, block2); err != nil {
 		t.Fatal(err)
 	}
 

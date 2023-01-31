@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 func TestNewApricotAtomicBlock(t *testing.T) {
@@ -22,16 +22,16 @@ func TestNewApricotAtomicBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.ImportTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: lux.BaseTx{
-					Ins:  []*lux.TransferableInput{},
-					Outs: []*lux.TransferableOutput{},
+				BaseTx: avax.BaseTx{
+					Ins:  []*avax.TransferableInput{},
+					Outs: []*avax.TransferableOutput{},
 				},
 			},
-			ImportedInputs: []*lux.TransferableInput{},
+			ImportedInputs: []*avax.TransferableInput{},
 		},
 		Creds: []verify.Verifiable{},
 	}
-	require.NoError(tx.Sign(txs.Codec, nil))
+	require.NoError(tx.Initialize(txs.Codec))
 
 	blk, err := NewApricotAtomicBlock(
 		parentID,
@@ -41,8 +41,8 @@ func TestNewApricotAtomicBlock(t *testing.T) {
 	require.NoError(err)
 
 	// Make sure the block and tx are initialized
-	require.NotNil(blk.Bytes())
-	require.NotNil(blk.Tx.Bytes())
+	require.NotEmpty(blk.Bytes())
+	require.NotEmpty(blk.Tx.Bytes())
 	require.NotEqual(ids.Empty, blk.Tx.ID())
 	require.Equal(tx.Bytes(), blk.Tx.Bytes())
 	require.Equal(parentID, blk.Parent())

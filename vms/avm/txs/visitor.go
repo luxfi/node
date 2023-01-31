@@ -1,9 +1,9 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
-import "github.com/luxdefi/luxd/vms/components/lux"
+import "github.com/ava-labs/avalanchego/vms/components/avax"
 
 var _ Visitor = (*utxoGetter)(nil)
 
@@ -19,19 +19,19 @@ type Visitor interface {
 // utxoGetter returns the UTXOs transaction is producing.
 type utxoGetter struct {
 	tx    *Tx
-	utxos []*lux.UTXO
+	utxos []*avax.UTXO
 }
 
 func (u *utxoGetter) BaseTx(tx *BaseTx) error {
 	txID := u.tx.ID()
-	u.utxos = make([]*lux.UTXO, len(tx.Outs))
+	u.utxos = make([]*avax.UTXO, len(tx.Outs))
 	for i, out := range tx.Outs {
-		u.utxos[i] = &lux.UTXO{
-			UTXOID: lux.UTXOID{
+		u.utxos[i] = &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(i),
 			},
-			Asset: lux.Asset{ID: out.AssetID()},
+			Asset: avax.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 	}
@@ -54,12 +54,12 @@ func (u *utxoGetter) CreateAssetTx(t *CreateAssetTx) error {
 	txID := u.tx.ID()
 	for _, state := range t.States {
 		for _, out := range state.Outs {
-			u.utxos = append(u.utxos, &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			u.utxos = append(u.utxos, &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(len(u.utxos)),
 				},
-				Asset: lux.Asset{
+				Asset: avax.Asset{
 					ID: txID,
 				},
 				Out: out,
@@ -78,12 +78,12 @@ func (u *utxoGetter) OperationTx(t *OperationTx) error {
 	for _, op := range t.Ops {
 		asset := op.AssetID()
 		for _, out := range op.Op.Outs() {
-			u.utxos = append(u.utxos, &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			u.utxos = append(u.utxos, &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(len(u.utxos)),
 				},
-				Asset: lux.Asset{ID: asset},
+				Asset: avax.Asset{ID: asset},
 				Out:   out,
 			})
 		}

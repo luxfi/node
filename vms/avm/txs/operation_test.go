@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,62 +6,46 @@ package txs
 import (
 	"testing"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 type testOperable struct {
-	lux.TestTransferable `serialize:"true"`
+	avax.TestTransferable `serialize:"true"`
 
 	Outputs []verify.State `serialize:"true"`
 }
 
-func (o *testOperable) InitCtx(ctx *snow.Context) {}
+func (*testOperable) InitCtx(*snow.Context) {}
 
-func (o *testOperable) Outs() []verify.State { return o.Outputs }
+func (o *testOperable) Outs() []verify.State {
+	return o.Outputs
+}
 
 func TestOperationVerifyNil(t *testing.T) {
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
-	if err := m.RegisterCodec(CodecVersion, c); err != nil {
-		t.Fatal(err)
-	}
-
 	op := (*Operation)(nil)
-	if err := op.Verify(m); err == nil {
+	if err := op.Verify(); err == nil {
 		t.Fatalf("Should have erred due to nil operation")
 	}
 }
 
 func TestOperationVerifyEmpty(t *testing.T) {
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
-	if err := m.RegisterCodec(CodecVersion, c); err != nil {
-		t.Fatal(err)
-	}
-
 	op := &Operation{
-		Asset: lux.Asset{ID: ids.Empty},
+		Asset: avax.Asset{ID: ids.Empty},
 	}
-	if err := op.Verify(m); err == nil {
+	if err := op.Verify(); err == nil {
 		t.Fatalf("Should have erred due to empty operation")
 	}
 }
 
 func TestOperationVerifyUTXOIDsNotSorted(t *testing.T) {
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
-	if err := m.RegisterCodec(CodecVersion, c); err != nil {
-		t.Fatal(err)
-	}
-
 	op := &Operation{
-		Asset: lux.Asset{ID: ids.Empty},
-		UTXOIDs: []*lux.UTXOID{
+		Asset: avax.Asset{ID: ids.Empty},
+		UTXOIDs: []*avax.UTXOID{
 			{
 				TxID:        ids.Empty,
 				OutputIndex: 1,
@@ -73,22 +57,16 @@ func TestOperationVerifyUTXOIDsNotSorted(t *testing.T) {
 		},
 		Op: &testOperable{},
 	}
-	if err := op.Verify(m); err == nil {
+	if err := op.Verify(); err == nil {
 		t.Fatalf("Should have erred due to unsorted utxoIDs")
 	}
 }
 
 func TestOperationVerify(t *testing.T) {
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
-	if err := m.RegisterCodec(CodecVersion, c); err != nil {
-		t.Fatal(err)
-	}
-
 	assetID := ids.GenerateTestID()
 	op := &Operation{
-		Asset: lux.Asset{ID: assetID},
-		UTXOIDs: []*lux.UTXOID{
+		Asset: avax.Asset{ID: assetID},
+		UTXOIDs: []*avax.UTXOID{
 			{
 				TxID:        assetID,
 				OutputIndex: 1,
@@ -96,7 +74,7 @@ func TestOperationVerify(t *testing.T) {
 		},
 		Op: &testOperable{},
 	}
-	if err := op.Verify(m); err != nil {
+	if err := op.Verify(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -114,8 +92,8 @@ func TestOperationSorting(t *testing.T) {
 
 	ops := []*Operation{
 		{
-			Asset: lux.Asset{ID: ids.Empty},
-			UTXOIDs: []*lux.UTXOID{
+			Asset: avax.Asset{ID: ids.Empty},
+			UTXOIDs: []*avax.UTXOID{
 				{
 					TxID:        ids.Empty,
 					OutputIndex: 1,
@@ -124,8 +102,8 @@ func TestOperationSorting(t *testing.T) {
 			Op: &testOperable{},
 		},
 		{
-			Asset: lux.Asset{ID: ids.Empty},
-			UTXOIDs: []*lux.UTXOID{
+			Asset: avax.Asset{ID: ids.Empty},
+			UTXOIDs: []*avax.UTXOID{
 				{
 					TxID:        ids.Empty,
 					OutputIndex: 0,
@@ -142,8 +120,8 @@ func TestOperationSorting(t *testing.T) {
 		t.Fatalf("Should be sorted")
 	}
 	ops = append(ops, &Operation{
-		Asset: lux.Asset{ID: ids.Empty},
-		UTXOIDs: []*lux.UTXOID{
+		Asset: avax.Asset{ID: ids.Empty},
+		UTXOIDs: []*avax.UTXOID{
 			{
 				TxID:        ids.Empty,
 				OutputIndex: 1,

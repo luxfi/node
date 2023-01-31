@@ -1,10 +1,10 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 type Header interface {
@@ -22,7 +22,18 @@ type statelessHeader struct {
 	bytes []byte
 }
 
-func (h *statelessHeader) ChainID() ids.ID  { return h.Chain }
-func (h *statelessHeader) ParentID() ids.ID { return h.Parent }
-func (h *statelessHeader) BodyID() ids.ID   { return h.Body }
-func (h *statelessHeader) Bytes() []byte    { return h.bytes }
+func (h *statelessHeader) ChainID() ids.ID {
+	return h.Chain
+}
+
+func (h *statelessHeader) ParentID() ids.ID {
+	return h.Parent
+}
+
+func (h *statelessHeader) BodyID() ids.ID {
+	return h.Body
+}
+
+func (h *statelessHeader) Bytes() []byte {
+	return h.bytes
+}

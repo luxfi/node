@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const cacheSize = 1000
@@ -176,13 +176,13 @@ func (s *state) PutID(db database.Database, key ids.ID, id ids.ID) error {
 
 // GetID gets the ID associated with [key] in [db]
 func (s *state) GetID(db database.Database, key ids.ID) (ids.ID, error) {
-	IDInterface, err := s.Get(db, IDTypeID, key)
+	idIntf, err := s.Get(db, IDTypeID, key)
 	if err != nil {
 		return ids.ID{}, err
 	}
 
-	if ID, ok := IDInterface.(ids.ID); ok {
-		return ID, nil
+	if id, ok := idIntf.(ids.ID); ok {
+		return id, nil
 	}
 
 	return ids.ID{}, errWrongType

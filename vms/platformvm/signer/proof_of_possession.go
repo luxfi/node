@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/formatting"
 )
 
 var (
@@ -59,7 +59,9 @@ func (p *ProofOfPossession) Verify() error {
 	return nil
 }
 
-func (p *ProofOfPossession) Key() *bls.PublicKey { return p.publicKey }
+func (p *ProofOfPossession) Key() *bls.PublicKey {
+	return p.publicKey
+}
 
 type jsonProofOfPossession struct {
 	PublicKey         string `json:"publicKey"`

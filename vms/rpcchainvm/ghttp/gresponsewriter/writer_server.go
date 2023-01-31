@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gresponsewriter
@@ -8,18 +8,20 @@ import (
 	"errors"
 	"net/http"
 
+	"golang.org/x/exp/maps"
+
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gconn"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gwriter"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gconn"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/greader"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gwriter"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	responsewriterpb "github.com/luxdefi/luxd/proto/pb/http/responsewriter"
-	readerpb "github.com/luxdefi/luxd/proto/pb/io/reader"
-	writerpb "github.com/luxdefi/luxd/proto/pb/io/writer"
-	connpb "github.com/luxdefi/luxd/proto/pb/net/conn"
+	responsewriterpb "github.com/ava-labs/avalanchego/proto/pb/http/responsewriter"
+	readerpb "github.com/ava-labs/avalanchego/proto/pb/io/reader"
+	writerpb "github.com/ava-labs/avalanchego/proto/pb/io/writer"
+	connpb "github.com/ava-labs/avalanchego/proto/pb/net/conn"
 )
 
 var (
@@ -42,11 +44,12 @@ func NewServer(writer http.ResponseWriter) *Server {
 	}
 }
 
-func (s *Server) Write(ctx context.Context, req *responsewriterpb.WriteRequest) (*responsewriterpb.WriteResponse, error) {
+func (s *Server) Write(
+	_ context.Context,
+	req *responsewriterpb.WriteRequest,
+) (*responsewriterpb.WriteResponse, error) {
 	headers := s.writer.Header()
-	for key := range headers {
-		delete(headers, key)
-	}
+	maps.Clear(headers)
 	for _, header := range req.Headers {
 		headers[header.Key] = header.Values
 	}
@@ -60,11 +63,12 @@ func (s *Server) Write(ctx context.Context, req *responsewriterpb.WriteRequest) 
 	}, nil
 }
 
-func (s *Server) WriteHeader(ctx context.Context, req *responsewriterpb.WriteHeaderRequest) (*emptypb.Empty, error) {
+func (s *Server) WriteHeader(
+	_ context.Context,
+	req *responsewriterpb.WriteHeaderRequest,
+) (*emptypb.Empty, error) {
 	headers := s.writer.Header()
-	for key := range headers {
-		delete(headers, key)
-	}
+	maps.Clear(headers)
 	for _, header := range req.Headers {
 		headers[header.Key] = header.Values
 	}
@@ -72,7 +76,7 @@ func (s *Server) WriteHeader(ctx context.Context, req *responsewriterpb.WriteHea
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) Flush(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *Server) Flush(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	flusher, ok := s.writer.(http.Flusher)
 	if !ok {
 		return nil, errUnsupportedFlushing
@@ -81,7 +85,7 @@ func (s *Server) Flush(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty,
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) Hijack(ctx context.Context, req *emptypb.Empty) (*responsewriterpb.HijackResponse, error) {
+func (s *Server) Hijack(context.Context, *emptypb.Empty) (*responsewriterpb.HijackResponse, error) {
 	hijacker, ok := s.writer.(http.Hijacker)
 	if !ok {
 		return nil, errUnsupportedHijacking
@@ -99,10 +103,7 @@ func (s *Server) Hijack(ctx context.Context, req *emptypb.Empty) (*responsewrite
 
 	closer := grpcutils.ServerCloser{}
 	go grpcutils.Serve(serverListener, func(opts []grpc.ServerOption) *grpc.Server {
-		if len(opts) == 0 {
-			opts = append(opts, grpcutils.DefaultServerOptions...)
-		}
-		server := grpc.NewServer(opts...)
+		server := grpcutils.NewDefaultServer(opts)
 		closer.Add(server)
 		connpb.RegisterConnServer(server, gconn.NewServer(conn, &closer))
 		readerpb.RegisterReaderServer(server, greader.NewServer(readWriter))

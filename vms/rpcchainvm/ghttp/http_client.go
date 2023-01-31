@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ghttp
@@ -9,11 +9,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/luxdefi/luxd/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxdefi/luxd/proto/pb/http"
-	responsewriterpb "github.com/luxdefi/luxd/proto/pb/http/responsewriter"
+	httppb "github.com/ava-labs/avalanchego/proto/pb/http"
+	responsewriterpb "github.com/ava-labs/avalanchego/proto/pb/http/responsewriter"
 )
 
 var _ http.Handler = (*Client)(nil)
@@ -56,10 +56,7 @@ func (c *Client) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Start responsewriter gRPC service.
 	go grpcutils.Serve(serverListener, func(opts []grpc.ServerOption) *grpc.Server {
-		if len(opts) == 0 {
-			opts = append(opts, grpcutils.DefaultServerOptions...)
-		}
-		server := grpc.NewServer(opts...)
+		server := grpcutils.NewDefaultServer(opts)
 		closer.Add(server)
 		responsewriterpb.RegisterWriterServer(server, gresponsewriter.NewServer(w))
 		return server

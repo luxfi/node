@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -28,7 +28,7 @@ func Parse(s string) (*Semantic, error) {
 }
 
 func ParseApplication(s string) (*Application, error) {
-	if !strings.HasPrefix(s, "lux/") {
+	if !strings.HasPrefix(s, "avalanche/") {
 		return nil, fmt.Errorf("application string %q missing required prefix", s)
 	}
 
