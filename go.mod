@@ -13,6 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 	github.com/ava-labs/coreth v0.11.6-rc.0
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
@@ -22,6 +23,8 @@ require (
 	github.com/ava-labs/avalanche-network-runner-sdk v0.2.0
 =======
 	github.com/ava-labs/avalanche-ledger-go v0.0.13
+=======
+>>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -62,7 +65,11 @@ require (
 	github.com/ava-labs/coreth v0.11.5
 =======
 	github.com/ava-labs/coreth v0.11.6-0.20221228194216-966a5923da9b
+<<<<<<< HEAD
 >>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
+=======
+	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
+>>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	github.com/btcsuite/btcd/btcutil v1.1.3
 >>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837
@@ -139,8 +146,12 @@ require (
 =======
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+<<<<<<< HEAD
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 >>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
+=======
+	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+>>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -194,9 +205,12 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969 // indirect
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	github.com/stretchr/objx v0.5.0 // indirect
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
+=======
+>>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
