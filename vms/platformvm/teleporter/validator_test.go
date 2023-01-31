@@ -307,6 +307,7 @@ func TestFilterValidators(t *testing.T) {
 			vdrs, err := FilterValidators(tt.indices, tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
 <<<<<<< HEAD
+<<<<<<< HEAD
 			if err == nil {
 				require.Equal(tt.expectedVdrs, vdrs)
 			}
@@ -316,6 +317,11 @@ func TestFilterValidators(t *testing.T) {
 			}
 			require.Equal(tt.expectedVdrs, vdrs)
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			if err == nil {
+				require.Equal(tt.expectedVdrs, vdrs)
+			}
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -368,6 +374,7 @@ func TestSumWeight(t *testing.T) {
 			sum, err := SumWeight(tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
 <<<<<<< HEAD
+<<<<<<< HEAD
 			if err == nil {
 				require.Equal(tt.expectedSum, sum)
 			}
@@ -377,6 +384,11 @@ func TestSumWeight(t *testing.T) {
 			}
 			require.Equal(tt.expectedSum, sum)
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+			if err == nil {
+				require.Equal(tt.expectedSum, sum)
+			}
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }

@@ -373,12 +373,16 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(vm.Shutdown(context.Background()))
 =======
 		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		require.NoError(vm.Shutdown(context.Background()))
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		ctx.Lock.Unlock()
 	}()
 
@@ -395,12 +399,16 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		nil,
 	)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(err)
 =======
 	if err != nil {
 		t.Fatal(err)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	m := atomic.NewMemory(atomicDB)
 	vm.ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)

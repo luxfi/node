@@ -483,11 +483,10 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 		nil,
 		appSender,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(err)
 
 	err = vm.SetState(context.Background(), snow.NormalOp)
+<<<<<<< HEAD
 	if err != nil {
 		panic(err)
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -506,6 +505,8 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 	require.NoError(err)
 
 	err = vm.SetState(context.Background(), snow.NormalOp)
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(err)
 
 	// Create a subnet and store it in testSubnet1
@@ -517,6 +518,9 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 		keys[0].PublicKey().Address(),           // change addr
 	)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(err)
 
 	err = vm.Builder.AddUnverifiedTx(testSubnet1)
@@ -530,6 +534,7 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 
 	err = blk.Accept(context.Background())
 	require.NoError(err)
+<<<<<<< HEAD
 =======
 	if err != nil {
 		panic(err)
@@ -543,6 +548,8 @@ func GenesisVMWithArgs(t *testing.T, args *api.BuildGenesisArgs) ([]byte, chan c
 		panic(err)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	return genesisBytes, msgChan, vm, m
 }
@@ -554,6 +561,7 @@ func TestGenesis(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -561,17 +569,25 @@ func TestGenesis(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
 	// Ensure the genesis block has been accepted and stored
 	genesisBlockID, err := vm.LastAccepted(context.Background()) // lastAccepted should be ID of genesis block
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(err)
 
 	genesisBlock, err := vm.manager.GetBlock(genesisBlockID)
 	require.NoError(err)
 	require.Equal(choices.Accepted, genesisBlock.Status())
+<<<<<<< HEAD
 =======
 	if err != nil {
 		t.Fatal(err)
@@ -582,6 +598,8 @@ func TestGenesis(t *testing.T) {
 		t.Fatal("genesis block should be accepted")
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	genesisState, _ := defaultGenesis()
 	// Ensure all the genesis UTXOs are there
@@ -591,6 +609,7 @@ func TestGenesis(t *testing.T) {
 
 		addr, err := ids.ToShortID(addrBytes)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(err)
 
 =======
@@ -598,6 +617,10 @@ func TestGenesis(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		require.NoError(err)
+
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		addrs := set.Set[ids.ShortID]{}
 		addrs.Add(addr)
 		utxos, err := avax.GetAllUTXOs(vm.state, addrs)
@@ -619,6 +642,7 @@ func TestGenesis(t *testing.T) {
 	// Ensure current validator set of primary network is correct
 	vdrSet, ok := vm.Validators.Get(constants.PrimaryNetworkID)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.True(ok)
 
 =======
@@ -626,6 +650,10 @@ func TestGenesis(t *testing.T) {
 		t.Fatalf("Missing the primary network validator set")
 	}
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
+=======
+	require.True(ok)
+
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	currentValidators := vdrSet.List()
 	require.Equal(len(currentValidators), len(genesisState.Validators))
 
@@ -692,6 +720,7 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -699,6 +728,10 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -740,10 +773,14 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 
 	parsedBlock, err := vm.ParseBlock(context.Background(), blkBytes)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(err)
 
 	err = parsedBlock.Verify(context.Background())
 	require.Error(err)
+<<<<<<< HEAD
 
 =======
 	if err != nil {
@@ -754,6 +791,9 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 		t.Fatalf("Should have errored during verification")
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	txID := statelessBlk.Txs()[0].ID()
 	_, dropped := vm.Builder.GetDropReason(txID)
 	require.True(dropped)
@@ -810,6 +850,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -817,6 +858,10 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1232,6 +1277,7 @@ func TestUnneededBuildBlock(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 		vm.ctx.Lock.Unlock()
@@ -1248,6 +1294,14 @@ func TestUnneededBuildBlock(t *testing.T) {
 		t.Fatalf("Should have errored on BuildBlock")
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+		vm.ctx.Lock.Unlock()
+	}()
+	_, err := vm.Builder.BuildBlock(context.Background())
+	require.Error(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }
 
 // test acceptance of proposal to create a new chain
@@ -1257,6 +1311,7 @@ func TestCreateChain(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -1264,6 +1319,10 @@ func TestCreateChain(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1277,6 +1336,9 @@ func TestCreateChain(t *testing.T) {
 		ids.ShortEmpty, // change addr
 	)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(err)
 
 	err = vm.Builder.AddUnverifiedTx(tx)
@@ -1294,6 +1356,7 @@ func TestCreateChain(t *testing.T) {
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
+<<<<<<< HEAD
 =======
 	if err != nil {
 		t.Fatal(err)
@@ -1311,6 +1374,8 @@ func TestCreateChain(t *testing.T) {
 		t.Fatalf("status should be Committed but is %s", txStatus)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	// Verify chain was created
 	chains, err := vm.state.GetChains(testSubnet1.ID())
@@ -1447,6 +1512,7 @@ func TestAtomicImport(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -1454,6 +1520,10 @@ func TestAtomicImport(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1517,6 +1587,7 @@ func TestAtomicImport(t *testing.T) {
 		ids.ShortEmpty, // change addr
 	)
 	require.NoError(err)
+<<<<<<< HEAD
 
 	err = vm.Builder.AddUnverifiedTx(tx)
 	require.NoError(err)
@@ -1550,6 +1621,25 @@ func TestAtomicImport(t *testing.T) {
 		t.Fatalf("status should be Committed but is %s", txStatus)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+
+	err = vm.Builder.AddUnverifiedTx(tx)
+	require.NoError(err)
+
+	blk, err := vm.Builder.BuildBlock(context.Background())
+	require.NoError(err)
+
+	err = blk.Verify(context.Background())
+	require.NoError(err)
+
+	err = blk.Accept(context.Background())
+	require.NoError(err)
+
+	_, txStatus, err := vm.state.GetTx(tx.ID())
+	require.NoError(err)
+	require.Equal(status.Committed, txStatus)
+
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	inputID = utxoID.InputID()
 	_, err = vm.ctx.SharedMemory.Get(vm.ctx.XChainID, [][]byte{inputID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
@@ -1562,6 +1652,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -1569,6 +1660,10 @@ func TestOptimisticAtomicImport(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -1590,6 +1685,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 		}},
 	}}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := tx.Initialize(txs.Codec)
 	require.NoError(err)
 =======
@@ -1597,6 +1693,10 @@ func TestOptimisticAtomicImport(t *testing.T) {
 		t.Fatal(err)
 	}
 >>>>>>> 3c968fec6 (Add codec.Size (#2343))
+=======
+	err := tx.Initialize(txs.Codec)
+	require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	preferred, err := vm.Builder.Preferred()
 	require.NoError(err)
@@ -1613,6 +1713,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 
 	blk := vm.manager.NewBlock(statelessBlk)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	err = blk.Verify(context.Background())
 	require.Error(err, "should have erred due to missing UTXOs")
@@ -1632,23 +1733,29 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	if err := blk.Verify(context.Background()); err == nil {
 		t.Fatalf("Block should have failed verification due to missing UTXOs")
 	}
+=======
+	err = blk.Verify(context.Background())
+	require.Error(err, "should have erred due to missing UTXOs")
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
-	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
-		t.Fatal(err)
-	}
+	err = vm.SetState(context.Background(), snow.Bootstrapping)
+	require.NoError(err)
 
-	if err := blk.Verify(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	err = blk.Verify(context.Background())
+	require.NoError(err)
 
-	if err := blk.Accept(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	err = blk.Accept(context.Background())
+	require.NoError(err)
 
+<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.NormalOp); err != nil {
 		t.Fatal(err)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	err = vm.SetState(context.Background(), snow.NormalOp)
+	require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1775,6 +1882,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	secondCtx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := secondVM.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -1782,6 +1890,10 @@ func TestRestartFullyAccepted(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := secondVM.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		secondCtx.Lock.Unlock()
 	}()
 
@@ -2107,6 +2219,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	ctx.Lock.Lock()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err = bootstrapper.Connected(context.Background(), peerID, version.CurrentApp)
 	require.NoError(err)
 =======
@@ -2114,6 +2227,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		t.Fatal(err)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	err = bootstrapper.Connected(context.Background(), peerID, version.CurrentApp)
+	require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2164,6 +2281,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		containerID, err := ids.ToID(inMsg.ContainerId)
 		require.NoError(err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.Equal(advanceTimeBlkID, containerID)
 =======
 		if containerID != advanceTimeBlkID {
@@ -2171,6 +2289,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		}
 
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
+=======
+		require.Equal(advanceTimeBlkID, containerID)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		return nodeIDs
 	}
 
@@ -2187,9 +2308,13 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.Equal(advanceTimeBlk.ID(), preferred.ID())
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx.Lock.Unlock()
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	ctx.Lock.Unlock()
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	chainRouter.Shutdown(context.Background())
 }
 
@@ -2312,12 +2437,16 @@ func TestMaxStakeAmount(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(t, vm.Shutdown(context.Background()))
 =======
 		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		require.NoError(t, vm.Shutdown(context.Background()))
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		vm.ctx.Lock.Unlock()
 	}()
 
@@ -2661,9 +2790,12 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 func TestVM_GetValidatorSet(t *testing.T) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	r := require.New(t)
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -2692,6 +2824,7 @@ func TestVM_GetValidatorSet(t *testing.T) {
 	msgChan := make(chan common.Message, 1)
 	appSender := &common.SenderTest{T: t}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vm.Initialize(context.Background(), ctx, db, genesisBytes, nil, nil, msgChan, nil, appSender)
 	require.NoError(t, err)
 	defer func() {
@@ -2701,6 +2834,12 @@ func TestVM_GetValidatorSet(t *testing.T) {
 	defer func() {
 		r.NoError(vm.Shutdown(context.Background()))
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+	err := vm.Initialize(context.Background(), ctx, db, genesisBytes, nil, nil, msgChan, nil, appSender)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, vm.Shutdown(context.Background()))
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		ctx.Lock.Unlock()
 	}()
 
@@ -2708,12 +2847,17 @@ func TestVM_GetValidatorSet(t *testing.T) {
 	vm.uptimeManager.(uptime.TestManager).SetTime(defaultGenesisTime)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(t, vm.SetState(context.Background(), snow.Bootstrapping))
 	require.NoError(t, vm.SetState(context.Background(), snow.NormalOp))
 =======
 	r.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
 	r.NoError(vm.SetState(context.Background(), snow.NormalOp))
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+	require.NoError(t, vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(t, vm.SetState(context.Background(), snow.NormalOp))
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	var (
 		oldVdrs       = vm.Validators
@@ -2726,10 +2870,14 @@ func TestVM_GetValidatorSet(t *testing.T) {
 	for i := 0; i < numVdrs; i++ {
 		sk, err := bls.NewSecretKey()
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(t, err)
 =======
 		r.NoError(err)
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		require.NoError(t, err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 		vdrs = append(vdrs, &validators.Validator{
 			NodeID:    ids.GenerateTestNodeID(),

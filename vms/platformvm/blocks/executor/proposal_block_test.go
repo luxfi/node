@@ -849,9 +849,15 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
+<<<<<<< HEAD
 func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 	for _, tracked := range []bool{true, false} {
 		t.Run(fmt.Sprintf("tracked %t", tracked), func(ts *testing.T) {
+=======
+func TestBanffProposalBlockWhitelistedSubnet(t *testing.T) {
+	for _, whitelist := range []bool{true, false} {
+		t.Run(fmt.Sprintf("whitelisted %t", whitelist), func(ts *testing.T) {
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			require := require.New(t)
 			env := newEnvironment(t, nil)
 			defer func() {

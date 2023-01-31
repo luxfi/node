@@ -5,9 +5,12 @@ package platformvm
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"bytes"
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	"context"
 	"errors"
 	"fmt"
@@ -112,10 +115,14 @@ func TestCreateBlockchainArgsParsing(t *testing.T) {
 	args := CreateBlockchainArgs{}
 	err := stdjson.Unmarshal([]byte(jsonString), &args)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	require.NoError(t, err)
 
 	_, err = stdjson.Marshal(args.GenesisData)
 	require.NoError(t, err)
+<<<<<<< HEAD
 =======
 	if err != nil {
 		t.Fatal(err)
@@ -124,6 +131,8 @@ func TestCreateBlockchainArgsParsing(t *testing.T) {
 		t.Fatal(err)
 	}
 >>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }
 
 func TestExportKey(t *testing.T) {
@@ -138,6 +147,7 @@ func TestExportKey(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := service.vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -145,6 +155,10 @@ func TestExportKey(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := service.vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		service.vm.ctx.Lock.Unlock()
 	}()
 
@@ -166,6 +180,7 @@ func TestImportKey(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := service.vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -173,6 +188,10 @@ func TestImportKey(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := service.vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		service.vm.ctx.Lock.Unlock()
 	}()
 
@@ -190,6 +209,7 @@ func TestGetTxStatus(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := service.vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -197,6 +217,10 @@ func TestGetTxStatus(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := service.vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		service.vm.ctx.Lock.Unlock()
 	}()
 
@@ -270,6 +294,9 @@ func TestGetTxStatus(t *testing.T) {
 	mutableSharedMemory.SharedMemory = sm
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	err = service.vm.Builder.AddUnverifiedTx(tx)
 	require.NoError(err)
 
@@ -282,6 +309,7 @@ func TestGetTxStatus(t *testing.T) {
 
 	err = blk.Accept(context.Background())
 	require.NoError(err)
+<<<<<<< HEAD
 =======
 	if err := service.vm.Builder.AddUnverifiedTx(tx); err != nil {
 		t.Fatal(err)
@@ -295,6 +323,8 @@ func TestGetTxStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	resp = GetTxStatusResponse{} // reset
 	err = service.GetTxStatus(nil, arg, &resp)
@@ -370,6 +400,9 @@ func TestGetTx(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				arg := &api.GetTxArgs{
 					TxID:     tx.ID(),
 					Encoding: encoding,
@@ -404,6 +437,7 @@ func TestGetTx(t *testing.T) {
 
 						err = commit.Accept(context.Background())
 						require.NoError(err)
+<<<<<<< HEAD
 =======
 			block, err := service.vm.BuildBlock(context.Background())
 			if err != nil {
@@ -431,6 +465,8 @@ func TestGetTx(t *testing.T) {
 					if err := commit.Accept(context.Background()); err != nil {
 						t.Fatalf("failed test '%s - %s': %s", test.description, encoding.String(), err)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 					}
 				}
 
@@ -438,6 +474,9 @@ func TestGetTx(t *testing.T) {
 				require.NoError(err)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				switch encoding {
 				case formatting.Hex:
 					// we're always guaranteed a string for hex encodings.
@@ -453,12 +492,15 @@ func TestGetTx(t *testing.T) {
 				require.NoError(err)
 				service.vm.ctx.Lock.Unlock()
 			})
+<<<<<<< HEAD
 =======
 			if err := service.vm.Shutdown(context.Background()); err != nil {
 				t.Fatal(err)
 			}
 			service.vm.ctx.Lock.Unlock()
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		}
 	}
 }
@@ -471,6 +513,7 @@ func TestGetBalance(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := service.vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -478,6 +521,10 @@ func TestGetBalance(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := service.vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		service.vm.ctx.Lock.Unlock()
 	}()
 
@@ -673,6 +720,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 	defer func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		err := service.vm.Shutdown(context.Background())
 		require.NoError(err)
 =======
@@ -680,6 +728,10 @@ func TestGetCurrentValidators(t *testing.T) {
 			t.Fatal(err)
 		}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		err := service.vm.Shutdown(context.Background())
+		require.NoError(err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		service.vm.ctx.Lock.Unlock()
 	}()
 
