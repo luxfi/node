@@ -7,9 +7,17 @@ import (
 	"context"
 	"sync"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/chains/atomic"
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
+=======
+	"golang.org/x/exp/maps"
+
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 
 	sharedmemorypb "github.com/luxdefi/luxd/proto/pb/sharedmemory"
 )
@@ -239,12 +247,7 @@ func (s *Server) Apply(
 
 	delete(s.apply, req.Id)
 
-	batches := make([]database.Batch, len(apply.batches))
-	i := 0
-	for _, batch := range apply.batches {
-		batches[i] = batch
-		i++
-	}
+	batches := maps.Values(apply.batches)
 
 	return &sharedmemorypb.ApplyResponse{}, s.sm.Apply(apply.requests, batches...)
 }

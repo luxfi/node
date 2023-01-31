@@ -9,10 +9,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"golang.org/x/exp/maps"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const (
@@ -98,13 +100,7 @@ func (cipcs *ChainIPCs) Unpublish(chainID ids.ID) (bool, error) {
 
 // GetPublishedBlockchains returns the chains that are currently being published
 func (cipcs *ChainIPCs) GetPublishedBlockchains() []ids.ID {
-	chainIds := make([]ids.ID, 0, len(cipcs.chains))
-
-	for id := range cipcs.chains {
-		chainIds = append(chainIds, id)
-	}
-
-	return chainIds
+	return maps.Keys(cipcs.chains)
 }
 
 func (cipcs *ChainIPCs) Shutdown() error {

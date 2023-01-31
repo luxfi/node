@@ -9,14 +9,19 @@ import (
 	"strings"
 	"sync"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/database/memdb"
 	"github.com/luxdefi/luxd/database/nodb"
 	"github.com/luxdefi/luxd/utils"
-)
+=======
+	"golang.org/x/exp/maps"
 
-const (
-	iterativeDeleteThreshold = 512
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/nodb"
+	"github.com/ava-labs/avalanchego/utils"
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 )
 
 var (
@@ -212,15 +217,7 @@ func (db *Database) Abort() {
 }
 
 func (db *Database) abort() {
-	// If there are a lot of keys, clear the map by just allocating a new one
-	if len(db.mem) > iterativeDeleteThreshold {
-		db.mem = make(map[string]valueDelete, memdb.DefaultSize)
-		return
-	}
-	// If there aren't many keys, clear the map iteratively
-	for key := range db.mem {
-		delete(db.mem, key)
-	}
+	maps.Clear(db.mem)
 }
 
 // CommitBatch returns a batch that contains all uncommitted puts/deletes.
