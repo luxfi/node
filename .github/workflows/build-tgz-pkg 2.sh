@@ -1,10 +1,10 @@
 PKG_ROOT=/tmp
 VERSION=$TAG
-AVALANCHE_ROOT=$PKG_ROOT/avalanchego-$VERSION
+AVALANCHE_ROOT=$PKG_ROOT/node-$VERSION
 
 mkdir -p $AVALANCHE_ROOT
 
-OK=`cp ./build/avalanchego $AVALANCHE_ROOT`
+OK=`cp ./build/node $AVALANCHE_ROOT`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi
@@ -17,5 +17,5 @@ fi
 echo "Build tgz package..."
 cd $PKG_ROOT
 echo "Version: $VERSION"
-tar -czvf "avalanchego-linux-$ARCH-$VERSION.tar.gz" avalanchego-$VERSION
-aws s3 cp avalanchego-linux-$ARCH-$VERSION.tar.gz s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/
+tar -czvf "node-linux-$ARCH-$VERSION.tar.gz" node-$VERSION
+aws s3 cp node-linux-$ARCH-$VERSION.tar.gz s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/
