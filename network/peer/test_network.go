@@ -15,7 +15,12 @@ import (
 =======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/ips"
+<<<<<<< HEAD
 >>>>>>> 6fc3d3f7c (Remove `Version` from the `peer.Network` interface (#2320))
+=======
+
+	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 )
 
 var TestNetwork Network = testNetwork{}
@@ -28,8 +33,12 @@ func (testNetwork) AllowConnection(ids.NodeID) bool {
 	return true
 }
 
-func (testNetwork) Track(ips.ClaimedIPPort) bool {
-	return true
+func (testNetwork) Track(ids.NodeID, []*ips.ClaimedIPPort) ([]*p2ppb.PeerAck, error) {
+	return nil, nil
+}
+
+func (testNetwork) MarkTracked(ids.NodeID, []*p2ppb.PeerAck) error {
+	return nil
 }
 
 func (testNetwork) Disconnected(ids.NodeID) {}

@@ -884,6 +884,9 @@ func (x *PeerList) GetClaimedIpPorts() []*ClaimedIpPort {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 // "peer_ack" is sent in response to a "peer_list" message. The "tx_id" should
 // correspond to a "tx_id" in the "peer_list" message. The sender should set
 // "timestamp" to be the latest known timestamp of a signed IP corresponding to
@@ -946,8 +949,11 @@ func (x *PeerAck) GetTimestamp() uint64 {
 	return 0
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 // Message that responds to a peer_list message containing the AddValidatorTxIDs
 // from the peer_list message that we currently have in our validator set.
 type PeerListAck struct {
@@ -956,20 +962,28 @@ type PeerListAck struct {
 	unknownFields protoimpl.UnknownFields
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	PeerAcks []*PeerAck `protobuf:"bytes,2,rep,name=peer_acks,json=peerAcks,proto3" json:"peer_acks,omitempty"`
 =======
 	TxIds [][]byte `protobuf:"bytes,1,rep,name=tx_ids,json=txIds,proto3" json:"tx_ids,omitempty"`
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	PeerAcks []*PeerAck `protobuf:"bytes,2,rep,name=peer_acks,json=peerAcks,proto3" json:"peer_acks,omitempty"`
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *PeerListAck) Reset() {
 	*x = PeerListAck{}
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[8]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[7]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[8]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -983,10 +997,14 @@ func (*PeerListAck) ProtoMessage() {}
 
 func (x *PeerListAck) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[8]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[7]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[8]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,6 +1018,7 @@ func (x *PeerListAck) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PeerListAck.ProtoReflect.Descriptor instead.
 func (*PeerListAck) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{8}
 }
 
@@ -1008,12 +1027,19 @@ func (x *PeerListAck) GetPeerAcks() []*PeerAck {
 		return x.PeerAcks
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{7}
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{8}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
-func (x *PeerListAck) GetTxIds() [][]byte {
+func (x *PeerListAck) GetPeerAcks() []*PeerAck {
 	if x != nil {
+<<<<<<< HEAD
 		return x.TxIds
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		return x.PeerAcks
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	}
 	return nil
 }
@@ -1033,6 +1059,7 @@ func (x *GetStateSummaryFrontier) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[9]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[7]
@@ -1040,6 +1067,9 @@ func (x *GetStateSummaryFrontier) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[8]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[9]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1054,6 +1084,7 @@ func (*GetStateSummaryFrontier) ProtoMessage() {}
 func (x *GetStateSummaryFrontier) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[9]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[7]
@@ -1061,6 +1092,9 @@ func (x *GetStateSummaryFrontier) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[8]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[9]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1075,6 +1109,7 @@ func (x *GetStateSummaryFrontier) ProtoReflect() protoreflect.Message {
 func (*GetStateSummaryFrontier) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{9}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{7}
@@ -1082,6 +1117,9 @@ func (*GetStateSummaryFrontier) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{8}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{9}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *GetStateSummaryFrontier) GetChainId() []byte {
@@ -1120,6 +1158,7 @@ func (x *StateSummaryFrontier) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[10]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[8]
@@ -1127,6 +1166,9 @@ func (x *StateSummaryFrontier) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[9]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[10]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1141,6 +1183,7 @@ func (*StateSummaryFrontier) ProtoMessage() {}
 func (x *StateSummaryFrontier) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[10]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[8]
@@ -1148,6 +1191,9 @@ func (x *StateSummaryFrontier) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[9]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[10]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1162,6 +1208,7 @@ func (x *StateSummaryFrontier) ProtoReflect() protoreflect.Message {
 func (*StateSummaryFrontier) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{10}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{8}
@@ -1169,6 +1216,9 @@ func (*StateSummaryFrontier) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{9}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{10}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *StateSummaryFrontier) GetChainId() []byte {
@@ -1208,6 +1258,7 @@ func (x *GetAcceptedStateSummary) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[11]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[9]
@@ -1215,6 +1266,9 @@ func (x *GetAcceptedStateSummary) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[10]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[11]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1229,6 +1283,7 @@ func (*GetAcceptedStateSummary) ProtoMessage() {}
 func (x *GetAcceptedStateSummary) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[11]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[9]
@@ -1236,6 +1291,9 @@ func (x *GetAcceptedStateSummary) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[10]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[11]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1250,6 +1308,7 @@ func (x *GetAcceptedStateSummary) ProtoReflect() protoreflect.Message {
 func (*GetAcceptedStateSummary) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{11}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{9}
@@ -1257,6 +1316,9 @@ func (*GetAcceptedStateSummary) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{10}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{11}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *GetAcceptedStateSummary) GetChainId() []byte {
@@ -1302,6 +1364,7 @@ func (x *AcceptedStateSummary) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[12]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[10]
@@ -1309,6 +1372,9 @@ func (x *AcceptedStateSummary) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[11]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[12]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1323,6 +1389,7 @@ func (*AcceptedStateSummary) ProtoMessage() {}
 func (x *AcceptedStateSummary) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[12]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[10]
@@ -1330,6 +1397,9 @@ func (x *AcceptedStateSummary) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[11]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[12]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1344,6 +1414,7 @@ func (x *AcceptedStateSummary) ProtoReflect() protoreflect.Message {
 func (*AcceptedStateSummary) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{12}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{10}
@@ -1351,6 +1422,9 @@ func (*AcceptedStateSummary) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{11}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{12}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *AcceptedStateSummary) GetChainId() []byte {
@@ -1399,6 +1473,7 @@ func (x *GetAcceptedFrontier) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[13]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[11]
@@ -1406,6 +1481,9 @@ func (x *GetAcceptedFrontier) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[12]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[13]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1420,6 +1498,7 @@ func (*GetAcceptedFrontier) ProtoMessage() {}
 func (x *GetAcceptedFrontier) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[13]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[11]
@@ -1427,6 +1506,9 @@ func (x *GetAcceptedFrontier) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[12]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[13]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,6 +1523,7 @@ func (x *GetAcceptedFrontier) ProtoReflect() protoreflect.Message {
 func (*GetAcceptedFrontier) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{13}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{11}
@@ -1448,6 +1531,9 @@ func (*GetAcceptedFrontier) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{12}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{13}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *GetAcceptedFrontier) GetChainId() []byte {
@@ -1499,6 +1585,7 @@ func (x *AcceptedFrontier) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[14]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[12]
@@ -1506,6 +1593,9 @@ func (x *AcceptedFrontier) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[13]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[14]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1520,6 +1610,7 @@ func (*AcceptedFrontier) ProtoMessage() {}
 func (x *AcceptedFrontier) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[14]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[12]
@@ -1527,6 +1618,9 @@ func (x *AcceptedFrontier) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[13]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[14]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1541,6 +1635,7 @@ func (x *AcceptedFrontier) ProtoReflect() protoreflect.Message {
 func (*AcceptedFrontier) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{14}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{12}
@@ -1548,6 +1643,9 @@ func (*AcceptedFrontier) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{13}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{14}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *AcceptedFrontier) GetChainId() []byte {
@@ -1602,6 +1700,7 @@ func (x *GetAccepted) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[15]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[13]
@@ -1609,6 +1708,9 @@ func (x *GetAccepted) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[14]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[15]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1623,6 +1725,7 @@ func (*GetAccepted) ProtoMessage() {}
 func (x *GetAccepted) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[15]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[13]
@@ -1630,6 +1733,9 @@ func (x *GetAccepted) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[14]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[15]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1644,6 +1750,7 @@ func (x *GetAccepted) ProtoReflect() protoreflect.Message {
 func (*GetAccepted) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{15}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{13}
@@ -1651,6 +1758,9 @@ func (*GetAccepted) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{14}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{15}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *GetAccepted) GetChainId() []byte {
@@ -1711,6 +1821,7 @@ func (x *Accepted) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[16]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[14]
@@ -1718,6 +1829,9 @@ func (x *Accepted) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[15]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[16]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1732,6 +1846,7 @@ func (*Accepted) ProtoMessage() {}
 func (x *Accepted) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[16]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[14]
@@ -1739,6 +1854,9 @@ func (x *Accepted) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[15]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[16]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1753,6 +1871,7 @@ func (x *Accepted) ProtoReflect() protoreflect.Message {
 func (*Accepted) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{16}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{14}
@@ -1760,6 +1879,9 @@ func (*Accepted) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{15}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{16}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *Accepted) GetChainId() []byte {
@@ -1813,6 +1935,7 @@ func (x *GetAncestors) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[17]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[15]
@@ -1820,6 +1943,9 @@ func (x *GetAncestors) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[16]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[17]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1834,6 +1960,7 @@ func (*GetAncestors) ProtoMessage() {}
 func (x *GetAncestors) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[17]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[15]
@@ -1841,6 +1968,9 @@ func (x *GetAncestors) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[16]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[17]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1855,6 +1985,7 @@ func (x *GetAncestors) ProtoReflect() protoreflect.Message {
 func (*GetAncestors) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{17}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{15}
@@ -1862,6 +1993,9 @@ func (*GetAncestors) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{16}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{17}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *GetAncestors) GetChainId() []byte {
@@ -1920,6 +2054,7 @@ func (x *Ancestors) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[18]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[16]
@@ -1927,6 +2062,9 @@ func (x *Ancestors) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[17]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[18]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1941,6 +2079,7 @@ func (*Ancestors) ProtoMessage() {}
 func (x *Ancestors) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[18]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[16]
@@ -1948,6 +2087,9 @@ func (x *Ancestors) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[17]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[18]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1962,6 +2104,7 @@ func (x *Ancestors) ProtoReflect() protoreflect.Message {
 func (*Ancestors) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{18}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{16}
@@ -1969,6 +2112,9 @@ func (*Ancestors) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{17}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{18}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *Ancestors) GetChainId() []byte {
@@ -2020,6 +2166,7 @@ func (x *Get) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[19]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[17]
@@ -2027,6 +2174,9 @@ func (x *Get) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[18]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[19]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2041,6 +2191,7 @@ func (*Get) ProtoMessage() {}
 func (x *Get) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[19]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[17]
@@ -2048,6 +2199,9 @@ func (x *Get) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[18]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[19]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2062,6 +2216,7 @@ func (x *Get) ProtoReflect() protoreflect.Message {
 func (*Get) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{19}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{17}
@@ -2069,6 +2224,9 @@ func (*Get) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{18}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{19}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *Get) GetChainId() []byte {
@@ -2125,6 +2283,7 @@ func (x *Put) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[20]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[18]
@@ -2132,6 +2291,9 @@ func (x *Put) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[19]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[20]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2146,6 +2308,7 @@ func (*Put) ProtoMessage() {}
 func (x *Put) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[20]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[18]
@@ -2153,6 +2316,9 @@ func (x *Put) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[19]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[20]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2167,6 +2333,7 @@ func (x *Put) ProtoReflect() protoreflect.Message {
 func (*Put) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{20}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{18}
@@ -2174,6 +2341,9 @@ func (*Put) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{19}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{20}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *Put) GetChainId() []byte {
@@ -2230,6 +2400,7 @@ func (x *PushQuery) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[21]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[19]
@@ -2237,6 +2408,9 @@ func (x *PushQuery) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[20]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[21]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2251,6 +2425,7 @@ func (*PushQuery) ProtoMessage() {}
 func (x *PushQuery) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[21]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[19]
@@ -2258,6 +2433,9 @@ func (x *PushQuery) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[20]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[21]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2272,6 +2450,7 @@ func (x *PushQuery) ProtoReflect() protoreflect.Message {
 func (*PushQuery) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{21}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{19}
@@ -2279,6 +2458,9 @@ func (*PushQuery) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{20}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{21}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *PushQuery) GetChainId() []byte {
@@ -2338,6 +2520,7 @@ func (x *PullQuery) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[22]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[20]
@@ -2345,6 +2528,9 @@ func (x *PullQuery) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[21]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[22]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2359,6 +2545,7 @@ func (*PullQuery) ProtoMessage() {}
 func (x *PullQuery) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[22]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[20]
@@ -2366,6 +2553,9 @@ func (x *PullQuery) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[21]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[22]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2380,6 +2570,7 @@ func (x *PullQuery) ProtoReflect() protoreflect.Message {
 func (*PullQuery) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{22}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{20}
@@ -2387,6 +2578,9 @@ func (*PullQuery) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{21}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{22}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *PullQuery) GetChainId() []byte {
@@ -2451,6 +2645,7 @@ func (x *Chits) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[23]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[21]
@@ -2458,6 +2653,9 @@ func (x *Chits) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[22]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[23]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2472,6 +2670,7 @@ func (*Chits) ProtoMessage() {}
 func (x *Chits) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[23]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[21]
@@ -2479,6 +2678,9 @@ func (x *Chits) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[22]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[23]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2493,6 +2695,7 @@ func (x *Chits) ProtoReflect() protoreflect.Message {
 func (*Chits) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{23}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{21}
@@ -2500,6 +2703,9 @@ func (*Chits) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{22}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{23}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *Chits) GetChainId() []byte {
@@ -2553,6 +2759,7 @@ func (x *AppRequest) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[24]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[22]
@@ -2560,6 +2767,9 @@ func (x *AppRequest) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[23]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[24]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2574,6 +2784,7 @@ func (*AppRequest) ProtoMessage() {}
 func (x *AppRequest) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[24]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[22]
@@ -2581,6 +2792,9 @@ func (x *AppRequest) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[23]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[24]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2595,6 +2809,7 @@ func (x *AppRequest) ProtoReflect() protoreflect.Message {
 func (*AppRequest) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{24}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{22}
@@ -2602,6 +2817,9 @@ func (*AppRequest) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{23}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{24}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *AppRequest) GetChainId() []byte {
@@ -2647,6 +2865,7 @@ func (x *AppResponse) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[25]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[23]
@@ -2654,6 +2873,9 @@ func (x *AppResponse) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[24]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[25]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2668,6 +2890,7 @@ func (*AppResponse) ProtoMessage() {}
 func (x *AppResponse) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[25]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[23]
@@ -2675,6 +2898,9 @@ func (x *AppResponse) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[24]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[25]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2689,6 +2915,7 @@ func (x *AppResponse) ProtoReflect() protoreflect.Message {
 func (*AppResponse) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{25}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{23}
@@ -2696,6 +2923,9 @@ func (*AppResponse) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{24}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{25}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *AppResponse) GetChainId() []byte {
@@ -2733,6 +2963,7 @@ func (x *AppGossip) Reset() {
 	if protoimpl.UnsafeEnabled {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		mi := &file_p2p_p2p_proto_msgTypes[26]
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[24]
@@ -2740,6 +2971,9 @@ func (x *AppGossip) Reset() {
 =======
 		mi := &file_p2p_p2p_proto_msgTypes[25]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		mi := &file_p2p_p2p_proto_msgTypes[26]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2754,6 +2988,7 @@ func (*AppGossip) ProtoMessage() {}
 func (x *AppGossip) ProtoReflect() protoreflect.Message {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mi := &file_p2p_p2p_proto_msgTypes[26]
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[24]
@@ -2761,6 +2996,9 @@ func (x *AppGossip) ProtoReflect() protoreflect.Message {
 =======
 	mi := &file_p2p_p2p_proto_msgTypes[25]
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	mi := &file_p2p_p2p_proto_msgTypes[26]
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2775,6 +3013,7 @@ func (x *AppGossip) ProtoReflect() protoreflect.Message {
 func (*AppGossip) Descriptor() ([]byte, []int) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{26}
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{24}
@@ -2782,6 +3021,9 @@ func (*AppGossip) Descriptor() ([]byte, []int) {
 =======
 	return file_p2p_p2p_proto_rawDescGZIP(), []int{25}
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{26}
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func (x *AppGossip) GetChainId() []byte {
@@ -2934,6 +3176,9 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x6f, 0x72, 0x74, 0x52, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x49, 0x70, 0x50, 0x6f,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	0x72, 0x74, 0x73, 0x22, 0x3c, 0x0a, 0x07, 0x50, 0x65, 0x65, 0x72, 0x41, 0x63, 0x6b, 0x12, 0x13,
 	0x0a, 0x05, 0x74, 0x78, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x74,
 	0x78, 0x49, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
@@ -2943,6 +3188,7 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x41, 0x63,
 	0x6b, 0x52, 0x08, 0x70, 0x65, 0x65, 0x72, 0x41, 0x63, 0x6b, 0x73, 0x4a, 0x04, 0x08, 0x01, 0x10,
 	0x02, 0x22, 0x6f, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53, 0x75, 0x6d,
+<<<<<<< HEAD
 =======
 	0x72, 0x74, 0x73, 0x22, 0x6f, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53,
 	0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x46, 0x72, 0x6f, 0x6e, 0x74, 0x69, 0x65, 0x72, 0x12, 0x19,
@@ -2953,15 +3199,21 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64,
 	0x6c, 0x69, 0x6e, 0x65, 0x22, 0x6a, 0x0a, 0x14, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53, 0x75, 0x6d,
 >>>>>>> 6e97a5d32 (Add TxIDs to the peerlist message format (#2315))
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	0x6d, 0x61, 0x72, 0x79, 0x46, 0x72, 0x6f, 0x6e, 0x74, 0x69, 0x65, 0x72, 0x12, 0x19, 0x0a, 0x08,
 	0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07,
 	0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69,
 	0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69,
 	0x6e, 0x65, 0x22, 0x6a, 0x0a, 0x14, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53, 0x75, 0x6d, 0x6d, 0x61,
 	0x72, 0x79, 0x46, 0x72, 0x6f, 0x6e, 0x74, 0x69, 0x65, 0x72, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68,
+<<<<<<< HEAD
 	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68,
 	0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65,
@@ -3318,32 +3570,78 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28,
 	0x0c, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x22, 0x84, 0x01, 0x0a,
 	0x09, 0x50, 0x75, 0x6c, 0x6c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68,
+=======
+	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x49, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x73, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x22, 0x89,
+	0x01, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x53, 0x74,
+	0x61, 0x74, 0x65, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68,
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68,
 	0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65,
 	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65,
-	0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65,
-	0x72, 0x49, 0x64, 0x22, 0x66, 0x0a, 0x05, 0x43, 0x68, 0x69, 0x74, 0x73, 0x12, 0x19, 0x0a, 0x08,
-	0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07,
-	0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
-	0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0c, 0x63,
-	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x49, 0x64, 0x73, 0x22, 0x7f, 0x0a, 0x0a, 0x41,
-	0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61,
-	0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61,
-	0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f,
-	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x12,
-	0x1b, 0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x08, 0x61, 0x70, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x22, 0x64, 0x0a, 0x0b,
-	0x41, 0x70, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x63,
+	0x12, 0x18, 0x0a, 0x07, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28,
+	0x04, 0x52, 0x07, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x22, 0x71, 0x0a, 0x14, 0x41, 0x63,
+	0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53, 0x75, 0x6d, 0x6d, 0x61,
+	0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a,
+	0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b,
+	0x73, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x0c, 0x52, 0x0a, 0x73, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x49, 0x64, 0x73, 0x22, 0x6b, 0x0a,
+	0x13, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x46, 0x72, 0x6f, 0x6e,
+	0x74, 0x69, 0x65, 0x72, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12,
+	0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a,
+	0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x22, 0x71, 0x0a, 0x10, 0x41, 0x63,
+	0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x46, 0x72, 0x6f, 0x6e, 0x74, 0x69, 0x65, 0x72, 0x12, 0x19,
+	0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74,
+	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0c, 0x52,
+	0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x49, 0x64, 0x73, 0x22, 0x88, 0x01,
+	0x0a, 0x0b, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x12, 0x19, 0x0a,
+	0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c,
+	0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c,
+	0x69, 0x6e, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x5f, 0x69, 0x64, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74,
+	0x61, 0x69, 0x6e, 0x65, 0x72, 0x49, 0x64, 0x73, 0x22, 0x69, 0x0a, 0x08, 0x41, 0x63, 0x63, 0x65,
+	0x70, 0x74, 0x65, 0x64, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12,
+	0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x23,
+	0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x49, 0x64, 0x73, 0x22, 0x87, 0x01, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x41, 0x6e, 0x63, 0x65, 0x73,
+	0x74, 0x6f, 0x72, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12,
+	0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a,
+	0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f,
+	0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x49, 0x64, 0x22, 0x65, 0x0a,
+	0x09, 0x41, 0x6e, 0x63, 0x65, 0x73, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x49, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65,
+	0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x73, 0x22, 0x7e, 0x0a, 0x03, 0x47, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x63,
 	0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63,
 	0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75,
+<<<<<<< HEAD
 <<<<<<< HEAD
 	0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e,
 	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e,
@@ -3377,6 +3675,64 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x76, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x67, 0x6f, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x2f, 0x70, 0x62, 0x2f, 0x70, 0x32, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e,
+	0x65, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69,
+	0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
+	0x65, 0x72, 0x49, 0x64, 0x22, 0x5d, 0x0a, 0x03, 0x50, 0x75, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x63,
+	0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63,
+	0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
+	0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x22, 0x7f, 0x0a, 0x09, 0x50, 0x75, 0x73, 0x68, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52,
+	0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65,
+	0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65,
+	0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x61,
+	0x69, 0x6e, 0x65, 0x72, 0x22, 0x84, 0x01, 0x0a, 0x09, 0x50, 0x75, 0x6c, 0x6c, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a,
+	0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08,
+	0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08,
+	0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f, 0x6e, 0x74,
+	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0b,
+	0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x49, 0x64, 0x22, 0x66, 0x0a, 0x05, 0x43,
+	0x68, 0x69, 0x74, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12,
+	0x1d, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x23,
+	0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x49, 0x64, 0x73, 0x22, 0x7f, 0x0a, 0x0a, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a,
+	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d,
+	0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64,
+	0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64,
+	0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x62,
+	0x79, 0x74, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x61, 0x70, 0x70, 0x42,
+	0x79, 0x74, 0x65, 0x73, 0x22, 0x64, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1d,
+	0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0d, 0x52, 0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1b, 0x0a,
+	0x09, 0x61, 0x70, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x08, 0x61, 0x70, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x22, 0x43, 0x0a, 0x09, 0x41, 0x70,
+	0x70, 0x47, 0x6f, 0x73, 0x73, 0x69, 0x70, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x61, 0x70, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x42,
+	0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x76,
+	0x61, 0x2d, 0x6c, 0x61, 0x62, 0x73, 0x2f, 0x61, 0x76, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x68, 0x65,
+	0x67, 0x6f, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x70, 0x62, 0x2f, 0x70, 0x32, 0x70, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 var (
@@ -3391,6 +3747,7 @@ func file_p2p_p2p_proto_rawDescGZIP() []byte {
 	return file_p2p_p2p_proto_rawDescData
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 var file_p2p_p2p_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
@@ -3473,6 +3830,9 @@ var file_p2p_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 =======
 var file_p2p_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+var file_p2p_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 var file_p2p_p2p_proto_goTypes = []interface{}{
 	(*Message)(nil),                 // 0: p2p.Message
 	(*Ping)(nil),                    // 1: p2p.Ping
@@ -3481,31 +3841,33 @@ var file_p2p_p2p_proto_goTypes = []interface{}{
 	(*Version)(nil),                 // 4: p2p.Version
 	(*ClaimedIpPort)(nil),           // 5: p2p.ClaimedIpPort
 	(*PeerList)(nil),                // 6: p2p.PeerList
-	(*PeerListAck)(nil),             // 7: p2p.PeerListAck
-	(*GetStateSummaryFrontier)(nil), // 8: p2p.GetStateSummaryFrontier
-	(*StateSummaryFrontier)(nil),    // 9: p2p.StateSummaryFrontier
-	(*GetAcceptedStateSummary)(nil), // 10: p2p.GetAcceptedStateSummary
-	(*AcceptedStateSummary)(nil),    // 11: p2p.AcceptedStateSummary
-	(*GetAcceptedFrontier)(nil),     // 12: p2p.GetAcceptedFrontier
-	(*AcceptedFrontier)(nil),        // 13: p2p.AcceptedFrontier
-	(*GetAccepted)(nil),             // 14: p2p.GetAccepted
-	(*Accepted)(nil),                // 15: p2p.Accepted
-	(*GetAncestors)(nil),            // 16: p2p.GetAncestors
-	(*Ancestors)(nil),               // 17: p2p.Ancestors
-	(*Get)(nil),                     // 18: p2p.Get
-	(*Put)(nil),                     // 19: p2p.Put
-	(*PushQuery)(nil),               // 20: p2p.PushQuery
-	(*PullQuery)(nil),               // 21: p2p.PullQuery
-	(*Chits)(nil),                   // 22: p2p.Chits
-	(*AppRequest)(nil),              // 23: p2p.AppRequest
-	(*AppResponse)(nil),             // 24: p2p.AppResponse
-	(*AppGossip)(nil),               // 25: p2p.AppGossip
+	(*PeerAck)(nil),                 // 7: p2p.PeerAck
+	(*PeerListAck)(nil),             // 8: p2p.PeerListAck
+	(*GetStateSummaryFrontier)(nil), // 9: p2p.GetStateSummaryFrontier
+	(*StateSummaryFrontier)(nil),    // 10: p2p.StateSummaryFrontier
+	(*GetAcceptedStateSummary)(nil), // 11: p2p.GetAcceptedStateSummary
+	(*AcceptedStateSummary)(nil),    // 12: p2p.AcceptedStateSummary
+	(*GetAcceptedFrontier)(nil),     // 13: p2p.GetAcceptedFrontier
+	(*AcceptedFrontier)(nil),        // 14: p2p.AcceptedFrontier
+	(*GetAccepted)(nil),             // 15: p2p.GetAccepted
+	(*Accepted)(nil),                // 16: p2p.Accepted
+	(*GetAncestors)(nil),            // 17: p2p.GetAncestors
+	(*Ancestors)(nil),               // 18: p2p.Ancestors
+	(*Get)(nil),                     // 19: p2p.Get
+	(*Put)(nil),                     // 20: p2p.Put
+	(*PushQuery)(nil),               // 21: p2p.PushQuery
+	(*PullQuery)(nil),               // 22: p2p.PullQuery
+	(*Chits)(nil),                   // 23: p2p.Chits
+	(*AppRequest)(nil),              // 24: p2p.AppRequest
+	(*AppResponse)(nil),             // 25: p2p.AppResponse
+	(*AppGossip)(nil),               // 26: p2p.AppGossip
 }
 var file_p2p_p2p_proto_depIdxs = []int32{
 	1,  // 0: p2p.Message.ping:type_name -> p2p.Ping
 	3,  // 1: p2p.Message.pong:type_name -> p2p.Pong
 	4,  // 2: p2p.Message.version:type_name -> p2p.Version
 	6,  // 3: p2p.Message.peer_list:type_name -> p2p.PeerList
+<<<<<<< HEAD
 <<<<<<< HEAD
 	7,  // 4: p2p.Message.get_state_summary_frontier:type_name -> p2p.GetStateSummaryFrontier
 	8,  // 5: p2p.Message.state_summary_frontier:type_name -> p2p.StateSummaryFrontier
@@ -3561,6 +3923,35 @@ var file_p2p_p2p_proto_depIdxs = []int32{
 	25, // [25:25] is the sub-list for extension extendee
 	0,  // [0:25] is the sub-list for field type_name
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+	9,  // 4: p2p.Message.get_state_summary_frontier:type_name -> p2p.GetStateSummaryFrontier
+	10, // 5: p2p.Message.state_summary_frontier:type_name -> p2p.StateSummaryFrontier
+	11, // 6: p2p.Message.get_accepted_state_summary:type_name -> p2p.GetAcceptedStateSummary
+	12, // 7: p2p.Message.accepted_state_summary:type_name -> p2p.AcceptedStateSummary
+	13, // 8: p2p.Message.get_accepted_frontier:type_name -> p2p.GetAcceptedFrontier
+	14, // 9: p2p.Message.accepted_frontier:type_name -> p2p.AcceptedFrontier
+	15, // 10: p2p.Message.get_accepted:type_name -> p2p.GetAccepted
+	16, // 11: p2p.Message.accepted:type_name -> p2p.Accepted
+	17, // 12: p2p.Message.get_ancestors:type_name -> p2p.GetAncestors
+	18, // 13: p2p.Message.ancestors:type_name -> p2p.Ancestors
+	19, // 14: p2p.Message.get:type_name -> p2p.Get
+	20, // 15: p2p.Message.put:type_name -> p2p.Put
+	21, // 16: p2p.Message.push_query:type_name -> p2p.PushQuery
+	22, // 17: p2p.Message.pull_query:type_name -> p2p.PullQuery
+	23, // 18: p2p.Message.chits:type_name -> p2p.Chits
+	24, // 19: p2p.Message.app_request:type_name -> p2p.AppRequest
+	25, // 20: p2p.Message.app_response:type_name -> p2p.AppResponse
+	26, // 21: p2p.Message.app_gossip:type_name -> p2p.AppGossip
+	8,  // 22: p2p.Message.peer_list_ack:type_name -> p2p.PeerListAck
+	2,  // 23: p2p.Pong.subnet_uptimes:type_name -> p2p.SubnetUptime
+	5,  // 24: p2p.PeerList.claimed_ip_ports:type_name -> p2p.ClaimedIpPort
+	7,  // 25: p2p.PeerListAck.peer_acks:type_name -> p2p.PeerAck
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 func init() { file_p2p_p2p_proto_init() }
@@ -3656,6 +4047,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*PeerAck); i {
 =======
 			switch v := v.(*GetStateSummaryFrontier); i {
@@ -3663,6 +4055,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*PeerListAck); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*PeerAck); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3676,6 +4071,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*PeerListAck); i {
 =======
 			switch v := v.(*StateSummaryFrontier); i {
@@ -3683,6 +4079,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*GetStateSummaryFrontier); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*PeerListAck); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3696,6 +4095,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*GetStateSummaryFrontier); i {
 =======
 			switch v := v.(*GetAcceptedStateSummary); i {
@@ -3703,6 +4103,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*StateSummaryFrontier); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*GetStateSummaryFrontier); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3716,6 +4119,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*StateSummaryFrontier); i {
 =======
 			switch v := v.(*AcceptedStateSummary); i {
@@ -3723,6 +4127,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*GetAcceptedStateSummary); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*StateSummaryFrontier); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3736,6 +4143,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*GetAcceptedStateSummary); i {
 =======
 			switch v := v.(*GetAcceptedFrontier); i {
@@ -3743,6 +4151,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*AcceptedStateSummary); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*GetAcceptedStateSummary); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3756,6 +4167,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*AcceptedStateSummary); i {
 =======
 			switch v := v.(*AcceptedFrontier); i {
@@ -3763,6 +4175,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*GetAcceptedFrontier); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*AcceptedStateSummary); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3776,6 +4191,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*GetAcceptedFrontier); i {
 =======
 			switch v := v.(*GetAccepted); i {
@@ -3783,6 +4199,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*AcceptedFrontier); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*GetAcceptedFrontier); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3796,6 +4215,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*AcceptedFrontier); i {
 =======
 			switch v := v.(*Accepted); i {
@@ -3803,6 +4223,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*GetAccepted); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*AcceptedFrontier); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3816,6 +4239,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*GetAccepted); i {
 =======
 			switch v := v.(*GetAncestors); i {
@@ -3823,6 +4247,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*Accepted); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*GetAccepted); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3836,6 +4263,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*Accepted); i {
 =======
 			switch v := v.(*Ancestors); i {
@@ -3843,6 +4271,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*GetAncestors); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*Accepted); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3856,6 +4287,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*GetAncestors); i {
 =======
 			switch v := v.(*Get); i {
@@ -3863,6 +4295,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*Ancestors); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*GetAncestors); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3876,6 +4311,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*Ancestors); i {
 =======
 			switch v := v.(*Put); i {
@@ -3883,6 +4319,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*Get); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*Ancestors); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3896,6 +4335,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*Get); i {
 =======
 			switch v := v.(*PushQuery); i {
@@ -3903,6 +4343,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*Put); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*Get); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3916,6 +4359,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*Put); i {
 =======
 			switch v := v.(*PullQuery); i {
@@ -3923,6 +4367,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*PushQuery); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*Put); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3936,6 +4383,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*PushQuery); i {
 =======
 			switch v := v.(*Chits); i {
@@ -3943,6 +4391,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*PullQuery); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*PushQuery); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3956,6 +4407,7 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*PullQuery); i {
 =======
 			switch v := v.(*AppRequest); i {
@@ -3963,6 +4415,9 @@ func file_p2p_p2p_proto_init() {
 =======
 			switch v := v.(*Chits); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*PullQuery); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3976,10 +4431,14 @@ func file_p2p_p2p_proto_init() {
 		file_p2p_p2p_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			switch v := v.(*Chits); i {
 =======
 			switch v := v.(*AppRequest); i {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			switch v := v.(*Chits); i {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			case 0:
 				return &v.state
 			case 1:
@@ -3992,6 +4451,9 @@ func file_p2p_p2p_proto_init() {
 		}
 		file_p2p_p2p_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			switch v := v.(*AppRequest); i {
 			case 0:
 				return &v.state
@@ -4004,10 +4466,13 @@ func file_p2p_p2p_proto_init() {
 			}
 		}
 		file_p2p_p2p_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+<<<<<<< HEAD
 =======
 >>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
 =======
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			switch v := v.(*AppResponse); i {
 			case 0:
 				return &v.state
@@ -4021,6 +4486,7 @@ func file_p2p_p2p_proto_init() {
 		}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		file_p2p_p2p_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 =======
 		file_p2p_p2p_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
@@ -4028,6 +4494,9 @@ func file_p2p_p2p_proto_init() {
 =======
 		file_p2p_p2p_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+		file_p2p_p2p_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			switch v := v.(*AppGossip); i {
 			case 0:
 				return &v.state
@@ -4077,11 +4546,15 @@ func file_p2p_p2p_proto_init() {
 =======
 			NumEnums:      0,
 <<<<<<< HEAD
+<<<<<<< HEAD
 			NumMessages:   25,
 >>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
 =======
 			NumMessages:   26,
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+			NumMessages:   27,
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 			NumExtensions: 0,
 			NumServices:   0,
 		},
