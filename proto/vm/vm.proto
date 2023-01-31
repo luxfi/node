@@ -31,7 +31,11 @@ service VM {
   rpc Connected(ConnectedRequest) returns (google.protobuf.Empty);
   rpc Disconnected(DisconnectedRequest) returns (google.protobuf.Empty);
   // Attempt to create a new block from data contained in the VM.
+<<<<<<< HEAD
   rpc BuildBlock(BuildBlockRequest) returns (BuildBlockResponse);
+=======
+  rpc BuildBlock(google.protobuf.Empty) returns (BuildBlockResponse);
+>>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
   // Attempt to create a block from a stream of bytes.
   rpc ParseBlock(ParseBlockRequest) returns (ParseBlockResponse);
   // Attempt to load a block.
