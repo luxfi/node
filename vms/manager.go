@@ -8,8 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+<<<<<<< HEAD
 
 	"golang.org/x/exp/maps"
+=======
+>>>>>>> a3b878f4f (Remove global info API lock (#2262))
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow"
@@ -93,11 +96,17 @@ func (m *manager) GetFactory(vmID ids.ID) (Factory, error) {
 
 func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Factory) error {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+>>>>>>> a3b878f4f (Remove global info API lock (#2262))
 	if _, exists := m.factories[vmID]; exists {
 		return fmt.Errorf("%q was already registered as a vm", vmID)
 	}
@@ -132,7 +141,15 @@ func (m *manager) ListFactories() ([]ids.ID, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+<<<<<<< HEAD
 	return maps.Keys(m.factories), nil
+=======
+	vmIDs := make([]ids.ID, 0, len(m.factories))
+	for vmID := range m.factories {
+		vmIDs = append(vmIDs, vmID)
+	}
+	return vmIDs, nil
+>>>>>>> a3b878f4f (Remove global info API lock (#2262))
 }
 
 func (m *manager) Versions() (map[string]string, error) {
