@@ -24,6 +24,7 @@ func (vm *blockVM) GetAncestors(
 	maxBlocksRetrivalTime time.Duration,
 ) ([][]byte, error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -36,6 +37,13 @@ func (vm *blockVM) GetAncestors(
 
 	ctx, span := vm.tracer.Start(ctx, "blockVM.GetAncestors", oteltrace.WithAttributes(
 >>>>>>> c7cc22f98 (Add VM tracer (#2225))
+=======
+	if vm.batchedVM == nil {
+		return nil, block.ErrRemoteVMNotImplemented
+	}
+
+	ctx, span := vm.tracer.Start(ctx, vm.getAncestorsTag, oteltrace.WithAttributes(
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		attribute.Stringer("blkID", blkID),
 		attribute.Int("maxBlocksNum", maxBlocksNum),
 		attribute.Int("maxBlocksSize", maxBlocksSize),
@@ -44,10 +52,14 @@ func (vm *blockVM) GetAncestors(
 	defer span.End()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return vm.batchedVM.GetAncestors(
 =======
 	return vm.bVM.GetAncestors(
 >>>>>>> c7cc22f98 (Add VM tracer (#2225))
+=======
+	return vm.batchedVM.GetAncestors(
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		ctx,
 		blkID,
 		maxBlocksNum,
@@ -57,6 +69,7 @@ func (vm *blockVM) GetAncestors(
 }
 
 func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
@@ -70,15 +83,26 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snow
 
 	ctx, span := vm.tracer.Start(ctx, "blockVM.BatchedParseBlock", oteltrace.WithAttributes(
 >>>>>>> c7cc22f98 (Add VM tracer (#2225))
+=======
+	if vm.batchedVM == nil {
+		return nil, block.ErrRemoteVMNotImplemented
+	}
+
+	ctx, span := vm.tracer.Start(ctx, vm.batchedParseBlockTag, oteltrace.WithAttributes(
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		attribute.Int("numBlocks", len(blks)),
 	))
 	defer span.End()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	blocks, err := vm.batchedVM.BatchedParseBlock(ctx, blks)
 =======
 	blocks, err := vm.bVM.BatchedParseBlock(ctx, blks)
 >>>>>>> c7cc22f98 (Add VM tracer (#2225))
+=======
+	blocks, err := vm.batchedVM.BatchedParseBlock(ctx, blks)
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}

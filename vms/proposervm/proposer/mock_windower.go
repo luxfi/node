@@ -53,6 +53,7 @@ func (mr *MockWindowerMockRecorder) Delay(arg0, arg1, arg2, arg3 interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delay", reflect.TypeOf((*MockWindower)(nil).Delay), arg0, arg1, arg2, arg3)
 }
+<<<<<<< HEAD
 
 // Proposers mocks base method.
 func (m *MockWindower) Proposers(arg0 context.Context, arg1, arg2 uint64) ([]ids.NodeID, error) {
@@ -68,3 +69,5 @@ func (mr *MockWindowerMockRecorder) Proposers(arg0, arg1, arg2 interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Proposers", reflect.TypeOf((*MockWindower)(nil).Proposers), arg0, arg1, arg2)
 }
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))

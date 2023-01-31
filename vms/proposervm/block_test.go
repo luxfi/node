@@ -49,7 +49,11 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	innerVM := mocks.NewMockChainVM(ctrl)
 	innerBlockBuilderVM := mocks.NewMockBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
+<<<<<<< HEAD
 		PChainHeight: pChainHeight - 1,
+=======
+		PChainHeight: pChainHeight,
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	}).Return(builtBlk, nil).AnyTimes()
 	vdrState := validators.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
@@ -62,12 +66,21 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &snow.Context{
+<<<<<<< HEAD
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
 		},
 		Windower:          windower,
 		stakingCertLeaf:   &x509.Certificate{},
 		stakingLeafSigner: pk,
+=======
+			ValidatorState:    vdrState,
+			Log:               logging.NoLog{},
+			StakingCertLeaf:   &x509.Certificate{},
+			StakingLeafSigner: pk,
+		},
+		Windower: windower,
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	}
 
 	blk := &postForkCommonComponents{

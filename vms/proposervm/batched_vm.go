@@ -68,10 +68,14 @@ func (vm *VM) GetAncestors(
 	preMaxBlocksSize := maxBlocksSize - currentByteLength
 	preMaxBlocksRetrivalTime := maxBlocksRetrivalTime - time.Since(startTime)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerBytes, err := vm.batchedVM.GetAncestors(
 =======
 	innerBytes, err := vm.bVM.GetAncestors(
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	innerBytes, err := vm.batchedVM.GetAncestors(
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		ctx,
 		blkID,
 		preMaxBlocksNum,
@@ -90,10 +94,14 @@ func (vm *VM) GetAncestors(
 
 func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if vm.batchedVM == nil {
 =======
 	if vm.bVM == nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if vm.batchedVM == nil {
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		return nil, block.ErrRemoteVMNotImplemented
 	}
 
@@ -133,10 +141,14 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 
 	// parse all inner blocks at once
 <<<<<<< HEAD
+<<<<<<< HEAD
 	innerBlks, err := vm.batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
 =======
 	innerBlks, err := vm.bVM.BatchedParseBlock(ctx, innerBlockBytes)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	innerBlks, err := vm.batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
