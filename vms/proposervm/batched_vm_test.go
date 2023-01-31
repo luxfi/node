@@ -979,6 +979,7 @@ func initTestRemoteProposerVM(
 		}
 	}
 
+<<<<<<< HEAD
 	proVM := New(
 		coreVM,
 		proBlkStartTime,
@@ -987,6 +988,9 @@ func initTestRemoteProposerVM(
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM := New(coreVM, proBlkStartTime, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	valState := &validators.TestState{
 		T: t,

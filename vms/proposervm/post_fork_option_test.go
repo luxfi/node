@@ -741,6 +741,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 	// Restart the node.
 
 	ctx := proVM.ctx
+<<<<<<< HEAD
 	proVM = New(
 		coreVM,
 		time.Time{},
@@ -749,6 +750,9 @@ func TestOptionTimestampValidity(t *testing.T) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	proVM = New(coreVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	coreVM.InitializeF = func(
 		context.Context,
