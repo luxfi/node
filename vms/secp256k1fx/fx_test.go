@@ -932,14 +932,24 @@ func TestFxVerifyOperationMismatchedMintOutputs(t *testing.T) {
 }
 
 func TestVerifyPermission(t *testing.T) {
+<<<<<<< HEAD
+=======
+	r := require.New(t)
+>>>>>>> 729709805 (Add additional VerifyPermission tests (#2259))
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
 	fx := Fx{}
+<<<<<<< HEAD
 	require.NoError(t, fx.Initialize(&vm))
 	require.NoError(t, fx.Bootstrapping())
 	require.NoError(t, fx.Bootstrapped())
+=======
+	r.NoError(fx.Initialize(&vm))
+	r.NoError(fx.Bootstrapping())
+	r.NoError(fx.Bootstrapped())
+>>>>>>> 729709805 (Add additional VerifyPermission tests (#2259))
 
 	now := time.Now()
 	fx.VM.Clock().Set(now)
@@ -1112,8 +1122,14 @@ func TestVerifyPermission(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+<<<<<<< HEAD
 			err := fx.VerifyPermission(test.tx, test.in, test.cred, test.cg)
 			require.ErrorIs(t, err, test.expectedErr)
+=======
+			require := require.New(t)
+			err := fx.VerifyPermission(test.tx, test.in, test.cred, test.cg)
+			require.ErrorIs(err, test.expectedErr)
+>>>>>>> 729709805 (Add additional VerifyPermission tests (#2259))
 		})
 	}
 }
