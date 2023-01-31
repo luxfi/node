@@ -27,6 +27,7 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
@@ -41,6 +42,9 @@ require (
 =======
 	github.com/ava-labs/coreth v0.11.4-0.20221129221227-18cf83fd48fc
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	github.com/ava-labs/coreth v0.11.4
+>>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
