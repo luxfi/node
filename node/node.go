@@ -798,7 +798,6 @@ func (n *Node) initVMs() error {
 			Config: config.Config{
 				Chains:                          n.chainManager,
 				Validators:                      vdrs,
-				SubnetTracker:                   n.Net,
 				UptimeLockedCalculator:          n.uptimeCalculator,
 				StakingEnabled:                  n.Config.EnableStaking,
 				WhitelistedSubnets:              n.Config.WhitelistedSubnets,

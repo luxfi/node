@@ -47,7 +47,11 @@ func TestStartTrackingDBError(t *testing.T) {
 	startTime := time.Now()
 
 	s := NewTestState()
+<<<<<<< HEAD
 	s.dbWriteError = errTest
+=======
+	s.dbWriteError = errors.New("err")
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	s.AddNode(nodeID0, subnetID, startTime)
 
 	up := NewManager(s).(*manager)
@@ -202,7 +206,11 @@ func TestStopTrackingConnectedDBError(t *testing.T) {
 	err = up.Connect(nodeID0, subnetID)
 	require.NoError(err)
 
+<<<<<<< HEAD
 	s.dbReadError = errTest
+=======
+	s.dbReadError = errors.New("err")
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	err = up.StopTracking([]ids.NodeID{nodeID0}, subnetID)
 	require.Error(err)
 }
@@ -254,7 +262,11 @@ func TestStopTrackingNonConnectedDBError(t *testing.T) {
 	currentTime = currentTime.Add(time.Second)
 	up.clock.Set(currentTime)
 
+<<<<<<< HEAD
 	s.dbWriteError = errTest
+=======
+	s.dbWriteError = errors.New("err")
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	err = up.StopTracking([]ids.NodeID{nodeID0}, subnetID)
 	require.Error(err)
 }

@@ -1183,6 +1183,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 		// Permissioned validators originally wrote their values as nil,
 		// then with Banff we started writing the potential reward.
@@ -1209,6 +1210,8 @@ func (s *state) loadCurrentValidators() error {
 		}
 
 >>>>>>> 4064106f1 (Add forward-compatibility for future subnet uptime tracking (#2255))
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		stakerTx, ok := tx.Unsigned.(txs.Staker)
 		if !ok {
 			return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
@@ -1470,6 +1473,7 @@ func (s *state) write(updateValidators bool, height uint64) error {
 	errs.Add(
 		s.writeBlocks(),
 <<<<<<< HEAD
+<<<<<<< HEAD
 		s.writeCurrentStakers(updateValidators, height),
 		s.writePendingStakers(),
 		s.WriteUptimes(s.currentValidatorList, s.currentSubnetValidatorList), // Must be called after writeCurrentStakers
@@ -1480,6 +1484,11 @@ func (s *state) write(updateValidators bool, height uint64) error {
 		s.writePendingSubnetStakers(),
 		s.writeUptimes(),
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+		s.writeCurrentStakers(updateValidators, height),
+		s.writePendingStakers(),
+		s.WriteUptimes(s.currentValidatorList, s.currentSubnetValidatorList), // Must be called after writeCurrentStakers
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		s.writeTXs(),
 		s.writeRewardUTXOs(),
 		s.writeUTXOs(),
@@ -1666,6 +1675,7 @@ func (s *state) GetStatelessBlock(blockID ids.ID) (blocks.Block, choices.Status,
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error {
 	heightBytes := database.PackUInt64(height)
 	rawPublicKeyDiffDB := prefixdb.New(heightBytes, s.validatorPublicKeyDiffsDB)
@@ -1802,6 +1812,10 @@ func (s *state) writeCurrentPrimaryNetworkStakers(updateValidators bool, height 
 func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) error {
 	for subnetID, subnetValidatorDiffs := range s.currentStakers.validatorDiffs {
 >>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
+=======
+func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error {
+	for subnetID, validatorDiffs := range s.currentStakers.validatorDiffs {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		delete(s.currentStakers.validatorDiffs, subnetID)
 
 		// Select db to write to
@@ -1824,6 +1838,7 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 		weightDiffDB := linkeddb.NewDefault(rawWeightDiffDB)
 		weightDiffs := make(map[ids.NodeID]*ValidatorWeightDiff)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 		// Record the change in weight and/or public key for each validator.
 		for nodeID, validatorDiff := range validatorDiffs {
@@ -1841,6 +1856,9 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 			isNewValidator := false
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 =======
+=======
+		for nodeID, validatorDiff := range validatorDiffs {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			var (
 				weightDiff     = &ValidatorWeightDiff{}
 				isNewValidator bool
@@ -1855,6 +1873,7 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 				weightDiff.Amount = staker.Weight
 
 				if validatorDiff.validatorDeleted {
+<<<<<<< HEAD
 					// Invariant: Only the Primary Network contains non-nil
 					//            public keys.
 					if staker.PublicKey != nil {
@@ -1867,6 +1886,8 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 						}
 					}
 
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 					if err := validatorDB.Delete(staker.TxID[:]); err != nil {
 						return fmt.Errorf("failed to delete current staker: %w", err)
 					}
@@ -1874,7 +1895,10 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 					s.validatorUptimes.DeleteUptime(nodeID, subnetID)
 				} else {
 <<<<<<< HEAD
+<<<<<<< HEAD
 					// The validator is being added.
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 					vdr := &uptimeAndReward{
 						txID:        staker.TxID,
 						lastUpdated: staker.StartTime,
@@ -1894,6 +1918,7 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 					}
 
 					s.validatorUptimes.LoadUptime(nodeID, subnetID, vdr)
+<<<<<<< HEAD
 					isNewValidator = true
 =======
 					err = database.PutUInt64(s.currentSubnetValidatorList, staker.TxID[:], staker.PotentialReward)
@@ -1904,6 +1929,11 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 					return fmt.Errorf("failed to update current subnet staker: %w", err)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 				}
+=======
+					isNewValidator = true
+					pk = staker.PublicKey
+				}
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			}
 
 			err := writeCurrentDelegatorDiff(
@@ -1933,12 +1963,20 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 			// TODO: Move the validator set management out of the state package
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			if !updateValidators {
 				continue
 			}
 
+<<<<<<< HEAD
 			// We only track the current validator set of tracked subnets.
 			if subnetID != constants.PrimaryNetworkID && !s.cfg.TrackedSubnets.Contains(subnetID) {
+=======
+			// We only track the current validator set of whitelisted subnets.
+			if subnetID != constants.PrimaryNetworkID && !s.cfg.WhitelistedSubnets.Contains(subnetID) {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				continue
 			}
 
@@ -1946,6 +1984,7 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 				err = validators.RemoveWeight(s.cfg.Validators, subnetID, nodeID, weightDiff.Amount)
 			} else {
 				if isNewValidator {
+<<<<<<< HEAD
 					staker := validatorDiff.validator
 					err = validators.Add(
 						s.cfg.Validators,
@@ -1974,6 +2013,11 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 				if err != nil {
 					return fmt.Errorf("failed to update validator weight: %w", err)
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+					err = validators.Add(s.cfg.Validators, subnetID, nodeID, pk, weightDiff.Amount)
+				} else {
+					err = validators.AddWeight(s.cfg.Validators, subnetID, nodeID, weightDiff.Amount)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 			if err != nil {
@@ -1982,7 +2026,10 @@ func (s *state) writeCurrentSubnetStakers(updateValidators bool, height uint64) 
 		}
 		s.validatorWeightDiffsCache.Put(string(prefixBytes), weightDiffs)
 	}
+<<<<<<< HEAD
 	s.validatorPublicKeyDiffsCache.Put(height, pkDiffs)
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 
 	// TODO: Move validator set management out of the state package
 	//

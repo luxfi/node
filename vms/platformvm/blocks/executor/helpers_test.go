@@ -86,7 +86,10 @@ var (
 	testSubnet1  *txs.Tx
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
+<<<<<<< HEAD
 	errMissing                  = errors.New("missing")
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 )
 
 type stakerStatus uint
