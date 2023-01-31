@@ -1,7 +1,7 @@
 module github.com/ava-labs/avalanchego
 
 // Changes to the minimum golang version must also be replicated in
-// scripts/build_avalanche.sh
+// scripts/build_lux.sh
 // scripts/local.Dockerfile
 // Dockerfile
 // README.md
@@ -14,11 +14,15 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 	github.com/ava-labs/coreth v0.11.6-rc.0
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
 	github.com/btcsuite/btcd/btcutil v1.1.3
 =======
+<<<<<<< HEAD
 	github.com/ava-labs/avalanche-ledger-go v0.0.12
 	github.com/ava-labs/avalanche-network-runner-sdk v0.2.0
 =======
@@ -72,6 +76,14 @@ require (
 >>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	github.com/btcsuite/btcd/btcutil v1.1.3
 >>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
+=======
+	github.com/luxdefi/lux-ledger-go v0.0.10
+	github.com/luxdefi/lux-network-runner-sdk v0.2.0
+	github.com/luxdefi/coreth v0.11.1-rc.7
+	github.com/btcsuite/btcd v0.23.1
+	github.com/btcsuite/btcd/btcutil v1.1.1
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/golang/mock v1.6.0

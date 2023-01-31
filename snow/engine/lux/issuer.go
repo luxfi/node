@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -8,10 +12,24 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/issuer.go
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
 	"github.com/luxdefi/luxd/snow/engine/common"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/issuer.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 // issuer issues [vtx] into consensus after its dependencies are met.
@@ -19,7 +37,11 @@ type issuer struct {
 	t                 *Transitive
 	vtx               lux.Vertex
 	issued, abandoned bool
+<<<<<<< HEAD
 	vtxDeps, txDeps   ids.Set
+=======
+	vtxDeps, txDeps   set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 // Register that a vertex we were waiting on has been issued to consensus.
@@ -57,7 +79,11 @@ func (i *issuer) Update(ctx context.Context) {
 	i.issued = true
 
 	// check stop vertex validity
+<<<<<<< HEAD
 	err := i.vtx.Verify()
+=======
+	err := i.vtx.Verify(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		if i.vtx.HasWhitelist() {
 			// do not update "i.t.errs" since it's only used for critical errors
@@ -82,14 +108,22 @@ func (i *issuer) Update(ctx context.Context) {
 	i.t.pending.Remove(vtxID) // Remove from set of vertices waiting to be issued.
 
 	// Make sure the transactions in this vertex are valid
+<<<<<<< HEAD
 	txs, err := i.vtx.Txs()
+=======
+	txs, err := i.vtx.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		i.t.errs.Add(err)
 		return
 	}
 	validTxs := make([]snowstorm.Tx, 0, len(txs))
 	for _, tx := range txs {
+<<<<<<< HEAD
 		if err := tx.Verify(); err != nil {
+=======
+		if err := tx.Verify(ctx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			txID := tx.ID()
 			i.t.Ctx.Log.Debug("transaction verification failed",
 				zap.Stringer("txID", txID),
@@ -121,14 +155,30 @@ func (i *issuer) Update(ctx context.Context) {
 	)
 
 	// Add this vertex to consensus.
+<<<<<<< HEAD
 	if err := i.t.Consensus.Add(i.vtx); err != nil {
+=======
+	if err := i.t.Consensus.Add(ctx, i.vtx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		i.t.errs.Add(err)
 		return
 	}
 
 	// Issue a poll for this vertex.
+<<<<<<< HEAD
 	p := i.t.Consensus.Parameters()
 	vdrs, err := i.t.Validators.Sample(p.K) // Validators to sample
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	vdrIDs, err := i.t.Validators.Sample(i.t.Params.K) // Validators to sample
+=======
+	vdrs, err := i.t.Validators.Sample(i.t.Params.K) // Validators to sample
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
+=======
+	vdrIDs, err := i.t.Validators.Sample(i.t.Params.K) // Validators to sample
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		i.t.Ctx.Log.Error("dropped query",
 			zap.String("reason", "insufficient number of validators"),
@@ -137,9 +187,13 @@ func (i *issuer) Update(ctx context.Context) {
 	}
 
 	vdrBag := ids.NodeIDBag{} // Validators to sample repr. as a set
+<<<<<<< HEAD
 	for _, vdr := range vdrs {
 		vdrBag.Add(vdr.ID())
 	}
+=======
+	vdrBag.Add(vdrIDs...)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	i.t.RequestID++
 	if err == nil && i.t.polls.Add(i.t.RequestID, vdrBag) {
@@ -179,6 +233,7 @@ func (i *issuer) Update(ctx context.Context) {
 
 type vtxIssuer struct{ i *issuer }
 
+<<<<<<< HEAD
 func (vi *vtxIssuer) Dependencies() ids.Set                  { return vi.i.vtxDeps }
 func (vi *vtxIssuer) Fulfill(ctx context.Context, id ids.ID) { vi.i.FulfillVtx(ctx, id) }
 func (vi *vtxIssuer) Abandon(ctx context.Context, _ ids.ID)  { vi.i.Abandon(ctx) }
@@ -190,3 +245,54 @@ func (ti *txIssuer) Dependencies() ids.Set                  { return ti.i.txDeps
 func (ti *txIssuer) Fulfill(ctx context.Context, id ids.ID) { ti.i.FulfillTx(ctx, id) }
 func (ti *txIssuer) Abandon(ctx context.Context, _ ids.ID)  { ti.i.Abandon(ctx) }
 func (ti *txIssuer) Update(ctx context.Context)             { ti.i.Update(ctx) }
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (vi *vtxIssuer) Dependencies() set.Set[ids.ID] {
+=======
+func (vi *vtxIssuer) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (vi *vtxIssuer) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+	return vi.i.vtxDeps
+}
+
+func (vi *vtxIssuer) Fulfill(ctx context.Context, id ids.ID) {
+	vi.i.FulfillVtx(ctx, id)
+}
+
+func (vi *vtxIssuer) Abandon(ctx context.Context, _ ids.ID) {
+	vi.i.Abandon(ctx)
+}
+
+func (vi *vtxIssuer) Update(ctx context.Context) {
+	vi.i.Update(ctx)
+}
+
+type txIssuer struct{ i *issuer }
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (ti *txIssuer) Dependencies() set.Set[ids.ID] {
+=======
+func (ti *txIssuer) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ti *txIssuer) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+	return ti.i.txDeps
+}
+
+func (ti *txIssuer) Fulfill(ctx context.Context, id ids.ID) {
+	ti.i.FulfillTx(ctx, id)
+}
+
+func (ti *txIssuer) Abandon(ctx context.Context, _ ids.ID) {
+	ti.i.Abandon(ctx)
+}
+
+func (ti *txIssuer) Update(ctx context.Context) {
+	ti.i.Update(ctx)
+}
+>>>>>>> 53a8245a8 (Update consensus)

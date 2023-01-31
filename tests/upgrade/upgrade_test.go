@@ -15,8 +15,18 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
+<<<<<<< HEAD
 	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 	"github.com/luxdefi/luxd/tests"
+=======
+<<<<<<< HEAD
+	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
+	"github.com/ava-labs/avalanchego/tests"
+=======
+	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
+	"github.com/luxdefi/luxd/tests"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 func TestUpgrade(t *testing.T) {

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -8,7 +12,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 func TestBuildInvalid(t *testing.T) {

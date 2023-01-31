@@ -1,17 +1,41 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package vertex
 
 import (
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/snow/consensus/lux"
 	"github.com/luxdefi/luxd/utils/hashing"
+=======
+<<<<<<< HEAD:snow/engine/avalanche/vertex/parser.go
+	"context"
+
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+=======
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/luxd/utils/hashing"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/parser.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 // Parser parses bytes into a vertex.
 type Parser interface {
 	// Parse a vertex from a slice of bytes
+<<<<<<< HEAD
 	ParseVtx(vertex []byte) (lux.Vertex, error)
+=======
+<<<<<<< HEAD:snow/engine/avalanche/vertex/parser.go
+	ParseVtx(ctx context.Context, vertex []byte) (avalanche.Vertex, error)
+=======
+	ParseVtx(vertex []byte) (lux.Vertex, error)
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/parser.go
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 // Parse parses the provided vertex bytes into a stateless vertex

@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
+<<<<<<< HEAD
+=======
+	"context"
+>>>>>>> 53a8245a8 (Update consensus)
 	"errors"
 	"math"
 	"path"
@@ -14,18 +22,71 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/snow/consensus/snowball"
 	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/utils/compare"
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 type testFunc func(*testing.T, Factory)
 
+<<<<<<< HEAD
 var testFuncs = []testFunc{
 	MetricsTest,
 	ParamsTest,
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
+var (
+	testFuncs = []testFunc{
+		MetricsTest,
+		NumProcessingTest,
+		AddTest,
+		VertexIssuedTest,
+		TxIssuedTest,
+		VirtuousTest,
+		VirtuousSkippedUpdateTest,
+		VotingTest,
+		IgnoreInvalidVotingTest,
+		IgnoreInvalidTransactionVertexVotingTest,
+		TransitiveVotingTest,
+		SplitVotingTest,
+		TransitiveRejectionTest,
+		IsVirtuousTest,
+		QuiesceTest,
+		QuiesceAfterVotingTest,
+		TransactionVertexTest,
+		OrphansTest,
+		OrphansUpdateTest,
+		ErrorOnVacuousAcceptTest,
+		ErrorOnTxAcceptTest,
+		ErrorOnVtxAcceptTest,
+		ErrorOnVtxRejectTest,
+		ErrorOnParentVtxRejectTest,
+		ErrorOnTransitiveVtxRejectTest,
+		SilenceTransactionVertexEventsTest,
+	}
+
+	errTest = errors.New("non-nil error")
+)
+<<<<<<< HEAD
+=======
+var testFuncs = []testFunc{
+	MetricsTest,
+>>>>>>> 53a8245a8 (Update consensus)
 	NumProcessingTest,
 	AddTest,
 	VertexIssuedTest,
@@ -52,6 +113,12 @@ var testFuncs = []testFunc{
 	ErrorOnTransitiveVtxRejectTest,
 	SilenceTransactionVertexEventsTest,
 }
+<<<<<<< HEAD
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
+>>>>>>> 53a8245a8 (Update consensus)
 
 func runConsensusTests(t *testing.T, factory Factory) {
 	for _, test := range testFuncs {
@@ -88,7 +155,11 @@ func MetricsTest(t *testing.T, factory Factory) {
 		if err != nil {
 			t.Fatal(err)
 		}
+<<<<<<< HEAD
 		if err := avl.Initialize(ctx, params, nil); err == nil {
+=======
+		if err := avl.Initialize(context.Background(), ctx, params, nil); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			t.Fatalf("should have failed due to registering a duplicated statistic")
 		}
 	}
@@ -112,7 +183,11 @@ func MetricsTest(t *testing.T, factory Factory) {
 		if err != nil {
 			t.Fatal(err)
 		}
+<<<<<<< HEAD
 		if err := avl.Initialize(ctx, params, nil); err == nil {
+=======
+		if err := avl.Initialize(context.Background(), ctx, params, nil); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			t.Fatalf("should have failed due to registering a duplicated statistic")
 		}
 	}
@@ -136,12 +211,17 @@ func MetricsTest(t *testing.T, factory Factory) {
 		if err != nil {
 			t.Fatal(err)
 		}
+<<<<<<< HEAD
 		if err := avl.Initialize(ctx, params, nil); err == nil {
+=======
+		if err := avl.Initialize(context.Background(), ctx, params, nil); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 			t.Fatalf("should have failed due to registering a duplicated statistic")
 		}
 	}
 }
 
+<<<<<<< HEAD
 func ParamsTest(t *testing.T, factory Factory) {
 	avl := factory.New()
 
@@ -180,6 +260,8 @@ func ParamsTest(t *testing.T, factory Factory) {
 	}
 }
 
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 func NumProcessingTest(t *testing.T, factory Factory) {
 	avl := factory.New()
 
@@ -209,7 +291,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	if err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -233,7 +319,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -257,7 +347,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -265,7 +359,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 		t.Fatalf("expected %d vertices processing but returned %d", 2, numProcessing)
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -273,7 +371,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 		t.Fatalf("expected %d vertices processing but returned %d", 2, numProcessing)
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vts[0]); err != nil {
+=======
+	if err := avl.Add(context.Background(), vts[0]); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -283,7 +385,11 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.ID())
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -330,14 +436,22 @@ func AddTest(t *testing.T, factory Factory) {
 	consensusEvents := snow.NewAcceptorTracker()
 	ctx.ConsensusAcceptor = consensusEvents
 
+<<<<<<< HEAD
 	if err := avl.Initialize(ctx, params, seedVertices); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), ctx, params, seedVertices); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	if !avl.Finalized() {
 		t.Fatal("An empty lux instance is not finalized")
 	}
+<<<<<<< HEAD
 	if !ids.UnsortedEquals([]ids.ID{seedVertices[0].ID(), seedVertices[1].ID()}, avl.Preferences().List()) {
+=======
+	if !compare.UnsortedEquals([]ids.ID{seedVertices[0].ID(), seedVertices[1].ID()}, avl.Preferences().List()) {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal("Initial frontier failed to be set")
 	}
 
@@ -412,7 +526,11 @@ func AddTest(t *testing.T, factory Factory) {
 	}
 	for i, tv := range tt {
 		for _, j := range []int{1, 2} { // duplicate vertex add should be skipped
+<<<<<<< HEAD
 			err := avl.Add(tv.toAdd)
+=======
+			err := avl.Add(context.Background(), tv.toAdd)
+>>>>>>> 53a8245a8 (Update consensus)
 			if err != tv.err {
 				t.Fatalf("#%d-%d: expected error %v, got %v", i, j, tv.err, err)
 			}
@@ -421,7 +539,11 @@ func AddTest(t *testing.T, factory Factory) {
 				t.Fatalf("#%d-%d: expected finalized %v, got %v", i, j, finalized, tv.finalized)
 			}
 			preferenceSet := avl.Preferences().List()
+<<<<<<< HEAD
 			if !ids.UnsortedEquals(tv.preferenceSet, preferenceSet) {
+=======
+			if !compare.UnsortedEquals(tv.preferenceSet, preferenceSet) {
+>>>>>>> 53a8245a8 (Update consensus)
 				t.Fatalf("#%d-%d: expected preferenceSet %v, got %v", i, j, preferenceSet, tv.preferenceSet)
 			}
 			if accepted, _ := consensusEvents.IsAccepted(tv.toAdd.ID()); accepted != tv.accepted {
@@ -460,7 +582,11 @@ func VertexIssuedTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	if err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -486,7 +612,11 @@ func VertexIssuedTest(t *testing.T, factory Factory) {
 
 	if avl.VertexIssued(vtx) {
 		t.Fatalf("Vertex reported as issued")
+<<<<<<< HEAD
 	} else if err := avl.Add(vtx); err != nil {
+=======
+	} else if err := avl.Add(context.Background(), vtx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if !avl.VertexIssued(vtx) {
 		t.Fatalf("Vertex reported as not issued")
@@ -530,7 +660,11 @@ func TxIssuedTest(t *testing.T, factory Factory) {
 	}}
 	tx1.InputIDsV = append(tx1.InputIDsV, utxos[0])
 
+<<<<<<< HEAD
 	if err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -549,7 +683,11 @@ func TxIssuedTest(t *testing.T, factory Factory) {
 		TxsV:    []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if !avl.TxIssued(tx1) {
 		t.Fatalf("Tx reported as not issued")
@@ -585,7 +723,11 @@ func VirtuousTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -648,13 +790,21 @@ func VirtuousTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx2},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if virtuous := avl.Virtuous(); virtuous.Len() != 1 {
 		t.Fatalf("Wrong number of virtuous.")
 	} else if !virtuous.Contains(vtx0.IDV) {
 		t.Fatalf("Wrong virtuous")
+<<<<<<< HEAD
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if virtuous := avl.Virtuous(); virtuous.Len() != 1 {
 		t.Fatalf("Wrong number of virtuous.")
@@ -666,7 +816,11 @@ func VirtuousTest(t *testing.T, factory Factory) {
 	votes.Add(0, vtx1.ID())
 	votes.Add(1, vtx1.ID())
 
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -680,7 +834,11 @@ func VirtuousTest(t *testing.T, factory Factory) {
 		t.Fatalf("Wrong virtuous")
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -694,7 +852,11 @@ func VirtuousTest(t *testing.T, factory Factory) {
 		t.Fatalf("Wrong virtuous")
 	}
 
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -741,7 +903,11 @@ func VirtuousSkippedUpdateTest(t *testing.T, factory Factory) {
 		ids.GenerateTestID(),
 	}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,19 +954,31 @@ func VirtuousSkippedUpdateTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if virtuous := avl.Virtuous(); virtuous.Len() != 1 {
 		t.Fatalf("Wrong number of virtuous.")
 	} else if !virtuous.Contains(vtx0.IDV) {
 		t.Fatalf("Wrong virtuous")
+<<<<<<< HEAD
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if virtuous := avl.Virtuous(); virtuous.Len() != 1 {
 		t.Fatalf("Wrong number of virtuous.")
 	} else if !virtuous.Contains(vtx0.IDV) {
 		t.Fatalf("Wrong virtuous")
+<<<<<<< HEAD
 	} else if err := avl.RecordPoll(ids.UniqueBag{}); err != nil {
+=======
+	} else if err := avl.RecordPoll(context.Background(), ids.UniqueBag{}); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if virtuous := avl.Virtuous(); virtuous.Len() != 1 {
 		t.Fatalf("Wrong number of virtuous.")
@@ -840,7 +1018,11 @@ func VotingTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -882,10 +1064,17 @@ func VotingTest(t *testing.T, factory Factory) {
 	}
 
 	// issue two vertices with conflicting transaction to the consensus instance
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	}
 	if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -895,13 +1084,27 @@ func VotingTest(t *testing.T, factory Factory) {
 	sm.Add(1, vtx1.IDV)
 
 	// "BetaRogue" is 2, thus consensus should not be finalized yet
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm)
+=======
+	err = avl.RecordPoll(context.Background(), sm)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too early")
 	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too early")
+	case !compare.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too early")
+	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Processing:
 		t.Fatalf("Tx should have been Processing")
@@ -911,13 +1114,27 @@ func VotingTest(t *testing.T, factory Factory) {
 
 	// second poll should reach consensus,
 	// and the other vertex of conflict transaction should be rejected
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm)
+=======
+	err = avl.RecordPoll(context.Background(), sm)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case !avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too late")
 	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too late")
+	case !compare.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too late")
+	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		// rejected vertex ID (vtx0) must have been removed from the preferred set
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Rejected:
@@ -957,7 +1174,11 @@ func IgnoreInvalidVotingTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	if err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -993,9 +1214,15 @@ func IgnoreInvalidVotingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1007,7 +1234,11 @@ func IgnoreInvalidVotingTest(t *testing.T, factory Factory) {
 	sm.Add(2, vtx0.IDV)
 	sm.Add(2, vtx1.IDV)
 
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if avl.Finalized() {
 		t.Fatalf("An lux instance finalized too early")
@@ -1043,7 +1274,11 @@ func IgnoreInvalidTransactionVertexVotingTest(t *testing.T, factory Factory) {
 		}},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts); err != nil {
+=======
+	if err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1074,9 +1309,15 @@ func IgnoreInvalidTransactionVertexVotingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1088,7 +1329,11 @@ func IgnoreInvalidTransactionVertexVotingTest(t *testing.T, factory Factory) {
 	sm.Add(2, vtx0.IDV)
 	sm.Add(2, vtx1.IDV)
 
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	} else if avl.Finalized() {
 		t.Fatalf("An lux instance finalized too early")
@@ -1124,7 +1369,11 @@ func TransitiveVotingTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1171,11 +1420,19 @@ func TransitiveVotingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1183,13 +1440,27 @@ func TransitiveVotingTest(t *testing.T, factory Factory) {
 	sm1.Add(0, vtx0.IDV)
 	sm1.Add(1, vtx2.IDV)
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm1)
+=======
+	err = avl.RecordPoll(context.Background(), sm1)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too early")
 	case !ids.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too early")
+	case !compare.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too early")
+	case !ids.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Accepted:
 		t.Fatalf("Tx should have been accepted")
@@ -1199,13 +1470,27 @@ func TransitiveVotingTest(t *testing.T, factory Factory) {
 	sm2.Add(0, vtx2.IDV)
 	sm2.Add(1, vtx2.IDV)
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm2)
+=======
+	err = avl.RecordPoll(context.Background(), sm2)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case !avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too late")
 	case !ids.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too late")
+	case !compare.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too late")
+	case !ids.UnsortedEquals([]ids.ID{vtx2.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Accepted:
 		t.Fatalf("Tx should have been accepted")
@@ -1243,7 +1528,11 @@ func SplitVotingTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1274,9 +1563,15 @@ func SplitVotingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1284,6 +1579,7 @@ func SplitVotingTest(t *testing.T, factory Factory) {
 	sm1.Add(0, vtx0.IDV) // peer 0 votes for the tx though vtx0
 	sm1.Add(1, vtx1.IDV) // peer 1 votes for the tx though vtx1
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm1)
 	switch {
 	case err != nil:
@@ -1291,6 +1587,21 @@ func SplitVotingTest(t *testing.T, factory Factory) {
 	case avl.Finalized(): // lux shouldn't be finalized because the vertex transactions are still processing
 		t.Fatalf("An lux instance finalized too late")
 	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+=======
+	err = avl.RecordPoll(context.Background(), sm1)
+	switch {
+	case err != nil:
+		t.Fatal(err)
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+	case avl.Finalized(): // avalanche shouldn't be finalized because the vertex transactions are still processing
+		t.Fatalf("An avalanche instance finalized too late")
+	case !compare.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+=======
+	case avl.Finalized(): // lux shouldn't be finalized because the vertex transactions are still processing
+		t.Fatalf("An lux instance finalized too late")
+	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Accepted:
 		t.Fatalf("Tx should have been accepted")
@@ -1301,13 +1612,27 @@ func SplitVotingTest(t *testing.T, factory Factory) {
 	sm2.Add(0, vtx0.IDV, vtx1.IDV) // peer 0 votes for vtx0 and vtx1
 	sm2.Add(1, vtx0.IDV, vtx1.IDV) // peer 1 votes for vtx0 and vtx1
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm2)
+=======
+	err = avl.RecordPoll(context.Background(), sm2)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case !avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too late")
 	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too late")
+	case !compare.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too late")
+	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV, vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Accepted:
 		t.Fatalf("Tx should have been accepted")
@@ -1343,7 +1668,11 @@ func TransitiveRejectionTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1396,11 +1725,19 @@ func TransitiveRejectionTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx2},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1408,23 +1745,51 @@ func TransitiveRejectionTest(t *testing.T, factory Factory) {
 	sm.Add(0, vtx1.IDV)
 	sm.Add(1, vtx1.IDV)
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm)
+=======
+	err = avl.RecordPoll(context.Background(), sm)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too early")
 	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
 		t.Fatalf("Initial frontier failed to be set")
 	}
 
 	err = avl.RecordPoll(sm)
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too early")
+	case !compare.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too early")
+	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+		t.Fatalf("Initial frontier failed to be set")
+	}
+
+	err = avl.RecordPoll(context.Background(), sm)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too early")
 	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too early")
+	case !compare.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too early")
+	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Rejected:
 		t.Fatalf("Tx should have been rejected")
@@ -1434,13 +1799,27 @@ func TransitiveRejectionTest(t *testing.T, factory Factory) {
 		t.Fatalf("Tx should not have been decided")
 	}
 
+<<<<<<< HEAD
 	err = avl.RecordPoll(sm)
+=======
+	err = avl.RecordPoll(context.Background(), sm)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
 	case avl.Finalized():
+<<<<<<< HEAD
 		t.Fatalf("An lux instance finalized too early")
 	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatalf("An avalanche instance finalized too early")
+	case !compare.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+=======
+		t.Fatalf("An lux instance finalized too early")
+	case !ids.UnsortedEquals([]ids.ID{vtx1.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Initial frontier failed to be set")
 	case tx0.Status() != choices.Rejected:
 		t.Fatalf("Tx should have been rejected")
@@ -1480,7 +1859,11 @@ func IsVirtuousTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1533,7 +1916,11 @@ func IsVirtuousTest(t *testing.T, factory Factory) {
 		t.Fatalf("Should be virtuous.")
 	}
 
+<<<<<<< HEAD
 	err = avl.Add(vtx0)
+=======
+	err = avl.Add(context.Background(), vtx0)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
@@ -1543,7 +1930,11 @@ func IsVirtuousTest(t *testing.T, factory Factory) {
 		t.Fatalf("Should not be virtuous.")
 	}
 
+<<<<<<< HEAD
 	err = avl.Add(vtx1)
+=======
+	err = avl.Add(context.Background(), vtx1)
+>>>>>>> 53a8245a8 (Update consensus)
 	switch {
 	case err != nil:
 		t.Fatal(err)
@@ -1583,7 +1974,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1638,7 +2033,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 
 	// Add [vtx0] containing [tx0]. Because [tx0] is virtuous, the instance
 	// shouldn't quiesce.
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if avl.Quiesce() {
@@ -1648,7 +2047,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 	// Add [vtx1] containing [tx1]. Because [tx1] conflicts with [tx0], neither
 	// [tx0] nor [tx1] are now virtuous. This means there are no virtuous
 	// transaction left in the consensus instance and it can quiesce.
+<<<<<<< HEAD
 	if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1656,7 +2059,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 	// be re-calculated by changing the preference of tx1.
 	sm1 := ids.UniqueBag{}
 	sm1.Add(0, vtx1.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm1); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1666,7 +2073,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 
 	// Add [vtx2] containing [tx2]. Because [tx2] is virtuous, the instance
 	// shouldn't quiesce, even though [tx0] and [tx1] conflict.
+<<<<<<< HEAD
 	if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if avl.Quiesce() {
@@ -1675,7 +2086,11 @@ func QuiesceTest(t *testing.T, factory Factory) {
 
 	sm2 := ids.UniqueBag{}
 	sm2.Add(0, vtx2.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm2); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1718,7 +2133,11 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 		ids.GenerateTestID(),
 	}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1784,6 +2203,7 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	}
@@ -1794,6 +2214,18 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 		t.Fatal(err)
 	}
 	if err := avl.Add(vtx3); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx2); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx3); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1804,7 +2236,11 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 
 	sm12 := ids.UniqueBag{}
 	sm12.Add(0, vtx1.IDV, vtx2.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm12); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm12); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1816,7 +2252,11 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 
 	sm023 := ids.UniqueBag{}
 	sm023.Add(0, vtx0.IDV, vtx2.IDV, vtx3.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm023); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm023); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1827,7 +2267,11 @@ func QuiesceAfterVotingTest(t *testing.T, factory Factory) {
 
 	sm3 := ids.UniqueBag{}
 	sm3.Add(0, vtx3.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm3); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm3); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -1866,7 +2310,11 @@ func TransactionVertexTest(t *testing.T, factory Factory) {
 		}},
 	}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, seedVertices)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, seedVertices)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1881,7 +2329,11 @@ func TransactionVertexTest(t *testing.T, factory Factory) {
 		ParentsV: seedVertices,
 		HeightV:  1,
 	}
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if !avl.VertexIssued(vtx0) {
@@ -1899,7 +2351,11 @@ func TransactionVertexTest(t *testing.T, factory Factory) {
 	bags := ids.UniqueBag{}
 	bags.Add(0, vtx0.IDV)
 	bags.Add(1, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(bags); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), bags); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("unexpected RecordPoll error %v", err)
 	}
 
@@ -1907,8 +2363,18 @@ func TransactionVertexTest(t *testing.T, factory Factory) {
 	case vtx0.Status() != choices.Accepted:
 		t.Fatalf("vertex with no transaction should have been accepted after polling, got %v", vtx0.Status())
 	case !avl.Finalized():
+<<<<<<< HEAD
 		t.Fatal("expected finalized lux instance")
 	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV}, avl.Preferences().List()):
+=======
+<<<<<<< HEAD:snow/consensus/avalanche/consensus_test.go
+		t.Fatal("expected finalized avalanche instance")
+	case !compare.UnsortedEquals([]ids.ID{vtx0.IDV}, avl.Preferences().List()):
+=======
+		t.Fatal("expected finalized lux instance")
+	case !ids.UnsortedEquals([]ids.ID{vtx0.IDV}, avl.Preferences().List()):
+>>>>>>> 04d685aa2 (Update consensus):snow/consensus/lux/consensus_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("unexpected frontier %v", avl.Preferences().List())
 	}
 }
@@ -1942,7 +2408,11 @@ func OrphansTest(t *testing.T, factory Factory) {
 	}
 	utxos := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1997,7 +2467,11 @@ func OrphansTest(t *testing.T, factory Factory) {
 
 	// [vtx0] contains [tx0], both of which will be preferred, so [tx0] is not
 	// an orphan.
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if orphans := avl.Orphans(); orphans.Len() != 0 {
@@ -2006,7 +2480,11 @@ func OrphansTest(t *testing.T, factory Factory) {
 
 	// [vtx1] contains [tx1], which conflicts with [tx0]. [tx0] is contained in
 	// a preferred vertex, and neither [tx0] nor [tx1] are virtuous.
+<<<<<<< HEAD
 	if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if orphans := avl.Orphans(); orphans.Len() != 0 {
@@ -2015,7 +2493,11 @@ func OrphansTest(t *testing.T, factory Factory) {
 
 	// [vtx2] contains [tx2], both of which will be preferred, so [tx2] is not
 	// an orphan.
+<<<<<<< HEAD
 	if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 	if orphans := avl.Orphans(); orphans.Len() != 0 {
@@ -2024,7 +2506,11 @@ func OrphansTest(t *testing.T, factory Factory) {
 
 	sm := ids.UniqueBag{}
 	sm.Add(0, vtx1.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(sm); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), sm); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -2068,7 +2554,11 @@ func OrphansUpdateTest(t *testing.T, factory Factory) {
 			StatusV: choices.Accepted,
 		}},
 	}
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, seedVertices)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, seedVertices)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2128,6 +2618,7 @@ func OrphansUpdateTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx2},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	}
@@ -2135,18 +2626,35 @@ func OrphansUpdateTest(t *testing.T, factory Factory) {
 		t.Fatal(err)
 	}
 	if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	}
+	if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	// vtx0 is virtuous, so it should be preferred. vtx1 and vtx2 conflict, but
 	// vtx1 was issued before vtx2, so vtx1 should be preferred and vtx2 should
 	// not be preferred.
+<<<<<<< HEAD
 	expectedPreferredSet := ids.Set{
+=======
+	expectedPreferredSet := set.Set[ids.ID]{
+>>>>>>> 53a8245a8 (Update consensus)
 		vtx0.ID(): struct{}{},
 		vtx1.ID(): struct{}{},
 	}
 	preferenceSet := avl.Preferences().List()
+<<<<<<< HEAD
 	if !ids.UnsortedEquals(expectedPreferredSet.List(), preferenceSet) {
+=======
+	if !compare.UnsortedEquals(expectedPreferredSet.List(), preferenceSet) {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("expected preferenceSet %v, got %v", expectedPreferredSet, preferenceSet)
 	}
 
@@ -2154,26 +2662,44 @@ func OrphansUpdateTest(t *testing.T, factory Factory) {
 	// update the orphan set.
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx2.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	// Because vtx2 was voted for over vtx1, they should be swapped in the
 	// preferred set.
+<<<<<<< HEAD
 	expectedPreferredSet = ids.Set{
+=======
+	expectedPreferredSet = set.Set[ids.ID]{
+>>>>>>> 53a8245a8 (Update consensus)
 		vtx0.ID(): struct{}{},
 		vtx2.ID(): struct{}{},
 	}
 	preferenceSet = avl.Preferences().List()
+<<<<<<< HEAD
 	if !ids.UnsortedEquals(expectedPreferredSet.List(), preferenceSet) {
+=======
+	if !compare.UnsortedEquals(expectedPreferredSet.List(), preferenceSet) {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("expected preferenceSet %v, got %v", expectedPreferredSet, preferenceSet)
 	}
 
 	// Because there are no virtuous transactions that are not in a preferred
 	// vertex, there should be no orphans.
+<<<<<<< HEAD
 	expectedOrphanSet := ids.Set{}
 	orphanSet := avl.Orphans()
 	if !ids.UnsortedEquals(expectedOrphanSet.List(), orphanSet.List()) {
+=======
+	expectedOrphanSet := set.Set[ids.ID]{}
+	orphanSet := avl.Orphans()
+	if !compare.UnsortedEquals(expectedOrphanSet.List(), orphanSet.List()) {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("expected orphanSet %v, got %v", expectedOrphanSet, orphanSet)
 	}
 }
@@ -2200,14 +2726,22 @@ func ErrorOnVacuousAcceptTest(t *testing.T, factory Factory) {
 		StatusV: choices.Accepted,
 	}}}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	tx0 := &snowstorm.TestTx{TestDecidable: choices.TestDecidable{
 		IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 		AcceptV: errors.New(""),
+=======
+		AcceptV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 		StatusV: choices.Processing,
 	}}
 
@@ -2221,7 +2755,11 @@ func ErrorOnVacuousAcceptTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err == nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex issuance")
 	}
 }
@@ -2249,14 +2787,22 @@ func ErrorOnTxAcceptTest(t *testing.T, factory Factory) {
 	}}}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	tx0 := &snowstorm.TestTx{TestDecidable: choices.TestDecidable{
 		IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 		AcceptV: errors.New(""),
+=======
+		AcceptV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 		StatusV: choices.Processing,
 	}}
 	tx0.InputIDsV = append(tx0.InputIDsV, utxos[0])
@@ -2271,13 +2817,21 @@ func ErrorOnTxAcceptTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err == nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex acceptance")
 	}
 }
@@ -2305,7 +2859,11 @@ func ErrorOnVtxAcceptTest(t *testing.T, factory Factory) {
 	}}}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2319,7 +2877,11 @@ func ErrorOnVtxAcceptTest(t *testing.T, factory Factory) {
 	vtx0 := &TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 			AcceptV: errors.New(""),
+=======
+			AcceptV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 			StatusV: choices.Processing,
 		},
 		ParentsV: vts,
@@ -2327,13 +2889,21 @@ func ErrorOnVtxAcceptTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx0},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err == nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex acceptance")
 	}
 }
@@ -2361,7 +2931,11 @@ func ErrorOnVtxRejectTest(t *testing.T, factory Factory) {
 	}}}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2391,7 +2965,11 @@ func ErrorOnVtxRejectTest(t *testing.T, factory Factory) {
 	vtx1 := &TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 			RejectV: errors.New(""),
+=======
+			RejectV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 			StatusV: choices.Processing,
 		},
 		ParentsV: vts,
@@ -2399,15 +2977,25 @@ func ErrorOnVtxRejectTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err == nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex rejection")
 	}
 }
@@ -2435,7 +3023,11 @@ func ErrorOnParentVtxRejectTest(t *testing.T, factory Factory) {
 	}}}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2465,7 +3057,11 @@ func ErrorOnParentVtxRejectTest(t *testing.T, factory Factory) {
 	vtx1 := &TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 			RejectV: errors.New(""),
+=======
+			RejectV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 			StatusV: choices.Processing,
 		},
 		ParentsV: vts,
@@ -2483,17 +3079,29 @@ func ErrorOnParentVtxRejectTest(t *testing.T, factory Factory) {
 		TxsV:     []snowstorm.Tx{tx1},
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err == nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex rejection")
 	}
 }
@@ -2521,7 +3129,11 @@ func ErrorOnTransitiveVtxRejectTest(t *testing.T, factory Factory) {
 	}}}
 	utxos := []ids.ID{ids.GenerateTestID()}
 
+<<<<<<< HEAD
 	err := avl.Initialize(snow.DefaultConsensusContextTest(), params, vts)
+=======
+	err := avl.Initialize(context.Background(), snow.DefaultConsensusContextTest(), params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2561,24 +3173,40 @@ func ErrorOnTransitiveVtxRejectTest(t *testing.T, factory Factory) {
 	vtx2 := &TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.GenerateTestID(),
+<<<<<<< HEAD
 			RejectV: errors.New(""),
+=======
+			RejectV: errTest,
+>>>>>>> 53a8245a8 (Update consensus)
 			StatusV: choices.Processing,
 		},
 		ParentsV: []Vertex{vtx1},
 		HeightV:  1,
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx1); err != nil {
 		t.Fatal(err)
 	} else if err := avl.Add(vtx2); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx1); err != nil {
+		t.Fatal(err)
+	} else if err := avl.Add(context.Background(), vtx2); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err == nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err == nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatalf("Should have errored on vertex rejection")
 	}
 }
@@ -2609,7 +3237,11 @@ func SilenceTransactionVertexEventsTest(t *testing.T, factory Factory) {
 	tracker := snow.NewAcceptorTracker()
 	ctx.DecisionAcceptor = tracker
 
+<<<<<<< HEAD
 	err := avl.Initialize(ctx, params, vts)
+=======
+	err := avl.Initialize(context.Background(), ctx, params, vts)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2623,13 +3255,21 @@ func SilenceTransactionVertexEventsTest(t *testing.T, factory Factory) {
 		HeightV:  1,
 	}
 
+<<<<<<< HEAD
 	if err := avl.Add(vtx0); err != nil {
+=======
+	if err := avl.Add(context.Background(), vtx0); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
 	votes := ids.UniqueBag{}
 	votes.Add(0, vtx0.IDV)
+<<<<<<< HEAD
 	if err := avl.RecordPoll(votes); err != nil {
+=======
+	if err := avl.RecordPoll(context.Background(), votes); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 

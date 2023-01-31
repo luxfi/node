@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/set"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -17,6 +19,13 @@ import (
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 =======
 >>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
+=======
+=======
+	"github.com/luxdefi/luxd/ids"
+
+	ledger "github.com/luxdefi/lux-ledger-go"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (

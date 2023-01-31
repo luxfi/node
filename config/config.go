@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/viper"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/app/runner"
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/genesis"
@@ -51,6 +52,8 @@ import (
 	"github.com/luxdefi/luxd/vms"
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 =======
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/ava-labs/avalanchego/app/runner"
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/genesis"
@@ -83,7 +86,42 @@ import (
 	"github.com/ava-labs/avalanchego/vms"
 	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 	"github.com/ava-labs/avalanchego/vms/proposervm"
+<<<<<<< HEAD
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+=======
+	"github.com/luxdefi/luxd/app/runner"
+	"github.com/luxdefi/luxd/chains"
+	"github.com/luxdefi/luxd/genesis"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/ipcs"
+	"github.com/luxdefi/luxd/nat"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/network/dialer"
+	"github.com/luxdefi/luxd/network/throttling"
+	"github.com/luxdefi/luxd/node"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/luxd/snow/networking/benchlist"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/sender"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/staking"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/luxd/utils/crypto/bls"
+	"github.com/luxdefi/luxd/utils/dynamicip"
+	"github.com/luxdefi/luxd/utils/ips"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/utils/password"
+	"github.com/luxdefi/luxd/utils/perms"
+	"github.com/luxdefi/luxd/utils/profiler"
+	"github.com/luxdefi/luxd/utils/storage"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/vms"
+	"github.com/luxdefi/luxd/vms/platformvm/reward"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (

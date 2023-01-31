@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package getter
@@ -8,6 +12,19 @@ import (
 	"errors"
 	"testing"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/getter/getter_test.go
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow"
 	"github.com/luxdefi/luxd/snow/choices"
@@ -15,6 +32,10 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/snow/engine/common"
 	"github.com/luxdefi/luxd/snow/validators"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/getter/getter_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var errUnknownVertex = errors.New("unknown vertex")
@@ -22,7 +43,23 @@ var errUnknownVertex = errors.New("unknown vertex")
 func testSetup(t *testing.T) (*vertex.TestManager, *common.SenderTest, common.Config) {
 	peers := validators.NewSet()
 	peer := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	if err := peers.AddWeight(peer, 1); err != nil {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+=======
+	if err := peers.Add(peer, 1); err != nil {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	if err := peers.Add(peer, nil, 1); err != nil {
+>>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+>>>>>>> 53a8245a8 (Update consensus)
 		t.Fatal(err)
 	}
 
@@ -32,9 +69,19 @@ func testSetup(t *testing.T) (*vertex.TestManager, *common.SenderTest, common.Co
 
 	isBootstrapped := false
 	subnet := &common.SubnetTest{
+<<<<<<< HEAD
 		T:               t,
 		IsBootstrappedF: func() bool { return isBootstrapped },
 		BootstrappedF:   func(ids.ID) { isBootstrapped = true },
+=======
+		T: t,
+		IsBootstrappedF: func() bool {
+			return isBootstrapped
+		},
+		BootstrappedF: func(ids.ID) {
+			isBootstrapped = true
+		},
+>>>>>>> 53a8245a8 (Update consensus)
 	}
 
 	commonConfig := common.Config{
@@ -73,7 +120,11 @@ func TestAcceptedFrontier(t *testing.T) {
 		t.Fatal("Unexpected get handler")
 	}
 
+<<<<<<< HEAD
 	manager.EdgeF = func() []ids.ID {
+=======
+	manager.EdgeF = func(context.Context) []ids.ID {
+>>>>>>> 53a8245a8 (Update consensus)
 		return []ids.ID{
 			vtxID0,
 			vtxID1,
@@ -89,7 +140,11 @@ func TestAcceptedFrontier(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	acceptedSet := ids.Set{}
+=======
+	acceptedSet := set.Set[ids.ID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 	acceptedSet.Add(accepted...)
 
 	manager.EdgeF = nil
@@ -132,7 +187,15 @@ func TestFilterAccepted(t *testing.T) {
 
 	vtxIDs := []ids.ID{vtxID0, vtxID1, vtxID2}
 
+<<<<<<< HEAD
 	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+=======
+<<<<<<< HEAD:snow/engine/avalanche/getter/getter_test.go
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+=======
+	manager.GetVtxF = func(vtxID ids.ID) (lux.Vertex, error) {
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/getter/getter_test.go
+>>>>>>> 53a8245a8 (Update consensus)
 		switch vtxID {
 		case vtxID0:
 			return vtx0, nil
@@ -154,7 +217,11 @@ func TestFilterAccepted(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	acceptedSet := ids.Set{}
+=======
+	acceptedSet := set.Set[ids.ID]{}
+>>>>>>> 53a8245a8 (Update consensus)
 	acceptedSet.Add(accepted...)
 
 	manager.GetVtxF = nil

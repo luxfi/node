@@ -40,7 +40,7 @@ type Bootstrapper interface {
 	Restart(ctx context.Context, reset bool) error
 }
 
-// It collects mechanisms common to both snowman and avalanche bootstrappers
+// It collects mechanisms common to both snowman and lux bootstrappers
 type bootstrapper struct {
 	Config
 	Halter

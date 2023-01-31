@@ -1,13 +1,24 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package vertex
 
 import (
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/codec"
 	"github.com/luxdefi/luxd/codec/linearcodec"
 	"github.com/luxdefi/luxd/codec/reflectcodec"
 	"github.com/luxdefi/luxd/utils/units"
+=======
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/codec/reflectcodec"
+	"github.com/ava-labs/avalanchego/utils/units"
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (

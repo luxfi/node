@@ -55,7 +55,7 @@ func (c *Config) IsBootstrapped() bool {
 	return c.Ctx.GetState() == snow.NormalOp
 }
 
-// Shared among common.bootstrapper and snowman/avalanche bootstrapper
+// Shared among common.bootstrapper and snowman/lux bootstrapper
 type SharedConfig struct {
 	// Tracks the last requestID that was used in a request
 	RequestID uint32

@@ -1,14 +1,36 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
+<<<<<<< HEAD
+=======
+	"context"
+>>>>>>> 53a8245a8 (Update consensus)
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/unique_vertex.go
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/cache"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/choices"
@@ -17,6 +39,10 @@ import (
 	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
 	"github.com/luxdefi/luxd/utils/formatting"
 	"github.com/luxdefi/luxd/utils/hashing"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/unique_vertex.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
@@ -41,7 +67,11 @@ type uniqueVertex struct {
 
 // newUniqueVertex returns a uniqueVertex instance from [b] by checking the cache
 // and then parsing the vertex bytes on a cache miss.
+<<<<<<< HEAD
 func newUniqueVertex(s *Serializer, b []byte) (*uniqueVertex, error) {
+=======
+func newUniqueVertex(ctx context.Context, s *Serializer, b []byte) (*uniqueVertex, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 	vtx := &uniqueVertex{
 		id:         hashing.ComputeHash256Array(b),
 		serializer: s,
@@ -65,7 +95,11 @@ func newUniqueVertex(s *Serializer, b []byte) (*uniqueVertex, error) {
 	unparsedTxs := innerVertex.Txs()
 	txs := make([]snowstorm.Tx, len(unparsedTxs))
 	for i, txBytes := range unparsedTxs {
+<<<<<<< HEAD
 		tx, err := vtx.serializer.VM.ParseTx(txBytes)
+=======
+		tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
+>>>>>>> 53a8245a8 (Update consensus)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +164,11 @@ func (vtx *uniqueVertex) Evict() {
 	}
 }
 
+<<<<<<< HEAD
 func (vtx *uniqueVertex) setVertex(innerVtx vertex.StatelessVertex) error {
+=======
+func (vtx *uniqueVertex) setVertex(ctx context.Context, innerVtx vertex.StatelessVertex) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	vtx.shallowRefresh()
 	vtx.v.vtx = innerVtx
 
@@ -138,7 +176,11 @@ func (vtx *uniqueVertex) setVertex(innerVtx vertex.StatelessVertex) error {
 		return nil
 	}
 
+<<<<<<< HEAD
 	if _, err := vtx.Txs(); err != nil {
+=======
+	if _, err := vtx.Txs(ctx); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return err
 	}
 
@@ -165,10 +207,29 @@ func (vtx *uniqueVertex) setStatus(status choices.Status) error {
 	return vtx.serializer.state.SetStatus(vtx.ID(), status)
 }
 
+<<<<<<< HEAD
 func (vtx *uniqueVertex) ID() ids.ID       { return vtx.id }
 func (vtx *uniqueVertex) Key() interface{} { return vtx.id }
 
 func (vtx *uniqueVertex) Accept() error {
+=======
+func (vtx *uniqueVertex) ID() ids.ID {
+	return vtx.id
+}
+<<<<<<< HEAD
+=======
+
+func (vtx *uniqueVertex) Key() interface{} {
+	return vtx.id
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+
+func (vtx *uniqueVertex) Key() interface{} {
+	return vtx.id
+}
+
+func (vtx *uniqueVertex) Accept(ctx context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	if err := vtx.setStatus(choices.Accepted); err != nil {
 		return err
 	}
@@ -183,7 +244,11 @@ func (vtx *uniqueVertex) Accept() error {
 		vtx.serializer.edge.Remove(parent.ID())
 	}
 
+<<<<<<< HEAD
 	if err := vtx.serializer.state.SetEdge(vtx.serializer.Edge()); err != nil {
+=======
+	if err := vtx.serializer.state.SetEdge(vtx.serializer.Edge(ctx)); err != nil {
+>>>>>>> 53a8245a8 (Update consensus)
 		return fmt.Errorf("failed to set edge while accepting vertex %s due to %w", vtx.id, err)
 	}
 
@@ -194,7 +259,11 @@ func (vtx *uniqueVertex) Accept() error {
 	return vtx.serializer.versionDB.Commit()
 }
 
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Reject() error {
+=======
+func (vtx *uniqueVertex) Reject(context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	if err := vtx.setStatus(choices.Rejected); err != nil {
 		return err
 	}
@@ -209,7 +278,14 @@ func (vtx *uniqueVertex) Reject() error {
 // TODO: run performance test to see if shallow refreshing
 // (which will mean that refresh must be called in Bytes and Verify)
 // improves performance
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Status() choices.Status { vtx.refresh(); return vtx.v.status }
+=======
+func (vtx *uniqueVertex) Status() choices.Status {
+	vtx.refresh()
+	return vtx.v.status
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (vtx *uniqueVertex) Parents() ([]lux.Vertex, error) {
 	vtx.refresh()
@@ -242,7 +318,11 @@ var (
 // "uniqueVertex" itself implements "Verify" regardless of whether the underlying vertex
 // is stop vertex or not. Called before issuing the vertex to the consensus.
 // No vertex should ever be able to refer to a stop vertex in its transitive closure.
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Verify() error {
+=======
+func (vtx *uniqueVertex) Verify(ctx context.Context) error {
+>>>>>>> 53a8245a8 (Update consensus)
 	// first verify the underlying stateless vertex
 	if err := vtx.v.vtx.Verify(); err != nil {
 		return err
@@ -262,7 +342,11 @@ func (vtx *uniqueVertex) Verify() error {
 
 	// MUST error if stop vertex has already been accepted (can't be accepted twice)
 	// regardless of whether the underlying vertex is stop vertex or not
+<<<<<<< HEAD
 	stopVtxAccepted, err := vtx.serializer.StopVertexAccepted()
+=======
+	stopVtxAccepted, err := vtx.serializer.StopVertexAccepted(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		return err
 	}
@@ -293,12 +377,26 @@ func (vtx *uniqueVertex) Verify() error {
 	// To make sure such transitive paths of the stop vertex reach all accepted frontier:
 	// 1. check the edge of the transitive paths refers to the accepted frontier
 	// 2. check dependencies of all txs must be subset of transitive paths
+<<<<<<< HEAD
 	queue := []lux.Vertex{vtx}
 	visitedVtx := ids.NewSet(0)
 
 	acceptedFrontier := ids.NewSet(0)
 	transitivePaths := ids.NewSet(0)
 	dependencies := ids.NewSet(0)
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/unique_vertex.go
+	queue := []avalanche.Vertex{vtx}
+	visitedVtx := set.NewSet[ids.ID](0)
+=======
+	queue := []lux.Vertex{vtx}
+	visitedVtx := ids.NewSet(0)
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/unique_vertex.go
+
+	acceptedFrontier := set.NewSet[ids.ID](0)
+	transitivePaths := set.NewSet[ids.ID](0)
+	dependencies := set.NewSet[ids.ID](0)
+>>>>>>> 53a8245a8 (Update consensus)
 	for len(queue) > 0 { // perform BFS
 		cur := queue[0]
 		queue = queue[1:]
@@ -319,7 +417,11 @@ func (vtx *uniqueVertex) Verify() error {
 		visitedVtx.Add(curID)
 		transitivePaths.Add(curID)
 
+<<<<<<< HEAD
 		txs, err := cur.Txs()
+=======
+		txs, err := cur.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 		if err != nil {
 			return err
 		}
@@ -344,8 +446,21 @@ func (vtx *uniqueVertex) Verify() error {
 		queue = append(queue, parents...)
 	}
 
+<<<<<<< HEAD
 	acceptedEdges := ids.NewSet(0)
 	acceptedEdges.Add(vtx.serializer.Edge()...)
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	acceptedEdges := set.NewSet[ids.ID](0)
+=======
+	acceptedEdges := ids.NewSet(0)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	acceptedEdges := set.NewSet[ids.ID](0)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+	acceptedEdges.Add(vtx.serializer.Edge(ctx)...)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	// stop vertex should be able to reach all IDs
 	// that are returned by the "Edge"
@@ -369,7 +484,19 @@ func (vtx *uniqueVertex) HasWhitelist() bool {
 
 // "uniqueVertex" itself implements "Whitelist" traversal iff its underlying
 // "vertex.StatelessVertex" is marked as a stop vertex.
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Whitelist() (ids.Set, error) {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+func (vtx *uniqueVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
+=======
+func (vtx *uniqueVertex) Whitelist(ctx context.Context) (ids.Set, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (vtx *uniqueVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+>>>>>>> 53a8245a8 (Update consensus)
 	if !vtx.v.vtx.StopVertex() {
 		return nil, nil
 	}
@@ -377,9 +504,21 @@ func (vtx *uniqueVertex) Whitelist() (ids.Set, error) {
 	// perform BFS on transitive paths until reaching the accepted frontier
 	// represents all processing transaction IDs transitively referenced by the
 	// vertex
+<<<<<<< HEAD
 	queue := []lux.Vertex{vtx}
 	whitlist := ids.NewSet(0)
 	visitedVtx := ids.NewSet(0)
+=======
+<<<<<<< HEAD:snow/engine/avalanche/state/unique_vertex.go
+	queue := []avalanche.Vertex{vtx}
+	whitlist := set.NewSet[ids.ID](0)
+	visitedVtx := set.NewSet[ids.ID](0)
+=======
+	queue := []lux.Vertex{vtx}
+	whitlist := ids.NewSet(0)
+	visitedVtx := ids.NewSet(0)
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/unique_vertex.go
+>>>>>>> 53a8245a8 (Update consensus)
 	for len(queue) > 0 {
 		cur := queue[0]
 		queue = queue[1:]
@@ -395,7 +534,11 @@ func (vtx *uniqueVertex) Whitelist() (ids.Set, error) {
 		}
 		visitedVtx.Add(curID)
 
+<<<<<<< HEAD
 		txs, err := cur.Txs()
+=======
+		txs, err := cur.Txs(ctx)
+>>>>>>> 53a8245a8 (Update consensus)
 		if err != nil {
 			return nil, err
 		}
@@ -433,7 +576,11 @@ func (vtx *uniqueVertex) Epoch() (uint32, error) {
 	return vtx.v.vtx.Epoch(), nil
 }
 
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Txs() ([]snowstorm.Tx, error) {
+=======
+func (vtx *uniqueVertex) Txs(ctx context.Context) ([]snowstorm.Tx, error) {
+>>>>>>> 53a8245a8 (Update consensus)
 	vtx.refresh()
 
 	if vtx.v.vtx == nil {
@@ -444,7 +591,11 @@ func (vtx *uniqueVertex) Txs() ([]snowstorm.Tx, error) {
 	if len(txs) != len(vtx.v.txs) {
 		vtx.v.txs = make([]snowstorm.Tx, len(txs))
 		for i, txBytes := range txs {
+<<<<<<< HEAD
 			tx, err := vtx.serializer.VM.ParseTx(txBytes)
+=======
+			tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
+>>>>>>> 53a8245a8 (Update consensus)
 			if err != nil {
 				return nil, err
 			}
@@ -455,7 +606,13 @@ func (vtx *uniqueVertex) Txs() ([]snowstorm.Tx, error) {
 	return vtx.v.txs, nil
 }
 
+<<<<<<< HEAD
 func (vtx *uniqueVertex) Bytes() []byte { return vtx.v.vtx.Bytes() }
+=======
+func (vtx *uniqueVertex) Bytes() []byte {
+	return vtx.v.vtx.Bytes()
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 func (vtx *uniqueVertex) String() string {
 	sb := strings.Builder{}
@@ -465,7 +622,11 @@ func (vtx *uniqueVertex) String() string {
 		sb.WriteString(fmt.Sprintf("Vertex(ID = %s, Error=error while retrieving vertex parents: %s)", vtx.ID(), err))
 		return sb.String()
 	}
+<<<<<<< HEAD
 	txs, err := vtx.Txs()
+=======
+	txs, err := vtx.Txs(context.Background())
+>>>>>>> 53a8245a8 (Update consensus)
 	if err != nil {
 		sb.WriteString(fmt.Sprintf("Vertex(ID = %s, Error=error while retrieving vertex txs: %s)", vtx.ID(), err))
 		return sb.String()

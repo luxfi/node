@@ -18,7 +18,11 @@ Now Serving: **Protocol Version 21**
 Now Serving: **Protocol Version 22**
 >>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
 
+<<<<<<< HEAD
 Protobuf files are hosted at [https://buf.build/ava-labs/avalanche](https://buf.build/ava-labs/avalanche) and can be used as dependencies in other projects.
+=======
+Protobuf files are hosted at [https://buf.build/luxdefi/lux](https://buf.build/luxdefi/lux) and can be used as dependencies in other projects.
+>>>>>>> 04d685aa2 (Update consensus)
 
 Protobuf linting and generation for this project is managed by [buf](https://github.com/bufbuild/buf).
 

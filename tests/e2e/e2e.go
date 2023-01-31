@@ -15,7 +15,15 @@ import (
 
 	"github.com/onsi/gomega"
 
+<<<<<<< HEAD
 	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
+=======
+<<<<<<< HEAD
+	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
+=======
+	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/tests"
@@ -95,9 +103,21 @@ func (te *TestEnvinronment) ConfigCluster(
 	uris string,
 	testKeysFile string,
 ) error {
+<<<<<<< HEAD
 	if luxGoExecPath != "" {
 		if _, err := os.Stat(luxGoExecPath); err != nil {
 			return fmt.Errorf("could not find luxd binary: %w", err)
+=======
+<<<<<<< HEAD
+	if avalancheGoExecPath != "" {
+		if _, err := os.Stat(avalancheGoExecPath); err != nil {
+			return fmt.Errorf("could not find avalanchego binary: %w", err)
+=======
+	if luxGoExecPath != "" {
+		if _, err := os.Stat(luxGoExecPath); err != nil {
+			return fmt.Errorf("could not find luxd binary: %w", err)
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 		}
 	}
 

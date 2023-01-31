@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 53a8245a8 (Update consensus)
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -6,8 +10,19 @@ package vertex
 import (
 	"container/heap"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/consensus/lux"
+=======
+<<<<<<< HEAD:snow/engine/avalanche/vertex/heap.go
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/utils/set"
+=======
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+>>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/heap.go
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
@@ -17,7 +32,13 @@ var (
 
 type priorityQueue []lux.Vertex
 
+<<<<<<< HEAD
 func (pq priorityQueue) Len() int { return len(pq) }
+=======
+func (pq priorityQueue) Len() int {
+	return len(pq)
+}
+>>>>>>> 53a8245a8 (Update consensus)
 
 // Returns true if the vertex at index i has greater height than the vertex at
 // index j.
@@ -87,11 +108,21 @@ type Heap interface {
 }
 
 // NewHeap returns an empty Heap
+<<<<<<< HEAD
 func NewHeap() Heap { return &maxHeightVertexHeap{} }
 
 type maxHeightVertexHeap struct {
 	heap       priorityQueue
 	elementIDs ids.Set
+=======
+func NewHeap() Heap {
+	return &maxHeightVertexHeap{}
+}
+
+type maxHeightVertexHeap struct {
+	heap       priorityQueue
+	elementIDs set.Set[ids.ID]
+>>>>>>> 53a8245a8 (Update consensus)
 }
 
 func (vh *maxHeightVertexHeap) Clear() {
@@ -121,6 +152,16 @@ func (vh *maxHeightVertexHeap) Pop() lux.Vertex {
 	return vtx
 }
 
+<<<<<<< HEAD
 func (vh *maxHeightVertexHeap) Len() int { return vh.heap.Len() }
 
 func (vh *maxHeightVertexHeap) Contains(vtxID ids.ID) bool { return vh.elementIDs.Contains(vtxID) }
+=======
+func (vh *maxHeightVertexHeap) Len() int {
+	return vh.heap.Len()
+}
+
+func (vh *maxHeightVertexHeap) Contains(vtxID ids.ID) bool {
+	return vh.elementIDs.Contains(vtxID)
+}
+>>>>>>> 53a8245a8 (Update consensus)

@@ -13,6 +13,28 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/api/server"
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/codec"
@@ -30,6 +52,10 @@ import (
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
 	"github.com/luxdefi/luxd/utils/wrappers"
+<<<<<<< HEAD
+=======
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 const (

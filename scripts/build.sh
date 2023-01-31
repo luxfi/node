@@ -33,7 +33,12 @@ source "$AVALANCHE_PATH"/scripts/constants.sh
 echo "Downloading dependencies..."
 go mod download
 
+<<<<<<< HEAD
 build_args="$race"
+=======
+# Build luxd
+"$LUX_PATH"/scripts/build_lux.sh
+>>>>>>> 04d685aa2 (Update consensus)
 
 # Build avalanchego
 "$AVALANCHE_PATH"/scripts/build_avalanche.sh $build_args

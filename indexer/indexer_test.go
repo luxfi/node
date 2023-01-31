@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/server"
 	"github.com/luxdefi/luxd/database/memdb"
 	"github.com/luxdefi/luxd/database/versiondb"
@@ -29,6 +30,43 @@ import (
 
 	aveng "github.com/luxdefi/luxd/snow/engine/lux"
 	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
+=======
+<<<<<<< HEAD
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
+
+	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
+	smblockmocks "github.com/ava-labs/avalanchego/snow/engine/snowman/block/mocks"
+=======
+	"github.com/luxdefi/luxd/api/server"
+	"github.com/luxdefi/luxd/database/memdb"
+	"github.com/luxdefi/luxd/database/versiondb"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/luxd/snow/engine/snowman"
+	"github.com/luxdefi/luxd/utils"
+	"github.com/luxdefi/luxd/utils/logging"
+
+	aveng "github.com/luxdefi/luxd/snow/engine/lux"
+	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 var (
@@ -295,12 +333,21 @@ func TestIndexer(t *testing.T) {
 	}
 	// Mocked VM knows about this block now
 <<<<<<< HEAD
+<<<<<<< HEAD
 	dagEngine.EXPECT().GetVtx(vtxID).Return(
 		&lux.TestVertex{
 =======
 	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
 		&avalanche.TestVertex{
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
+		&avalanche.TestVertex{
+=======
+	dagEngine.EXPECT().GetVtx(vtxID).Return(
+		&lux.TestVertex{
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 			TestDecidable: choices.TestDecidable{
 				StatusV: choices.Accepted,
 				IDV:     vtxID,

@@ -8,6 +8,7 @@ import (
 	"time"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/genesis"
 	"github.com/luxdefi/luxd/ids"
@@ -27,6 +28,8 @@ import (
 	"github.com/luxdefi/luxd/utils/timer"
 	"github.com/luxdefi/luxd/vms"
 =======
+=======
+>>>>>>> 53a8245a8 (Update consensus)
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/genesis"
 	"github.com/ava-labs/avalanchego/ids"
@@ -46,7 +49,30 @@ import (
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/timer"
 	"github.com/ava-labs/avalanchego/vms"
+<<<<<<< HEAD
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+=======
+	"github.com/luxdefi/luxd/chains"
+	"github.com/luxdefi/luxd/genesis"
+	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/luxd/nat"
+	"github.com/luxdefi/luxd/network"
+	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/luxd/snow/networking/benchlist"
+	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/luxdefi/luxd/snow/networking/sender"
+	"github.com/luxdefi/luxd/snow/networking/tracker"
+	"github.com/luxdefi/luxd/trace"
+	"github.com/luxdefi/luxd/utils/crypto/bls"
+	"github.com/luxdefi/luxd/utils/dynamicip"
+	"github.com/luxdefi/luxd/utils/ips"
+	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/luxd/utils/profiler"
+	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/luxdefi/luxd/vms"
+>>>>>>> 04d685aa2 (Update consensus)
+>>>>>>> 53a8245a8 (Update consensus)
 )
 
 type IPCConfig struct {
