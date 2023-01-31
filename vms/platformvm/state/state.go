@@ -115,12 +115,15 @@ type State interface {
 	uptime.State
 	avax.UTXOReader
 
+<<<<<<< HEAD
 	GetLastAccepted() ids.ID
 	SetLastAccepted(blkID ids.ID)
 
 	GetStatelessBlock(blockID ids.ID) (blocks.Block, choices.Status, error)
 	AddStatelessBlock(block blocks.Block, status choices.Status)
 
+=======
+>>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 	// ValidatorSet adds all the validators and delegators of [subnetID] into
 	// [vdrs].
 	ValidatorSet(subnetID ids.ID, vdrs validators.Set) error
@@ -1433,10 +1436,14 @@ func (s *state) initValidatorSets() error {
 		return errValidatorSetAlreadyPopulated
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := s.ValidatorSet(constants.PrimaryNetworkID, primaryValidators)
 =======
 	err := s.validatorSet(constants.PrimaryNetworkID, primaryValidators)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	err := s.ValidatorSet(constants.PrimaryNetworkID, primaryValidators)
+>>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 	if err != nil {
 		return err
 	}
@@ -1451,8 +1458,12 @@ func (s *state) initValidatorSets() error {
 =======
 	for subnetID := range s.cfg.WhitelistedSubnets {
 		subnetValidators := validators.NewSet()
+<<<<<<< HEAD
 		err := s.validatorSet(subnetID, subnetValidators)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+		err := s.ValidatorSet(subnetID, subnetValidators)
+>>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 		if err != nil {
 			return err
 		}
@@ -1464,6 +1475,7 @@ func (s *state) initValidatorSets() error {
 	return nil
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
@@ -1489,6 +1501,8 @@ func (s *state) validatorSet(subnetID ids.ID, vdrs validators.Set) error {
 }
 
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+>>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 func (s *state) write(updateValidators bool, height uint64) error {
 	errs := wrappers.Errs{}
 	errs.Add(
