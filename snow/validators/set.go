@@ -314,7 +314,11 @@ func (s *vdrSet) Len() int {
 	return s.len()
 }
 
+<<<<<<< HEAD
 func (s *vdrSet) len() int {
+=======
+func (s *set) len() int {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return len(s.vdrSlice)
 }
 

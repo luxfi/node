@@ -110,7 +110,11 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	handler.Push(context.Background(), msg)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
+=======
+	bootstrapper.StartF = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 
@@ -190,7 +194,11 @@ func TestHandlerClosesOnError(t *testing.T) {
 	// should normally be handled
 	ctx.SetState(snow.Bootstrapping)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
+=======
+	bootstrapper.StartF = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 
@@ -262,7 +270,11 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	handler.SetBootstrapper(bootstrapper)
 	ctx.SetState(snow.Bootstrapping) // assumed bootstrapping is ongoing
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
+=======
+	bootstrapper.StartF = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 
@@ -326,14 +338,22 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	engine.NotifyF = func(context.Context, common.Message) error {
+=======
+	engine.NotifyF = func(common.Message) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		calledNotify <- struct{}{}
 		return nil
 	}
 	handler.SetConsensus(engine)
 	ctx.SetState(snow.NormalOp) // assumed bootstrapping is done
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
+=======
+	bootstrapper.StartF = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 

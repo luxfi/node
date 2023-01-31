@@ -284,18 +284,25 @@ func (b *bootstrapper) Timeout(ctx context.Context) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*bootstrapper) Gossip(context.Context) error {
 	return nil
 }
 =======
 func (*bootstrapper) Gossip() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*bootstrapper) Gossip() error {
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (b *bootstrapper) Shutdown(ctx context.Context) error {
 	b.Ctx.Log.Info("shutting down bootstrapper")
 	return b.VM.Shutdown(ctx)
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 	if msg != common.StateSyncDone {
@@ -307,6 +314,11 @@ func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 =======
 func (*bootstrapper) Notify(common.Message) error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*bootstrapper) Notify(common.Message) error {
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	b.Ctx.RunningStateSync(false)
 	return nil

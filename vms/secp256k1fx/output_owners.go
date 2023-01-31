@@ -140,7 +140,11 @@ func (out *OutputOwners) VerifyState() error {
 }
 
 func (out *OutputOwners) Sort() {
+<<<<<<< HEAD
 	utils.Sort(out.Addrs)
+=======
+	ids.SortShortIDs(out.Addrs)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 }
 
 // formatAddress formats a given [addr] into human readable format using

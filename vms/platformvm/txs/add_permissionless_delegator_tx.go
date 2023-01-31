@@ -50,6 +50,13 @@ func (tx *AddPermissionlessDelegatorTx) InitCtx(ctx *snow.Context) {
 func (tx *AddPermissionlessDelegatorTx) SubnetID() ids.ID {
 	return tx.Subnet
 }
+<<<<<<< HEAD
+=======
+
+func (tx *AddPermissionlessDelegatorTx) NodeID() ids.NodeID {
+	return tx.Validator.NodeID
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 <<<<<<< HEAD
 func (tx *AddPermissionlessDelegatorTx) NodeID() ids.NodeID {

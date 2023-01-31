@@ -190,8 +190,13 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 			ssVM.MockStateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be accepted before returning it
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncStatic, nil
+=======
+					mockedSummary.AcceptF = func() (bool, error) {
+						return true, nil
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
 					return mockedSummary, nil
 				},
@@ -199,8 +204,13 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 			ssVM.MockStateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be skipped before returning it
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncSkipped, nil
+=======
+					mockedSummary.AcceptF = func() (bool, error) {
+						return false, nil
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
 					return mockedSummary, nil
 				},
@@ -208,8 +218,13 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) (plugin.P
 			ssVM.MockStateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to fail accept
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncSkipped, errBrokenConnectionOrSomething
+=======
+					mockedSummary.AcceptF = func() (bool, error) {
+						return false, errBrokenConnectionOrSomething
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
 					return mockedSummary, nil
 				},
@@ -243,8 +258,13 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 			ssVM.MockStateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
 				func(context.Context, []byte) (block.StateSummary, error) {
 					// setup summary to be accepted before returning it
+<<<<<<< HEAD
 					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 						return block.StateSyncStatic, nil
+=======
+					mockedSummary.AcceptF = func() (bool, error) {
+						return true, nil
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 					}
 					return mockedSummary, nil
 				},

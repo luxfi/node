@@ -87,8 +87,13 @@ type testBlockable struct {
 
 func newTestBlockable() *testBlockable {
 	return &testBlockable{
+<<<<<<< HEAD
 		dependencies: func() set.Set[ids.ID] {
 			return set.Set[ids.ID]{}
+=======
+		dependencies: func() ids.Set {
+			return ids.Set{}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		},
 		fulfill: func(context.Context, ids.ID) {},
 		abandon: func(context.Context, ids.ID) {},
@@ -96,7 +101,11 @@ func newTestBlockable() *testBlockable {
 	}
 }
 
+<<<<<<< HEAD
 func (b *testBlockable) Dependencies() set.Set[ids.ID] {
+=======
+func (b *testBlockable) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return b.dependencies()
 }
 

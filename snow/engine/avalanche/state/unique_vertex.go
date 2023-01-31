@@ -170,6 +170,13 @@ func (vtx *uniqueVertex) setStatus(status choices.Status) error {
 func (vtx *uniqueVertex) ID() ids.ID {
 	return vtx.id
 }
+<<<<<<< HEAD
+=======
+
+func (vtx *uniqueVertex) Key() interface{} {
+	return vtx.id
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (vtx *uniqueVertex) Key() interface{} {
 	return vtx.id

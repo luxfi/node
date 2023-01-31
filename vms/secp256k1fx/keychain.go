@@ -61,7 +61,11 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Addresses returns a list of addresses this keychain manages
+<<<<<<< HEAD
 func (kc Keychain) Addresses() set.Set[ids.ShortID] {
+=======
+func (kc Keychain) Addresses() ids.ShortSet {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return kc.Addrs
 }
 

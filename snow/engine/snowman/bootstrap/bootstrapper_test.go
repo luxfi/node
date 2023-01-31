@@ -158,25 +158,44 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 		BytesV:  blkBytes0,
 	}
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(blk0.ID(), blkID)
 		return blk0, nil
 	}
 
 	// create bootstrapper
+<<<<<<< HEAD
 	dummyCallback := func(context.Context, uint32) error {
 		cfg.Ctx.SetState(snow.NormalOp)
 		return nil
 	}
 	bs, err := New(context.Background(), cfg, dummyCallback)
+=======
+	dummyCallback := func(uint32) error {
+		cfg.Ctx.SetState(snow.NormalOp)
+		return nil
+	}
+	bs, err := New(cfg, dummyCallback)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 
 	vm.CantSetState = false
 	vm.CantConnected = true
+<<<<<<< HEAD
 	vm.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
+=======
+	vm.ConnectedF = func(ids.NodeID, *version.Application) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
 
@@ -234,10 +253,17 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -245,7 +271,11 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -338,10 +368,17 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	vm.CantSetState = false
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -349,7 +386,11 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -499,10 +540,17 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -510,7 +558,11 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -663,10 +715,17 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -674,7 +733,11 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -849,10 +912,17 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	vm.CantSetState = false
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
@@ -860,7 +930,11 @@ func TestBootstrapperAncestors(t *testing.T) {
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -993,17 +1067,28 @@ func TestBootstrapperFinalized(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk0.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk0.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		require.Equal(t, blk0.ID(), blkID)
 		return blk0, nil
 	}
 	bs, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1149,7 +1234,11 @@ func TestRestartBootstrapping(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return blk0.ID(), nil
 	}
 	parsedBlk1 := false
@@ -1213,7 +1302,11 @@ func TestRestartBootstrapping(t *testing.T) {
 	bsIntf, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1325,10 +1418,17 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		BytesV:  utils.RandomBytes(32),
 	}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk1.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return blk1.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case blk0.ID():
 			return nil, database.ErrNotFound
@@ -1353,7 +1453,11 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	bsIntf, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},
@@ -1433,14 +1537,22 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		BytesV:  utils.RandomBytes(32),
 	}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return blk0.ID(), nil
 	}
 
 	bsIntf, err := New(
 		context.Background(),
 		config,
+<<<<<<< HEAD
 		func(context.Context, uint32) error {
+=======
+		func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			config.Ctx.SetState(snow.NormalOp)
 			return nil
 		},

@@ -92,7 +92,11 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 
@@ -106,10 +110,17 @@ func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp(),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return prntCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -200,7 +211,11 @@ func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 
@@ -214,10 +229,17 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return prntCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -398,7 +420,11 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 
@@ -412,10 +438,17 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return prntCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -556,7 +589,11 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 	// proVM.SetStartTime(timer.MaxTime) // switch off scheduler for current test
@@ -594,10 +631,17 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -764,7 +808,11 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	// Show that other verify call would not call coreBlk.Verify()
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 
@@ -777,10 +825,17 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return coreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -828,7 +883,11 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 	// setup
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
+<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetCurrentHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return pChainHeight, nil
 	}
 
@@ -841,10 +900,17 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return coreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -891,7 +957,11 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	var minimumHeight uint64
+<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
+=======
+	valState.GetMinimumHeightF = func() (uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return minimumHeight, nil
 	}
 
@@ -906,7 +976,11 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 		HeightV:    coreGenBlk.Height() + 1,
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreBlk, nil
 	}
 
@@ -954,7 +1028,11 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 		HeightV:    coreGenBlk.Height() + 1,
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreBlk, nil
 	}
 
@@ -1019,10 +1097,17 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 		coreOpt1,
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil

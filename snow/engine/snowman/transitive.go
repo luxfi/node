@@ -343,12 +343,18 @@ func (t *Transitive) Disconnected(ctx context.Context, nodeID ids.NodeID) error 
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*Transitive) Timeout(context.Context) error {
 	return nil
 }
 =======
 func (*Transitive) Timeout() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*Transitive) Timeout() error {
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (t *Transitive) Gossip(ctx context.Context) error {
 	blkID, err := t.VM.LastAccepted(ctx)

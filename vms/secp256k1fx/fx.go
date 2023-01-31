@@ -76,12 +76,18 @@ func (fx *Fx) InitializeVM(vmIntf interface{}) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*Fx) Bootstrapping() error {
 	return nil
 }
 =======
 func (*Fx) Bootstrapping() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*Fx) Bootstrapping() error {
+	return nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (fx *Fx) Bootstrapped() error {
 	fx.bootstrapped = true

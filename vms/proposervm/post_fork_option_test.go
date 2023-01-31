@@ -71,10 +71,17 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -150,7 +157,11 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 		BytesV:     []byte{4},
 		TimestampV: oracleCoreBlk.opts[0].Timestamp().Add(proposer.MaxDelay),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return childCoreBlk, nil
 	}
 	proVM.Set(childCoreBlk.Timestamp())
@@ -208,10 +219,17 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 		coreOpt1,
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -324,10 +342,17 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -444,10 +469,17 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -554,10 +586,17 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 		TimestampV: coreBlk.Timestamp(),
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return coreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -724,7 +763,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 		t.Fatal("called GetBlock when unable to handle the error")
 		return nil, nil
 	}
+<<<<<<< HEAD
 	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+=======
+	coreVM.ParseBlockF = func([]byte) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		t.Fatal("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}
@@ -767,7 +810,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 	) error {
 		return nil
 	}
+<<<<<<< HEAD
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	coreVM.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreOracleBlk.opts[0].ID(), nil
 	}
 
@@ -828,7 +875,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 		t.Fatal("called GetBlock when unable to handle the error")
 		return nil, nil
 	}
+<<<<<<< HEAD
 	coreVM.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+=======
+	coreVM.ParseBlockF = func([]byte) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		t.Fatal("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}

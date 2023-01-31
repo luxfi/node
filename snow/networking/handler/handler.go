@@ -178,6 +178,21 @@ func (h *handler) SetBootstrapper(engine common.BootstrapableEngine) {
 func (h *handler) Bootstrapper() common.BootstrapableEngine {
 	return h.bootstrapper
 }
+<<<<<<< HEAD
+=======
+
+func (h *handler) SetConsensus(engine common.Engine) {
+	h.engine = engine
+}
+
+func (h *handler) Consensus() common.Engine {
+	return h.engine
+}
+
+func (h *handler) SetOnStopped(onStopped func()) {
+	h.onStopped = onStopped
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (h *handler) SetConsensus(engine common.Engine) {
 	h.engine = engine

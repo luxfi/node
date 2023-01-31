@@ -22,7 +22,11 @@ type rejector struct {
 	txID     ids.ID
 }
 
+<<<<<<< HEAD
 func (r *rejector) Dependencies() set.Set[ids.ID] {
+=======
+func (r *rejector) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return r.deps
 }
 

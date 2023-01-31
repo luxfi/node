@@ -149,6 +149,7 @@ func (dg *Directed) Initialize(
 	return params.Verify()
 }
 
+<<<<<<< HEAD
 func (dg *Directed) Virtuous() set.Set[ids.ID] {
 	return dg.virtuous
 }
@@ -158,6 +159,21 @@ func (dg *Directed) Preferences() set.Set[ids.ID] {
 }
 
 func (dg *Directed) VirtuousVoting() set.Set[ids.ID] {
+=======
+func (dg *Directed) Parameters() sbcon.Parameters {
+	return dg.params
+}
+
+func (dg *Directed) Virtuous() ids.Set {
+	return dg.virtuous
+}
+
+func (dg *Directed) Preferences() ids.Set {
+	return dg.preferences
+}
+
+func (dg *Directed) VirtuousVoting() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return dg.virtuousVoting
 }
 

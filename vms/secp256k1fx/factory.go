@@ -19,9 +19,15 @@ var (
 type Factory struct{}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*Factory) New(*snow.Context) (interface{}, error) {
 	return &Fx{}, nil
 }
 =======
 func (*Factory) New(*snow.Context) (interface{}, error) { return &Fx{}, nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*Factory) New(*snow.Context) (interface{}, error) {
+	return &Fx{}, nil
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

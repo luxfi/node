@@ -30,6 +30,17 @@ type TestStateSummary struct {
 func (s *TestStateSummary) ID() ids.ID {
 	return s.IDV
 }
+<<<<<<< HEAD
+=======
+
+func (s *TestStateSummary) Height() uint64 {
+	return s.HeightV
+}
+
+func (s *TestStateSummary) Bytes() []byte {
+	return s.BytesV
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (s *TestStateSummary) Height() uint64 {
 	return s.HeightV
