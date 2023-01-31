@@ -22,6 +22,9 @@ type State interface {
 	GetCurrentHeight(context.Context) (uint64, error)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	// GetSubnetID returns the subnetID of the provided chain.
 	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 
@@ -80,6 +83,9 @@ func (s *lockedState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (s *lockedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -87,8 +93,11 @@ func (s *lockedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, 
 	return s.s.GetSubnetID(ctx, chainID)
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (s *lockedState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,

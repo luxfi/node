@@ -57,9 +57,12 @@ import (
 	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
 	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	subnetlookuppb "github.com/ava-labs/avalanchego/proto/pb/subnetlookup"
 >>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	teleporterpb "github.com/ava-labs/avalanchego/proto/pb/teleporter"
 	validatorstatepb "github.com/ava-labs/avalanchego/proto/pb/validatorstate"
 	vmpb "github.com/ava-labs/avalanchego/proto/pb/vm"
@@ -102,9 +105,12 @@ type VMClient struct {
 	sharedMemory           *gsharedmemory.Server
 	bcLookup               *galiasreader.Server
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	snLookup               *gsubnetlookup.Server
 >>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	appSender              *appsender.Server
 	validatorStateServer   *gvalidators.Server
 	teleporterSignerServer *gteleporter.Server
@@ -194,6 +200,9 @@ func (vm *VMClient) Initialize(
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, dbManager.Current().Database)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	vm.appSender = appsender.NewServer(appSender)
 	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
 	vm.teleporterSignerServer = gteleporter.NewServer(chainCtx.TeleporterSigner)
