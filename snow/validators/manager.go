@@ -32,9 +32,25 @@ type Manager interface {
 	// returned and the manager will not be modified.
 	Add(subnetID ids.ID, set Set) bool
 
+<<<<<<< HEAD
 	// Get returns the validator set for the given subnet
 	// Returns false if the subnet doesn't exist
 	Get(ids.ID) (Set, bool)
+=======
+	// AddWeight adds weight to a given validator on the given subnet
+	AddWeight(ids.ID, ids.NodeID, uint64) error
+
+	// RemoveWeight removes weight from a given validator on a given subnet
+	RemoveWeight(ids.ID, ids.NodeID, uint64) error
+
+	// Get returns the validator set for the given subnet
+	// Returns false if the subnet doesn't exist
+	Get(ids.ID) (Set, bool)
+
+	// Contains returns true if there is a validator with the specified ID
+	// currently in the set.
+	Contains(ids.ID, ids.NodeID) bool
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 }
 
 // NewManager returns a new, empty manager
@@ -64,6 +80,31 @@ func (m *manager) Add(subnetID ids.ID, set Set) bool {
 	return true
 }
 
+<<<<<<< HEAD
+=======
+func (m *manager) AddWeight(subnetID ids.ID, vdrID ids.NodeID, weight uint64) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	vdrs, ok := m.subnetToVdrs[subnetID]
+	if !ok {
+		vdrs = NewSet()
+		m.subnetToVdrs[subnetID] = vdrs
+	}
+	return vdrs.AddWeight(vdrID, weight)
+}
+
+func (m *manager) RemoveWeight(subnetID ids.ID, vdrID ids.NodeID, weight uint64) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if vdrs, ok := m.subnetToVdrs[subnetID]; ok {
+		return vdrs.RemoveWeight(vdrID, weight)
+	}
+	return nil
+}
+
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 func (m *manager) Get(subnetID ids.ID) (Set, bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

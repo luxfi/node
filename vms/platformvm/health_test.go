@@ -75,7 +75,12 @@ func TestHealthCheckSubnet(t *testing.T) {
 				err := subnetVdrs.Add(subnetVal, nil, ids.Empty, 100)
 				require.NoError(err)
 			}
+<<<<<<< HEAD
 			ok := vm.Validators.Add(subnetID, subnetVdrs)
+=======
+
+			vals, ok := vm.Validators.Get(subnetID)
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 			require.True(ok)
 
 			// connect to all primary network validators first

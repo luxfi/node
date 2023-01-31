@@ -601,8 +601,14 @@ func TestGenesis(t *testing.T) {
 
 	// Ensure current validator set of primary network is correct
 	vdrSet, ok := vm.Validators.Get(constants.PrimaryNetworkID)
+<<<<<<< HEAD
 	require.True(ok)
 
+=======
+	if !ok {
+		t.Fatalf("Missing the primary network validator set")
+	}
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	currentValidators := vdrSet.List()
 	require.Equal(len(currentValidators), len(genesisState.Validators))
 

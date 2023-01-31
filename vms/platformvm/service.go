@@ -1072,10 +1072,14 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 	)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	validators, ok := s.vm.Validators.Get(args.SubnetID)
 =======
 	validators, ok := s.vm.Validators.GetValidators(args.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+	validators, ok := s.vm.Validators.Get(args.SubnetID)
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		return fmt.Errorf(
 			"couldn't get validators of subnet %q. Is it being validated?",
@@ -1887,10 +1891,14 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	validators, ok := s.vm.Validators.Get(chain.SubnetID)
 =======
 	validators, ok := s.vm.Validators.GetValidators(chain.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+	validators, ok := s.vm.Validators.Get(chain.SubnetID)
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		return false
 	}
@@ -2470,8 +2478,12 @@ func (service *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, 
 	vdrs, ok := service.vm.Validators.GetValidators(args.SubnetID)
 =======
 func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
+<<<<<<< HEAD
 	vdrs, ok := s.vm.Validators.GetValidators(args.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+	vdrs, ok := s.vm.Validators.Get(args.SubnetID)
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		return errNoValidators
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))

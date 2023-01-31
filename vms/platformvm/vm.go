@@ -290,9 +290,15 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
+<<<<<<< HEAD
 	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 	if !exists {
 		return errMissingValidatorSet
+=======
+	primaryValidatorSet, exist := vm.Validators.Get(constants.PrimaryNetworkID)
+	if !exist {
+		return errNoPrimaryValidators
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	}
 	if err := vm.uptimeManager.StartTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
 		return err
@@ -337,9 +343,15 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.Builder.Shutdown()
 
 	if vm.bootstrapped.GetValue() {
+<<<<<<< HEAD
 		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 		if !exists {
 			return errMissingValidatorSet
+=======
+		primaryValidatorSet, exist := vm.Validators.Get(constants.PrimaryNetworkID)
+		if !exist {
+			return errNoPrimaryValidators
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 		}
 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
 			return err
@@ -536,7 +548,11 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	// get the start time to track metrics
 	startTime := vm.Clock().Time()
 
+<<<<<<< HEAD
 	currentSubnetValidators, ok := vm.Validators.Get(subnetID)
+=======
+	currentValidators, ok := vm.Validators.Get(subnetID)
+>>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		currentSubnetValidators = validators.NewSet()
 		if err := vm.state.ValidatorSet(subnetID, currentSubnetValidators); err != nil {
