@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.0.3
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxdefi/coreth v0.11.7-rc.1
+	github.com/luxdefi/coreth v0.11.7-rc.2
 	github.com/luxdefi/netrunner-sdk v0.3.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
