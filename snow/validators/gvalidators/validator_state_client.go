@@ -42,6 +42,7 @@ func (c *Client) GetCurrentHeight(ctx context.Context) (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	resp, err := c.client.GetSubnetID(ctx, &pb.GetSubnetIDRequest{
 		ChainId: chainID[:],
@@ -52,14 +53,20 @@ func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error
 	return ids.ToID(resp.SubnetId)
 }
 
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (c *Client) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	subnetID ids.ID,
+<<<<<<< HEAD
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 =======
 func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+) (map[ids.NodeID]*validators.Validator, error) {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	resp, err := c.client.GetValidatorSet(ctx, &pb.GetValidatorSetRequest{
 		Height:   height,
 		SubnetId: subnetID[:],
@@ -68,7 +75,11 @@ func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID id
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, len(resp.Validators))
+=======
+	vdrs := make(map[ids.NodeID]*validators.Validator, len(resp.Validators))
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	for _, validator := range resp.Validators {
 		nodeID, err := ids.ToNodeID(validator.NodeId)
 		if err != nil {
@@ -81,7 +92,11 @@ func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID id
 				return nil, err
 			}
 		}
+<<<<<<< HEAD
 		vdrs[nodeID] = &validators.GetValidatorOutput{
+=======
+		vdrs[nodeID] = &validators.Validator{
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			NodeID:    nodeID,
 			PublicKey: publicKey,
 			Weight:    validator.Weight,

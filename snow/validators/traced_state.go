@@ -58,6 +58,7 @@ func (s *tracedState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *tracedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	ctx, span := s.tracer.Start(ctx, s.getValidatorSetTag, oteltrace.WithAttributes(
 		attribute.Stringer("chainID", chainID),
@@ -67,14 +68,20 @@ func (s *tracedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, 
 	return s.s.GetSubnetID(ctx, chainID)
 }
 
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (s *tracedState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	subnetID ids.ID,
+<<<<<<< HEAD
 ) (map[ids.NodeID]*GetValidatorOutput, error) {
 =======
 func (s *tracedState) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 >>>>>>> 04a9ba9d5 (Add validators.State tracer (#2243))
+=======
+) (map[ids.NodeID]*Validator, error) {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	ctx, span := s.tracer.Start(ctx, s.getValidatorSetTag, oteltrace.WithAttributes(
 		attribute.Int64("height", int64(height)),
 		attribute.Stringer("subnetID", subnetID),
