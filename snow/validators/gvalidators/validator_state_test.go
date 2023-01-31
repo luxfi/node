@@ -118,6 +118,7 @@ func TestGetCurrentHeight(t *testing.T) {
 	state.server.EXPECT().GetCurrentHeight(gomock.Any()).Return(expectedHeight, errCustom)
 
 	_, err = state.client.GetCurrentHeight(context.Background())
+<<<<<<< HEAD
 	require.Error(err)
 }
 
@@ -142,6 +143,8 @@ func TestGetSubnetID(t *testing.T) {
 	state.server.EXPECT().GetSubnetID(gomock.Any(), chainID).Return(expectedSubnetID, errCustom)
 
 	_, err = state.client.GetSubnetID(context.Background(), chainID)
+=======
+>>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	require.Error(err)
 }
 
