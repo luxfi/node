@@ -29,7 +29,11 @@ type Consensus interface {
 	// called, the status maps should be immediately updated accordingly.
 	// Assumes each element in the accepted frontier will return accepted from
 	// the join status map.
+<<<<<<< HEAD
 	Initialize(context.Context, *snow.ConsensusContext, Parameters, []Vertex) error
+=======
+	Initialize(*snow.ConsensusContext, Parameters, []Vertex) error
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 
 	// Returns the number of vertices processing
 	NumProcessing() int

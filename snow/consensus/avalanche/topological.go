@@ -146,6 +146,7 @@ func (ta *Topological) NumProcessing() int {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
 	return ta.cg.IsVirtuous(tx)
 }
@@ -156,6 +157,8 @@ func (ta *Topological) Parameters() Parameters {
 	return ta.params
 }
 
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func (ta *Topological) IsVirtuous(tx snowstorm.Tx) bool {
 	return ta.cg.IsVirtuous(tx)
 }

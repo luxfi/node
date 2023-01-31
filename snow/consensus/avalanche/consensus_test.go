@@ -26,6 +26,7 @@ import (
 
 type testFunc func(*testing.T, Factory)
 
+<<<<<<< HEAD
 var (
 	testFuncs = []testFunc{
 		MetricsTest,
@@ -58,6 +59,36 @@ var (
 
 	errTest = errors.New("non-nil error")
 )
+=======
+var testFuncs = []testFunc{
+	MetricsTest,
+	NumProcessingTest,
+	AddTest,
+	VertexIssuedTest,
+	TxIssuedTest,
+	VirtuousTest,
+	VirtuousSkippedUpdateTest,
+	VotingTest,
+	IgnoreInvalidVotingTest,
+	IgnoreInvalidTransactionVertexVotingTest,
+	TransitiveVotingTest,
+	SplitVotingTest,
+	TransitiveRejectionTest,
+	IsVirtuousTest,
+	QuiesceTest,
+	QuiesceAfterVotingTest,
+	TransactionVertexTest,
+	OrphansTest,
+	OrphansUpdateTest,
+	ErrorOnVacuousAcceptTest,
+	ErrorOnTxAcceptTest,
+	ErrorOnVtxAcceptTest,
+	ErrorOnVtxRejectTest,
+	ErrorOnParentVtxRejectTest,
+	ErrorOnTransitiveVtxRejectTest,
+	SilenceTransactionVertexEventsTest,
+}
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 
 func runConsensusTests(t *testing.T, factory Factory) {
 	for _, test := range testFuncs {
