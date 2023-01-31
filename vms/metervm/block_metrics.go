@@ -23,19 +23,10 @@ type blockMetrics struct {
 	verifyErr,
 	accept,
 	reject,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	// Block verification with context metrics
 	shouldVerifyWithContext,
 	verifyWithContext,
 	verifyWithContextErr,
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	// Block building with context metrics
 	buildBlockWithContext,
 	buildBlockWithContextErr,

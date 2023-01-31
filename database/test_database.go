@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package database
@@ -12,8 +12,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/units"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/units"
 )
 
 // Tests is a list of all database tests

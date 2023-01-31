@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package process
@@ -9,13 +9,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/app"
-	"github.com/luxdefi/luxd/nat"
-	"github.com/luxdefi/luxd/node"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/perms"
-	"github.com/luxdefi/luxd/utils/ulimit"
+	"github.com/ava-labs/avalanchego/app"
+	"github.com/ava-labs/avalanchego/nat"
+	"github.com/ava-labs/avalanchego/node"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/ava-labs/avalanchego/utils/ulimit"
 )
 
 const (

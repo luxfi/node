@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc

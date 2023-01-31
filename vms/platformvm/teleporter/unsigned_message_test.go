@@ -29,18 +29,6 @@ func TestUnsignedMessage(t *testing.T) {
 }
 
 func TestParseUnsignedMessageJunk(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
 	require.Error(t, err)
-=======
-	require := require.New(t)
-
-	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
-	require.Error(err)
->>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
-=======
-	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
-	require.Error(t, err)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }

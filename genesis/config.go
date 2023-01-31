@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -28,7 +28,7 @@ type LockedAmount struct {
 
 type Allocation struct {
 	ETHAddr        ids.ShortID    `json:"ethAddr"`
-	LUXAddr       ids.ShortID    `json:"luxAddr"`
+	AVAXAddr       ids.ShortID    `json:"avaxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -39,12 +39,12 @@ func (a Allocation) Unparse(networkID uint32) (UnparsedAllocation, error) {
 		UnlockSchedule: a.UnlockSchedule,
 		ETHAddr:        "0x" + hex.EncodeToString(a.ETHAddr.Bytes()),
 	}
-	luxAddr, err := address.Format(
+	avaxAddr, err := address.Format(
 		"X",
 		constants.GetHRP(networkID),
-		a.LUXAddr.Bytes(),
+		a.AVAXAddr.Bytes(),
 	)
-	ua.LUXAddr = luxAddr
+	ua.AVAXAddr = avaxAddr
 	return ua, err
 }
 
@@ -60,14 +60,14 @@ type Staker struct {
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
-	luxAddr, err := address.Format(
+	avaxAddr, err := address.Format(
 		"X",
 		constants.GetHRP(networkID),
 		s.RewardAddress.Bytes(),
 	)
 	return UnparsedStaker{
 		NodeID:        s.NodeID,
-		RewardAddress: luxAddr,
+		RewardAddress: avaxAddr,
 		DelegationFee: s.DelegationFee,
 	}, err
 }
@@ -109,7 +109,7 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 		uc.Allocations[i] = ua
 	}
 	for i, isa := range c.InitialStakedFunds {
-		luxAddr, err := address.Format(
+		avaxAddr, err := address.Format(
 			"X",
 			constants.GetHRP(uc.NetworkID),
 			isa.Bytes(),
@@ -117,7 +117,7 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 		if err != nil {
 			return uc, err
 		}
-		uc.InitialStakedFunds[i] = luxAddr
+		uc.InitialStakedFunds[i] = avaxAddr
 	}
 	for i, is := range c.InitialStakers {
 		uis, err := is.Unparse(c.NetworkID)

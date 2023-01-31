@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -13,28 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/snowman"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/logging"
-
-	aveng "github.com/luxdefi/luxd/snow/engine/lux"
-	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
-=======
-<<<<<<< HEAD
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/api/server"
 	"github.com/ava-labs/avalanchego/database/memdb"
 	"github.com/ava-labs/avalanchego/database/versiondb"
@@ -51,28 +29,6 @@ import (
 
 	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
 	smblockmocks "github.com/ava-labs/avalanchego/snow/engine/snowman/block/mocks"
-<<<<<<< HEAD
-=======
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/snowman"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/logging"
-
-	aveng "github.com/luxdefi/luxd/snow/engine/lux"
-	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 var (
@@ -338,27 +294,8 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 	// Mocked VM knows about this block now
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	dagEngine.EXPECT().GetVtx(vtxID).Return(
-		&lux.TestVertex{
-=======
 	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
 		&avalanche.TestVertex{
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
-		&avalanche.TestVertex{
-=======
-	dagEngine.EXPECT().GetVtx(vtxID).Return(
-		&lux.TestVertex{
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
-	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
-		&avalanche.TestVertex{
->>>>>>> c5eafdb72 (Update LICENSE)
 			TestDecidable: choices.TestDecidable{
 				StatusV: choices.Accepted,
 				IDV:     vtxID,

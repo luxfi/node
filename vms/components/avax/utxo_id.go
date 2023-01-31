@@ -7,13 +7,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	"sort"
->>>>>>> 7b681477c (Add `avax.UTXOIDFromString` helper (#2138))
-=======
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"strconv"
 	"strings"
 
@@ -111,25 +104,3 @@ func (utxo *UTXOID) Less(other *UTXOID) bool {
 		return false
 	}
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-func (utxos innerSortUTXOIDs) Len() int {
-	return len(utxos)
-}
-
-func (utxos innerSortUTXOIDs) Swap(i, j int) {
-	utxos[j], utxos[i] = utxos[i], utxos[j]
-}
-
-func SortUTXOIDs(utxos []*UTXOID) {
-	sort.Sort(innerSortUTXOIDs(utxos))
-}
-
-func IsSortedAndUniqueUTXOIDs(utxos []*UTXOID) bool {
-	return utils.IsSortedAndUnique(innerSortUTXOIDs(utxos))
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> e7024bd25 (Use generic sorting (#1850))

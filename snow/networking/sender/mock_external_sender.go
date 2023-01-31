@@ -12,14 +12,7 @@ import (
 
 	ids "github.com/ava-labs/avalanchego/ids"
 	message "github.com/ava-labs/avalanchego/message"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	set "github.com/ava-labs/avalanchego/utils/set"
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-	set "github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -47,24 +40,10 @@ func (m *MockExternalSender) EXPECT() *MockExternalSenderMockRecorder {
 }
 
 // Gossip mocks base method.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (m *MockExternalSender) Gossip(arg0 message.OutboundMessage, arg1 ids.ID, arg2 bool, arg3, arg4, arg5 int) set.Set[ids.NodeID] {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Gossip", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(set.Set[ids.NodeID])
-=======
-func (m *MockExternalSender) Gossip(arg0 message.OutboundMessage, arg1 ids.ID, arg2 bool, arg3, arg4, arg5 int) ids.NodeIDSet {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Gossip", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(ids.NodeIDSet)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-func (m *MockExternalSender) Gossip(arg0 message.OutboundMessage, arg1 ids.ID, arg2 bool, arg3, arg4, arg5 int) set.Set[ids.NodeID] {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Gossip", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(set.Set[ids.NodeID])
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return ret0
 }
 
@@ -75,24 +54,10 @@ func (mr *MockExternalSenderMockRecorder) Gossip(arg0, arg1, arg2, arg3, arg4, a
 }
 
 // Send mocks base method.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (m *MockExternalSender) Send(arg0 message.OutboundMessage, arg1 set.Set[ids.NodeID], arg2 ids.ID, arg3 bool) set.Set[ids.NodeID] {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(set.Set[ids.NodeID])
-=======
-func (m *MockExternalSender) Send(arg0 message.OutboundMessage, arg1 ids.NodeIDSet, arg2 ids.ID, arg3 bool) ids.NodeIDSet {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(ids.NodeIDSet)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-func (m *MockExternalSender) Send(arg0 message.OutboundMessage, arg1 set.Set[ids.NodeID], arg2 ids.ID, arg3 bool) set.Set[ids.NodeID] {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(set.Set[ids.NodeID])
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return ret0
 }
 

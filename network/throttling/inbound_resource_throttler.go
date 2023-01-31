@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -11,23 +11,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-<<<<<<< HEAD
-	"golang.org/x/net/context"
-
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/utils/wrappers"
-=======
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/networking/tracker"
 	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 )
 
 const epsilon = time.Millisecond

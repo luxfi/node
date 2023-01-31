@@ -82,10 +82,6 @@ func (r *vmRegisterer) register(ctx context.Context, pathAdder server.PathAdder,
 	return pathAdder.AddAliases(defaultEndpoint, urlAliases...)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
 // Creates a dedicated VM instance for the sole purpose of serving the static
 // handlers.
 func (r *vmRegisterer) createStaticHandlers(
@@ -94,12 +90,6 @@ func (r *vmRegisterer) createStaticHandlers(
 	factory vms.Factory,
 ) (map[string]*common.HTTPHandler, error) {
 	// passing a nil ctx to the factory disables logging.
-<<<<<<< HEAD
-=======
-func (r *vmRegisterer) createStaticHandlers(ctx context.Context, vmID ids.ID, factory vms.Factory) (map[string]*common.HTTPHandler, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
 	vm, err := factory.New(nil)
 	if err != nil {
 		return nil, err

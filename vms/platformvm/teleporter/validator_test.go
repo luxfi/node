@@ -15,14 +15,7 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
-=======
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-	"github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 
 func TestGetCanonicalValidatorSet(t *testing.T) {
@@ -39,24 +32,10 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "can't get validator set",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
-<<<<<<< HEAD
-<<<<<<< HEAD
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
 				return state
 			},
 			expectedErr: errTest,
-=======
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errMock)
-				return state
-			},
-			expectedErr: errMock,
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
-				return state
-			},
-			expectedErr: errTest,
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "all validators have public keys; no duplicate pub keys",
@@ -202,15 +181,7 @@ func TestFilterValidators(t *testing.T) {
 
 	type test struct {
 		name         string
-<<<<<<< HEAD
-<<<<<<< HEAD
 		indices      set.Bits
-=======
-		indices      ids.BigBitSet
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-		indices      set.Bits
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		vdrs         []*Validator
 		expectedVdrs []*Validator
 		expectedErr  error
@@ -219,44 +190,20 @@ func TestFilterValidators(t *testing.T) {
 	tests := []test{
 		{
 			name:         "empty",
-<<<<<<< HEAD
-<<<<<<< HEAD
 			indices:      set.NewBits(),
-=======
-			indices:      ids.NewBigBitSet(),
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			indices:      set.NewBits(),
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs:         []*Validator{},
 			expectedVdrs: []*Validator{},
 			expectedErr:  nil,
 		},
 		{
 			name:        "unknown validator",
-<<<<<<< HEAD
-<<<<<<< HEAD
 			indices:     set.NewBits(2),
-=======
-			indices:     ids.NewBigBitSet(2),
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			indices:     set.NewBits(2),
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs:        []*Validator{vdr0, vdr1},
 			expectedErr: ErrUnknownValidator,
 		},
 		{
 			name:    "two filtered out",
-<<<<<<< HEAD
-<<<<<<< HEAD
 			indices: set.NewBits(),
-=======
-			indices: ids.NewBigBitSet(),
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			indices: set.NewBits(),
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,
@@ -266,15 +213,7 @@ func TestFilterValidators(t *testing.T) {
 		},
 		{
 			name:    "one filtered out",
-<<<<<<< HEAD
-<<<<<<< HEAD
 			indices: set.NewBits(1),
-=======
-			indices: ids.NewBigBitSet(1),
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			indices: set.NewBits(1),
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,
@@ -286,15 +225,7 @@ func TestFilterValidators(t *testing.T) {
 		},
 		{
 			name:    "none filtered out",
-<<<<<<< HEAD
-<<<<<<< HEAD
 			indices: set.NewBits(0, 1),
-=======
-			indices: ids.NewBigBitSet(0, 1),
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			indices: set.NewBits(0, 1),
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			vdrs: []*Validator{
 				vdr0,
 				vdr1,
@@ -313,22 +244,9 @@ func TestFilterValidators(t *testing.T) {
 
 			vdrs, err := FilterValidators(tt.indices, tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
-<<<<<<< HEAD
-<<<<<<< HEAD
 			if err == nil {
 				require.Equal(tt.expectedVdrs, vdrs)
 			}
-=======
-			if err != nil {
-				return
-			}
-			require.Equal(tt.expectedVdrs, vdrs)
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			if err == nil {
-				require.Equal(tt.expectedVdrs, vdrs)
-			}
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -380,22 +298,9 @@ func TestSumWeight(t *testing.T) {
 
 			sum, err := SumWeight(tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
-<<<<<<< HEAD
-<<<<<<< HEAD
 			if err == nil {
 				require.Equal(tt.expectedSum, sum)
 			}
-=======
-			if err != nil {
-				return
-			}
-			require.Equal(tt.expectedSum, sum)
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			if err == nil {
-				require.Equal(tt.expectedSum, sum)
-			}
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }

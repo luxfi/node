@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -8,19 +8,19 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 var _ Backend = (*backend)(nil)
 
 type ChainUTXOs interface {
-	AddUTXO(ctx stdcontext.Context, destinationChainID ids.ID, utxo *lux.UTXO) error
+	AddUTXO(ctx stdcontext.Context, destinationChainID ids.ID, utxo *avax.UTXO) error
 	RemoveUTXO(ctx stdcontext.Context, sourceChainID, utxoID ids.ID) error
 
-	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	GetUTXO(ctx stdcontext.Context, sourceChainID, utxoID ids.ID) (*lux.UTXO, error)
+	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*avax.UTXO, error)
+	GetUTXO(ctx stdcontext.Context, sourceChainID, utxoID ids.ID) (*avax.UTXO, error)
 }
 
 // Backend defines the full interface required to support an X-chain wallet.
@@ -65,12 +65,12 @@ func (b *backend) AcceptTx(ctx stdcontext.Context, tx *txs.Tx) error {
 			err := b.AddUTXO(
 				ctx,
 				utx.DestinationChain,
-				&lux.UTXO{
-					UTXOID: lux.UTXOID{
+				&avax.UTXO{
+					UTXOID: avax.UTXOID{
 						TxID:        txID,
 						OutputIndex: uint32(len(utx.Outs) + i),
 					},
-					Asset: lux.Asset{ID: out.AssetID()},
+					Asset: avax.Asset{ID: out.AssetID()},
 					Out:   out.Out,
 				},
 			)

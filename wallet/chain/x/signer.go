@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -9,18 +9,18 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/crypto/keychain"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/propertyfx"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -43,7 +43,7 @@ type Signer interface {
 }
 
 type SignerBackend interface {
-	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
+	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*avax.UTXO, error)
 }
 
 type signer struct {
@@ -133,7 +133,7 @@ func (s *signer) signExportTx(ctx stdcontext.Context, tx *txs.Tx, utx *txs.Expor
 	return sign(tx, txCreds, txSigners)
 }
 
-func (s *signer) getSigners(ctx stdcontext.Context, sourceChainID ids.ID, ins []*lux.TransferableInput) ([]verify.Verifiable, [][]keychain.Signer, error) {
+func (s *signer) getSigners(ctx stdcontext.Context, sourceChainID ids.ID, ins []*avax.TransferableInput) ([]verify.Verifiable, [][]keychain.Signer, error) {
 	txCreds := make([]verify.Verifiable, len(ins))
 	txSigners := make([][]keychain.Signer, len(ins))
 	for credIndex, transferInput := range ins {

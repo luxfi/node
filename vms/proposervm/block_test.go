@@ -49,15 +49,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	innerVM := mocks.NewMockChainVM(ctrl)
 	innerBlockBuilderVM := mocks.NewMockBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
-<<<<<<< HEAD
-<<<<<<< HEAD
 		PChainHeight: pChainHeight - 1,
-=======
-		PChainHeight: pChainHeight,
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-		PChainHeight: pChainHeight - 1,
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	}).Return(builtBlk, nil).AnyTimes()
 	vdrState := validators.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
@@ -70,30 +62,12 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &snow.Context{
-<<<<<<< HEAD
-<<<<<<< HEAD
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
 		},
 		Windower:          windower,
 		stakingCertLeaf:   &x509.Certificate{},
 		stakingLeafSigner: pk,
-=======
-			ValidatorState:    vdrState,
-			Log:               logging.NoLog{},
-			StakingCertLeaf:   &x509.Certificate{},
-			StakingLeafSigner: pk,
-		},
-		Windower: windower,
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
-		},
-		Windower:          windower,
-		stakingCertLeaf:   &x509.Certificate{},
-		stakingLeafSigner: pk,
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	}
 
 	blk := &postForkCommonComponents{

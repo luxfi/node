@@ -57,85 +57,37 @@ func NewNetwork(
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
-=======
-func (*network) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
-=======
-func (*network) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-=======
-func (*network) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
-=======
-func (*network) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
-=======
-func (*network) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msgBytes []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*network) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
-=======
-func (*network) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, msgBytes []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*network) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	// This VM currently only supports gossiping of txs, so there are no
 	// requests.
 	return nil

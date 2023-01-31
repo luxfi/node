@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -6,14 +6,14 @@ package x
 import (
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
 )
 
 var (
@@ -36,7 +36,7 @@ type Wallet interface {
 	// - [outputs] specifies all the recipients and amounts that should be sent
 	//   from this transaction.
 	IssueBaseTx(
-		outputs []*lux.TransferableOutput,
+		outputs []*avax.TransferableOutput,
 		options ...common.Option,
 	) (ids.ID, error)
 
@@ -127,7 +127,7 @@ type Wallet interface {
 	// - [outputs] specifies the outputs to send to the [chainID].
 	IssueExportTx(
 		chainID ids.ID,
-		outputs []*lux.TransferableOutput,
+		outputs []*avax.TransferableOutput,
 		options ...common.Option,
 	) (ids.ID, error)
 
@@ -174,7 +174,7 @@ func (w *wallet) Signer() Signer {
 }
 
 func (w *wallet) IssueBaseTx(
-	outputs []*lux.TransferableOutput,
+	outputs []*avax.TransferableOutput,
 	options ...common.Option,
 ) (ids.ID, error) {
 	utx, err := w.builder.NewBaseTx(outputs, options...)
@@ -270,7 +270,7 @@ func (w *wallet) IssueImportTx(
 
 func (w *wallet) IssueExportTx(
 	chainID ids.ID,
-	outputs []*lux.TransferableOutput,
+	outputs []*avax.TransferableOutput,
 	options ...common.Option,
 ) (ids.ID, error) {
 	utx, err := w.builder.NewExportTx(chainID, outputs, options...)

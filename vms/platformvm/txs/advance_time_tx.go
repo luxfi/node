@@ -27,15 +27,7 @@ type AdvanceTimeTx struct {
 	unsignedBytes []byte // Unsigned byte representation of this data
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
-=======
-func (tx *AdvanceTimeTx) Initialize(unsignedBytes []byte) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
->>>>>>> 3c968fec6 (Add codec.Size (#2343))
 	tx.unsignedBytes = unsignedBytes
 }
 
@@ -50,16 +42,7 @@ func (tx *AdvanceTimeTx) Timestamp() time.Time {
 	return time.Unix(int64(tx.Time), 0)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
-=======
-func (*AdvanceTimeTx) InputIDs() ids.Set {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return nil
 }
 
@@ -70,14 +53,6 @@ func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput {
 func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error {
 	return nil
 }
-<<<<<<< HEAD
-=======
-func (*AdvanceTimeTx) InputIDs() ids.Set                   { return nil }
-func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput { return nil }
-func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error { return nil }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 	return visitor.AdvanceTimeTx(tx)

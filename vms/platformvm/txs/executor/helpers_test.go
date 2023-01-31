@@ -76,14 +76,7 @@ var (
 	testKeyfactory crypto.FactorySECP256K1R
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
-<<<<<<< HEAD
-<<<<<<< HEAD
 	errMissing                  = errors.New("missing")
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	errMissing                  = errors.New("missing")
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 )
 
 type mutableSharedMemory struct {
@@ -278,15 +271,7 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 				cChainID:                  constants.PrimaryNetworkID,
 			}[chainID]
 			if !ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				return ids.Empty, errMissing
-=======
-				return ids.Empty, errors.New("missing")
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
-=======
-				return ids.Empty, errMissing
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 			}
 			return subnetID, nil
 		},
@@ -451,33 +436,9 @@ func shutdownEnvironment(env *environment) error {
 		validatorIDs := make([]ids.NodeID, len(primaryValidators))
 		for i, vdr := range primaryValidators {
 			validatorIDs[i] = vdr.NodeID
-<<<<<<< HEAD
 		}
 		if err := env.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID); err != nil {
 			return err
-=======
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-		}
-<<<<<<< HEAD
-
-		for subnetID := range env.config.TrackedSubnets {
-			vdrs, exist := env.config.Validators.Get(subnetID)
-			if !exist {
-				return nil
-			}
-			validators := vdrs.List()
-
-			validatorIDs := make([]ids.NodeID, len(validators))
-			for i, vdr := range validators {
-				validatorIDs[i] = vdr.NodeID
-			}
-			if err := env.uptimes.StopTracking(validatorIDs, subnetID); err != nil {
-				return err
-			}
-=======
-		if err := env.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID); err != nil {
-			return err
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		}
 
 		for subnetID := range env.config.TrackedSubnets {

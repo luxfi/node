@@ -161,46 +161,8 @@ func (in *TransferableInput) Verify() error {
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (in *TransferableInput) Less(other *TransferableInput) bool {
 	return in.UTXOID.Less(&other.UTXOID)
-=======
-type innerSortTransferableInputs []*TransferableInput
-
-func (ins innerSortTransferableInputs) Less(i, j int) bool {
-	iID, iIndex := ins[i].InputSource()
-	jID, jIndex := ins[j].InputSource()
-
-	switch bytes.Compare(iID[:], jID[:]) {
-	case -1:
-		return true
-	case 0:
-		return iIndex < jIndex
-	default:
-		return false
-	}
-}
-
-func (ins innerSortTransferableInputs) Len() int {
-	return len(ins)
-}
-
-func (ins innerSortTransferableInputs) Swap(i, j int) {
-	ins[j], ins[i] = ins[i], ins[j]
-}
-
-func SortTransferableInputs(ins []*TransferableInput) {
-	sort.Sort(innerSortTransferableInputs(ins))
-}
-
-func IsSortedAndUniqueTransferableInputs(ins []*TransferableInput) bool {
-	return utils.IsSortedAndUnique(innerSortTransferableInputs(ins))
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (in *TransferableInput) Less(other *TransferableInput) bool {
-	return in.UTXOID.Less(&other.UTXOID)
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 }
 
 type innerSortTransferableInputsWithSigners struct {

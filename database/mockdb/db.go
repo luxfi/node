@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mockdb
@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxdefi/luxd/database"
+	"github.com/ava-labs/avalanchego/database"
 )
 
 var (

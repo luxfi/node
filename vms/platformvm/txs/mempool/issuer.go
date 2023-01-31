@@ -21,27 +21,11 @@ type issuer struct {
 	tx *txs.Tx
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*issuer) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
 	return errCantIssueAdvanceTimeTx
 }
 
 func (*issuer) RewardValidatorTx(*txs.RewardValidatorTx) error {
-=======
-func (*issuer) AdvanceTimeTx(tx *txs.AdvanceTimeTx) error {
-	return errCantIssueAdvanceTimeTx
-}
-
-func (*issuer) RewardValidatorTx(tx *txs.RewardValidatorTx) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*issuer) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errCantIssueAdvanceTimeTx
-}
-
-func (*issuer) RewardValidatorTx(*txs.RewardValidatorTx) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return errCantIssueRewardValidatorTx
 }
 

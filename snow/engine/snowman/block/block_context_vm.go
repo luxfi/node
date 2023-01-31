@@ -12,10 +12,6 @@ import (
 // Context defines the block context that will be optionally provided by the
 // proposervm to an underlying vm.
 type Context struct {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	// PChainHeight is the height that this block will use to verify it's state.
 	// In the proposervm, blocks verify the proposer based on the P-chain height
 	// recorded in the parent block. The P-chain height provided here is also
@@ -23,11 +19,6 @@ type Context struct {
 	//
 	// Because PreForkBlocks and PostForkOptions do not verify their execution
 	// against the P-chain's state, this context is undefined for those blocks.
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	PChainHeight uint64
 }
 
@@ -36,38 +27,18 @@ type Context struct {
 type BuildBlockWithContextChainVM interface {
 	// Attempt to build a new block given that the P-Chain height is
 	// [blockCtx.PChainHeight].
-<<<<<<< HEAD
-<<<<<<< HEAD
 	//
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-	//
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	// This method will be called if and only if the proposervm is activated.
 	// Otherwise [BuildBlock] will be called.
 	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (snowman.Block, error)
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 type WithVerifyContext interface {
 	// Returns true if [VerifyWithContext] should be called.
 	// Returns false if [Verify] should be called.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	//
 	// This method will be called if and only if the proposervm is activated.
 	// Otherwise [Verify] will be called.
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
-	//
-	// This method will be called if and only if the proposervm is activated.
-	// Otherwise [Verify] will be called.
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	ShouldVerifyWithContext(context.Context) (bool, error)
 
 	// Verify that the state transition this block would make if accepted is
@@ -79,8 +50,3 @@ type WithVerifyContext interface {
 	// This method may be called again with a different context.
 	VerifyWithContext(context.Context, *Context) error
 }
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))

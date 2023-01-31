@@ -92,15 +92,7 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -114,24 +106,10 @@ func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp(),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -222,15 +200,7 @@ func TestBlockVerify_PostForkBlock_ParentChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -244,24 +214,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -442,15 +398,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -464,24 +412,10 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -622,15 +556,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(100)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 	// proVM.SetStartTime(timer.MaxTime) // switch off scheduler for current test
@@ -668,24 +594,10 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -852,15 +764,7 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	// Show that other verify call would not call coreBlk.Verify()
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -873,24 +777,10 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -921,15 +811,7 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}
 
 	// set error on coreBlock.Verify and recall Verify()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreBlk.VerifyV = errDuplicateVerify
-=======
-	coreBlk.VerifyV = errors.New("core block verify should only be called once")
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	coreBlk.VerifyV = errDuplicateVerify
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	if err := builtBlk.Verify(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -946,15 +828,7 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 	// setup
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	pChainHeight := uint64(2000)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetCurrentHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return pChainHeight, nil
 	}
 
@@ -967,24 +841,10 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -1031,15 +891,7 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
 	var minimumHeight uint64
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-=======
-	valState.GetMinimumHeightF = func() (uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return minimumHeight, nil
 	}
 
@@ -1054,15 +906,7 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 		HeightV:    coreGenBlk.Height() + 1,
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlk, nil
 	}
 
@@ -1110,15 +954,7 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 		HeightV:    coreGenBlk.Height() + 1,
 		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlk, nil
 	}
 
@@ -1183,24 +1019,10 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 		coreOpt1,
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil

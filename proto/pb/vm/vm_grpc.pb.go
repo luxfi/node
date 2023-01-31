@@ -43,15 +43,7 @@ type VMClient interface {
 	Connected(ctx context.Context, in *ConnectedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Disconnected(ctx context.Context, in *DisconnectedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Attempt to create a new block from data contained in the VM.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	BuildBlock(ctx context.Context, in *BuildBlockRequest, opts ...grpc.CallOption) (*BuildBlockResponse, error)
-=======
-	BuildBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BuildBlockResponse, error)
->>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
-=======
-	BuildBlock(ctx context.Context, in *BuildBlockRequest, opts ...grpc.CallOption) (*BuildBlockResponse, error)
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	// Attempt to create a block from a stream of bytes.
 	ParseBlock(ctx context.Context, in *ParseBlockRequest, opts ...grpc.CallOption) (*ParseBlockResponse, error)
 	// Attempt to load a block.
@@ -442,15 +434,7 @@ type VMServer interface {
 	Connected(context.Context, *ConnectedRequest) (*emptypb.Empty, error)
 	Disconnected(context.Context, *DisconnectedRequest) (*emptypb.Empty, error)
 	// Attempt to create a new block from data contained in the VM.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	BuildBlock(context.Context, *BuildBlockRequest) (*BuildBlockResponse, error)
-=======
-	BuildBlock(context.Context, *emptypb.Empty) (*BuildBlockResponse, error)
->>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
-=======
-	BuildBlock(context.Context, *BuildBlockRequest) (*BuildBlockResponse, error)
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	// Attempt to create a block from a stream of bytes.
 	ParseBlock(context.Context, *ParseBlockRequest) (*ParseBlockResponse, error)
 	// Attempt to load a block.

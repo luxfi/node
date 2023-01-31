@@ -36,23 +36,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	vdrs := validators.NewSet()
 	vdr0 := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
-=======
-	err := vdrs.AddWeight(vdr0, 1)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	err := vdrs.Add(vdr0, 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(vdr0, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -104,41 +88,17 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	nodeID := ids.EmptyNodeID
 	reqID := uint32(1)
 	chainID := ids.ID{}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
-=======
-	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
 	currentTime := time.Now().Add(time.Second)
 	handler.clock.Set(currentTime)
 
 	reqID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
-=======
-	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
-=======
-	bootstrapper.StartF = func(uint32) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -158,23 +118,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -230,15 +174,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	// should normally be handled
 	ctx.SetState(snow.Bootstrapping)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
-=======
-	bootstrapper.StartF = func(uint32) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -247,15 +183,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	nodeID := ids.EmptyNodeID
 	reqID := uint32(1)
 	deadline := time.Nanosecond
-<<<<<<< HEAD
-<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID, 0)
-=======
-	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID, 0)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
 	ticker := time.NewTicker(time.Second)
@@ -270,19 +198,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	closed := make(chan struct{}, 1)
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -326,15 +242,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	handler.SetBootstrapper(bootstrapper)
 	ctx.SetState(snow.Bootstrapping) // assumed bootstrapping is ongoing
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
-=======
-	bootstrapper.StartF = func(uint32) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -360,19 +268,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	msgFromVMChan := make(chan common.Message)
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -410,30 +306,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	engine.NotifyF = func(context.Context, common.Message) error {
-=======
-	engine.NotifyF = func(common.Message) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	engine.NotifyF = func(context.Context, common.Message) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		calledNotify <- struct{}{}
 		return nil
 	}
 	handler.SetConsensus(engine)
 	ctx.SetState(snow.NormalOp) // assumed bootstrapping is done
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
-=======
-	bootstrapper.StartF = func(uint32) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 
@@ -450,15 +330,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 func TestHandlerSubnetConnector(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -481,14 +353,7 @@ func TestHandlerSubnetConnector(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
-<<<<<<< HEAD
-<<<<<<< HEAD
 		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 		resourceTracker,
 		connector,
 	)

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
@@ -6,9 +6,9 @@ package atomic
 import (
 	"bytes"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 var (

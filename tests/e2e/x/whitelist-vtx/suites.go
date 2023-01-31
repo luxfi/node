@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements X-Chain whitelist vtx (stop vertex) tests.
@@ -8,17 +8,6 @@ import (
 	"context"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/tests"
-	"github.com/luxdefi/luxd/tests/e2e"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-	"github.com/luxdefi/luxd/wallet/subnet/primary"
-	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
-=======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/tests"
 	"github.com/ava-labs/avalanchego/tests/e2e"
@@ -29,7 +18,6 @@ import (
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -74,7 +62,7 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 					ginkgo.Skip("skipping tests (mainnet)")
 				}
 			})
-			luxAssetID := baseWallet.X().LUXAssetID()
+			avaxAssetID := baseWallet.X().AVAXAssetID()
 			wallets := make([]primary.Wallet, len(testKeys))
 			for i := range wallets {
 				wallets[i] = primary.NewWalletWithOptions(
@@ -117,13 +105,13 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 			ginkgo.By("issue regular, virtuous X-Chain tx, before whitelist vtx, should succeed", func() {
 				balances, err := wallets[0].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				key1PrevBalX := balances[luxAssetID]
+				key1PrevBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}} %d\n", key1PrevBalX)
 
 				balances, err = wallets[1].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
 
-				key2PrevBalX := balances[luxAssetID]
+				key2PrevBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}second wallet balance:{{/}} %d\n", key2PrevBalX)
 
 				transferAmount := key1PrevBalX / 10
@@ -133,9 +121,9 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 				tests.Outf("{{blue}}issuing regular, virtuous transaction at %q{{/}}\n", uris[0])
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				_, err = wallets[0].X().IssueBaseTx(
-					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{
-							ID: luxAssetID,
+					[]*avax.TransferableOutput{{
+						Asset: avax.Asset{
+							ID: avaxAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: transferAmount,
@@ -154,12 +142,12 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 
 				balances, err = wallets[0].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				key1CurBalX := balances[luxAssetID]
+				key1CurBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}} %d\n", key1CurBalX)
 
 				balances, err = wallets[1].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				key2CurBalX := balances[luxAssetID]
+				key2CurBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}second wallet balance:{{/}} %d\n", key2CurBalX)
 
 				gomega.Expect(key1CurBalX).Should(gomega.Equal(key1PrevBalX - transferAmount - baseWallet.X().BaseTxFee()))
@@ -258,8 +246,8 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 				balances, err := wallets[0].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
 
-				luxAssetID := baseWallet.X().LUXAssetID()
-				key1PrevBalX := balances[luxAssetID]
+				avaxAssetID := baseWallet.X().AVAXAssetID()
+				key1PrevBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}} %d\n", key1PrevBalX)
 
 				transferAmount := key1PrevBalX / 10
@@ -267,9 +255,9 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 				tests.Outf("{{blue}}issuing regular, virtuous transaction at %q{{/}}\n", uris[0])
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				_, err = wallets[0].X().IssueBaseTx(
-					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{
-							ID: luxAssetID,
+					[]*avax.TransferableOutput{{
+						Asset: avax.Asset{
+							ID: avaxAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: transferAmount,

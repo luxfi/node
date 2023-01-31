@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -6,19 +6,19 @@ package genesis
 import (
 	"time"
 
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 )
 
 type StakingConfig struct {
 	// Staking uptime requirements
 	UptimeRequirement float64 `json:"uptimeRequirement"`
-	// Minimum stake, in nLUX, required to validate the primary network
+	// Minimum stake, in nAVAX, required to validate the primary network
 	MinValidatorStake uint64 `json:"minValidatorStake"`
-	// Maximum stake, in nLUX, allowed to be placed on a single validator in
+	// Maximum stake, in nAVAX, allowed to be placed on a single validator in
 	// the primary network
 	MaxValidatorStake uint64 `json:"maxValidatorStake"`
-	// Minimum stake, in nLUX, that can be delegated on the primary network
+	// Minimum stake, in nAVAX, that can be delegated on the primary network
 	MinDelegatorStake uint64 `json:"minDelegatorStake"`
 	// Minimum delegation fee, in the range [0, 1000000], that can be charged
 	// for delegation on the primary network.

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/luxdefi/luxd/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/crypto"
 )
 
 // Loads a list of secp256k1 hex-encoded private keys from the file, new-line separated.

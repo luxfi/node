@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package versiondb
@@ -8,12 +8,6 @@ import (
 	"strings"
 	"sync"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/nodb"
-	"github.com/luxdefi/luxd/utils"
-=======
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -21,7 +15,6 @@ import (
 	"github.com/ava-labs/avalanchego/database/memdb"
 	"github.com/ava-labs/avalanchego/database/nodb"
 	"github.com/ava-labs/avalanchego/utils"
->>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 )
 
 var (

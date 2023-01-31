@@ -14,46 +14,14 @@ import (
 
 // RPCChainVMProtocol should be bumped anytime changes are made which require
 // the plugin vm to upgrade to latest avalanchego release to be compatible.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 const RPCChainVMProtocol uint = 22
-=======
-const RPCChainVMProtocol uint = 20
->>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
-=======
-const RPCChainVMProtocol uint = 21
->>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
-=======
-const RPCChainVMProtocol uint = 22
->>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
 
 // These are globals that describe network upgrades and node versions
 var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 9,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		Patch: 7,
-=======
-		Patch: 3,
->>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
-=======
-		Patch: 4,
->>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
-=======
-		Patch: 5,
->>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
-=======
-		Patch: 6,
->>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
-=======
-		Patch: 7,
->>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 	}
 	CurrentApp = &Application{
 		Major: Current.Major,

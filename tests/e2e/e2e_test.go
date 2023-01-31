@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e_test
@@ -11,15 +11,15 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/luxdefi/luxd/tests/e2e"
+	"github.com/ava-labs/avalanchego/tests/e2e"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/luxdefi/luxd/tests/e2e/banff"
-	_ "github.com/luxdefi/luxd/tests/e2e/p"
-	_ "github.com/luxdefi/luxd/tests/e2e/ping"
-	_ "github.com/luxdefi/luxd/tests/e2e/static-handlers"
-	_ "github.com/luxdefi/luxd/tests/e2e/x/transfer"
-	_ "github.com/luxdefi/luxd/tests/e2e/x/whitelist-vtx"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/banff"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/p"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/ping"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/static-handlers"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/x/transfer"
+	_ "github.com/ava-labs/avalanchego/tests/e2e/x/whitelist-vtx"
 )
 
 func TestE2E(t *testing.T) {
@@ -32,8 +32,8 @@ var (
 	logLevel string
 
 	networkRunnerGRPCEp              string
-	networkRunnerLUXGoExecPath string
-	networkRunnerLUXGoLogLevel string
+	networkRunnerAvalancheGoExecPath string
+	networkRunnerAvalancheGoLogLevel string
 
 	uris string
 
@@ -55,16 +55,16 @@ func init() {
 		"[optional] gRPC server endpoint for network-runner (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerLUXGoExecPath,
-		"network-runner-luxd-path",
+		&networkRunnerAvalancheGoExecPath,
+		"network-runner-avalanchego-path",
 		"",
-		"[optional] luxd executable path (only required for local network-runner tests)",
+		"[optional] avalanchego executable path (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerLUXGoLogLevel,
-		"network-runner-luxd-log-level",
+		&networkRunnerAvalancheGoLogLevel,
+		"network-runner-avalanchego-log-level",
 		"INFO",
-		"[optional] luxd log-level (only required for local network-runner tests)",
+		"[optional] avalanchego log-level (only required for local network-runner tests)",
 	)
 
 	// e.g., custom network HTTP RPC endpoints
@@ -88,8 +88,8 @@ var _ = ginkgo.BeforeSuite(func() {
 	err := e2e.Env.ConfigCluster(
 		logLevel,
 		networkRunnerGRPCEp,
-		networkRunnerLUXGoExecPath,
-		networkRunnerLUXGoLogLevel,
+		networkRunnerAvalancheGoExecPath,
+		networkRunnerAvalancheGoLogLevel,
 		uris,
 		testKeysFile,
 	)

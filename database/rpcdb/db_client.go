@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -9,21 +9,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/nodb"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/utils/wrappers"
-=======
 	"github.com/ava-labs/avalanchego/database"
 	"github.com/ava-labs/avalanchego/database/nodb"
 	"github.com/ava-labs/avalanchego/utils"
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
-	rpcdbpb "github.com/luxdefi/luxd/proto/pb/rpcdb"
+	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
 )
 
 var (

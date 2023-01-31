@@ -27,32 +27,8 @@ func (sb *snowballNode) String() string {
 		sb.confidence)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (sb *snowballNode) Less(other *snowballNode) bool {
 	return sb.txID.Less(other.txID)
-=======
-type sortSnowballNodeData []*snowballNode
-
-func (sb sortSnowballNodeData) Less(i, j int) bool {
-	return bytes.Compare(sb[i].txID[:], sb[j].txID[:]) == -1
-}
-
-func (sb sortSnowballNodeData) Len() int {
-	return len(sb)
-}
-
-func (sb sortSnowballNodeData) Swap(i, j int) {
-	sb[j], sb[i] = sb[i], sb[j]
-}
-
-func sortSnowballNodes(nodes []*snowballNode) {
-	sort.Sort(sortSnowballNodeData(nodes))
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (sb *snowballNode) Less(other *snowballNode) bool {
-	return sb.txID.Less(other.txID)
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 }
 
 // consensusString converts a list of snowball nodes into a human-readable

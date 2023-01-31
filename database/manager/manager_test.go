@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package manager
@@ -12,12 +12,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database/leveldb"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/meterdb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/version"
+	"github.com/ava-labs/avalanchego/database/leveldb"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/meterdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 func TestNewSingleLevelDB(t *testing.T) {

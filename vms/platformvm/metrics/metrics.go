@@ -53,15 +53,7 @@ type Metrics interface {
 func New(
 	namespace string,
 	registerer prometheus.Registerer,
-<<<<<<< HEAD
-<<<<<<< HEAD
 	trackedSubnets set.Set[ids.ID],
-=======
-	whitelistedSubnets set.Set[ids.ID],
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	trackedSubnets set.Set[ids.ID],
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 ) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(namespace, registerer)
 	m := &metrics{

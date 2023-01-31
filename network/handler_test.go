@@ -1,12 +1,12 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/version"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var _ router.ExternalHandler = (*testHandler)(nil)

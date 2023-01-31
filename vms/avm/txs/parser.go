@@ -110,8 +110,6 @@ func NewCustomParser(
 func (p *parser) Codec() codec.Manager {
 	return p.cm
 }
-<<<<<<< HEAD
-=======
 
 func (p *parser) GenesisCodec() codec.Manager {
 	return p.gcm
@@ -140,39 +138,7 @@ func (p *parser) InitializeTx(tx *Tx) error {
 func (p *parser) InitializeGenesisTx(tx *Tx) error {
 	return initializeTx(p.gcm, tx)
 }
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
-<<<<<<< HEAD
-func (p *parser) GenesisCodec() codec.Manager {
-	return p.gcm
-}
-
-func (p *parser) CodecRegistry() codec.Registry {
-	return p.c
-}
-
-func (p *parser) GenesisCodecRegistry() codec.Registry {
-	return p.gc
-}
-
-func (p *parser) ParseTx(bytes []byte) (*Tx, error) {
-	return parse(p.cm, bytes)
-}
-
-func (p *parser) ParseGenesisTx(bytes []byte) (*Tx, error) {
-	return parse(p.gcm, bytes)
-}
-
-func (p *parser) InitializeTx(tx *Tx) error {
-	return initializeTx(p.cm, tx)
-}
-
-func (p *parser) InitializeGenesisTx(tx *Tx) error {
-	return initializeTx(p.gcm, tx)
-}
-
-=======
->>>>>>> 3c968fec6 (Add codec.Size (#2343))
 func parse(cm codec.Manager, signedBytes []byte) (*Tx, error) {
 	tx := &Tx{}
 	parsedVersion, err := cm.Unmarshal(signedBytes, tx)

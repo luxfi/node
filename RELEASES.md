@@ -1,12 +1,5 @@
 # Release Notes
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 ## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -15,11 +8,6 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 
 - Fixed subnet validator lookup regression
 
-<<<<<<< HEAD
-=======
->>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
-=======
->>>>>>> 3e3e40f2f (Update versions for v1.9.7 (#2461))
 ## [v1.9.6](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.6)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -73,11 +61,6 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Added `SetLevel` to the `Logger` interface
 - Updated `auth` API to use the new `jwt` standard
 
-<<<<<<< HEAD
-=======
->>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
-=======
->>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
 ## [v1.9.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.5)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
@@ -116,11 +99,6 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Moved bit sets from the `ids` package to the `set` package
 - Added more wallet examples
 
-<<<<<<< HEAD
-=======
->>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
-=======
->>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
 ## [v1.9.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.4)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
@@ -194,11 +172,6 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Converted all sorting to utilize generics
 - Converted all set management to utilize generics
 
-<<<<<<< HEAD
-=======
->>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
-=======
->>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
 ## [v1.9.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.3)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.

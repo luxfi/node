@@ -9,25 +9,6 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/set"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-	ledger "github.com/ava-labs/avalanche-ledger-go"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
->>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
-=======
-=======
-	"github.com/luxdefi/luxd/ids"
-
-	ledger "github.com/luxdefi/lux-ledger-go"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 var (
@@ -60,15 +41,7 @@ type Keychain interface {
 // ledgerKeychain is an abstraction of the underlying ledger hardware device,
 // to be able to get a signer from a finite set of derived signers
 type ledgerKeychain struct {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ledger    Ledger
-=======
-	ledger    ledger.Ledger
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ledger    Ledger
->>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	addrs     set.Set[ids.ShortID]
 	addrToIdx map[ids.ShortID]uint32
 }
@@ -96,15 +69,7 @@ func NewLedgerKeychain(l Ledger, numToDerive int) (Keychain, error) {
 }
 
 // NewLedgerKeychainFromIndices creates a new Ledger with addresses taken from the given [indices].
-<<<<<<< HEAD
-<<<<<<< HEAD
 func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) {
-=======
-func NewLedgerKeychainFromIndices(l ledger.Ledger, indices []uint32) (Keychain, error) {
->>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
-=======
-func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) {
->>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 	if len(indices) == 0 {
 		return nil, ErrInvalidIndicesLength
 	}
@@ -123,15 +88,7 @@ func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) 
 		)
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	addrsSet := set.NewSet[ids.ShortID](len(addrs))
-=======
-	addrsSet := ids.ShortSet{}
->>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
-=======
-	addrsSet := set.NewSet[ids.ShortID](len(addrs))
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	addrsSet.Add(addrs...)
 
 	addrToIdx := map[ids.ShortID]uint32{}

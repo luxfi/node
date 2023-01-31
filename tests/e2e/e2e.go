@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // e2e implements the e2e tests.
@@ -15,24 +15,12 @@ import (
 
 	"github.com/onsi/gomega"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
-=======
-<<<<<<< HEAD
 	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
-=======
-	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
-	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
->>>>>>> c5eafdb72 (Update LICENSE)
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/tests"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 type ClusterType byte
@@ -107,27 +95,9 @@ func (te *TestEnvinronment) ConfigCluster(
 	uris string,
 	testKeysFile string,
 ) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	if luxGoExecPath != "" {
-		if _, err := os.Stat(luxGoExecPath); err != nil {
-			return fmt.Errorf("could not find luxd binary: %w", err)
-=======
-<<<<<<< HEAD
 	if avalancheGoExecPath != "" {
 		if _, err := os.Stat(avalancheGoExecPath); err != nil {
 			return fmt.Errorf("could not find avalanchego binary: %w", err)
-=======
-	if luxGoExecPath != "" {
-		if _, err := os.Stat(luxGoExecPath); err != nil {
-			return fmt.Errorf("could not find luxd binary: %w", err)
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
-	if avalancheGoExecPath != "" {
-		if _, err := os.Stat(avalancheGoExecPath); err != nil {
-			return fmt.Errorf("could not find avalanchego binary: %w", err)
->>>>>>> c5eafdb72 (Update LICENSE)
 		}
 	}
 

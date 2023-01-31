@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -6,19 +6,6 @@ package primary
 import (
 	"context"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/api/info"
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/rpc"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/wallet/chain/p"
-	"github.com/luxdefi/luxd/wallet/chain/x"
-=======
 	"github.com/ava-labs/avalanchego/api/info"
 	"github.com/ava-labs/avalanchego/codec"
 	"github.com/ava-labs/avalanchego/ids"
@@ -31,12 +18,11 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	"github.com/ava-labs/avalanchego/wallet/chain/p"
 	"github.com/ava-labs/avalanchego/wallet/chain/x"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 const (
-	MainnetAPIURI = "https://api.lux.network"
-	FujiAPIURI    = "https://api.lux-test.network"
+	MainnetAPIURI = "https://api.avax.network"
+	FujiAPIURI    = "https://api.avax-test.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
@@ -144,7 +130,7 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			var utxo lux.UTXO
+			var utxo avax.UTXO
 			_, err := codec.Unmarshal(utxoBytes, &utxo)
 			if err != nil {
 				return err

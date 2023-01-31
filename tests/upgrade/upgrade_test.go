@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Runs upgrade tests.
@@ -15,23 +15,8 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
-	"github.com/luxdefi/luxd/tests"
-=======
-<<<<<<< HEAD
 	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
 	"github.com/ava-labs/avalanchego/tests"
-=======
-	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
-	"github.com/luxdefi/luxd/tests"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
-	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
-	"github.com/ava-labs/avalanchego/tests"
->>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 func TestUpgrade(t *testing.T) {
@@ -42,9 +27,9 @@ func TestUpgrade(t *testing.T) {
 var (
 	logLevel                                  string
 	networkRunnerGRPCEp                       string
-	networkRunnerLUXGoExecPath          string
-	networkRunnerLUXGoExecPathToUpgrade string
-	networkRunnerLUXGoLogLevel          string
+	networkRunnerAvalancheGoExecPath          string
+	networkRunnerAvalancheGoExecPathToUpgrade string
+	networkRunnerAvalancheGoLogLevel          string
 )
 
 func init() {
@@ -61,32 +46,32 @@ func init() {
 		"gRPC server endpoint for network-runner",
 	)
 	flag.StringVar(
-		&networkRunnerLUXGoExecPath,
-		"network-runner-luxd-path",
+		&networkRunnerAvalancheGoExecPath,
+		"network-runner-avalanchego-path",
 		"",
-		"luxd executable path",
+		"avalanchego executable path",
 	)
 	flag.StringVar(
-		&networkRunnerLUXGoExecPathToUpgrade,
-		"network-runner-luxd-path-to-upgrade",
+		&networkRunnerAvalancheGoExecPathToUpgrade,
+		"network-runner-avalanchego-path-to-upgrade",
 		"",
-		"luxd executable path (to upgrade to, only required for upgrade tests with local network-runner)",
+		"avalanchego executable path (to upgrade to, only required for upgrade tests with local network-runner)",
 	)
 	flag.StringVar(
-		&networkRunnerLUXGoLogLevel,
-		"network-runner-luxd-log-level",
+		&networkRunnerAvalancheGoLogLevel,
+		"network-runner-avalanchego-log-level",
 		"INFO",
-		"luxd log-level",
+		"avalanchego log-level",
 	)
 }
 
 var runnerCli runner_sdk.Client
 
 var _ = ginkgo.BeforeSuite(func() {
-	_, err := os.Stat(networkRunnerLUXGoExecPath)
+	_, err := os.Stat(networkRunnerAvalancheGoExecPath)
 	gomega.Expect(err).Should(gomega.BeNil())
 
-	_, err = os.Stat(networkRunnerLUXGoExecPathToUpgrade)
+	_, err = os.Stat(networkRunnerAvalancheGoExecPathToUpgrade)
 	gomega.Expect(err).Should(gomega.BeNil())
 
 	runnerCli, err = runner_sdk.New(runner_sdk.Config{
@@ -102,11 +87,11 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).Should(gomega.BeNil())
 	tests.Outf("{{green}}network-runner running in PID %d{{/}}\n", presp.Pid)
 
-	tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", networkRunnerLUXGoExecPath)
+	tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", networkRunnerAvalancheGoExecPath)
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	resp, err := runnerCli.Start(ctx, networkRunnerLUXGoExecPath,
+	resp, err := runnerCli.Start(ctx, networkRunnerAvalancheGoExecPath,
 		runner_sdk.WithNumNodes(5),
-		runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, networkRunnerLUXGoLogLevel)),
+		runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, networkRunnerAvalancheGoLogLevel)),
 	)
 	cancel()
 	gomega.Expect(err).Should(gomega.BeNil())
@@ -135,16 +120,16 @@ var _ = ginkgo.AfterSuite(func() {
 
 var _ = ginkgo.Describe("[Upgrade]", func() {
 	ginkgo.It("can upgrade versions", func() {
-		tests.Outf("{{magenta}}starting upgrade tests %q{{/}}\n", networkRunnerLUXGoExecPathToUpgrade)
+		tests.Outf("{{magenta}}starting upgrade tests %q{{/}}\n", networkRunnerAvalancheGoExecPathToUpgrade)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		sresp, err := runnerCli.Status(ctx)
 		cancel()
 		gomega.Expect(err).Should(gomega.BeNil())
 
 		for _, name := range sresp.ClusterInfo.NodeNames {
-			tests.Outf("{{magenta}}restarting the node %q{{/}} with %q\n", name, networkRunnerLUXGoExecPathToUpgrade)
+			tests.Outf("{{magenta}}restarting the node %q{{/}} with %q\n", name, networkRunnerAvalancheGoExecPathToUpgrade)
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			resp, err := runnerCli.RestartNode(ctx, name, runner_sdk.WithExecPath(networkRunnerLUXGoExecPathToUpgrade))
+			resp, err := runnerCli.RestartNode(ctx, name, runner_sdk.WithExecPath(networkRunnerAvalancheGoExecPathToUpgrade))
 			cancel()
 			gomega.Expect(err).Should(gomega.BeNil())
 
@@ -154,7 +139,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 			_, err = runnerCli.Health(ctx)
 			cancel()
 			gomega.Expect(err).Should(gomega.BeNil())
-			tests.Outf("{{green}}successfully upgraded %q to %q{{/}} (current info: %+v)\n", name, networkRunnerLUXGoExecPathToUpgrade, resp.ClusterInfo.NodeInfos)
+			tests.Outf("{{green}}successfully upgraded %q to %q{{/}} (current info: %+v)\n", name, networkRunnerAvalancheGoExecPathToUpgrade, resp.ClusterInfo.NodeInfos)
 		}
 	})
 })

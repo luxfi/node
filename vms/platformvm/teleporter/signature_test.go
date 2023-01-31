@@ -17,14 +17,7 @@ import (
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
-=======
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-	"github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 )
 
 const pChainHeight uint64 = 1337
@@ -32,15 +25,7 @@ const pChainHeight uint64 = 1337
 var (
 	_ utils.Sortable[*testValidator] = (*testValidator)(nil)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	errTest       = errors.New("non-nil error")
-=======
-	errMock       = errors.New("")
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-	errTest       = errors.New("non-nil error")
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	sourceChainID = ids.GenerateTestID()
 	subnetID      = ids.GenerateTestID()
 
@@ -110,30 +95,14 @@ func TestSignatureVerification(t *testing.T) {
 		stateF    func(*gomock.Controller) validators.State
 		quorumNum uint64
 		quorumDen uint64
-<<<<<<< HEAD
-<<<<<<< HEAD
 		msgF      func(*require.Assertions) *Message
-=======
-		msgF      func(require *require.Assertions) *Message
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-		msgF      func(*require.Assertions) *Message
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		err       error
 	}{
 		{
 			name: "can't get subnetID",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
-<<<<<<< HEAD
-<<<<<<< HEAD
 				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errTest)
-=======
-				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errMock)
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, errTest)
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 				return state
 			},
 			quorumNum: 1,
@@ -153,30 +122,14 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 				return msg
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			err: errTest,
-=======
-			err: errMock,
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			err: errTest,
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "can't get validator set",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, nil)
-<<<<<<< HEAD
-<<<<<<< HEAD
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
-=======
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errMock)
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 				return state
 			},
 			quorumNum: 1,
@@ -196,15 +149,7 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 				return msg
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			err: errTest,
-=======
-			err: errMock,
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-			err: errTest,
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 		},
 		{
 			name: "weight overflow",
@@ -287,15 +232,7 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(3) // vdr oob
 
 				msg, err := NewMessage(
@@ -330,15 +267,7 @@ func TestSignatureVerification(t *testing.T) {
 
 				// [signers] has weight from [vdr[0], vdr[1]],
 				// which is 6, which is less than 9
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -380,15 +309,7 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -405,10 +326,6 @@ func TestSignatureVerification(t *testing.T) {
 			err: ErrParseSignature,
 		},
 		{
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d8b08bd26 (Add teleporter verification test with no validators (#2389))
 			name: "no validators",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
@@ -444,11 +361,6 @@ func TestSignatureVerification(t *testing.T) {
 			err: bls.ErrNoPublicKeys,
 		},
 		{
-<<<<<<< HEAD
-=======
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
->>>>>>> d8b08bd26 (Add teleporter verification test with no validators (#2389))
 			name: "invalid signature (substitute)",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
@@ -466,15 +378,7 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -518,15 +422,7 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -566,15 +462,7 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(0)
 				signers.Add(1)
 
@@ -621,15 +509,7 @@ func TestSignatureVerification(t *testing.T) {
 
 				// [signers] has weight from [vdr[1], vdr[2]],
 				// which is 6, which is greater than 4.5
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(1)
 				signers.Add(2)
 
@@ -673,15 +553,7 @@ func TestSignatureVerification(t *testing.T) {
 
 				// [signers] has weight from [vdr[1], vdr[2]],
 				// which is 6, which meets the minimum 6
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				signers.Add(1)
 				signers.Add(2)
 
@@ -741,15 +613,7 @@ func TestSignatureVerification(t *testing.T) {
 
 				// [signers] has weight from [vdr2, vdr3],
 				// which is 6, which is greater than 3
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				// Note: the bits are shifted because vdr[0]'s key was zeroed
 				signers.Add(0) // vdr[1]
 				signers.Add(1) // vdr[2]
@@ -810,15 +674,7 @@ func TestSignatureVerification(t *testing.T) {
 
 				// [signers] has weight from [vdr2, vdr3],
 				// which is 6, which meets the minimum 6
-<<<<<<< HEAD
-<<<<<<< HEAD
 				signers := set.NewBits()
-=======
-				signers := ids.NewBigBitSet()
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-				signers := set.NewBits()
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 				// Note: the bits are shifted because vdr[0]'s key was zeroed
 				// Note: vdr[1] and vdr[2] were combined because of a shared pk
 				signers.Add(0) // vdr[1] + vdr[2]

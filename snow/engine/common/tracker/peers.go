@@ -10,14 +10,7 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
-=======
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	"github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	"github.com/ava-labs/avalanchego/version"
 )
 
@@ -54,15 +47,7 @@ func NewPeers() Peers {
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (p *peers) OnValidatorAdded(nodeID ids.NodeID, _ *bls.PublicKey, _ ids.ID, weight uint64) {
-=======
-func (p *peers) OnValidatorAdded(nodeID ids.NodeID, _ *bls.PublicKey, weight uint64) {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-func (p *peers) OnValidatorAdded(nodeID ids.NodeID, _ *bls.PublicKey, _ ids.ID, weight uint64) {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

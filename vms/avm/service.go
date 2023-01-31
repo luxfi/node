@@ -64,18 +64,8 @@ type FormattedAssetID struct {
 }
 
 // IssueTx attempts to issue a transaction into consensus
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	s.vm.ctx.Log.Debug("AVM: IssueTx called",
-=======
-func (service *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
-	service.vm.ctx.Log.Debug("AVM: IssueTx called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
-	s.vm.ctx.Log.Debug("AVM: IssueTx called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("tx", args.Tx),
 	)
 
@@ -92,18 +82,8 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSO
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) IssueStopVertex(_ *http.Request, _, _ *struct{}) error {
 	return s.vm.issueStopVertex()
-=======
-func (service *Service) IssueStopVertex(_ *http.Request, _, _ *struct{}) error {
-	return service.vm.issueStopVertex()
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) IssueStopVertex(_ *http.Request, _, _ *struct{}) error {
-	return s.vm.issueStopVertex()
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 }
 
 // GetTxStatusReply defines the GetTxStatus replies returned from the API
@@ -128,15 +108,7 @@ type GetAddressTxsReply struct {
 }
 
 // GetAddressTxs returns list of transactions for a given address
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
-=======
-func (service *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	cursor := uint64(args.Cursor)
 	pageSize := uint64(args.PageSize)
 	s.vm.ctx.Log.Debug("AVM: GetAddressTxs called",
@@ -189,18 +161,8 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 }
 
 // GetTxStatus returns the status of the specified transaction
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
 	s.vm.ctx.Log.Debug("AVM: GetTxStatus called",
-=======
-func (service *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
-	service.vm.ctx.Log.Debug("AVM: GetTxStatus called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
-	s.vm.ctx.Log.Debug("AVM: GetTxStatus called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		zap.Stringer("txID", args.TxID),
 	)
 
@@ -218,18 +180,8 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 }
 
 // GetTx returns the specified transaction
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
 	s.vm.ctx.Log.Debug("AVM: GetTx called",
-=======
-func (service *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
-	service.vm.ctx.Log.Debug("AVM: GetTx called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
-	s.vm.ctx.Log.Debug("AVM: GetTx called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		zap.Stringer("txID", args.TxID),
 	)
 
@@ -266,18 +218,8 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 }
 
 // GetUTXOs gets all utxos for passed in addresses
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
 	s.vm.ctx.Log.Debug("AVM: GetUTXOs called",
-=======
-func (service *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
-	service.vm.ctx.Log.Debug("AVM: GetUTXOs called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
-	s.vm.ctx.Log.Debug("AVM: GetUTXOs called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserStrings("addresses", args.Addresses),
 	)
 
@@ -434,18 +376,8 @@ type GetBalanceReply struct {
 // (1 out of 1 multisig) by the address and with a locktime in the past.
 // Otherwise, returned balance includes assets held only partially by the
 // address, and includes balances with locktime in the future.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
 	s.vm.ctx.Log.Debug("AVM: GetBalance called",
-=======
-func (service *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
-	service.vm.ctx.Log.Debug("AVM: GetBalance called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
-	s.vm.ctx.Log.Debug("AVM: GetBalance called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("address", args.Address),
 		logging.UserString("assetID", args.AssetID),
 	)
@@ -515,18 +447,8 @@ type GetAllBalancesReply struct {
 // If ![args.IncludePartial], returns only unlocked balance/UTXOs with a 1-out-of-1 multisig.
 // Otherwise, returned balance/UTXOs includes assets held only partially by the
 // address, and includes balances with locktime in the future.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
 	s.vm.ctx.Log.Debug("AVM: GetAllBalances called",
-=======
-func (service *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
-	service.vm.ctx.Log.Debug("AVM: GetAllBalances called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
-	s.vm.ctx.Log.Debug("AVM: GetAllBalances called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("address", args.Address),
 	)
 
@@ -543,15 +465,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	}
 
 	now := s.vm.clock.Unix()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	assetIDs := set.Set[ids.ID]{}       // IDs of assets the address has a non-zero balance of
-=======
-	assetIDs := ids.Set{}               // IDs of assets the address has a non-zero balance of
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-	assetIDs := set.Set[ids.ID]{}       // IDs of assets the address has a non-zero balance of
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	balances := make(map[ids.ID]uint64) // key: ID (as bytes). value: balance of that asset
 	for _, utxo := range utxos {
 		// TODO make this not specific to *secp256k1fx.TransferOutput
@@ -617,18 +531,8 @@ type AssetIDChangeAddr struct {
 }
 
 // CreateAsset returns ID of the newly created asset
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: CreateAsset called",
-=======
-func (service *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: CreateAsset called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: CreateAsset called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("name", args.Name),
 		logging.UserString("symbol", args.Symbol),
 		zap.Int("numInitialHolders", len(args.InitialHolders)),
@@ -747,18 +651,8 @@ func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *Ass
 }
 
 // CreateFixedCapAsset returns ID of the newly created asset
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) CreateFixedCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: CreateFixedCapAsset called",
-=======
-func (service *Service) CreateFixedCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: CreateFixedCapAsset called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) CreateFixedCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: CreateFixedCapAsset called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("name", args.Name),
 		logging.UserString("symbol", args.Symbol),
 		zap.Int("numInitialHolders", len(args.InitialHolders)),
@@ -768,18 +662,8 @@ func (s *Service) CreateFixedCapAsset(_ *http.Request, args *CreateAssetArgs, re
 }
 
 // CreateVariableCapAsset returns ID of the newly created asset
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) CreateVariableCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: CreateVariableCapAsset called",
-=======
-func (service *Service) CreateVariableCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: CreateVariableCapAsset called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) CreateVariableCapAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: CreateVariableCapAsset called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("name", args.Name),
 		logging.UserString("symbol", args.Symbol),
 		zap.Int("numMinters", len(args.MinterSets)),
@@ -797,18 +681,8 @@ type CreateNFTAssetArgs struct {
 }
 
 // CreateNFTAsset returns ID of the newly created asset
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: CreateNFTAsset called",
-=======
-func (service *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: CreateNFTAsset called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: CreateNFTAsset called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("name", args.Name),
 		logging.UserString("symbol", args.Symbol),
 		zap.Int("numMinters", len(args.MinterSets)),
@@ -913,18 +787,8 @@ func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, repl
 }
 
 // CreateAddress creates an address for the user [args.Username]
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
 	s.vm.ctx.Log.Debug("AVM: CreateAddress called",
-=======
-func (service *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
-	service.vm.ctx.Log.Debug("AVM: CreateAddress called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Debug("AVM: CreateAddress called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -995,18 +859,8 @@ type ExportKeyReply struct {
 }
 
 // ExportKey returns a private key from the provided user
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	s.vm.ctx.Log.Debug("AVM: ExportKey called",
-=======
-func (service *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	service.vm.ctx.Log.Debug("AVM: ExportKey called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	s.vm.ctx.Log.Debug("AVM: ExportKey called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1043,18 +897,8 @@ type ImportKeyReply struct {
 }
 
 // ImportKey adds a private key to the provided user
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
 	s.vm.ctx.Log.Debug("AVM: ImportKey called",
-=======
-func (service *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	service.vm.ctx.Log.Debug("AVM: ImportKey called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Debug("AVM: ImportKey called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1127,18 +971,8 @@ func (s *Service) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChang
 }
 
 // SendMultiple sends a transaction with multiple outputs.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: SendMultiple called",
-=======
-func (service *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: SendMultiple called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: SendMultiple called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1287,18 +1121,8 @@ type MintArgs struct {
 }
 
 // Mint issues a transaction that mints more of the asset
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: Mint called",
-=======
-func (service *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: Mint called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: Mint called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1414,18 +1238,8 @@ type SendNFTArgs struct {
 }
 
 // SendNFT sends an NFT
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: SendNFT called",
-=======
-func (service *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: SendNFT called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: SendNFT called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -1535,18 +1349,8 @@ type MintNFTArgs struct {
 }
 
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.ctx.Log.Debug("AVM: MintNFT called",
-=======
-func (service *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	service.vm.ctx.Log.Debug("AVM: MintNFT called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Debug("AVM: MintNFT called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 

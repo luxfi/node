@@ -294,19 +294,7 @@ func (*UniqueTx) HasWhitelist() bool {
 }
 
 // Whitelist is not supported by this transaction type, so [false] is returned.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*UniqueTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
-=======
-func (*UniqueTx) Whitelist() (ids.Set, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*UniqueTx) Whitelist(context.Context) (ids.Set, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (*UniqueTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return nil, nil
 }
 

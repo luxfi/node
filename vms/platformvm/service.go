@@ -83,36 +83,13 @@ type GetHeightResponse struct {
 }
 
 // GetHeight returns the height of the last accepted block
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
-	ctx := r.Context()
-	lastAcceptedID, err := s.vm.LastAccepted(ctx)
-=======
-func (service *Service) GetHeight(_ *http.Request, _ *struct{}, response *GetHeightResponse) error {
-	lastAcceptedID, err := service.vm.LastAccepted()
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-	if err != nil {
-		return fmt.Errorf("couldn't get last accepted block ID: %w", err)
-	}
-	lastAccepted, err := s.vm.GetBlock(ctx, lastAcceptedID)
-=======
-func (service *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
-=======
-func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	ctx := r.Context()
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't get last accepted block ID: %w", err)
 	}
-<<<<<<< HEAD
-	lastAccepted, err := service.vm.GetBlock(ctx, lastAcceptedID)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
 	lastAccepted, err := s.vm.GetBlock(ctx, lastAcceptedID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("couldn't get last accepted block: %w", err)
 	}
@@ -133,18 +110,8 @@ type ExportKeyReply struct {
 }
 
 // ExportKey returns a private key from the provided user
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	s.vm.ctx.Log.Debug("Platform: ExportKey called")
-=======
-func (service *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	service.vm.ctx.Log.Debug("Platform: ExportKey called")
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	s.vm.ctx.Log.Debug("Platform: ExportKey called")
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 
 	address, err := avax.ParseServiceAddress(s.addrManager, args.Address)
 	if err != nil {
@@ -173,18 +140,8 @@ type ImportKeyArgs struct {
 }
 
 // ImportKey adds a private key to the provided user
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
 	s.vm.ctx.Log.Debug("Platform: ImportKey called",
-=======
-func (service *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	service.vm.ctx.Log.Debug("Platform: ImportKey called",
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Debug("Platform: ImportKey called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		logging.UserString("username", args.Username),
 	)
 
@@ -746,15 +703,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			continue
 		}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(currentStaker.TxID)
-=======
-		tx, _, err := s.vm.state.GetTx(staker.TxID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-		tx, _, err := s.vm.state.GetTx(currentStaker.TxID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		if err != nil {
 			return err
 		}
@@ -775,91 +724,28 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			shares := staker.Shares()
 			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			uptime, err := s.getAPIUptime(currentStaker)
-=======
-			primaryNetworkStaker, err := s.vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-			uptime, err := s.getAPIUptime(currentStaker)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			if err != nil {
 				return err
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-=======
-			// TODO: calculate subnet uptimes
-			rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(nodeID, primaryNetworkStaker.StartTime)
-			if err != nil {
-				return err
-			}
-			uptime := json.Float32(rawUptime)
-
-			connected := s.vm.uptimeManager.IsConnected(nodeID)
-			tracksSubnet := args.SubnetID == constants.PrimaryNetworkID || s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
-
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			var (
 				validationRewardOwner *platformapi.Owner
 				delegationRewardOwner *platformapi.Owner
 			)
 			validationOwner, ok := staker.ValidationRewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				validationRewardOwner, err = s.getAPIOwner(validationOwner)
 				if err != nil {
 					return err
-=======
-				validationRewardOwner = &platformapi.Owner{
-					Locktime:  json.Uint64(validationOwner.Locktime),
-					Threshold: json.Uint32(validationOwner.Threshold),
-				}
-				for _, addr := range validationOwner.Addrs {
-					addrStr, err := s.addrManager.FormatLocalAddress(addr)
-					if err != nil {
-						return err
-					}
-					validationRewardOwner.Addresses = append(validationRewardOwner.Addresses, addrStr)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-				validationRewardOwner, err = s.getAPIOwner(validationOwner)
-				if err != nil {
-					return err
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 			delegationOwner, ok := staker.DelegationRewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				delegationRewardOwner, err = s.getAPIOwner(delegationOwner)
 				if err != nil {
 					return err
-=======
-				delegationRewardOwner = &platformapi.Owner{
-					Locktime:  json.Uint64(delegationOwner.Locktime),
-					Threshold: json.Uint32(delegationOwner.Threshold),
-				}
-				for _, addr := range delegationOwner.Addrs {
-					addrStr, err := s.addrManager.FormatLocalAddress(addr)
-					if err != nil {
-						return err
-					}
-					delegationRewardOwner.Addresses = append(delegationRewardOwner.Addresses, addrStr)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-				delegationRewardOwner, err = s.getAPIOwner(delegationOwner)
-				if err != nil {
-					return err
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 
@@ -886,28 +772,9 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			var rewardOwner *platformapi.Owner
 			owner, ok := staker.RewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				rewardOwner, err = s.getAPIOwner(owner)
 				if err != nil {
 					return err
-=======
-				rewardOwner = &platformapi.Owner{
-					Locktime:  json.Uint64(owner.Locktime),
-					Threshold: json.Uint32(owner.Threshold),
-				}
-				for _, addr := range owner.Addrs {
-					addrStr, err := s.addrManager.FormatLocalAddress(addr)
-					if err != nil {
-						return err
-					}
-					rewardOwner.Addresses = append(rewardOwner.Addresses, addrStr)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-				rewardOwner, err = s.getAPIOwner(owner)
-				if err != nil {
-					return err
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 
@@ -918,22 +785,11 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 		case *txs.AddSubnetValidatorTx:
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			uptime, err := s.getAPIUptime(currentStaker)
 			if err != nil {
 				return err
 			}
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-<<<<<<< HEAD
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID)
-			tracksSubnet := s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -1002,15 +858,7 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 			continue
 		}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(pendingStaker.TxID)
-=======
-		tx, _, err := s.vm.state.GetTx(staker.TxID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-		tx, _, err := s.vm.state.GetTx(pendingStaker.TxID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		if err != nil {
 			return err
 		}
@@ -1030,16 +878,7 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 			shares := staker.Shares()
 			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID)
-			tracksSubnet := args.SubnetID == constants.PrimaryNetworkID || s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			vdr := platformapi.PermissionlessValidator{
 				Staker:        apiStaker,
 				DelegationFee: delegationFee,
@@ -1058,16 +897,7 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 			reply.Delegators = append(reply.Delegators, apiStaker)
 
 		case *txs.AddSubnetValidatorTx:
-<<<<<<< HEAD
-<<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID)
-			tracksSubnet := s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -1119,15 +949,7 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		zap.Uint16("size", uint16(args.Size)),
 	)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	validators, ok := s.vm.Validators.Get(args.SubnetID)
-=======
-	validators, ok := s.vm.Validators.GetValidators(args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-	validators, ok := s.vm.Validators.Get(args.SubnetID)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		return fmt.Errorf(
 			"couldn't get validators of subnet %q. Is it being validated?",
@@ -1143,15 +965,7 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 	if sample == nil {
 		reply.Validators = []ids.NodeID{}
 	} else {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		utils.Sort(sample)
-=======
-		ids.SortNodeIDs(sample)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
-=======
-		utils.Sort(sample)
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 		reply.Validators = sample
 	}
 	return nil
@@ -1847,18 +1661,8 @@ type GetBlockchainStatusReply struct {
 }
 
 // GetBlockchainStatus gets the status of a blockchain with the ID [args.BlockchainID].
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlockchainStatus called")
-=======
-func (service *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
-	service.vm.ctx.Log.Debug("Platform: GetBlockchainStatus called")
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
-	s.vm.ctx.Log.Debug("Platform: GetBlockchainStatus called")
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 
 	if args.BlockchainID == "" {
 		return errMissingBlockchainID
@@ -1881,28 +1685,12 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	}
 
 	ctx := r.Context()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
-=======
-	lastAcceptedID, err := service.vm.LastAccepted(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	lastAcceptedID, err := s.vm.LastAccepted(ctx)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("problem loading last accepted ID: %w", err)
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	exists, err := s.chainExists(ctx, lastAcceptedID, blockchainID)
-=======
-	exists, err := service.chainExists(ctx, lastAcceptedID, blockchainID)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	exists, err := s.chainExists(ctx, lastAcceptedID, blockchainID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("problem looking up blockchain: %w", err)
 	}
@@ -1915,15 +1703,7 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	if err != nil {
 		return fmt.Errorf("could not retrieve preferred block, err %w", err)
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	preferred, err := s.chainExists(ctx, preferredBlk.ID(), blockchainID)
-=======
-	preferred, err := service.chainExists(ctx, preferredBlk.ID(), blockchainID)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	preferred, err := s.chainExists(ctx, preferredBlk.ID(), blockchainID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("problem looking up blockchain: %w", err)
 	}
@@ -1946,15 +1726,7 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	validators, ok := s.vm.Validators.Get(chain.SubnetID)
-=======
-	validators, ok := s.vm.Validators.GetValidators(chain.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-	validators, ok := s.vm.Validators.Get(chain.SubnetID)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	if !ok {
 		return false
 	}
@@ -1962,24 +1734,10 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 	return validators.Contains(s.vm.ctx.NodeID)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
 	state, ok := s.vm.manager.GetState(blockID)
 	if !ok {
 		block, err := s.vm.GetBlock(ctx, blockID)
-=======
-func (service *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
-	state, ok := service.vm.manager.GetState(blockID)
-	if !ok {
-		block, err := service.vm.GetBlock(ctx, blockID)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
-	state, ok := s.vm.manager.GetState(blockID)
-	if !ok {
-		block, err := s.vm.GetBlock(ctx, blockID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		if err != nil {
 			return false, err
 		}
@@ -2013,8 +1771,6 @@ type ValidatedByResponse struct {
 }
 
 // ValidatedBy returns the ID of the Subnet that validates [args.BlockchainID]
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
 	s.vm.ctx.Log.Debug("Platform: ValidatedBy called")
 
@@ -2022,34 +1778,6 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 	ctx := r.Context()
 	response.SubnetID, err = s.vm.GetSubnetID(ctx, args.BlockchainID)
 	return err
-=======
-func (s *Service) ValidatedBy(_ *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
-	s.vm.ctx.Log.Debug("Platform: ValidatedBy called")
-
-	chainTx, _, err := s.vm.state.GetTx(args.BlockchainID)
-	if err != nil {
-		return fmt.Errorf(
-			"problem retrieving blockchain %q: %w",
-			args.BlockchainID,
-			err,
-		)
-	}
-	chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
-	if !ok {
-		return fmt.Errorf("%q is not a blockchain", args.BlockchainID)
-	}
-	response.SubnetID = chain.SubnetID
-	return nil
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
-	s.vm.ctx.Log.Debug("Platform: ValidatedBy called")
-
-	var err error
-	ctx := r.Context()
-	response.SubnetID, err = s.vm.GetSubnetID(ctx, args.BlockchainID)
-	return err
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 }
 
 // ValidatesArgs are the arguments to Validates
@@ -2116,18 +1844,8 @@ type GetBlockchainsResponse struct {
 }
 
 // GetBlockchains returns all of the blockchains that exist
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlockchains called")
-=======
-func (service *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
-	service.vm.ctx.Log.Debug("Platform: GetBlockchains called")
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
-	s.vm.ctx.Log.Debug("Platform: GetBlockchains called")
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 
 	subnets, err := s.vm.state.GetSubnets()
 	if err != nil {
@@ -2330,45 +2048,19 @@ type GetStakeReply struct {
 // This method only concerns itself with the Primary Network, not subnets
 // TODO: Improve the performance of this method by maintaining this data
 // in a data structure rather than re-calculating it by iterating over stakers
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetStake called")
-=======
-func (service *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
-	service.vm.ctx.Log.Debug("Platform: GetStake called")
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
-	s.vm.ctx.Log.Debug("Platform: GetStake called")
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 
 	if len(args.Addresses) > maxGetStakeAddrs {
 		return fmt.Errorf("%d addresses provided but this method can take at most %d", len(args.Addresses), maxGetStakeAddrs)
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	addrs, err := avax.ParseServiceAddresses(s.addrManager, args.Addresses)
-=======
-	addrs, err := avax.ParseServiceAddresses(service.addrManager, args.Addresses)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	addrs, err := avax.ParseServiceAddresses(s.addrManager, args.Addresses)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
-=======
-	currentStakerIterator, err := service.vm.state.GetCurrentStakerIterator()
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return err
 	}
@@ -2381,15 +2073,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	for currentStakerIterator.Next() { // Iterates over current stakers
 		staker := currentStakerIterator.Value()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
-=======
-		tx, _, err := service.vm.state.GetTx(staker.TxID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-		tx, _, err := s.vm.state.GetTx(staker.TxID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		if err != nil {
 			return err
 		}
@@ -2397,15 +2081,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 		stakedOuts = append(stakedOuts, getStakeHelper(tx, addrs, totalAmountStaked)...)
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	pendingStakerIterator, err := s.vm.state.GetPendingStakerIterator()
-=======
-	pendingStakerIterator, err := service.vm.state.GetPendingStakerIterator()
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	pendingStakerIterator, err := s.vm.state.GetPendingStakerIterator()
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return err
 	}
@@ -2414,15 +2090,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	for pendingStakerIterator.Next() { // Iterates over pending stakers
 		staker := pendingStakerIterator.Value()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
-=======
-		tx, _, err := service.vm.state.GetTx(staker.TxID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-		tx, _, err := s.vm.state.GetTx(staker.TxID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		if err != nil {
 			return err
 		}
@@ -2431,15 +2099,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	}
 
 	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	response.Staked = response.Stakeds[s.vm.ctx.AVAXAssetID]
-=======
-	response.Staked = response.Stakeds[service.vm.ctx.AVAXAssetID]
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	response.Staked = response.Stakeds[s.vm.ctx.AVAXAssetID]
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		bytes, err := txs.Codec.Marshal(txs.Version, output)
@@ -2470,8 +2130,6 @@ type GetMinStakeReply struct {
 }
 
 // GetMinStake returns the minimum staking amount in nAVAX.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
 	if args.SubnetID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = json.Uint64(s.vm.MinValidatorStake)
@@ -2480,23 +2138,6 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	}
 
 	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
-=======
-func (service *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
-=======
-func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-	if args.SubnetID == constants.PrimaryNetworkID {
-		reply.MinValidatorStake = json.Uint64(s.vm.MinValidatorStake)
-		reply.MinDelegatorStake = json.Uint64(s.vm.MinDelegatorStake)
-		return nil
-	}
-
-<<<<<<< HEAD
-	transformSubnetIntf, err := service.vm.state.GetSubnetTransformation(args.SubnetID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching subnet transformation for %s: %w",
@@ -2533,29 +2174,10 @@ type GetTotalStakeReply struct {
 }
 
 // GetTotalStake returns the total amount staked on the Primary Network
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
 	vdrs, ok := s.vm.Validators.Get(args.SubnetID)
 	if !ok {
 		return errMissingValidatorSet
-<<<<<<< HEAD
-=======
-func (service *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
-	vdrs, ok := service.vm.Validators.GetValidators(args.SubnetID)
-=======
-func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
-<<<<<<< HEAD
-	vdrs, ok := s.vm.Validators.GetValidators(args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-=======
-	vdrs, ok := s.vm.Validators.Get(args.SubnetID)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-	if !ok {
-		return errNoValidators
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	}
 	weight := json.Uint64(vdrs.Weight())
 	reply.Weight = weight
@@ -2578,43 +2200,19 @@ type GetMaxStakeAmountReply struct {
 
 // GetMaxStakeAmount returns the maximum amount of nAVAX staking to the named
 // node during the time period.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
-=======
-func (service *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	startTime := time.Unix(int64(args.StartTime), 0)
 	endTime := time.Unix(int64(args.EndTime), 0)
 
 	if startTime.After(endTime) {
 		return errStartAfterEndTime
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	now := s.vm.state.GetTimestamp()
-=======
-	now := service.vm.state.GetTimestamp()
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	now := s.vm.state.GetTimestamp()
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if startTime.Before(now) {
 		return errStartTimeInThePast
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	staker, err := executor.GetValidator(s.vm.state, args.SubnetID, args.NodeID)
-=======
-	staker, err := executor.GetValidator(service.vm.state, args.SubnetID, args.NodeID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	staker, err := executor.GetValidator(s.vm.state, args.SubnetID, args.NodeID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err == database.ErrNotFound {
 		return nil
 	}
@@ -2629,15 +2227,7 @@ func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs
 		return nil
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	maxStakeAmount, err := executor.GetMaxWeight(s.vm.state, staker, startTime, endTime)
-=======
-	maxStakeAmount, err := executor.GetMaxWeight(service.vm.state, staker, startTime, endTime)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	maxStakeAmount, err := executor.GetMaxWeight(s.vm.state, staker, startTime, endTime)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	reply.Amount = json.Uint64(maxStakeAmount)
 	return err
 }
@@ -2654,24 +2244,10 @@ type GetRewardUTXOsReply struct {
 
 // GetRewardUTXOs returns the UTXOs that were rewarded after the provided
 // transaction's staking period ended.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetRewardUTXOs called")
 
 	utxos, err := s.vm.state.GetRewardUTXOs(args.TxID)
-=======
-func (service *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
-	service.vm.ctx.Log.Debug("Platform: GetRewardUTXOs called")
-
-	utxos, err := service.vm.state.GetRewardUTXOs(args.TxID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
-	s.vm.ctx.Log.Debug("Platform: GetRewardUTXOs called")
-
-	utxos, err := s.vm.state.GetRewardUTXOs(args.TxID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("couldn't get reward UTXOs: %w", err)
 	}
@@ -2701,28 +2277,10 @@ type GetTimestampReply struct {
 }
 
 // GetTimestamp returns the current timestamp on chain.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetTimestamp called")
 
 	reply.Timestamp = s.vm.state.GetTimestamp()
-=======
-func (service *Service) GetTimestamp(_ *http.Request, args *struct{}, reply *GetTimestampReply) error {
-=======
-func (service *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-	service.vm.ctx.Log.Debug("Platform: GetTimestamp called")
-
-	reply.Timestamp = service.vm.state.GetTimestamp()
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
-	s.vm.ctx.Log.Debug("Platform: GetTimestamp called")
-
-	reply.Timestamp = s.vm.state.GetTimestamp()
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	return nil
 }
 
@@ -2734,50 +2292,22 @@ type GetValidatorsAtArgs struct {
 
 // GetValidatorsAtReply is the response from GetValidatorsAt
 type GetValidatorsAtReply struct {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	// TODO should we change this to map[ids.NodeID]*validators.Validator?
 	// We'd have to add a MarshalJSON method to validators.Validator.
-=======
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	// TODO should we change this to map[ids.NodeID]*validators.Validator?
-	// We'd have to add a MarshalJSON method to validators.Validator.
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	Validators map[ids.NodeID]uint64 `json:"validators"`
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided subnet
 // at the specified height.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	height := uint64(args.Height)
 	s.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
-=======
-func (service *Service) GetValidatorsAt(_ *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
-=======
-func (service *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-	height := uint64(args.Height)
-	service.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
-	height := uint64(args.Height)
-	s.vm.ctx.Log.Debug("Platform: GetValidatorsAt called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		zap.Uint64("height", height),
 		zap.Stringer("subnetID", args.SubnetID),
 	)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx := r.Context()
 	var err error
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
@@ -2785,71 +2315,24 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	reply.Validators = make(map[ids.NodeID]uint64, len(vdrs))
 	for _, vdr := range vdrs {
 		reply.Validators[vdr.NodeID] = vdr.Weight
-=======
-=======
-	ctx := r.Context()
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-	var err error
-	reply.Validators, err = service.vm.GetValidatorSet(ctx, height, args.SubnetID)
-=======
-	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.SubnetID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
-	if err != nil {
-		return fmt.Errorf("couldn't get validator set: %w", err)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
-	if err != nil {
-		return fmt.Errorf("failed to get validator set: %w", err)
-	}
-	reply.Validators = make(map[ids.NodeID]uint64, len(vdrs))
-	for _, vdr := range vdrs {
-		reply.Validators[vdr.NodeID] = vdr.Weight
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlock called",
-=======
-func (service *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
-	service.vm.ctx.Log.Debug("Platform: GetBlock called",
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
-	s.vm.ctx.Log.Debug("Platform: GetBlock called",
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		zap.Stringer("blkID", args.BlockID),
 		zap.Stringer("encoding", args.Encoding),
 	)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	block, err := s.vm.manager.GetStatelessBlock(args.BlockID)
-=======
-	block, err := service.vm.manager.GetStatelessBlock(args.BlockID)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	block, err := s.vm.manager.GetStatelessBlock(args.BlockID)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	if err != nil {
 		return fmt.Errorf("couldn't get block with id %s: %w", args.BlockID, err)
 	}
 	response.Encoding = args.Encoding
 
 	if args.Encoding == formatting.JSON {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		block.InitCtx(s.vm.ctx)
-=======
-		block.InitCtx(service.vm.ctx)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-		block.InitCtx(s.vm.ctx)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 		response.Block = block
 		return nil
 	}
@@ -2862,20 +2345,9 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
 	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
-=======
-func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
-	// Only report uptimes that we have been actively tracking.
-<<<<<<< HEAD
-	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.WhitelistedSubnets.Contains(staker.SubnetID) {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		return nil, nil
 	}
 
@@ -2902,24 +2374,11 @@ func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Own
 	return apiOwner, nil
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 // Takes in a staker and a set of addresses
 // Returns:
 // 1) The total amount staked by addresses in [addrs]
 // 2) The staked outputs
-<<<<<<< HEAD
-<<<<<<< HEAD
 func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
-=======
-func getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	staker, ok := tx.Unsigned.(txs.PermissionlessStaker)
 	if !ok {
 		return nil

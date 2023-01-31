@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -8,15 +8,6 @@ import (
 	"crypto/tls"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/network/dialer"
-	"github.com/luxdefi/luxd/network/throttling"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/snow/uptime"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/ips"
-=======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/network/dialer"
 	"github.com/ava-labs/avalanchego/network/peer"
@@ -25,11 +16,7 @@ import (
 	"github.com/ava-labs/avalanchego/snow/uptime"
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/ips"
-<<<<<<< HEAD
->>>>>>> 5d06d0a89 (Track peers of peers for improving peerlist gossip (#2017))
-=======
 	"github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -146,7 +133,7 @@ type Config struct {
 	TrackedSubnets set.Set[ids.ID] `json:"-"`
 	Beacons        validators.Set  `json:"-"`
 
-	// Validators are the current validators in the LUX network
+	// Validators are the current validators in the Avalanche network
 	Validators validators.Manager `json:"-"`
 
 	UptimeCalculator uptime.Calculator `json:"-"`

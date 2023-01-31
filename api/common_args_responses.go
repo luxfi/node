@@ -1,12 +1,12 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/json"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/json"
 )
 
 // This file contains structs used in arguments and responses in services

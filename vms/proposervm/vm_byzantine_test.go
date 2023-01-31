@@ -43,15 +43,7 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 		HeightV:    gBlock.Height() + 1,
 		TimestampV: gBlock.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return xBlock, nil
 	}
 
@@ -147,24 +139,10 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return xBlock, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return xBlock, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return xBlock, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -259,15 +237,7 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 		HeightV:    gBlock.Height() + 1,
 		TimestampV: gBlock.Timestamp().Add(proposer.MaxDelay),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return xBlock, nil
 	}
 
@@ -395,24 +365,10 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return xBlock, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return xBlock, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return xBlock, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -553,15 +509,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := bBlock.Verify(context.Background()); err != nil {
-=======
-	if err = bBlock.Verify(context.Background()); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	if err := bBlock.Verify(context.Background()); err != nil {
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 
@@ -588,24 +536,10 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	}
 
 	// generate A from X and O2
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return xBlock, nil
 	}
 	aBlock, err := proVM.BuildBlock(context.Background())
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return xBlock, nil
-	}
-	aBlock, err := proVM.BuildBlock()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return xBlock, nil
-	}
-	aBlock, err := proVM.BuildBlock(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -670,24 +604,10 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return zBlock, nil
 	}
 	cBlock, err := proVM.BuildBlock(context.Background())
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return zBlock, nil
-	}
-	cBlock, err := proVM.BuildBlock()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return zBlock, nil
-	}
-	cBlock, err := proVM.BuildBlock(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -723,37 +643,13 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0)
 
 	// Make sure that we will be sampled to perform the proposals.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-=======
-	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
-		return map[ids.NodeID]*validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-		return map[ids.NodeID]*validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			proVM.ctx.NodeID: {
 				NodeID: proVM.ctx.NodeID,
 				Weight: 10,
 			},
 		}, nil
-<<<<<<< HEAD
-=======
-	valState.GetValidatorSetF = func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
-=======
-	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-		res := make(map[ids.NodeID]uint64)
-		res[proVM.ctx.NodeID] = uint64(10)
-		return res, nil
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	}
 
 	proVM.Set(coreGenBlk.Timestamp())
@@ -807,15 +703,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	}
 
 	// Build the first proposal block
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlk0, nil
 	}
 

@@ -17,16 +17,6 @@ const (
 	initialUnaryDescription = "SB(NumSuccessfulPolls = 0, SF(Confidence = 0, Finalized = false)) Bits = [0, 256)"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-func TestTreeParams(t *testing.T) {
-	ParamsTest(t, TreeFactory{})
-}
-
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func TestSnowballSingleton(t *testing.T) {
 	require := require.New(t)
 

@@ -60,19 +60,7 @@ func buildTestPeers(t *testing.T) validators.Set {
 	vdrs := validators.NewSet()
 	for idx := 0; idx < 2*common.MaxOutstandingBroadcastRequests; idx++ {
 		beaconID := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		require.NoError(t, vdrs.Add(beaconID, nil, ids.Empty, 1))
-=======
-		require.NoError(t, vdrs.Add(beaconID, uint64(1)))
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-		require.NoError(t, vdrs.Add(beaconID, nil, 1))
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-		require.NoError(t, vdrs.Add(beaconID, nil, ids.Empty, 1))
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 	return vdrs
 }
@@ -98,15 +86,7 @@ func buildTestsObjects(t *testing.T, commonCfg *common.Config) (
 
 	cfg, err := NewConfig(*commonCfg, nil, dummyGetter, fullVM)
 	require.NoError(t, err)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	commonSyncer := New(cfg, func(context.Context, uint32) error {
-=======
-	commonSyncer := New(cfg, func(uint32) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	commonSyncer := New(cfg, func(context.Context, uint32) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	})
 	syncer, ok := commonSyncer.(*stateSyncer)

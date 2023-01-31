@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -19,44 +19,6 @@ import (
 
 	"github.com/spf13/viper"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/app/runner"
-	"github.com/luxdefi/luxd/chains"
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/ipcs"
-	"github.com/luxdefi/luxd/nat"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/network/dialer"
-	"github.com/luxdefi/luxd/network/throttling"
-	"github.com/luxdefi/luxd/node"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/sender"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/staking"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/utils/dynamicip"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/password"
-	"github.com/luxdefi/luxd/utils/perms"
-	"github.com/luxdefi/luxd/utils/profiler"
-	"github.com/luxdefi/luxd/utils/storage"
-	"github.com/luxdefi/luxd/utils/timer"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
-=======
-=======
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/app/runner"
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/genesis"
@@ -89,45 +51,6 @@ import (
 	"github.com/ava-labs/avalanchego/vms"
 	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 	"github.com/ava-labs/avalanchego/vms/proposervm"
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
-=======
-=======
-	"github.com/luxdefi/luxd/app/runner"
-	"github.com/luxdefi/luxd/chains"
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/ipcs"
-	"github.com/luxdefi/luxd/nat"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/network/dialer"
-	"github.com/luxdefi/luxd/network/throttling"
-	"github.com/luxdefi/luxd/node"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/sender"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/staking"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/utils/dynamicip"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/password"
-	"github.com/luxdefi/luxd/utils/perms"
-	"github.com/luxdefi/luxd/utils/profiler"
-	"github.com/luxdefi/luxd/utils/storage"
-	"github.com/luxdefi/luxd/utils/timer"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 const (
@@ -165,46 +88,6 @@ func GetRunnerConfig(v *viper.Viper) runner.Config {
 		DisplayVersionAndExit: v.GetBool(VersionKey),
 		PluginMode:            v.GetBool(PluginModeKey),
 	}
-<<<<<<< HEAD
-
-	// Build directory should have this structure:
-	//
-	// build
-	// ├── luxd (the binary from compiling the app directory)
-	// └── plugins
-	//     └── evm
-	validBuildDir := func(dir string) bool {
-		info, err := os.Stat(dir)
-		if err != nil || !info.IsDir() {
-			return false
-		}
-
-		// make sure the expected subdirectory exists
-		_, err = os.Stat(filepath.Join(dir, pluginsDirName))
-		return err == nil
-	}
-	if validBuildDir(config.BuildDir) {
-		return config, nil
-	}
-
-	foundBuildDir := false
-	for _, dir := range defaultBuildDirs {
-		dir = GetExpandedString(v, dir)
-		if validBuildDir(dir) {
-			config.BuildDir = dir
-			foundBuildDir = true
-			break
-		}
-	}
-	if !foundBuildDir {
-		return runner.Config{}, fmt.Errorf(
-			"couldn't find valid build directory in any of the default locations: %s",
-			defaultBuildDirs,
-		)
-	}
-	return config, nil
-=======
->>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
 }
 
 func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
@@ -221,8 +104,8 @@ func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
 			MixedQueryNumPushVdr:    int(v.GetUint(SnowMixedQueryNumPushVdrKey)),
 			MixedQueryNumPushNonVdr: int(v.GetUint(SnowMixedQueryNumPushNonVdrKey)),
 		},
-		BatchSize: v.GetInt(SnowLUXBatchSizeKey),
-		Parents:   v.GetInt(SnowLUXNumParentsKey),
+		BatchSize: v.GetInt(SnowAvalancheBatchSizeKey),
+		Parents:   v.GetInt(SnowAvalancheNumParentsKey),
 	}
 }
 
@@ -1478,7 +1361,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.TxFeeConfig = getTxFeeConfig(v, nodeConfig.NetworkID)
 
 	// Genesis Data
-	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID)
+	nodeConfig.GenesisBytes, nodeConfig.AvaxAssetID, err = getGenesisData(v, nodeConfig.NetworkID)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}

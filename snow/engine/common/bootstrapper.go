@@ -222,31 +222,14 @@ func (b *bootstrapper) Accepted(ctx context.Context, nodeID ids.NodeID, requestI
 	// retry or fail the bootstrap
 	size := len(accepted)
 	if size == 0 && b.Beacons.Len() > 0 {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		// if we had too many timeouts when asking for validator votes, we
 		// should restart bootstrap hoping for the network problems to go away;
 		// otherwise, we received enough (>= b.Alpha) responses, but no frontier
 		// was supported by a majority of validators (i.e. votes are split
 		// between minorities supporting different frontiers).
-<<<<<<< HEAD
 		failedBeaconWeight := b.Beacons.SubsetWeight(b.failedAccepted)
 		votingStakes := b.Beacons.Weight() - failedBeaconWeight
 		if b.Config.RetryBootstrap && votingStakes < b.Alpha {
-=======
-		// retry the bootstrap if the weight is not enough to bootstrap
-		failedBeaconWeight := b.Beacons.SubsetWeight(b.failedAccepted)
-
-		// in a zero network there will be no accepted votes but the voting weight will be greater than the failed weight
-		if b.Config.RetryBootstrap && b.Beacons.Weight()-b.Alpha < failedBeaconWeight {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-		failedBeaconWeight := b.Beacons.SubsetWeight(b.failedAccepted)
-		votingStakes := b.Beacons.Weight() - failedBeaconWeight
-		if b.Config.RetryBootstrap && votingStakes < b.Alpha {
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 			b.Ctx.Log.Debug("restarting bootstrap",
 				zap.String("reason", "not enough votes received"),
 				zap.Int("numBeacons", b.Beacons.Len()),
@@ -289,36 +272,17 @@ func (b *bootstrapper) GetAcceptedFailed(ctx context.Context, nodeID ids.NodeID,
 }
 
 func (b *bootstrapper) Startup(ctx context.Context) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	beaconIDs, err := b.Beacons.Sample(b.Config.SampleK)
-=======
-	beacons, err := b.Beacons.Sample(b.Config.SampleK)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	beaconIDs, err := b.Beacons.Sample(b.Config.SampleK)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	if err != nil {
 		return err
 	}
 
 	b.sampledBeacons = validators.NewSet()
 	b.pendingSendAcceptedFrontier.Clear()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !b.sampledBeacons.Contains(nodeID) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			// Invariant: We never use the TxID or BLS keys populated here.
 			err = b.sampledBeacons.Add(nodeID, nil, ids.Empty, 1)
-=======
-			err = b.sampledBeacons.Add(nodeID, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-			// Invariant: We never use the TxID or BLS keys populated here.
-			err = b.sampledBeacons.Add(nodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		} else {
 			err = b.sampledBeacons.AddWeight(nodeID, 1)
 		}
@@ -326,28 +290,6 @@ func (b *bootstrapper) Startup(ctx context.Context) error {
 			return err
 		}
 		b.pendingSendAcceptedFrontier.Add(nodeID)
-=======
-	for _, vdr := range beacons {
-		vdrID := vdr.ID()
-		if !b.sampledBeacons.Contains(vdrID) {
-			err = b.sampledBeacons.Add(vdrID, 1)
-=======
-	for _, nodeID := range beaconIDs {
-		if !b.sampledBeacons.Contains(nodeID) {
-			err = b.sampledBeacons.Add(nodeID, 1)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
-		} else {
-			err = b.sampledBeacons.AddWeight(nodeID, 1)
-		}
-		if err != nil {
-			return err
-		}
-<<<<<<< HEAD
-		b.pendingSendAcceptedFrontier.Add(vdrID)
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
-=======
-		b.pendingSendAcceptedFrontier.Add(nodeID)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	}
 
 	b.pendingReceiveAcceptedFrontier.Clear()
@@ -415,15 +357,7 @@ func (b *bootstrapper) sendGetAcceptedFrontiers(ctx context.Context) {
 // Ask up to [MaxOutstandingBroadcastRequests] bootstrap validators to send
 // their filtered accepted frontier
 func (b *bootstrapper) sendGetAccepted(ctx context.Context) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vdrs := set.NewSet[ids.NodeID](1)
-=======
-	vdrs := ids.NewNodeIDSet(1)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	vdrs := set.NewSet[ids.NodeID](1)
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	for b.pendingSendAccepted.Len() > 0 && b.pendingReceiveAccepted.Len() < MaxOutstandingBroadcastRequests {
 		vdr, _ := b.pendingSendAccepted.Pop()
 		// Add the validator to the set to send the messages to

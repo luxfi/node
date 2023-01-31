@@ -190,17 +190,7 @@ func (t *Transitive) GetFailed(ctx context.Context, nodeID ids.NodeID, requestID
 }
 
 func (t *Transitive) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	t.sendChits(ctx, nodeID, requestID)
-=======
-	if err := t.sendChits(ctx, nodeID, requestID); err != nil {
-		return err
-	}
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-	t.sendChits(ctx, nodeID, requestID)
->>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 
 	// Try to issue [blkID] to consensus.
 	// If we're missing an ancestor, request it from [vdr]
@@ -212,17 +202,7 @@ func (t *Transitive) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID
 }
 
 func (t *Transitive) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkBytes []byte) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	t.sendChits(ctx, nodeID, requestID)
-=======
-	if err := t.sendChits(ctx, nodeID, requestID); err != nil {
-		return err
-	}
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-	t.sendChits(ctx, nodeID, requestID)
->>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 
 	blk, err := t.VM.ParseBlock(ctx, blkBytes)
 	// If parsing fails, we just drop the request, as we didn't ask for it
@@ -362,23 +342,9 @@ func (t *Transitive) Disconnected(ctx context.Context, nodeID ids.NodeID) error 
 	return t.VM.Disconnected(ctx, nodeID)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*Transitive) Timeout(context.Context) error {
 	return nil
 }
-=======
-func (*Transitive) Timeout() error { return nil }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*Transitive) Timeout() error {
-=======
-func (*Transitive) Timeout(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-	return nil
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (t *Transitive) Gossip(ctx context.Context) error {
 	blkID, err := t.VM.LastAccepted(ctx)
@@ -402,15 +368,7 @@ func (t *Transitive) Gossip(ctx context.Context) error {
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*Transitive) Halt(context.Context) {}
-=======
-func (*Transitive) Halt() {}
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*Transitive) Halt(context.Context) {}
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 func (t *Transitive) Shutdown(ctx context.Context) error {
 	t.Ctx.Log.Info("shutting down consensus engine")
@@ -418,10 +376,6 @@ func (t *Transitive) Shutdown(ctx context.Context) error {
 }
 
 func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	switch msg {
 	case common.PendingTxs:
 		// the pending txs message means we should attempt to build a block.
@@ -431,27 +385,11 @@ func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 		t.Ctx.RunningStateSync(false)
 		return nil
 	default:
-<<<<<<< HEAD
-=======
-	if msg != common.PendingTxs {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		t.Ctx.Log.Warn("received an unexpected message from the VM",
 			zap.Stringer("messageString", msg),
 		)
 		return nil
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-	// the pending txs message means we should attempt to build a block.
-	t.pendingBuildBlocks++
-	return t.buildBlocks(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }
 
 func (t *Transitive) Context() *snow.ConsensusContext {
@@ -545,18 +483,6 @@ func (t *Transitive) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 	}
 
 	return t.VM.GetBlock(ctx, blkID)
-<<<<<<< HEAD
-}
-
-func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32) {
-	lastAccepted := t.Consensus.LastAccepted()
-	if t.Ctx.IsRunningStateSync() {
-		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{lastAccepted}, []ids.ID{lastAccepted})
-	} else {
-		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{t.Consensus.Preference()}, []ids.ID{lastAccepted})
-	}
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32) {
@@ -697,18 +623,8 @@ func (t *Transitive) issueWithAncestors(ctx context.Context, blk snowman.Block) 
 			return false, err
 		}
 		blkID = blk.Parent()
-<<<<<<< HEAD
-<<<<<<< HEAD
 		blk, err = t.GetBlock(ctx, blkID)
 		if err != nil {
-=======
-		var err error
-		if blk, err = t.GetBlock(ctx, blkID); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-		blk, err = t.GetBlock(ctx, blkID)
-		if err != nil {
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 			status = choices.Unknown
 			break
 		}

@@ -12,14 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/database"
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	"github.com/ava-labs/avalanchego/database"
->>>>>>> beeee6901 (Add `time_until_unstake` metrics (#2258))
 	"github.com/ava-labs/avalanchego/utils/constants"
 )
 
@@ -111,15 +104,7 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 		}
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if len(errorReasons) == 0 || !vm.StakingEnabled {
-=======
-	if len(errorReasons) == 0 {
->>>>>>> beeee6901 (Add `time_until_unstake` metrics (#2258))
-=======
-	if len(errorReasons) == 0 || !vm.StakingEnabled {
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		return details, nil
 	}
 	return details, fmt.Errorf("platform layer is unhealthy err: %w, details: %s",

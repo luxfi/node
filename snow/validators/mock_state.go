@@ -66,22 +66,6 @@ func (m *MockState) GetMinimumHeight(arg0 context.Context) (uint64, error) {
 func (mr *MockStateMockRecorder) GetMinimumHeight(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMinimumHeight", reflect.TypeOf((*MockState)(nil).GetMinimumHeight), arg0)
-<<<<<<< HEAD
-}
-
-// GetSubnetID mocks base method.
-func (m *MockState) GetSubnetID(arg0 context.Context, arg1 ids.ID) (ids.ID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetID", arg0, arg1)
-	ret0, _ := ret[0].(ids.ID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetSubnetID indicates an expected call of GetSubnetID.
-func (mr *MockStateMockRecorder) GetSubnetID(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetID", reflect.TypeOf((*MockState)(nil).GetSubnetID), arg0, arg1)
 }
 
 // GetSubnetID mocks base method.
@@ -104,23 +88,6 @@ func (m *MockState) GetValidatorSet(arg0 context.Context, arg1 uint64, arg2 ids.
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidatorSet", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[ids.NodeID]*GetValidatorOutput)
-=======
-}
-
-// GetValidatorSet mocks base method.
-func (m *MockState) GetValidatorSet(arg0 context.Context, arg1 uint64, arg2 ids.ID) (map[ids.NodeID]*GetValidatorOutput, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValidatorSet", arg0, arg1, arg2)
-<<<<<<< HEAD
-<<<<<<< HEAD
-	ret0, _ := ret[0].(map[ids.NodeID]uint64)
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-=======
-	ret0, _ := ret[0].(map[ids.NodeID]*Validator)
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	ret0, _ := ret[0].(map[ids.NodeID]*GetValidatorOutput)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

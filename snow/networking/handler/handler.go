@@ -178,21 +178,6 @@ func (h *handler) SetBootstrapper(engine common.BootstrapableEngine) {
 func (h *handler) Bootstrapper() common.BootstrapableEngine {
 	return h.bootstrapper
 }
-<<<<<<< HEAD
-=======
-
-func (h *handler) SetConsensus(engine common.Engine) {
-	h.engine = engine
-}
-
-func (h *handler) Consensus() common.Engine {
-	return h.engine
-}
-
-func (h *handler) SetOnStopped(onStopped func()) {
-	h.onStopped = onStopped
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (h *handler) SetConsensus(engine common.Engine) {
 	h.engine = engine
@@ -246,8 +231,6 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	dispatchSync := func() {
 		h.dispatchSync(detachedCtx)
@@ -257,23 +240,6 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	}
 	dispatchChans := func() {
 		h.dispatchChans(detachedCtx)
-=======
-=======
-	detachedCtx := utils.Detach(ctx)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-	dispatchSync := func() {
-		h.dispatchSync(detachedCtx)
-	}
-	dispatchAsync := func() {
-		h.dispatchAsync(detachedCtx)
-	}
-	dispatchChans := func() {
-<<<<<<< HEAD
-		h.dispatchChans(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-		h.dispatchChans(detachedCtx)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	}
 	if recoverPanic {
 		go h.ctx.Log.RecoverAndExit(dispatchSync, func() {
@@ -460,21 +426,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	h.ctx.Log.Debug("forwarding sync message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.ctx.Log.Verbo("forwarding sync message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-<<<<<<< HEAD
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	h.ctx.Lock.Lock()
@@ -497,15 +453,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 				zap.Duration("processingTime", processingTime),
 				zap.Stringer("nodeID", nodeID),
 				zap.Stringer("messageOp", op),
-<<<<<<< HEAD
-<<<<<<< HEAD
 				zap.Any("message", body),
-=======
-				zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
-=======
-				zap.Any("message", body),
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 			)
 		}
 	}()
@@ -521,15 +469,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	//            the timeout has already been cleared. This means the engine
 	//            should be invoked with a failure message if parsing of the
 	//            response fails.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	switch msg := body.(type) {
-=======
-	switch msg := msg.Message().(type) {
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
-=======
-	switch msg := body.(type) {
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	// State messages should always be sent to the snowman engine
 	case *p2p.GetStateSummaryFrontier:
 		return engine.GetStateSummaryFrontier(ctx, nodeID, msg.RequestId)
@@ -540,15 +480,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	case *message.GetStateSummaryFrontierFailed:
 		return engine.GetStateSummaryFrontierFailed(ctx, nodeID, msg.RequestID)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	case *p2p.GetAcceptedStateSummary:
-=======
-	case *p2ppb.GetAcceptedStateSummary:
->>>>>>> e7024bd25 (Use generic sorting (#1850))
-=======
-	case *p2p.GetAcceptedStateSummary:
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 		// TODO: Enforce that the numbers are sorted to make this verification
 		//       more efficient.
 		if !utils.IsUnique(msg.Heights) {
@@ -704,15 +636,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 		return engine.PullQuery(ctx, nodeID, msg.RequestId, containerID)
 
 	case *p2p.Chits:
-<<<<<<< HEAD
-<<<<<<< HEAD
 		votes, err := getIDs(msg.PreferredContainerIds)
-=======
-		votes, err := getIDs(msg.ContainerIds)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
-=======
-		votes, err := getIDs(msg.PreferredContainerIds)
->>>>>>> 5c16945e9 (Add accepted frontier in Chits proto (#2106))
 		if err != nil {
 			h.ctx.Log.Debug("message with invalid field",
 				zap.Stringer("nodeID", nodeID),
@@ -744,12 +668,6 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	// Connection messages can be sent to the currently executing engine
 	case *message.Connected:
 		return engine.Connected(ctx, nodeID, msg.NodeVersion)
-<<<<<<< HEAD
-
-	case *message.ConnectedSubnet:
-		return h.subnetConnector.ConnectedSubnet(ctx, nodeID, msg.SubnetID)
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	case *message.ConnectedSubnet:
 		return h.subnetConnector.ConnectedSubnet(ctx, nodeID, msg.SubnetID)
@@ -788,21 +706,11 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg message.InboundMessag
 	h.ctx.Log.Debug("forwarding async message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.ctx.Log.Verbo("forwarding async message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-<<<<<<< HEAD
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	defer func() {
@@ -823,15 +731,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg message.InboundMessag
 		return err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	switch m := body.(type) {
-=======
-	switch m := msg.Message().(type) {
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
-=======
-	switch m := body.(type) {
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	case *p2p.AppRequest:
 		return engine.AppRequest(
 			ctx,
@@ -891,20 +791,10 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 	)
 	h.ctx.Log.Debug("forwarding chan message to consensus",
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.ctx.Log.Verbo("forwarding chan message to consensus",
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-<<<<<<< HEAD
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
-=======
->>>>>>> 0f6316cbe (Fix consensus handler message logging (#2456))
 	)
 	h.ctx.Lock.Lock()
 	defer func() {

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metercacher
@@ -6,8 +6,8 @@ package metercacher
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 )
 
 var _ cache.Cacher = (*Cache)(nil)

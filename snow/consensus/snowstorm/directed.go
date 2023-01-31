@@ -149,9 +149,6 @@ func (dg *Directed) Initialize(
 	return params.Verify()
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (dg *Directed) Virtuous() set.Set[ids.ID] {
 	return dg.virtuous
 }
@@ -161,30 +158,6 @@ func (dg *Directed) Preferences() set.Set[ids.ID] {
 }
 
 func (dg *Directed) VirtuousVoting() set.Set[ids.ID] {
-=======
-func (dg *Directed) Parameters() sbcon.Parameters {
-	return dg.params
-}
-
-=======
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
-func (dg *Directed) Virtuous() ids.Set {
-=======
-func (dg *Directed) Virtuous() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-	return dg.virtuous
-}
-
-func (dg *Directed) Preferences() set.Set[ids.ID] {
-	return dg.preferences
-}
-
-<<<<<<< HEAD
-func (dg *Directed) VirtuousVoting() ids.Set {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (dg *Directed) VirtuousVoting() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return dg.virtuousVoting
 }
 
@@ -440,15 +413,7 @@ func (dg *Directed) addEdge(src, dst *directedTx) {
 }
 
 func (dg *Directed) Remove(ctx context.Context, txID ids.ID) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := dg.reject(ctx, set.Set[ids.ID]{
-=======
-	err := dg.reject(ctx, ids.Set{
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	err := dg.reject(ctx, set.Set[ids.ID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		txID: struct{}{},
 	})
 
@@ -581,15 +546,7 @@ func (dg *Directed) accept(ctx context.Context, txID ids.ID) error {
 }
 
 // reject all the named txIDs and remove them from the graph
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (dg *Directed) reject(ctx context.Context, conflictIDs set.Set[ids.ID]) error {
-=======
-func (dg *Directed) reject(ctx context.Context, conflictIDs ids.Set) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (dg *Directed) reject(ctx context.Context, conflictIDs set.Set[ids.ID]) error {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	for conflictKey := range conflictIDs {
 		conflict := dg.txs[conflictKey]
 		// This tx is no longer an option for consuming the UTXOs from its

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements static handlers tests for avm and platformvm
@@ -8,18 +8,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/tests/e2e"
-	"github.com/luxdefi/luxd/utils/cb58"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/formatting/address"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/platformvm/api"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/cb58"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/platformvm/api"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -145,7 +145,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 			addr, err := address.FormatBech32(hrp, id.Bytes())
 			gomega.Expect(err).Should(gomega.BeNil())
 			genesisUTXOs[i] = api.UTXO{
-				Amount:  json.Uint64(50000 * units.MilliLux),
+				Amount:  json.Uint64(50000 * units.MilliAvax),
 				Address: addr,
 			}
 		}
@@ -175,12 +175,12 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 
 		buildGenesisArgs := api.BuildGenesisArgs{
 			NetworkID:     json.Uint32(constants.UnitTestID),
-			LuxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
+			AvaxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
 			UTXOs:         genesisUTXOs,
 			Validators:    genesisValidators,
 			Chains:        nil,
 			Time:          json.Uint64(time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			InitialSupply: json.Uint64(360 * units.MegaLux),
+			InitialSupply: json.Uint64(360 * units.MegaAvax),
 			Encoding:      formatting.Hex,
 		}
 

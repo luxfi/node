@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package hierarchycodec
@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/reflectcodec"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/reflectcodec"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const (

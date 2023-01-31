@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gsharedmemory
@@ -14,15 +14,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	sharedmemorypb "github.com/luxdefi/luxd/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
 )
 
 const (

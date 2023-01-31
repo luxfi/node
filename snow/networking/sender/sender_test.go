@@ -45,23 +45,7 @@ var defaultGossipConfig = GossipConfig{
 func TestTimeout(t *testing.T) {
 	require := require.New(t)
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -96,14 +80,7 @@ func TestTimeout(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
-<<<<<<< HEAD
-<<<<<<< HEAD
 		true,
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-		true,
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -160,53 +137,21 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
-=======
-	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
-=======
-	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
-<<<<<<< HEAD
-	bootstrapper.QueryFailedF = func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
-		failedVDRs.Add(nodeID)
-		wg.Done()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-		return nil
-	}
-=======
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 	handler.SetBootstrapper(bootstrapper)
 	ctx2.SetState(snow.Bootstrapping) // assumed bootstrap is ongoing
 
 	chainRouter.AddChain(context.Background(), handler)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
-=======
-	bootstrapper.StartF = func(uint32) error {
-		return nil
-	}
-	handler.Start(false)
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
-		return nil
-	}
-	handler.Start(context.Background(), false)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	var (
 		wg           = sync.WaitGroup{}
-<<<<<<< HEAD
-<<<<<<< HEAD
 		vdrIDs       = set.Set[ids.NodeID]{}
 		chains       = set.Set[ids.ID]{}
 		requestID    uint32
@@ -221,24 +166,6 @@ func TestTimeout(t *testing.T) {
 	failed := func(ctx context.Context, nodeID ids.NodeID, _ uint32) error {
 		require.NoError(ctx.Err())
 
-<<<<<<< HEAD
-=======
-		vdrIDs       = ids.NodeIDSet{}
-		chains       = ids.Set{}
-=======
-		vdrIDs       = set.Set[ids.NodeID]{}
-		chains       = set.Set[ids.ID]{}
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-		requestID    uint32
-		failedLock   sync.Mutex
-		failedVDRs   = set.Set[ids.NodeID]{}
-		failedChains = set.Set[ids.ID]{}
-	)
-
-	failed := func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -255,19 +182,9 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.GetFailedF = failed
 	bootstrapper.QueryFailedF = failed
 	bootstrapper.AppRequestFailedF = failed
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.CrossChainAppRequestFailedF = func(ctx context.Context, chainID ids.ID, _ uint32) error {
 		require.NoError(ctx.Err())
 
-=======
-	bootstrapper.CrossChainAppRequestFailedF = func(_ context.Context, chainID ids.ID, _ uint32) error {
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-	bootstrapper.CrossChainAppRequestFailedF = func(ctx context.Context, chainID ids.ID, _ uint32) error {
-		require.NoError(ctx.Err())
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -278,202 +195,81 @@ func TestTimeout(t *testing.T) {
 
 	sendAll := func() {
 		{
-<<<<<<< HEAD
-<<<<<<< HEAD
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGetStateSummaryFrontier(cancelledCtx, nodeIDs, requestID)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendGetStateSummaryFrontier(context.Background(), nodeIDs, requestID)
-=======
-			sender.SendGetStateSummaryFrontier(cancelledCtx, nodeIDs, requestID)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGetAcceptedStateSummary(cancelledCtx, nodeIDs, requestID, nil)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, nil)
-=======
-			sender.SendGetAcceptedStateSummary(cancelledCtx, nodeIDs, requestID, nil)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGetAcceptedFrontier(cancelledCtx, nodeIDs, requestID)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
-=======
-			sender.SendGetAcceptedFrontier(cancelledCtx, nodeIDs, requestID)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGetAccepted(cancelledCtx, nodeIDs, requestID, nil)
-=======
-			sender.SendGetAccepted(context.Background(), nodeIDs, requestID, nil)
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			sender.SendGetAccepted(cancelledCtx, nodeIDs, requestID, nil)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
 			vdrIDs.Add(nodeID)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGetAncestors(cancelledCtx, nodeID, requestID, ids.Empty)
-=======
-			sender.SendGetAncestors(context.Background(), nodeID, requestID, ids.Empty)
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			sender.SendGetAncestors(cancelledCtx, nodeID, requestID, ids.Empty)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
 			vdrIDs.Add(nodeID)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendGet(cancelledCtx, nodeID, requestID, ids.Empty)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendGet(context.Background(), nodeID, requestID, ids.Empty)
-=======
-			sender.SendGet(cancelledCtx, nodeID, requestID, ids.Empty)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sender.SendPullQuery(cancelledCtx, nodeIDs, requestID, ids.Empty)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendPullQuery(context.Background(), nodeIDs, requestID, ids.Empty)
-=======
-			sender.SendPullQuery(cancelledCtx, nodeIDs, requestID, ids.Empty)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			sender.SendPushQuery(cancelledCtx, nodeIDs, requestID, nil)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
-=======
-			sender.SendPushQuery(context.Background(), nodeIDs, requestID, nil)
-		}
-		{
-<<<<<<< HEAD
-			nodeIDs := ids.NodeIDSet{
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			nodeIDs := set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			err := sender.SendAppRequest(cancelledCtx, nodeIDs, requestID, nil)
-=======
-			err := sender.SendAppRequest(context.Background(), nodeIDs, requestID, nil)
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			err := sender.SendAppRequest(cancelledCtx, nodeIDs, requestID, nil)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			require.NoError(err)
 		}
 		{
@@ -481,43 +277,19 @@ func TestTimeout(t *testing.T) {
 			chains.Add(chainID)
 			wg.Add(1)
 			requestID++
-<<<<<<< HEAD
-<<<<<<< HEAD
 			err := sender.SendCrossChainAppRequest(cancelledCtx, chainID, requestID, nil)
-=======
-			err := sender.SendCrossChainAppRequest(context.Background(), chainID, requestID, nil)
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-			err := sender.SendCrossChainAppRequest(cancelledCtx, chainID, requestID, nil)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			require.NoError(err)
 		}
 	}
 
 	// Send messages to disconnected peers
-<<<<<<< HEAD
-<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
-=======
-	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		return nil
 	}
 	sendAll()
 
 	// Send messages to connected peers
-<<<<<<< HEAD
-<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
-=======
-	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
->>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
-=======
-	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		return nodeIDs
 	}
 	sendAll()
@@ -530,19 +302,7 @@ func TestTimeout(t *testing.T) {
 
 func TestReliableMessages(t *testing.T) {
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.NodeID{1}, nil, ids.Empty, 1)
-=======
-	err := vdrs.Add(ids.NodeID{1}, 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.NodeID{1}, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.NodeID{1}, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -578,14 +338,7 @@ func TestReliableMessages(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
-<<<<<<< HEAD
-<<<<<<< HEAD
 		true,
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-		true,
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -643,15 +396,7 @@ func TestReliableMessages(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx2
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
-=======
-	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 	queriesToSend := 1000
@@ -669,24 +414,10 @@ func TestReliableMessages(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
-=======
-	bootstrapper.StartF = func(uint32) error {
-		return nil
-	}
-	handler.Start(false)
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
-		return nil
-	}
-	handler.Start(context.Background(), false)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {
@@ -706,19 +437,7 @@ func TestReliableMessages(t *testing.T) {
 func TestReliableMessagesToMyself(t *testing.T) {
 	benchlist := benchlist.NewNoBenchlist()
 	vdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(t, err)
 	tm, err := timeout.NewManager(
 		&timer.AdaptiveTimeoutConfig{
@@ -753,14 +472,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
-<<<<<<< HEAD
-<<<<<<< HEAD
 		true,
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-		true,
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -810,15 +522,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx2
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
-=======
-	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	}
 	queriesToSend := 2
@@ -835,24 +539,10 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
-=======
-	bootstrapper.StartF = func(uint32) error {
-		return nil
-	}
-	handler.Start(false)
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	bootstrapper.StartF = func(context.Context, uint32) error {
-		return nil
-	}
-	handler.Start(context.Background(), false)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	go func() {
 		for i := 0; i < queriesToSend; i++ {
@@ -882,14 +572,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		ctx           = snow.DefaultContextTest()
 		heights       = []uint64{1, 2, 3}
 		containerIDs  = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
-<<<<<<< HEAD
-<<<<<<< HEAD
 		engineType    = p2p.EngineType_ENGINE_TYPE_SNOWMAN
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		engineType    = p2p.EngineType_ENGINE_TYPE_SNOWMAN
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -902,31 +585,11 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 	type test struct {
 		name                    string
 		failedMsgF              func(nodeID ids.NodeID) message.InboundMessage
-<<<<<<< HEAD
-<<<<<<< HEAD
 		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *MockExternalSender)
 		sendF                   func(require *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
-=======
-		assertMsgToMyself       func(r *require.Assertions, msg message.InboundMessage)
-		expectedResponseOp      message.Op
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender)
-<<<<<<< HEAD
-		sendF                   func(r *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		sendF                   func(r *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
-		expectedResponseOp      message.Op
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender)
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	}
 
 	tests := []test{
@@ -939,30 +602,12 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					requestID,
 				)
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
 				innerMsg, ok := msg.Message().(*p2p.GetStateSummaryFrontier)
 				require.True(ok)
 				require.Equal(chainID[:], innerMsg.ChainId)
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
-=======
-			assertMsgToMyself: func(r *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetStateSummaryFrontier)
-				r.True(ok)
-				r.Equal(chainID[:], innerMsg.ChainId)
-				r.Equal(requestID, innerMsg.RequestId)
-				r.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetStateSummaryFrontier)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				require.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			},
 			expectedResponseOp: message.StateSummaryFrontierOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -975,45 +620,17 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
-=======
-					ids.NodeIDSet{ // Note [myNodeID] is not in this set
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
-<<<<<<< HEAD
-<<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
 				})
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
-=======
-				).Return(ids.NodeIDSet{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(r *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				).Return(set.Set[ids.NodeID]{
-					successNodeID: struct{}{},
-				})
-			},
-<<<<<<< HEAD
-			sendF: func(r *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				sender.SendGetStateSummaryFrontier(
 					context.Background(),
 					nodeIDs,
@@ -1030,8 +647,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					requestID,
 				)
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
 				innerMsg, ok := msg.Message().(*p2p.GetAcceptedStateSummary)
 				require.True(ok)
@@ -1039,24 +654,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 				require.Equal(heights, innerMsg.Heights)
-=======
-			assertMsgToMyself: func(r *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetAcceptedStateSummary)
-				r.True(ok)
-				r.Equal(chainID[:], innerMsg.ChainId)
-				r.Equal(requestID, innerMsg.RequestId)
-				r.Equal(uint64(deadline), innerMsg.Deadline)
-				r.Equal(heights, innerMsg.Heights)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetAcceptedStateSummary)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				require.Equal(uint64(deadline), innerMsg.Deadline)
-				require.Equal(heights, innerMsg.Heights)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			},
 			expectedResponseOp: message.AcceptedStateSummaryOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1070,41 +667,17 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
-=======
-					ids.NodeIDSet{ // Note [myNodeID] is not in this set
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
-<<<<<<< HEAD
-<<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
 				})
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
-=======
-				).Return(ids.NodeIDSet{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				).Return(set.Set[ids.NodeID]{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, heights)
 			},
 		},
@@ -1115,10 +688,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					nodeID,
 					chainID,
 					requestID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1129,26 +698,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				)
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetAcceptedFrontier)
-<<<<<<< HEAD
-				r.True(ok)
-				r.Equal(chainID[:], innerMsg.ChainId)
-				r.Equal(requestID, innerMsg.RequestId)
-				r.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				require.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AcceptedFrontierOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1156,54 +705,23 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					chainID,
 					requestID,
 					deadline,
-<<<<<<< HEAD
-<<<<<<< HEAD
 					engineType,
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					engineType,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 				).Return(nil, nil)
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
-=======
-					ids.NodeIDSet{ // Note [myNodeID] is not in this set
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
-<<<<<<< HEAD
-<<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
 				})
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
-=======
-				).Return(ids.NodeIDSet{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				).Return(set.Set[ids.NodeID]{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
 			},
 		},
@@ -1214,10 +732,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					nodeID,
 					chainID,
 					requestID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1228,26 +742,6 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				)
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.GetAccepted)
-<<<<<<< HEAD
-				r.True(ok)
-				r.Equal(chainID[:], innerMsg.ChainId)
-				r.Equal(requestID, innerMsg.RequestId)
-				r.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				require.Equal(uint64(deadline), innerMsg.Deadline)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AcceptedOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1256,54 +750,23 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					requestID,
 					deadline,
 					containerIDs,
-<<<<<<< HEAD
-<<<<<<< HEAD
 					engineType,
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					engineType,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 				).Return(nil, nil)
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
-=======
-					ids.NodeIDSet{ // Note [myNodeID] is not in this set
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
-<<<<<<< HEAD
-<<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
 				})
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
-=======
-				).Return(ids.NodeIDSet{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				).Return(set.Set[ids.NodeID]{
-					successNodeID: struct{}{},
-				})
-			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAccepted(context.Background(), nodeIDs, requestID, containerIDs)
 			},
 		},
@@ -1320,28 +783,12 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender = NewMockExternalSender(ctrl)
 				timeoutManager = timeout.NewMockManager(ctrl)
 				router         = router.NewMockRouter(ctrl)
-<<<<<<< HEAD
-<<<<<<< HEAD
 				nodeIDs        = set.Set[ids.NodeID]{
-=======
-				nodeIDs        = ids.NodeIDSet{
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				nodeIDs        = set.Set[ids.NodeID]{
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					successNodeID: struct{}{},
 					failedNodeID:  struct{}{},
 					myNodeID:      struct{}{},
 				}
-<<<<<<< HEAD
-<<<<<<< HEAD
 				nodeIDsCopy set.Set[ids.NodeID]
-=======
-				nodeIDsCopy ids.NodeIDSet
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				nodeIDsCopy set.Set[ids.NodeID]
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 			)
 			nodeIDsCopy.Union(nodeIDs)
 			snowCtx.Registerer = prometheus.NewRegistry()
@@ -1353,14 +800,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				router,
 				timeoutManager,
 				defaultGossipConfig,
-<<<<<<< HEAD
-<<<<<<< HEAD
 				engineType,
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				engineType,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 
@@ -1419,14 +859,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		ctx               = snow.DefaultContextTest()
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
-<<<<<<< HEAD
-<<<<<<< HEAD
 		engineType        = p2p.EngineType_ENGINE_TYPE_AVALANCHE
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		engineType        = p2p.EngineType_ENGINE_TYPE_AVALANCHE
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -1438,24 +871,10 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 
 	type test struct {
 		name                    string
-<<<<<<< HEAD
-<<<<<<< HEAD
 		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
 		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *MockExternalSender)
 		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
-=======
-		assertMsgToMyself       func(r *require.Assertions, msg message.InboundMessage)
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender)
-		sendF                   func(r *require.Assertions, sender common.Sender, nodeID ids.NodeID)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender)
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	}
 
 	tests := []test{
@@ -1468,43 +887,17 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					summary,
 				).Return(nil, nil) // Don't care about the message
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
 				innerMsg, ok := msg.Message().(*p2p.StateSummaryFrontier)
 				require.True(ok)
 				require.Equal(chainID[:], innerMsg.ChainId)
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(summary, innerMsg.Summary)
-=======
-			assertMsgToMyself: func(r *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.StateSummaryFrontier)
-				r.True(ok)
-				r.Equal(chainID[:], innerMsg.ChainId)
-				r.Equal(requestID, innerMsg.RequestId)
-				r.Equal(summary, innerMsg.Summary)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.StateSummaryFrontier)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				require.Equal(summary, innerMsg.Summary)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1522,8 +915,6 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					summaryIDs,
 				).Return(nil, nil) // Don't care about the message
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
 				innerMsg, ok := msg.Message().(*p2p.AcceptedStateSummary)
 				require.True(ok)
@@ -1531,36 +922,12 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				for i, summaryID := range summaryIDs {
 					require.Equal(summaryID[:], innerMsg.SummaryIds[i])
-=======
-			assertMsgToMyself: func(r *require.Assertions, msg message.InboundMessage) {
-=======
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-				innerMsg, ok := msg.Message().(*p2p.AcceptedStateSummary)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				for i, summaryID := range summaryIDs {
-<<<<<<< HEAD
-					r.Equal(summaryID[:], innerMsg.SummaryIds[i])
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					require.Equal(summaryID[:], innerMsg.SummaryIds[i])
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				}
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1576,10 +943,6 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					chainID,
 					requestID,
 					summaryIDs,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1592,34 +955,11 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				).Return(nil, nil) // Don't care about the message
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.AcceptedFrontier)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				for i, summaryID := range summaryIDs {
-					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
-				}
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1635,10 +975,6 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					chainID,
 					requestID,
 					summaryIDs,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1651,34 +987,11 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				).Return(nil, nil) // Don't care about the message
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*p2p.Accepted)
-				require.True(ok)
-				require.Equal(chainID[:], innerMsg.ChainId)
-				require.Equal(requestID, innerMsg.RequestId)
-				for i, summaryID := range summaryIDs {
-					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
-				}
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1710,14 +1023,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				router,
 				timeoutManager,
 				defaultGossipConfig,
-<<<<<<< HEAD
-<<<<<<< HEAD
 				engineType,
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				engineType,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 
@@ -1762,14 +1068,7 @@ func TestSender_Single_Request(t *testing.T) {
 		requestID         = uint32(1337)
 		ctx               = snow.DefaultContextTest()
 		containerID       = ids.GenerateTestID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 		engineType        = p2p.EngineType_ENGINE_TYPE_SNOWMAN
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		engineType        = p2p.EngineType_ENGINE_TYPE_SNOWMAN
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -1782,27 +1081,11 @@ func TestSender_Single_Request(t *testing.T) {
 	type test struct {
 		name                    string
 		failedMsgF              func(nodeID ids.NodeID) message.InboundMessage
-<<<<<<< HEAD
-<<<<<<< HEAD
 		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID])
 		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
-=======
-		assertMsgToMyself       func(r *require.Assertions, msg message.InboundMessage)
-		expectedResponseOp      message.Op
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID])
-		sendF                   func(r *require.Assertions, sender common.Sender, nodeID ids.NodeID)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
-		expectedResponseOp      message.Op
-		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID])
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	}
 
 	tests := []test{
@@ -1813,10 +1096,6 @@ func TestSender_Single_Request(t *testing.T) {
 					nodeID,
 					chainID,
 					requestID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1826,24 +1105,6 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				)
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*message.GetAncestorsFailed)
-<<<<<<< HEAD
-				r.True(ok)
-				r.Equal(chainID, innerMsg.ChainID)
-				r.Equal(requestID, innerMsg.RequestID)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				require.True(ok)
-				require.Equal(chainID, innerMsg.ChainID)
-				require.Equal(requestID, innerMsg.RequestID)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AncestorsOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1852,10 +1113,6 @@ func TestSender_Single_Request(t *testing.T) {
 					requestID,
 					deadline,
 					containerID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil)
 			},
@@ -1863,31 +1120,11 @@ func TestSender_Single_Request(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-				).Return(nil, nil)
-			},
-			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID]) {
-				externalSender.EXPECT().Send(
-					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID,
 					snowCtx.IsValidatorOnly(),
 				).Return(sentTo)
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
-=======
-			sendF: func(r *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				sender.SendGetAncestors(context.Background(), nodeID, requestID, containerID)
 			},
 		},
@@ -1898,10 +1135,6 @@ func TestSender_Single_Request(t *testing.T) {
 					nodeID,
 					chainID,
 					requestID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1911,24 +1144,6 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 				require.Equal(engineType, innerMsg.EngineType)
-<<<<<<< HEAD
-=======
-				)
-			},
-			assertMsgToMyself: func(require *require.Assertions, msg message.InboundMessage) {
-				innerMsg, ok := msg.Message().(*message.GetFailed)
-<<<<<<< HEAD
-				r.True(ok)
-				r.Equal(chainID, innerMsg.ChainID)
-				r.Equal(requestID, innerMsg.RequestID)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				require.True(ok)
-				require.Equal(chainID, innerMsg.ChainID)
-				require.Equal(requestID, innerMsg.RequestID)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.PutOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1937,10 +1152,6 @@ func TestSender_Single_Request(t *testing.T) {
 					requestID,
 					deadline,
 					containerID,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil)
 			},
@@ -1948,31 +1159,11 @@ func TestSender_Single_Request(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
-=======
-				).Return(nil, nil)
-			},
-			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID]) {
-				externalSender.EXPECT().Send(
-					gomock.Any(), // Outbound message
-<<<<<<< HEAD
-					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID,
 					snowCtx.IsValidatorOnly(),
 				).Return(sentTo)
 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
-=======
-			sendF: func(r *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 				sender.SendGet(context.Background(), nodeID, requestID, containerID)
 			},
 		},
@@ -1999,14 +1190,7 @@ func TestSender_Single_Request(t *testing.T) {
 				router,
 				timeoutManager,
 				defaultGossipConfig,
-<<<<<<< HEAD
-<<<<<<< HEAD
 				engineType,
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				engineType,
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 
@@ -2113,15 +1297,7 @@ func TestSender_Single_Request(t *testing.T) {
 				tt.setMsgCreatorExpect(msgCreator)
 
 				// Make sure we're sending the message
-<<<<<<< HEAD
-<<<<<<< HEAD
 				tt.setExternalSenderExpect(externalSender, set.Set[ids.NodeID]{})
-=======
-				tt.setExternalSenderExpect(externalSender, ids.NodeIDSet{})
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-				tt.setExternalSenderExpect(externalSender, set.Set[ids.NodeID]{})
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 				tt.sendF(require, sender, destinationNodeID)
 

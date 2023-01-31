@@ -129,15 +129,7 @@ func createInternalBlockFuncs(t *testing.T, blks []*TestBlock) (
 }
 
 func cantBuildBlock(context.Context) (snowman.Block, error) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	return nil, errCantBuildBlock
-=======
-	return nil, errors.New("can't build new block")
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	return nil, errCantBuildBlock
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 }
 
 // checkProcessingBlock checks that [blk] is of the correct type and is

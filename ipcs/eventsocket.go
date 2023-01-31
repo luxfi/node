@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ipcs
@@ -8,11 +8,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/ipcs/socket"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/ipcs/socket"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 var _ snow.Acceptor = (*EventSockets)(nil)

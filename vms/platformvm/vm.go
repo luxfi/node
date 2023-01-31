@@ -66,30 +66,9 @@ var (
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	errWrongCacheType      = errors.New("unexpectedly cached type")
 	errMissingValidatorSet = errors.New("missing validator set")
 	errMissingValidator    = errors.New("missing validator")
-<<<<<<< HEAD
-=======
-	errWrongCacheType        = errors.New("unexpectedly cached type")
-	errMissingValidatorSet   = errors.New("missing validator set")
-	errDuplicateValidatorSet = errors.New("duplicate validator set")
->>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
-=======
-	errWrongCacheType               = errors.New("unexpectedly cached type")
-	errMissingValidatorSet          = errors.New("missing validator set")
-	errValidatorSetAlreadyPopulated = errors.New("validator set already populated")
-	errDuplicateValidatorSet        = errors.New("duplicate validator set")
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
-=======
-	errWrongCacheType      = errors.New("unexpectedly cached type")
-	errMissingValidatorSet = errors.New("missing validator set")
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 )
 
 type VM struct {
@@ -237,16 +216,6 @@ func (vm *VM) Initialize(
 		appSender,
 	)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	if err := vm.initValidators(); err != nil {
-		return fmt.Errorf("failed to initialize validator sets: %w", err)
-	}
-
->>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
-=======
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	// Create all of the chains that the database says exist
 	if err := vm.initBlockchains(); err != nil {
 		return fmt.Errorf(
@@ -321,34 +290,6 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
-	if !exists {
-		return errMissingValidatorSet
-=======
-	primaryValidatorSet, exist := vm.Validators.Get(constants.PrimaryNetworkID)
-	if !exist {
-		return errNoPrimaryValidators
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-	}
-<<<<<<< HEAD
-	if err := vm.uptimeManager.StartTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
-=======
-	primaryValidators := primaryValidatorSet.List()
-
-	validatorIDs := make([]ids.NodeID, len(primaryValidators))
-	for i, vdr := range primaryValidators {
-		validatorIDs[i] = vdr.NodeID
-	}
-
-	if err := vm.uptimeManager.StartTracking(validatorIDs); err != nil {
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-		return err
-	}
-
-	for subnetID := range vm.TrackedSubnets {
-=======
 	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 	if !exists {
 		return errMissingValidatorSet
@@ -357,12 +298,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-<<<<<<< HEAD
-	for subnetID := range vm.WhitelistedSubnets {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
 	for subnetID := range vm.TrackedSubnets {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		vdrIDs, exists := vm.getValidatorIDs(subnetID)
 		if !exists {
 			return errMissingValidatorSet
@@ -401,34 +337,6 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.Builder.Shutdown()
 
 	if vm.bootstrapped.GetValue() {
-<<<<<<< HEAD
-<<<<<<< HEAD
-		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
-		if !exists {
-			return errMissingValidatorSet
-=======
-		primaryValidatorSet, exist := vm.Validators.Get(constants.PrimaryNetworkID)
-		if !exist {
-			return errNoPrimaryValidators
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-		}
-<<<<<<< HEAD
-		if err := vm.uptimeManager.StopTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
-=======
-		primaryValidators := primaryValidatorSet.List()
-
-		validatorIDs := make([]ids.NodeID, len(primaryValidators))
-		for i, vdr := range primaryValidators {
-			validatorIDs[i] = vdr.NodeID
-		}
-
-		if err := vm.uptimeManager.Shutdown(validatorIDs); err != nil {
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-			return err
-		}
-
-		for subnetID := range vm.TrackedSubnets {
-=======
 		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 		if !exists {
 			return errMissingValidatorSet
@@ -437,12 +345,7 @@ func (vm *VM) Shutdown(context.Context) error {
 			return err
 		}
 
-<<<<<<< HEAD
-		for subnetID := range vm.WhitelistedSubnets {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
 		for subnetID := range vm.TrackedSubnets {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			vdrIDs, exists := vm.getValidatorIDs(subnetID)
 			if !exists {
 				return errMissingValidatorSet
@@ -465,10 +368,6 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errs.Err
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	validatorSet, exist := vm.Validators.Get(subnetID)
 	if !exist {
@@ -484,11 +383,6 @@ func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	return validatorIDs, true
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
@@ -514,15 +408,7 @@ func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
-=======
-func (*VM) Version() (string, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) Version(context.Context) (string, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return version.Current.String(), nil
 }
 
@@ -555,15 +441,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 // CreateStaticHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
-=======
-func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
@@ -579,8 +457,6 @@ func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler
 	}, nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
 	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
 }
@@ -591,26 +467,6 @@ func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids
 
 func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
-=======
-func (vm *VM) Connected(_ context.Context, vdrID ids.NodeID, _ *version.Application) error {
-	return vm.uptimeManager.Connect(vdrID)
-}
-
-func (vm *VM) Disconnected(_ context.Context, vdrID ids.NodeID) error {
-	if err := vm.uptimeManager.Disconnect(vdrID); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
-	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
-}
-
-func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids.ID) error {
-	return vm.uptimeManager.Connect(nodeID, subnetID)
-}
-
-func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
-	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		return err
 	}
 	return vm.state.Commit()
@@ -618,48 +474,18 @@ func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 
 // GetValidatorSet returns the validator set at the specified height for the
 // provided subnetID.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-=======
-func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-=======
-func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.Validator, error) {
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
 	if !exists {
 		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
-<<<<<<< HEAD
-<<<<<<< HEAD
 		// Only cache tracked subnets
 		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
-=======
-		// Only cache whitelisted subnets
-		if subnetID == constants.PrimaryNetworkID || vm.WhitelistedSubnets.Contains(subnetID) {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-		// Only cache tracked subnets
-		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			vm.validatorSetCaches[subnetID] = validatorSetsCache
 		}
 	}
 
 	if validatorSetIntf, ok := validatorSetsCache.Get(height); ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.GetValidatorOutput)
-=======
-		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.Validator)
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-		validatorSet, ok := validatorSetIntf.(map[ids.NodeID]*validators.GetValidatorOutput)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		if !ok {
 			return nil, errWrongCacheType
 		}
@@ -678,35 +504,13 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	// get the start time to track metrics
 	startTime := vm.Clock().Time()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	currentSubnetValidators, ok := vm.Validators.Get(subnetID)
-=======
-	currentValidators, ok := vm.Validators.Get(subnetID)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-=======
-	currentSubnetValidators, ok := vm.Validators.Get(subnetID)
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	if !ok {
 		currentSubnetValidators = validators.NewSet()
 		if err := vm.state.ValidatorSet(subnetID, currentSubnetValidators); err != nil {
 			return nil, err
 		}
-<<<<<<< HEAD
 	}
-	currentPrimaryNetworkValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
-	if !ok {
-		// This should never happen
-		return nil, errMissingValidatorSet
-=======
->>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
-	}
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-	currentSubnetValidatorList := currentSubnetValidators.List()
-	vdrSet := make(map[ids.NodeID]*validators.GetValidatorOutput, len(currentSubnetValidatorList))
-=======
 	currentPrimaryNetworkValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
 	if !ok {
 		// This should never happen
@@ -714,39 +518,18 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	}
 
 	currentSubnetValidatorList := currentSubnetValidators.List()
-<<<<<<< HEAD
-	vdrSet := make(map[ids.NodeID]*validators.Validator, len(currentSubnetValidatorList))
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
 	vdrSet := make(map[ids.NodeID]*validators.GetValidatorOutput, len(currentSubnetValidatorList))
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	for _, vdr := range currentSubnetValidatorList {
 		primaryVdr, ok := currentPrimaryNetworkValidators.Get(vdr.NodeID)
 		if !ok {
 			// This should never happen
 			return nil, fmt.Errorf("%w: %s", errMissingValidator, vdr.NodeID)
 		}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		vdrSet[vdr.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    vdr.NodeID,
 			PublicKey: primaryVdr.PublicKey,
 			Weight:    vdr.Weight,
 		}
-<<<<<<< HEAD
-=======
-	vdrSet := make(map[ids.NodeID]uint64, len(currentValidatorList))
-	for _, vdr := range currentValidatorList {
-		vdrSet[vdr.NodeID] = vdr.Weight
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-=======
-		vdr.PublicKey = primaryVdr.PublicKey
-		vdrSet[vdr.NodeID] = vdr
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	}
 
 	for i := lastAcceptedHeight; i > height; i-- {
@@ -759,15 +542,7 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 			vdr, ok := vdrSet[nodeID]
 			if !ok {
 				// This node isn't in the current validator set.
-<<<<<<< HEAD
-<<<<<<< HEAD
 				vdr = &validators.GetValidatorOutput{
-=======
-				vdr = &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-				vdr = &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: nodeID,
 				}
 				vdrSet[nodeID] = vdr
@@ -795,25 +570,6 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 				// The validator's weight was 0 before this block so
 				// they weren't in the validator set.
 				delete(vdrSet, nodeID)
-<<<<<<< HEAD
-			}
-		}
-
-		pkDiffs, err := vm.state.GetValidatorPublicKeyDiffs(i)
-		if err != nil {
-			return nil, err
-		}
-
-		for nodeID, pk := range pkDiffs {
-			// pkDiffs includes all primary network key diffs, if we are
-			// fetching a subnet's validator set, we should ignore non-subnet
-			// validators.
-			if vdr, ok := vdrSet[nodeID]; ok {
-				// The validator's public key was removed at this block, so it
-				// was in the validator set before.
-				vdr.PublicKey = pk
-=======
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			}
 		}
 
@@ -878,38 +634,20 @@ func (vm *VM) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 // in the case of a process restart, we default to the lastAccepted block's
 // height which is likely (but not guaranteed) to also be older than the
 // window's configured TTL.
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 8a3460395 (Add flag to set the proposervm P-chain height to the last accepted height (#2247))
 //
 // If [UseCurrentHeight] is true, we will always return the last accepted block
 // height as the minimum. This is used to trigger the proposervm on recently
 // created subnets before [recentlyAcceptedWindowTTL].
 func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	if vm.Config.UseCurrentHeight {
-<<<<<<< HEAD
-=======
-func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	oldest, ok := vm.recentlyAccepted.Oldest()
-	if !ok {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 		return vm.GetCurrentHeight(ctx)
 	}
 
-<<<<<<< HEAD
-=======
-		return vm.GetCurrentHeight(ctx)
-	}
-
->>>>>>> 8a3460395 (Add flag to set the proposervm P-chain height to the last accepted height (#2247))
 	oldest, ok := vm.recentlyAccepted.Oldest()
 	if !ok {
 		return vm.GetCurrentHeight(ctx)
 	}
 
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	blk, err := vm.manager.GetBlock(oldest)
 	if err != nil {
 		return 0, err
@@ -924,15 +662,7 @@ func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
 }
 
 // GetCurrentHeight returns the height of the last accepted block
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
-=======
-func (vm *VM) GetCurrentHeight() (uint64, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	lastAccepted, err := vm.manager.GetBlock(vm.state.GetLastAccepted())
 	if err != nil {
 		return 0, err
@@ -940,53 +670,6 @@ func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
 	return lastAccepted.Height(), nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-func (vm *VM) CodecRegistry() codec.Registry {
-	return vm.codecRegistry
-=======
-func (vm *VM) initValidators() error {
-	primaryValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
-	if !ok {
-		return errMissingValidatorSet
-	}
-	if primaryValidators.Len() != 0 {
-		// Enforce the invariant that the validator set is empty before the call
-		// to VM.Initialize.
-		return errValidatorSetAlreadyPopulated
-	}
-	err := vm.state.ValidatorSet(constants.PrimaryNetworkID, primaryValidators)
-	if err != nil {
-		return err
-	}
-
-	weight, _ := primaryValidators.GetWeight(vm.ctx.NodeID)
-	vm.metrics.SetLocalStake(weight)
-	vm.metrics.SetTotalStake(primaryValidators.Weight())
-
-	for subnetID := range vm.WhitelistedSubnets {
-		subnetValidators := validators.NewSet()
-		err := vm.state.ValidatorSet(subnetID, subnetValidators)
-		if err != nil {
-			return err
-		}
-
-		if !vm.Validators.Add(subnetID, subnetValidators) {
-			return fmt.Errorf("%w: %s", errDuplicateValidatorSet, subnetID)
-		}
-	}
-	return nil
->>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
-}
-
-<<<<<<< HEAD
-func (vm *VM) Clock() *mockable.Clock {
-	return &vm.clock
-}
-
-=======
-=======
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }
@@ -995,7 +678,6 @@ func (vm *VM) Clock() *mockable.Clock {
 	return &vm.clock
 }
 
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (vm *VM) Logger() logging.Logger {
 	return vm.ctx.Log
 }
@@ -1018,15 +700,7 @@ func (vm *VM) getPercentConnected(subnetID ids.ID) (float64, error) {
 		err            error
 	)
 	for _, vdr := range vdrSet.List() {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
-=======
-		if !vm.uptimeManager.IsConnected(vdr.NodeID) {
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-=======
-		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			continue // not connected to us --> don't include
 		}
 		connectedStake, err = math.Add64(connectedStake, vdr.Weight)

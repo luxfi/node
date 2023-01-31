@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -7,15 +7,15 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
 )
 
 var errInvalidETHAddress = errors.New("invalid eth address")
 
 type UnparsedAllocation struct {
 	ETHAddr        string         `json:"ethAddr"`
-	LUXAddr       string         `json:"luxAddr"`
+	AVAXAddr       string         `json:"avaxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -40,15 +40,15 @@ func (ua UnparsedAllocation) Parse() (Allocation, error) {
 	}
 	a.ETHAddr = ethAddr
 
-	_, _, luxAddrBytes, err := address.Parse(ua.LUXAddr)
+	_, _, avaxAddrBytes, err := address.Parse(ua.AVAXAddr)
 	if err != nil {
 		return a, err
 	}
-	luxAddr, err := ids.ToShortID(luxAddrBytes)
+	avaxAddr, err := ids.ToShortID(avaxAddrBytes)
 	if err != nil {
 		return a, err
 	}
-	a.LUXAddr = luxAddr
+	a.AVAXAddr = avaxAddr
 
 	return a, nil
 }
@@ -65,15 +65,15 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 		DelegationFee: us.DelegationFee,
 	}
 
-	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
+	_, _, avaxAddrBytes, err := address.Parse(us.RewardAddress)
 	if err != nil {
 		return s, err
 	}
-	luxAddr, err := ids.ToShortID(luxAddrBytes)
+	avaxAddr, err := ids.ToShortID(avaxAddrBytes)
 	if err != nil {
 		return s, err
 	}
-	s.RewardAddress = luxAddr
+	s.RewardAddress = avaxAddr
 	return s, nil
 }
 
@@ -114,15 +114,15 @@ func (uc UnparsedConfig) Parse() (Config, error) {
 		c.Allocations[i] = a
 	}
 	for i, isa := range uc.InitialStakedFunds {
-		_, _, luxAddrBytes, err := address.Parse(isa)
+		_, _, avaxAddrBytes, err := address.Parse(isa)
 		if err != nil {
 			return c, err
 		}
-		luxAddr, err := ids.ToShortID(luxAddrBytes)
+		avaxAddr, err := ids.ToShortID(avaxAddrBytes)
 		if err != nil {
 			return c, err
 		}
-		c.InitialStakedFunds[i] = luxAddr
+		c.InitialStakedFunds[i] = avaxAddr
 	}
 	for i, uis := range uc.InitialStakers {
 		is, err := uis.Parse()

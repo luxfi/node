@@ -6,15 +6,7 @@ package sampler
 import (
 	"math"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
-=======
-	"golang.org/x/exp/maps"
->>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
-=======
-	"github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 // uniformResample allows for sampling over a uniform distribution without
@@ -68,15 +60,7 @@ func (s *uniformResample) ClearSeed() {
 }
 
 func (s *uniformResample) Reset() {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	s.drawn.Clear()
-=======
-	maps.Clear(s.drawn)
->>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
-=======
-	s.drawn.Clear()
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 }
 
 func (s *uniformResample) Next() (uint64, error) {

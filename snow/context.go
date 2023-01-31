@@ -49,18 +49,7 @@ type Context struct {
 	TeleporterSigner teleporter.Signer
 
 	// snowman++ attributes
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ValidatorState validators.State // interface for P-Chain validators
-=======
-	ValidatorState    validators.State  // interface for P-Chain validators
-	StakingLeafSigner crypto.Signer     // block signer
-	StakingCertLeaf   *x509.Certificate // block certificate
-
->>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
-=======
-	ValidatorState validators.State // interface for P-Chain validators
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
 }

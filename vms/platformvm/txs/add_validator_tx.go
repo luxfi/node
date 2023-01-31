@@ -54,10 +54,6 @@ func (tx *AddValidatorTx) InitCtx(ctx *snow.Context) {
 	tx.RewardsOwner.InitCtx(ctx)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (*AddValidatorTx) SubnetID() ids.ID {
 	return constants.PrimaryNetworkID
 }
@@ -105,23 +101,6 @@ func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner {
 func (tx *AddValidatorTx) Shares() uint32 {
 	return tx.DelegationShares
 }
-<<<<<<< HEAD
-=======
-func (*AddValidatorTx) SubnetID() ids.ID                         { return constants.PrimaryNetworkID }
-func (tx *AddValidatorTx) NodeID() ids.NodeID                    { return tx.Validator.NodeID }
-func (*AddValidatorTx) PublicKey() (*bls.PublicKey, bool, error) { return nil, false, nil }
-func (tx *AddValidatorTx) StartTime() time.Time                  { return tx.Validator.StartTime() }
-func (tx *AddValidatorTx) EndTime() time.Time                    { return tx.Validator.EndTime() }
-func (tx *AddValidatorTx) Weight() uint64                        { return tx.Validator.Wght }
-func (*AddValidatorTx) PendingPriority() Priority                { return PrimaryNetworkValidatorPendingPriority }
-func (*AddValidatorTx) CurrentPriority() Priority                { return PrimaryNetworkValidatorCurrentPriority }
-func (tx *AddValidatorTx) Stake() []*avax.TransferableOutput     { return tx.StakeOuts }
-func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner      { return tx.RewardsOwner }
-func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner      { return tx.RewardsOwner }
-func (tx *AddValidatorTx) Shares() uint32                        { return tx.DelegationShares }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 // SyntacticVerify returns nil iff [tx] is valid
 func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {
