@@ -976,10 +976,14 @@ func (vm *VMServer) StateSummaryAccept(
 		summary, err = vm.ssVM.ParseStateSummary(ctx, req.Bytes)
 		if err == nil {
 <<<<<<< HEAD
+<<<<<<< HEAD
 			mode, err = summary.Accept(ctx)
 =======
 			accepted, err = summary.Accept(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+			mode, err = summary.Accept(ctx)
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		}
 	} else {
 		err = block.ErrStateSyncableVMNotImplemented
@@ -987,6 +991,10 @@ func (vm *VMServer) StateSummaryAccept(
 
 	return &vmpb.StateSummaryAcceptResponse{
 		Mode: vmpb.StateSummaryAcceptResponse_Mode(mode),
+<<<<<<< HEAD
 		Err:  errorToErrEnum[err],
+=======
+		Err:  errorToErrCode[err],
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	}, errorToRPCError(err)
 }

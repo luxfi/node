@@ -24,6 +24,7 @@ type StateSummary interface {
 	// Accept triggers the VM to start state syncing to this summary.
 	//
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// It returns the state sync mode selected by the VM.
 	Accept(context.Context) (StateSyncMode, error)
 =======
@@ -31,4 +32,8 @@ type StateSummary interface {
 	// [false] if the VM has skipped state sync.
 	Accept(context.Context) (bool, error)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	// It returns the state sync mode selected by the VM.
+	Accept(context.Context) (StateSyncMode, error)
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }

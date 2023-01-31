@@ -309,6 +309,9 @@ func (b *bootstrapper) Shutdown(ctx context.Context) error {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 	if msg != common.StateSyncDone {
 		b.Ctx.Log.Warn("received an unexpected message from the VM",
@@ -316,6 +319,7 @@ func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 		)
 		return nil
 	}
+<<<<<<< HEAD
 =======
 func (*bootstrapper) Notify(common.Message) error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
@@ -329,6 +333,9 @@ func (*bootstrapper) Notify(context.Context, common.Message) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 <<<<<<< HEAD
+=======
+
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	b.Ctx.RunningStateSync(false)
 	return nil
 }

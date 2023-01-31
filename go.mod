@@ -31,6 +31,7 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
@@ -59,6 +60,9 @@ require (
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
 =======
 	github.com/ava-labs/coreth v0.11.5
+=======
+	github.com/ava-labs/coreth v0.11.6-0.20221228194216-966a5923da9b
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	github.com/btcsuite/btcd/btcutil v1.1.3
 >>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837

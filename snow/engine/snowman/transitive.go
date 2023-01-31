@@ -190,7 +190,13 @@ func (t *Transitive) GetFailed(ctx context.Context, nodeID ids.NodeID, requestID
 }
 
 func (t *Transitive) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) error {
+<<<<<<< HEAD
 	t.sendChits(ctx, nodeID, requestID)
+=======
+	if err := t.sendChits(ctx, nodeID, requestID); err != nil {
+		return err
+	}
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 
 	// Try to issue [blkID] to consensus.
 	// If we're missing an ancestor, request it from [vdr]
@@ -202,7 +208,13 @@ func (t *Transitive) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID
 }
 
 func (t *Transitive) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkBytes []byte) error {
+<<<<<<< HEAD
 	t.sendChits(ctx, nodeID, requestID)
+=======
+	if err := t.sendChits(ctx, nodeID, requestID); err != nil {
+		return err
+	}
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 
 	blk, err := t.VM.ParseBlock(ctx, blkBytes)
 	// If parsing fails, we just drop the request, as we didn't ask for it
@@ -399,6 +411,9 @@ func (t *Transitive) Shutdown(ctx context.Context) error {
 
 func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	switch msg {
 	case common.PendingTxs:
 		// the pending txs message means we should attempt to build a block.
@@ -408,14 +423,18 @@ func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 		t.Ctx.RunningStateSync(false)
 		return nil
 	default:
+<<<<<<< HEAD
 =======
 	if msg != common.PendingTxs {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		t.Ctx.Log.Warn("received an unexpected message from the VM",
 			zap.Stringer("messageString", msg),
 		)
 		return nil
 	}
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 
@@ -423,6 +442,8 @@ func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 	t.pendingBuildBlocks++
 	return t.buildBlocks(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }
 
 func (t *Transitive) Context() *snow.ConsensusContext {
@@ -528,6 +549,19 @@ func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID
 	}
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+}
+
+func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	if t.Ctx.IsRunningStateSync() {
+		lastAcceptedID, err := t.VM.LastAccepted(ctx)
+		if err != nil {
+			return err
+		}
+		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{lastAcceptedID})
+	} else {
+		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{t.Consensus.Preference()})
+	}
+	return nil
 }
 
 // Build blocks if they have been requested and the number of processing blocks

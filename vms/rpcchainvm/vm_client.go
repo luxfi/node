@@ -1103,10 +1103,14 @@ func (s *summaryClient) Bytes() []byte {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error) {
 =======
 func (s *summaryClient) Accept(ctx context.Context) (bool, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error) {
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	resp, err := s.vm.client.StateSummaryAccept(
 		ctx,
 		&vmpb.StateSummaryAcceptRequest{
@@ -1116,5 +1120,9 @@ func (s *summaryClient) Accept(ctx context.Context) (bool, error) {
 	if err != nil {
 		return block.StateSyncSkipped, err
 	}
+<<<<<<< HEAD
 	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
+=======
+	return block.StateSyncMode(resp.Mode), errCodeToError[resp.Err]
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }

@@ -313,6 +313,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 
 	preferredStateSummary := ss.selectSyncableStateSummary()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	syncMode, err := preferredStateSummary.Accept(ctx)
 =======
 	ss.Ctx.Log.Info("selected summary start state sync",
@@ -322,11 +323,17 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 
 	startedSyncing, err := preferredStateSummary.Accept(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	syncMode, err := preferredStateSummary.Accept(ctx)
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	if err != nil {
 		return err
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	ss.Ctx.Log.Info("accepted state summary",
 		zap.Stringer("summaryID", preferredStateSummary.ID()),
 		zap.Stringer("syncMode", syncMode),
@@ -342,7 +349,11 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		// Engine will wait for notification of state sync done.
 		ss.Ctx.RunningStateSync(true)
 		return nil
+<<<<<<< HEAD
 	case block.StateSyncDynamic:
+=======
+	case block.StateSummaryDynamic:
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		// Summary was accepted and VM is state syncing.
 		// Engine will continue into bootstrapping and the VM will sync in the
 		// background.
@@ -354,10 +365,13 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		)
 		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
+<<<<<<< HEAD
 =======
 	// VM did not accept the summary, move on to bootstrapping.
 	return ss.onDoneStateSyncing(ctx, ss.requestID)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }
 
 // selectSyncableStateSummary chooses a state summary from all
@@ -604,10 +618,15 @@ func (ss *stateSyncer) Notify(ctx context.Context, msg common.Message) error {
 		return nil
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 	ss.Ctx.RunningStateSync(false)
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+
+	ss.Ctx.RunningStateSync(false)
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	return ss.onDoneStateSyncing(ctx, ss.requestID)
 }
 

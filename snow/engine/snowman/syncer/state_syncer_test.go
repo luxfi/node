@@ -1174,6 +1174,7 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 	majoritySummaryCalled := false
 	minoritySummaryCalled := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	summary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 =======
 	summary.AcceptF = func(context.Context) (bool, error) {
@@ -1186,6 +1187,13 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 =======
 	minoritySummary.AcceptF = func(context.Context) (bool, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	summary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+		majoritySummaryCalled = true
+		return block.StateSyncStatic, nil
+	}
+	minoritySummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
@@ -1311,10 +1319,14 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 
 	minoritySummaryCalled := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	minoritySummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 =======
 	minoritySummary.AcceptF = func(context.Context) (bool, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	minoritySummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
@@ -1459,6 +1471,7 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 	majoritySummaryCalled := false
 	minoritySummaryCalled := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	minoritySummary1.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 =======
 	minoritySummary1.AcceptF = func(context.Context) (bool, error) {
@@ -1471,6 +1484,13 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 =======
 	minoritySummary2.AcceptF = func(context.Context) (bool, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	minoritySummary1.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+		majoritySummaryCalled = true
+		return block.StateSyncStatic, nil
+	}
+	minoritySummary2.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+>>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
