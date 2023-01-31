@@ -7,6 +7,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"sort"
+>>>>>>> 7b681477c (Add `avax.UTXOIDFromString` helper (#2138))
 	"strconv"
 	"strings"
 

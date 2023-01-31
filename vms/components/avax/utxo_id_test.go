@@ -62,6 +62,7 @@ func TestUTXOID(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func TestUTXOIDLess(t *testing.T) {
 	type test struct {
 		name     string
@@ -117,6 +118,8 @@ func TestUTXOIDLess(t *testing.T) {
 	}
 }
 
+=======
+>>>>>>> 7b681477c (Add `avax.UTXOIDFromString` helper (#2138))
 func TestUTXOIDFromString(t *testing.T) {
 	tests := []struct {
 		description string
