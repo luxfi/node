@@ -56,8 +56,11 @@ import (
 var (
 	_ vmpb.VMServer = (*VMServer)(nil)
 
+<<<<<<< HEAD
 	originalStderr = os.Stderr
 
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
@@ -431,6 +434,9 @@ func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.Bui
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	blkWithCtx, verifyWithCtx := blk.(block.WithVerifyContext)
 	if verifyWithCtx {
 		verifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
@@ -443,10 +449,13 @@ func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.Bui
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
+<<<<<<< HEAD
 =======
 	blkID := blk.ID()
 	parentID := blk.Parent()
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	return &vmpb.BuildBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
@@ -478,7 +487,11 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	return &vmpb.ParseBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
+<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
+=======
+		Status:            uint32(blk.Status()),
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -509,7 +522,11 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	return &vmpb.GetBlockResponse{
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
+<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
+=======
+		Status:            uint32(blk.Status()),
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -878,6 +895,9 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 		return nil, err
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 	if req.PChainHeight == nil {
 		err = blk.Verify(ctx)
@@ -892,9 +912,12 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	}
 	if err != nil {
+<<<<<<< HEAD
 =======
 	if err := blk.Verify(ctx); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		return nil, err
 	}
 

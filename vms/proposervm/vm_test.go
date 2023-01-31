@@ -2982,6 +2982,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	// Create a block near the tip (0).
 	blkNearTipInnerBytes := []byte{1}
 	blkNearTip, err := statelessblock.Build(
+<<<<<<< HEAD
 		ids.GenerateTestID(), // parent
 		time.Time{},          // timestamp
 		1,                    // pChainHeight,
@@ -2989,6 +2990,15 @@ func TestVMInnerBlkCache(t *testing.T) {
 		blkNearTipInnerBytes, // inner blk bytes
 		vm.ctx.ChainID,       // chain ID
 		vm.stakingLeafSigner, // key
+=======
+		ids.GenerateTestID(),     // parent
+		time.Time{},              // timestamp
+		1,                        // pChainHeight,
+		vm.ctx.StakingCertLeaf,   // cert
+		blkNearTipInnerBytes,     // inner blk bytes
+		vm.ctx.ChainID,           // chain ID
+		vm.ctx.StakingLeafSigner, // key
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	)
 	require.NoError(err)
 
@@ -3042,12 +3052,16 @@ func TestVMInnerBlkCacheDeduplicationRegression(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return xBlock, nil
 	}
 	aBlock, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 	coreVM.BuildBlockF = nil
+<<<<<<< HEAD
 
 	bStatelessBlock, err := statelessblock.BuildUnsigned(
 		gBlock.ID(),
@@ -3065,6 +3079,15 @@ func TestVMInnerBlkCacheDeduplicationRegression(t *testing.T) {
 	// (hasn't been verified) so we verify it and put it in the cahce.
 	err = vm.verifyAndRecordInnerBlk(context.Background(), blk)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+
+	bStatelessBlock, err := statelessblock.BuildUnsigned(
+		gBlock.ID(),
+		gBlock.Timestamp(),
+		defaultPChainHeight,
+		xBlock.Bytes(),
+	)
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	require.NoError(err)
 
 	xBlockCopy := &snowman.TestBlock{
@@ -3136,8 +3159,11 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		time.Time{}, // fork is active
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
+<<<<<<< HEAD
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -3158,6 +3184,11 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	snowCtx := snow.DefaultContextTest()
 	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
+<<<<<<< HEAD
+=======
+	snowCtx.StakingCertLeaf = pTestCert.Leaf
+	snowCtx.StakingLeafSigner = pTestCert.PrivateKey.(crypto.Signer)
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 	err := vm.Initialize(
 		context.Background(),
@@ -3191,6 +3222,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		blk.EXPECT().getInnerBlk().Return(innerBlk).AnyTimes()
 		blkID := ids.GenerateTestID()
 		blk.EXPECT().ID().Return(blkID).AnyTimes()
+<<<<<<< HEAD
 
 		err = vm.verifyAndRecordInnerBlk(
 			context.Background(),
@@ -3199,17 +3231,27 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 			},
 			blk,
 		)
+=======
+		blk.EXPECT().pChainHeight(gomock.Any()).Return(pChainHeight, nil)
+
+		err = vm.verifyAndRecordInnerBlk(context.Background(), blk)
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		require.NoError(err)
 
 		// Call VerifyWithContext again but with a different P-Chain height
 		blk.EXPECT().setInnerBlk(innerBlk).AnyTimes()
 		pChainHeight++
+<<<<<<< HEAD
+=======
+		blk.EXPECT().pChainHeight(context.Background()).Return(pChainHeight, nil)
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		innerBlk.MockWithVerifyContext.EXPECT().VerifyWithContext(context.Background(),
 			&block.Context{
 				PChainHeight: pChainHeight,
 			},
 		).Return(nil)
 
+<<<<<<< HEAD
 		err = vm.verifyAndRecordInnerBlk(
 			context.Background(),
 			&block.Context{
@@ -3261,4 +3303,26 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		err = vm.verifyAndRecordInnerBlk(context.Background(), nil, blk)
 		require.NoError(err)
 	}
+=======
+		err = vm.verifyAndRecordInnerBlk(context.Background(), blk)
+		require.NoError(err)
+	}
+
+	// Ensure we call Verify on a block that returns
+	// false for ShouldVerifyWithContext
+	innerBlk := blockWithVerifyContext{
+		MockBlock:             snowman.NewMockBlock(ctrl),
+		MockWithVerifyContext: mocks.NewMockWithVerifyContext(ctrl),
+	}
+	innerBlk.MockWithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(false, nil)
+	innerBlk.MockBlock.EXPECT().Verify(gomock.Any()).Return(nil)
+	innerBlk.MockBlock.EXPECT().Parent().Return(ids.GenerateTestID()).AnyTimes()
+	innerBlk.MockBlock.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
+	blk := NewMockPostForkBlock(ctrl)
+	blk.EXPECT().getInnerBlk().Return(innerBlk).AnyTimes()
+	blkID := ids.GenerateTestID()
+	blk.EXPECT().ID().Return(blkID).AnyTimes()
+	err = vm.verifyAndRecordInnerBlk(context.Background(), blk)
+	require.NoError(err)
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 }

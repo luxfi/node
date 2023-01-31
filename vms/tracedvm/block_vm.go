@@ -53,6 +53,9 @@ type blockVM struct {
 	ssVM         block.StateSyncableVM
 	// ChainVM tags
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	initializeTag              string
 	buildBlockTag              string
 	parseBlockTag              string

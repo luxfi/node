@@ -27,8 +27,12 @@ github.com/ava-labs/avalanchego/snow/engine/snowman/block=BuildBlockWithContextC
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=StateSyncableVM=snow/engine/snowman/block/mocks/state_syncable_vm.go
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
 github.com/ava-labs/avalanchego/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
+=======
+github.com/ava-labs/avalanchego/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 github.com/ava-labs/avalanchego/snow/networking/handler=Handler=snow/networking/handler/mock_handler.go
 github.com/ava-labs/avalanchego/snow/networking/timeout=Manager=snow/networking/timeout/mock_manager.go
 <<<<<<< HEAD
