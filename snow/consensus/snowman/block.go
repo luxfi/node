@@ -1,13 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
 
 import (
+	"context"
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
 )
 
 // Block is a possible decision that dictates the next canonical block.
@@ -34,7 +35,7 @@ type Block interface {
 	//
 	// If nil is returned, it is guaranteed that either Accept or Reject will be
 	// called on this block, unless the VM is shut down.
-	Verify() error
+	Verify(context.Context) error
 
 	// Bytes returns the binary representation of this block.
 	//

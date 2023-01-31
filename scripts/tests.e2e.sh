@@ -5,17 +5,17 @@ set -o pipefail
 
 # e.g.,
 # ./scripts/build.sh
-# ./scripts/tests.e2e.sh ./build/luxd
-# ENABLE_WHITELIST_VTX_TESTS=true ./scripts/tests.e2e.sh ./build/luxd
+# ./scripts/tests.e2e.sh ./build/avalanchego
+# ENABLE_WHITELIST_VTX_TESTS=true ./scripts/tests.e2e.sh ./build/avalanchego
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
 
-LUXGO_PATH="${1-}"
-if [[ -z "${LUXGO_PATH}" ]]; then
-  echo "Missing LUXGO_PATH argument!"
-  echo "Usage: ${0} [LUXGO_PATH]" >> /dev/stderr
+AVALANCHEGO_PATH="${1-}"
+if [[ -z "${AVALANCHEGO_PATH}" ]]; then
+  echo "Missing AVALANCHEGO_PATH argument!"
+  echo "Usage: ${0} [AVALANCHEGO_PATH]" >> /dev/stderr
   exit 255
 fi
 
@@ -35,24 +35,24 @@ fi
 echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
 
 #################################
-# download lux-network-runner
-# https://github.com/luxdefi/lux-network-runner
-# TODO: migrate to upstream lux-network-runner
+# download avalanche-network-runner
+# https://github.com/ava-labs/avalanche-network-runner
+# TODO: migrate to upstream avalanche-network-runner
 GOARCH=$(go env GOARCH)
 GOOS=$(go env GOOS)
-NETWORK_RUNNER_VERSION=1.2.2
-DOWNLOAD_PATH=/tmp/lux-network-runner.tar.gz
-DOWNLOAD_URL="https://github.com/luxdefi/lux-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/lux-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+NETWORK_RUNNER_VERSION=1.3.5-rc.0
+DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
+DOWNLOAD_URL="https://github.com/ava-labs/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
 
 rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/lux-network-runner
+rm -f /tmp/avalanche-network-runner
 
-echo "downloading lux-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL}"
+echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
 curl --fail -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
 
-echo "extracting downloaded lux-network-runner"
+echo "extracting downloaded avalanche-network-runner"
 tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/lux-network-runner -h
+/tmp/avalanche-network-runner -h
 
 GOPATH="$(go env GOPATH)"
 PATH="${GOPATH}/bin:${PATH}"
@@ -65,23 +65,23 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "lux-network-runner" server
-echo "launch lux-network-runner in the background"
-/tmp/lux-network-runner \
+# run "avalanche-network-runner" server
+echo "launch avalanche-network-runner in the background"
+/tmp/avalanche-network-runner \
 server \
 --log-level debug \
 --port=":12342" \
---disable-grpc-gateway 2> /dev/null &
+--disable-grpc-gateway &
 PID=${!}
 
 #################################
-echo "running e2e tests against the local cluster with ${LUXGO_PATH}"
+echo "running e2e tests against the local cluster with ${AVALANCHEGO_PATH}"
 ./tests/e2e/e2e.test \
 --ginkgo.v \
 --log-level debug \
 --network-runner-grpc-endpoint="0.0.0.0:12342" \
---network-runner-luxd-path=${LUXGO_PATH} \
---network-runner-luxd-log-level="WARN" \
+--network-runner-avalanchego-path=${AVALANCHEGO_PATH} \
+--network-runner-avalanchego-log-level="WARN" \
 --test-keys-file=tests/test.insecure.secp256k1.keys --ginkgo.label-filter="${GINKGO_LABEL_FILTER}" \
 && EXIT_CODE=$? || EXIT_CODE=$?
 

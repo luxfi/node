@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowstorm
@@ -6,9 +6,9 @@ package snowstorm
 import (
 	"testing"
 
-	"github.com/luxdefi/luxd/utils/sampler"
+	"github.com/ava-labs/avalanchego/utils/sampler"
 
-	sbcon "github.com/luxdefi/luxd/snow/consensus/snowball"
+	sbcon "github.com/ava-labs/avalanchego/snow/consensus/snowball"
 )
 
 func Simulate(

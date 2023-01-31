@@ -1,16 +1,18 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
 
 import (
+	"context"
 	"math/rand"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/utils/sampler"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/sampler"
 )
 
 type Network struct {
@@ -28,7 +30,7 @@ func (n *Network) shuffleColors() {
 		colors = append(colors, n.colors[int(index)])
 	}
 	n.colors = colors
-	SortTestBlocks(n.colors)
+	utils.Sort(n.colors)
 }
 
 func (n *Network) Initialize(params snowball.Parameters, numColors int) {
@@ -76,10 +78,10 @@ func (n *Network) AddNode(sm Consensus) error {
 			},
 			ParentV: myDep,
 			HeightV: blk.Height(),
-			VerifyV: blk.Verify(),
+			VerifyV: blk.Verify(context.Background()),
 			BytesV:  blk.Bytes(),
 		}
-		if err := sm.Add(myVtx); err != nil {
+		if err := sm.Add(context.Background(), myVtx); err != nil {
 			return err
 		}
 		deps[myVtx.ID()] = myDep
@@ -89,7 +91,9 @@ func (n *Network) AddNode(sm Consensus) error {
 	return nil
 }
 
-func (n *Network) Finalized() bool { return len(n.running) == 0 }
+func (n *Network) Finalized() bool {
+	return len(n.running) == 0
+}
 
 func (n *Network) Round() error {
 	if len(n.running) == 0 {
@@ -108,7 +112,7 @@ func (n *Network) Round() error {
 		sampledColors.Add(peer.Preference())
 	}
 
-	if err := running.RecordPoll(sampledColors); err != nil {
+	if err := running.RecordPoll(context.Background(), sampledColors); err != nil {
 		return err
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timeout
@@ -9,11 +9,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/utils/timer"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/utils/timer"
 )
 
 var _ Manager = (*manager)(nil)
@@ -38,7 +38,7 @@ type Manager interface {
 	RegisterRequest(
 		nodeID ids.NodeID,
 		chainID ids.ID,
-		op message.Op,
+		measureLatency bool,
 		requestID ids.RequestID,
 		timeoutHandler func(),
 	)
@@ -120,7 +120,7 @@ func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
 func (m *manager) RegisterRequest(
 	nodeID ids.NodeID,
 	chainID ids.ID,
-	op message.Op,
+	measureLatency bool,
 	requestID ids.RequestID,
 	timeoutHandler func(),
 ) {
@@ -129,7 +129,7 @@ func (m *manager) RegisterRequest(
 		m.benchlistMgr.RegisterFailure(chainID, nodeID)
 		timeoutHandler()
 	}
-	m.tm.Put(requestID, op, newTimeoutHandler)
+	m.tm.Put(requestID, measureLatency, newTimeoutHandler)
 }
 
 // RegisterResponse registers that we received a response from [nodeID]

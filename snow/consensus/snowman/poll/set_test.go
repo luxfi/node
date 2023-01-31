@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package poll
@@ -10,9 +10,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 func TestNewSetErrorOnMetrics(t *testing.T) {
@@ -245,11 +245,11 @@ func TestCreateAndFinishSuccessfulPoll(t *testing.T) {
 		t.Fatalf("Should only have one active poll")
 	} else if results := s.Vote(1, vdr1, vtxID); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish a non-existent poll")
-	} else if results = s.Vote(0, vdr1, vtxID); len(results) > 0 {
+	} else if results := s.Vote(0, vdr1, vtxID); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish an ongoing poll")
-	} else if results = s.Vote(0, vdr1, vtxID); len(results) > 0 {
+	} else if results := s.Vote(0, vdr1, vtxID); len(results) > 0 {
 		t.Fatalf("Should have dropped a duplicated poll")
-	} else if results = s.Vote(0, vdr2, vtxID); len(results) == 0 {
+	} else if results := s.Vote(0, vdr2, vtxID); len(results) == 0 {
 		t.Fatalf("Should have finished the")
 	} else if len(results) != 1 {
 		t.Fatalf("Wrong number of results returned")
@@ -290,11 +290,11 @@ func TestCreateAndFinishFailedPoll(t *testing.T) {
 		t.Fatalf("Should only have one active poll")
 	} else if results := s.Drop(1, vdr1); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish a non-existent poll")
-	} else if results = s.Drop(0, vdr1); len(results) > 0 {
+	} else if results := s.Drop(0, vdr1); len(results) > 0 {
 		t.Fatalf("Shouldn't have been able to finish an ongoing poll")
-	} else if results = s.Drop(0, vdr1); len(results) > 0 {
+	} else if results := s.Drop(0, vdr1); len(results) > 0 {
 		t.Fatalf("Should have dropped a duplicated poll")
-	} else if results = s.Drop(0, vdr2); len(results) == 0 {
+	} else if results := s.Drop(0, vdr2); len(results) == 0 {
 		t.Fatalf("Should have finished the")
 	} else if list := results[0].List(); len(list) != 0 {
 		t.Fatalf("Wrong number of vertices returned")

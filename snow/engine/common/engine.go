@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/validators"
 )
 
 // Engine describes the standard interface of a consensus engine
@@ -21,7 +21,7 @@ type Engine interface {
 	Context() *snow.ConsensusContext
 
 	// Start engine operations from given request ID
-	Start(startReqID uint32) error
+	Start(ctx context.Context, startReqID uint32) error
 
 	// Returns nil if the engine is healthy.
 	// Periodically called and reported through the health API
@@ -386,7 +386,13 @@ type ChitsHandler interface {
 	// This function can be called by any validator. It is not safe to assume
 	// this message is in response to a PullQuery or a PushQuery message.
 	// However, the validatorID is assumed to be authenticated.
-	Chits(ctx context.Context, validatorID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
+	Chits(
+		ctx context.Context,
+		validatorID ids.NodeID,
+		requestID uint32,
+		preferredContainerIDs []ids.ID,
+		acceptedContainerIDs []ids.ID,
+	) error
 
 	// Notify this engine that a query it issued has failed.
 	//
@@ -536,23 +542,23 @@ type InternalHandler interface {
 	validators.Connector
 
 	// Notify this engine that a registered timeout has fired.
-	Timeout() error
+	Timeout(context.Context) error
 
 	// Gossip to the network a container on the accepted frontier
-	Gossip() error
+	Gossip(context.Context) error
 
 	// Halt this engine.
 	//
 	// This function will be called before the environment starts exiting. This
 	// function is slightly special, in that it does not expect the chain's
 	// context lock to be held before calling this function.
-	Halt()
+	Halt(context.Context)
 
 	// Shutdown this engine.
 	//
 	// This function will be called when the environment is exiting.
-	Shutdown() error
+	Shutdown(context.Context) error
 
 	// Notify this engine of a message from the virtual machine.
-	Notify(Message) error
+	Notify(context.Context, Message) error
 }

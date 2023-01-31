@@ -1,13 +1,13 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package syncer
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/snowman/block"
-	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/validators"
 )
 
 type Config struct {
@@ -49,7 +49,8 @@ func NewConfig(
 	if len(stateSyncerIDs) != 0 {
 		stateSyncBeacons = validators.NewSet()
 		for _, peerID := range stateSyncerIDs {
-			if err := stateSyncBeacons.AddWeight(peerID, 1); err != nil {
+			// Invariant: We never use the TxID or BLS keys populated here.
+			if err := stateSyncBeacons.Add(peerID, nil, ids.Empty, 1); err != nil {
 				return Config{}, err
 			}
 		}

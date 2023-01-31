@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -11,10 +11,10 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/version"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var _ Engine = (*tracedEngine)(nil)
@@ -243,15 +243,16 @@ func (e *tracedEngine) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	return e.engine.PushQuery(ctx, nodeID, requestID, container)
 }
 
-func (e *tracedEngine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error {
+func (e *tracedEngine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs []ids.ID, acceptedIDs []ids.ID) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.Chits", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
-		attribute.Int("numContainerIDs", len(containerIDs)),
+		attribute.Int("numPreferredIDs", len(preferredIDs)),
+		attribute.Int("numAcceptedIDs", len(acceptedIDs)),
 	))
 	defer span.End()
 
-	return e.engine.Chits(ctx, nodeID, requestID, containerIDs)
+	return e.engine.Chits(ctx, nodeID, requestID, preferredIDs, acceptedIDs)
 }
 
 func (e *tracedEngine) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
@@ -338,44 +339,80 @@ func (e *tracedEngine) CrossChainAppRequestFailed(ctx context.Context, chainID i
 	return e.engine.CrossChainAppRequestFailed(ctx, chainID, requestID)
 }
 
-func (e *tracedEngine) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error {
-	return e.engine.Connected(nodeID, nodeVersion)
+func (e *tracedEngine) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Connected", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", nodeID),
+		attribute.Stringer("version", nodeVersion),
+	))
+	defer span.End()
+
+	return e.engine.Connected(ctx, nodeID, nodeVersion)
 }
 
-func (e *tracedEngine) Disconnected(nodeID ids.NodeID) error {
-	return e.engine.Disconnected(nodeID)
+func (e *tracedEngine) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Disconnected", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", nodeID),
+	))
+	defer span.End()
+
+	return e.engine.Disconnected(ctx, nodeID)
 }
 
-func (e *tracedEngine) Timeout() error {
-	return e.engine.Timeout()
+func (e *tracedEngine) Timeout(ctx context.Context) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Timeout")
+	defer span.End()
+
+	return e.engine.Timeout(ctx)
 }
 
-func (e *tracedEngine) Gossip() error {
-	return e.engine.Gossip()
+func (e *tracedEngine) Gossip(ctx context.Context) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Gossip")
+	defer span.End()
+
+	return e.engine.Gossip(ctx)
 }
 
-func (e *tracedEngine) Halt() {
-	e.engine.Halt()
+func (e *tracedEngine) Halt(ctx context.Context) {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Halt")
+	defer span.End()
+
+	e.engine.Halt(ctx)
 }
 
-func (e *tracedEngine) Shutdown() error {
-	return e.engine.Shutdown()
+func (e *tracedEngine) Shutdown(ctx context.Context) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Shutdown")
+	defer span.End()
+
+	return e.engine.Shutdown(ctx)
 }
 
-func (e *tracedEngine) Notify(msg Message) error {
-	return e.engine.Notify(msg)
+func (e *tracedEngine) Notify(ctx context.Context, msg Message) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Notify", oteltrace.WithAttributes(
+		attribute.Stringer("message", msg),
+	))
+	defer span.End()
+
+	return e.engine.Notify(ctx, msg)
 }
 
 func (e *tracedEngine) Context() *snow.ConsensusContext {
 	return e.engine.Context()
 }
 
-func (e *tracedEngine) Start(startReqID uint32) error {
-	return e.engine.Start(startReqID)
+func (e *tracedEngine) Start(ctx context.Context, startReqID uint32) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Start", oteltrace.WithAttributes(
+		attribute.Int64("requestID", int64(startReqID)),
+	))
+	defer span.End()
+
+	return e.engine.Start(ctx, startReqID)
 }
 
-func (e *tracedEngine) HealthCheck() (interface{}, error) {
-	return e.engine.HealthCheck()
+func (e *tracedEngine) HealthCheck(ctx context.Context) (interface{}, error) {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.HealthCheck")
+	defer span.End()
+
+	return e.engine.HealthCheck(ctx)
 }
 
 func (e *tracedEngine) GetVM() VM {
