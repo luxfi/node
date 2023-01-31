@@ -68,6 +68,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 			subnetID := ids.GenerateTestID()
 			subnetVdrs := validators.NewSet()
+<<<<<<< HEAD
 			vm.TrackedSubnets.Add(subnetID)
 			testVdrCount := 4
 			for i := 0; i < testVdrCount; i++ {
@@ -81,6 +82,16 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 			vals, ok := vm.Validators.Get(subnetID)
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
+=======
+			vm.WhitelistedSubnets.Add(subnetID)
+			testVdrCount := 4
+			for i := 0; i < testVdrCount; i++ {
+				subnetVal := ids.GenerateTestNodeID()
+				err := subnetVdrs.AddWeight(subnetVal, 100)
+				require.NoError(err)
+			}
+			ok := vm.Validators.Add(subnetID, subnetVdrs)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 			require.True(ok)
 
 			// connect to all primary network validators first
@@ -99,10 +110,14 @@ func TestHealthCheckSubnet(t *testing.T) {
 				}
 			}
 <<<<<<< HEAD
+<<<<<<< HEAD
 			for index, vdr := range subnetVdrs.List() {
 				err := vm.ConnectedSubnet(context.Background(), vdr.NodeID, subnetID)
 =======
 			for index, validator := range vals.List() {
+=======
+			for index, validator := range subnetVdrs.List() {
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 				err := vm.Connected(context.Background(), validator.ID(), version.CurrentApp)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 				require.NoError(err)

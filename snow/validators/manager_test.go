@@ -11,6 +11,7 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 )
 
+<<<<<<< HEAD
 func TestAdd(t *testing.T) {
 	require := require.New(t)
 
@@ -32,6 +33,8 @@ func TestAdd(t *testing.T) {
 	require.EqualValues(1, weight)
 }
 
+=======
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 func TestAddWeight(t *testing.T) {
 	require := require.New(t)
 
@@ -47,6 +50,7 @@ func TestAddWeight(t *testing.T) {
 	m.Add(subnetID, s)
 
 	err = AddWeight(m, subnetID, nodeID, 1)
+<<<<<<< HEAD
 	require.ErrorIs(err, errMissingValidator)
 
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
@@ -57,6 +61,12 @@ func TestAddWeight(t *testing.T) {
 
 	weight := s.Weight()
 	require.EqualValues(2, weight)
+=======
+	require.NoError(err)
+
+	weight := s.Weight()
+	require.EqualValues(1, weight)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
 func TestRemoveWeight(t *testing.T) {
@@ -73,7 +83,11 @@ func TestRemoveWeight(t *testing.T) {
 	s := NewSet()
 	m.Add(subnetID, s)
 
+<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
+=======
+	err = AddWeight(m, subnetID, nodeID, 2)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 	require.NoError(err)
 
 	err = RemoveWeight(m, subnetID, nodeID, 1)
@@ -106,7 +120,11 @@ func TestContains(t *testing.T) {
 	contains = Contains(m, subnetID, nodeID)
 	require.False(contains)
 
+<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+=======
+	err := AddWeight(m, subnetID, nodeID, 1)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 	require.NoError(err)
 
 	contains = Contains(m, subnetID, nodeID)
