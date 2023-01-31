@@ -51,10 +51,14 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	cfg, err := NewConfig(*commonCfg, nil, dummyGetter, nonStateSyncableVM)
 	require.NoError(err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	syncer := New(cfg, func(context.Context, uint32) error {
 =======
 	syncer := New(cfg, func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	syncer := New(cfg, func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	})
 
@@ -79,15 +83,20 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	cfg, err = NewConfig(*commonCfg, nil, dummyGetter, fullVM)
 	require.NoError(err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	syncer = New(cfg, func(context.Context, uint32) error {
 =======
 	syncer = New(cfg, func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	syncer = New(cfg, func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil
 	})
 
 	// test: VM does not support state syncing
 <<<<<<< HEAD
+<<<<<<< HEAD
 	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
@@ -98,10 +107,17 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	}
 	enabled, err = syncer.IsEnabled()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
+		return false, nil
+	}
+	enabled, err = syncer.IsEnabled(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.False(enabled)
 
 	// test: VM does support state syncing
+<<<<<<< HEAD
 <<<<<<< HEAD
 	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return true, nil
@@ -113,6 +129,12 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	}
 	enabled, err = syncer.IsEnabled()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
+		return true, nil
+	}
+	enabled, err = syncer.IsEnabled(context.Background())
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.True(enabled)
 }
@@ -149,7 +171,11 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// attempt starting bootstrapper with not enough stake connected. Bootstrapper should stall.
 	vdr0 := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, startupAlpha/2))
+=======
+	require.NoError(vdrs.AddWeight(vdr0, startupAlpha/2))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(syncer.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.False(commonCfg.StartupTracker.ShouldStart())
@@ -158,7 +184,11 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr, nil, ids.Empty, startupAlpha))
+=======
+	require.NoError(vdrs.AddWeight(vdr, startupAlpha))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(syncer.Connected(context.Background(), vdr, version.CurrentApp))
 
 	require.True(commonCfg.StartupTracker.ShouldStart())
@@ -198,7 +228,11 @@ func TestStateSyncLocalSummaryIsIncludedAmongFrontiersIfAvailable(t *testing.T) 
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	require.True(syncer.locallyAvailableSummary == localSummary)
@@ -235,7 +269,11 @@ func TestStateSyncNotFoundOngoingSummaryIsNotIncludedAmongFrontiers(t *testing.T
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	require.Nil(syncer.locallyAvailableSummary)
@@ -270,7 +308,11 @@ func TestBeaconsAreReachedForFrontiersUponStartup(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	// check that vdrs are reached out for frontiers
@@ -314,7 +356,11 @@ func TestUnRequestedStateSummaryFrontiersAreDropped(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	initiallyReachedOutBeaconsSize := len(contactedFrontiersProviders)
@@ -407,7 +453,11 @@ func TestMalformedStateSummaryFrontiersAreDropped(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	initiallyReachedOutBeaconsSize := len(contactedFrontiersProviders)
@@ -479,7 +529,11 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	initiallyReachedOutBeaconsSize := len(contactedFrontiersProviders)
@@ -493,7 +547,11 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
 		require.Empty(summaryBytes)
+<<<<<<< HEAD
 		return nil, errEmptySummary
+=======
+		return nil, errors.New("empty summary")
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 
 	// assume timeout is reached and vdrs is marked as unresponsive
@@ -592,7 +650,11 @@ func TestStateSyncIsRestartedIfTooManyFrontierSeedersTimeout(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -678,7 +740,11 @@ func TestVoteRequestsAreSentAsAllFrontierBeaconsResponded(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -751,7 +817,11 @@ func TestUnRequestedVotesAreDropped(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -871,7 +941,11 @@ func TestVotesForUnknownSummariesAreDropped(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -993,7 +1067,11 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -1027,11 +1105,19 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 
 	majoritySummaryCalled := false
 	minoritySummaryCalled := false
+<<<<<<< HEAD
 	summary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+=======
+	summary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		majoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
+<<<<<<< HEAD
 	minoritySummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+=======
+	minoritySummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
@@ -1128,7 +1214,11 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -1148,7 +1238,11 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 	require.False(syncer.pendingSeeders.Len() != 0)
 
 	minoritySummaryCalled := false
+<<<<<<< HEAD
 	minoritySummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+=======
+	minoritySummary.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
@@ -1250,7 +1344,11 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 
 	// Connect enough stake to start syncer
 	for _, vdr := range vdrs.List() {
+<<<<<<< HEAD
 		require.NoError(syncer.Connected(context.Background(), vdr.NodeID, version.CurrentApp))
+=======
+		require.NoError(syncer.Connected(context.Background(), vdr.ID(), version.CurrentApp))
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	}
 	require.True(syncer.pendingSeeders.Len() != 0)
 
@@ -1284,21 +1382,33 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 
 	majoritySummaryCalled := false
 	minoritySummaryCalled := false
+<<<<<<< HEAD
 	minoritySummary1.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+=======
+	minoritySummary1.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		majoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
+<<<<<<< HEAD
 	minoritySummary2.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+=======
+	minoritySummary2.AcceptF = func(context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		minoritySummaryCalled = true
 		return block.StateSyncStatic, nil
 	}
 
 	stateSyncFullyDone := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
 =======
 	syncer.onDoneStateSyncing = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		stateSyncFullyDone = true
 		return nil
 	}
@@ -1362,10 +1472,14 @@ func TestStateSyncIsDoneOnceVMNotifies(t *testing.T) {
 
 	stateSyncFullyDone := false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
 =======
 	syncer.onDoneStateSyncing = func(uint32) error {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		stateSyncFullyDone = true
 		return nil
 	}

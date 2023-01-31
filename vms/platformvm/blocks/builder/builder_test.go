@@ -57,7 +57,11 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	// show that build block include that tx and removes it from mempool
 	blkIntf, err := env.Builder.BuildBlock(context.Background())
+<<<<<<< HEAD
 	require.NoError(err)
+=======
+	require.NoError(err, "couldn't build block out of mempool")
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	blk, ok := blkIntf.(*blockexecutor.Block)
 	require.True(ok)

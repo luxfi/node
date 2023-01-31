@@ -7,9 +7,13 @@ import "context"
 
 // TODO: add health checks
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
 =======
 func (*VM) HealthCheck() (interface{}, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) HealthCheck(context.Context) (interface{}, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil, nil
 }

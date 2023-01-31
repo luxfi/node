@@ -13,7 +13,11 @@ import (
 // Job defines the interface required to be placed on the job queue.
 type Job interface {
 	ID() ids.ID
+<<<<<<< HEAD
 	MissingDependencies(context.Context) (set.Set[ids.ID], error)
+=======
+	MissingDependencies(context.Context) (ids.Set, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	// Returns true if this job has at least 1 missing dependency
 	HasMissingDependencies(context.Context) (bool, error)
 	Execute(context.Context) error

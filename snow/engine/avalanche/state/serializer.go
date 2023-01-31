@@ -151,10 +151,14 @@ func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (avalanche.Vertex, 
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Serializer) Edge(context.Context) []ids.ID {
 =======
 func (s *Serializer) Edge() []ids.ID {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (s *Serializer) Edge(context.Context) []ids.ID {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return s.edge.List()
 }
 

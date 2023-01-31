@@ -81,7 +81,11 @@ type stateSyncer struct {
 
 	// summaries received may be different even if referring to the same height
 	// we keep a list of deduplicated height ready for voting
+<<<<<<< HEAD
 	summariesHeights       set.Set[uint64]
+=======
+	summariesHeights       map[uint64]struct{}
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	uniqueSummariesHeights []uint64
 
 	// number of times the state sync has been attempted
@@ -304,11 +308,21 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 	}
 
 	preferredStateSummary := ss.selectSyncableStateSummary()
+<<<<<<< HEAD
 	syncMode, err := preferredStateSummary.Accept(ctx)
+=======
+	ss.Ctx.Log.Info("selected summary start state sync",
+		zap.Stringer("summaryID", preferredStateSummary.ID()),
+		zap.Int("numTotalSummaries", size),
+	)
+
+	startedSyncing, err := preferredStateSummary.Accept(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return err
 	}
 
+<<<<<<< HEAD
 	ss.Ctx.Log.Info("accepted state summary",
 		zap.Stringer("summaryID", preferredStateSummary.ID()),
 		zap.Stringer("syncMode", syncMode),
@@ -336,6 +350,10 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		)
 		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
+=======
+	// VM did not accept the summary, move on to bootstrapping.
+	return ss.onDoneStateSyncing(ctx, ss.requestID)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // selectSyncableStateSummary chooses a state summary from all
@@ -541,8 +559,11 @@ func (ss *stateSyncer) Notify(ctx context.Context, msg common.Message) error {
 		)
 		return nil
 	}
+<<<<<<< HEAD
 
 	ss.Ctx.RunningStateSync(false)
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return ss.onDoneStateSyncing(ctx, ss.requestID)
 }
 
@@ -573,6 +594,7 @@ func (ss *stateSyncer) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*stateSyncer) Gossip(context.Context) error {
 	return nil
 }
@@ -581,6 +603,9 @@ func (*stateSyncer) Gossip() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 =======
 func (*stateSyncer) Gossip() error {
+=======
+func (*stateSyncer) Gossip(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
@@ -590,6 +615,7 @@ func (ss *stateSyncer) Shutdown(ctx context.Context) error {
 	return ss.VM.Shutdown(ctx)
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (*stateSyncer) Halt(context.Context) {}
 
@@ -604,6 +630,11 @@ func (*stateSyncer) Timeout() error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 =======
 func (*stateSyncer) Timeout() error {
+=======
+func (*stateSyncer) Halt(context.Context) {}
+
+func (*stateSyncer) Timeout(context.Context) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

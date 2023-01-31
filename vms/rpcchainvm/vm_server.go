@@ -401,6 +401,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 	return &emptypb.Empty{}, vm.vm.Disconnected(ctx, nodeID)
 }
 
+<<<<<<< HEAD
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
@@ -415,6 +416,10 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 			PChainHeight: *req.PChainHeight,
 		})
 	}
+=======
+func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.BuildBlockResponse, error) {
+	blk, err := vm.vm.BuildBlock(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return nil, err
 	}
@@ -509,12 +514,17 @@ func (vm *VMServer) SetPreference(ctx context.Context, req *vmpb.SetPreferenceRe
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthResponse, error) {
 	vmHealth, err := vm.vm.HealthCheck(ctx)
 =======
 func (vm *VMServer) Health(context.Context, *emptypb.Empty) (*vmpb.HealthResponse, error) {
 	vmHealth, err := vm.vm.HealthCheck()
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthResponse, error) {
+	vmHealth, err := vm.vm.HealthCheck(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}
@@ -695,10 +705,14 @@ func (vm *VMServer) VerifyHeightIndex(ctx context.Context, _ *emptypb.Empty) (*v
 
 func (vm *VMServer) GetBlockIDAtHeight(
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx context.Context,
 =======
 	_ context.Context,
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+	ctx context.Context,
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	req *vmpb.GetBlockIDAtHeightRequest,
 ) (*vmpb.GetBlockIDAtHeightResponse, error) {
 	var (
@@ -761,10 +775,14 @@ func (vm *VMServer) GetOngoingSyncStateSummary(
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VMServer) GetLastStateSummary(ctx context.Context, _ *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
 =======
 func (vm *VMServer) GetLastStateSummary(context.Context, *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (vm *VMServer) GetLastStateSummary(ctx context.Context, _ *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	var (
 		summary block.StateSummary
 		err     error
@@ -790,7 +808,7 @@ func (vm *VMServer) GetLastStateSummary(context.Context, *emptypb.Empty) (*vmpb.
 }
 
 func (vm *VMServer) ParseStateSummary(
-	_ context.Context,
+	ctx context.Context,
 	req *vmpb.ParseStateSummaryRequest,
 ) (*vmpb.ParseStateSummaryResponse, error) {
 	var (
@@ -817,7 +835,7 @@ func (vm *VMServer) ParseStateSummary(
 }
 
 func (vm *VMServer) GetStateSummary(
-	_ context.Context,
+	ctx context.Context,
 	req *vmpb.GetStateSummaryRequest,
 ) (*vmpb.GetStateSummaryResponse, error) {
 	var (
@@ -848,6 +866,7 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 
 	if req.PChainHeight == nil {
 		err = blk.Verify(ctx)
@@ -862,6 +881,9 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	}
 	if err != nil {
+=======
+	if err := blk.Verify(ctx); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil, err
 	}
 
@@ -912,7 +934,11 @@ func (vm *VMServer) StateSummaryAccept(
 		var summary block.StateSummary
 		summary, err = vm.ssVM.ParseStateSummary(ctx, req.Bytes)
 		if err == nil {
+<<<<<<< HEAD
 			mode, err = summary.Accept(ctx)
+=======
+			accepted, err = summary.Accept(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		}
 	} else {
 		err = block.ErrStateSyncableVMNotImplemented

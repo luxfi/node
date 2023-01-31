@@ -35,6 +35,10 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 func TestGetAncestorsPropagatesErrors(t *testing.T) {
 	vm := &TestVM{}
 	someID := ids.GenerateTestID()
+<<<<<<< HEAD
+=======
+	someError := errors.New("some error that is not ErrNotFound")
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
 		require.Equal(t, someID, id)
 		return nil, errTest

@@ -118,6 +118,7 @@ type VM struct {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
 	return nil
 }
@@ -137,6 +138,13 @@ func (*VM) Connected(ids.NodeID, *version.Application) error {
 
 func (*VM) Disconnected(ids.NodeID) error {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
+	return nil
+}
+
+func (*VM) Disconnected(context.Context, ids.NodeID) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 
@@ -313,10 +321,14 @@ func (vm *VM) Shutdown(context.Context) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
 =======
 func (*VM) Version() (string, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) Version(context.Context) (string, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return version.Current.String(), nil
 }
 
@@ -349,10 +361,14 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
 =======
 func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	newServer := rpc.NewServer()
 	codec := json.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
@@ -365,6 +381,7 @@ func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
 	}, newServer.RegisterService(staticService, "avm")
 }
 
+<<<<<<< HEAD
 /*
  ******************************************************************************
  ********************************** Chain VM **********************************
@@ -401,6 +418,8 @@ func (*VM) Linearize(context.Context, ids.ID) error {
 	return errUnimplemented
 }
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (vm *VM) PendingTxs(context.Context) []snowstorm.Tx {
 	vm.timer.Cancel()
 

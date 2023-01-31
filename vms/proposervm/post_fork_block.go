@@ -123,6 +123,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 // A post-fork block can never have a pre-fork child
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*postForkBlock) verifyPreForkChild(context.Context, *preForkBlock) error {
 =======
 func (*postForkBlock) verifyPreForkChild(child *preForkBlock) error {
@@ -130,6 +131,9 @@ func (*postForkBlock) verifyPreForkChild(child *preForkBlock) error {
 =======
 func (*postForkBlock) verifyPreForkChild(*preForkBlock) error {
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+func (*postForkBlock) verifyPreForkChild(context.Context, *preForkBlock) error {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return errUnsignedChild
 }
 
@@ -156,7 +160,11 @@ func (b *postForkBlock) verifyPostForkOption(ctx context.Context, child *postFor
 		return errInnerParentMismatch
 	}
 
+<<<<<<< HEAD
 	return child.vm.verifyAndRecordInnerBlk(ctx, nil, child)
+=======
+	return child.vm.verifyAndRecordInnerBlk(ctx, child)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 // Return the child (a *postForkBlock) of this block

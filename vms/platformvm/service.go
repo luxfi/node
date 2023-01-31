@@ -84,6 +84,7 @@ type GetHeightResponse struct {
 
 // GetHeight returns the height of the last accepted block
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
 	ctx := r.Context()
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
@@ -95,6 +96,15 @@ func (service *Service) GetHeight(_ *http.Request, _ *struct{}, response *GetHei
 		return fmt.Errorf("couldn't get last accepted block ID: %w", err)
 	}
 	lastAccepted, err := s.vm.GetBlock(ctx, lastAcceptedID)
+=======
+func (service *Service) GetHeight(r *http.Request, _ *struct{}, response *GetHeightResponse) error {
+	ctx := r.Context()
+	lastAcceptedID, err := service.vm.LastAccepted(ctx)
+	if err != nil {
+		return fmt.Errorf("couldn't get last accepted block ID: %w", err)
+	}
+	lastAccepted, err := service.vm.GetBlock(ctx, lastAcceptedID)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return fmt.Errorf("couldn't get last accepted block: %w", err)
 	}
@@ -1676,8 +1686,13 @@ type GetBlockchainStatusReply struct {
 }
 
 // GetBlockchainStatus gets the status of a blockchain with the ID [args.BlockchainID].
+<<<<<<< HEAD
 func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
 	s.vm.ctx.Log.Debug("Platform: GetBlockchainStatus called")
+=======
+func (service *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
+	service.vm.ctx.Log.Debug("Platform: GetBlockchainStatus called")
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
 	if args.BlockchainID == "" {
 		return errMissingBlockchainID
@@ -1700,12 +1715,20 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	}
 
 	ctx := r.Context()
+<<<<<<< HEAD
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
+=======
+	lastAcceptedID, err := service.vm.LastAccepted(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return fmt.Errorf("problem loading last accepted ID: %w", err)
 	}
 
+<<<<<<< HEAD
 	exists, err := s.chainExists(ctx, lastAcceptedID, blockchainID)
+=======
+	exists, err := service.chainExists(ctx, lastAcceptedID, blockchainID)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return fmt.Errorf("problem looking up blockchain: %w", err)
 	}
@@ -1718,7 +1741,11 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	if err != nil {
 		return fmt.Errorf("could not retrieve preferred block, err %w", err)
 	}
+<<<<<<< HEAD
 	preferred, err := s.chainExists(ctx, preferredBlk.ID(), blockchainID)
+=======
+	preferred, err := service.chainExists(ctx, preferredBlk.ID(), blockchainID)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return fmt.Errorf("problem looking up blockchain: %w", err)
 	}
@@ -1749,10 +1776,17 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 	return validators.Contains(s.vm.ctx.NodeID)
 }
 
+<<<<<<< HEAD
 func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
 	state, ok := s.vm.manager.GetState(blockID)
 	if !ok {
 		block, err := s.vm.GetBlock(ctx, blockID)
+=======
+func (service *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
+	state, ok := service.vm.manager.GetState(blockID)
+	if !ok {
+		block, err := service.vm.GetBlock(ctx, blockID)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if err != nil {
 			return false, err
 		}

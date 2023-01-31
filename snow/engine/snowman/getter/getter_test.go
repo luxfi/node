@@ -100,6 +100,7 @@ func TestAcceptedFrontier(t *testing.T) {
 	}
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blkID, nil
 	}
@@ -110,6 +111,12 @@ func TestAcceptedFrontier(t *testing.T) {
 	}
 	vm.GetBlockF = func(bID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blkID, nil
+	}
+	vm.GetBlockF = func(_ context.Context, bID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blkID, bID)
 		return dummyBlk, nil
 	}
@@ -161,6 +168,7 @@ func TestFilterAccepted(t *testing.T) {
 
 	vm.CantLastAccepted = false
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk1.ID(), nil
 	}
@@ -171,6 +179,12 @@ func TestFilterAccepted(t *testing.T) {
 	}
 	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		return blk1.ID(), nil
+	}
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk1.ID(), blkID)
 		return blk1, nil
 	}

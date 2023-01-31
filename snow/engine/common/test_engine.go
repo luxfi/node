@@ -105,6 +105,7 @@ type EngineTest struct {
 
 	CantGetVM bool
 
+<<<<<<< HEAD
 	StartF                                     func(ctx context.Context, startReqID uint32) error
 	IsBootstrappedF                            func() bool
 	ContextF                                   func() *snow.ConsensusContext
@@ -116,6 +117,18 @@ type EngineTest struct {
 	AncestorsF                                 func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) error
 	AcceptedFrontierF, GetAcceptedF, AcceptedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs []ids.ID) error
 	ChitsF                                     func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs []ids.ID, acceptedIDs []ids.ID) error
+=======
+	StartF                                             func(ctx context.Context, startReqID uint32) error
+	IsBootstrappedF                                    func() bool
+	ContextF                                           func() *snow.ConsensusContext
+	HaltF                                              func(context.Context)
+	TimeoutF, GossipF, ShutdownF                       func(context.Context) error
+	NotifyF                                            func(context.Context, Message) error
+	GetF, GetAncestorsF, PullQueryF                    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error
+	PutF, PushQueryF                                   func(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error
+	AncestorsF                                         func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) error
+	AcceptedFrontierF, GetAcceptedF, AcceptedF, ChitsF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	GetStateSummaryFrontierF, GetStateSummaryFrontierFailedF, GetAcceptedStateSummaryFailedF,
 	GetAcceptedFrontierF, GetFailedF, GetAncestorsFailedF,
 	QueryFailedF, GetAcceptedFrontierFailedF, GetAcceptedFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32) error
@@ -123,6 +136,7 @@ type EngineTest struct {
 	StateSummaryFrontierF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error
 	GetAcceptedStateSummaryF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, keys []uint64) error
 	AcceptedStateSummaryF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error
+<<<<<<< HEAD
 <<<<<<< HEAD
 	ConnectedF                  func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
 	DisconnectedF               func(ctx context.Context, nodeID ids.NodeID) error
@@ -132,6 +146,11 @@ type EngineTest struct {
 	DisconnectedF               func(nodeID ids.NodeID) error
 	HealthF                     func() (interface{}, error)
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+	ConnectedF                  func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
+	DisconnectedF               func(ctx context.Context, nodeID ids.NodeID) error
+	HealthF                     func(context.Context) (interface{}, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	GetVMF                      func() VM
 	AppRequestF                 func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
 	AppResponseF                func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error

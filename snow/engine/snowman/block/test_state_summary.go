@@ -24,7 +24,11 @@ type TestStateSummary struct {
 
 	T          *testing.T
 	CantAccept bool
+<<<<<<< HEAD
 	AcceptF    func(context.Context) (StateSyncMode, error)
+=======
+	AcceptF    func(context.Context) (bool, error)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }
 
 func (s *TestStateSummary) ID() ids.ID {
@@ -50,7 +54,11 @@ func (s *TestStateSummary) Bytes() []byte {
 	return s.BytesV
 }
 
+<<<<<<< HEAD
 func (s *TestStateSummary) Accept(ctx context.Context) (StateSyncMode, error) {
+=======
+func (s *TestStateSummary) Accept(ctx context.Context) (bool, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if s.AcceptF != nil {
 		return s.AcceptF(ctx)
 	}

@@ -5,11 +5,16 @@ package metervm
 
 import (
 	"context"
+<<<<<<< HEAD
 	"errors"
 	"fmt"
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+=======
+
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 )
 
 var (

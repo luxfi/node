@@ -204,8 +204,12 @@ func (vm *VM) Initialize(
 	})
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
+<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	context, cancel := context.WithCancel(detachedCtx)
+=======
+	context, cancel := context.WithCancel(ctx)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	vm.context = context
 	vm.onShutdown = cancel
 
@@ -224,7 +228,11 @@ func (vm *VM) Initialize(
 		return err
 	}
 
+<<<<<<< HEAD
 	if err := vm.repair(detachedCtx); err != nil {
+=======
+	if err := vm.repair(ctx, indexerState); err != nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return err
 	}
 
@@ -345,11 +353,17 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
+<<<<<<< HEAD
 // repair makes sure that vm and innerVM chains are in sync.
 // Moreover it fixes vm's height index if defined.
 func (vm *VM) repair(ctx context.Context) error {
 	if vm.hVM == nil {
 		// height index not defined. Just sync vms and innerVM chains.
+=======
+func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
+	// check and possibly rebuild height index
+	if vm.hVM == nil {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return vm.repairAcceptedChainByIteration(ctx)
 	}
 
@@ -359,6 +373,33 @@ func (vm *VM) repair(ctx context.Context) error {
 		// and repair this VM height index.
 		shouldRepair, err := vm.shouldHeightIndexBeRepaired(ctx)
 		if err != nil {
+<<<<<<< HEAD
+=======
+			return fmt.Errorf("retrieving value of required index reset failed with: %w", err)
+		}
+
+		if !indexWasReset {
+			vm.resetHeightIndexOngoing.SetValue(true)
+		}
+	}
+
+	if !vm.resetHeightIndexOngoing.GetValue() {
+		// We are not going to wipe the height index
+		switch vm.hVM.VerifyHeightIndex(ctx) {
+		case nil:
+			// We are not going to wait for the height index to be repaired.
+			shouldRepair, err := vm.shouldHeightIndexBeRepaired(ctx)
+			if err != nil {
+				return err
+			}
+			if !shouldRepair {
+				vm.ctx.Log.Info("block height index was successfully verified")
+				vm.hIndexer.MarkRepaired(true)
+				return vm.repairAcceptedChainByHeight(ctx)
+			}
+		case block.ErrIndexIncomplete:
+		default:
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			return err
 		}
 		if !shouldRepair {
@@ -371,7 +412,10 @@ func (vm *VM) repair(ctx context.Context) error {
 		return nil
 	}
 
+<<<<<<< HEAD
 	// innerVM height index is incomplete. Sync vm and innerVM chains first.
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err := vm.repairAcceptedChainByIteration(ctx); err != nil {
 		return err
 	}
@@ -531,6 +575,10 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	proLastAccepted, err := vm.getPostForkBlock(ctx, proLastAcceptedID)
 	if err != nil {
 		return err
@@ -722,6 +770,7 @@ func (vm *VM) storePostForkBlock(blk PostForkBlock) error {
 	return vm.db.Commit()
 }
 
+<<<<<<< HEAD
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
 	postForkID := postFork.ID()
@@ -746,6 +795,19 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 			if err != nil {
 				return err
 			}
+=======
+func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBlock) error {
+	postForkID := postFork.ID()
+	// If inner block's Verify returned true, don't call it again.
+	//
+	// Note that if [innerBlk.Verify] returns nil, this method returns nil. This
+	// must always remain the case to maintain the inner block's invariant that
+	// if it's Verify() returns nil, it is eventually accepted or rejected.
+	currentInnerBlk := postFork.getInnerBlk()
+	if originalInnerBlk, contains := vm.Tree.Get(currentInnerBlk); !contains {
+		if err := currentInnerBlk.Verify(ctx); err != nil {
+			return err
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		}
 	}
 

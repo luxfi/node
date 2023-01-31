@@ -4,11 +4,13 @@
 package throttling
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
+<<<<<<< HEAD
 	"golang.org/x/net/context"
 
 <<<<<<< HEAD
@@ -18,6 +20,8 @@ import (
 	"github.com/luxdefi/luxd/utils/timer/mockable"
 	"github.com/luxdefi/luxd/utils/wrappers"
 =======
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/networking/tracker"
 	"github.com/ava-labs/avalanchego/utils/timer/mockable"

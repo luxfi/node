@@ -24,7 +24,10 @@ type TestVM struct {
 
 	CantLinearize, CantPendingTxs, CantParse, CantGet bool
 
+<<<<<<< HEAD
 	LinearizeF  func(context.Context, ids.ID) error
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	PendingTxsF func(context.Context) []snowstorm.Tx
 	ParseTxF    func(context.Context, []byte) (snowstorm.Tx, error)
 	GetTxF      func(context.Context, ids.ID) (snowstorm.Tx, error)
@@ -38,6 +41,7 @@ func (vm *TestVM) Default(cant bool) {
 	vm.CantGet = cant
 }
 
+<<<<<<< HEAD
 func (vm *TestVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	if vm.LinearizeF != nil {
 		return vm.LinearizeF(ctx, stopVertexID)
@@ -48,6 +52,8 @@ func (vm *TestVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return errLinearize
 }
 
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (vm *TestVM) PendingTxs(ctx context.Context) []snowstorm.Tx {
 	if vm.PendingTxsF != nil {
 		return vm.PendingTxsF(ctx)

@@ -53,10 +53,14 @@ func (t *txJob) ID() ids.ID {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (t *txJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
 =======
 func (t *txJob) MissingDependencies() (ids.Set, error) {
+=======
+func (t *txJob) MissingDependencies(context.Context) (ids.Set, error) {
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	missing := ids.Set{}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	deps, err := t.tx.Dependencies()

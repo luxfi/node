@@ -360,11 +360,18 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	// Notify connected validators
 	subnetID := chain.Context().SubnetID
 	for validatorID, peer := range cr.peers {
+<<<<<<< HEAD
 		// If this validator is benched on any chain, treat them as disconnected
 		// on all chains
 		_, benched := cr.benched[validatorID]
 		if benched {
 			continue
+=======
+		// If this validator is benched on any chain, treat them as disconnected on all chains
+		if _, benched := cr.benched[validatorID]; !benched && peer.trackedSubnets.Contains(subnetID) {
+			msg := message.InternalConnected(validatorID, peer.version)
+			chain.Push(ctx, msg)
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		}
 
 		// If this peer isn't running this chain, then we shouldn't mark them as

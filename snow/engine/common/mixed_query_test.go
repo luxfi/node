@@ -11,7 +11,10 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/ava-labs/avalanchego/ids"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 )
 
 func TestSendMixedQuery(t *testing.T) {
