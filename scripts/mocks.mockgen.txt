@@ -61,9 +61,13 @@ github.com/ava-labs/avalanchego/snow/validators=Manager=snow/validators/mock_man
 github.com/ava-labs/avalanchego/snow/validators=State=snow/validators/mock_state.go
 github.com/ava-labs/avalanchego/snow/validators=SubnetConnector=snow/validators/mock_subnet_connector.go
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/utils/crypto/keychain=Ledger=utils/crypto/keychain/mock_ledger.go
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+github.com/ava-labs/avalanchego/utils/crypto/keychain=Ledger=utils/crypto/keychain/mock_ledger.go
+>>>>>>> 85e4e7623 (Support ledger-avalanche@v0.6.5 (#2427))
 github.com/ava-labs/avalanchego/utils/filesystem=Reader=utils/filesystem/mock_io.go
 github.com/ava-labs/avalanchego/utils/hashing=Hasher=utils/hashing/mock_hasher.go
 github.com/ava-labs/avalanchego/utils/logging=Logger=utils/logging/mock_logger.go
