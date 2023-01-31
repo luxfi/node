@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
+>>>>>>> d7a7925ff (Update various imports)
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -6,6 +10,7 @@ package ids
 import (
 	"encoding/json"
 	"strings"
+<<<<<<< HEAD
 
 	"golang.org/x/exp/maps"
 
@@ -14,6 +19,18 @@ import (
 
 // The minimum capacity of a set
 const minSetSize = 16
+=======
+)
+
+const (
+	// The minimum capacity of a set
+	minSetSize = 16
+
+	// If a set has more than this many keys, it will be cleared by setting the map to nil
+	// rather than iteratively deleting
+	clearSizeThreshold = 512
+)
+>>>>>>> d7a7925ff (Update various imports)
 
 // Set is a set of IDs
 type Set map[ID]struct{}
@@ -83,9 +100,13 @@ func (ids *Set) Overlaps(big Set) bool {
 }
 
 // Len returns the number of ids in this set
+<<<<<<< HEAD
 func (ids Set) Len() int {
 	return len(ids)
 }
+=======
+func (ids Set) Len() int { return len(ids) }
+>>>>>>> d7a7925ff (Update various imports)
 
 // Remove all the id from this set, if the id isn't in the set, nothing happens
 func (ids *Set) Remove(idList ...ID) {
@@ -96,18 +117,42 @@ func (ids *Set) Remove(idList ...ID) {
 
 // Clear empties this set
 func (ids *Set) Clear() {
+<<<<<<< HEAD
 	maps.Clear(*ids)
+=======
+	if len(*ids) > clearSizeThreshold {
+		*ids = nil
+		return
+	}
+	for key := range *ids {
+		delete(*ids, key)
+	}
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 // List converts this set into a list
 func (ids Set) List() []ID {
+<<<<<<< HEAD
 	return maps.Keys(ids)
+=======
+	idList := make([]ID, ids.Len())
+	i := 0
+	for id := range ids {
+		idList[i] = id
+		i++
+	}
+	return idList
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 // SortedList returns this set as a sorted list
 func (ids Set) SortedList() []ID {
 	lst := ids.List()
+<<<<<<< HEAD
 	utils.Sort(lst)
+=======
+	SortIDs(lst)
+>>>>>>> d7a7925ff (Update various imports)
 	return lst
 }
 
@@ -134,7 +179,19 @@ func (ids Set) CappedList(size int) []ID {
 
 // Equals returns true if the sets contain the same elements
 func (ids Set) Equals(oIDs Set) bool {
+<<<<<<< HEAD
 	return maps.Equal(ids, oIDs)
+=======
+	if ids.Len() != oIDs.Len() {
+		return false
+	}
+	for key := range oIDs {
+		if _, contains := ids[key]; !contains {
+			return false
+		}
+	}
+	return true
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 // String returns the string representation of a set
@@ -165,6 +222,10 @@ func (ids *Set) Pop() (ID, bool) {
 
 func (ids *Set) MarshalJSON() ([]byte, error) {
 	idsList := ids.List()
+<<<<<<< HEAD
 	utils.Sort(idsList)
+=======
+	SortIDs(idsList)
+>>>>>>> d7a7925ff (Update various imports)
 	return json.Marshal(idsList)
 }

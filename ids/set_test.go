@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
+>>>>>>> d7a7925ff (Update various imports)
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -111,6 +115,7 @@ func TestSetCappedList(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func TestSetClear(t *testing.T) {
 	set := Set{}
 	for i := 0; i < 25; i++ {
@@ -120,6 +125,37 @@ func TestSetClear(t *testing.T) {
 	require.Len(t, set, 0)
 	set.Add(GenerateTestID())
 	require.Len(t, set, 1)
+=======
+// Test that Clear() works with both the iterative and set-to-nil path
+func TestSetClearLarge(t *testing.T) {
+	// Using iterative clear path
+	set := Set{}
+	for i := 0; i < clearSizeThreshold; i++ {
+		set.Add(GenerateTestID())
+	}
+	set.Clear()
+	if set.Len() != 0 {
+		t.Fatal("length should be 0")
+	}
+	set.Add(GenerateTestID())
+	if set.Len() != 1 {
+		t.Fatal("length should be 1")
+	}
+
+	// Using bulk (set map to nil) path
+	set = Set{}
+	for i := 0; i < clearSizeThreshold+1; i++ {
+		set.Add(GenerateTestID())
+	}
+	set.Clear()
+	if set.Len() != 0 {
+		t.Fatal("length should be 0")
+	}
+	set.Add(GenerateTestID())
+	if set.Len() != 1 {
+		t.Fatal("length should be 1")
+	}
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 func TestSetPop(t *testing.T) {
@@ -156,7 +192,11 @@ func TestSetMarshalJSON(t *testing.T) {
 		require.NoError(err)
 		require.Equal("[]", string(asJSON))
 	}
+<<<<<<< HEAD
 	id1, id2 := Empty.Prefix(0), Empty.Prefix(1)
+=======
+	id1, id2 := GenerateTestID(), GenerateTestID()
+>>>>>>> d7a7925ff (Update various imports)
 	set.Add(id1)
 	{
 		asJSON, err := set.MarshalJSON()

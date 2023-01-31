@@ -1,10 +1,18 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
+>>>>>>> d7a7925ff (Update various imports)
 // See the file LICENSE for licensing terms.
 
 package ids
 
 import (
 	"encoding/json"
+<<<<<<< HEAD
+=======
+	"fmt"
+>>>>>>> d7a7925ff (Update various imports)
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,11 +46,16 @@ func TestShortString(t *testing.T) {
 
 func TestIsUniqueShortIDs(t *testing.T) {
 	ids := []ShortID{}
+<<<<<<< HEAD
 	if !IsUniqueShortIDs(ids) {
+=======
+	if IsUniqueShortIDs(ids) == false {
+>>>>>>> d7a7925ff (Update various imports)
 		t.Fatal("should be unique")
 	}
 	id1 := GenerateTestShortID()
 	ids = append(ids, id1)
+<<<<<<< HEAD
 	if !IsUniqueShortIDs(ids) {
 		t.Fatal("should be unique")
 	}
@@ -52,10 +65,95 @@ func TestIsUniqueShortIDs(t *testing.T) {
 	}
 	ids = append(ids, id1)
 	if IsUniqueShortIDs(ids) {
+=======
+	if IsUniqueShortIDs(ids) == false {
+		t.Fatal("should be unique")
+	}
+	ids = append(ids, GenerateTestShortID())
+	if IsUniqueShortIDs(ids) == false {
+		t.Fatal("should be unique")
+	}
+	ids = append(ids, id1)
+	if IsUniqueShortIDs(ids) == true {
+>>>>>>> d7a7925ff (Update various imports)
 		t.Fatal("should not be unique")
 	}
 }
 
+<<<<<<< HEAD
+=======
+func TestIsSortedAndUniqueShortIDs(t *testing.T) {
+	id0 := ShortID{0}
+	id1 := ShortID{1}
+	id2 := ShortID{2}
+
+	tests := []struct {
+		arr      []ShortID
+		isSorted bool
+	}{
+		{
+			arr:      nil,
+			isSorted: true,
+		},
+		{
+			arr:      []ShortID{},
+			isSorted: true,
+		},
+		{
+			arr:      []ShortID{GenerateTestShortID()},
+			isSorted: true,
+		},
+		{
+			arr:      []ShortID{id0, id0},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id0, id1},
+			isSorted: true,
+		},
+		{
+			arr:      []ShortID{id1, id0},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id0, id1, id2},
+			isSorted: true,
+		},
+		{
+			arr:      []ShortID{id0, id1, id2, id2},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id0, id1, id1},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id0, id0, id1},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id2, id1, id0},
+			isSorted: false,
+		},
+		{
+			arr:      []ShortID{id2, id1, id2},
+			isSorted: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("%v", test.arr), func(t *testing.T) {
+			if test.isSorted {
+				if !IsSortedAndUniqueShortIDs(test.arr) {
+					t.Fatal("should have been marked as sorted and unique")
+				}
+			} else if IsSortedAndUniqueShortIDs(test.arr) {
+				t.Fatal("shouldn't have been marked as sorted and unique")
+			}
+		})
+	}
+}
+
+>>>>>>> d7a7925ff (Update various imports)
 func TestShortIDMapMarshalling(t *testing.T) {
 	originalMap := map[ShortID]int{
 		{'e', 'v', 'a', ' ', 'l', 'a', 'b', 's'}: 1,
@@ -88,6 +186,7 @@ func TestShortIDsToStrings(t *testing.T) {
 	shortStrings := ShortIDsToStrings(shortIDs)
 	require.EqualValues(t, expected, shortStrings)
 }
+<<<<<<< HEAD
 
 func TestShortIDLess(t *testing.T) {
 	require := require.New(t)
@@ -112,3 +211,5 @@ func TestShortIDLess(t *testing.T) {
 	require.True(id1.Less(id2))
 	require.False(id2.Less(id1))
 }
+=======
+>>>>>>> d7a7925ff (Update various imports)
