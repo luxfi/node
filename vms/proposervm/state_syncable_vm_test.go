@@ -26,7 +26,30 @@ import (
 	statelessblock "github.com/ava-labs/avalanchego/vms/proposervm/block"
 )
 
+<<<<<<< HEAD
 var errUnknownSummary = errors.New("unknown summary")
+=======
+func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
+	rawDB := dbMan.Current().Database
+	prefixDB := prefixdb.New(dbPrefix, rawDB)
+	db := versiondb.New(prefixDB)
+	vmState := state.New(db)
+
+	if err := vmState.SetIndexHasReset(); err != nil {
+		t.Fatal("could not preload key to vm state")
+	}
+	if err := vmState.Commit(); err != nil {
+		t.Fatal("could not commit preloaded key")
+	}
+	if err := db.Commit(); err != nil {
+		t.Fatal("could not commit preloaded key")
+	}
+
+	coreVM.VerifyHeightIndexF = func() error {
+		return nil
+	}
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	innerVM := &fullVM{
@@ -62,6 +85,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	) error {
 		return nil
 	}
+<<<<<<< HEAD
 	innerVM.VerifyHeightIndexF = func(context.Context) error {
 		return nil
 	}
@@ -69,6 +93,15 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		return innerGenesisBlk.ID(), nil
 	}
 	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
+=======
+	innerVM.VerifyHeightIndexF = func() error {
+		return nil
+	}
+	innerVM.LastAcceptedF = func() (ids.ID, error) {
+		return innerGenesisBlk.ID(), nil
+	}
+	innerVM.GetBlockF = func(ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return innerGenesisBlk, nil
 	}
 
@@ -117,18 +150,32 @@ func TestStateSyncEnabled(t *testing.T) {
 
 	// ProposerVM State Sync disabled if innerVM State sync is disabled
 	vm.hIndexer.MarkRepaired(true)
+<<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
 	enabled, err := vm.StateSyncEnabled(context.Background())
+=======
+	innerVM.StateSyncEnabledF = func() (bool, error) {
+		return false, nil
+	}
+	enabled, err := vm.StateSyncEnabled()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.False(enabled)
 
 	// ProposerVM State Sync enabled if innerVM State sync is enabled
+<<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return true, nil
 	}
 	enabled, err = vm.StateSyncEnabled(context.Background())
+=======
+	innerVM.StateSyncEnabledF = func() (bool, error) {
+		return true, nil
+	}
+	enabled, err = vm.StateSyncEnabled()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.True(enabled)
 }
@@ -511,18 +558,32 @@ func TestStateSummaryAccept(t *testing.T) {
 	require.NoError(err)
 
 	// test Accept accepted
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
 	status, err := summary.Accept(context.Background())
+=======
+	innerSummary.AcceptF = func() (bool, error) {
+		return true, nil
+	}
+	accepted, err := summary.Accept()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 
 	// test Accept skipped
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncSkipped, nil
 	}
 	status, err = summary.Accept(context.Background())
+=======
+	innerSummary.AcceptF = func() (bool, error) {
+		return false, nil
+	}
+	accepted, err = summary.Accept()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }
@@ -585,10 +646,17 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	require.NoError(err)
 
 	// test Accept skipped
+<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
 	status, err := summary.Accept(context.Background())
+=======
+	innerSummary.AcceptF = func() (bool, error) {
+		return true, nil
+	}
+	accepted, err := summary.Accept()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }

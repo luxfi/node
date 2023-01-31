@@ -33,7 +33,11 @@ type BaseTx struct {
 	unsignedBytes []byte // Unsigned byte representation of this data
 }
 
+<<<<<<< HEAD
 func (tx *BaseTx) SetBytes(unsignedBytes []byte) {
+=======
+func (tx *BaseTx) Initialize(unsignedBytes []byte) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	tx.unsignedBytes = unsignedBytes
 }
 

@@ -21,7 +21,11 @@ type voter struct {
 	deps      set.Set[ids.ID]
 }
 
+<<<<<<< HEAD
 func (v *voter) Dependencies() set.Set[ids.ID] {
+=======
+func (v *voter) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return v.deps
 }
 

@@ -51,7 +51,11 @@ func (t *BaseTx) ConsumedAssetIDs() set.Set[ids.ID] {
 }
 
 // AssetIDs returns the IDs of the assets this transaction depends on
+<<<<<<< HEAD
 func (t *BaseTx) AssetIDs() set.Set[ids.ID] {
+=======
+func (t *BaseTx) AssetIDs() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return t.ConsumedAssetIDs()
 }
 

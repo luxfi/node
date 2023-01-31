@@ -36,6 +36,9 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (*RewardValidatorTx) InitCtx(*snow.Context) {}
 
@@ -43,7 +46,11 @@ func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
+<<<<<<< HEAD
 func (*RewardValidatorTx) InputIDs() set.Set[ids.ID] {
+=======
+func (*RewardValidatorTx) InputIDs() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return nil
 }
 
@@ -54,6 +61,7 @@ func (*RewardValidatorTx) Outputs() []*avax.TransferableOutput {
 func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error {
 	return nil
 }
+<<<<<<< HEAD
 =======
 func (*RewardValidatorTx) InitCtx(*snow.Context)               {}
 func (tx *RewardValidatorTx) Bytes() []byte                    { return tx.unsignedBytes }
@@ -61,6 +69,8 @@ func (*RewardValidatorTx) InputIDs() ids.Set                   { return nil }
 func (*RewardValidatorTx) Outputs() []*avax.TransferableOutput { return nil }
 func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error { return nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (tx *RewardValidatorTx) Visit(visitor Visitor) error {
 	return visitor.RewardValidatorTx(tx)

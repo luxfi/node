@@ -682,10 +682,21 @@ func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }
 
+<<<<<<< HEAD
 func (vm *VM) Clock() *mockable.Clock {
 	return &vm.clock
 }
 
+=======
+func (vm *VM) CodecRegistry() codec.Registry {
+	return vm.codecRegistry
+}
+
+func (vm *VM) Clock() *mockable.Clock {
+	return &vm.clock
+}
+
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (vm *VM) Logger() logging.Logger {
 	return vm.ctx.Log
 }

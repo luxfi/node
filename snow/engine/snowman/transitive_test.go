@@ -67,7 +67,11 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return gBlk.ID(), nil
 	}
 
@@ -103,7 +107,11 @@ func setupDefaultConfig(t *testing.T) (ids.NodeID, validators.Set, *common.Sende
 func TestEngineShutdown(t *testing.T) {
 	_, _, _, vm, transitive, _ := setupDefaultConfig(t)
 	vmShutdownCalled := false
+<<<<<<< HEAD
 	vm.ShutdownF = func(context.Context) error {
+=======
+	vm.ShutdownF = func() error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		vmShutdownCalled = true
 		return nil
 	}
@@ -185,7 +193,11 @@ func TestEngineAdd(t *testing.T) {
 		t.Fatalf("Should have been blocking on request")
 	}
 
+<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
+=======
+	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil, errUnknownBytes
 	}
 
@@ -453,10 +465,17 @@ func TestEngineMultipleQuery(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -562,8 +581,13 @@ func TestEngineMultipleQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
+		vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			switch {
 			case blkID == blk0.ID():
 				return blk0, nil
@@ -860,10 +884,17 @@ func TestEngineBuildBlock(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	vm.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return blk, nil
 	}
 	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
+=======
+	vm.BuildBlockF = func() (snowman.Block, error) {
+		return blk, nil
+	}
+	if err := te.Notify(common.PendingTxs); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		t.Fatal(err)
 	}
 
@@ -945,10 +976,17 @@ func TestVoteCanceling(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch id {
 		case gBlk.ID():
 			return gBlk, nil
@@ -1040,7 +1078,11 @@ func TestEngineNoQuery(t *testing.T) {
 
 	vm := &block.TestVM{}
 	vm.T = t
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return gBlk.ID(), nil
 	}
 
@@ -1091,7 +1133,11 @@ func TestEngineNoRepollQuery(t *testing.T) {
 
 	vm := &block.TestVM{}
 	vm.T = t
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return gBlk.ID(), nil
 	}
 
@@ -1563,10 +1609,17 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 func TestEngineGossip(t *testing.T) {
 	_, _, sender, vm, te, gBlk := setupDefaultConfig(t)
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		if blkID == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -1830,10 +1883,17 @@ func TestEngineAggressivePolling(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -1886,12 +1946,20 @@ func TestEngineAggressivePolling(t *testing.T) {
 	}
 
 	numPushed := new(int)
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+=======
+	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		*numPushed++
 	}
 
 	numPulled := new(int)
+<<<<<<< HEAD
 	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
+=======
+	sender.SendPullQueryF = func(context.Context, ids.NodeIDSet, uint32, ids.ID) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		*numPulled++
 	}
 
@@ -1953,10 +2021,17 @@ func TestEngineDoubleChit(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		if id == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -2080,10 +2155,17 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
+<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	vm.LastAcceptedF = func() (ids.ID, error) {
+		return gBlk.ID(), nil
+	}
+	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}

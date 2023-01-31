@@ -108,6 +108,7 @@ func TestShutdown(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	bootstrapper.ShutdownF = func(context.Context) error {
 		shutdownCalled <- struct{}{}
 		return nil
@@ -116,6 +117,16 @@ func TestShutdown(t *testing.T) {
 		return nil
 	}
 	bootstrapper.HaltF = func(context.Context) {}
+=======
+	bootstrapper.ShutdownF = func() error {
+		shutdownCalled <- struct{}{}
+		return nil
+	}
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.HaltF = func() {}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	handler.SetBootstrapper(bootstrapper)
 
 	engine := &common.EngineTest{T: t}
@@ -124,6 +135,7 @@ func TestShutdown(t *testing.T) {
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	engine.ShutdownF = func(context.Context) error {
 		shutdownCalled <- struct{}{}
 		return nil
@@ -132,15 +144,32 @@ func TestShutdown(t *testing.T) {
 		return nil
 	}
 	engine.HaltF = func(context.Context) {}
+=======
+	engine.ShutdownF = func() error {
+		shutdownCalled <- struct{}{}
+		return nil
+	}
+	engine.ConnectedF = func(ids.NodeID, *version.Application) error {
+		return nil
+	}
+	engine.HaltF = func() {}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	handler.SetConsensus(engine)
 	ctx.SetState(snow.NormalOp) // assumed bootstrap is done
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	chainRouter.Shutdown(context.Background())
 
@@ -232,10 +261,17 @@ func TestShutdownTimesOut(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
 	bootstrapper.HaltF = func(context.Context) {}
+=======
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.HaltF = func() {}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	bootstrapper.PullQueryF = func(context.Context, ids.NodeID, uint32, ids.ID) error {
 		// Ancestors blocks for two seconds
 		time.Sleep(2 * time.Second)
@@ -250,7 +286,11 @@ func TestShutdownTimesOut(t *testing.T) {
 		return ctx
 	}
 	closed := new(int)
+<<<<<<< HEAD
 	engine.ShutdownF = func(context.Context) error {
+=======
+	engine.ShutdownF = func() error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		*closed++
 		return nil
 	}
@@ -259,10 +299,17 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	shutdownFinished := make(chan struct{}, 1)
 
@@ -376,10 +423,17 @@ func TestRouterTimeout(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+<<<<<<< HEAD
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
 	bootstrapper.HaltF = func(context.Context) {}
+=======
+	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
+		return nil
+	}
+	bootstrapper.HaltF = func() {}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	bootstrapper.GetStateSummaryFrontierFailedF = func(context.Context, ids.NodeID, uint32) error {
 		defer wg.Done()
@@ -431,10 +485,17 @@ func TestRouterTimeout(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	nodeID := ids.GenerateTestNodeID()
 	requestID := uint32(0)
@@ -704,10 +765,17 @@ func TestRouterClearTimeouts(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	nodeID := ids.GenerateTestNodeID()
 	requestID := uint32(0)
@@ -983,10 +1051,17 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 
 	chainRouter.AddChain(context.Background(), handler)
 
+<<<<<<< HEAD
 	bootstrapper.StartF = func(context.Context, uint32) error {
 		return nil
 	}
 	handler.Start(context.Background(), false)
+=======
+	bootstrapper.StartF = func(uint32) error {
+		return nil
+	}
+	handler.Start(false)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	var inMsg message.InboundMessage
 	dummyContainerID := ids.GenerateTestID()

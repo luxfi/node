@@ -29,6 +29,15 @@ func testJob(t *testing.T, jobID ids.ID, executed *bool, parentID ids.ID, parent
 		T: t,
 		IDF: func() ids.ID {
 			return jobID
+<<<<<<< HEAD
+=======
+		},
+		MissingDependenciesF: func() (ids.Set, error) {
+			if parentID != ids.Empty && !*parentExecuted {
+				return ids.Set{parentID: struct{}{}}, nil
+			}
+			return ids.Set{}, nil
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		},
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			if parentID != ids.Empty && !*parentExecuted {
@@ -350,6 +359,17 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 	job1ID, executed1 := ids.GenerateTestID(), false
 	job0 := testJob(t, job0ID, &executed0, ids.Empty, nil)
 	job1 := testJob(t, job1ID, &executed1, job0ID, &executed0)
+<<<<<<< HEAD
+=======
+
+	// job1 fails to execute the first time due to a closed database
+	job1.ExecuteF = func() error {
+		return database.ErrClosed
+	}
+	job1.BytesF = func() []byte {
+		return []byte{1}
+	}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	// job1 fails to execute the first time due to a closed database
 	job1.ExecuteF = func(context.Context) error {
@@ -395,7 +415,11 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 	require.False(executed1)
 
 	executed0 = false
+<<<<<<< HEAD
 	job1.ExecuteF = func(context.Context) error {
+=======
+	job1.ExecuteF = func() error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		executed1 = true // job1 succeeds the second time
 		return nil
 	}
@@ -452,10 +476,17 @@ func TestInitializeNumJobs(t *testing.T) {
 		IDF: func() ids.ID {
 			return job0ID
 		},
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
 		HasMissingDependenciesF: func(context.Context) (bool, error) {
+=======
+		MissingDependenciesF: func() (ids.Set, error) {
+			return nil, nil
+		},
+		HasMissingDependenciesF: func() (bool, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			return false, nil
 		},
 		BytesF: func() []byte {
@@ -468,10 +499,17 @@ func TestInitializeNumJobs(t *testing.T) {
 		IDF: func() ids.ID {
 			return job1ID
 		},
+<<<<<<< HEAD
 		MissingDependenciesF: func(context.Context) (set.Set[ids.ID], error) {
 			return nil, nil
 		},
 		HasMissingDependenciesF: func(context.Context) (bool, error) {
+=======
+		MissingDependenciesF: func() (ids.Set, error) {
+			return nil, nil
+		},
+		HasMissingDependenciesF: func() (bool, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			return false, nil
 		},
 		BytesF: func() []byte {

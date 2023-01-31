@@ -177,7 +177,11 @@ func (i *issuer) Update(ctx context.Context) {
 
 type vtxIssuer struct{ i *issuer }
 
+<<<<<<< HEAD
 func (vi *vtxIssuer) Dependencies() set.Set[ids.ID] {
+=======
+func (vi *vtxIssuer) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return vi.i.vtxDeps
 }
 
@@ -195,7 +199,11 @@ func (vi *vtxIssuer) Update(ctx context.Context) {
 
 type txIssuer struct{ i *issuer }
 
+<<<<<<< HEAD
 func (ti *txIssuer) Dependencies() set.Set[ids.ID] {
+=======
+func (ti *txIssuer) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return ti.i.txDeps
 }
 

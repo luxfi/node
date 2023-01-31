@@ -25,9 +25,20 @@ func (v *TestVerifiable) VerifyState() error      { return v.Err }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 =======
 func (*TestVerifiable) InitCtx(*snow.Context) {}
+<<<<<<< HEAD
 func (v *TestVerifiable) Verify() error       { return v.Err }
 func (v *TestVerifiable) VerifyState() error  { return v.Err }
 >>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
+=======
+
+func (v *TestVerifiable) Verify() error {
+	return v.Err
+}
+
+func (v *TestVerifiable) VerifyState() error {
+	return v.Err
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 type TestTransferable struct {
 	TestVerifiable
@@ -37,6 +48,9 @@ type TestTransferable struct {
 
 func (*TestTransferable) InitCtx(*snow.Context) {}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val
@@ -45,10 +59,13 @@ func (t *TestTransferable) Amount() uint64 {
 func (*TestTransferable) Cost() (uint64, error) {
 	return 0, nil
 }
+<<<<<<< HEAD
 =======
 func (t *TestTransferable) Amount() uint64      { return t.Val }
 func (*TestTransferable) Cost() (uint64, error) { return 0, nil }
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 type TestAddressable struct {
 	TestTransferable `serialize:"true"`

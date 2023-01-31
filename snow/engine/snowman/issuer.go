@@ -19,7 +19,11 @@ type issuer struct {
 	deps      set.Set[ids.ID]
 }
 
+<<<<<<< HEAD
 func (i *issuer) Dependencies() set.Set[ids.ID] {
+=======
+func (i *issuer) Dependencies() ids.Set {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	return i.deps
 }
 

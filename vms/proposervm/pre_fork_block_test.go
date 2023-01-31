@@ -83,10 +83,17 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -134,7 +141,11 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 			ParentV: oracleCoreBlk.opts[0].ID(),
 		},
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return lastCoreBlk, nil
 	}
 
@@ -186,10 +197,17 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return oracleCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -237,7 +255,11 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 			ParentV: oracleCoreBlk.opts[0].ID(),
 		},
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return lastCoreBlk, nil
 	}
 
@@ -268,10 +290,17 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp(),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return prntCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -345,7 +374,11 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: preActivationTime,
 		VerifyV:    nil,
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreBlk, nil
 	}
 
@@ -394,10 +427,17 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	postActivationTime := activationTime.Add(time.Second)
 	proVM.Set(postActivationTime)
 
+<<<<<<< HEAD
 	coreVM.SetPreferenceF = func(_ context.Context, id ids.ID) error {
 		return nil
 	}
 	if err := proVM.SetPreference(context.Background(), preForkChild.ID()); err != nil {
+=======
+	coreVM.SetPreferenceF = func(id ids.ID) error {
+		return nil
+	}
+	if err := proVM.SetPreference(preForkChild.ID()); err != nil {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		t.Fatal("could not set preference")
 	}
 
@@ -410,10 +450,17 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: postActivationTime,
 		VerifyV:    nil,
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return secondCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return secondCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch id {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -448,10 +495,17 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: postActivationTime,
 		VerifyV:    nil,
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return thirdCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return thirdCoreBlk, nil
+	}
+	coreVM.GetBlockF = func(id ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch id {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -493,7 +547,11 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 		VerifyV:    nil,
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreBlock, nil
 	}
 
@@ -531,10 +589,17 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 		BytesV:  []byte{1},
 		ParentV: coreGenBlk.ID(),
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+		return coreBlk, nil
+	}
+	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -590,7 +655,11 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 		ParentV: coreGenBlk.ID(),
 		HeightV: coreGenBlk.Height() + 1,
 	}
+<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+=======
+	coreVM.BuildBlockF = func() (snowman.Block, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return coreBlk, nil
 	}
 

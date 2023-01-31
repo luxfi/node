@@ -52,8 +52,13 @@ func (t *txJob) ID() ids.ID {
 	return t.tx.ID()
 }
 
+<<<<<<< HEAD
 func (t *txJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
+=======
+func (t *txJob) MissingDependencies() (ids.Set, error) {
+	missing := ids.Set{}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	deps, err := t.tx.Dependencies()
 	if err != nil {
 		return missing, err

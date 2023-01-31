@@ -85,8 +85,30 @@ func NewContext(
 	}
 }
 
+<<<<<<< HEAD
 func (c *context) NetworkID() uint32        { return c.networkID }
 func (c *context) BlockchainID() ids.ID     { return c.blockchainID }
 func (c *context) LUXAssetID() ids.ID      { return c.luxAssetID }
 func (c *context) BaseTxFee() uint64        { return c.baseTxFee }
 func (c *context) CreateAssetTxFee() uint64 { return c.createAssetTxFee }
+=======
+func (c *context) NetworkID() uint32 {
+	return c.networkID
+}
+
+func (c *context) BlockchainID() ids.ID {
+	return c.blockchainID
+}
+
+func (c *context) AVAXAssetID() ids.ID {
+	return c.avaxAssetID
+}
+
+func (c *context) BaseTxFee() uint64 {
+	return c.baseTxFee
+}
+
+func (c *context) CreateAssetTxFee() uint64 {
+	return c.createAssetTxFee
+}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

@@ -26,6 +26,9 @@ type TestVM struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (vm *TestVM) Clock() *mockable.Clock {
 	return &vm.Clk
 }
@@ -37,8 +40,11 @@ func (vm *TestVM) CodecRegistry() codec.Registry {
 func (vm *TestVM) Logger() logging.Logger {
 	return vm.Log
 }
+<<<<<<< HEAD
 =======
 func (vm *TestVM) Clock() *mockable.Clock        { return &vm.Clk }
 func (vm *TestVM) CodecRegistry() codec.Registry { return vm.Codec }
 func (vm *TestVM) Logger() logging.Logger        { return vm.Log }
 >>>>>>> a8631aa5c (Add Fx tests (#1838))
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

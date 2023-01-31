@@ -23,7 +23,11 @@ func TestWindowerNoValidators(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	vdrState := &validators.TestState{
 		T: t,
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+=======
+		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			return nil, nil
 		},
 	}
@@ -44,12 +48,18 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 	nonValidatorID := ids.GenerateTestNodeID()
 	vdrState := &validators.TestState{
 		T: t,
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			return map[ids.NodeID]*validators.GetValidatorOutput{
 				validatorID: {
 					NodeID: validatorID,
 					Weight: 10,
 				},
+=======
+		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+			return map[ids.NodeID]uint64{
+				validatorID: 10,
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			}, nil
 		},
 	}
@@ -76,8 +86,13 @@ func TestWindowerChangeByHeight(t *testing.T) {
 	}
 	vdrState := &validators.TestState{
 		T: t,
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
+=======
+		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+			validators := make(map[ids.NodeID]uint64, MaxWindows)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.GetValidatorOutput{
 					NodeID: id,
@@ -138,8 +153,13 @@ func TestWindowerChangeByChain(t *testing.T) {
 	}
 	vdrState := &validators.TestState{
 		T: t,
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
+=======
+		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+			validators := make(map[ids.NodeID]uint64, MaxWindows)
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.GetValidatorOutput{
 					NodeID: id,

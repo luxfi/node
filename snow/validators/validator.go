@@ -22,10 +22,47 @@ type Validator struct {
 	index int
 }
 
+<<<<<<< HEAD
 // GetValidatorOutput is a struct that contains the publicly relevant values of
 // a validator of the Avalanche Network for the output of GetValidator.
 type GetValidatorOutput struct {
 	NodeID    ids.NodeID
 	PublicKey *bls.PublicKey
 	Weight    uint64
+=======
+func (v *validator) ID() ids.NodeID {
+	return v.nodeID
+}
+
+func (v *validator) Weight() uint64 {
+	return v.weight
+}
+
+func (v *validator) addWeight(weight uint64) {
+	newTotalWeight, err := safemath.Add64(weight, v.weight)
+	if err != nil {
+		newTotalWeight = math.MaxUint64
+	}
+	v.weight = newTotalWeight
+}
+
+func (v *validator) removeWeight(weight uint64) {
+	newTotalWeight, err := safemath.Sub(v.weight, weight)
+	if err != nil {
+		newTotalWeight = 0
+	}
+	v.weight = newTotalWeight
+}
+
+// NewValidator returns a validator object that implements the Validator
+// interface
+func NewValidator(
+	nodeID ids.NodeID,
+	weight uint64,
+) Validator {
+	return &validator{
+		nodeID: nodeID,
+		weight: weight,
+	}
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 }

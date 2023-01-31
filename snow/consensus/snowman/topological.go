@@ -147,11 +147,23 @@ func (ts *Topological) Initialize(ctx *snow.ConsensusContext, params snowball.Pa
 	return nil
 }
 
+<<<<<<< HEAD
 func (ts *Topological) NumProcessing() int {
 	return len(ts.blocks) - 1
 }
 
 func (ts *Topological) Add(ctx context.Context, blk Block) error {
+=======
+func (ts *Topological) Parameters() snowball.Parameters {
+	return ts.params
+}
+
+func (ts *Topological) NumProcessing() int {
+	return len(ts.blocks) - 1
+}
+
+func (ts *Topological) Add(blk Block) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	blkID := blk.ID()
 
 	// Make sure a block is not inserted twice. This enforces the invariant that
@@ -223,10 +235,13 @@ func (ts *Topological) IsPreferred(blk Block) bool {
 	return ts.preferredIDs.Contains(blk.ID())
 }
 
+<<<<<<< HEAD
 func (ts *Topological) LastAccepted() ids.ID {
 	return ts.head
 }
 
+=======
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (ts *Topological) Preference() ids.ID {
 	return ts.tail
 }

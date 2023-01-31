@@ -50,7 +50,11 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 
 	cfg, err := NewConfig(*commonCfg, nil, dummyGetter, nonStateSyncableVM)
 	require.NoError(err)
+<<<<<<< HEAD
 	syncer := New(cfg, func(context.Context, uint32) error {
+=======
+	syncer := New(cfg, func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	})
 
@@ -74,23 +78,41 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 
 	cfg, err = NewConfig(*commonCfg, nil, dummyGetter, fullVM)
 	require.NoError(err)
+<<<<<<< HEAD
 	syncer = New(cfg, func(context.Context, uint32) error {
+=======
+	syncer = New(cfg, func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	})
 
 	// test: VM does not support state syncing
+<<<<<<< HEAD
 	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
 	enabled, err = syncer.IsEnabled(context.Background())
+=======
+	fullVM.StateSyncEnabledF = func() (bool, error) {
+		return false, nil
+	}
+	enabled, err = syncer.IsEnabled()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.False(enabled)
 
 	// test: VM does support state syncing
+<<<<<<< HEAD
 	fullVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return true, nil
 	}
 	enabled, err = syncer.IsEnabled(context.Background())
+=======
+	fullVM.StateSyncEnabledF = func() (bool, error) {
+		return true, nil
+	}
+	enabled, err = syncer.IsEnabled()
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 	require.NoError(err)
 	require.True(enabled)
 }
@@ -1272,7 +1294,11 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 	}
 
 	stateSyncFullyDone := false
+<<<<<<< HEAD
 	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
+=======
+	syncer.onDoneStateSyncing = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		stateSyncFullyDone = true
 		return nil
 	}
@@ -1335,7 +1361,11 @@ func TestStateSyncIsDoneOnceVMNotifies(t *testing.T) {
 	_ = fullVM
 
 	stateSyncFullyDone := false
+<<<<<<< HEAD
 	syncer.onDoneStateSyncing = func(context.Context, uint32) error {
+=======
+	syncer.onDoneStateSyncing = func(uint32) error {
+>>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		stateSyncFullyDone = true
 		return nil
 	}
