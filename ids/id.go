@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -9,10 +9,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/cb58"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/cb58"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const nullStr = "null"

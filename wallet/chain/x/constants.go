@@ -1,14 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
 
 import (
-	"github.com/luxdefi/luxd/vms/avm/fxs"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/propertyfx"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 const (

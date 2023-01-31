@@ -21,15 +21,7 @@ type voter struct {
 	deps      set.Set[ids.ID]
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (v *voter) Dependencies() set.Set[ids.ID] {
-=======
-func (v *voter) Dependencies() ids.Set {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (v *voter) Dependencies() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return v.deps
 }
 
@@ -60,18 +52,6 @@ func (v *voter) Update(ctx context.Context) {
 		return
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	// To prevent any potential deadlocks with un-disclosed dependencies, votes
-	// must be bubbled to the nearest valid block
-	for i, result := range results {
-		results[i] = v.bubbleVotes(ctx, result)
-	}
-
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 4cf818ef3 (Log poll responses before bubbling (#2357))
 	for _, result := range results {
 		result := result
 		v.t.Ctx.Log.Debug("filtering poll results",

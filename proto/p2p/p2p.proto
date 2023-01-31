@@ -120,10 +120,6 @@ message PeerList {
   repeated ClaimedIpPort claimed_ip_ports = 1;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 // "peer_ack" is sent in response to a "peer_list" message. The "tx_id" should
 // correspond to a "tx_id" in the "peer_list" message. The sender should set
 // "timestamp" to be the latest known timestamp of a signed IP corresponding to
@@ -136,27 +132,12 @@ message PeerAck {
   uint64 timestamp = 2;
 }
 
-<<<<<<< HEAD
 // Message that responds to a peer_list message containing the AddValidatorTxIDs
 // from the peer_list message that we currently have in our validator set.
 message PeerListAck {
   reserved 1; // deprecated; used to be tx_ids
 
   repeated PeerAck peer_acks = 2;
-=======
-// Message that responds to a peer_list message containing the AddValidatorTxIDs
-// from the peer_list message that we currently have in our validator set.
-message PeerListAck {
-  repeated bytes tx_ids = 1;
->>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
-=======
-// Message that responds to a peer_list message containing the AddValidatorTxIDs
-// from the peer_list message that we currently have in our validator set.
-message PeerListAck {
-  reserved 1; // deprecated; used to be tx_ids
-
-  repeated PeerAck peer_acks = 2;
->>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 message GetStateSummaryFrontier {
@@ -338,23 +319,12 @@ message PullQuery {
 message Chits {
   bytes chain_id = 1;
   uint32 request_id = 2;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 5c16945e9 (Add accepted frontier in Chits proto (#2106))
   // Represents the current preferred frontier.
   // TODO: Remove `repeated` once all chains are running Snowman.
   repeated bytes preferred_container_ids = 3;
   // Represents the current accepted frontier.
   // TODO: Remove `repeated` once all chains are running Snowman.
   repeated bytes accepted_container_ids = 4;
-<<<<<<< HEAD
-=======
-  repeated bytes container_ids = 3;
-  // TODO: Add repeated bytes accepted_container_ids = 4;
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
-=======
->>>>>>> 5c16945e9 (Add accepted frontier in Chits proto (#2106))
   EngineType engine_type = 5;
 }
 

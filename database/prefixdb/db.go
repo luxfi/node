@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package prefixdb
@@ -7,10 +7,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/nodb"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/nodb"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 const (

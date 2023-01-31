@@ -22,15 +22,7 @@ type rejector struct {
 	txID     ids.ID
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (r *rejector) Dependencies() set.Set[ids.ID] {
-=======
-func (r *rejector) Dependencies() ids.Set {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (r *rejector) Dependencies() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return r.deps
 }
 

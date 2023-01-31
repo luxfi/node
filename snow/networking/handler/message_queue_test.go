@@ -32,23 +32,8 @@ func TestQueue(t *testing.T) {
 	cpuTracker := tracker.NewMockTracker(ctrl)
 	vdrs := validators.NewSet()
 	vdr1ID, vdr2ID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
-=======
-	require.NoError(vdrs.Add(vdr1ID, 1))
-	require.NoError(vdrs.Add(vdr2ID, 1))
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	require.NoError(vdrs.Add(vdr1ID, nil, 1))
-	require.NoError(vdrs.Add(vdr2ID, nil, 1))
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
-	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	mIntf, err := NewMessageQueue(logging.NoLog{}, vdrs, cpuTracker, "", prometheus.NewRegistry(), message.SynchronousOps)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)
@@ -141,18 +126,8 @@ func TestQueue(t *testing.T) {
 	// u is now empty
 	// Non-validators should be able to put messages onto [u]
 	nonVdrNodeID1, nonVdrNodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
 	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
-=======
-	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1)
-	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2)
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
-	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	u.Push(context.Background(), msg3)
 	u.Push(context.Background(), msg4)
 	u.Push(context.Background(), msg1)

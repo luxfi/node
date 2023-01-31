@@ -17,14 +17,7 @@ import (
 	handler "github.com/ava-labs/avalanchego/snow/networking/handler"
 	timeout "github.com/ava-labs/avalanchego/snow/networking/timeout"
 	logging "github.com/ava-labs/avalanchego/utils/logging"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	set "github.com/ava-labs/avalanchego/utils/set"
-=======
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-	set "github.com/ava-labs/avalanchego/utils/set"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	version "github.com/ava-labs/avalanchego/version"
 	gomock "github.com/golang/mock/gomock"
 	prometheus "github.com/prometheus/client_golang/prometheus"
@@ -129,45 +122,17 @@ func (mr *MockRouterMockRecorder) HealthCheck(arg0 interface{}) *gomock.Call {
 }
 
 // Initialize mocks base method.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4 set.Set[ids.ID], arg5 bool, arg6 set.Set[ids.ID], arg7 func(int), arg8 HealthConfig, arg9 string, arg10 prometheus.Registerer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
-=======
-func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4, arg5 ids.Set, arg6 func(int), arg7 HealthConfig, arg8 string, arg9 prometheus.Registerer) error {
-=======
-func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4, arg5 set.Set[ids.ID], arg6 func(int), arg7 HealthConfig, arg8 string, arg9 prometheus.Registerer) error {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4 set.Set[ids.ID], arg5 bool, arg6 set.Set[ids.ID], arg7 func(int), arg8 HealthConfig, arg9 string, arg10 prometheus.Registerer) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Initialize indicates an expected call of Initialize.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
-=======
-func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
->>>>>>> 340734087 (Add additional sender tests (#2254))
-=======
-func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 }
 
 // RegisterRequest mocks base method.

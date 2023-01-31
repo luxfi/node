@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements tests for the banff network upgrade.
@@ -11,16 +11,16 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/tests"
-	"github.com/luxdefi/luxd/tests/e2e"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-	"github.com/luxdefi/luxd/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
 )
 
 var _ = ginkgo.Describe("[Banff]", func() {
@@ -93,9 +93,9 @@ var _ = ginkgo.Describe("[Banff]", func() {
 			ginkgo.By("export new X-chain asset to P-chain", func() {
 				txID, err := xWallet.IssueExportTx(
 					constants.PlatformChainID,
-					[]*lux.TransferableOutput{
+					[]*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
@@ -120,9 +120,9 @@ var _ = ginkgo.Describe("[Banff]", func() {
 			ginkgo.By("export asset from P-chain to the X-chain", func() {
 				txID, err := pWallet.IssueExportTx(
 					xChainID,
-					[]*lux.TransferableOutput{
+					[]*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
+							Asset: avax.Asset{
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{

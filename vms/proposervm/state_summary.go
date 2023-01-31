@@ -38,15 +38,7 @@ func (s *stateSummary) Height() uint64 {
 	return s.innerSummary.Height()
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *stateSummary) Accept(ctx context.Context) (block.StateSyncMode, error) {
-=======
-func (s *stateSummary) Accept(ctx context.Context) (bool, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (s *stateSummary) Accept(ctx context.Context) (block.StateSyncMode, error) {
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	// If we have already synced up to or past this state summary, we do not
 	// want to sync to it.
 	if s.vm.lastAcceptedHeight >= s.Height() {

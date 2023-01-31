@@ -116,35 +116,11 @@ type VM struct {
 	uniqueTxs cache.Deduplicator
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
 	return nil
 }
 
 func (*VM) Disconnected(context.Context, ids.NodeID) error {
-=======
-func (*VM) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error {
-	return nil
-}
-
-func (*VM) Disconnected(nodeID ids.NodeID) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) Connected(ids.NodeID, *version.Application) error {
-	return nil
-}
-
-func (*VM) Disconnected(ids.NodeID) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
-	return nil
-}
-
-func (*VM) Disconnected(context.Context, ids.NodeID) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return nil
 }
 
@@ -320,15 +296,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	return vm.baseDB.Close()
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) Version(context.Context) (string, error) {
-=======
-func (*VM) Version() (string, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) Version(context.Context) (string, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return version.Current.String(), nil
 }
 
@@ -360,15 +328,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 	}, err
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
-=======
-func (*VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	newServer := rpc.NewServer()
 	codec := json.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
@@ -381,10 +341,6 @@ func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler
 	}, newServer.RegisterService(staticService, "avm")
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 /*
  ******************************************************************************
  ********************************** Chain VM **********************************
@@ -421,11 +377,6 @@ func (*VM) Linearize(context.Context, ids.ID) error {
 	return errUnimplemented
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 func (vm *VM) PendingTxs(context.Context) []snowstorm.Tx {
 	vm.timer.Cancel()
 
@@ -1136,8 +1087,6 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	return nil
 }
@@ -1147,76 +1096,26 @@ func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 }
 
 func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-=======
-func (*VM) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-=======
-func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-	return nil
-}
-
-func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
-	return nil
-}
-
-<<<<<<< HEAD
-func (*VM) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
-=======
-func (*VM) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
-=======
-func (*VM) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
-=======
-func (*VM) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
-=======
-func (*VM) AppGossip(_ context.Context, nodeID ids.NodeID, msg []byte) error {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return nil
 }
 

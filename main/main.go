@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/luxdefi/luxd/app/runner"
-	"github.com/luxdefi/luxd/config"
-	"github.com/luxdefi/luxd/version"
+	"github.com/ava-labs/avalanchego/app/runner"
+	"github.com/ava-labs/avalanchego/config"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 func main() {

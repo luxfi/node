@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -9,17 +9,17 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/crypto/keychain"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/stakeable"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -164,7 +164,7 @@ func (s *signerVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDe
 	return sign(s.tx, txSigners)
 }
 
-func (s *signerVisitor) getSigners(sourceChainID ids.ID, ins []*lux.TransferableInput) ([][]keychain.Signer, error) {
+func (s *signerVisitor) getSigners(sourceChainID ids.ID, ins []*avax.TransferableInput) ([][]keychain.Signer, error) {
 	txSigners := make([][]keychain.Signer, len(ins))
 	for credIndex, transferInput := range ins {
 		inIntf := transferInput.In

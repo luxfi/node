@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -13,26 +13,26 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/luxdefi/luxd/database/leveldb"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/ulimit"
-	"github.com/luxdefi/luxd/utils/units"
+	"github.com/ava-labs/avalanchego/database/leveldb"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/ulimit"
+	"github.com/ava-labs/avalanchego/utils/units"
 )
 
 const (
 	DefaultHTTPPort    = 9650
 	DefaultStakingPort = 9651
 
-	LUXGoDataDirVar    = "LUXGO_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + LUXGoDataDirVar
+	AvalancheGoDataDirVar    = "AVALANCHEGO_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + AvalancheGoDataDirVar
 )
 
 var (
 	// [defaultUnexpandedDataDir] will be expanded when reading the flags
-	defaultDataDir              = filepath.Join("$HOME", ".luxd")
+	defaultDataDir              = filepath.Join("$HOME", ".avalanchego")
 	defaultDBDir                = filepath.Join(defaultUnexpandedDataDir, "db")
 	defaultLogDir               = filepath.Join(defaultUnexpandedDataDir, "logs")
 	defaultProfileDir           = filepath.Join(defaultUnexpandedDataDir, "profiles")
@@ -80,16 +80,16 @@ func addNodeFlags(fs *flag.FlagSet) {
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
 
-	// LUX fees
-	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
-	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
-	fs.Uint64(CreateSubnetTxFeeKey, genesis.LocalParams.CreateSubnetTxFee, "Transaction fee, in nLUX, for transactions that create new subnets")
-	fs.Uint64(TransformSubnetTxFeeKey, genesis.LocalParams.TransformSubnetTxFee, "Transaction fee, in nLUX, for transactions that transform subnets")
-	fs.Uint64(CreateBlockchainTxFeeKey, genesis.LocalParams.CreateBlockchainTxFee, "Transaction fee, in nLUX, for transactions that create new blockchains")
-	fs.Uint64(AddPrimaryNetworkValidatorFeeKey, genesis.LocalParams.AddPrimaryNetworkValidatorFee, "Transaction fee, in nLUX, for transactions that add new primary network validators")
-	fs.Uint64(AddPrimaryNetworkDelegatorFeeKey, genesis.LocalParams.AddPrimaryNetworkDelegatorFee, "Transaction fee, in nLUX, for transactions that add new primary network delegators")
-	fs.Uint64(AddSubnetValidatorFeeKey, genesis.LocalParams.AddSubnetValidatorFee, "Transaction fee, in nLUX, for transactions that add new subnet validators")
-	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new subnet delegators")
+	// AVAX fees
+	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nAVAX")
+	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nAVAX, for transactions that create new assets")
+	fs.Uint64(CreateSubnetTxFeeKey, genesis.LocalParams.CreateSubnetTxFee, "Transaction fee, in nAVAX, for transactions that create new subnets")
+	fs.Uint64(TransformSubnetTxFeeKey, genesis.LocalParams.TransformSubnetTxFee, "Transaction fee, in nAVAX, for transactions that transform subnets")
+	fs.Uint64(CreateBlockchainTxFeeKey, genesis.LocalParams.CreateBlockchainTxFee, "Transaction fee, in nAVAX, for transactions that create new blockchains")
+	fs.Uint64(AddPrimaryNetworkValidatorFeeKey, genesis.LocalParams.AddPrimaryNetworkValidatorFee, "Transaction fee, in nAVAX, for transactions that add new primary network validators")
+	fs.Uint64(AddPrimaryNetworkDelegatorFeeKey, genesis.LocalParams.AddPrimaryNetworkDelegatorFee, "Transaction fee, in nAVAX, for transactions that add new primary network delegators")
+	fs.Uint64(AddSubnetValidatorFeeKey, genesis.LocalParams.AddSubnetValidatorFee, "Transaction fee, in nAVAX, for transactions that add new subnet validators")
+	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nAVAX, for transactions that add new subnet delegators")
 
 	// Database
 	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Should be one of {%s, %s}", leveldb.Name, memdb.Name))
@@ -98,7 +98,7 @@ func addNodeFlags(fs *flag.FlagSet) {
 	fs.String(DBConfigContentKey, "", "Specifies base64 encoded database config content")
 
 	// Logging
-	fs.String(LogsDirKey, defaultLogDir, "Logging directory for LUX")
+	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Avalanche")
 	fs.String(LogLevelKey, "info", "The log level. Should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
 	fs.String(LogDisplayLevelKey, "", "The log display level. If left blank, will inherit the value of log-level. Otherwise, should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
 	fs.String(LogFormatKey, "auto", "The structure of log format. Defaults to 'auto' which formats terminal-like logs, when the output is a terminal. Otherwise, should be one of {auto, plain, colors, json}")
@@ -195,7 +195,7 @@ func addNodeFlags(fs *flag.FlagSet) {
 	fs.String(HTTPSKeyContentKey, "", "Specifies base64 encoded TLS private key for the HTTPs server")
 	fs.String(HTTPSCertFileKey, "", fmt.Sprintf("TLS certificate file for the HTTPs server. Ignored if %s is specified", HTTPSCertContentKey))
 	fs.String(HTTPSCertContentKey, "", "Specifies base64 encoded TLS certificate for the HTTPs server")
-	fs.String(HTTPAllowedOrigins, "*", "Origins to allow on the HTTP port. Defaults to * which allows all origins. Example: https://*.lux.network https://*.lux-test.network")
+	fs.String(HTTPAllowedOrigins, "*", "Origins to allow on the HTTP port. Defaults to * which allows all origins. Example: https://*.avax.network https://*.avax-test.network")
 	fs.Duration(HTTPShutdownWaitKey, 0, "Duration to wait after receiving SIGTERM or SIGINT before initiating shutdown. The /health endpoint will return unhealthy during this duration")
 	fs.Duration(HTTPShutdownTimeoutKey, 10*time.Second, "Maximum duration to wait for existing connections to complete during node shutdown")
 	fs.Bool(APIAuthRequiredKey, false, "Require authorization token to call HTTP APIs")
@@ -242,11 +242,11 @@ func addNodeFlags(fs *flag.FlagSet) {
 	// Uptime Requirement
 	fs.Float64(UptimeRequirementKey, genesis.LocalParams.UptimeRequirement, "Fraction of time a validator must be online to receive rewards")
 	// Minimum Stake required to validate the Primary Network
-	fs.Uint64(MinValidatorStakeKey, genesis.LocalParams.MinValidatorStake, "Minimum stake, in nLUX, required to validate the primary network")
+	fs.Uint64(MinValidatorStakeKey, genesis.LocalParams.MinValidatorStake, "Minimum stake, in nAVAX, required to validate the primary network")
 	// Maximum Stake that can be staked and delegated to a validator on the Primary Network
-	fs.Uint64(MaxValidatorStakeKey, genesis.LocalParams.MaxValidatorStake, "Maximum stake, in nLUX, that can be placed on a validator on the primary network")
+	fs.Uint64(MaxValidatorStakeKey, genesis.LocalParams.MaxValidatorStake, "Maximum stake, in nAVAX, that can be placed on a validator on the primary network")
 	// Minimum Stake that can be delegated on the Primary Network
-	fs.Uint64(MinDelegatorStakeKey, genesis.LocalParams.MinDelegatorStake, "Minimum stake, in nLUX, that can be delegated on the primary network")
+	fs.Uint64(MinDelegatorStakeKey, genesis.LocalParams.MinDelegatorStake, "Minimum stake, in nAVAX, that can be delegated on the primary network")
 	fs.Uint64(MinDelegatorFeeKey, uint64(genesis.LocalParams.MinDelegationFee), "Minimum delegation fee, in the range [0, 1000000], that can be charged for delegation on the primary network")
 	// Minimum Stake Duration
 	fs.Duration(MinStakeDurationKey, genesis.LocalParams.MinStakeDuration, "Minimum staking duration")
@@ -280,8 +280,8 @@ func addNodeFlags(fs *flag.FlagSet) {
 	fs.Int(SnowQuorumSizeKey, 15, "Alpha value to use for required number positive results")
 	fs.Int(SnowVirtuousCommitThresholdKey, 15, "Beta value to use for virtuous transactions")
 	fs.Int(SnowRogueCommitThresholdKey, 20, "Beta value to use for rogue transactions")
-	fs.Int(SnowLUXNumParentsKey, 5, "Number of vertexes for reference from each new vertex")
-	fs.Int(SnowLUXBatchSizeKey, 30, "Number of operations to batch in each new vertex")
+	fs.Int(SnowAvalancheNumParentsKey, 5, "Number of vertexes for reference from each new vertex")
+	fs.Int(SnowAvalancheBatchSizeKey, 30, "Number of operations to batch in each new vertex")
 	fs.Int(SnowConcurrentRepollsKey, 4, "Minimum number of concurrent polls for finalizing consensus")
 	fs.Int(SnowOptimalProcessingKey, 50, "Optimal number of processing containers in consensus")
 	fs.Int(SnowMaxProcessingKey, 1024, "Maximum number of processing items to be considered healthy")
@@ -356,7 +356,7 @@ func addNodeFlags(fs *flag.FlagSet) {
 	// TODO add flag to take in headers to send from exporter
 }
 
-// BuildFlagSet returns a complete set of flags for luxd
+// BuildFlagSet returns a complete set of flags for avalanchego
 func BuildFlagSet() *flag.FlagSet {
 	// TODO parse directly into a *pflag.FlagSet instead of into a *flag.FlagSet
 	// and then putting those into a *plag.FlagSet
@@ -367,7 +367,7 @@ func BuildFlagSet() *flag.FlagSet {
 }
 
 // GetExpandedArg gets the string in viper corresponding to [key] and expands
-// any variables using the OS env. If the [LUXGoDataDirVar] var is used,
+// any variables using the OS env. If the [AvalancheGoDataDirVar] var is used,
 // we expand the value of the variable with the string in viper corresponding to
 // [DataDirKey].
 func GetExpandedArg(v *viper.Viper, key string) string {
@@ -375,13 +375,13 @@ func GetExpandedArg(v *viper.Viper, key string) string {
 }
 
 // GetExpandedString expands [s] with any variables using the OS env. If the
-// [LUXGoDataDirVar] var is used, we expand the value of the variable with
+// [AvalancheGoDataDirVar] var is used, we expand the value of the variable with
 // the string in viper corresponding to [DataDirKey].
 func GetExpandedString(v *viper.Viper, s string) string {
 	return os.Expand(
 		s,
 		func(strVar string) string {
-			if strVar == LUXGoDataDirVar {
+			if strVar == AvalancheGoDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)

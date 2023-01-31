@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/network/peer"
-	"github.com/luxdefi/luxd/staking"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/staking"
 )
 
 var (

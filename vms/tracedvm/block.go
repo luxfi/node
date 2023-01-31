@@ -5,24 +5,14 @@ package tracedvm
 
 import (
 	"context"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"errors"
 	"fmt"
-=======
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
-	"errors"
-	"fmt"
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 	"go.opentelemetry.io/otel/attribute"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
 )
 
@@ -32,24 +22,6 @@ var (
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
-=======
-)
-
-var (
-	_ snowman.Block       = (*tracedBlock)(nil)
-	_ snowman.OracleBlock = (*tracedBlock)(nil)
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
-)
-
-var (
-	_ snowman.Block           = (*tracedBlock)(nil)
-	_ snowman.OracleBlock     = (*tracedBlock)(nil)
-	_ block.WithVerifyContext = (*tracedBlock)(nil)
-
-	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 )
 
 type tracedBlock struct {
@@ -115,10 +87,6 @@ func (b *tracedBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 		},
 	}, nil
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
 	blkWithCtx, ok := b.Block.(block.WithVerifyContext)
@@ -150,8 +118,3 @@ func (b *tracedBlock) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 
 	return blkWithCtx.VerifyWithContext(ctx, blockCtx)
 }
-<<<<<<< HEAD
-=======
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))

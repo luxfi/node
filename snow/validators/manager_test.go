@@ -11,10 +11,6 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func TestAdd(t *testing.T) {
 	require := require.New(t)
 
@@ -23,48 +19,19 @@ func TestAdd(t *testing.T) {
 	subnetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
-=======
-	err := Add(m, subnetID, nodeID, 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := Add(m, subnetID, nodeID, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.ErrorIs(err, errMissingValidators)
 
 	s := NewSet()
 	m.Add(subnetID, s)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
-=======
-	err = Add(m, subnetID, nodeID, 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err = Add(m, subnetID, nodeID, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	weight := s.Weight()
 	require.EqualValues(1, weight)
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func TestAddWeight(t *testing.T) {
 	require := require.New(t)
 
@@ -80,8 +47,6 @@ func TestAddWeight(t *testing.T) {
 	m.Add(subnetID, s)
 
 	err = AddWeight(m, subnetID, nodeID, 1)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.ErrorIs(err, errMissingValidator)
 
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
@@ -92,24 +57,6 @@ func TestAddWeight(t *testing.T) {
 
 	weight := s.Weight()
 	require.EqualValues(2, weight)
-=======
-	require.NoError(err)
-
-	weight := s.Weight()
-	require.EqualValues(1, weight)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-	require.ErrorIs(err, errMissingValidator)
-
-	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
-	require.NoError(err)
-
-	err = AddWeight(m, subnetID, nodeID, 1)
-	require.NoError(err)
-
-	weight := s.Weight()
-	require.EqualValues(2, weight)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 }
 
 func TestRemoveWeight(t *testing.T) {
@@ -126,23 +73,7 @@ func TestRemoveWeight(t *testing.T) {
 	s := NewSet()
 	m.Add(subnetID, s)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
-=======
-	err = AddWeight(m, subnetID, nodeID, 2)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-	err = Add(m, subnetID, nodeID, 2)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err = Add(m, subnetID, nodeID, nil, 2)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	err = RemoveWeight(m, subnetID, nodeID, 1)
@@ -175,23 +106,7 @@ func TestContains(t *testing.T) {
 	contains = Contains(m, subnetID, nodeID)
 	require.False(contains)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
-=======
-	err := AddWeight(m, subnetID, nodeID, 1)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-	err := Add(m, subnetID, nodeID, 1)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	err := Add(m, subnetID, nodeID, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(err)
 
 	contains = Contains(m, subnetID, nodeID)

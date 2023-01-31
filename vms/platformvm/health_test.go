@@ -68,8 +68,6 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 			subnetID := ids.GenerateTestID()
 			subnetVdrs := validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
 			vm.TrackedSubnets.Add(subnetID)
 			testVdrCount := 4
 			for i := 0; i < testVdrCount; i++ {
@@ -77,25 +75,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 				err := subnetVdrs.Add(subnetVal, nil, ids.Empty, 100)
 				require.NoError(err)
 			}
-<<<<<<< HEAD
 			ok := vm.Validators.Add(subnetID, subnetVdrs)
-=======
-
-			vals, ok := vm.Validators.Get(subnetID)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-=======
-			vm.WhitelistedSubnets.Add(subnetID)
-=======
-			vm.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
-			testVdrCount := 4
-			for i := 0; i < testVdrCount; i++ {
-				subnetVal := ids.GenerateTestNodeID()
-				err := subnetVdrs.Add(subnetVal, nil, ids.Empty, 100)
-				require.NoError(err)
-			}
-			ok := vm.Validators.Add(subnetID, subnetVdrs)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 			require.True(ok)
 
 			// connect to all primary network validators first
@@ -113,26 +93,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 					subnetID: expectedMinStake,
 				}
 			}
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 			for index, vdr := range subnetVdrs.List() {
 				err := vm.ConnectedSubnet(context.Background(), vdr.NodeID, subnetID)
-=======
-			for index, validator := range vals.List() {
-=======
-			for index, validator := range subnetVdrs.List() {
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-				err := vm.Connected(context.Background(), validator.ID(), version.CurrentApp)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-			for index, vdr := range subnetVdrs.List() {
-<<<<<<< HEAD
-				err := vm.Connected(context.Background(), vdr.NodeID, version.CurrentApp)
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-=======
-				err := vm.ConnectedSubnet(context.Background(), vdr.NodeID, subnetID)
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				require.NoError(err)
 				details, err := vm.HealthCheck(context.Background())
 				connectedPerc := float64((index + 1) * (100 / testVdrCount))

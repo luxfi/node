@@ -355,15 +355,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 			dummyHeight := uint64(1)
 
 			subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 			env.config.TrackedSubnets.Add(subnetID)
-=======
-			env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			env.config.Validators.Add(subnetID, validators.NewSet())
 
 			for _, staker := range test.stakers {
@@ -463,15 +455,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	}()
 
 	subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	env.config.TrackedSubnets.Add(subnetID)
-=======
-	env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-	env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	env.config.Validators.Add(subnetID, validators.NewSet())
 
 	dummyHeight := uint64(1)
@@ -561,21 +545,9 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func TestTrackedSubnet(t *testing.T) {
 	for _, tracked := range []bool{true, false} {
 		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
-=======
-func TestWhitelistedSubnet(t *testing.T) {
-	for _, whitelist := range []bool{true, false} {
-		t.Run(fmt.Sprintf("whitelisted %t", whitelist), func(t *testing.T) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
-func TestTrackedSubnet(t *testing.T) {
-	for _, tracked := range []bool{true, false} {
-		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			require := require.New(t)
 			env := newEnvironment( /*postBanff*/ false)
 			env.ctx.Lock.Lock()
@@ -585,18 +557,8 @@ func TestTrackedSubnet(t *testing.T) {
 			dummyHeight := uint64(1)
 
 			subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 			if tracked {
 				env.config.TrackedSubnets.Add(subnetID)
-=======
-			if whitelist {
-				env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			if tracked {
-				env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 				env.config.Validators.Add(subnetID, validators.NewSet())
 			}
 
@@ -650,22 +612,8 @@ func TestTrackedSubnet(t *testing.T) {
 
 			executor.OnCommitState.Apply(env.state)
 			env.state.SetHeight(dummyHeight)
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.NoError(env.state.Commit())
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
-=======
-			require.NoError(t, env.state.Commit())
-			require.Equal(t, whitelist, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			require.NoError(env.state.Commit())
-<<<<<<< HEAD
-			require.Equal(whitelist, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
-			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		})
 	}
 }
@@ -717,21 +665,9 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 
 	// Test validator weight before delegation
 	primarySet, ok := env.config.Validators.Get(constants.PrimaryNetworkID)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.True(ok)
 	vdrWeight := primarySet.GetWeight(nodeID)
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
-=======
-	require.True(t, ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
-	require.Equal(t, env.config.MinValidatorStake, vdrWeight)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-=======
-	require.True(ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
-	require.Equal(env.config.MinValidatorStake, vdrWeight)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	// Add delegator
 	pendingDelegatorStartTime := pendingValidatorStartTime.Add(1 * time.Second)
@@ -788,15 +724,7 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 
 	// Test validator weight after delegation
 	vdrWeight = primarySet.GetWeight(nodeID)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
-=======
-	require.Equal(t, env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }
 
 func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
@@ -840,21 +768,9 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 
 	// Test validator weight before delegation
 	primarySet, ok := env.config.Validators.Get(constants.PrimaryNetworkID)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.True(ok)
 	vdrWeight := primarySet.GetWeight(nodeID)
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
-=======
-	require.True(t, ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
-	require.Equal(t, env.config.MinValidatorStake, vdrWeight)
->>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
-=======
-	require.True(ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
-	require.Equal(env.config.MinValidatorStake, vdrWeight)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	// Add delegator
 	pendingDelegatorStartTime := pendingValidatorStartTime.Add(1 * time.Second)
@@ -906,15 +822,7 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 
 	// Test validator weight after delegation
 	vdrWeight = primarySet.GetWeight(nodeID)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
-=======
-	require.Equal(t, env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }
 
 // Test method InitiallyPrefersCommit

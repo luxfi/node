@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -12,27 +12,27 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/luxdefi/luxd/api/info"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/tests"
-	"github.com/luxdefi/luxd/tests/e2e"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm"
-	"github.com/luxdefi/luxd/vms/platformvm/status"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-	"github.com/luxdefi/luxd/wallet/subnet/primary"
-	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+	"github.com/ava-labs/avalanchego/api/info"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations
 // - Issues an Add Validator and an Add Delegator using the funding address
-// - Exports LUX from the P-Chain funding address to the X-Chain created address
-// - Exports LUX from the X-Chain created address to the P-Chain created address
+// - Exports AVAX from the P-Chain funding address to the X-Chain created address
+// - Exports AVAX from the X-Chain created address to the P-Chain created address
 // - Checks the expected value of the funding address
 
 var _ = e2e.DescribePChain("[Workflow]", func() {
@@ -60,7 +60,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			gomega.Expect(err).Should(gomega.BeNil())
 
 			pWallet := baseWallet.P()
-			luxAssetID := baseWallet.P().LUXAssetID()
+			avaxAssetID := baseWallet.P().AVAXAssetID()
 			xWallet := baseWallet.X()
 			pChainClient := platformvm.NewClient(nodeURI)
 			xChainClient := avm.NewClient(nodeURI, xWallet.BlockchainID().String())
@@ -83,13 +83,13 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			tests.Outf("{{green}} txFee: %d {{/}}\n", txFees)
 
 			// amount to transfer from P to X chain
-			toTransfer := 1 * units.Lux
+			toTransfer := 1 * units.Avax
 
 			pShortAddr := testKeyAddrs[0]
 			xTargetAddr := testKeyAddrs[1]
 			ginkgo.By("check selected keys have sufficient funds", func() {
 				pBalances, err := pWallet.Builder().GetBalance()
-				pBalance := pBalances[luxAssetID]
+				pBalance := pBalances[avaxAssetID]
 				minBalance := minValStake + txFees + minDelStake + txFees + toTransfer + txFees
 				gomega.Expect(pBalance, err).To(gomega.BeNumerically(">=", minBalance))
 			})
@@ -145,12 +145,12 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			// retrieve initial balances
 			pBalances, err := pWallet.Builder().GetBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			pStartBalance := pBalances[luxAssetID]
+			pStartBalance := pBalances[avaxAssetID]
 			tests.Outf("{{blue}} P-chain balance before P->X export: %d {{/}}\n", pStartBalance)
 
 			xBalances, err := xWallet.Builder().GetFTBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			xStartBalance := xBalances[luxAssetID]
+			xStartBalance := xBalances[avaxAssetID]
 			tests.Outf("{{blue}} X-chain balance before P->X export: %d {{/}}\n", xStartBalance)
 
 			outputOwner := secp256k1fx.OutputOwners{
@@ -164,14 +164,14 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 				OutputOwners: outputOwner,
 			}
 
-			ginkgo.By("export lux from P to X chain", func() {
+			ginkgo.By("export avax from P to X chain", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				exportTxID, err := pWallet.IssueExportTx(
 					xWallet.BlockchainID(),
-					[]*lux.TransferableOutput{
+					[]*avax.TransferableOutput{
 						{
-							Asset: lux.Asset{
-								ID: luxAssetID,
+							Asset: avax.Asset{
+								ID: avaxAssetID,
 							},
 							Out: output,
 						},
@@ -190,18 +190,18 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			// check balances post export
 			pBalances, err = pWallet.Builder().GetBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			pPreImportBalance := pBalances[luxAssetID]
+			pPreImportBalance := pBalances[avaxAssetID]
 			tests.Outf("{{blue}} P-chain balance after P->X export: %d {{/}}\n", pPreImportBalance)
 
 			xBalances, err = xWallet.Builder().GetFTBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			xPreImportBalance := xBalances[luxAssetID]
+			xPreImportBalance := xBalances[avaxAssetID]
 			tests.Outf("{{blue}} X-chain balance after P->X export: %d {{/}}\n", xPreImportBalance)
 
 			gomega.Expect(xPreImportBalance).To(gomega.Equal(xStartBalance)) // import not performed yet
 			gomega.Expect(pPreImportBalance).To(gomega.Equal(pStartBalance - toTransfer - txFees))
 
-			ginkgo.By("import lux from P into X chain", func() {
+			ginkgo.By("import avax from P into X chain", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				importTxID, err := xWallet.IssueImportTx(
 					constants.PlatformChainID,
@@ -220,12 +220,12 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			// check balances post import
 			pBalances, err = pWallet.Builder().GetBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			pFinalBalance := pBalances[luxAssetID]
+			pFinalBalance := pBalances[avaxAssetID]
 			tests.Outf("{{blue}} P-chain balance after P->X import: %d {{/}}\n", pFinalBalance)
 
 			xBalances, err = xWallet.Builder().GetFTBalance()
 			gomega.Expect(err).Should(gomega.BeNil())
-			xFinalBalance := xBalances[luxAssetID]
+			xFinalBalance := xBalances[avaxAssetID]
 			tests.Outf("{{blue}} X-chain balance after P->X import: %d {{/}}\n", xFinalBalance)
 
 			gomega.Expect(xFinalBalance).To(gomega.Equal(xPreImportBalance + toTransfer - txFees)) // import not performed yet

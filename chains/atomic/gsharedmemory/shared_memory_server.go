@@ -1,28 +1,16 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gsharedmemory
 
 import (
 	"context"
-<<<<<<< HEAD
-	"sync"
-
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-=======
-	"golang.org/x/exp/maps"
-=======
->>>>>>> 9ff918407 (Remove large gRPC message handling (#2342))
 
 	"github.com/ava-labs/avalanchego/chains/atomic"
 	"github.com/ava-labs/avalanchego/database"
 	"github.com/ava-labs/avalanchego/ids"
->>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 
-	sharedmemorypb "github.com/luxdefi/luxd/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
 )
 
 var _ sharedmemorypb.SharedMemoryServer = (*Server)(nil)

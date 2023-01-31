@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package galiasreader
@@ -13,10 +13,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	aliasreaderpb "github.com/luxdefi/luxd/proto/pb/aliasreader"
+	aliasreaderpb "github.com/ava-labs/avalanchego/proto/pb/aliasreader"
 )
 
 const (

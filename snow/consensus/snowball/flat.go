@@ -33,16 +33,6 @@ func (f *Flat) Initialize(params Parameters, choice ids.ID) {
 	f.params = params
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-func (f *Flat) Parameters() Parameters {
-	return f.params
-}
-
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func (f *Flat) RecordPoll(votes ids.Bag) bool {
 	if pollMode, numVotes := votes.Mode(); numVotes >= f.params.Alpha {
 		f.RecordSuccessfulPoll(pollMode)

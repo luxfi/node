@@ -1027,17 +1027,7 @@ func newRemoveSubnetValidatorTx(t *testing.T) (*txs.RemoveSubnetValidatorTx, *tx
 		Unsigned: unsignedTx,
 		Creds:    creds,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.NoError(t, tx.Initialize(txs.Codec))
-=======
-	if err := tx.Initialize(txs.Codec); err != nil {
-		t.Fatal(err)
-	}
->>>>>>> 3c968fec6 (Add codec.Size (#2343))
-=======
-	require.NoError(t, tx.Initialize(txs.Codec))
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	return unsignedTx, tx
 }
 
@@ -1418,17 +1408,7 @@ func newTransformSubnetTx(t *testing.T) (*txs.TransformSubnetTx, *txs.Tx) {
 		Unsigned: unsignedTx,
 		Creds:    creds,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.NoError(t, tx.Initialize(txs.Codec))
-=======
-	if err := tx.Initialize(txs.Codec); err != nil {
-		t.Fatal(err)
-	}
->>>>>>> 3c968fec6 (Add codec.Size (#2343))
-=======
-	require.NoError(t, tx.Initialize(txs.Codec))
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	return unsignedTx, tx
 }
 

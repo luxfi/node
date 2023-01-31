@@ -26,39 +26,8 @@ import (
 	statelessblock "github.com/ava-labs/avalanchego/vms/proposervm/block"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-var errUnknownSummary = errors.New("unknown summary")
-=======
-=======
 var errUnknownSummary = errors.New("unknown summary")
 
-<<<<<<< HEAD
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
-func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
-	rawDB := dbMan.Current().Database
-	prefixDB := prefixdb.New(dbPrefix, rawDB)
-	db := versiondb.New(prefixDB)
-	vmState := state.New(db)
-
-	if err := vmState.SetIndexHasReset(); err != nil {
-		t.Fatal("could not preload key to vm state")
-	}
-	if err := vmState.Commit(); err != nil {
-		t.Fatal("could not commit preloaded key")
-	}
-	if err := db.Commit(); err != nil {
-		t.Fatal("could not commit preloaded key")
-	}
-
-	coreVM.VerifyHeightIndexF = func(context.Context) error {
-		return nil
-	}
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-
-=======
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	innerVM := &fullVM{
 		TestVM: &block.TestVM{
@@ -93,8 +62,6 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	) error {
 		return nil
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerVM.VerifyHeightIndexF = func(context.Context) error {
 		return nil
 	}
@@ -102,28 +69,10 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		return innerGenesisBlk.ID(), nil
 	}
 	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
-=======
-	innerVM.VerifyHeightIndexF = func() error {
-=======
-	innerVM.VerifyHeightIndexF = func(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-		return nil
-	}
-	innerVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return innerGenesisBlk.ID(), nil
-	}
-<<<<<<< HEAD
-	innerVM.GetBlockF = func(ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return innerGenesisBlk, nil
 	}
 
 	// createVM
-<<<<<<< HEAD
-<<<<<<< HEAD
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 	dbManager = dbManager.NewPrefixDBManager([]byte{})
 
@@ -135,17 +84,6 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
-<<<<<<< HEAD
-=======
-=======
-	dbManager := manager.NewMemDB(version.Semantic1_0_0)
-	dbManager = dbManager.NewPrefixDBManager([]byte{})
-
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
-	vm := New(innerVM, time.Time{}, 0, DefaultMinBlockDelay)
->>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
-=======
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	ctx := snow.DefaultContextTest()
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
@@ -175,46 +113,18 @@ func TestStateSyncEnabled(t *testing.T) {
 
 	// ProposerVM State Sync disabled if innerVM State sync is disabled
 	vm.hIndexer.MarkRepaired(true)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
 	enabled, err := vm.StateSyncEnabled(context.Background())
-=======
-	innerVM.StateSyncEnabledF = func() (bool, error) {
-		return false, nil
-	}
-	enabled, err := vm.StateSyncEnabled()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
-		return false, nil
-	}
-	enabled, err := vm.StateSyncEnabled(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.False(enabled)
 
 	// ProposerVM State Sync enabled if innerVM State sync is enabled
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return true, nil
 	}
 	enabled, err = vm.StateSyncEnabled(context.Background())
-=======
-	innerVM.StateSyncEnabledF = func() (bool, error) {
-		return true, nil
-	}
-	enabled, err = vm.StateSyncEnabled()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
-		return true, nil
-	}
-	enabled, err = vm.StateSyncEnabled(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	require.NoError(err)
 	require.True(enabled)
 }
@@ -597,60 +507,18 @@ func TestStateSummaryAccept(t *testing.T) {
 	require.NoError(err)
 
 	// test Accept accepted
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
 	status, err := summary.Accept(context.Background())
-=======
-	innerSummary.AcceptF = func() (bool, error) {
-		return true, nil
-	}
-	accepted, err := summary.Accept()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerSummary.AcceptF = func(context.Context) (bool, error) {
-		return true, nil
-	}
-	accepted, err := summary.Accept(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-		return block.StateSyncStatic, nil
-	}
-	status, err := summary.Accept(context.Background())
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncStatic, status)
 
 	// test Accept skipped
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncSkipped, nil
 	}
 	status, err = summary.Accept(context.Background())
-=======
-	innerSummary.AcceptF = func() (bool, error) {
-		return false, nil
-	}
-	accepted, err = summary.Accept()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerSummary.AcceptF = func(context.Context) (bool, error) {
-		return false, nil
-	}
-	accepted, err = summary.Accept(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-		return block.StateSyncSkipped, nil
-	}
-	status, err = summary.Accept(context.Background())
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }
@@ -713,31 +581,10 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	require.NoError(err)
 
 	// test Accept skipped
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
 		return block.StateSyncStatic, nil
 	}
 	status, err := summary.Accept(context.Background())
-=======
-	innerSummary.AcceptF = func() (bool, error) {
-		return true, nil
-	}
-	accepted, err := summary.Accept()
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	innerSummary.AcceptF = func(context.Context) (bool, error) {
-		return true, nil
-	}
-	accepted, err := summary.Accept(context.Background())
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	innerSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-		return block.StateSyncStatic, nil
-	}
-	status, err := summary.Accept(context.Background())
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 }

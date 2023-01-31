@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // For ease of implementation, our database's interface matches Ethereum's
@@ -10,7 +10,7 @@ package database
 import (
 	"io"
 
-	"github.com/luxdefi/luxd/api/health"
+	"github.com/ava-labs/avalanchego/api/health"
 )
 
 // KeyValueReader wraps the Has and Get method of a backing data store.

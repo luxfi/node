@@ -51,15 +51,7 @@ func (t *BaseTx) ConsumedAssetIDs() set.Set[ids.ID] {
 }
 
 // AssetIDs returns the IDs of the assets this transaction depends on
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (t *BaseTx) AssetIDs() set.Set[ids.ID] {
-=======
-func (t *BaseTx) AssetIDs() ids.Set {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (t *BaseTx) AssetIDs() set.Set[ids.ID] {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return t.ConsumedAssetIDs()
 }
 

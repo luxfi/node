@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -23,64 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	coreth "github.com/luxdefi/coreth/plugin/evm"
+	coreth "github.com/ava-labs/coreth/plugin/evm"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/api/admin"
-	"github.com/luxdefi/luxd/api/auth"
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/api/info"
-	"github.com/luxdefi/luxd/api/keystore"
-	"github.com/luxdefi/luxd/api/metrics"
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/chains"
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/leveldb"
-	"github.com/luxdefi/luxd/database/manager"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/indexer"
-	"github.com/luxdefi/luxd/ipcs"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/network/dialer"
-	"github.com/luxdefi/luxd/network/peer"
-	"github.com/luxdefi/luxd/network/throttling"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/timeout"
-	"github.com/luxdefi/luxd/snow/networking/tracker"
-	"github.com/luxdefi/luxd/snow/uptime"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/filesystem"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/utils/math/meter"
-	"github.com/luxdefi/luxd/utils/perms"
-	"github.com/luxdefi/luxd/utils/profiler"
-	"github.com/luxdefi/luxd/utils/resource"
-	"github.com/luxdefi/luxd/utils/timer"
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/platformvm"
-	"github.com/luxdefi/luxd/vms/platformvm/config"
-	"github.com/luxdefi/luxd/vms/platformvm/signer"
-	"github.com/luxdefi/luxd/vms/propertyfx"
-	"github.com/luxdefi/luxd/vms/registry"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-=======
 	"github.com/ava-labs/avalanchego/api/admin"
 	"github.com/ava-labs/avalanchego/api/auth"
 	"github.com/ava-labs/avalanchego/api/health"
@@ -136,9 +80,8 @@ import (
 	"github.com/ava-labs/avalanchego/vms/propertyfx"
 	"github.com/ava-labs/avalanchego/vms/registry"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 
-	ipcsapi "github.com/luxdefi/luxd/api/ipcs"
+	ipcsapi "github.com/ava-labs/avalanchego/api/ipcs"
 )
 
 var (
@@ -149,7 +92,7 @@ var (
 	errShuttingDown  = errors.New("server shutting down")
 )
 
-// Node is an instance of an LUX node.
+// Node is an instance of an Avalanche node.
 type Node struct {
 	Log        logging.Logger
 	LogFactory logging.Factory
@@ -692,7 +635,7 @@ func (n *Node) addDefaultVMAliases() error {
 // Create the chainManager and register the following VMs:
 // AVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
-func (n *Node) initChainManager(luxAssetID ids.ID) error {
+func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 	createAVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.AVMID)
 	if err != nil {
 		return err
@@ -763,7 +706,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		Server:                                  n.APIServer,
 		Keystore:                                n.keystore,
 		AtomicMemory:                            n.sharedMemory,
-		LUXAssetID:                             luxAssetID,
+		AVAXAssetID:                             avaxAssetID,
 		XChainID:                                xChainID,
 		CChainID:                                cChainID,
 		CriticalChains:                          criticalChains,
@@ -795,7 +738,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	return nil
 }
 
-// initVMs initializes the VMs LUX supports + any additional vms installed as plugins.
+// initVMs initializes the VMs Avalanche supports + any additional vms installed as plugins.
 func (n *Node) initVMs() error {
 	n.Log.Info("initializing VMs")
 
@@ -816,7 +759,7 @@ func (n *Node) initVMs() error {
 		VMManager: n.Config.VMManager,
 	})
 
-	// Register the VMs that LUX supports
+	// Register the VMs that Avalanche supports
 	errs := wrappers.Errs{}
 	errs.Add(
 		vmRegisterer.Register(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
@@ -1356,7 +1299,7 @@ func (n *Node) Initialize(
 	if err := n.addDefaultVMAliases(); err != nil {
 		return fmt.Errorf("couldn't initialize API aliases: %w", err)
 	}
-	if err := n.initChainManager(n.Config.LuxAssetID); err != nil { // Set up the chain manager
+	if err := n.initChainManager(n.Config.AvaxAssetID); err != nil { // Set up the chain manager
 		return fmt.Errorf("couldn't initialize chain manager: %w", err)
 	}
 	if err := n.initVMs(); err != nil { // Initialize the VM registry.

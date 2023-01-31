@@ -63,13 +63,6 @@ func TestLockOutVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-			require := require.New(t)
->>>>>>> a8631aa5c (Add Fx tests (#1838))
-=======
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -77,15 +70,7 @@ func TestLockOutVerify(t *testing.T) {
 				Locktime:        tt.locktime,
 				TransferableOut: tt.transferableOutF(ctrl),
 			}
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Equal(t, tt.expectedErr, lockOut.Verify())
-=======
-			require.Equal(tt.expectedErr, lockOut.Verify())
->>>>>>> a8631aa5c (Add Fx tests (#1838))
-=======
-			require.Equal(t, tt.expectedErr, lockOut.Verify())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -137,13 +122,6 @@ func TestLockInVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-			require := require.New(t)
->>>>>>> a8631aa5c (Add Fx tests (#1838))
-=======
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -151,15 +129,7 @@ func TestLockInVerify(t *testing.T) {
 				Locktime:       tt.locktime,
 				TransferableIn: tt.transferableInF(ctrl),
 			}
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Equal(t, tt.expectedErr, lockOut.Verify())
-=======
-			require.Equal(tt.expectedErr, lockOut.Verify())
->>>>>>> a8631aa5c (Add Fx tests (#1838))
-=======
-			require.Equal(t, tt.expectedErr, lockOut.Verify())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }

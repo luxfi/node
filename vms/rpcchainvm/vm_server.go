@@ -48,13 +48,6 @@ import (
 	messengerpb "github.com/ava-labs/avalanchego/proto/pb/messenger"
 	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
 	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	subnetlookuppb "github.com/ava-labs/avalanchego/proto/pb/subnetlookup"
->>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	teleporterpb "github.com/ava-labs/avalanchego/proto/pb/teleporter"
 	validatorstatepb "github.com/ava-labs/avalanchego/proto/pb/validatorstate"
 	vmpb "github.com/ava-labs/avalanchego/proto/pb/vm"
@@ -63,16 +56,8 @@ import (
 var (
 	_ vmpb.VMServer = (*VMServer)(nil)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	originalStderr = os.Stderr
 
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
-	originalStderr = os.Stderr
-
->>>>>>> 14f0575b2 (Populate reasonable rpcchainvm logger in vm server (#2408))
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
@@ -416,10 +401,6 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 	return &emptypb.Empty{}, vm.vm.Disconnected(ctx, nodeID)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
@@ -434,21 +415,10 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 			PChainHeight: *req.PChainHeight,
 		})
 	}
-<<<<<<< HEAD
-=======
-func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.BuildBlockResponse, error) {
-	blk, err := vm.vm.BuildBlock(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	blkWithCtx, verifyWithCtx := blk.(block.WithVerifyContext)
 	if verifyWithCtx {
 		verifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
@@ -461,13 +431,6 @@ func (vm *VMServer) BuildBlock(ctx context.Context, _ *emptypb.Empty) (*vmpb.Bui
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
-<<<<<<< HEAD
-=======
-	blkID := blk.ID()
-	parentID := blk.Parent()
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	return &vmpb.BuildBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
@@ -499,15 +462,7 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	return &vmpb.ParseBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
-<<<<<<< HEAD
-<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
-=======
-		Status:            uint32(blk.Status()),
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
-		Status:            vmpb.Status(blk.Status()),
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -538,15 +493,7 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	return &vmpb.GetBlockResponse{
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
-<<<<<<< HEAD
-<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
-=======
-		Status:            uint32(blk.Status()),
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
-		Status:            vmpb.Status(blk.Status()),
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -561,18 +508,8 @@ func (vm *VMServer) SetPreference(ctx context.Context, req *vmpb.SetPreferenceRe
 	return &emptypb.Empty{}, vm.vm.SetPreference(ctx, id)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthResponse, error) {
 	vmHealth, err := vm.vm.HealthCheck(ctx)
-=======
-func (vm *VMServer) Health(context.Context, *emptypb.Empty) (*vmpb.HealthResponse, error) {
-	vmHealth, err := vm.vm.HealthCheck()
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthResponse, error) {
-	vmHealth, err := vm.vm.HealthCheck(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}
@@ -752,15 +689,7 @@ func (vm *VMServer) VerifyHeightIndex(ctx context.Context, _ *emptypb.Empty) (*v
 }
 
 func (vm *VMServer) GetBlockIDAtHeight(
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx context.Context,
-=======
-	_ context.Context,
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-	ctx context.Context,
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	req *vmpb.GetBlockIDAtHeightRequest,
 ) (*vmpb.GetBlockIDAtHeightResponse, error) {
 	var (
@@ -822,15 +751,7 @@ func (vm *VMServer) GetOngoingSyncStateSummary(
 	}, nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VMServer) GetLastStateSummary(ctx context.Context, _ *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
-=======
-func (vm *VMServer) GetLastStateSummary(context.Context, *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (vm *VMServer) GetLastStateSummary(ctx context.Context, _ *emptypb.Empty) (*vmpb.GetLastStateSummaryResponse, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	var (
 		summary block.StateSummary
 		err     error
@@ -914,10 +835,6 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 	if req.PChainHeight == nil {
 		err = blk.Verify(ctx)
@@ -932,12 +849,6 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	}
 	if err != nil {
-<<<<<<< HEAD
-=======
-	if err := blk.Verify(ctx); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		return nil, err
 	}
 
@@ -988,15 +899,7 @@ func (vm *VMServer) StateSummaryAccept(
 		var summary block.StateSummary
 		summary, err = vm.ssVM.ParseStateSummary(ctx, req.Bytes)
 		if err == nil {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			mode, err = summary.Accept(ctx)
-=======
-			accepted, err = summary.Accept(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-			mode, err = summary.Accept(ctx)
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 		}
 	} else {
 		err = block.ErrStateSyncableVMNotImplemented
@@ -1004,14 +907,6 @@ func (vm *VMServer) StateSummaryAccept(
 
 	return &vmpb.StateSummaryAcceptResponse{
 		Mode: vmpb.StateSummaryAcceptResponse_Mode(mode),
-<<<<<<< HEAD
-<<<<<<< HEAD
 		Err:  errorToErrEnum[err],
-=======
-		Err:  errorToErrCode[err],
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-		Err:  errorToErrEnum[err],
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 	}, errorToRPCError(err)
 }

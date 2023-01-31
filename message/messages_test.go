@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -13,23 +13,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/staking"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/units"
-=======
 	"google.golang.org/protobuf/proto"
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/proto/pb/p2p"
 	"github.com/ava-labs/avalanchego/staking"
-<<<<<<< HEAD
->>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
-
-	p2ppb "github.com/luxdefi/luxd/proto/pb/p2p"
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 func TestMessage(t *testing.T) {

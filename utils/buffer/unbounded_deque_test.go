@@ -16,101 +16,29 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	b, ok := bIntf.(*unboundedSliceDeque[int])
 	require.True(ok)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.Equal(0, b.Len())
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	require.Equal(0, b.Len())
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushLeft(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-	got, ok := b.Index(0)
-=======
-=======
 	got, ok := b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
 	_, ok = b.Index(1)
 	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopLeft()
 	require.Equal(0, b.Len())
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 	require.True(ok)
 	require.Equal(1, got)
-<<<<<<< HEAD
-	_, ok = b.Index(1)
-=======
-	_, ok = b.Index(0)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
-	require.False(ok)
-
-<<<<<<< HEAD
-=======
-	b.PushLeft(1)
-	require.Equal(1, b.Len())
-	require.Equal([]int{1}, b.List())
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
-
-	got, ok = b.PopRight()
-	require.Equal(0, b.Len())
-	require.True(ok)
-	require.Equal(1, got)
-	require.Empty(b.List())
 	_, ok = b.Index(0)
 	require.False(ok)
-
-	b.PushRight(1)
-	require.Equal(1, b.Len())
-	require.Equal([]int{1}, b.List())
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
-
-	got, ok = b.PopRight()
-	require.Equal(0, b.Len())
-	require.True(ok)
-	require.Equal(1, got)
-	require.Empty(b.List())
-	_, ok = b.Index(0)
-	require.False(ok)
-
-	b.PushRight(1)
-	require.Equal(1, b.Len())
-	require.Equal([]int{1}, b.List())
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
-
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-	got, ok = b.PopLeft()
-	require.Equal(0, b.Len())
-	require.True(ok)
-	require.Equal(1, got)
-<<<<<<< HEAD
-	_, ok = b.Index(0)
-	require.False(ok)
-=======
-	require.Empty(b.List())
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 
 	b.PushLeft(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
@@ -159,11 +87,6 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-<<<<<<< HEAD
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushLeft(2)
 	require.Equal(2, b.Len())
@@ -174,50 +97,24 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	require.True(ok)
 	require.Equal(2, got)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopLeft()
 	require.Equal(0, b.Len())
 	require.True(ok)
 	require.Equal(1, got)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushRight(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushRight(2)
 	require.Equal(2, b.Len())
@@ -228,50 +125,24 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	require.True(ok)
 	require.Equal(2, got)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopRight()
 	require.Equal(0, b.Len())
 	require.True(ok)
 	require.Equal(1, got)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushLeft(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushLeft(2)
 	require.Equal(2, b.Len())
@@ -282,50 +153,24 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	require.True(ok)
 	require.Equal(1, got)
 	require.Equal([]int{2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(2, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopLeft()
 	require.Equal(0, b.Len())
 	require.True(ok)
 	require.Equal(2, got)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushRight(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushLeft(2)
 	require.Equal(2, b.Len())
@@ -336,22 +181,9 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	require.True(ok)
 	require.Equal(1, got)
 	require.Equal([]int{2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-	got, ok = b.Index(0)
-=======
-
-	got, ok = b.PopLeft()
-	require.Equal(0, b.Len())
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-	require.True(ok)
-	require.Equal(2, got)
-	require.Empty(b.List())
-=======
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopLeft()
 	require.Equal(0, b.Len())
@@ -364,18 +196,9 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	b.PushLeft(1)
 	require.Equal(1, b.Len())
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	b.PushRight(2)
 	require.Equal(2, b.Len())
@@ -386,34 +209,17 @@ func TestUnboundedDeque_InitialCapGreaterThanMin(t *testing.T) {
 	require.True(ok)
 	require.Equal(1, got)
 	require.Equal([]int{2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(2, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopRight()
 	require.Equal(0, b.Len())
 	require.True(ok)
 	require.Equal(2, got)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 }
 
 // Cases we test:
@@ -449,13 +255,6 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(1, b.left)
 	require.Equal(1, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	// slice is [1,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok := b.PeekLeft()
 	require.True(ok)
@@ -472,22 +271,12 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{2, 1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
 	got, ok = b.Index(1)
 	require.True(ok)
 	require.Equal(1, got)
-<<<<<<< HEAD
-=======
-	// slice is [2,1,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -504,10 +293,6 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(2, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{3, 2, 1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(3, got)
@@ -519,12 +304,6 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(1, got)
 	_, ok = b.Index(3)
 	require.False(ok)
-<<<<<<< HEAD
-=======
-	// slice is [2,1,EMPTY,3]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -543,22 +322,12 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{2, 1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
 	got, ok = b.Index(1)
 	require.True(ok)
 	require.Equal(1, got)
-<<<<<<< HEAD
-=======
-	// slice is [2,1,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -577,19 +346,9 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(0, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
-	// slice is [EMPTY,1,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -606,22 +365,12 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{2, 1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
 	got, ok = b.Index(1)
 	require.True(ok)
 	require.Equal(1, got)
-<<<<<<< HEAD
-=======
-	// slice is [2,1,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -639,19 +388,9 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(0, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
-	// slice is [EMPTY,1,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PopLeft() // slice is [EMPTY,EMPTY,EMPTY,EMPTY]
 	require.True(ok)
@@ -661,17 +400,8 @@ func TestUnboundedSliceDequePushLeftPopLeft(t *testing.T) {
 	require.Equal(1, b.left)
 	require.Equal(2, b.right)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	_, ok = b.PopLeft()
 	require.False(ok)
@@ -708,19 +438,9 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(0, b.left)
 	require.Equal(0, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok := b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
-	// slice is [1,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok := b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -737,22 +457,12 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{1, 2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
 	got, ok = b.Index(1)
 	require.True(ok)
 	require.Equal(2, got)
-<<<<<<< HEAD
-=======
-	// slice is [1,2,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -769,10 +479,6 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(3, b.right)
 	require.Equal([]int{1, 2, 3}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
@@ -782,12 +488,6 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	got, ok = b.Index(2)
 	require.True(ok)
 	require.Equal(3, got)
-<<<<<<< HEAD
-=======
-	// slice is [1,2,3,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -806,10 +506,6 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(2, b.right)
 	require.Equal([]int{1, 2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
@@ -818,12 +514,6 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(2, got)
 	_, ok = b.Index(2)
 	require.False(ok)
-<<<<<<< HEAD
-=======
-	// slice is [1,2,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -841,21 +531,11 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(1, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
 	_, ok = b.Index(1)
 	require.False(ok)
-<<<<<<< HEAD
-=======
-	// slice is [1,EMPTY,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -873,19 +553,9 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(3, b.left)
 	require.Equal(0, b.right)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.Equal(0, b.Len())
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	require.Equal(0, b.Len())
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	_, ok = b.PeekLeft()
 	require.False(ok)
@@ -900,19 +570,9 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(2, b.left)
 	require.Equal(0, b.right)
 	require.Equal([]int{1}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,1]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(1, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -931,19 +591,9 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(2, b.left)
 	require.Equal(3, b.right)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.Equal(0, b.Len())
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	require.Equal(0, b.Len())
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	_, ok = b.PeekLeft()
 	require.False(ok)
@@ -958,19 +608,9 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.Equal(2, b.left)
 	require.Equal(0, b.right)
 	require.Equal([]int{2}, b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	got, ok = b.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,2]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	got, ok = b.Index(0)
-	require.True(ok)
-	require.Equal(2, got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	got, ok = b.PeekLeft()
 	require.True(ok)
@@ -984,17 +624,8 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.True(ok)
 	require.Equal(2, got)
 	require.Empty(b.List())
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, ok = b.Index(0)
 	require.False(ok)
-=======
-	// slice is [EMPTY,EMPTY,EMPTY,EMPTY]
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-	_, ok = b.Index(0)
-	require.False(ok)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 
 	_, ok = b.PeekLeft()
 	require.False(ok)
@@ -1004,8 +635,6 @@ func TestUnboundedSliceDequePushRightPopRight(t *testing.T) {
 	require.False(ok)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func FuzzUnboundedSliceDeque(f *testing.F) {
 	f.Fuzz(
 		func(t *testing.T, initSize uint, input []byte) {
@@ -1022,39 +651,12 @@ func FuzzUnboundedSliceDeque(f *testing.F) {
 			require.Equal(len(input), len(list))
 			for i, n := range input {
 				require.Equal(n, list[i])
-=======
-func FuzzUnboundedSliceQueueList(f *testing.F) {
-=======
-func FuzzUnboundedSliceDeque(f *testing.F) {
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
-	f.Fuzz(
-		func(t *testing.T, initSize uint, input []byte) {
-			require := require.New(t)
-			b := NewUnboundedDeque[byte](int(initSize))
-			for i, n := range input {
-				b.PushRight(n)
-				gotIndex, ok := b.Index(i)
-				require.True(ok)
-				require.Equal(n, gotIndex)
-			}
-
-			list := b.List()
-			require.Equal(len(input), len(list))
-			for i, n := range input {
-<<<<<<< HEAD
-				require.Equal(t, n, list[i])
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-				require.Equal(n, list[i])
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 			}
 
 			for i := 0; i < len(input); i++ {
 				_, _ = b.PopLeft()
 				list = b.List()
 				if i == len(input)-1 {
-<<<<<<< HEAD
-<<<<<<< HEAD
 					require.Empty(list)
 					_, ok := b.Index(0)
 					require.False(ok)
@@ -1063,21 +665,6 @@ func FuzzUnboundedSliceDeque(f *testing.F) {
 					got, ok := b.Index(0)
 					require.True(ok)
 					require.Equal(input[i+1], got)
-=======
-					require.Nil(t, list)
-				} else {
-					require.Equal(t, input[i+1:], list)
->>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
-=======
-					require.Empty(list)
-					_, ok := b.Index(0)
-					require.False(ok)
-				} else {
-					require.Equal(input[i+1:], list)
-					got, ok := b.Index(0)
-					require.True(ok)
-					require.Equal(input[i+1], got)
->>>>>>> 6a86eca6b (Add Index method to deque (#2407))
 				}
 			}
 		},

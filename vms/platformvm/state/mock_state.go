@@ -14,18 +14,8 @@ import (
 	database "github.com/ava-labs/avalanchego/database"
 	ids "github.com/ava-labs/avalanchego/ids"
 	choices "github.com/ava-labs/avalanchego/snow/choices"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 	validators "github.com/ava-labs/avalanchego/snow/validators"
 	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
-=======
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	avax "github.com/ava-labs/avalanchego/vms/components/avax"
 	blocks "github.com/ava-labs/avalanchego/vms/platformvm/blocks"
 	status "github.com/ava-labs/avalanchego/vms/platformvm/status"
@@ -524,24 +514,6 @@ func (m *MockState) GetUptime(arg0 ids.NodeID, arg1 ids.ID) (time.Duration, time
 func (mr *MockStateMockRecorder) GetUptime(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), arg0, arg1)
-<<<<<<< HEAD
-}
-
-// GetValidatorPublicKeyDiffs mocks base method.
-func (m *MockState) GetValidatorPublicKeyDiffs(arg0 uint64) (map[ids.NodeID]*bls.PublicKey, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValidatorPublicKeyDiffs", arg0)
-	ret0, _ := ret[0].(map[ids.NodeID]*bls.PublicKey)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetValidatorPublicKeyDiffs indicates an expected call of GetValidatorPublicKeyDiffs.
-func (mr *MockStateMockRecorder) GetValidatorPublicKeyDiffs(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorPublicKeyDiffs", reflect.TypeOf((*MockState)(nil).GetValidatorPublicKeyDiffs), arg0)
-=======
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 }
 
 // GetValidatorPublicKeyDiffs mocks base method.

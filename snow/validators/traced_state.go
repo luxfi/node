@@ -21,14 +21,7 @@ type tracedState struct {
 	s                   State
 	getMinimumHeightTag string
 	getCurrentHeightTag string
-<<<<<<< HEAD
-<<<<<<< HEAD
 	getSubnetIDTag      string
-=======
->>>>>>> 04a9ba9d5 (Add validators.State tracer (#2243))
-=======
-	getSubnetIDTag      string
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	getValidatorSetTag  string
 	tracer              trace.Tracer
 }
@@ -38,14 +31,7 @@ func Trace(s State, name string, tracer trace.Tracer) State {
 		s:                   s,
 		getMinimumHeightTag: fmt.Sprintf("%s.GetMinimumHeight", name),
 		getCurrentHeightTag: fmt.Sprintf("%s.GetCurrentHeight", name),
-<<<<<<< HEAD
-<<<<<<< HEAD
 		getSubnetIDTag:      fmt.Sprintf("%s.GetSubnetID", name),
-=======
->>>>>>> 04a9ba9d5 (Add validators.State tracer (#2243))
-=======
-		getSubnetIDTag:      fmt.Sprintf("%s.GetSubnetID", name),
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 		getValidatorSetTag:  fmt.Sprintf("%s.GetValidatorSet", name),
 		tracer:              tracer,
 	}
@@ -65,11 +51,6 @@ func (s *tracedState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return s.s.GetCurrentHeight(ctx)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (s *tracedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	ctx, span := s.tracer.Start(ctx, s.getValidatorSetTag, oteltrace.WithAttributes(
 		attribute.Stringer("chainID", chainID),
@@ -79,27 +60,11 @@ func (s *tracedState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, 
 	return s.s.GetSubnetID(ctx, chainID)
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 func (s *tracedState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	subnetID ids.ID,
-<<<<<<< HEAD
-<<<<<<< HEAD
 ) (map[ids.NodeID]*GetValidatorOutput, error) {
-=======
-func (s *tracedState) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> 04a9ba9d5 (Add validators.State tracer (#2243))
-=======
-) (map[ids.NodeID]*Validator, error) {
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-) (map[ids.NodeID]*GetValidatorOutput, error) {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	ctx, span := s.tracer.Start(ctx, s.getValidatorSetTag, oteltrace.WithAttributes(
 		attribute.Int64("height", int64(height)),
 		attribute.Stringer("subnetID", subnetID),

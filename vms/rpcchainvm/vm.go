@@ -54,15 +54,7 @@ func (p *vmPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
 }
 
 // GRPCClient returns a new GRPC client
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*vmPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-=======
-func (*vmPlugin) GRPCClient(ctx context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*vmPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return NewClient(vmpb.NewVMClient(c)), nil
 }
 

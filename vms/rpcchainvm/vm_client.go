@@ -56,13 +56,6 @@ import (
 	messengerpb "github.com/ava-labs/avalanchego/proto/pb/messenger"
 	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
 	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	subnetlookuppb "github.com/ava-labs/avalanchego/proto/pb/subnetlookup"
->>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	teleporterpb "github.com/ava-labs/avalanchego/proto/pb/teleporter"
 	validatorstatepb "github.com/ava-labs/avalanchego/proto/pb/validatorstate"
 	vmpb "github.com/ava-labs/avalanchego/proto/pb/vm"
@@ -104,13 +97,6 @@ type VMClient struct {
 	keystore               *gkeystore.Server
 	sharedMemory           *gsharedmemory.Server
 	bcLookup               *galiasreader.Server
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	snLookup               *gsubnetlookup.Server
->>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	appSender              *appsender.Server
 	validatorStateServer   *gvalidators.Server
 	teleporterSignerServer *gteleporter.Server
@@ -199,22 +185,9 @@ func (vm *VMClient) Initialize(
 	vm.keystore = gkeystore.NewServer(chainCtx.Keystore)
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, dbManager.Current().Database)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
 	vm.appSender = appsender.NewServer(appSender)
 	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
 	vm.teleporterSignerServer = gteleporter.NewServer(chainCtx.TeleporterSigner)
-=======
-	vm.snLookup = gsubnetlookup.NewServer(chainCtx.SNLookup)
-	vm.appSender = appsender.NewServer(appSender)
-	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
-<<<<<<< HEAD
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	vm.teleporterSignerServer = gteleporter.NewServer(chainCtx.TeleporterSigner)
->>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -233,19 +206,9 @@ func (vm *VMClient) Initialize(
 		ChainId:      chainCtx.ChainID[:],
 		NodeId:       chainCtx.NodeID.Bytes(),
 		XChainId:     chainCtx.XChainID[:],
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
 		CChainId:     chainCtx.CChainID[:],
 		AvaxAssetId:  chainCtx.AVAXAssetID[:],
 		ChainDataDir: chainCtx.ChainDataDir,
-<<<<<<< HEAD
-=======
-		AvaxAssetId:  chainCtx.AVAXAssetID[:],
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,
@@ -292,14 +255,7 @@ func (vm *VMClient) Initialize(
 			LastAcceptedBlock:     lastAcceptedBlk,
 			GetBlock:              vm.getBlock,
 			UnmarshalBlock:        vm.parseBlock,
-<<<<<<< HEAD
-<<<<<<< HEAD
 			BatchedUnmarshalBlock: vm.batchedParseBlock,
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-			BatchedUnmarshalBlock: vm.batchedParseBlock,
->>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 			BuildBlock:            vm.buildBlock,
 			BuildBlockWithContext: vm.buildBlockWithContext,
 		},
@@ -381,15 +337,7 @@ func (vm *VMClient) getInitServer(opts []grpc.ServerOption) *grpc.Server {
 
 func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
-<<<<<<< HEAD
-<<<<<<< HEAD
 		State: vmpb.State(state),
-=======
-		State: uint32(state),
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-		State: vmpb.State(state),
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 	})
 	if err != nil {
 		return err
@@ -497,22 +445,12 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return err
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
 func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
-<<<<<<< HEAD
-=======
-func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
-	resp, err := vm.client.BuildBlock(ctx, &emptypb.Empty{})
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
 	if err != nil {
 		return nil, err
 	}
@@ -521,24 +459,12 @@ func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 
 func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-<<<<<<< HEAD
-func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
-	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
-	if err != nil {
-		return nil, err
-	}
-	return vm.newBlockFromBuildBlock(resp)
-}
-
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
@@ -601,10 +527,6 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		vm:                  vm,
 		id:                  blkID,
 		parentID:            parentID,
@@ -613,18 +535,6 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
-<<<<<<< HEAD
-=======
-		vm:       vm,
-		id:       blkID,
-		parentID: parentID,
-		status:   status,
-		bytes:    resp.Bytes,
-		height:   resp.Height,
-		time:     time,
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	}, err
 }
 
@@ -762,15 +672,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
-=======
-func (vm *VMClient) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
->>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -947,10 +849,6 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		vm:                  vm,
 		id:                  id,
 		parentID:            parentID,
@@ -959,18 +857,6 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
-<<<<<<< HEAD
-=======
-		vm:       vm,
-		id:       id,
-		parentID: parentID,
-		status:   choices.Processing,
-		bytes:    resp.Bytes,
-		height:   resp.Height,
-		time:     time,
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	}, err
 }
 
@@ -1037,26 +923,6 @@ func (b *blockClient) Height() uint64 {
 func (b *blockClient) Timestamp() time.Time {
 	return b.time
 }
-<<<<<<< HEAD
-
-func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {
-	return b.shouldVerifyWithCtx, nil
-}
-
-func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
-	resp, err := b.vm.client.BlockVerify(ctx, &vmpb.BlockVerifyRequest{
-		Bytes:        b.bytes,
-		PChainHeight: &blockCtx.PChainHeight,
-	})
-	if err != nil {
-		return err
-	}
-
-	b.time, err = grpcutils.TimestampAsTime(resp.Timestamp)
-	return err
-}
-=======
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {
 	return b.shouldVerifyWithCtx, nil
@@ -1086,17 +952,6 @@ type summaryClient struct {
 func (s *summaryClient) ID() ids.ID {
 	return s.id
 }
-<<<<<<< HEAD
-=======
-
-func (s *summaryClient) Height() uint64 {
-	return s.height
-}
-
-func (s *summaryClient) Bytes() []byte {
-	return s.bytes
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (s *summaryClient) Height() uint64 {
 	return s.height
@@ -1106,15 +961,7 @@ func (s *summaryClient) Bytes() []byte {
 	return s.bytes
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error) {
-=======
-func (s *summaryClient) Accept(ctx context.Context) (bool, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error) {
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	resp, err := s.vm.client.StateSummaryAccept(
 		ctx,
 		&vmpb.StateSummaryAcceptRequest{
@@ -1124,13 +971,5 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 	if err != nil {
 		return block.StateSyncSkipped, err
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
-=======
-	return block.StateSyncMode(resp.Mode), errCodeToError[resp.Err]
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 }

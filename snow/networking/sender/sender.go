@@ -94,16 +94,8 @@ func New(
 }
 
 func (s *sender) SendGetStateSummaryFrontier(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -240,16 +232,8 @@ func (s *sender) SendStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID
 }
 
 func (s *sender) SendGetAcceptedStateSummary(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, heights []uint64) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -382,16 +366,8 @@ func (s *sender) SendAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID
 }
 
 func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -527,16 +503,8 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 }
 
 func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, containerIDs []ids.ID) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -926,16 +894,8 @@ func (s *sender) SendPut(_ context.Context, nodeID ids.NodeID, requestID uint32,
 // node to send their preferred frontier given the existence of the specified
 // container.
 func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, container []byte) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail
@@ -1062,16 +1022,8 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 // The PullQuery message signifies that this consensus engine would like each
 // node to send their preferred frontier.
 func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, containerID ids.ID) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail
@@ -1187,15 +1139,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 }
 
 // SendChits sends chits
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes, accepted []ids.ID) {
-=======
-func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes []ids.ID) {
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-=======
-func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes, accepted []ids.ID) {
->>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 	ctx = utils.Detach(ctx)
 
 	// If [nodeID] is myself, send this message directly
@@ -1214,15 +1158,7 @@ func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uin
 	}
 
 	// Create the outbound message.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, accepted, s.engineType)
-=======
-	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, s.engineType)
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
-=======
-	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, accepted, s.engineType)
->>>>>>> af06d11f1 (Populate accepted frontier when sending chits (#2121))
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.ChitsOp),
@@ -1304,16 +1240,8 @@ func (s *sender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, 
 // The meaning of this request, and how it should be handled, is defined by the
 // VM.
 func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	ctx = utils.Detach(ctx)
-
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail
@@ -1491,15 +1419,7 @@ func (s *sender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, request
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (s *sender) SendAppGossipSpecific(_ context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-=======
-func (s *sender) SendAppGossipSpecific(_ context.Context, nodeIDs ids.NodeIDSet, appGossipBytes []byte) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
-func (s *sender) SendAppGossipSpecific(_ context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	// Create the outbound message.
 	outMsg, err := s.msgCreator.AppGossip(s.ctx.ChainID, appGossipBytes)
 	if err != nil {

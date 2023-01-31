@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package versiondb
@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/memdb"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
 )
 
 func TestInterface(t *testing.T) {

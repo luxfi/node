@@ -23,21 +23,10 @@ type Config struct {
 
 	// Node's validator set maps subnetID -> validators of the subnet
 	//
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
 	// Invariant: The primary network's validator set should be empty before
 	//            calling VM.Initialize.
-<<<<<<< HEAD
-=======
-	// Invariant: The primary network's validator set should be populated
-	//            externally to the vm.
->>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
-=======
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
 	Validators validators.Manager
 
 	// Provides access to the uptime manager as a thread safe data structure
@@ -47,15 +36,7 @@ type Config struct {
 	StakingEnabled bool
 
 	// Set of subnets that this node is validating
-<<<<<<< HEAD
-<<<<<<< HEAD
 	TrackedSubnets set.Set[ids.ID]
-=======
-	WhitelistedSubnets set.Set[ids.ID]
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	TrackedSubnets set.Set[ids.ID]
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 
 	// Fee that is burned by every non-state creating transaction
 	TxFee uint64

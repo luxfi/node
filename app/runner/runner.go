@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package runner
@@ -12,17 +12,17 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/luxdefi/luxd/app"
-	"github.com/luxdefi/luxd/app/process"
-	"github.com/luxdefi/luxd/node"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/app"
+	"github.com/ava-labs/avalanchego/app/process"
+	"github.com/ava-labs/avalanchego/node"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 
-	appplugin "github.com/luxdefi/luxd/app/plugin"
+	appplugin "github.com/ava-labs/avalanchego/app/plugin"
 )
 
-// Run an LUXGo node.
+// Run an AvalancheGo node.
 // If specified in the config, serves a hashicorp plugin that can be consumed by
-// the daemon (see luxd/main).
+// the daemon (see avalanchego/main).
 func Run(config Config, nodeConfig node.Config) {
 	nodeApp := process.NewApp(nodeConfig) // Create node wrapper
 	if config.PluginMode {                // Serve as a plugin

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package galiasreader
@@ -6,9 +6,9 @@ package galiasreader
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 
-	aliasreaderpb "github.com/luxdefi/luxd/proto/pb/aliasreader"
+	aliasreaderpb "github.com/ava-labs/avalanchego/proto/pb/aliasreader"
 )
 
 var _ ids.AliaserReader = (*Client)(nil)

@@ -67,19 +67,10 @@ type VM struct {
 	activationTime      time.Time
 	minimumPChainHeight uint64
 	minBlkDelay         time.Duration
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	// block signer
 	stakingLeafSigner crypto.Signer
 	// block certificate
 	stakingCertLeaf *x509.Certificate
-<<<<<<< HEAD
-=======
->>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
-=======
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	state.State
 	hIndexer indexer.HeightIndexer
@@ -123,16 +114,8 @@ func New(
 	activationTime time.Time,
 	minimumPChainHeight uint64,
 	minBlkDelay time.Duration,
-<<<<<<< HEAD
-<<<<<<< HEAD
 	stakingLeafSigner crypto.Signer,
 	stakingCertLeaf *x509.Certificate,
-=======
->>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
-=======
-	stakingLeafSigner crypto.Signer,
-	stakingCertLeaf *x509.Certificate,
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 ) *VM {
 	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)
@@ -148,16 +131,8 @@ func New(
 		activationTime:      activationTime,
 		minimumPChainHeight: minimumPChainHeight,
 		minBlkDelay:         minBlkDelay,
-<<<<<<< HEAD
-<<<<<<< HEAD
 		stakingLeafSigner:   stakingLeafSigner,
 		stakingCertLeaf:     stakingCertLeaf,
-=======
->>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
-=======
-		stakingLeafSigner:   stakingLeafSigner,
-		stakingCertLeaf:     stakingCertLeaf,
->>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	}
 }
 
@@ -220,17 +195,8 @@ func (vm *VM) Initialize(
 	})
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	context, cancel := context.WithCancel(detachedCtx)
-=======
-	context, cancel := context.WithCancel(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	detachedCtx := utils.Detach(ctx)
-	context, cancel := context.WithCancel(detachedCtx)
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	vm.context = context
 	vm.onShutdown = cancel
 
@@ -249,19 +215,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vm.repair(detachedCtx); err != nil {
-=======
-	if err := vm.repair(ctx, indexerState); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	if err := vm.repair(detachedCtx, indexerState); err != nil {
->>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
-=======
-	if err := vm.repair(detachedCtx); err != nil {
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 		return err
 	}
 
@@ -382,25 +336,11 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // repair makes sure that vm and innerVM chains are in sync.
 // Moreover it fixes vm's height index if defined.
 func (vm *VM) repair(ctx context.Context) error {
 	if vm.hVM == nil {
 		// height index not defined. Just sync vms and innerVM chains.
-=======
-func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
-	// check and possibly rebuild height index
-	if vm.hVM == nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-// repair makes sure that vm and innerVM chains are in sync.
-// Moreover it fixes vm's height index if defined.
-func (vm *VM) repair(ctx context.Context) error {
-	if vm.hVM == nil {
-		// height index not defined. Just sync vms and innerVM chains.
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 		return vm.repairAcceptedChainByIteration(ctx)
 	}
 
@@ -410,36 +350,6 @@ func (vm *VM) repair(ctx context.Context) error {
 		// and repair this VM height index.
 		shouldRepair, err := vm.shouldHeightIndexBeRepaired(ctx)
 		if err != nil {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-			return fmt.Errorf("retrieving value of required index reset failed with: %w", err)
-		}
-
-		if !indexWasReset {
-			vm.resetHeightIndexOngoing.SetValue(true)
-		}
-	}
-
-	if !vm.resetHeightIndexOngoing.GetValue() {
-		// We are not going to wipe the height index
-		switch vm.hVM.VerifyHeightIndex(ctx) {
-		case nil:
-			// We are not going to wait for the height index to be repaired.
-			shouldRepair, err := vm.shouldHeightIndexBeRepaired(ctx)
-			if err != nil {
-				return err
-			}
-			if !shouldRepair {
-				vm.ctx.Log.Info("block height index was successfully verified")
-				vm.hIndexer.MarkRepaired(true)
-				return vm.repairAcceptedChainByHeight(ctx)
-			}
-		case block.ErrIndexIncomplete:
-		default:
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 			return err
 		}
 		if !shouldRepair {
@@ -452,14 +362,7 @@ func (vm *VM) repair(ctx context.Context) error {
 		return nil
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	// innerVM height index is incomplete. Sync vm and innerVM chains first.
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	// innerVM height index is incomplete. Sync vm and innerVM chains first.
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	if err := vm.repairAcceptedChainByIteration(ctx); err != nil {
 		return err
 	}
@@ -619,13 +522,6 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	proLastAccepted, err := vm.getPostForkBlock(ctx, proLastAcceptedID)
 	if err != nil {
 		return err
@@ -817,8 +713,6 @@ func (vm *VM) storePostForkBlock(blk PostForkBlock) error {
 	return vm.db.Commit()
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
 	postForkID := postFork.ID()
@@ -843,41 +737,6 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 			if err != nil {
 				return err
 			}
-=======
-func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBlock) error {
-=======
-func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
-	innerBlk := postFork.getInnerBlk()
-	postForkID := postFork.ID()
-	originalInnerBlock, previouslyVerified := vm.Tree.Get(innerBlk)
-	if previouslyVerified {
-		innerBlk = originalInnerBlock
-		// We must update all of the mappings from postFork -> innerBlock to
-		// now point to originalInnerBlock.
-		postFork.setInnerBlk(originalInnerBlock)
-		vm.innerBlkCache.Put(postForkID, originalInnerBlock)
-	}
-
-	var (
-		shouldVerifyWithCtx = blockCtx != nil
-		blkWithCtx          block.WithVerifyContext
-		err                 error
-	)
-	if shouldVerifyWithCtx {
-<<<<<<< HEAD
-		shouldVerifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
-		if err != nil {
-			return err
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-		blkWithCtx, shouldVerifyWithCtx = innerBlk.(block.WithVerifyContext)
-		if shouldVerifyWithCtx {
-			shouldVerifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
-			if err != nil {
-				return err
-			}
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		}
 	}
 
@@ -889,17 +748,6 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 		// This block needs to know the P-Chain height during verification.
 		// Note that [VerifyWithContext] with context may be called multiple
 		// times with multiple contexts.
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-		blockCtx := &block.Context{}
-		blockCtx.PChainHeight, err = postFork.pChainHeight(ctx)
-		if err != nil {
-			return err
-		}
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	} else if !previouslyVerified {
 		// This isn't a [block.WithVerifyContext] so we only call [Verify] once.

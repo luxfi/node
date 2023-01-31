@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -10,20 +10,20 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxdefi/luxd/chains"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/network/peer"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/networking/benchlist"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
 )
 
 var errNoChainProvided = errors.New("argument 'chain' not given")
@@ -304,25 +304,7 @@ type GetTxFeeResponse struct {
 	AddSubnetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
-<<<<<<< HEAD
-// GetTxFee returns the transaction fee in nLUX.
-func (service *Info) GetTxFee(_ *http.Request, args *struct{}, reply *GetTxFeeResponse) error {
-=======
 // GetTxFee returns the transaction fee in nAVAX.
-<<<<<<< HEAD
-func (service *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-	reply.TxFee = json.Uint64(service.TxFee)
-	reply.CreationTxFee = json.Uint64(service.CreateAssetTxFee)
-	reply.CreateAssetTxFee = json.Uint64(service.CreateAssetTxFee)
-	reply.CreateSubnetTxFee = json.Uint64(service.CreateSubnetTxFee)
-	reply.TransformSubnetTxFee = json.Uint64(service.TransformSubnetTxFee)
-	reply.CreateBlockchainTxFee = json.Uint64(service.CreateBlockchainTxFee)
-	reply.AddPrimaryNetworkValidatorFee = json.Uint64(service.AddPrimaryNetworkValidatorFee)
-	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(service.AddPrimaryNetworkDelegatorFee)
-	reply.AddSubnetValidatorFee = json.Uint64(service.AddSubnetValidatorFee)
-	reply.AddSubnetDelegatorFee = json.Uint64(service.AddSubnetDelegatorFee)
-=======
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
 	reply.TxFee = json.Uint64(i.TxFee)
 	reply.CreationTxFee = json.Uint64(i.CreateAssetTxFee)
@@ -334,7 +316,6 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.AddPrimaryNetworkDelegatorFee)
 	reply.AddSubnetValidatorFee = json.Uint64(i.AddSubnetValidatorFee)
 	reply.AddSubnetDelegatorFee = json.Uint64(i.AddSubnetDelegatorFee)
->>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
 	return nil
 }
 

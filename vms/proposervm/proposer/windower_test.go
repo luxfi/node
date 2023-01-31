@@ -23,23 +23,7 @@ func TestWindowerNoValidators(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	vdrState := &validators.TestState{
 		T: t,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-=======
-		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			return nil, nil
 		},
 	}
@@ -60,35 +44,12 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 	nonValidatorID := ids.GenerateTestNodeID()
 	vdrState := &validators.TestState{
 		T: t,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			return map[ids.NodeID]*validators.GetValidatorOutput{
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
-			return map[ids.NodeID]*validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-			return map[ids.NodeID]*validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				validatorID: {
 					NodeID: validatorID,
 					Weight: 10,
 				},
-<<<<<<< HEAD
-=======
-		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-			return map[ids.NodeID]uint64{
-				validatorID: 10,
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 			}, nil
 		},
 	}
@@ -115,33 +76,10 @@ func TestWindowerChangeByHeight(t *testing.T) {
 	}
 	vdrState := &validators.TestState{
 		T: t,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
-=======
-		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-			validators := make(map[ids.NodeID]uint64, MaxWindows)
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-			for _, id := range validatorIDs {
-				vdrs[id] = &validators.GetValidatorOutput{
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
-			vdrs := make(map[ids.NodeID]*validators.Validator, MaxWindows)
-			for _, id := range validatorIDs {
-				vdrs[id] = &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: id,
 					Weight: 1,
 				}
@@ -200,33 +138,10 @@ func TestWindowerChangeByChain(t *testing.T) {
 	}
 	vdrState := &validators.TestState{
 		T: t,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
-=======
-		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]uint64, error) {
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
-			validators := make(map[ids.NodeID]uint64, MaxWindows)
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-			for _, id := range validatorIDs {
-				vdrs[id] = &validators.GetValidatorOutput{
-=======
-		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
-			vdrs := make(map[ids.NodeID]*validators.Validator, MaxWindows)
-			for _, id := range validatorIDs {
-				vdrs[id] = &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: id,
 					Weight: 1,
 				}

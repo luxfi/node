@@ -21,41 +21,20 @@ import (
 )
 
 var (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	_ block.ChainVM                      = (*blockVM)(nil)
 	_ block.BuildBlockWithContextChainVM = (*blockVM)(nil)
 	_ block.BatchedChainVM               = (*blockVM)(nil)
 	_ block.HeightIndexedChainVM         = (*blockVM)(nil)
 	_ block.StateSyncableVM              = (*blockVM)(nil)
-<<<<<<< HEAD
-=======
-	_ block.ChainVM              = (*blockVM)(nil)
-	_ block.BatchedChainVM       = (*blockVM)(nil)
-	_ block.HeightIndexedChainVM = (*blockVM)(nil)
-	_ block.StateSyncableVM      = (*blockVM)(nil)
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 )
 
 type blockVM struct {
 	block.ChainVM
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	buildBlockVM block.BuildBlockWithContextChainVM
 	batchedVM    block.BatchedChainVM
 	hVM          block.HeightIndexedChainVM
 	ssVM         block.StateSyncableVM
 	// ChainVM tags
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	initializeTag              string
 	buildBlockTag              string
 	parseBlockTag              string
@@ -119,90 +98,6 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 		parseStateSummaryTag:          fmt.Sprintf("%s.parseStateSummary", name),
 		getStateSummaryTag:            fmt.Sprintf("%s.getStateSummary", name),
 		tracer:                        tracer,
-=======
-	bVM              block.BatchedChainVM
-	hVM              block.HeightIndexedChainVM
-	ssVM             block.StateSyncableVM
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-	initializeTag    string
-	buildBlockTag    string
-	parseBlockTag    string
-	getBlockTag      string
-	setPreferenceTag string
-	lastAcceptedTag  string
-	verifyTag        string
-	acceptTag        string
-	rejectTag        string
-	optionsTag       string
-	// BuildBlockWithContextChainVM tags
-	buildBlockWithContextTag string
-	// BatchedChainVM tags
-	getAncestorsTag      string
-	batchedParseBlockTag string
-	// HeightIndexedChainVM tags
-	verifyHeightIndexTag  string
-	getBlockIDAtHeightTag string
-	// StateSyncableVM tags
-	stateSyncEnabledTag           string
-	getOngoingSyncStateSummaryTag string
-	getLastStateSummaryTag        string
-	parseStateSummaryTag          string
-	getStateSummaryTag            string
-	tracer                        trace.Tracer
-}
-
-func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainVM {
-	buildBlockVM, _ := vm.(block.BuildBlockWithContextChainVM)
-	batchedVM, _ := vm.(block.BatchedChainVM)
-	hVM, _ := vm.(block.HeightIndexedChainVM)
-	ssVM, _ := vm.(block.StateSyncableVM)
-	return &blockVM{
-<<<<<<< HEAD
-		ChainVM:          vm,
-		bVM:              bVM,
-		hVM:              hVM,
-		ssVM:             ssVM,
-		initializeTag:    fmt.Sprintf("%s.initialize", name),
-		buildBlockTag:    fmt.Sprintf("%s.buildBlock", name),
-		parseBlockTag:    fmt.Sprintf("%s.parseBlock", name),
-		getBlockTag:      fmt.Sprintf("%s.getBlock", name),
-		setPreferenceTag: fmt.Sprintf("%s.setPreference", name),
-		lastAcceptedTag:  fmt.Sprintf("%s.lastAccepted", name),
-		verifyTag:        fmt.Sprintf("%s.verify", name),
-		acceptTag:        fmt.Sprintf("%s.accept", name),
-		rejectTag:        fmt.Sprintf("%s.reject", name),
-		optionsTag:       fmt.Sprintf("%s.options", name),
-		tracer:           tracer,
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
-		ChainVM:                       vm,
-		buildBlockVM:                  buildBlockVM,
-		batchedVM:                     batchedVM,
-		hVM:                           hVM,
-		ssVM:                          ssVM,
-		initializeTag:                 fmt.Sprintf("%s.initialize", name),
-		buildBlockTag:                 fmt.Sprintf("%s.buildBlock", name),
-		parseBlockTag:                 fmt.Sprintf("%s.parseBlock", name),
-		getBlockTag:                   fmt.Sprintf("%s.getBlock", name),
-		setPreferenceTag:              fmt.Sprintf("%s.setPreference", name),
-		lastAcceptedTag:               fmt.Sprintf("%s.lastAccepted", name),
-		verifyTag:                     fmt.Sprintf("%s.verify", name),
-		acceptTag:                     fmt.Sprintf("%s.accept", name),
-		rejectTag:                     fmt.Sprintf("%s.reject", name),
-		optionsTag:                    fmt.Sprintf("%s.options", name),
-		buildBlockWithContextTag:      fmt.Sprintf("%s.buildBlockWithContext", name),
-		getAncestorsTag:               fmt.Sprintf("%s.getAncestors", name),
-		batchedParseBlockTag:          fmt.Sprintf("%s.batchedParseBlock", name),
-		verifyHeightIndexTag:          fmt.Sprintf("%s.verifyHeightIndex", name),
-		getBlockIDAtHeightTag:         fmt.Sprintf("%s.getBlockIDAtHeight", name),
-		stateSyncEnabledTag:           fmt.Sprintf("%s.stateSyncEnabled", name),
-		getOngoingSyncStateSummaryTag: fmt.Sprintf("%s.getOngoingSyncStateSummary", name),
-		getLastStateSummaryTag:        fmt.Sprintf("%s.getLastStateSummary", name),
-		parseStateSummaryTag:          fmt.Sprintf("%s.parseStateSummary", name),
-		getStateSummaryTag:            fmt.Sprintf("%s.getStateSummary", name),
-		tracer:                        tracer,
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	}
 }
 

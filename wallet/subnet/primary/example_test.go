@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -8,16 +8,16 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxdefi/luxd/genesis"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
-	"github.com/luxdefi/luxd/vms/platformvm/signer"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func ExampleWallet() {
@@ -56,7 +56,7 @@ func ExampleWallet() {
 		map[uint32][]verify.State{
 			0: {
 				&secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaLux,
+					Amt:          100 * units.MegaAvax,
 					OutputOwners: *owner,
 				},
 			},
@@ -68,17 +68,17 @@ func ExampleWallet() {
 	}
 	log.Printf("created X-chain asset %s in %s\n", createAssetTxID, time.Since(createAssetStartTime))
 
-	// Send 100 MegaLux to the P-chain.
+	// Send 100 MegaAvax to the P-chain.
 	exportStartTime := time.Now()
 	exportTxID, err := xWallet.IssueExportTx(
 		constants.PlatformChainID,
-		[]*lux.TransferableOutput{
+		[]*avax.TransferableOutput{
 			{
-				Asset: lux.Asset{
+				Asset: avax.Asset{
 					ID: createAssetTxID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaLux,
+					Amt:          100 * units.MegaAvax,
 					OutputOwners: *owner,
 				},
 			},
@@ -90,7 +90,7 @@ func ExampleWallet() {
 	}
 	log.Printf("issued X->P export %s in %s\n", exportTxID, time.Since(exportStartTime))
 
-	// Import the 100 MegaLux from the X-chain into the P-chain.
+	// Import the 100 MegaAvax from the X-chain into the P-chain.
 	importStartTime := time.Now()
 	importTxID, err := pWallet.IssueImportTx(xChainID, owner)
 	if err != nil {
@@ -111,12 +111,12 @@ func ExampleWallet() {
 	transformSubnetTxID, err := pWallet.IssueTransformSubnetTx(
 		createSubnetTxID,
 		createAssetTxID,
-		50*units.MegaLux,
-		100*units.MegaLux,
+		50*units.MegaAvax,
+		100*units.MegaAvax,
 		reward.PercentDenominator,
 		reward.PercentDenominator,
 		1,
-		100*units.MegaLux,
+		100*units.MegaAvax,
 		time.Second,
 		365*24*time.Hour,
 		0,
@@ -138,7 +138,7 @@ func ExampleWallet() {
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaLux,
+				Wght:   25 * units.MegaAvax,
 			},
 			Subnet: createSubnetTxID,
 		},
@@ -161,7 +161,7 @@ func ExampleWallet() {
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaLux,
+				Wght:   25 * units.MegaAvax,
 			},
 			Subnet: createSubnetTxID,
 		},

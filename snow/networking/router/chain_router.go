@@ -44,26 +44,11 @@ type requestEntry struct {
 
 type peer struct {
 	version *version.Application
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	// The subnets that this peer is currently tracking
 	trackedSubnets set.Set[ids.ID]
 	// The subnets that this peer actually has a connection to.
 	// This is a subset of trackedSubnets.
 	connectedSubnets set.Set[ids.ID]
-=======
-	// The subnets that this peer is currently tracking (i.e whitelisted)
-	trackedSubnets set.Set[ids.ID]
-	// The subnets that this peer actually has a connection to.
-	// This is a subset of trackedSubnets.
-<<<<<<< HEAD
-	connectedSubnets ids.Set
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	connectedSubnets set.Set[ids.ID]
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 }
 
 // ChainRouter routes incoming messages from the validator network
@@ -89,14 +74,7 @@ type ChainRouter struct {
 	// invariant: if a node is benched on any chain, it is treated as disconnected on all chains
 	benched        map[ids.NodeID]set.Set[ids.ID]
 	criticalChains set.Set[ids.ID]
-<<<<<<< HEAD
-<<<<<<< HEAD
 	stakingEnabled bool
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
-	stakingEnabled bool
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	onFatal        func(exitCode int)
 	metrics        *routerMetrics
 	// Parameters for doing health checks
@@ -116,19 +94,8 @@ func (cr *ChainRouter) Initialize(
 	timeoutManager timeout.Manager,
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
-<<<<<<< HEAD
-<<<<<<< HEAD
 	stakingEnabled bool,
 	trackedSubnets set.Set[ids.ID],
-<<<<<<< HEAD
-=======
-=======
-	stakingEnabled bool,
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
-	whitelistedSubnets set.Set[ids.ID],
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-=======
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
 	metricsNamespace string,
@@ -393,24 +360,11 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	// Notify connected validators
 	subnetID := chain.Context().SubnetID
 	for validatorID, peer := range cr.peers {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		// If this validator is benched on any chain, treat them as disconnected
 		// on all chains
 		_, benched := cr.benched[validatorID]
 		if benched {
 			continue
-<<<<<<< HEAD
-=======
-		// If this validator is benched on any chain, treat them as disconnected on all chains
-		if _, benched := cr.benched[validatorID]; !benched && peer.trackedSubnets.Contains(subnetID) {
-			msg := message.InternalConnected(validatorID, peer.version)
-			chain.Push(ctx, msg)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		}
 
 		// If this peer isn't running this chain, then we shouldn't mark them as
@@ -421,28 +375,6 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 
 		msg := message.InternalConnected(validatorID, peer.version)
 		chain.Push(ctx, msg)
-<<<<<<< HEAD
-	}
-
-	// When we register the P-chain, we mark ourselves as connected on all of
-	// the subnets that we have tracked.
-	if chainID != constants.PlatformChainID {
-		return
-	}
-
-	// If we have currently benched ourselves, we will mark ourselves as
-	// connected when we unbench. So skip connecting now.
-	// This is not "theoretically" possible, but keeping this here prevents us
-	// from keeping an invariant that we never bench ourselves.
-	if _, benched := cr.benched[cr.myNodeID]; benched {
-		return
-	}
-
-	myself := cr.peers[cr.myNodeID]
-	for subnetID := range myself.trackedSubnets {
-		cr.connectedSubnet(myself, cr.myNodeID, subnetID)
-=======
->>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	}
 
 	// When we register the P-chain, we mark ourselves as connected on all of

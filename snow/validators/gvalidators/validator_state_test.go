@@ -118,33 +118,6 @@ func TestGetCurrentHeight(t *testing.T) {
 	state.server.EXPECT().GetCurrentHeight(gomock.Any()).Return(expectedHeight, errCustom)
 
 	_, err = state.client.GetCurrentHeight(context.Background())
-<<<<<<< HEAD
-	require.Error(err)
-}
-
-func TestGetSubnetID(t *testing.T) {
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	state := setupState(t, ctrl)
-	defer state.closeFn()
-
-	// Happy path
-	chainID := ids.GenerateTestID()
-	expectedSubnetID := ids.GenerateTestID()
-	state.server.EXPECT().GetSubnetID(gomock.Any(), chainID).Return(expectedSubnetID, nil)
-
-	subnetID, err := state.client.GetSubnetID(context.Background(), chainID)
-	require.NoError(err)
-	require.Equal(expectedSubnetID, subnetID)
-
-	// Error path
-	state.server.EXPECT().GetSubnetID(gomock.Any(), chainID).Return(expectedSubnetID, errCustom)
-
-	_, err = state.client.GetSubnetID(context.Background(), chainID)
-=======
->>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
 	require.Error(err)
 }
 
@@ -183,15 +156,7 @@ func TestGetValidatorSet(t *testing.T) {
 	// Happy path
 	sk0, err := bls.NewSecretKey()
 	require.NoError(err)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vdr0 := &validators.GetValidatorOutput{
-=======
-	vdr0 := &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	vdr0 := &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		NodeID:    ids.GenerateTestNodeID(),
 		PublicKey: bls.PublicFromSecretKey(sk0),
 		Weight:    1,
@@ -199,43 +164,19 @@ func TestGetValidatorSet(t *testing.T) {
 
 	sk1, err := bls.NewSecretKey()
 	require.NoError(err)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vdr1 := &validators.GetValidatorOutput{
-=======
-	vdr1 := &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	vdr1 := &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		NodeID:    ids.GenerateTestNodeID(),
 		PublicKey: bls.PublicFromSecretKey(sk1),
 		Weight:    2,
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vdr2 := &validators.GetValidatorOutput{
-=======
-	vdr2 := &validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	vdr2 := &validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		NodeID:    ids.GenerateTestNodeID(),
 		PublicKey: nil,
 		Weight:    3,
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	expectedVdrs := map[ids.NodeID]*validators.GetValidatorOutput{
-=======
-	expectedVdrs := map[ids.NodeID]*validators.Validator{
->>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
-=======
-	expectedVdrs := map[ids.NodeID]*validators.GetValidatorOutput{
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		vdr0.NodeID: vdr0,
 		vdr1.NodeID: vdr1,
 		vdr2.NodeID: vdr2,

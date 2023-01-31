@@ -40,15 +40,7 @@ echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
 # TODO: migrate to upstream avalanche-network-runner
 GOARCH=$(go env GOARCH)
 GOOS=$(go env GOOS)
-<<<<<<< HEAD
-<<<<<<< HEAD
 NETWORK_RUNNER_VERSION=1.3.5-rc.0
-=======
-NETWORK_RUNNER_VERSION=1.3.1
->>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
-=======
-NETWORK_RUNNER_VERSION=1.3.5-rc.0
->>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
 DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
 DOWNLOAD_URL="https://github.com/ava-labs/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
 

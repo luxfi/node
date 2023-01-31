@@ -4,14 +4,11 @@
 package teleporter
 
 import (
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"context"
 	"errors"
 	"fmt"
 	"math/big"
 
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/set"
@@ -44,61 +41,10 @@ type Signature interface {
 type BitSetSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed this
 	// message.
-=======
-=======
-	"context"
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-	"errors"
-	"fmt"
-	"math/big"
-
-	"github.com/ava-labs/avalanchego/ids"
-=======
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/utils/set"
-)
-
-var (
-	_ Signature = (*BitSetSignature)(nil)
-
-	ErrInvalidBitSet      = errors.New("bitset is invalid")
-	ErrInsufficientWeight = errors.New("signature weight is insufficient")
-	ErrInvalidSignature   = errors.New("signature is invalid")
-	ErrParseSignature     = errors.New("failed to parse signature")
-)
-
-type Signature interface {
-	// Verify that this signature was signed by at least [quorumNum]/[quorumDen]
-	// of the validators of [msg.SourceChainID] at [pChainHeight].
-	//
-	// Invariant: [msg] is correctly initialized.
-	Verify(
-		ctx context.Context,
-		msg *UnsignedMessage,
-		pChainState validators.State,
-		pChainHeight uint64,
-		quorumNum uint64,
-		quorumDen uint64,
-	) error
-}
-
-type BitSetSignature struct {
-<<<<<<< HEAD
->>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
-=======
-	// Signers is a big-endian byte slice encoding which validators signed this
-	// message.
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 	Signers   []byte                 `serialize:"true"`
 	Signature [bls.SignatureLen]byte `serialize:"true"`
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 func (s *BitSetSignature) Verify(
 	ctx context.Context,
 	msg *UnsignedMessage,
@@ -118,15 +64,7 @@ func (s *BitSetSignature) Verify(
 	}
 
 	// Parse signer bit vector
-<<<<<<< HEAD
-<<<<<<< HEAD
 	signerIndices := set.BitsFromBytes(s.Signers)
-=======
-	signerIndices := ids.BigBitSetFromBytes(s.Signers)
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
-=======
-	signerIndices := set.BitsFromBytes(s.Signers)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 	if len(signerIndices.Bytes()) != len(s.Signers) {
 		return ErrInvalidBitSet
 	}
@@ -196,11 +134,4 @@ func VerifyWeight(
 		)
 	}
 	return nil
-<<<<<<< HEAD
-=======
-func (*BitSetSignature) Verify() error {
-	return errors.New("unimplemented")
->>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
-=======
->>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 }

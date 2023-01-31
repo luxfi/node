@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -13,12 +13,6 @@ import (
 
 	"go.uber.org/zap"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/api/server"
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/codec"
@@ -36,32 +30,6 @@ import (
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
-<<<<<<< HEAD
-=======
->>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/chains"
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/lux"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/snowman"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/utils/wrappers"
-<<<<<<< HEAD
-=======
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 const (

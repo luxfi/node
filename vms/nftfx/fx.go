@@ -107,16 +107,6 @@ func (fx *Fx) VerifyTransferOperation(tx secp256k1fx.UnsignedTx, op *TransferOpe
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*Fx) VerifyTransfer(_, _, _, _ interface{}) error {
 	return errCantTransfer
 }
-=======
-func (*Fx) VerifyTransfer(_, _, _, _ interface{}) error { return errCantTransfer }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*Fx) VerifyTransfer(_, _, _, _ interface{}) error {
-	return errCantTransfer
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -6,16 +6,16 @@ package p
 import (
 	stdcontext "context"
 
-	"github.com/luxdefi/luxd/api/info"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/avm"
+	"github.com/ava-labs/avalanchego/api/info"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/avm"
 )
 
 var _ Context = (*context)(nil)
 
 type Context interface {
 	NetworkID() uint32
-	LUXAssetID() ids.ID
+	AVAXAssetID() ids.ID
 	BaseTxFee() uint64
 	CreateSubnetTxFee() uint64
 	TransformSubnetTxFee() uint64
@@ -28,7 +28,7 @@ type Context interface {
 
 type context struct {
 	networkID                     uint32
-	luxAssetID                   ids.ID
+	avaxAssetID                   ids.ID
 	baseTxFee                     uint64
 	createSubnetTxFee             uint64
 	transformSubnetTxFee          uint64
@@ -55,7 +55,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "LUX")
+	asset, err := xChainClient.GetAssetDescription(ctx, "AVAX")
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func NewContextFromClients(
 
 func NewContext(
 	networkID uint32,
-	luxAssetID ids.ID,
+	avaxAssetID ids.ID,
 	baseTxFee uint64,
 	createSubnetTxFee uint64,
 	transformSubnetTxFee uint64,
@@ -93,7 +93,7 @@ func NewContext(
 ) Context {
 	return &context{
 		networkID:                     networkID,
-		luxAssetID:                   luxAssetID,
+		avaxAssetID:                   avaxAssetID,
 		baseTxFee:                     baseTxFee,
 		createSubnetTxFee:             createSubnetTxFee,
 		transformSubnetTxFee:          transformSubnetTxFee,
@@ -105,18 +105,6 @@ func NewContext(
 	}
 }
 
-<<<<<<< HEAD
-func (c *context) NetworkID() uint32                     { return c.networkID }
-func (c *context) LUXAssetID() ids.ID                   { return c.luxAssetID }
-func (c *context) BaseTxFee() uint64                     { return c.baseTxFee }
-func (c *context) CreateSubnetTxFee() uint64             { return c.createSubnetTxFee }
-func (c *context) TransformSubnetTxFee() uint64          { return c.transformSubnetTxFee }
-func (c *context) CreateBlockchainTxFee() uint64         { return c.createBlockchainTxFee }
-func (c *context) AddPrimaryNetworkValidatorFee() uint64 { return c.addPrimaryNetworkValidatorFee }
-func (c *context) AddPrimaryNetworkDelegatorFee() uint64 { return c.addPrimaryNetworkDelegatorFee }
-func (c *context) AddSubnetValidatorFee() uint64         { return c.addSubnetValidatorFee }
-func (c *context) AddSubnetDelegatorFee() uint64         { return c.addSubnetDelegatorFee }
-=======
 func (c *context) NetworkID() uint32 {
 	return c.networkID
 }
@@ -156,4 +144,3 @@ func (c *context) AddSubnetValidatorFee() uint64 {
 func (c *context) AddSubnetDelegatorFee() uint64 {
 	return c.addSubnetDelegatorFee
 }
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))

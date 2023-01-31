@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements X-chain transfer tests.
@@ -10,17 +10,6 @@ import (
 	"math/rand"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/tests"
-	"github.com/luxdefi/luxd/tests/e2e"
-	"github.com/luxdefi/luxd/vms/avm"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
-	"github.com/luxdefi/luxd/wallet/subnet/primary"
-	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
-=======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/choices"
 	"github.com/ava-labs/avalanchego/tests"
@@ -31,7 +20,6 @@ import (
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -45,14 +33,14 @@ const (
 
 const totalRounds = 50
 
-var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
-	ginkgo.It("can issue a virtuous transfer tx for LUX asset",
+var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
+	ginkgo.It("can issue a virtuous transfer tx for AVAX asset",
 		// use this for filtering tests by labels
 		// ref. https://onsi.github.io/ginkgo/#spec-labels
 		ginkgo.Label(
 			"require-network-runner",
 			"x",
-			"virtuous-transfer-tx-lux",
+			"virtuous-transfer-tx-avax",
 		),
 		func() {
 			rpcEps := e2e.Env.GetURIs()
@@ -89,7 +77,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
 					cancel()
 					gomega.Expect(err).Should(gomega.BeNil())
 				})
-				luxAssetID := baseWallet.X().LUXAssetID()
+				avaxAssetID := baseWallet.X().AVAXAssetID()
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))
@@ -126,10 +114,10 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
 					balances, err := w.X().Builder().GetFTBalance()
 					gomega.Expect(err).Should(gomega.BeNil())
 
-					bal := balances[luxAssetID]
+					bal := balances[avaxAssetID]
 					testBalances = append(testBalances, bal)
 
-					fmt.Printf(`CURRENT BALANCE %21d LUX (SHORT ADDRESS %q)
+					fmt.Printf(`CURRENT BALANCE %21d AVAX (SHORT ADDRESS %q)
 `,
 						bal,
 						testKeys[i].PublicKey().Address(),
@@ -170,9 +158,9 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
 				ginkgo.By("X-Chain transfer with wrong amount must fail", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 					_, err = wallets[fromIdx].X().IssueBaseTx(
-						[]*lux.TransferableOutput{{
-							Asset: lux.Asset{
-								ID: luxAssetID,
+						[]*avax.TransferableOutput{{
+							Asset: avax.Asset{
+								ID: avaxAssetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: senderOrigBal + 1,
@@ -192,14 +180,14 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
 TRANSFERRING
 
 FROM [%q]
-SENDER    CURRENT BALANCE     : %21d LUX
-SENDER    NEW BALANCE (AFTER) : %21d LUX
+SENDER    CURRENT BALANCE     : %21d AVAX
+SENDER    NEW BALANCE (AFTER) : %21d AVAX
 
-TRANSFER AMOUNT FROM SENDER   : %21d LUX
+TRANSFER AMOUNT FROM SENDER   : %21d AVAX
 
 TO [%q]
-RECEIVER  CURRENT BALANCE     : %21d LUX
-RECEIVER  NEW BALANCE (AFTER) : %21d LUX
+RECEIVER  CURRENT BALANCE     : %21d AVAX
+RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 ===
 `,
 					shortAddrs[fromIdx],
@@ -213,9 +201,9 @@ RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 				txID, err := wallets[fromIdx].X().IssueBaseTx(
-					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{
-							ID: luxAssetID,
+					[]*avax.TransferableOutput{{
+						Asset: avax.Asset{
+							ID: avaxAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: amountToTransfer,
@@ -232,12 +220,12 @@ RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 
 				balances, err := wallets[fromIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				senderCurBalX := balances[luxAssetID]
+				senderCurBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}}  %d\n", senderCurBalX)
 
 				balances, err = wallets[toIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				receiverCurBalX := balances[luxAssetID]
+				receiverCurBalX := balances[avaxAssetID]
 				tests.Outf("{{green}}second wallet balance:{{/}} %d\n", receiverCurBalX)
 
 				gomega.Expect(senderCurBalX).Should(gomega.Equal(senderNewBal))

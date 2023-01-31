@@ -39,19 +39,7 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
-=======
-	if err := vals.Add(vdr, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := vals.Add(vdr, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -79,15 +67,7 @@ func setup(t *testing.T, commonCfg common.Config, engCfg Config) (ids.NodeID, va
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -123,15 +103,7 @@ func setupDefaultConfig(t *testing.T) (ids.NodeID, validators.Set, *common.Sende
 func TestEngineShutdown(t *testing.T) {
 	_, _, _, vm, transitive, _ := setupDefaultConfig(t)
 	vmShutdownCalled := false
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.ShutdownF = func(context.Context) error {
-=======
-	vm.ShutdownF = func() error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.ShutdownF = func(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		vmShutdownCalled = true
 		return nil
 	}
@@ -213,15 +185,7 @@ func TestEngineAdd(t *testing.T) {
 		t.Fatalf("Should have been blocking on request")
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
-=======
-	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return nil, errUnknownBytes
 	}
 
@@ -464,27 +428,9 @@ func TestEngineMultipleQuery(t *testing.T) {
 
 	errs := wrappers.Errs{}
 	errs.Add(
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		vals.Add(vdr0, nil, ids.Empty, 1),
 		vals.Add(vdr1, nil, ids.Empty, 1),
 		vals.Add(vdr2, nil, ids.Empty, 1),
-=======
-		vals.Add(vdr0, 1),
-		vals.Add(vdr1, 1),
-		vals.Add(vdr2, 1),
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-		vals.Add(vdr0, nil, 1),
-		vals.Add(vdr1, nil, 1),
-		vals.Add(vdr2, nil, 1),
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-		vals.Add(vdr0, nil, ids.Empty, 1),
-		vals.Add(vdr1, nil, ids.Empty, 1),
-		vals.Add(vdr2, nil, ids.Empty, 1),
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -507,24 +453,10 @@ func TestEngineMultipleQuery(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -630,18 +562,8 @@ func TestEngineMultipleQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
 		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.ParseBlockF = func([]byte) (snowman.Block, error) {
-		vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.ParseBlockF = func(context.Context, []byte) (snowman.Block, error) {
-		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 			switch {
 			case blkID == blk0.ID():
 				return blk0, nil
@@ -938,24 +860,10 @@ func TestEngineBuildBlock(t *testing.T) {
 		}
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return blk, nil
 	}
 	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
-=======
-	vm.BuildBlockF = func() (snowman.Block, error) {
-		return blk, nil
-	}
-	if err := te.Notify(common.PendingTxs); err != nil {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return blk, nil
-	}
-	if err := te.Notify(context.Background(), common.PendingTxs); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal(err)
 	}
 
@@ -1012,27 +920,9 @@ func TestVoteCanceling(t *testing.T) {
 
 	errs := wrappers.Errs{}
 	errs.Add(
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		vals.Add(vdr0, nil, ids.Empty, 1),
 		vals.Add(vdr1, nil, ids.Empty, 1),
 		vals.Add(vdr2, nil, ids.Empty, 1),
-=======
-		vals.Add(vdr0, 1),
-		vals.Add(vdr1, 1),
-		vals.Add(vdr2, 1),
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-		vals.Add(vdr0, nil, 1),
-		vals.Add(vdr1, nil, 1),
-		vals.Add(vdr2, nil, 1),
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-		vals.Add(vdr0, nil, ids.Empty, 1),
-		vals.Add(vdr1, nil, ids.Empty, 1),
-		vals.Add(vdr2, nil, ids.Empty, 1),
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	)
 	if errs.Errored() {
 		t.Fatal(errs.Err)
@@ -1055,24 +945,10 @@ func TestVoteCanceling(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch id {
 		case gBlk.ID():
 			return gBlk, nil
@@ -1164,15 +1040,7 @@ func TestEngineNoQuery(t *testing.T) {
 
 	vm := &block.TestVM{}
 	vm.T = t
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -1223,15 +1091,7 @@ func TestEngineNoRepollQuery(t *testing.T) {
 
 	vm := &block.TestVM{}
 	vm.T = t
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return gBlk.ID(), nil
 	}
 
@@ -1703,24 +1563,10 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 func TestEngineGossip(t *testing.T) {
 	_, _, sender, vm, te, gBlk := setupDefaultConfig(t)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -1749,19 +1595,7 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 	vdr, vdrs, sender, vm, te, gBlk := setupDefaultConfig(t)
 
 	secondVdr := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vdrs.Add(secondVdr, nil, ids.Empty, 1); err != nil {
-=======
-	if err := vdrs.Add(secondVdr, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := vdrs.Add(secondVdr, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := vdrs.Add(secondVdr, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -1975,19 +1809,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
-=======
-	if err := vals.Add(vdr, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := vals.Add(vdr, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -2008,24 +1830,10 @@ func TestEngineAggressivePolling(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -2078,28 +1886,12 @@ func TestEngineAggressivePolling(t *testing.T) {
 	}
 
 	numPushed := new(int)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
-=======
-	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		*numPushed++
 	}
 
 	numPulled := new(int)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
-=======
-	sender.SendPullQueryF = func(context.Context, ids.NodeIDSet, uint32, ids.ID) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		*numPulled++
 	}
 
@@ -2136,31 +1928,10 @@ func TestEngineDoubleChit(t *testing.T) {
 	vdr0 := ids.GenerateTestNodeID()
 	vdr1 := ids.GenerateTestNodeID()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := vals.Add(vdr1, nil, ids.Empty, 1); err != nil {
-=======
-	if err := vals.Add(vdr0, 1); err != nil {
-		t.Fatal(err)
-	}
-	if err := vals.Add(vdr1, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := vals.Add(vdr0, nil, 1); err != nil {
-		t.Fatal(err)
-	}
-	if err := vals.Add(vdr1, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := vals.Add(vdr0, nil, ids.Empty, 1); err != nil {
-		t.Fatal(err)
-	}
-	if err := vals.Add(vdr1, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -2182,24 +1953,10 @@ func TestEngineDoubleChit(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(id ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if id == gBlk.ID() {
 			return gBlk, nil
 		}
@@ -2302,19 +2059,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	engCfg.Validators = vals
 
 	vdr := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
-=======
-	if err := vals.Add(vdr, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := vals.Add(vdr, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := vals.Add(vdr, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -2335,24 +2080,10 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 		StatusV: choices.Accepted,
 	}}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return gBlk.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return gBlk.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		if blkID != gBlk.ID() {
 			t.Fatalf("Wrong block requested")
 		}
@@ -3416,11 +3147,6 @@ func TestSendMixedQuery(t *testing.T) {
 				engConfig.Params.K = 20
 				_, _, sender, vm, te, gBlk := setup(t, commonCfg, engConfig)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				vdrs := set.Set[ids.NodeID]{}
 				te.Validators = validators.NewSet()
 				for i := 0; i < te.Params.K; i++ {
@@ -3434,44 +3160,6 @@ func TestSendMixedQuery(t *testing.T) {
 				if tt.isVdr {
 					vdrs.Add(te.Ctx.NodeID)
 					err := te.Validators.Add(te.Ctx.NodeID, nil, ids.Empty, 1)
-=======
-				vdrsList := []validators.Validator{}
-=======
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-				vdrs := ids.NodeIDSet{}
-				te.Validators = validators.NewSet()
-				for i := 0; i < te.Params.K; i++ {
-					vdrID := ids.GenerateTestNodeID()
-					vdrs.Add(vdrID)
-					err := te.Validators.Add(vdrID, nil, ids.Empty, 1)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-				if tt.isVdr {
-					vdrs.Add(te.Ctx.NodeID)
-<<<<<<< HEAD
-<<<<<<< HEAD
-					vdrsList = append(vdrsList, validators.NewValidator(te.Ctx.NodeID, nil, 1))
-				}
-				te.Validators = validators.NewSet()
-				for _, vdr := range vdrsList {
-<<<<<<< HEAD
-<<<<<<< HEAD
-					err := te.Validators.AddWeight(vdr.ID(), vdr.Weight())
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
-=======
-					err := te.Validators.Add(vdr.ID(), vdr.Weight())
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-					err := te.Validators.Add(vdr.ID(), nil, vdr.Weight())
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-					err := te.Validators.Add(te.Ctx.NodeID, nil, 1)
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
-=======
-					err := te.Validators.Add(te.Ctx.NodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -3541,15 +3229,7 @@ func TestSendMixedQuery(t *testing.T) {
 
 				// Give the engine blk1. It should insert it into consensus and send a mixed query
 				// consisting of 12 push queries and 8 pull queries.
-<<<<<<< HEAD
-<<<<<<< HEAD
 				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
-=======
-				if err := te.Put(context.Background(), te.Validators.List()[0].ID(), constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
-=======
-				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
->>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 					t.Fatal(err)
 				}
 

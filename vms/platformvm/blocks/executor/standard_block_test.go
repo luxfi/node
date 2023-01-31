@@ -343,15 +343,7 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 
 	// Test VM validators
 	require.NoError(block.Accept(context.Background()))
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.True(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, nodeID))
-=======
-	require.True(env.config.Validators.Contains(constants.PrimaryNetworkID, nodeID))
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	require.True(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, nodeID))
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
 // Ensure semantic verification updates the current and pending staker sets correctly.
@@ -499,15 +491,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 			env.config.BanffTime = time.Time{} // activate Banff
 
 			subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 			env.config.TrackedSubnets.Add(subnetID)
-=======
-			env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			env.config.Validators.Add(subnetID, validators.NewSet())
 
 			for _, staker := range test.stakers {
@@ -606,15 +590,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 	env.config.BanffTime = time.Time{} // activate Banff
 
 	subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	env.config.TrackedSubnets.Add(subnetID)
-=======
-	env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-	env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	env.config.Validators.Add(subnetID, validators.NewSet())
 
 	// Add a subnet validator to the staker set
@@ -696,35 +672,13 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 
 	// Check VM Validators are removed successfully
 	require.NoError(block.Accept(context.Background()))
-<<<<<<< HEAD
-<<<<<<< HEAD
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
 	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
-=======
-	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetVdr2NodeID))
-	require.False(env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
-	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 	for _, tracked := range []bool{true, false} {
 		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
-=======
-func TestBanffStandardBlockWhitelistedSubnet(t *testing.T) {
-	for _, whitelist := range []bool{true, false} {
-		t.Run(fmt.Sprintf("whitelisted %t", whitelist), func(t *testing.T) {
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-=======
-func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
-	for _, tracked := range []bool{true, false} {
-		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			require := require.New(t)
 			env := newEnvironment(t, nil)
 			defer func() {
@@ -733,18 +687,8 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 			env.config.BanffTime = time.Time{} // activate Banff
 
 			subnetID := testSubnet1.ID()
-<<<<<<< HEAD
-<<<<<<< HEAD
 			if tracked {
 				env.config.TrackedSubnets.Add(subnetID)
-=======
-			if whitelist {
-				env.config.WhitelistedSubnets.Add(subnetID)
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			if tracked {
-				env.config.TrackedSubnets.Add(subnetID)
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 				env.config.Validators.Add(subnetID, validators.NewSet())
 			}
 
@@ -793,19 +737,7 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 			// update staker set
 			require.NoError(block.Verify(context.Background()))
 			require.NoError(block.Accept(context.Background()))
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
-=======
-			require.Equal(whitelist, env.config.Validators.Contains(testSubnet1.ID(), subnetValidatorNodeID))
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-			require.Equal(whitelist, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
->>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		})
 	}
 }

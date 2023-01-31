@@ -110,15 +110,7 @@ func NewContext(tb testing.TB) *snow.Context {
 				chainID:                   ctx.SubnetID,
 			}[chainID]
 			if !ok {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				return ids.Empty, errMissing
-=======
-				return ids.Empty, errors.New("missing")
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
-=======
-				return ids.Empty, errMissing
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 			}
 			return subnetID, nil
 		},
@@ -1167,12 +1159,6 @@ func TestTxNotCached(t *testing.T) {
 	db.OnPut = func([]byte, []byte) error {
 		return nil
 	}
-<<<<<<< HEAD
-=======
-	db.OnPut = func([]byte, []byte) error {
-		return nil
-	}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 	registerer := prometheus.NewRegistry()
 	require.NoError(t, err)
@@ -1544,15 +1530,7 @@ func TestIssueImportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
-=======
-	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 
@@ -1721,15 +1699,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
-=======
-	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 
@@ -1966,15 +1936,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	}
 	vm.batchTimeout = 0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
-=======
-	if err = vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
 		t.Fatal(err)
 	}
 

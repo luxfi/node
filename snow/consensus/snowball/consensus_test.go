@@ -7,52 +7,6 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-var _ Consensus = (*Byzantine)(nil)
-=======
-var (
-	Red   = ids.Empty.Prefix(0)
-	Blue  = ids.Empty.Prefix(1)
-	Green = ids.Empty.Prefix(2)
-
-	_ Consensus = (*Byzantine)(nil)
-)
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
-
-// Byzantine is a naive implementation of a multi-choice snowball instance
-type Byzantine struct {
-	// Hardcode the preference
-	preference ids.ID
-}
-
-func (b *Byzantine) Initialize(_ Parameters, choice ids.ID) {
-	b.preference = choice
-}
-
-func (*Byzantine) Add(ids.ID) {}
-
-func (b *Byzantine) Preference() ids.ID {
-	return b.preference
-}
-
-func (*Byzantine) RecordPoll(ids.Bag) bool {
-	return false
-}
-
-func (*Byzantine) RecordUnsuccessfulPoll() {}
-
-func (*Byzantine) Finalized() bool {
-	return true
-}
-
-func (b *Byzantine) String() string {
-	return b.preference.String()
-}
-<<<<<<< HEAD
-
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 var (
 	Red   = ids.Empty.Prefix(0)
 	Blue  = ids.Empty.Prefix(1)
@@ -90,5 +44,3 @@ func (*Byzantine) Finalized() bool {
 func (b *Byzantine) String() string {
 	return b.preference.String()
 }
-=======
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))

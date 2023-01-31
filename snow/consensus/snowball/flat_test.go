@@ -11,16 +11,6 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-func TestFlatParams(t *testing.T) {
-	ParamsTest(t, FlatFactory{})
-}
-
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
->>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func TestFlat(t *testing.T) {
 	require := require.New(t)
 

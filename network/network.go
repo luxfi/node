@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -19,28 +19,8 @@ import (
 
 	"go.uber.org/zap"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/network/dialer"
-	"github.com/luxdefi/luxd/network/peer"
-	"github.com/luxdefi/luxd/network/throttling"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/sender"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/ips"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/version"
-=======
-=======
 	"golang.org/x/exp/maps"
 
->>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 	"github.com/ava-labs/avalanchego/api/health"
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/message"
@@ -59,15 +39,6 @@ import (
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
 	"github.com/ava-labs/avalanchego/version"
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
-=======
-
-	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
->>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 const (

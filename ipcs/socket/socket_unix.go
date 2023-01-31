@@ -1,7 +1,7 @@
 //go:build !windows && !plan9 && !js
 // +build !windows,!plan9,!js
 
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package socket
@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/constants"
 )
 
 var staleSocketTimeout = 100 * time.Millisecond

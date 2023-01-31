@@ -451,25 +451,6 @@ func TestCreateAssetTxSerializationAgain(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-func TestCreateAssetTxGetters(*testing.T) {
-	tx := &CreateAssetTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
-			NetworkID:    networkID,
-			BlockchainID: chainID,
-		}},
-		Name:         "BRADY",
-		Symbol:       "TOM",
-		Denomination: 0,
-	}
-	tx.Initialize(nil)
-}
-
->>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
-=======
->>>>>>> 3c968fec6 (Add codec.Size (#2343))
 func TestCreateAssetTxSyntacticVerify(t *testing.T) {
 	ctx := NewContext(t)
 	c := setupCodec()

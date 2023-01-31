@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -18,46 +18,6 @@ import (
 
 	"go.uber.org/zap"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/api/keystore"
-	"github.com/luxdefi/luxd/api/metrics"
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/engine/lux/state"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/common/queue"
-	"github.com/luxdefi/luxd/snow/engine/common/tracker"
-	"github.com/luxdefi/luxd/snow/engine/snowman/block"
-	"github.com/luxdefi/luxd/snow/engine/snowman/syncer"
-	"github.com/luxdefi/luxd/snow/networking/handler"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/sender"
-	"github.com/luxdefi/luxd/snow/networking/timeout"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils/buffer"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/metervm"
-	"github.com/luxdefi/luxd/vms/proposervm"
-=======
-=======
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/api/health"
 	"github.com/ava-labs/avalanchego/api/keystore"
 	"github.com/ava-labs/avalanchego/api/metrics"
@@ -95,80 +55,19 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/teleporter"
 	"github.com/ava-labs/avalanchego/vms/proposervm"
 	"github.com/ava-labs/avalanchego/vms/tracedvm"
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> c7cc22f98 (Add VM tracer (#2225))
-=======
-=======
-	"github.com/luxdefi/luxd/api/health"
-	"github.com/luxdefi/luxd/api/keystore"
-	"github.com/luxdefi/luxd/api/metrics"
-	"github.com/luxdefi/luxd/api/server"
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/network"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/engine/lux/state"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/common/queue"
-	"github.com/luxdefi/luxd/snow/engine/common/tracker"
-	"github.com/luxdefi/luxd/snow/engine/snowman/block"
-	"github.com/luxdefi/luxd/snow/engine/snowman/syncer"
-	"github.com/luxdefi/luxd/snow/networking/handler"
-	"github.com/luxdefi/luxd/snow/networking/router"
-	"github.com/luxdefi/luxd/snow/networking/sender"
-	"github.com/luxdefi/luxd/snow/networking/timeout"
-	"github.com/luxdefi/luxd/snow/validators"
-	"github.com/luxdefi/luxd/trace"
-	"github.com/luxdefi/luxd/utils/buffer"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto/bls"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/metervm"
-	"github.com/luxdefi/luxd/vms/proposervm"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 
-	dbManager "github.com/luxdefi/luxd/database/manager"
-	timetracker "github.com/luxdefi/luxd/snow/networking/tracker"
+	dbManager "github.com/ava-labs/avalanchego/database/manager"
+	timetracker "github.com/ava-labs/avalanchego/snow/networking/tracker"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
-	aveng "github.com/luxdefi/luxd/snow/engine/lux"
-	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
-	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
-=======
-<<<<<<< HEAD
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 	avcon "github.com/ava-labs/avalanchego/snow/consensus/avalanche"
 	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
 	avbootstrap "github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
 	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
-<<<<<<< HEAD
-=======
-	avcon "github.com/luxdefi/luxd/snow/consensus/lux"
-	aveng "github.com/luxdefi/luxd/snow/engine/lux"
-	avbootstrap "github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
->>>>>>> c5eafdb72 (Update LICENSE)
 
-	smcon "github.com/luxdefi/luxd/snow/consensus/snowman"
-	smeng "github.com/luxdefi/luxd/snow/engine/snowman"
-	smbootstrap "github.com/luxdefi/luxd/snow/engine/snowman/bootstrap"
-	snowgetter "github.com/luxdefi/luxd/snow/engine/snowman/getter"
+	smcon "github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	smeng "github.com/ava-labs/avalanchego/snow/engine/snowman"
+	smbootstrap "github.com/ava-labs/avalanchego/snow/engine/snowman/bootstrap"
+	snowgetter "github.com/ava-labs/avalanchego/snow/engine/snowman/getter"
 )
 
 const (
@@ -177,24 +76,7 @@ const (
 )
 
 var (
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	errUnknownChainID   = errors.New("unknown chain ID")
-	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
-=======
 	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
->>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
-=======
-	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
-=======
-	errUnknownChainID   = errors.New("unknown chain ID")
-	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
->>>>>>> 04d685aa2 (Update consensus)
->>>>>>> 53a8245a8 (Update consensus)
-=======
-	errUnknownVMType    = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
->>>>>>> c5eafdb72 (Update LICENSE)
 	errCreatePlatformVM = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped  = errors.New("subnets not bootstrapped")
 
@@ -293,19 +175,10 @@ type ManagerConfig struct {
 	Server                      server.Server              // Handles HTTP API calls
 	Keystore                    keystore.Keystore
 	AtomicMemory                *atomic.Memory
-<<<<<<< HEAD
-	LUXAssetID                 ids.ID
-	XChainID                    ids.ID
-=======
 	AVAXAssetID                 ids.ID
 	XChainID                    ids.ID          // ID of the X-Chain,
 	CChainID                    ids.ID          // ID of the C-Chain,
-<<<<<<< HEAD
->>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
-	CriticalChains              ids.Set         // Chains that can't exit gracefully
-=======
 	CriticalChains              set.Set[ids.ID] // Chains that can't exit gracefully
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	TimeoutManager              timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                      health.Registerer
 	RetryBootstrap              bool                    // Should Bootstrap be retried
@@ -563,12 +436,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 			NodeID:    m.NodeID,
 
 			XChainID:    m.XChainID,
-<<<<<<< HEAD
-			LUXAssetID: m.LUXAssetID,
-=======
 			CChainID:    m.CChainID,
 			AVAXAssetID: m.AVAXAssetID,
->>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
 
 			Log:          chainLog,
 			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),
@@ -657,7 +526,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb Subnet) (*chain, er
 	var chain *chain
 	switch vm := vm.(type) {
 	case vertex.DAGVM:
-		chain, err = m.createLUXChain(
+		chain, err = m.createAvalancheChain(
 			ctx,
 			chainParams.GenesisData,
 			vdrs,
@@ -702,8 +571,8 @@ func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
 }
 
-// Create a DAG-based blockchain that uses LUX
-func (m *manager) createLUXChain(
+// Create a DAG-based blockchain that uses Avalanche
+func (m *manager) createAvalancheChain(
 	ctx *snow.ConsensusContext,
 	genesisData []byte,
 	vdrs,
@@ -853,7 +722,7 @@ func (m *manager) createLUXChain(
 		SharedCfg:                      &common.SharedConfig{},
 	}
 
-	luxGetHandler, err := luxgetter.New(vtxManager, commonCfg)
+	avaGetHandler, err := avagetter.New(vtxManager, commonCfg)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize avalanche base message handler: %w", err)
 	}
@@ -861,7 +730,7 @@ func (m *manager) createLUXChain(
 	// create bootstrap gear
 	bootstrapperConfig := avbootstrap.Config{
 		Config:        commonCfg,
-		AllGetsServer: luxGetHandler,
+		AllGetsServer: avaGetHandler,
 		VtxBlocked:    vtxBlocker,
 		TxBlocked:     txBlocker,
 		Manager:       vtxManager,
@@ -892,7 +761,7 @@ func (m *manager) createLUXChain(
 	// create engine gear
 	engineConfig := aveng.Config{
 		Ctx:           bootstrapperConfig.Ctx,
-		AllGetsServer: luxGetHandler,
+		AllGetsServer: avaGetHandler,
 		VM:            bootstrapperConfig.VM,
 		Manager:       vtxManager,
 		Sender:        bootstrapperConfig.Sender,

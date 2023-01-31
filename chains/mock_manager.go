@@ -1,11 +1,11 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/networking/router"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
 )
 
 var _ Manager = (*MockManager)(nil)

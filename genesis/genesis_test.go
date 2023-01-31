@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -14,11 +14,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/perms"
-	"github.com/luxdefi/luxd/vms/platformvm/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
 )
 
 var (
@@ -444,7 +444,7 @@ func TestVMGenesis(t *testing.T) {
 	}
 }
 
-func TestLUXAssetID(t *testing.T) {
+func TestAVAXAssetID(t *testing.T) {
 	tests := []struct {
 		networkID  uint32
 		expectedID string
@@ -468,13 +468,13 @@ func TestLUXAssetID(t *testing.T) {
 			require := require.New(t)
 
 			config := GetConfig(test.networkID)
-			_, luxAssetID, err := FromConfig(config)
+			_, avaxAssetID, err := FromConfig(config)
 			require.NoError(err)
 
 			require.Equal(
 				test.expectedID,
-				luxAssetID.String(),
-				"LUX assetID with networkID %d mismatch",
+				avaxAssetID.String(),
+				"AVAX assetID with networkID %d mismatch",
 				test.networkID,
 			)
 		})

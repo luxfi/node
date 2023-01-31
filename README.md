@@ -1,37 +1,27 @@
-# Avalanche gRPC
+<div align="center">
+  <img src="resources/AvalancheLogoRed.png?raw=true">
+</div>
 
-Now Serving: **Protocol Version 22**
+---
 
-<<<<<<< HEAD
-Protobuf files are hosted at [https://buf.build/ava-labs/avalanche](https://buf.build/ava-labs/avalanche) and can be used as dependencies in other projects.
-=======
-Node implementation for [Lux Network](https://lux.network) - a decentralized
-network of blockchains designed for real world asset (RWA)s.
->>>>>>> 1d9864b10 (Update README)
+Node implementation for the [Avalanche](https://avax.network) network -
+a blockchains platform with high throughput, and blazing fast transactions.
 
-Protobuf linting and generation for this project is managed by [buf](https://github.com/bufbuild/buf).
+## Installation
 
-<<<<<<< HEAD
-Please find installation instructions on [https://docs.buf.build/installation/](https://docs.buf.build/installation/) or use `Dockerfile.buf` provided in the `proto/` directory of AvalancheGo.
-=======
-Lux is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
+Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 Note that as network usage increases, hardware requirements may change.
->>>>>>> 1d9864b10 (Update README)
 
-Any changes made to proto definition can be updated by running `protobuf_codegen.sh` located in the `scripts/` directory of AvalancheGo.
+The minimum recommended hardware specification for nodes connected to Mainnet is:
 
-Introduction to `buf` [https://docs.buf.build/tour/introduction](https://docs.buf.build/tour/introduction)
+- CPU: Equivalent of 8 AWS vCPU
+- RAM: 16 GiB
+- Storage: 1 TiB
+- OS: Ubuntu 20.04/22.04 or macOS >= 12
+- Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-<<<<<<< HEAD
-## Protocol Version Compatibility
-=======
-If you plan to build Lux from source, you will also need the following software:
->>>>>>> 1d9864b10 (Update README)
+If you plan to build AvalancheGo from source, you will also need the following software:
 
-<<<<<<< HEAD
-The protobuf definitions and generated code are versioned based on the [RPCChainVMProtocol](../version/version.go#L13) defined for the RPCChainVM.
-Many versions of an Avalanche client can use the same [RPCChainVMProtocol](../version/version.go#L13). But each Avalanche client and subnet vm must use the same protocol version to be compatible.
-=======
 - [Go](https://golang.org/doc/install) version >= 1.18.1
 - [gcc](https://gcc.gnu.org/)
 - g++
@@ -40,28 +30,60 @@ Many versions of an Avalanche client can use the same [RPCChainVMProtocol](../ve
 
 #### Clone The Repository
 
-Clone the Node repository:
+Clone the AvalancheGo repository:
 
 ```sh
-git clone git@github.com:luxdefi/node.git
-cd node
+git clone git@github.com:ava-labs/avalanchego.git
+cd avalanchego
 ```
 
-This will clone and checkout the `main` branch.
+This will clone and checkout the `master` branch.
 
-#### Building Lux Node
+#### Building AvalancheGo
 
-Build from source by running the following build script:
+Build AvalancheGo by running the build script:
 
 ```sh
 ./scripts/build.sh
 ```
 
-The `luxd` binary is now in the `build` directory. To run:
+The `avalanchego` binary is now in the `build` directory. To run:
 
 ```sh
-./build/luxd
+./build/avalanchego
 ```
+
+### Binary Repository
+
+Install AvalancheGo using an `apt` repository.
+
+#### Adding the APT Repository
+
+If you have already added the APT repository, you do not need to add it again.
+
+To add the repository on Ubuntu, run:
+
+```sh
+sudo su -
+wget -qO - https://downloads.avax.network/avalanchego.gpg.key | tee /etc/apt/trusted.gpg.d/avalanchego.asc
+source /etc/os-release && echo "deb https://downloads.avax.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/avalanche.list
+exit
+```
+
+#### Installing the Latest Version
+
+After adding the APT repository, install avalanchego by running:
+
+```sh
+sudo apt update
+sudo apt install avalanchego
+```
+
+### Binary Install
+
+Download the [latest build](https://github.com/ava-labs/avalanchego/releases/latest) for your operating system and architecture.
+
+The Avalanche binary to be executed is named `avalanchego`.
 
 ### Docker Install
 
@@ -79,43 +101,43 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `luxdefi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the source it was built from. To run the Lux node, run:
+The image should be tagged as `avaplatform/avalanchego:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Avalanche source it was built from. To run the avalanche node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 luxdefi/lux:xxxxxxxx /node/build/luxd
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/avalanchego:xxxxxxxx /avalanchego/build/avalanchego
 ```
 
-## Running Lux
+## Running Avalanche
 
 ### Connecting to Mainnet
 
-To connect to the Lux Mainnet, run:
+To connect to the Avalanche Mainnet, run:
 
 ```sh
-./build/luxd
+./build/avalanchego
 ```
 
 You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to Testnet
+### Connecting to Fuji
 
-To connect to Testnet, run:
+To connect to the Fuji Testnet, run:
 
 ```sh
-./build/luxd --network-id=testnet
+./build/avalanchego --network-id=fuji
 ```
 
 ### Creating a Local Testnet
 
-See [this tutorial.](https://docs.lux.network/build/tutorials/platform/create-a-local-test-network/)
+See [this tutorial.](https://docs.avax.network/build/tutorials/platform/create-a-local-test-network/)
 
 ## Bootstrapping
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process, called bootstrapping, currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://docs.lux.network/build/node-apis/health) until it is done bootstrapping.
+A node will not [report healthy](https://docs.avax.network/build/avalanchego-apis/health) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
@@ -160,8 +182,8 @@ For more information, refer to the [GRPC Golang Quick Start Guide](https://grpc.
 ### Running protobuf codegen from docker
 
 ```sh
-docker build -t lux:protobuf_codegen -f api/Dockerfile.buf .
-docker run -t -i -v $(pwd):/opt/lux -w/opt/lux lux:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
+docker build -t avalanche:protobuf_codegen -f api/Dockerfile.buf .
+docker run -t -i -v $(pwd):/opt/avalanche -w/opt/avalanche avalanche:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
 ```
 
 ### Running mock codegen
@@ -174,7 +196,7 @@ This should only be necessary when modifying exported interfaces or after modify
 
 ### Version Semantics
 
-Lux Node is first and foremost a client for the Lux network. The versioning of Lux Node follows that of the Lux network.
+AvalancheGo is first and foremost a client for the Avalanche network. The versioning of AvalancheGo follows that of the Avalanche network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -183,36 +205,37 @@ Lux Node is first and foremost a client for the Lux network. The versioning of L
 
 ### Library Compatibility Guarantees
 
-Because Lux Node's version denotes the network version, it is expected that interfaces exported may change in `Patch` version updates.
+Because AvalancheGo's version denotes the network version, it is expected that interfaces exported by AvalancheGo's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running Lux Node will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running AvalancheGo will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-Lux Node can run on different platforms, with different support tiers:
+AvalancheGo can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
 - **Tier 3**: Builds but lightly tested (or not), considered _experimental_.
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
-The following table lists currently supported platforms and their corresponding support tiers:
+The following table lists currently supported platforms and their corresponding
+AvalancheGo support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
-|    amd64     |      Darwin      |       1       |
 |    amd64     |      Linux       |       1       |
-|    arm64     |      Darwin      |       1       |
-|    arm64     |      Linux       |       1       |
-|    amd64     |     Windows      | Not supported |
+|    arm64     |      Linux       |       2       |
+|    amd64     |      Darwin      |       2       |
+|    amd64     |     Windows      |       3       |
 |     arm      |      Linux       | Not supported |
 |     i386     |      Linux       | Not supported |
+|    arm64     |      Darwin      | Not supported |
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| Node continuous integration        | Tier 1  | Tier 2  | Tier 3  |
+| AvalancheGo continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |
@@ -222,9 +245,4 @@ To officially support a new platform, one must satisfy the following requirement
 
 **We and our community welcome responsible disclosures.**
 
-<<<<<<< HEAD
 If you've discovered a security vulnerability, please report it via our [bug bounty program](https://hackenproof.com/avalanche/). Valid reports will be eligible for a reward (terms and conditions apply).
->>>>>>> 51f21a85b (Update buf to v1.9.0 (#2239))
-=======
-If you've discovered a security vulnerability, please report it via our [bug bounty program](mailto:security@lux.network). Valid reports will be eligible for a reward (terms and conditions apply).
->>>>>>> 1d9864b10 (Update README)

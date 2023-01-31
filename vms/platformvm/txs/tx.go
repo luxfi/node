@@ -89,13 +89,6 @@ func (tx *Tx) Bytes() []byte {
 	return tx.bytes
 }
 
-<<<<<<< HEAD
-=======
-func (tx *Tx) Bytes() []byte {
-	return tx.bytes
-}
-
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 func (tx *Tx) ID() ids.ID {
 	return tx.id
 }

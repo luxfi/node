@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package plugin
@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pluginpb "github.com/luxdefi/luxd/proto/pb/plugin"
+	pluginpb "github.com/ava-labs/avalanchego/proto/pb/plugin"
 )
 
 type Client struct {

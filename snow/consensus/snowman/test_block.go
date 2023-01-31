@@ -5,13 +5,6 @@ package snowman
 
 import (
 	"context"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	"sort"
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"
@@ -38,8 +31,6 @@ type TestBlock struct {
 func (b *TestBlock) Parent() ids.ID {
 	return b.ParentV
 }
-<<<<<<< HEAD
-=======
 
 func (b *TestBlock) Height() uint64 {
 	return b.HeightV
@@ -56,47 +47,7 @@ func (b *TestBlock) Verify(context.Context) error {
 func (b *TestBlock) Bytes() []byte {
 	return b.BytesV
 }
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-
-<<<<<<< HEAD
-func (b *TestBlock) Height() uint64 {
-	return b.HeightV
-}
-
-<<<<<<< HEAD
-func (b *TestBlock) Timestamp() time.Time {
-	return b.TimestampV
-}
-
-func (b *TestBlock) Verify(context.Context) error {
-	return b.VerifyV
-}
-
-func (b *TestBlock) Bytes() []byte {
-	return b.BytesV
-}
 
 func (b *TestBlock) Less(other *TestBlock) bool {
 	return b.HeightV < other.HeightV
-=======
-func (sb sortBlocks) Less(i, j int) bool {
-	return sb[i].HeightV < sb[j].HeightV
-}
-
-func (sb sortBlocks) Len() int {
-	return len(sb)
-}
-
-func (sb sortBlocks) Swap(i, j int) {
-	sb[j], sb[i] = sb[i], sb[j]
-}
-
-// SortTestBlocks sorts the array of blocks by height
-func SortTestBlocks(blocks []*TestBlock) {
-	sort.Sort(sortBlocks(blocks))
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (b *TestBlock) Less(other *TestBlock) bool {
-	return b.HeightV < other.HeightV
->>>>>>> e7024bd25 (Use generic sorting (#1850))
 }

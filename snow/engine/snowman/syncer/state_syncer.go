@@ -81,15 +81,7 @@ type stateSyncer struct {
 
 	// summaries received may be different even if referring to the same height
 	// we keep a list of deduplicated height ready for voting
-<<<<<<< HEAD
-<<<<<<< HEAD
 	summariesHeights       set.Set[uint64]
-=======
-	summariesHeights       map[uint64]struct{}
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	summariesHeights       set.Set[uint64]
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	uniqueSummariesHeights []uint64
 
 	// number of times the state sync has been attempted
@@ -312,28 +304,11 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 	}
 
 	preferredStateSummary := ss.selectSyncableStateSummary()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	syncMode, err := preferredStateSummary.Accept(ctx)
-=======
-	ss.Ctx.Log.Info("selected summary start state sync",
-		zap.Stringer("summaryID", preferredStateSummary.ID()),
-		zap.Int("numTotalSummaries", size),
-	)
-
-	startedSyncing, err := preferredStateSummary.Accept(ctx)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-	syncMode, err := preferredStateSummary.Accept(ctx)
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	if err != nil {
 		return err
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	ss.Ctx.Log.Info("accepted state summary",
 		zap.Stringer("summaryID", preferredStateSummary.ID()),
 		zap.Stringer("syncMode", syncMode),
@@ -349,15 +324,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		// Engine will wait for notification of state sync done.
 		ss.Ctx.RunningStateSync(true)
 		return nil
-<<<<<<< HEAD
-<<<<<<< HEAD
 	case block.StateSyncDynamic:
-=======
-	case block.StateSummaryDynamic:
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-	case block.StateSyncDynamic:
->>>>>>> e480f4dcc (Fix typo `StateSummaryDynamic` to `StateSyncDynamic` (#2419))
 		// Summary was accepted and VM is state syncing.
 		// Engine will continue into bootstrapping and the VM will sync in the
 		// background.
@@ -369,13 +336,6 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		)
 		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
-<<<<<<< HEAD
-=======
-	// VM did not accept the summary, move on to bootstrapping.
-	return ss.onDoneStateSyncing(ctx, ss.requestID)
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 }
 
 // selectSyncableStateSummary chooses a state summary from all
@@ -466,22 +426,10 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 	}
 
 	ss.frontierSeeders = validators.NewSet()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !ss.frontierSeeders.Contains(nodeID) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			// Invariant: We never use the TxID or BLS keys populated here.
 			err = ss.frontierSeeders.Add(nodeID, nil, ids.Empty, 1)
-=======
-			err = ss.frontierSeeders.Add(nodeID, nil, 1)
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-			// Invariant: We never use the TxID or BLS keys populated here.
-			err = ss.frontierSeeders.Add(nodeID, nil, ids.Empty, 1)
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		} else {
 			err = ss.frontierSeeders.AddWeight(nodeID, 1)
 		}
@@ -489,34 +437,6 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 			return err
 		}
 		ss.targetSeeders.Add(nodeID)
-=======
-	if err := ss.frontierSeeders.Set(beacons); err != nil {
-		return err
-	}
-
-=======
->>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
-	for _, vdr := range beacons {
-		vdrID := vdr.ID()
-		if !ss.frontierSeeders.Contains(vdrID) {
-			err = ss.frontierSeeders.Add(vdrID, 1)
-=======
-	for _, nodeID := range beaconIDs {
-		if !ss.frontierSeeders.Contains(nodeID) {
-			err = ss.frontierSeeders.Add(nodeID, 1)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
-		} else {
-			err = ss.frontierSeeders.AddWeight(nodeID, 1)
-		}
-		if err != nil {
-			return err
-		}
-<<<<<<< HEAD
-		ss.targetSeeders.Add(vdrID)
->>>>>>> 2808ee59c (Cleanup confusing variable assignments (#2268))
-=======
-		ss.targetSeeders.Add(nodeID)
->>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	}
 
 	// list all beacons, to reach them for voting on frontier
@@ -621,16 +541,8 @@ func (ss *stateSyncer) Notify(ctx context.Context, msg common.Message) error {
 		)
 		return nil
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 	ss.Ctx.RunningStateSync(false)
-=======
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-=======
-
-	ss.Ctx.RunningStateSync(false)
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
 	return ss.onDoneStateSyncing(ctx, ss.requestID)
 }
 
@@ -659,52 +571,20 @@ func (ss *stateSyncer) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 	return ss.StartupTracker.Disconnected(ctx, nodeID)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*stateSyncer) Gossip(context.Context) error {
 	return nil
 }
-=======
-func (*stateSyncer) Gossip() error { return nil }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*stateSyncer) Gossip() error {
-=======
-func (*stateSyncer) Gossip(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-	return nil
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (ss *stateSyncer) Shutdown(ctx context.Context) error {
 	ss.Config.Ctx.Log.Info("shutting down state syncer")
 	return ss.VM.Shutdown(ctx)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (*stateSyncer) Halt(context.Context) {}
 
 func (*stateSyncer) Timeout(context.Context) error {
 	return nil
 }
-=======
-func (*stateSyncer) Halt() {}
-
-<<<<<<< HEAD
-func (*stateSyncer) Timeout() error { return nil }
->>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
-=======
-func (*stateSyncer) Timeout() error {
-=======
-func (*stateSyncer) Halt(context.Context) {}
-
-func (*stateSyncer) Timeout(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
-	return nil
-}
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
 func (ss *stateSyncer) HealthCheck(ctx context.Context) (interface{}, error) {
 	vmIntf, vmErr := ss.VM.HealthCheck(ctx)

@@ -83,24 +83,10 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -148,15 +134,7 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 			ParentV: oracleCoreBlk.opts[0].ID(),
 		},
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return lastCoreBlk, nil
 	}
 
@@ -208,24 +186,10 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return oracleCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return oracleCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -273,15 +237,7 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 			ParentV: oracleCoreBlk.opts[0].ID(),
 		},
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return lastCoreBlk, nil
 	}
 
@@ -312,24 +268,10 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 		ParentV:    coreGenBlk.ID(),
 		TimestampV: coreGenBlk.Timestamp(),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return prntCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return prntCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -403,15 +345,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: preActivationTime,
 		VerifyV:    nil,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlk, nil
 	}
 
@@ -460,24 +394,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	postActivationTime := activationTime.Add(time.Second)
 	proVM.Set(postActivationTime)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.SetPreferenceF = func(_ context.Context, id ids.ID) error {
 		return nil
 	}
 	if err := proVM.SetPreference(context.Background(), preForkChild.ID()); err != nil {
-=======
-	coreVM.SetPreferenceF = func(id ids.ID) error {
-		return nil
-	}
-	if err := proVM.SetPreference(preForkChild.ID()); err != nil {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.SetPreferenceF = func(_ context.Context, id ids.ID) error {
-		return nil
-	}
-	if err := proVM.SetPreference(context.Background(), preForkChild.ID()); err != nil {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		t.Fatal("could not set preference")
 	}
 
@@ -490,24 +410,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: postActivationTime,
 		VerifyV:    nil,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return secondCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return secondCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(id ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return secondCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch id {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -542,24 +448,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		TimestampV: postActivationTime,
 		VerifyV:    nil,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return thirdCoreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return thirdCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(id ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return thirdCoreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch id {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -601,15 +493,7 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 		TimestampV: coreGenBlk.Timestamp(),
 		VerifyV:    nil,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlock, nil
 	}
 
@@ -647,24 +531,10 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 		BytesV:  []byte{1},
 		ParentV: coreGenBlk.ID(),
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-		return coreBlk, nil
-	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		switch blkID {
 		case coreGenBlk.ID():
 			return coreGenBlk, nil
@@ -720,15 +590,7 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 		ParentV: coreGenBlk.ID(),
 		HeightV: coreGenBlk.Height() + 1,
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
-=======
-	coreVM.BuildBlockF = func() (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		return coreBlk, nil
 	}
 
@@ -959,19 +821,8 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 }
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
-<<<<<<< HEAD
-<<<<<<< HEAD
 // and the proposervm is activated, we only call the VM's BuildBlockWithContext
 // when a P-chain height can be correctly provided from the parent block.
-=======
-// and the proposervm is activated, we call the VM's BuildBlockWithContext
-// method to build a block rather than BuildBlockWithContext. If the proposervm
-// isn't activated, we should call BuildBlock rather than BuildBlockWithContext.
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-// and the proposervm is activated, we only call the VM's BuildBlockWithContext
-// when a P-chain height can be correctly provided from the parent block.
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
@@ -987,32 +838,12 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 	innerVM := mocks.NewMockChainVM(ctrl)
-<<<<<<< HEAD
-<<<<<<< HEAD
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
-=======
-	innerBlockBuilderVM := mocks.NewMockBuildBlockWithContextChainVM(ctrl)
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &smblock.Context{
-		PChainHeight: pChainHeight,
-	}).Return(builtBlk, nil).AnyTimes()
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	vdrState := validators.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
 	vm := &VM{
-<<<<<<< HEAD
-<<<<<<< HEAD
 		ChainVM: innerVM,
-=======
-		ChainVM:        innerVM,
-		blockBuilderVM: innerBlockBuilderVM,
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-		ChainVM: innerVM,
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		ctx: &snow.Context{
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
@@ -1024,16 +855,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 		vm:    vm,
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	// Should call BuildBlock since proposervm won't have a P-chain height
-=======
-	// Should call BuildBlockWithContext since proposervm is activated
-	// (timestamp is after activation time)
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-	// Should call BuildBlock since proposervm won't have a P-chain height
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	gotChild, err := blk.buildChild(context.Background())
 	require.NoError(err)
 	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
@@ -1041,13 +863,6 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	// Should call BuildBlock since proposervm is not activated
 	innerBlk.EXPECT().Timestamp().Return(time.Time{})
 	vm.activationTime = mockable.MaxTime
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	innerVM.EXPECT().BuildBlock(context.Background()).Return(builtBlk, nil)
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
->>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 
 	gotChild, err = blk.buildChild(context.Background())
 	require.NoError(err)

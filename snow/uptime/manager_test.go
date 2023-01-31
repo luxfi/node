@@ -47,15 +47,7 @@ func TestStartTrackingDBError(t *testing.T) {
 	startTime := time.Now()
 
 	s := NewTestState()
-<<<<<<< HEAD
-<<<<<<< HEAD
 	s.dbWriteError = errTest
-=======
-	s.dbWriteError = errors.New("err")
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	s.dbWriteError = errTest
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	s.AddNode(nodeID0, subnetID, startTime)
 
 	up := NewManager(s).(*manager)
@@ -210,15 +202,7 @@ func TestStopTrackingConnectedDBError(t *testing.T) {
 	err = up.Connect(nodeID0, subnetID)
 	require.NoError(err)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	s.dbReadError = errTest
-=======
-	s.dbReadError = errors.New("err")
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	s.dbReadError = errTest
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	err = up.StopTracking([]ids.NodeID{nodeID0}, subnetID)
 	require.Error(err)
 }
@@ -270,15 +254,7 @@ func TestStopTrackingNonConnectedDBError(t *testing.T) {
 	currentTime = currentTime.Add(time.Second)
 	up.clock.Set(currentTime)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	s.dbWriteError = errTest
-=======
-	s.dbWriteError = errors.New("err")
->>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
-=======
-	s.dbWriteError = errTest
->>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	err = up.StopTracking([]ids.NodeID{nodeID0}, subnetID)
 	require.Error(err)
 }

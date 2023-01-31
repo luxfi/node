@@ -61,19 +61,7 @@ func testSetup(
 	sender.CantSendGetAcceptedFrontier = false
 
 	peer := ids.GenerateTestNodeID()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
-=======
-	if err := peers.Add(peer, 1); err != nil {
->>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
-=======
-	if err := peers.Add(peer, nil, 1); err != nil {
->>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
-=======
-	if err := peers.Add(peer, nil, ids.Empty, 1); err != nil {
->>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 		t.Fatal(err)
 	}
 
@@ -111,24 +99,10 @@ func TestAcceptedFrontier(t *testing.T) {
 		BytesV:  []byte{1, 2, 3},
 	}
 	vm.CantLastAccepted = false
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blkID, nil
 	}
 	vm.GetBlockF = func(_ context.Context, bID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return blkID, nil
-	}
-	vm.GetBlockF = func(bID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return blkID, nil
-	}
-	vm.GetBlockF = func(_ context.Context, bID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blkID, bID)
 		return dummyBlk, nil
 	}
@@ -179,24 +153,10 @@ func TestFilterAccepted(t *testing.T) {
 	}}
 
 	vm.CantLastAccepted = false
-<<<<<<< HEAD
-<<<<<<< HEAD
 	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		return blk1.ID(), nil
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-=======
-	vm.LastAcceptedF = func() (ids.ID, error) {
-		return blk1.ID(), nil
-	}
-	vm.GetBlockF = func(blkID ids.ID) (snowman.Block, error) {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-	vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return blk1.ID(), nil
-	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 		require.Equal(t, blk1.ID(), blkID)
 		return blk1, nil
 	}

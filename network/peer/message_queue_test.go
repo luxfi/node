@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -9,20 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-	"github.com/luxdefi/luxd/message"
-	"github.com/luxdefi/luxd/utils/logging"
-=======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/message"
 	"github.com/ava-labs/avalanchego/proto/pb/p2p"
 	"github.com/ava-labs/avalanchego/utils/logging"
-<<<<<<< HEAD
-
-	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
->>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
-=======
->>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 func TestMessageQueue(t *testing.T) {

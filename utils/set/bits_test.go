@@ -29,8 +29,6 @@ func Test_Bits_New(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
 			b := NewBits(test.bits...)
 
@@ -39,23 +37,6 @@ func Test_Bits_New(t *testing.T) {
 			}
 
 			require.Equal(test.length, b.Len())
-=======
-			r := require.New(t)
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
-			b := NewBits(test.bits...)
-
-			for _, bit := range test.bits {
-				require.True(b.Contains(bit))
-			}
-
-<<<<<<< HEAD
-			r.Equal(test.length, b.Len())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.Equal(test.length, b.Len())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -128,15 +109,7 @@ func Test_Bits_AddRemove(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			b := NewBits()
 
 			for _, add := range test.toAdd {
@@ -148,24 +121,10 @@ func Test_Bits_AddRemove(t *testing.T) {
 			}
 
 			for _, element := range test.expectedElements {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				require.True(b.Contains(element))
 			}
 
 			require.Equal(test.expectedLen, b.Len())
-=======
-				r.True(b.Contains(element))
-			}
-
-			r.Equal(test.expectedLen, b.Len())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-				require.True(b.Contains(element))
-			}
-
-			require.Equal(test.expectedLen, b.Len())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -224,15 +183,7 @@ func Test_Bits_Union(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			b := NewBits()
 
 			for _, add := range test.left {
@@ -243,24 +194,10 @@ func Test_Bits_Union(t *testing.T) {
 			}
 
 			for _, element := range test.expected {
-<<<<<<< HEAD
-<<<<<<< HEAD
 				require.True(b.Contains(element))
 			}
 
 			require.Equal(test.expectedLen, b.Len())
-=======
-				r.True(b.Contains(element))
-			}
-
-			r.Equal(test.expectedLen, b.Len())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-				require.True(b.Contains(element))
-			}
-
-			require.Equal(test.expectedLen, b.Len())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -319,15 +256,7 @@ func Test_Bits_Intersection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			left := NewBits()
 			right := NewBits()
 			for _, add := range test.left {
@@ -344,15 +273,7 @@ func Test_Bits_Intersection(t *testing.T) {
 				expected.Add(element)
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
-=======
-			r.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -411,15 +332,7 @@ func Test_Bits_Difference(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			left := NewBits()
 			right := NewBits()
 			for _, add := range test.left {
@@ -436,15 +349,7 @@ func Test_Bits_Difference(t *testing.T) {
 				expected.Add(element)
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
-=======
-			r.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -469,15 +374,7 @@ func Test_Bits_Clear(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			b := NewBits()
 
 			for bit := range test.bitset {
@@ -486,15 +383,7 @@ func Test_Bits_Clear(t *testing.T) {
 
 			b.Clear()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Zero(b.Len())
-=======
-			r.Zero(b.Len())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.Zero(b.Len())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -518,30 +407,14 @@ func Test_Bits_String(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			b := NewBits()
 
 			for _, bit := range test.bitset {
 				b.Add(bit)
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Equal(test.expected, b.String())
-=======
-			r.Equal(test.expected, b.String())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.Equal(test.expected, b.String())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }
@@ -585,30 +458,14 @@ func Test_Bits_HammingWeight(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require := require.New(t)
-=======
-			r := require.New(t)
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require := require.New(t)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 			b := NewBits()
 
 			for _, bit := range test.bitset {
 				b.Add(bit)
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 			require.Equal(test.expected, b.HammingWeight())
-=======
-			r.Equal(test.expected, b.HammingWeight())
->>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
-=======
-			require.Equal(test.expected, b.HammingWeight())
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		})
 	}
 }

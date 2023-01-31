@@ -31,15 +31,7 @@ service VM {
   rpc Connected(ConnectedRequest) returns (google.protobuf.Empty);
   rpc Disconnected(DisconnectedRequest) returns (google.protobuf.Empty);
   // Attempt to create a new block from data contained in the VM.
-<<<<<<< HEAD
-<<<<<<< HEAD
   rpc BuildBlock(BuildBlockRequest) returns (BuildBlockResponse);
-=======
-  rpc BuildBlock(google.protobuf.Empty) returns (BuildBlockResponse);
->>>>>>> f84ef1f3f (Improve VM proto docs (#2163))
-=======
-  rpc BuildBlock(BuildBlockRequest) returns (BuildBlockResponse);
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
   // Attempt to create a block from a stream of bytes.
   rpc ParseBlock(ParseBlockRequest) returns (ParseBlockResponse);
   // Attempt to load a block.
@@ -129,36 +121,15 @@ message InitializeRequest {
   bytes x_chain_id = 5;
   bytes c_chain_id = 6;
   bytes avax_asset_id = 7;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
   string chain_data_dir = 8;
   bytes genesis_bytes = 9;
   bytes upgrade_bytes = 10;
   bytes config_bytes = 11;
   repeated VersionedDBServer db_servers = 12;
-<<<<<<< HEAD
   // server_addr is the address of the gRPC server which serves
   // the messenger, keystore, shared memory, blockchain alias,
   // subnet alias, and appSender services
   string server_addr = 13;
-=======
-  bytes genesis_bytes = 8;
-  bytes upgrade_bytes = 9;
-  bytes config_bytes = 10;
-  repeated VersionedDBServer db_servers = 11;
-  // server_addr is the address of the gRPC server which serves
-  // the messenger, keystore, shared memory, blockchain alias,
-  // subnet alias, and appSender services
-  string server_addr = 12;
->>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
-=======
-  // server_addr is the address of the gRPC server which serves
-  // the messenger, keystore, shared memory, blockchain alias,
-  // subnet alias, and appSender services
-  string server_addr = 13;
->>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
 }
 
 message InitializeResponse {
@@ -208,14 +179,7 @@ message BuildBlockRequest {
   optional uint64 p_chain_height = 1;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // Note: The status of a freshly built block is assumed to be Processing.
-=======
->>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
-=======
-// Note: The status of a freshly built block is assumed to be Processing.
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 message BuildBlockResponse {
   bytes id = 1;
   bytes parent_id = 2;
@@ -249,15 +213,7 @@ message GetBlockResponse {
   uint64 height = 4;
   google.protobuf.Timestamp timestamp = 5;
   // used to propagate database.ErrNotFound through RPC
-<<<<<<< HEAD
-<<<<<<< HEAD
   Error err = 6;
-=======
-  uint32 err = 6;
->>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
-=======
-  Error err = 6;
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
   bool verify_with_context = 7;
 }
 
@@ -450,13 +406,5 @@ message StateSummaryAcceptResponse {
     MODE_DYNAMIC = 3;
   }
   Mode mode = 1;
-<<<<<<< HEAD
-<<<<<<< HEAD
   Error err = 2;
-=======
-  uint32 err = 2;
->>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
-=======
-  Error err = 2;
->>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 }

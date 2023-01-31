@@ -39,18 +39,6 @@ func TestMessage(t *testing.T) {
 }
 
 func TestParseMessageJunk(t *testing.T) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	_, err := ParseMessage(utils.RandomBytes(1024))
 	require.Error(t, err)
-=======
-	require := require.New(t)
-
-	_, err := ParseMessage(utils.RandomBytes(1024))
-	require.Error(err)
->>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
-=======
-	_, err := ParseMessage(utils.RandomBytes(1024))
-	require.Error(t, err)
->>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }

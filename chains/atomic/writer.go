@@ -1,10 +1,10 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
 
 import (
-	"github.com/luxdefi/luxd/database"
+	"github.com/ava-labs/avalanchego/database"
 )
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.

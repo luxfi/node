@@ -39,31 +39,11 @@ func (t *TestTx) HasWhitelist() bool {
 	return t.HasWhitelistV
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (t *TestTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
 	return t.WhitelistV, t.WhitelistErrV
 }
 
 func (t *TestTx) Verify(context.Context) error {
-=======
-func (t *TestTx) Whitelist() (ids.Set, error) {
-	return t.WhitelistV, t.WhitelistErrV
-}
-
-func (t *TestTx) Verify() error {
->>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
-=======
-func (t *TestTx) Whitelist(context.Context) (ids.Set, error) {
-=======
-func (t *TestTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
->>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
-	return t.WhitelistV, t.WhitelistErrV
-}
-
-func (t *TestTx) Verify(context.Context) error {
->>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	return t.VerifyV
 }
 
