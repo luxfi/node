@@ -328,9 +328,13 @@ func defaultVM() (*VM, database.Database, *mutableSharedMemory) {
 			Chains:                 chains.MockManager{},
 			UptimeLockedCalculator: uptime.NewLockedCalculator(),
 <<<<<<< HEAD
+<<<<<<< HEAD
 			StakingEnabled:         true,
 =======
 >>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
+=======
+			StakingEnabled:         true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 			Validators:             vdrs,
 			TxFee:                  defaultTxFee,
 			CreateSubnetTxFee:      100 * defaultTxFee,
@@ -1958,6 +1962,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 =======
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		nil,

@@ -77,9 +77,13 @@ func TestShutdown(t *testing.T) {
 		time.Second,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -269,9 +273,13 @@ func TestShutdownTimesOut(t *testing.T) {
 		time.Millisecond,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -436,9 +444,13 @@ func TestRouterTimeout(t *testing.T) {
 		time.Millisecond,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -809,9 +821,13 @@ func TestRouterClearTimeouts(t *testing.T) {
 		time.Millisecond,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1108,9 +1124,13 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		time.Millisecond,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1308,9 +1328,13 @@ func TestRouterCrossChainMessages(t *testing.T) {
 		time.Millisecond,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1478,12 +1502,15 @@ func TestConnectedSubnet(t *testing.T) {
 <<<<<<< HEAD
 		set.Set[ids.ID]{},
 		true,
+<<<<<<< HEAD
 		trackedSubnets,
 =======
 		ids.Set{},
 =======
 		set.Set[ids.ID]{},
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		whitelistedSubnets,
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		nil,

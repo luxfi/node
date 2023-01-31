@@ -112,10 +112,14 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if len(errorReasons) == 0 || !vm.StakingEnabled {
 =======
 	if len(errorReasons) == 0 {
 >>>>>>> beeee6901 (Add `time_until_unstake` metrics (#2258))
+=======
+	if len(errorReasons) == 0 || !vm.StakingEnabled {
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		return details, nil
 	}
 	return details, fmt.Errorf("platform layer is unhealthy err: %w, details: %s",

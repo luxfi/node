@@ -97,9 +97,13 @@ func TestTimeout(t *testing.T) {
 		time.Second,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -575,9 +579,13 @@ func TestReliableMessages(t *testing.T) {
 		time.Second,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -746,9 +754,13 @@ func TestReliableMessagesToMyself(t *testing.T) {
 		time.Second,
 		set.Set[ids.ID]{},
 <<<<<<< HEAD
+<<<<<<< HEAD
 		true,
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+		true,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},

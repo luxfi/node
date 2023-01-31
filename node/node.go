@@ -719,6 +719,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		timeoutManager,
 		n.Config.ConsensusShutdownTimeout,
 		criticalChains,
+		n.Config.EnableStaking,
 		n.Config.WhitelistedSubnets,
 		n.Shutdown,
 		n.Config.RouterHealthConfig,
