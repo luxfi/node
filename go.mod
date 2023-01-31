@@ -30,6 +30,7 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
@@ -56,6 +57,10 @@ require (
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
+=======
+	github.com/ava-labs/coreth v0.11.5
+	github.com/btcsuite/btcd/btcutil v1.1.3
+>>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/golang/mock v1.6.0
@@ -91,11 +96,15 @@ require (
 	go.opentelemetry.io/otel/sdk v1.11.0
 	go.opentelemetry.io/otel/trace v1.11.0
 <<<<<<< HEAD
+<<<<<<< HEAD
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
 =======
 	go.uber.org/zap v1.23.0
+=======
+	go.uber.org/zap v1.24.0
+>>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
 <<<<<<< HEAD
@@ -116,21 +125,30 @@ require (
 require (
 	github.com/VictoriaMetrics/fastcache v1.10.0 // indirect
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	github.com/aead/siphash v1.0.1 // indirect
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+=======
+	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
+>>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	github.com/decred/dcrd/lru v1.1.1 // indirect
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 82f402542 (Minor cleanup with updated dependencies (#2397))
 	github.com/ethereum/go-ethereum v1.10.26 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
