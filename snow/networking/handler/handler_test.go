@@ -37,10 +37,14 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	vdrs := validators.NewSet()
 	vdr0 := ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(vdr0, nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(vdr0, 1)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	err := vdrs.Add(vdr0, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -139,10 +143,14 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	vdrs := validators.NewSet()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 =======
 	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -234,7 +242,11 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	closed := make(chan struct{}, 1)
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -312,7 +324,11 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	msgFromVMChan := make(chan common.Message)
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(

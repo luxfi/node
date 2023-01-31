@@ -39,7 +39,11 @@ const engineType = p2p.EngineType_ENGINE_TYPE_AVALANCHE
 
 func TestShutdown(t *testing.T) {
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -213,7 +217,11 @@ func TestShutdown(t *testing.T) {
 func TestShutdownTimesOut(t *testing.T) {
 	nodeID := ids.EmptyNodeID
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 	benchlist := benchlist.NewNoBenchlist()
 	metrics := prometheus.NewRegistry()
@@ -428,8 +436,13 @@ func TestRouterTimeout(t *testing.T) {
 
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err = vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 	require.NoError(err)
+=======
+	err = vdrs.Add(ids.GenerateTestNodeID(), 1)
+	r.NoError(err)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -774,7 +787,11 @@ func TestRouterClearTimeouts(t *testing.T) {
 	// Create bootstrapper, engine and handler
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err = vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err = vdrs.Add(ids.GenerateTestNodeID(), 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -1063,7 +1080,11 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	ctx.SetValidatorOnly()
 	vdrs := validators.NewSet()
 	vID := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 	err = vdrs.Add(vID, nil, ids.Empty, 1)
+=======
+	err = vdrs.Add(vID, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(t, err)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -1242,7 +1263,11 @@ func TestRouterCrossChainMessages(t *testing.T) {
 
 	// Set up validators
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	require.NoError(t, vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+=======
+	require.NoError(t, vdrs.Add(ids.GenerateTestNodeID(), 1))
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 
 	// Create bootstrapper, engine and handler
 	requester := snow.DefaultConsensusContextTest()

@@ -12,6 +12,9 @@ import (
 )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func TestAdd(t *testing.T) {
 	require := require.New(t)
 
@@ -20,21 +23,32 @@ func TestAdd(t *testing.T) {
 	subnetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
+<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+=======
+	err := Add(m, subnetID, nodeID, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.ErrorIs(err, errMissingValidators)
 
 	s := NewSet()
 	m.Add(subnetID, s)
 
+<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 1)
+=======
+	err = Add(m, subnetID, nodeID, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(err)
 
 	weight := s.Weight()
 	require.EqualValues(1, weight)
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func TestAddWeight(t *testing.T) {
 	require := require.New(t)
 
@@ -50,6 +64,7 @@ func TestAddWeight(t *testing.T) {
 	m.Add(subnetID, s)
 
 	err = AddWeight(m, subnetID, nodeID, 1)
+<<<<<<< HEAD
 <<<<<<< HEAD
 	require.ErrorIs(err, errMissingValidator)
 
@@ -67,6 +82,18 @@ func TestAddWeight(t *testing.T) {
 	weight := s.Weight()
 	require.EqualValues(1, weight)
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+	require.ErrorIs(err, errMissingValidator)
+
+	err = Add(m, subnetID, nodeID, 1)
+	require.NoError(err)
+
+	err = AddWeight(m, subnetID, nodeID, 1)
+	require.NoError(err)
+
+	weight := s.Weight()
+	require.EqualValues(2, weight)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 }
 
 func TestRemoveWeight(t *testing.T) {
@@ -84,10 +111,14 @@ func TestRemoveWeight(t *testing.T) {
 	m.Add(subnetID, s)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err = Add(m, subnetID, nodeID, nil, ids.Empty, 2)
 =======
 	err = AddWeight(m, subnetID, nodeID, 2)
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+	err = Add(m, subnetID, nodeID, 2)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(err)
 
 	err = RemoveWeight(m, subnetID, nodeID, 1)
@@ -121,10 +152,14 @@ func TestContains(t *testing.T) {
 	require.False(contains)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	err := Add(m, subnetID, nodeID, nil, ids.Empty, 1)
 =======
 	err := AddWeight(m, subnetID, nodeID, 1)
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+	err := Add(m, subnetID, nodeID, 1)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	require.NoError(err)
 
 	contains = Contains(m, subnetID, nodeID)

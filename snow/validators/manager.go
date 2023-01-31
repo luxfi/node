@@ -151,21 +151,34 @@ func (m *manager) String() string {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 // Add is a helper that fetches the validator set of [subnetID] from [m] and
 // adds [nodeID] to the validator set.
 // Returns an error if:
 // - [subnetID] does not have a registered validator set in [m]
 // - adding [nodeID] to the validator set returns an error
+<<<<<<< HEAD
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+=======
+func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	vdrs, ok := m.Get(subnetID)
 	if !ok {
 		return fmt.Errorf("%w: %s", errMissingValidators, subnetID)
 	}
+<<<<<<< HEAD
 	return vdrs.Add(nodeID, pk, txID, weight)
 }
 
 =======
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
+=======
+	return vdrs.Add(nodeID, weight)
+}
+
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 // AddWeight is a helper that fetches the validator set of [subnetID] from [m]
 // and adds [weight] to [nodeID] in the validator set.
 // Returns an error if:
