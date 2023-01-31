@@ -68,12 +68,18 @@ type VM struct {
 	minimumPChainHeight uint64
 	minBlkDelay         time.Duration
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	// block signer
 	stakingLeafSigner crypto.Signer
 	// block certificate
 	stakingCertLeaf *x509.Certificate
+<<<<<<< HEAD
 =======
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	state.State
 	hIndexer indexer.HeightIndexer
@@ -118,10 +124,15 @@ func New(
 	minimumPChainHeight uint64,
 	minBlkDelay time.Duration,
 <<<<<<< HEAD
+<<<<<<< HEAD
 	stakingLeafSigner crypto.Signer,
 	stakingCertLeaf *x509.Certificate,
 =======
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+	stakingLeafSigner crypto.Signer,
+	stakingCertLeaf *x509.Certificate,
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 ) *VM {
 	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)
@@ -138,10 +149,15 @@ func New(
 		minimumPChainHeight: minimumPChainHeight,
 		minBlkDelay:         minBlkDelay,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		stakingLeafSigner:   stakingLeafSigner,
 		stakingCertLeaf:     stakingCertLeaf,
 =======
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+		stakingLeafSigner:   stakingLeafSigner,
+		stakingCertLeaf:     stakingCertLeaf,
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	}
 }
 

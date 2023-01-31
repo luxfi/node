@@ -71,6 +71,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &snow.Context{
 <<<<<<< HEAD
+<<<<<<< HEAD
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
 		},
@@ -85,6 +86,14 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		Windower: windower,
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+			ValidatorState: vdrState,
+			Log:            logging.NoLog{},
+		},
+		Windower:          windower,
+		stakingCertLeaf:   &x509.Certificate{},
+		stakingLeafSigner: pk,
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	}
 
 	blk := &postForkCommonComponents{

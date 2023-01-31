@@ -1274,6 +1274,9 @@ func initTestRemoteProposerVM(
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 	proVM := New(
 		coreVM,
 		proBlkStartTime,
@@ -1282,9 +1285,12 @@ func initTestRemoteProposerVM(
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+<<<<<<< HEAD
 =======
 	proVM := New(coreVM, proBlkStartTime, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
+=======
+>>>>>>> e38a148bb (Remove proposervm signer + cert from `snow.Context` (#2447))
 
 	valState := &validators.TestState{
 		T: t,
