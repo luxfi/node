@@ -83,7 +83,7 @@ var (
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
 	errNotValidator             = errors.New("node is not a validator")
-	errNotWhiteListed           = errors.New("subnet is not whitelisted")
+	errNotTracked               = errors.New("subnet is not tracked")
 	errSubnetNotExist           = errors.New("subnet does not exist")
 )
 
@@ -248,7 +248,7 @@ func NewNetwork(
 		return nil, fmt.Errorf("initializing peer metrics failed with: %w", err)
 	}
 
-	metrics, err := newMetrics(config.Namespace, metricsRegisterer, config.WhitelistedSubnets)
+	metrics, err := newMetrics(config.Namespace, metricsRegisterer, config.TrackedSubnets)
 	if err != nil {
 		return nil, fmt.Errorf("initializing network metrics failed with: %w", err)
 	}
@@ -264,7 +264,7 @@ func NewNetwork(
 		Network:              nil, // This is set below.
 		Router:               router,
 		VersionCompatibility: version.GetCompatibility(config.NetworkID),
-		MySubnets:            config.WhitelistedSubnets,
+		MySubnets:            config.TrackedSubnets,
 		Beacons:              config.Beacons,
 		NetworkID:            config.NetworkID,
 		PingFrequency:        config.PingFrequency,
@@ -1271,8 +1271,8 @@ func (n *network) StartClose() {
 }
 
 func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
-	if subnetID != constants.PrimaryNetworkID && !n.config.WhitelistedSubnets.Contains(subnetID) {
-		return UptimeResult{}, errNotWhiteListed
+	if subnetID != constants.PrimaryNetworkID && !n.config.TrackedSubnets.Contains(subnetID) {
+		return UptimeResult{}, errNotTracked
 	}
 
 	validators, ok := n.config.Validators.Get(subnetID)
@@ -1349,7 +1349,7 @@ func (n *network) runTimers() {
 			n.metrics.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
 			n.metrics.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
 
-			for subnetID := range n.config.WhitelistedSubnets {
+			for subnetID := range n.config.TrackedSubnets {
 				result, err := n.NodeUptime(subnetID)
 				if err != nil {
 					n.peerConfig.Log.Debug("failed to get subnet uptime",

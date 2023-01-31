@@ -45,6 +45,9 @@ type requestEntry struct {
 type peer struct {
 	version *version.Application
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	// The subnets that this peer is currently tracking
 	trackedSubnets set.Set[ids.ID]
 	// The subnets that this peer actually has a connection to.
@@ -117,12 +120,15 @@ func (cr *ChainRouter) Initialize(
 <<<<<<< HEAD
 	stakingEnabled bool,
 	trackedSubnets set.Set[ids.ID],
+<<<<<<< HEAD
 =======
 =======
 	stakingEnabled bool,
 >>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	whitelistedSubnets set.Set[ids.ID],
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
 	metricsNamespace string,
@@ -440,7 +446,7 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	}
 
 	// When we register the P-chain, we mark ourselves as connected on all of
-	// the subnets that we have whitelisted.
+	// the subnets that we have tracked.
 	if chainID != constants.PlatformChainID {
 		return
 	}

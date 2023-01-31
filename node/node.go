@@ -382,7 +382,7 @@ func (n *Node) initNetworking(primaryNetVdrs validators.Set) error {
 	n.Config.NetworkConfig.Beacons = n.beacons
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
-	n.Config.NetworkConfig.WhitelistedSubnets = n.Config.WhitelistedSubnets
+	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
 	n.Config.NetworkConfig.ResourceTracker = n.resourceTracker
@@ -720,7 +720,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		n.Config.ConsensusShutdownTimeout,
 		criticalChains,
 		n.Config.EnableStaking,
-		n.Config.WhitelistedSubnets,
+		n.Config.TrackedSubnets,
 		n.Shutdown,
 		n.Config.RouterHealthConfig,
 		"requests",
@@ -812,7 +812,7 @@ func (n *Node) initVMs() error {
 				Validators:                      vdrs,
 				UptimeLockedCalculator:          n.uptimeCalculator,
 				StakingEnabled:                  n.Config.EnableStaking,
-				WhitelistedSubnets:              n.Config.WhitelistedSubnets,
+				TrackedSubnets:                  n.Config.TrackedSubnets,
 				TxFee:                           n.Config.TxFee,
 				CreateAssetTxFee:                n.Config.CreateAssetTxFee,
 				CreateSubnetTxFee:               n.Config.CreateSubnetTxFee,

@@ -357,8 +357,12 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
+<<<<<<< HEAD
 	for subnetID := range vm.WhitelistedSubnets {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	for subnetID := range vm.TrackedSubnets {
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		vdrIDs, exists := vm.getValidatorIDs(subnetID)
 		if !exists {
 			return errMissingValidatorSet
@@ -433,8 +437,12 @@ func (vm *VM) Shutdown(context.Context) error {
 			return err
 		}
 
+<<<<<<< HEAD
 		for subnetID := range vm.WhitelistedSubnets {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+		for subnetID := range vm.TrackedSubnets {
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			vdrIDs, exists := vm.getValidatorIDs(subnetID)
 			if !exists {
 				return errMissingValidatorSet
@@ -627,12 +635,17 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	if !exists {
 		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
 <<<<<<< HEAD
+<<<<<<< HEAD
 		// Only cache tracked subnets
 		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
 =======
 		// Only cache whitelisted subnets
 		if subnetID == constants.PrimaryNetworkID || vm.WhitelistedSubnets.Contains(subnetID) {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+		// Only cache tracked subnets
+		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 			vm.validatorSetCaches[subnetID] = validatorSetsCache
 		}
 	}

@@ -480,7 +480,7 @@ func shutdownEnvironment(env *environment) error {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		}
 
-		for subnetID := range env.config.WhitelistedSubnets {
+		for subnetID := range env.config.TrackedSubnets {
 			vdrs, exist := env.config.Validators.Get(subnetID)
 			if !exist {
 				return nil
