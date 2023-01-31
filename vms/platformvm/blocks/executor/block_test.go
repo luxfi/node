@@ -1,21 +1,22 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowman"
-	"github.com/luxdefi/luxd/vms/platformvm/blocks"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
 )
 
 func TestStatus(t *testing.T) {
@@ -115,12 +116,11 @@ func TestStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			blk := tt.blockF(ctrl)
-			require.Equal(tt.expectedStatus, blk.Status())
+			require.Equal(t, tt.expectedStatus, blk.Status())
 		})
 	}
 }
@@ -245,7 +245,7 @@ func TestBlockOptions(t *testing.T) {
 			defer ctrl.Finish()
 
 			blk := tt.blkF()
-			options, err := blk.Options()
+			options, err := blk.Options(context.Background())
 			if tt.expectedErr != nil {
 				require.ErrorIs(err, tt.expectedErr)
 				return

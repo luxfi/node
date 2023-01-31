@@ -1,12 +1,12 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
 
 import (
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)

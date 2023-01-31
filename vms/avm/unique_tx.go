@@ -1,20 +1,22 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 var (
@@ -45,8 +47,8 @@ type TxCachedState struct {
 	validity                          error
 
 	inputs     []ids.ID
-	inputUTXOs []*lux.UTXOID
-	utxos      []*lux.UTXO
+	inputUTXOs []*avax.UTXOID
+	utxos      []*avax.UTXO
 	deps       []snowstorm.Tx
 
 	status choices.Status
@@ -112,11 +114,16 @@ func (tx *UniqueTx) setStatus(status choices.Status) error {
 }
 
 // ID returns the wrapped txID
-func (tx *UniqueTx) ID() ids.ID       { return tx.txID }
-func (tx *UniqueTx) Key() interface{} { return tx.txID }
+func (tx *UniqueTx) ID() ids.ID {
+	return tx.txID
+}
+
+func (tx *UniqueTx) Key() interface{} {
+	return tx.txID
+}
 
 // Accept is called when the transaction was finalized as accepted by consensus
-func (tx *UniqueTx) Accept() error {
+func (tx *UniqueTx) Accept(context.Context) error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("transaction has invalid status: %s", s)
 	}
@@ -126,7 +133,7 @@ func (tx *UniqueTx) Accept() error {
 
 	// Fetch the input UTXOs
 	inputUTXOIDs := tx.InputUTXOs()
-	inputUTXOs := make([]*lux.UTXO, 0, len(inputUTXOIDs))
+	inputUTXOs := make([]*avax.UTXO, 0, len(inputUTXOIDs))
 	for _, utxoID := range inputUTXOIDs {
 		// Don't bother fetching the input UTXO if its symbolic
 		if utxoID.Symbolic() {
@@ -193,7 +200,7 @@ func (tx *UniqueTx) Accept() error {
 }
 
 // Reject is called when the transaction was finalized as rejected by consensus
-func (tx *UniqueTx) Reject() error {
+func (tx *UniqueTx) Reject(context.Context) error {
 	defer tx.vm.db.Abort()
 
 	if err := tx.setStatus(choices.Rejected); err != nil {
@@ -237,7 +244,7 @@ func (tx *UniqueTx) Dependencies() ([]snowstorm.Tx, error) {
 		return tx.deps, nil
 	}
 
-	txIDs := ids.Set{}
+	txIDs := set.Set[ids.ID]{}
 	for _, in := range tx.InputUTXOs() {
 		if in.Symbolic() {
 			continue
@@ -282,17 +289,17 @@ func (tx *UniqueTx) InputIDs() []ids.ID {
 }
 
 // Whitelist is not supported by this transaction type, so [false] is returned.
-func (tx *UniqueTx) HasWhitelist() bool {
+func (*UniqueTx) HasWhitelist() bool {
 	return false
 }
 
 // Whitelist is not supported by this transaction type, so [false] is returned.
-func (tx *UniqueTx) Whitelist() (ids.Set, error) {
+func (*UniqueTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
 	return nil, nil
 }
 
 // InputUTXOs returns the utxos that will be consumed on tx acceptance
-func (tx *UniqueTx) InputUTXOs() []*lux.UTXOID {
+func (tx *UniqueTx) InputUTXOs() []*avax.UTXOID {
 	tx.refresh()
 	if tx.Tx == nil || len(tx.inputUTXOs) != 0 {
 		return tx.inputUTXOs
@@ -302,7 +309,7 @@ func (tx *UniqueTx) InputUTXOs() []*lux.UTXOID {
 }
 
 // UTXOs returns the utxos that will be added to the UTXO set on tx acceptance
-func (tx *UniqueTx) UTXOs() []*lux.UTXO {
+func (tx *UniqueTx) UTXOs() []*avax.UTXO {
 	tx.refresh()
 	if tx.Tx == nil || len(tx.utxos) != 0 {
 		return tx.utxos
@@ -331,7 +338,7 @@ func (tx *UniqueTx) verifyWithoutCacheWrites() error {
 }
 
 // Verify the validity of this transaction
-func (tx *UniqueTx) Verify() error {
+func (tx *UniqueTx) Verify(context.Context) error {
 	if err := tx.verifyWithoutCacheWrites(); err != nil {
 		return err
 	}

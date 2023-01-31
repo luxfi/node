@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -6,9 +6,9 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 var _ Block = (*ApricotAtomicBlock)(nil)
@@ -22,7 +22,7 @@ type ApricotAtomicBlock struct {
 
 func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	b.CommonBlock.initialize(bytes)
-	if err := b.Tx.Sign(txs.Codec, nil); err != nil {
+	if err := b.Tx.Initialize(txs.Codec); err != nil {
 		return fmt.Errorf("failed to initialize tx: %w", err)
 	}
 	return nil
@@ -32,8 +32,13 @@ func (b *ApricotAtomicBlock) InitCtx(ctx *snow.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 
-func (b *ApricotAtomicBlock) Txs() []*txs.Tx        { return []*txs.Tx{b.Tx} }
-func (b *ApricotAtomicBlock) Visit(v Visitor) error { return v.ApricotAtomicBlock(b) }
+func (b *ApricotAtomicBlock) Txs() []*txs.Tx {
+	return []*txs.Tx{b.Tx}
+}
+
+func (b *ApricotAtomicBlock) Visit(v Visitor) error {
+	return v.ApricotAtomicBlock(b)
+}
 
 func NewApricotAtomicBlock(
 	parentID ids.ID,

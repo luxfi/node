@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -7,17 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/resource"
-	"github.com/luxdefi/luxd/utils/subprocess"
-	"github.com/luxdefi/luxd/vms"
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/subprocess"
+	"github.com/ava-labs/avalanchego/vms"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 )
 
 var (
@@ -59,15 +58,15 @@ func (f *factory) New(ctx *snow.Context) (interface{}, error) {
 		Managed:         true,
 		GRPCDialOptions: grpcutils.DefaultDialOptions,
 	}
+	// createStaticHandlers will send a nil ctx to disable logs
+	// TODO: create a separate log file and no-op ctx
 	if ctx != nil {
-		log.SetOutput(ctx.Log)
 		config.Stderr = ctx.Log
 		config.Logger = hclog.New(&hclog.LoggerOptions{
 			Output: ctx.Log,
 			Level:  hclog.Info,
 		})
 	} else {
-		log.SetOutput(io.Discard)
 		config.Stderr = io.Discard
 		config.Logger = hclog.New(&hclog.LoggerOptions{
 			Output: io.Discard,

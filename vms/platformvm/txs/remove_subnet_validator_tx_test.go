@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,12 +11,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
+
+var errInvalidSubnetAuth = errors.New("invalid subnet auth")
 
 func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	type test struct {
@@ -29,9 +31,8 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	}
 
 	var (
-		networkID            = uint32(1337)
-		chainID              = ids.GenerateTestID()
-		errInvalidSubnetAuth = errors.New("invalid subnet auth")
+		networkID = uint32(1337)
+		chainID   = ids.GenerateTestID()
 	)
 
 	ctx := &snow.Context{
@@ -48,7 +49,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
-		BaseTx: lux.BaseTx{
+		BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
@@ -65,8 +66,10 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 
 	tests := []test{
 		{
-			name:      "nil tx",
-			txFunc:    func(*gomock.Controller) *RemoveSubnetValidatorTx { return nil },
+			name: "nil tx",
+			txFunc: func(*gomock.Controller) *RemoveSubnetValidatorTx {
+				return nil
+			},
 			shouldErr: true,
 		},
 		{

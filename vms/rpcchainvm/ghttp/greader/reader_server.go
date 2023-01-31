@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package greader
@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	readerpb "github.com/luxdefi/luxd/proto/pb/io/reader"
+	readerpb "github.com/ava-labs/avalanchego/proto/pb/io/reader"
 )
 
 var _ readerpb.ReaderServer = (*Server)(nil)
@@ -23,15 +23,15 @@ func NewServer(reader io.Reader) *Server {
 	return &Server{reader: reader}
 }
 
-func (s *Server) Read(ctx context.Context, req *readerpb.ReadRequest) (*readerpb.ReadResponse, error) {
+func (s *Server) Read(_ context.Context, req *readerpb.ReadRequest) (*readerpb.ReadResponse, error) {
 	buf := make([]byte, int(req.Length))
 	n, err := s.reader.Read(buf)
 	resp := &readerpb.ReadResponse{
 		Read: buf[:n],
 	}
 	if err != nil {
-		resp.Errored = true
-		resp.Error = err.Error()
+		errStr := err.Error()
+		resp.Error = &errStr
 	}
 	return resp, nil
 }

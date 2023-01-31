@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package scheduler
@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 func TestDelayFromNew(t *testing.T) {
@@ -46,7 +46,7 @@ func TestDelayFromSetTime(t *testing.T) {
 	}
 }
 
-func TestReceipt(t *testing.T) {
+func TestReceipt(*testing.T) {
 	toEngine := make(chan common.Message, 10)
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)

@@ -1,14 +1,14 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 var _ txs.Visitor = (*executeTx)(nil)
@@ -20,7 +20,7 @@ type executeTx struct {
 	parser       txs.Parser
 }
 
-func (et *executeTx) BaseTx(t *txs.BaseTx) error {
+func (et *executeTx) BaseTx(*txs.BaseTx) error {
 	return et.batch.Write()
 }
 
@@ -46,12 +46,12 @@ func (et *executeTx) ExportTx(t *txs.ExportTx) error {
 	elems := make([]*atomic.Element, len(t.ExportedOuts))
 	codec := et.parser.Codec()
 	for i, out := range t.ExportedOuts {
-		utxo := &lux.UTXO{
-			UTXOID: lux.UTXOID{
+		utxo := &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(len(t.Outs) + i),
 			},
-			Asset: lux.Asset{ID: out.AssetID()},
+			Asset: avax.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 
@@ -65,7 +65,7 @@ func (et *executeTx) ExportTx(t *txs.ExportTx) error {
 			Key:   inputID[:],
 			Value: utxoBytes,
 		}
-		if out, ok := utxo.Out.(lux.Addressable); ok {
+		if out, ok := utxo.Out.(avax.Addressable); ok {
 			elem.Traits = out.Addresses()
 		}
 

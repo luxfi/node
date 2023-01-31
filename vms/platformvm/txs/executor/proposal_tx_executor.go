@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,16 +8,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/math"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/reward"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/utxo"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
 )
 
 const (
@@ -63,14 +63,29 @@ type ProposalTxExecutor struct {
 	PrefersCommit bool
 }
 
-func (*ProposalTxExecutor) CreateChainTx(*txs.CreateChainTx) error   { return errWrongTxType }
-func (*ProposalTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error { return errWrongTxType }
-func (*ProposalTxExecutor) ImportTx(*txs.ImportTx) error             { return errWrongTxType }
-func (*ProposalTxExecutor) ExportTx(*txs.ExportTx) error             { return errWrongTxType }
+func (*ProposalTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
+	return errWrongTxType
+}
+
+func (*ProposalTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+	return errWrongTxType
+}
+
+func (*ProposalTxExecutor) ImportTx(*txs.ImportTx) error {
+	return errWrongTxType
+}
+
+func (*ProposalTxExecutor) ExportTx(*txs.ExportTx) error {
+	return errWrongTxType
+}
+
 func (*ProposalTxExecutor) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
 	return errWrongTxType
 }
-func (*ProposalTxExecutor) TransformSubnetTx(*txs.TransformSubnetTx) error { return errWrongTxType }
+
+func (*ProposalTxExecutor) TransformSubnetTx(*txs.TransformSubnetTx) error {
+	return errWrongTxType
+}
 
 func (*ProposalTxExecutor) AddPermissionlessValidatorTx(*txs.AddPermissionlessValidatorTx) error {
 	return errWrongTxType
@@ -112,7 +127,11 @@ func (e *ProposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	// Produce the UTXOs
 	utxo.Produce(e.OnCommitState, txID, tx.Outs)
 
-	newStaker := state.NewPendingStaker(txID, tx)
+	newStaker, err := state.NewPendingStaker(txID, tx)
+	if err != nil {
+		return err
+	}
+
 	e.OnCommitState.PutPendingValidator(newStaker)
 
 	// Set up the state if this tx is aborted
@@ -156,7 +175,11 @@ func (e *ProposalTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 	// Produce the UTXOs
 	utxo.Produce(e.OnCommitState, txID, tx.Outs)
 
-	newStaker := state.NewPendingStaker(txID, tx)
+	newStaker, err := state.NewPendingStaker(txID, tx)
+	if err != nil {
+		return err
+	}
+
 	e.OnCommitState.PutPendingValidator(newStaker)
 
 	// Set up the state if this tx is aborted
@@ -201,7 +224,11 @@ func (e *ProposalTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	// Produce the UTXOs
 	utxo.Produce(e.OnCommitState, txID, tx.Outs)
 
-	newStaker := state.NewPendingStaker(txID, tx)
+	newStaker, err := state.NewPendingStaker(txID, tx)
+	if err != nil {
+		return err
+	}
+
 	e.OnCommitState.PutPendingDelegator(newStaker)
 
 	// Set up the state if this tx is aborted
@@ -339,8 +366,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 
 		// Refund the stake here
 		for i, out := range stake {
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + i),
 				},
@@ -363,8 +390,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 				return errInvalidState
 			}
 
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake)),
 				},
@@ -388,8 +415,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 
 		// Refund the stake here
 		for i, out := range stake {
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + i),
 				},
@@ -456,8 +483,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 			if !ok {
 				return errInvalidState
 			}
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake)),
 				},
@@ -482,8 +509,8 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 			if !ok {
 				return errInvalidState
 			}
-			utxo := &lux.UTXO{
-				UTXOID: lux.UTXOID{
+			utxo := &avax.UTXO{
+				UTXOID: avax.UTXOID{
 					TxID:        tx.TxID,
 					OutputIndex: uint32(len(outputs) + len(stake) + offset),
 				},
@@ -532,6 +559,7 @@ func (e *ProposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 	// TODO: calculate subnet uptimes
 	uptime, err := e.Uptimes.CalculateUptimePercentFrom(
 		primaryNetworkValidator.NodeID,
+		constants.PrimaryNetworkID,
 		primaryNetworkValidator.StartTime,
 	)
 	if err != nil {

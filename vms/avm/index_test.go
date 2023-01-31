@@ -1,9 +1,10 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -13,22 +14,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/manager"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/index"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/index"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var indexEnabledAvmConfig = Config{
@@ -40,11 +41,11 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
-	luxID := genesisTx.ID()
+	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	avaxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
@@ -54,12 +55,12 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	addr := key.PublicKey().Address()
 
 	var uniqueTxs []*UniqueTx
-	txAssetID := lux.Asset{ID: luxID}
+	txAssetID := avax.Asset{ID: avaxID}
 
 	ctx.Lock.Lock()
 	for i := 0; i < 5; i++ {
 		// create utxoID and assetIDs
-		utxoID := lux.UTXOID{
+		utxoID := avax.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -94,7 +95,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		ctx.Lock.Lock()
 
 		// get pending transactions
-		txs := vm.PendingTxs()
+		txs := vm.PendingTxs(context.Background())
 		if len(txs) != 1 {
 			t.Fatalf("Should have returned %d tx(s)", 1)
 		}
@@ -103,7 +104,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		uniqueTxs = append(uniqueTxs, uniqueParsedTX)
 
-		var inputUTXOs []*lux.UTXO
+		var inputUTXOs []*avax.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -133,25 +134,25 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
 
-	luxID := genesisTx.ID()
+	avaxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
 	}()
 
 	addressTxMap := map[ids.ShortID]*UniqueTx{}
-	txAssetID := lux.Asset{ID: luxID}
+	txAssetID := avax.Asset{ID: avaxID}
 
 	ctx.Lock.Lock()
 	for _, key := range keys {
 		addr := key.PublicKey().Address()
 		// create utxoID and assetIDs
-		utxoID := lux.UTXOID{
+		utxoID := avax.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -186,7 +187,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		ctx.Lock.Lock()
 
 		// get pending transactions
-		txs := vm.PendingTxs()
+		txs := vm.PendingTxs(context.Background())
 		if len(txs) != 1 {
 			t.Fatalf("Should have returned %d tx(s)", 1)
 		}
@@ -195,7 +196,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		addressTxMap[addr] = uniqueParsedTX
 
-		var inputUTXOs []*lux.UTXO
+		var inputUTXOs []*avax.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -225,18 +226,18 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
 
-	luxID := genesisTx.ID()
+	avaxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
 	}()
 
-	txAssetID := lux.Asset{ID: luxID}
+	txAssetID := avax.Asset{ID: avaxID}
 	addrs := make([]ids.ShortID, len(keys))
 	for _, key := range keys {
 		addrs = append(addrs, key.PublicKey().Address())
@@ -247,7 +248,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	key := keys[0]
 	addr := key.PublicKey().Address()
 	// create utxoID and assetIDs
-	utxoID := lux.UTXOID{
+	utxoID := avax.UTXOID{
 		TxID: ids.GenerateTestID(),
 	}
 
@@ -267,7 +268,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 		t.Fatal("Error saving utxo", err)
 	}
 
-	var inputUTXOs []*lux.UTXO //nolint:prealloc
+	var inputUTXOs []*avax.UTXO //nolint:prealloc
 	for _, utxoID := range tx.Unsigned.InputUTXOs() {
 		utxo, err := vm.getUTXO(utxoID)
 		if err != nil {
@@ -291,24 +292,24 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 	issuer := make(chan common.Message, 1)
 	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
 	ctx := NewContext(t)
-	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
-	luxID := genesisTx.ID()
+	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	avaxID := genesisTx.ID()
 	vm := setupTestVM(t, ctx, baseDBManager, genesisBytes, issuer, indexEnabledAvmConfig)
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		ctx.Lock.Unlock()
 	}()
 
 	addressTxMap := map[ids.ShortID]*UniqueTx{}
-	txAssetID := lux.Asset{ID: luxID}
+	txAssetID := avax.Asset{ID: avaxID}
 
 	ctx.Lock.Lock()
 	for _, key := range keys {
 		addr := key.PublicKey().Address()
 		// create utxoID and assetIDs
-		utxoID := lux.UTXOID{
+		utxoID := avax.UTXOID{
 			TxID: ids.GenerateTestID(),
 		}
 
@@ -343,7 +344,7 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 		ctx.Lock.Lock()
 
 		// get pending transactions
-		txs := vm.PendingTxs()
+		txs := vm.PendingTxs(context.Background())
 		if len(txs) != 1 {
 			t.Fatalf("Should have returned %d tx(s)", 1)
 		}
@@ -352,7 +353,7 @@ func TestIndexTransaction_UnorderedWrites(t *testing.T) {
 		uniqueParsedTX := parsedTx.(*UniqueTx)
 		addressTxMap[addr] = uniqueParsedTX
 
-		var inputUTXOs []*lux.UTXO
+		var inputUTXOs []*avax.UTXO
 		for _, utxoID := range uniqueParsedTX.InputUTXOs() {
 			utxo, err := vm.getUTXO(utxoID)
 			if err != nil {
@@ -382,7 +383,7 @@ func TestIndexer_Read(t *testing.T) {
 	_, vm, _, _, _ := setup(t, true)
 
 	defer func() {
-		if err := vm.Shutdown(); err != nil {
+		if err := vm.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		vm.ctx.Lock.Unlock()
@@ -471,8 +472,8 @@ func TestIndexingAllowIncomplete(t *testing.T) {
 	require.Error(t, err)
 }
 
-func buildPlatformUTXO(utxoID lux.UTXOID, txAssetID lux.Asset, addr ids.ShortID) *lux.UTXO {
-	return &lux.UTXO{
+func buildPlatformUTXO(utxoID avax.UTXOID, txAssetID avax.Asset, addr ids.ShortID) *avax.UTXO {
+	return &avax.UTXO{
 		UTXOID: utxoID,
 		Asset:  txAssetID,
 		Out: &secp256k1fx.TransferOutput{
@@ -489,12 +490,12 @@ func signTX(codec codec.Manager, tx *txs.Tx, key *crypto.PrivateKeySECP256K1R) e
 	return tx.SignSECP256K1Fx(codec, [][]*crypto.PrivateKeySECP256K1R{{key}})
 }
 
-func buildTX(utxoID lux.UTXOID, txAssetID lux.Asset, address ...ids.ShortID) *txs.Tx {
+func buildTX(utxoID avax.UTXOID, txAssetID avax.Asset, address ...ids.ShortID) *txs.Tx {
 	return &txs.Tx{Unsigned: &txs.BaseTx{
-		BaseTx: lux.BaseTx{
+		BaseTx: avax.BaseTx{
 			NetworkID:    networkID,
 			BlockchainID: chainID,
-			Ins: []*lux.TransferableInput{{
+			Ins: []*avax.TransferableInput{{
 				UTXOID: utxoID,
 				Asset:  txAssetID,
 				In: &secp256k1fx.TransferInput{
@@ -502,7 +503,7 @@ func buildTX(utxoID lux.UTXOID, txAssetID lux.Asset, address ...ids.ShortID) *tx
 					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 				},
 			}},
-			Outs: []*lux.TransferableOutput{{
+			Outs: []*avax.TransferableOutput{{
 				Asset: txAssetID,
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1000,
@@ -521,7 +522,9 @@ func setupTestVM(t *testing.T, ctx *snow.Context, baseDBManager manager.Manager,
 	avmConfigBytes, err := json.Marshal(config)
 	require.NoError(t, err)
 	appSender := &common.SenderTest{T: t}
-	if err := vm.Initialize(
+
+	err = vm.Initialize(
+		context.Background(),
 		ctx,
 		baseDBManager.NewPrefixDBManager([]byte{1}),
 		genesisBytes,
@@ -533,16 +536,18 @@ func setupTestVM(t *testing.T, ctx *snow.Context, baseDBManager manager.Manager,
 			Fx: &secp256k1fx.Fx{},
 		}},
 		appSender,
-	); err != nil {
+	)
+	if err != nil {
 		t.Fatal(err)
 	}
+
 	vm.batchTimeout = 0
 
-	if err := vm.SetState(snow.Bootstrapping); err != nil {
+	if err := vm.SetState(context.Background(), snow.Bootstrapping); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := vm.SetState(snow.NormalOp); err != nil {
+	if err := vm.SetState(context.Background(), snow.NormalOp); err != nil {
 		t.Fatal(err)
 	}
 	return vm

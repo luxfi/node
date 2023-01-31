@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,11 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/vms/platformvm/blocks"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
 )
 
 func TestGetState(t *testing.T) {
@@ -91,7 +91,7 @@ func TestBackendGetBlock(t *testing.T) {
 	{
 		// Case: block is in the map.
 		gotBlk, err := b.GetBlock(blkID1)
-		require.Nil(err)
+		require.NoError(err)
 		require.Equal(statelessBlk, gotBlk)
 	}
 
@@ -150,13 +150,12 @@ func TestGetTimestamp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			backend := tt.backendF(ctrl)
 			gotTimestamp := backend.getTimestamp(blkID)
-			require.Equal(tt.expectedTimestamp, gotTimestamp)
+			require.Equal(t, tt.expectedTimestamp, gotTimestamp)
 		})
 	}
 }

@@ -1,10 +1,10 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
 )
 
 var _ verify.State = (*MintOutput)(nil)
@@ -22,4 +22,6 @@ func (out *MintOutput) Verify() error {
 	}
 }
 
-func (out *MintOutput) VerifyState() error { return out.Verify() }
+func (out *MintOutput) VerifyState() error {
+	return out.Verify()
+}

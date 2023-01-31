@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -11,17 +11,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/status"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 func TestDiffMissingState(t *testing.T) {
-	require := require.New(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -31,7 +30,7 @@ func TestDiffMissingState(t *testing.T) {
 	versions.EXPECT().GetState(parentID).Times(1).Return(nil, false)
 
 	_, err := NewDiff(parentID, versions)
-	require.ErrorIs(err, ErrMissingParentState)
+	require.ErrorIs(t, err, ErrMissingParentState)
 }
 
 func TestDiffCreation(t *testing.T) {
@@ -318,8 +317,8 @@ func TestDiffChain(t *testing.T) {
 	gotChains, err := d.GetChains(subnetID)
 	require.NoError(err)
 	require.Len(gotChains, 2)
-	require.Equal(gotChains[0], parentStateCreateChainTx)
-	require.Equal(gotChains[1], createChainTx)
+	require.Equal(parentStateCreateChainTx, gotChains[0])
+	require.Equal(createChainTx, gotChains[1])
 }
 
 func TestDiffTx(t *testing.T) {
@@ -345,7 +344,7 @@ func TestDiffTx(t *testing.T) {
 			SubnetID: subnetID,
 		},
 	}
-	tx.Initialize(utils.RandomBytes(16), utils.RandomBytes(16))
+	tx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))
 	d.AddTx(tx, status.Committed)
 
 	{
@@ -364,7 +363,7 @@ func TestDiffTx(t *testing.T) {
 				SubnetID: subnetID,
 			},
 		}
-		parentTx.Initialize(utils.RandomBytes(16), utils.RandomBytes(16))
+		parentTx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))
 		state.EXPECT().GetTx(parentTx.ID()).Return(parentTx, status.Committed, nil).Times(1)
 		gotParentTx, gotStatus, err := d.GetTx(parentTx.ID())
 		require.NoError(err)
@@ -391,8 +390,8 @@ func TestDiffRewardUTXO(t *testing.T) {
 
 	// Put a reward UTXO
 	txID := ids.GenerateTestID()
-	rewardUTXO := &lux.UTXO{
-		UTXOID: lux.UTXOID{TxID: txID},
+	rewardUTXO := &avax.UTXO{
+		UTXOID: avax.UTXOID{TxID: txID},
 	}
 	d.AddRewardUTXO(txID, rewardUTXO)
 
@@ -408,10 +407,10 @@ func TestDiffRewardUTXO(t *testing.T) {
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
 		txID2 := ids.GenerateTestID()
-		parentRewardUTXO := &lux.UTXO{
-			UTXOID: lux.UTXOID{TxID: txID2},
+		parentRewardUTXO := &avax.UTXO{
+			UTXOID: avax.UTXOID{TxID: txID2},
 		}
-		state.EXPECT().GetRewardUTXOs(txID2).Return([]*lux.UTXO{parentRewardUTXO}, nil).Times(1)
+		state.EXPECT().GetRewardUTXOs(txID2).Return([]*avax.UTXO{parentRewardUTXO}, nil).Times(1)
 		gotParentRewardUTXOs, err := d.GetRewardUTXOs(txID2)
 		require.NoError(err)
 		require.Len(gotParentRewardUTXOs, 1)
@@ -436,8 +435,8 @@ func TestDiffUTXO(t *testing.T) {
 	require.NoError(err)
 
 	// Put a UTXO
-	utxo := &lux.UTXO{
-		UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
+	utxo := &avax.UTXO{
+		UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
 	}
 	d.AddUTXO(utxo)
 
@@ -451,8 +450,8 @@ func TestDiffUTXO(t *testing.T) {
 	{
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
-		parentUTXO := &lux.UTXO{
-			UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
+		parentUTXO := &avax.UTXO{
+			UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
 		}
 		state.EXPECT().GetUTXO(parentUTXO.InputID()).Return(parentUTXO, nil).Times(1)
 		gotParentUTXO, err := d.GetUTXO(parentUTXO.InputID())

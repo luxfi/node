@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
@@ -27,7 +29,7 @@ type ImportTx struct {
 	SourceChain ids.ID `serialize:"true" json:"sourceChain"`
 
 	// Inputs that consume UTXOs produced on the chain
-	ImportedInputs []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
+	ImportedInputs []*avax.TransferableInput `serialize:"true" json:"importedInputs"`
 }
 
 // InitCtx sets the FxID fields in the inputs and outputs of this
@@ -41,15 +43,15 @@ func (tx *ImportTx) InitCtx(ctx *snow.Context) {
 }
 
 // InputUTXOs returns the UTXOIDs of the imported funds
-func (tx *ImportTx) InputUTXOs() ids.Set {
-	set := ids.NewSet(len(tx.ImportedInputs))
+func (tx *ImportTx) InputUTXOs() set.Set[ids.ID] {
+	set := set.NewSet[ids.ID](len(tx.ImportedInputs))
 	for _, in := range tx.ImportedInputs {
 		set.Add(in.InputID())
 	}
 	return set
 }
 
-func (tx *ImportTx) InputIDs() ids.Set {
+func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 	inputs := tx.BaseTx.InputIDs()
 	atomicInputs := tx.InputUTXOs()
 	inputs.Union(atomicInputs)
@@ -76,7 +78,7 @@ func (tx *ImportTx) SyntacticVerify(ctx *snow.Context) error {
 			return fmt.Errorf("input failed verification: %w", err)
 		}
 	}
-	if !lux.IsSortedAndUniqueTransferableInputs(tx.ImportedInputs) {
+	if !utils.IsSortedAndUniqueSortable(tx.ImportedInputs) {
 		return errInputsNotSortedUnique
 	}
 

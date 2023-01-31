@@ -1,10 +1,9 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -12,20 +11,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/config"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/utxo"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
@@ -57,11 +56,11 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 		verifiedTx = txs.AddPermissionlessValidatorTx{
 			BaseTx: txs.BaseTx{
 				SyntacticallyVerified: true,
-				BaseTx: lux.BaseTx{
+				BaseTx: avax.BaseTx{
 					NetworkID:    1,
 					BlockchainID: ids.GenerateTestID(),
-					Outs:         []*lux.TransferableOutput{},
-					Ins:          []*lux.TransferableInput{},
+					Outs:         []*avax.TransferableOutput{},
+					Ins:          []*avax.TransferableInput{},
 				},
 			},
 			Validator: validator.Validator{
@@ -71,9 +70,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				Wght:   unsignedTransformTx.MinValidatorStake,
 			},
 			Subnet: subnetID,
-			StakeOuts: []*lux.TransferableOutput{
+			StakeOuts: []*avax.TransferableOutput{
 				{
-					Asset: lux.Asset{
+					Asset: avax.Asset{
 						ID: customAssetID,
 					},
 				},
@@ -93,7 +92,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			Creds:    []verify.Verifiable{},
 		}
 	)
-	verifiedSignedTx.Initialize([]byte{1}, []byte{2})
+	verifiedSignedTx.SetBytes([]byte{1}, []byte{2})
 
 	tests := []test{
 		{
@@ -106,8 +105,12 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
-			sTxF:        func() *txs.Tx { return nil },
-			txF:         func() *txs.AddPermissionlessValidatorTx { return nil },
+			sTxF: func() *txs.Tx {
+				return nil
+			},
+			txF: func() *txs.AddPermissionlessValidatorTx {
+				return nil
+			},
 			expectedErr: txs.ErrNilSignedTx,
 		},
 		{
@@ -121,8 +124,12 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				return nil
 			},
-			sTxF:        func() *txs.Tx { return &verifiedSignedTx },
-			txF:         func() *txs.AddPermissionlessValidatorTx { return nil },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
+			txF: func() *txs.AddPermissionlessValidatorTx {
+				return nil
+			},
 			expectedErr: nil,
 		},
 		{
@@ -140,8 +147,12 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetTimestamp().Return(verifiedTx.StartTime())
 				return state
 			},
-			sTxF:        func() *txs.Tx { return &verifiedSignedTx },
-			txF:         func() *txs.AddPermissionlessValidatorTx { return &verifiedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
+			txF: func() *txs.AddPermissionlessValidatorTx {
+				return &verifiedTx
+			},
 			expectedErr: errTimestampNotBeforeStartTime,
 		},
 		{
@@ -160,7 +171,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
 				tx.Validator.Wght = unsignedTransformTx.MinValidatorStake - 1
@@ -184,7 +197,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
 				tx.Validator.Wght = unsignedTransformTx.MaxValidatorStake + 1
@@ -208,7 +223,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
 				tx.Validator.Wght = unsignedTransformTx.MaxValidatorStake
@@ -233,7 +250,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
 				tx.Validator.Wght = unsignedTransformTx.MaxValidatorStake
@@ -261,7 +280,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
 				tx.Validator.Wght = unsignedTransformTx.MaxValidatorStake
@@ -289,12 +310,14 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
-				tx.StakeOuts = []*lux.TransferableOutput{
+				tx.StakeOuts = []*avax.TransferableOutput{
 					{
-						Asset: lux.Asset{
+						Asset: avax.Asset{
 							ID: ids.GenerateTestID(),
 						},
 					},
@@ -321,7 +344,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, nil)
 				return state
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
@@ -351,7 +376,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				mockState.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, verifiedTx.NodeID()).Return(primaryNetworkVdr, nil)
 				return mockState
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
@@ -371,7 +398,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 					gomock.Any(),
 					gomock.Any(),
 					gomock.Any(),
-				).Return(errors.New("flow check failed"))
+				).Return(errFlowCheckFailed)
 
 				return &Backend{
 					FlowChecker: flowChecker,
@@ -395,7 +422,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				mockState.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, verifiedTx.NodeID()).Return(primaryNetworkVdr, nil)
 				return mockState
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
@@ -439,7 +468,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				mockState.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, verifiedTx.NodeID()).Return(primaryNetworkVdr, nil)
 				return mockState
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				// Note this copies [verifiedTx]
 				tx := verifiedTx
@@ -487,7 +518,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				mockState.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, verifiedTx.NodeID()).Return(primaryNetworkVdr, nil)
 				return mockState
 			},
-			sTxF: func() *txs.Tx { return &verifiedSignedTx },
+			sTxF: func() *txs.Tx {
+				return &verifiedSignedTx
+			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
@@ -497,7 +530,6 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -509,7 +541,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			)
 
 			err := verifyAddPermissionlessValidatorTx(backend, state, sTx, tx)
-			require.ErrorIs(err, tt.expectedErr)
+			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
 }
@@ -532,10 +564,9 @@ func TestGetValidatorRules(t *testing.T) {
 			MaxStakeDuration:  2 * time.Second,
 			MinDelegationFee:  1337,
 		}
-		luxAssetID   = ids.GenerateTestID()
+		avaxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
-		testErr       = errors.New("an error")
 	)
 
 	tests := []test{
@@ -545,14 +576,14 @@ func TestGetValidatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					LUXAssetID: luxAssetID,
+					AVAXAssetID: avaxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addValidatorRules{
-				assetID:           luxAssetID,
+				assetID:           avaxAssetID,
 				minValidatorStake: config.MinValidatorStake,
 				maxValidatorStake: config.MaxValidatorStake,
 				minStakeDuration:  config.MinStakeDuration,
@@ -566,11 +597,11 @@ func TestGetValidatorRules(t *testing.T) {
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, testErr)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, errTest)
 				return state
 			},
 			expectedRules: &addValidatorRules{},
-			expectedErr:   testErr,
+			expectedErr:   errTest,
 		},
 		{
 			name:     "invalid transformation tx",
@@ -652,10 +683,9 @@ func TestGetDelegatorRules(t *testing.T) {
 			MinStakeDuration:  time.Second,
 			MaxStakeDuration:  2 * time.Second,
 		}
-		luxAssetID   = ids.GenerateTestID()
+		avaxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
-		testErr       = errors.New("an error")
 	)
 	tests := []test{
 		{
@@ -664,14 +694,14 @@ func TestGetDelegatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					LUXAssetID: luxAssetID,
+					AVAXAssetID: avaxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addDelegatorRules{
-				assetID:                  luxAssetID,
+				assetID:                  avaxAssetID,
 				minDelegatorStake:        config.MinDelegatorStake,
 				maxValidatorStake:        config.MaxValidatorStake,
 				minStakeDuration:         config.MinStakeDuration,
@@ -685,11 +715,11 @@ func TestGetDelegatorRules(t *testing.T) {
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, testErr)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, errTest)
 				return state
 			},
 			expectedRules: &addDelegatorRules{},
-			expectedErr:   testErr,
+			expectedErr:   errTest,
 		},
 		{
 			name:     "invalid transformation tx",

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,13 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/luxd/chains/atomic"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/platformvm/blocks"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
-	"github.com/luxdefi/luxd/vms/platformvm/status"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/txs/executor"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
 )
 
 var (
@@ -461,7 +462,7 @@ func (v *verifier) standardBlock(
 
 // verifyUniqueInputs verifies that the inputs of the given block are not
 // duplicated in any of the parent blocks pinned in memory.
-func (v *verifier) verifyUniqueInputs(block blocks.Block, inputs ids.Set) error {
+func (v *verifier) verifyUniqueInputs(block blocks.Block, inputs set.Set[ids.ID]) error {
 	if inputs.Len() == 0 {
 		return nil
 	}

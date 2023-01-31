@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var preFundedKeys = crypto.BuildTestKeys()
@@ -255,11 +255,11 @@ func TestAtomicBlock(t *testing.T) {
 
 func testAtomicTx() (*txs.Tx, error) {
 	utx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 			NetworkID:    10,
 			BlockchainID: ids.ID{'c', 'h', 'a', 'i', 'n', 'I', 'D'},
-			Outs: []*lux.TransferableOutput{{
-				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+			Outs: []*avax.TransferableOutput{{
+				Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(1234),
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -268,12 +268,12 @@ func testAtomicTx() (*txs.Tx, error) {
 					},
 				},
 			}},
-			Ins: []*lux.TransferableInput{{
-				UTXOID: lux.UTXOID{
+			Ins: []*avax.TransferableInput{{
+				UTXOID: avax.UTXOID{
 					TxID:        ids.ID{'t', 'x', 'I', 'D'},
 					OutputIndex: 2,
 				},
-				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 				In: &secp256k1fx.TransferInput{
 					Amt:   uint64(5678),
 					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -282,12 +282,12 @@ func testAtomicTx() (*txs.Tx, error) {
 			Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SourceChain: ids.ID{'c', 'h', 'a', 'i', 'n'},
-		ImportedInputs: []*lux.TransferableInput{{
-			UTXOID: lux.UTXOID{
+		ImportedInputs: []*avax.TransferableInput{{
+			UTXOID: avax.UTXOID{
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+			Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 			In: &secp256k1fx.TransferInput{
 				Amt:   50000,
 				Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -304,11 +304,11 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 	for i := 0; i < countTxs; i++ {
 		// Create the tx
 		utx := &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
 				NetworkID:    10,
 				BlockchainID: ids.ID{'c', 'h', 'a', 'i', 'n', 'I', 'D'},
-				Outs: []*lux.TransferableOutput{{
-					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Outs: []*avax.TransferableOutput{{
+					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: uint64(1234),
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -317,12 +317,12 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 						},
 					},
 				}},
-				Ins: []*lux.TransferableInput{{
-					UTXOID: lux.UTXOID{
+				Ins: []*avax.TransferableInput{{
+					UTXOID: avax.UTXOID{
 						TxID:        ids.ID{'t', 'x', 'I', 'D'},
 						OutputIndex: 2,
 					},
-					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					In: &secp256k1fx.TransferInput{
 						Amt:   uint64(5678),
 						Input: secp256k1fx.Input{SigIndices: []uint32{0}},

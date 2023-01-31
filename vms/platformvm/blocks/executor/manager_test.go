@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/vms/platformvm/blocks"
-	"github.com/luxdefi/luxd/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
 )
 
 func TestGetBlock(t *testing.T) {
@@ -65,8 +65,6 @@ func TestGetBlock(t *testing.T) {
 }
 
 func TestManagerLastAccepted(t *testing.T) {
-	require := require.New(t)
-
 	lastAcceptedID := ids.GenerateTestID()
 	manager := &manager{
 		backend: &backend{
@@ -74,5 +72,5 @@ func TestManagerLastAccepted(t *testing.T) {
 		},
 	}
 
-	require.Equal(lastAcceptedID, manager.LastAccepted())
+	require.Equal(t, lastAcceptedID, manager.LastAccepted())
 }

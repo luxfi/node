@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxdefi/luxd/vms/types"
+	"github.com/ava-labs/avalanchego/vms/types"
 
-	"github.com/luxdefi/luxd/utils/units"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 const (
@@ -56,4 +56,6 @@ func (out *TransferOutput) Verify() error {
 	}
 }
 
-func (out *TransferOutput) VerifyState() error { return out.Verify() }
+func (out *TransferOutput) VerifyState() error {
+	return out.Verify()
+}

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -19,33 +19,35 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/manager"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/pubsub"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/utils/json"
-	"github.com/luxdefi/luxd/utils/timer"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
-	"github.com/luxdefi/luxd/version"
-	"github.com/luxdefi/luxd/vms/avm/states"
-	"github.com/luxdefi/luxd/vms/avm/txs"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/index"
-	"github.com/luxdefi/luxd/vms/components/keystore"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/nftfx"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/pubsub"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm/states"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/index"
+	"github.com/ava-labs/avalanchego/vms/components/keystore"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
-	safemath "github.com/luxdefi/luxd/utils/math"
-	extensions "github.com/luxdefi/luxd/vms/avm/fxs"
+	safemath "github.com/ava-labs/avalanchego/utils/math"
+	extensions "github.com/ava-labs/avalanchego/vms/avm/fxs"
 )
 
 const (
@@ -61,6 +63,7 @@ var (
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
 	errBootstrapping             = errors.New("chain is currently bootstrapping")
 	errInsufficientFunds         = errors.New("insufficient funds")
+	errUnimplemented             = errors.New("unimplemented")
 
 	_ vertex.DAGVM = (*VM)(nil)
 )
@@ -68,8 +71,8 @@ var (
 type VM struct {
 	Factory
 	metrics
-	lux.AddressManager
-	lux.AtomicUTXOManager
+	avax.AddressManager
+	avax.AtomicUTXOManager
 	ids.Aliaser
 
 	// Contains information of where this VM is executing
@@ -113,17 +116,17 @@ type VM struct {
 	uniqueTxs cache.Deduplicator
 }
 
-func (vm *VM) Connected(nodeID ids.NodeID, nodeVersion *version.Application) error {
+func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
 	return nil
 }
 
-func (vm *VM) Disconnected(nodeID ids.NodeID) error {
+func (*VM) Disconnected(context.Context, ids.NodeID) error {
 	return nil
 }
 
 /*
  ******************************************************************************
- ******************************** LUX API *******************************
+ ********************************* Common VM **********************************
  ******************************************************************************
  */
 
@@ -133,10 +136,11 @@ type Config struct {
 }
 
 func (vm *VM) Initialize(
+	_ context.Context,
 	ctx *snow.Context,
 	dbManager manager.Manager,
 	genesisBytes []byte,
-	upgradeBytes []byte,
+	_ []byte,
 	configBytes []byte,
 	toEngine chan<- common.Message,
 	fxs []*common.Fx,
@@ -161,7 +165,7 @@ func (vm *VM) Initialize(
 	if err != nil {
 		return err
 	}
-	vm.AddressManager = lux.NewAddressManager(ctx)
+	vm.AddressManager = avax.NewAddressManager(ctx)
 	vm.Aliaser = ids.NewAliaser()
 
 	db := dbManager.Current().Database
@@ -171,7 +175,7 @@ func (vm *VM) Initialize(
 	vm.db = versiondb.New(db)
 	vm.assetToFxCache = &cache.LRU{Size: assetToFxCacheSize}
 
-	vm.pubsub = pubsub.New(ctx.NetworkID, ctx.Log)
+	vm.pubsub = pubsub.New(ctx.Log)
 
 	typedFxs := make([]extensions.Fx, len(fxs))
 	vm.fxs = make([]*extensions.ParsedFx, len(fxs))
@@ -201,7 +205,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.AtomicUTXOManager = lux.NewAtomicUTXOManager(ctx.SharedMemory, vm.parser.Codec())
+	vm.AtomicUTXOManager = avax.NewAtomicUTXOManager(ctx.SharedMemory, vm.parser.Codec())
 
 	state, err := states.New(vm.db, vm.parser, registerer)
 	if err != nil {
@@ -267,7 +271,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state snow.State) error {
 	switch state {
 	case snow.Bootstrapping:
 		return vm.onBootstrapStarted()
@@ -278,7 +282,7 @@ func (vm *VM) SetState(state snow.State) error {
 	}
 }
 
-func (vm *VM) Shutdown() error {
+func (vm *VM) Shutdown(context.Context) error {
 	if vm.timer == nil {
 		return nil
 	}
@@ -292,11 +296,11 @@ func (vm *VM) Shutdown() error {
 	return vm.baseDB.Close()
 }
 
-func (vm *VM) Version() (string, error) {
+func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
 }
 
-func (vm *VM) CreateHandlers() (map[string]*common.HTTPHandler, error) {
+func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
 	codec := json.NewCodec()
 
 	rpcServer := rpc.NewServer()
@@ -324,7 +328,7 @@ func (vm *VM) CreateHandlers() (map[string]*common.HTTPHandler, error) {
 	}, err
 }
 
-func (vm *VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
+func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
 	newServer := rpc.NewServer()
 	codec := json.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
@@ -337,7 +341,43 @@ func (vm *VM) CreateStaticHandlers() (map[string]*common.HTTPHandler, error) {
 	}, newServer.RegisterService(staticService, "avm")
 }
 
-func (vm *VM) PendingTxs() []snowstorm.Tx {
+/*
+ ******************************************************************************
+ ********************************** Chain VM **********************************
+ ******************************************************************************
+ */
+
+func (*VM) GetBlock(context.Context, ids.ID) (snowman.Block, error) {
+	return nil, errUnimplemented
+}
+
+func (*VM) ParseBlock(context.Context, []byte) (snowman.Block, error) {
+	return nil, errUnimplemented
+}
+
+func (*VM) BuildBlock(context.Context) (snowman.Block, error) {
+	return nil, errUnimplemented
+}
+
+func (*VM) SetPreference(context.Context, ids.ID) error {
+	return errUnimplemented
+}
+
+func (*VM) LastAccepted(context.Context) (ids.ID, error) {
+	return ids.Empty, errUnimplemented
+}
+
+/*
+ ******************************************************************************
+ *********************************** DAG VM ***********************************
+ ******************************************************************************
+ */
+
+func (*VM) Linearize(context.Context, ids.ID) error {
+	return errUnimplemented
+}
+
+func (vm *VM) PendingTxs(context.Context) []snowstorm.Tx {
 	vm.timer.Cancel()
 
 	txs := vm.txs
@@ -345,11 +385,11 @@ func (vm *VM) PendingTxs() []snowstorm.Tx {
 	return txs
 }
 
-func (vm *VM) ParseTx(b []byte) (snowstorm.Tx, error) {
+func (vm *VM) ParseTx(_ context.Context, b []byte) (snowstorm.Tx, error) {
 	return vm.parseTx(b)
 }
 
-func (vm *VM) GetTx(txID ids.ID) (snowstorm.Tx, error) {
+func (vm *VM) GetTx(_ context.Context, txID ids.ID) (snowstorm.Tx, error) {
 	tx := &UniqueTx{
 		vm:   vm,
 		txID: txID,
@@ -430,8 +470,8 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		return err
 	}
 
-	// secure this by defaulting to luxAsset
-	vm.feeAssetID = vm.ctx.LUXAssetID
+	// secure this by defaulting to avaxAsset
+	vm.feeAssetID = vm.ctx.AVAXAssetID
 
 	for index, genesisTx := range genesis.Txs {
 		if len(genesisTx.Outs) != 0 {
@@ -491,7 +531,7 @@ func (vm *VM) initState(tx txs.Tx) error {
 }
 
 func (vm *VM) parseTx(bytes []byte) (*UniqueTx, error) {
-	rawTx, err := vm.parser.Parse(bytes)
+	rawTx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +570,7 @@ func (vm *VM) issueTx(tx snowstorm.Tx) {
 	}
 }
 
-func (vm *VM) getUTXO(utxoID *lux.UTXOID) (*lux.UTXO, error) {
+func (vm *VM) getUTXO(utxoID *avax.UTXOID) (*avax.UTXO, error) {
 	inputID := utxoID.InputID()
 	utxo, err := vm.state.GetUTXO(inputID)
 	if err == nil {
@@ -569,7 +609,7 @@ func (vm *VM) verifyFxUsage(fxID int, assetID ids.ID) bool {
 	// Check cache to see whether this asset supports this fx
 	fxIDsIntf, assetInCache := vm.assetToFxCache.Get(assetID)
 	if assetInCache {
-		return fxIDsIntf.(ids.BitSet64).Contains(uint(fxID))
+		return fxIDsIntf.(set.Bits64).Contains(uint(fxID))
 	}
 	// Caches doesn't say whether this asset support this fx.
 	// Get the tx that created the asset and check.
@@ -585,7 +625,7 @@ func (vm *VM) verifyFxUsage(fxID int, assetID ids.ID) bool {
 		// This transaction was not an asset creation tx
 		return false
 	}
-	fxIDs := ids.BitSet64(0)
+	fxIDs := set.Bits64(0)
 	for _, state := range createAssetTx.States {
 		if state.FxIndex == uint32(fxID) {
 			// Cache that this asset supports this fx
@@ -596,7 +636,7 @@ func (vm *VM) verifyFxUsage(fxID int, assetID ids.ID) bool {
 	return fxIDs.Contains(uint(fxID))
 }
 
-func (vm *VM) verifyTransferOfUTXO(utx txs.UnsignedTx, in *lux.TransferableInput, cred verify.Verifiable, utxo *lux.UTXO) error {
+func (vm *VM) verifyTransferOfUTXO(utx txs.UnsignedTx, in *avax.TransferableInput, cred verify.Verifiable, utxo *avax.UTXO) error {
 	fxIndex, err := vm.getFx(cred)
 	if err != nil {
 		return err
@@ -616,7 +656,7 @@ func (vm *VM) verifyTransferOfUTXO(utx txs.UnsignedTx, in *lux.TransferableInput
 	return fx.VerifyTransfer(utx, in.In, cred, utxo.Out)
 }
 
-func (vm *VM) verifyTransfer(tx txs.UnsignedTx, in *lux.TransferableInput, cred verify.Verifiable) error {
+func (vm *VM) verifyTransfer(tx txs.UnsignedTx, in *avax.TransferableInput, cred verify.Verifiable) error {
 	utxo, err := vm.getUTXO(&in.UTXOID)
 	if err != nil {
 		return err
@@ -662,9 +702,9 @@ func (vm *VM) verifyOperation(tx *txs.OperationTx, op *txs.Operation, cred verif
 func (vm *VM) LoadUser(
 	username string,
 	password string,
-	addrsToUse ids.ShortSet,
+	addrsToUse set.Set[ids.ShortID],
 ) (
-	[]*lux.UTXO,
+	[]*avax.UTXO,
 	*secp256k1fx.Keychain,
 	error,
 ) {
@@ -681,7 +721,7 @@ func (vm *VM) LoadUser(
 		return nil, nil, err
 	}
 
-	utxos, err := lux.GetAllUTXOs(vm.state, kc.Addresses())
+	utxos, err := avax.GetAllUTXOs(vm.state, kc.Addresses())
 	if err != nil {
 		return nil, nil, fmt.Errorf("problem retrieving user's UTXOs: %w", err)
 	}
@@ -690,19 +730,19 @@ func (vm *VM) LoadUser(
 }
 
 func (vm *VM) Spend(
-	utxos []*lux.UTXO,
+	utxos []*avax.UTXO,
 	kc *secp256k1fx.Keychain,
 	amounts map[ids.ID]uint64,
 ) (
 	map[ids.ID]uint64,
-	[]*lux.TransferableInput,
+	[]*avax.TransferableInput,
 	[][]*crypto.PrivateKeySECP256K1R,
 	error,
 ) {
 	amountsSpent := make(map[ids.ID]uint64, len(amounts))
 	time := vm.clock.Unix()
 
-	ins := []*lux.TransferableInput{}
+	ins := []*avax.TransferableInput{}
 	keys := [][]*crypto.PrivateKeySECP256K1R{}
 	for _, utxo := range utxos {
 		assetID := utxo.AssetID()
@@ -719,7 +759,7 @@ func (vm *VM) Spend(
 			// this utxo can't be spent with the current keys right now
 			continue
 		}
-		input, ok := inputIntf.(lux.TransferableIn)
+		input, ok := inputIntf.(avax.TransferableIn)
 		if !ok {
 			// this input doesn't have an amount, so I don't care about it here
 			continue
@@ -732,9 +772,9 @@ func (vm *VM) Spend(
 		amountsSpent[assetID] = newAmountSpent
 
 		// add the new input to the array
-		ins = append(ins, &lux.TransferableInput{
+		ins = append(ins, &avax.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  lux.Asset{ID: assetID},
+			Asset:  avax.Asset{ID: assetID},
 			In:     input,
 		})
 		// add the required keys to the array
@@ -751,12 +791,12 @@ func (vm *VM) Spend(
 		}
 	}
 
-	lux.SortTransferableInputsWithSigners(ins, keys)
+	avax.SortTransferableInputsWithSigners(ins, keys)
 	return amountsSpent, ins, keys, nil
 }
 
 func (vm *VM) SpendNFT(
-	utxos []*lux.UTXO,
+	utxos []*avax.UTXO,
 	kc *secp256k1fx.Keychain,
 	assetID ids.ID,
 	groupID uint32,
@@ -802,7 +842,7 @@ func (vm *VM) SpendNFT(
 		// add the new operation to the array
 		ops = append(ops, &txs.Operation{
 			Asset:   utxo.Asset,
-			UTXOIDs: []*lux.UTXOID{&utxo.UTXOID},
+			UTXOIDs: []*avax.UTXOID{&utxo.UTXOID},
 			Op: &nftfx.TransferOperation{
 				Input: secp256k1fx.Input{
 					SigIndices: indices,
@@ -830,18 +870,18 @@ func (vm *VM) SpendNFT(
 }
 
 func (vm *VM) SpendAll(
-	utxos []*lux.UTXO,
+	utxos []*avax.UTXO,
 	kc *secp256k1fx.Keychain,
 ) (
 	map[ids.ID]uint64,
-	[]*lux.TransferableInput,
+	[]*avax.TransferableInput,
 	[][]*crypto.PrivateKeySECP256K1R,
 	error,
 ) {
 	amountsSpent := make(map[ids.ID]uint64)
 	time := vm.clock.Unix()
 
-	ins := []*lux.TransferableInput{}
+	ins := []*avax.TransferableInput{}
 	keys := [][]*crypto.PrivateKeySECP256K1R{}
 	for _, utxo := range utxos {
 		assetID := utxo.AssetID()
@@ -852,7 +892,7 @@ func (vm *VM) SpendAll(
 			// this utxo can't be spent with the current keys right now
 			continue
 		}
-		input, ok := inputIntf.(lux.TransferableIn)
+		input, ok := inputIntf.(avax.TransferableIn)
 		if !ok {
 			// this input doesn't have an amount, so I don't care about it here
 			continue
@@ -865,21 +905,21 @@ func (vm *VM) SpendAll(
 		amountsSpent[assetID] = newAmountSpent
 
 		// add the new input to the array
-		ins = append(ins, &lux.TransferableInput{
+		ins = append(ins, &avax.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  lux.Asset{ID: assetID},
+			Asset:  avax.Asset{ID: assetID},
 			In:     input,
 		})
 		// add the required keys to the array
 		keys = append(keys, signers)
 	}
 
-	lux.SortTransferableInputsWithSigners(ins, keys)
+	avax.SortTransferableInputsWithSigners(ins, keys)
 	return amountsSpent, ins, keys, nil
 }
 
 func (vm *VM) Mint(
-	utxos []*lux.UTXO,
+	utxos []*avax.UTXO,
 	kc *secp256k1fx.Keychain,
 	amounts map[ids.ID]uint64,
 	to ids.ShortID,
@@ -921,7 +961,7 @@ func (vm *VM) Mint(
 		// add the operation to the array
 		ops = append(ops, &txs.Operation{
 			Asset:   utxo.Asset,
-			UTXOIDs: []*lux.UTXOID{&utxo.UTXOID},
+			UTXOIDs: []*avax.UTXOID{&utxo.UTXOID},
 			Op: &secp256k1fx.MintOperation{
 				MintInput:  *in,
 				MintOutput: *out,
@@ -952,7 +992,7 @@ func (vm *VM) Mint(
 }
 
 func (vm *VM) MintNFT(
-	utxos []*lux.UTXO,
+	utxos []*avax.UTXO,
 	kc *secp256k1fx.Keychain,
 	assetID ids.ID,
 	payload []byte,
@@ -994,8 +1034,8 @@ func (vm *VM) MintNFT(
 
 		// add the operation to the array
 		ops = append(ops, &txs.Operation{
-			Asset: lux.Asset{ID: assetID},
-			UTXOIDs: []*lux.UTXOID{
+			Asset: avax.Asset{ID: assetID},
+			UTXOIDs: []*avax.UTXOID{
 				&utxo.UTXOID,
 			},
 			Op: &nftfx.MintOperation{
@@ -1028,7 +1068,7 @@ func (vm *VM) selectChangeAddr(defaultAddr ids.ShortID, changeAddr string) (ids.
 	if changeAddr == "" {
 		return defaultAddr, nil
 	}
-	addr, err := lux.ParseServiceAddress(vm, changeAddr)
+	addr, err := avax.ParseServiceAddress(vm, changeAddr)
 	if err != nil {
 		return ids.ShortID{}, fmt.Errorf("couldn't parse changeAddr: %w", err)
 	}
@@ -1047,35 +1087,35 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
 }
 
-func (vm *VM) CrossChainAppRequest(_ context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+func (*VM) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	return nil
 }
 
-func (vm *VM) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
+func (*VM) CrossChainAppRequestFailed(context.Context, ids.ID, uint32) error {
 	return nil
 }
 
-func (vm *VM) CrossChainAppResponse(_ context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	return nil
-}
-
-// This VM doesn't (currently) have any app-specific messages
-func (vm *VM) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+func (*VM) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-func (vm *VM) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+func (*VM) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-func (vm *VM) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (*VM) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
 	return nil
 }
 
 // This VM doesn't (currently) have any app-specific messages
-func (vm *VM) AppGossip(_ context.Context, nodeID ids.NodeID, msg []byte) error {
+func (*VM) AppRequestFailed(context.Context, ids.NodeID, uint32) error {
+	return nil
+}
+
+// This VM doesn't (currently) have any app-specific messages
+func (*VM) AppGossip(context.Context, ids.NodeID, []byte) error {
 	return nil
 }
 

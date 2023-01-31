@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -13,7 +13,8 @@ import (
 
 	plugin "github.com/hashicorp/go-plugin"
 
-	"github.com/luxdefi/luxd/vms/rpcchainvm/grpcutils"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
 )
 
 // plugin_test collects objects and helpers generally helpful for various rpc tests
@@ -27,11 +28,13 @@ const (
 	getStateSummaryTestKey                         = "getStateSummaryTest"
 	acceptStateSummaryTestKey                      = "acceptStateSummaryTest"
 	lastAcceptedBlockPostStateSummaryAcceptTestKey = "lastAcceptedBlockPostStateSummaryAcceptTest"
+	contextTestKey                                 = "contextTest"
+	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
 )
 
 var (
 	TestHandshake = plugin.HandshakeConfig{
-		ProtocolVersion:  protocolVersion,
+		ProtocolVersion:  version.RPCChainVMProtocol,
 		MagicCookieKey:   "VM_PLUGIN",
 		MagicCookieValue: "dynamic",
 	}
@@ -49,6 +52,8 @@ var (
 		getStateSummaryTestKey:                         getStateSummaryTestPlugin,
 		acceptStateSummaryTestKey:                      acceptStateSummaryTestPlugin,
 		lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
+		contextTestKey:                                 contextEnabledTestPlugin,
+		batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 	}
 )
 

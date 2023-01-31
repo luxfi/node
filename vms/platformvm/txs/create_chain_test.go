@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,12 +6,14 @@ package txs
 import (
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils/constants"
-	"github.com/luxdefi/luxd/utils/crypto"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
@@ -44,7 +46,9 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			fxIDs:       nil,
 			chainName:   "yeet",
 			keys:        []*crypto.PrivateKeySECP256K1R{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
-			setup:       func(*CreateChainTx) *CreateChainTx { return nil },
+			setup: func(*CreateChainTx) *CreateChainTx {
+				return nil
+			},
 		},
 		{
 			description: "vm ID is empty",
@@ -55,7 +59,10 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			fxIDs:       nil,
 			chainName:   "yeet",
 			keys:        []*crypto.PrivateKeySECP256K1R{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
-			setup:       func(tx *CreateChainTx) *CreateChainTx { tx.VMID = ids.ID{}; return tx },
+			setup: func(tx *CreateChainTx) *CreateChainTx {
+				tx.VMID = ids.ID{}
+				return tx
+			},
 		},
 		{
 			description: "subnet ID is empty",
@@ -130,19 +137,19 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		inputs := []*lux.TransferableInput{{
-			UTXOID: lux.UTXOID{
+		inputs := []*avax.TransferableInput{{
+			UTXOID: avax.UTXOID{
 				TxID:        ids.ID{'t', 'x', 'I', 'D'},
 				OutputIndex: 2,
 			},
-			Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+			Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 			In: &secp256k1fx.TransferInput{
 				Amt:   uint64(5678),
 				Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 			},
 		}}
-		outputs := []*lux.TransferableOutput{{
-			Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		outputs := []*avax.TransferableOutput{{
+			Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(1234),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -156,7 +163,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		}
 
 		createChainTx := &CreateChainTx{
-			BaseTx: BaseTx{BaseTx: lux.BaseTx{
+			BaseTx: BaseTx{BaseTx: avax.BaseTx{
 				NetworkID:    ctx.NetworkID,
 				BlockchainID: ctx.ChainID,
 				Ins:          inputs,
@@ -172,16 +179,16 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 		signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 		stx, err := NewSigned(createChainTx, Codec, signers)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
 		createChainTx.SyntacticallyVerified = false
 		stx.Unsigned = test.setup(createChainTx)
-		if err := stx.SyntacticVerify(ctx); err != nil && !test.shouldErr {
-			t.Fatalf("test '%s' shouldn't have erred but got: %s", test.description, err)
-		} else if err == nil && test.shouldErr {
-			t.Fatalf("test '%s' didn't error but should have", test.description)
+
+		err = stx.SyntacticVerify(ctx)
+		if !test.shouldErr {
+			require.NoError(t, err)
+		} else {
+			require.Error(t, err)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/lux"
-	"github.com/luxdefi/luxd/vms/components/verify"
-	"github.com/luxdefi/luxd/vms/platformvm/txs"
-	"github.com/luxdefi/luxd/vms/platformvm/validator"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestNewBanffProposalBlock(t *testing.T) {
@@ -27,12 +27,12 @@ func TestNewBanffProposalBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: lux.BaseTx{
-					Ins:  []*lux.TransferableInput{},
-					Outs: []*lux.TransferableOutput{},
+				BaseTx: avax.BaseTx{
+					Ins:  []*avax.TransferableInput{},
+					Outs: []*avax.TransferableOutput{},
 				},
 			},
-			StakeOuts: []*lux.TransferableOutput{},
+			StakeOuts: []*avax.TransferableOutput{},
 			Validator: validator.Validator{},
 			RewardsOwner: &secp256k1fx.OutputOwners{
 				Addrs: []ids.ShortID{},
@@ -40,7 +40,7 @@ func TestNewBanffProposalBlock(t *testing.T) {
 		},
 		Creds: []verify.Verifiable{},
 	}
-	require.NoError(tx.Sign(txs.Codec, nil))
+	require.NoError(tx.Initialize(txs.Codec))
 
 	blk, err := NewBanffProposalBlock(
 		timestamp,
@@ -51,8 +51,8 @@ func TestNewBanffProposalBlock(t *testing.T) {
 	require.NoError(err)
 
 	// Make sure the block and tx are initialized
-	require.NotNil(blk.Bytes())
-	require.NotNil(blk.Tx.Bytes())
+	require.NotEmpty(blk.Bytes())
+	require.NotEmpty(blk.Tx.Bytes())
 	require.NotEqual(ids.Empty, blk.Tx.ID())
 	require.Equal(tx.Bytes(), blk.Tx.Bytes())
 	require.Equal(timestamp, blk.Timestamp())
@@ -69,12 +69,12 @@ func TestNewApricotProposalBlock(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{
-				BaseTx: lux.BaseTx{
-					Ins:  []*lux.TransferableInput{},
-					Outs: []*lux.TransferableOutput{},
+				BaseTx: avax.BaseTx{
+					Ins:  []*avax.TransferableInput{},
+					Outs: []*avax.TransferableOutput{},
 				},
 			},
-			StakeOuts: []*lux.TransferableOutput{},
+			StakeOuts: []*avax.TransferableOutput{},
 			Validator: validator.Validator{},
 			RewardsOwner: &secp256k1fx.OutputOwners{
 				Addrs: []ids.ShortID{},
@@ -82,7 +82,7 @@ func TestNewApricotProposalBlock(t *testing.T) {
 		},
 		Creds: []verify.Verifiable{},
 	}
-	require.NoError(tx.Sign(txs.Codec, nil))
+	require.NoError(tx.Initialize(txs.Codec))
 
 	blk, err := NewApricotProposalBlock(
 		parentID,
@@ -92,8 +92,8 @@ func TestNewApricotProposalBlock(t *testing.T) {
 	require.NoError(err)
 
 	// Make sure the block and tx are initialized
-	require.NotNil(blk.Bytes())
-	require.NotNil(blk.Tx.Bytes())
+	require.NotEmpty(blk.Bytes())
+	require.NotEmpty(blk.Tx.Bytes())
 	require.NotEqual(ids.Empty, blk.Tx.ID())
 	require.Equal(tx.Bytes(), blk.Tx.Bytes())
 	require.Equal(parentID, blk.Parent())

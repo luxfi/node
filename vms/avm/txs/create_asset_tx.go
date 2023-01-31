@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,11 +9,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 const (
@@ -58,7 +58,9 @@ func (t *CreateAssetTx) InitCtx(ctx *snow.Context) {
 
 // InitialStates track which virtual machines, and the initial state of these
 // machines, this asset uses. The returned array should not be modified.
-func (t *CreateAssetTx) InitialStates() []*InitialState { return t.States }
+func (t *CreateAssetTx) InitialStates() []*InitialState {
+	return t.States
+}
 
 func (t *CreateAssetTx) SyntacticVerify(
 	ctx *snow.Context,
@@ -107,14 +109,12 @@ func (t *CreateAssetTx) SyntacticVerify(
 			return err
 		}
 	}
-	if !utils.IsSortedAndUnique(innerSortInitialState(t.States)) {
+	if !utils.IsSortedAndUniqueSortable(t.States) {
 		return errInitialStatesNotSortedUnique
 	}
 
 	return nil
 }
-
-func (t *CreateAssetTx) Sort() { SortInitialStates(t.States) }
 
 func (t *CreateAssetTx) Visit(v Visitor) error {
 	return v.CreateAssetTx(t)

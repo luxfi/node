@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,9 +6,10 @@ package txs
 import (
 	"time"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/vms/components/lux"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 var _ UnsignedTx = (*AdvanceTimeTx)(nil)
@@ -26,20 +27,32 @@ type AdvanceTimeTx struct {
 	unsignedBytes []byte // Unsigned byte representation of this data
 }
 
-func (tx *AdvanceTimeTx) Initialize(unsignedBytes []byte) { tx.unsignedBytes = unsignedBytes }
+func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
+	tx.unsignedBytes = unsignedBytes
+}
 
-func (tx *AdvanceTimeTx) Bytes() []byte { return tx.unsignedBytes }
+func (tx *AdvanceTimeTx) Bytes() []byte {
+	return tx.unsignedBytes
+}
 
-func (tx *AdvanceTimeTx) InitCtx(*snow.Context) {}
+func (*AdvanceTimeTx) InitCtx(*snow.Context) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
 	return time.Unix(int64(tx.Time), 0)
 }
 
-func (tx *AdvanceTimeTx) InputIDs() ids.Set                   { return nil }
-func (tx *AdvanceTimeTx) Outputs() []*lux.TransferableOutput { return nil }
-func (tx *AdvanceTimeTx) SyntacticVerify(*snow.Context) error { return nil }
+func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
+	return nil
+}
+
+func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput {
+	return nil
+}
+
+func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error {
+	return nil
+}
 
 func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 	return visitor.AdvanceTimeTx(tx)
