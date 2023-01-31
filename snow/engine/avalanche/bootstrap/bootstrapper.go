@@ -306,18 +306,26 @@ func (b *bootstrapper) Timeout(ctx context.Context) error {
 	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
 }
 
+<<<<<<< HEAD
 func (*bootstrapper) Gossip(context.Context) error {
 	return nil
 }
+=======
+func (*bootstrapper) Gossip() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (b *bootstrapper) Shutdown(ctx context.Context) error {
 	b.Ctx.Log.Info("shutting down bootstrapper")
 	return b.VM.Shutdown(ctx)
 }
 
+<<<<<<< HEAD
 func (*bootstrapper) Notify(context.Context, common.Message) error {
 	return nil
 }
+=======
+func (*bootstrapper) Notify(common.Message) error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")

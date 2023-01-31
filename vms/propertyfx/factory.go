@@ -18,6 +18,10 @@ var (
 
 type Factory struct{}
 
+<<<<<<< HEAD
 func (*Factory) New(*snow.Context) (interface{}, error) {
 	return &Fx{}, nil
 }
+=======
+func (*Factory) New(*snow.Context) (interface{}, error) { return &Fx{}, nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))

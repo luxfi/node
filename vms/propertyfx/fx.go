@@ -98,6 +98,10 @@ func (fx *Fx) VerifyTransferOperation(tx secp256k1fx.UnsignedTx, op *BurnOperati
 	return fx.VerifyCredentials(tx, &op.Input, &cred.Credential, &out.OutputOwners)
 }
 
+<<<<<<< HEAD
 func (*Fx) VerifyTransfer(_, _, _, _ interface{}) error {
 	return errCantTransfer
 }
+=======
+func (*Fx) VerifyTransfer(_, _, _, _ interface{}) error { return errCantTransfer }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))

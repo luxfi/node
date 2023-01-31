@@ -42,6 +42,7 @@ func (tx *AdvanceTimeTx) Timestamp() time.Time {
 	return time.Unix(int64(tx.Time), 0)
 }
 
+<<<<<<< HEAD
 func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
 	return nil
 }
@@ -53,6 +54,11 @@ func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput {
 func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error {
 	return nil
 }
+=======
+func (*AdvanceTimeTx) InputIDs() ids.Set                   { return nil }
+func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput { return nil }
+func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 	return visitor.AdvanceTimeTx(tx)

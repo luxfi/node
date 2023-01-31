@@ -35,6 +35,7 @@ type RewardValidatorTx struct {
 func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
+<<<<<<< HEAD
 
 func (*RewardValidatorTx) InitCtx(*snow.Context) {}
 
@@ -53,6 +54,13 @@ func (*RewardValidatorTx) Outputs() []*avax.TransferableOutput {
 func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error {
 	return nil
 }
+=======
+func (*RewardValidatorTx) InitCtx(*snow.Context)               {}
+func (tx *RewardValidatorTx) Bytes() []byte                    { return tx.unsignedBytes }
+func (*RewardValidatorTx) InputIDs() ids.Set                   { return nil }
+func (*RewardValidatorTx) Outputs() []*avax.TransferableOutput { return nil }
+func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (tx *RewardValidatorTx) Visit(visitor Visitor) error {
 	return visitor.RewardValidatorTx(tx)

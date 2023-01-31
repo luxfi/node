@@ -156,7 +156,11 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	return b.vm.verifyAndRecordInnerBlk(ctx, nil, child)
 }
 
+<<<<<<< HEAD
 func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) error {
+=======
+func (*preForkBlock) verifyPostForkOption(child *postForkOption) error {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return errUnexpectedBlockType
 }
 
@@ -229,7 +233,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	return blk, nil
 }
 
+<<<<<<< HEAD
 func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
+=======
+func (*preForkBlock) pChainHeight() (uint64, error) {
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 	return 0, nil
 }
 

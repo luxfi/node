@@ -20,7 +20,11 @@ type testOperable struct {
 	Outputs []verify.State `serialize:"true"`
 }
 
+<<<<<<< HEAD
 func (*testOperable) InitCtx(*snow.Context) {}
+=======
+func (*testOperable) InitCtx(ctx *snow.Context) {}
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs

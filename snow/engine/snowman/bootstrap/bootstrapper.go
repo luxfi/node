@@ -283,15 +283,20 @@ func (b *bootstrapper) Timeout(ctx context.Context) error {
 	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
 }
 
+<<<<<<< HEAD
 func (*bootstrapper) Gossip(context.Context) error {
 	return nil
 }
+=======
+func (*bootstrapper) Gossip() error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 func (b *bootstrapper) Shutdown(ctx context.Context) error {
 	b.Ctx.Log.Info("shutting down bootstrapper")
 	return b.VM.Shutdown(ctx)
 }
 
+<<<<<<< HEAD
 func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 	if msg != common.StateSyncDone {
 		b.Ctx.Log.Warn("received an unexpected message from the VM",
@@ -299,6 +304,9 @@ func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 		)
 		return nil
 	}
+=======
+func (*bootstrapper) Notify(common.Message) error { return nil }
+>>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
 
 	b.Ctx.RunningStateSync(false)
 	return nil
