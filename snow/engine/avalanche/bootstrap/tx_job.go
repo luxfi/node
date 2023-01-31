@@ -54,6 +54,7 @@ func (t *txJob) ID() ids.ID {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (t *txJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
 =======
@@ -63,6 +64,10 @@ func (t *txJob) MissingDependencies(context.Context) (ids.Set, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	missing := ids.Set{}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (t *txJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
+	missing := set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	deps, err := t.tx.Dependencies()
 	if err != nil {
 		return missing, err

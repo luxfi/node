@@ -20,10 +20,14 @@ type issuer struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (i *issuer) Dependencies() set.Set[ids.ID] {
 =======
 func (i *issuer) Dependencies() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (i *issuer) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return i.deps
 }
 

@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/choices"
 	"github.com/luxdefi/luxd/tests"
@@ -19,6 +20,18 @@ import (
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -85,7 +98,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
 
 					wallets[i] = primary.NewWalletWithOptions(
 						baseWallet,
-						common.WithCustomAddresses(ids.ShortSet{
+						common.WithCustomAddresses(set.Set[ids.ShortID]{
 							testKeys[i].PublicKey().Address(): struct{}{},
 						}),
 					)

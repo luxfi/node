@@ -47,7 +47,11 @@ type Config struct {
 	StakingEnabled bool
 
 	// Set of subnets that this node is validating
+<<<<<<< HEAD
 	TrackedSubnets set.Set[ids.ID]
+=======
+	WhitelistedSubnets set.Set[ids.ID]
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	// Fee that is burned by every non-state creating transaction
 	TxFee uint64

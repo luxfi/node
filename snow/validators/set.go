@@ -23,8 +23,12 @@ var (
 	_ Set = (*vdrSet)(nil)
 =======
 var (
+<<<<<<< HEAD
 	_ Set = (*set)(nil)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	_ Set = (*vdrSet)(nil)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	errZeroWeight         = errors.New("weight must be non-zero")
 	errDuplicateValidator = errors.New("duplicate validator")
@@ -90,6 +94,7 @@ type Set interface {
 
 	// SubsetWeight returns the sum of the weights of the validators.
 	SubsetWeight(set.Set[ids.NodeID]) uint64
+<<<<<<< HEAD
 =======
 	Get(ids.NodeID) (Validator, bool)
 =======
@@ -99,6 +104,8 @@ type Set interface {
 	// SubsetWeight returns the sum of the weights of the validators.
 	SubsetWeight(ids.NodeIDSet) uint64
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	// RemoveWeight from a staker. If the staker's weight becomes 0, the staker
 	// will be removed from the validator set.
@@ -148,10 +155,14 @@ type SetCallbackListener interface {
 // NewSet returns a new, empty set of validators.
 func NewSet() Set {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return &vdrSet{
 =======
 	return &set{
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+	return &vdrSet{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		vdrs:    make(map[ids.NodeID]*Validator),
 		sampler: sampler.NewWeightedWithoutReplacement(),
 	}
@@ -160,20 +171,28 @@ func NewSet() Set {
 // NewBestSet returns a new, empty set of validators.
 func NewBestSet(expectedSampleSize int) Set {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return &vdrSet{
 =======
 	return &set{
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+	return &vdrSet{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		vdrs:    make(map[ids.NodeID]*Validator),
 		sampler: sampler.NewBestWeightedWithoutReplacement(expectedSampleSize),
 	}
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 type vdrSet struct {
 =======
 type set struct {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+type vdrSet struct {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	lock        sync.RWMutex
 	vdrs        map[ids.NodeID]*Validator
 	vdrSlice    []*Validator
@@ -186,6 +205,7 @@ type set struct {
 	callbackListeners []SetCallbackListener
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -203,6 +223,9 @@ func (s *set) Add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 =======
 func (s *set) Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 >>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+=======
+func (s *vdrSet) Add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if weight == 0 {
 		return errZeroWeight
 	}
@@ -233,8 +256,12 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 	return s.add(nodeID, pk, txID, weight)
 }
 
+<<<<<<< HEAD
 func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 >>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
+=======
+func (s *vdrSet) add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	_, nodeExists := s.vdrs[nodeID]
 	if nodeExists {
 		return errDuplicateValidator
@@ -285,6 +312,7 @@ func (s *set) add(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint
 }
 
 func (s *vdrSet) AddWeight(nodeID ids.NodeID, weight uint64) error {
+<<<<<<< HEAD
 =======
 	s.callValidatorAddedCallbacks(nodeID, weight)
 =======
@@ -298,6 +326,8 @@ func (s *vdrSet) AddWeight(nodeID ids.NodeID, weight uint64) error {
 
 func (s *set) AddWeight(nodeID ids.NodeID, weight uint64) error {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if weight == 0 {
 		return errZeroWeight
 	}
@@ -309,10 +339,14 @@ func (s *set) AddWeight(nodeID ids.NodeID, weight uint64) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) addWeight(nodeID ids.NodeID, weight uint64) error {
 =======
 func (s *set) addWeight(nodeID ids.NodeID, weight uint64) error {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) addWeight(nodeID ids.NodeID, weight uint64) error {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	vdr, nodeExists := s.vdrs[nodeID]
 	if !nodeExists {
 		return errMissingValidator
@@ -348,6 +382,7 @@ func (s *set) addWeight(nodeID ids.NodeID, weight uint64) error {
 }
 
 func (s *vdrSet) GetWeight(nodeID ids.NodeID) uint64 {
+<<<<<<< HEAD
 =======
 	s.callWeightChangeCallbacks(nodeID, oldWeight, vdr.weight)
 =======
@@ -358,6 +393,8 @@ func (s *vdrSet) GetWeight(nodeID ids.NodeID) uint64 {
 
 func (s *set) GetWeight(nodeID ids.NodeID) uint64 {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -365,6 +402,9 @@ func (s *set) GetWeight(nodeID ids.NodeID) uint64 {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 func (s *vdrSet) getWeight(nodeID ids.NodeID) uint64 {
 	if vdr, ok := s.vdrs[nodeID]; ok {
 		return vdr.Weight
@@ -382,10 +422,14 @@ func (s *set) getWeight(nodeID ids.NodeID) uint64 {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) SubsetWeight(subset set.Set[ids.NodeID]) uint64 {
 =======
 func (s *set) SubsetWeight(subset ids.NodeIDSet) uint64 {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) SubsetWeight(subset set.Set[ids.NodeID]) uint64 {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -393,10 +437,14 @@ func (s *set) SubsetWeight(subset ids.NodeIDSet) uint64 {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) subsetWeight(subset set.Set[ids.NodeID]) uint64 {
 =======
 func (s *set) subsetWeight(subset ids.NodeIDSet) uint64 {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) subsetWeight(subset set.Set[ids.NodeID]) uint64 {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	var totalWeight uint64
 	for nodeID := range subset {
 		// Because [totalWeight] will be <= [s.totalWeight], we are guaranteed
@@ -407,10 +455,14 @@ func (s *set) subsetWeight(subset ids.NodeIDSet) uint64 {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) RemoveWeight(nodeID ids.NodeID, weight uint64) error {
 =======
 func (s *set) RemoveWeight(nodeID ids.NodeID, weight uint64) error {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) RemoveWeight(nodeID ids.NodeID, weight uint64) error {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if weight == 0 {
 		return errZeroWeight
 	}
@@ -422,10 +474,14 @@ func (s *set) RemoveWeight(nodeID ids.NodeID, weight uint64) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) removeWeight(nodeID ids.NodeID, weight uint64) error {
 =======
 func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) removeWeight(nodeID ids.NodeID, weight uint64) error {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	vdr, ok := s.vdrs[nodeID]
 	if !ok {
 		return errMissingValidator
@@ -493,6 +549,7 @@ func (s *set) removeWeight(nodeID ids.NodeID, weight uint64) error {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) Get(nodeID ids.NodeID) (*Validator, bool) {
 =======
 func (s *set) Get(nodeID ids.NodeID) (Validator, bool) {
@@ -500,12 +557,16 @@ func (s *set) Get(nodeID ids.NodeID) (Validator, bool) {
 =======
 func (s *set) Get(nodeID ids.NodeID) (*Validator, bool) {
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+func (s *vdrSet) Get(nodeID ids.NodeID) (*Validator, bool) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	return s.get(nodeID)
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 func (s *vdrSet) get(nodeID ids.NodeID) (*Validator, bool) {
@@ -515,6 +576,9 @@ func (s *set) get(nodeID ids.NodeID) (Validator, bool) {
 =======
 func (s *set) get(nodeID ids.NodeID) (*Validator, bool) {
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+func (s *vdrSet) get(nodeID ids.NodeID) (*Validator, bool) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	vdr, ok := s.vdrs[nodeID]
 	if !ok {
 		return nil, false
@@ -524,10 +588,14 @@ func (s *set) get(nodeID ids.NodeID) (*Validator, bool) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) Contains(nodeID ids.NodeID) bool {
 =======
 func (s *set) Contains(nodeID ids.NodeID) bool {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) Contains(nodeID ids.NodeID) bool {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -535,10 +603,14 @@ func (s *set) Contains(nodeID ids.NodeID) bool {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) contains(nodeID ids.NodeID) bool {
 =======
 func (s *set) contains(nodeID ids.NodeID) bool {
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+func (s *vdrSet) contains(nodeID ids.NodeID) bool {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	_, contains := s.vdrs[nodeID]
 	return contains
 }
@@ -550,6 +622,7 @@ func (s *vdrSet) Len() int {
 	return s.len()
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (s *vdrSet) len() int {
 =======
@@ -563,6 +636,13 @@ func (s *vdrSet) List() []*Validator {
 =======
 func (s *set) List() []*Validator {
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+func (s *vdrSet) len() int {
+	return len(s.vdrSlice)
+}
+
+func (s *vdrSet) List() []*Validator {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -570,10 +650,14 @@ func (s *set) List() []*Validator {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) list() []*Validator {
 =======
 func (s *set) list() []*Validator {
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+func (s *vdrSet) list() []*Validator {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	list := make([]*Validator, len(s.vdrSlice))
 	for i, vdr := range s.vdrSlice {
 		copiedVdr := *vdr
@@ -583,10 +667,14 @@ func (s *set) list() []*Validator {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) Sample(size int) ([]ids.NodeID, error) {
 =======
 func (s *set) Sample(size int) ([]ids.NodeID, error) {
 >>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
+=======
+func (s *vdrSet) Sample(size int) ([]ids.NodeID, error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if size == 0 {
 		return nil, nil
 	}
@@ -598,10 +686,14 @@ func (s *set) Sample(size int) ([]ids.NodeID, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) sample(size int) ([]ids.NodeID, error) {
 =======
 func (s *set) sample(size int) ([]ids.NodeID, error) {
 >>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
+=======
+func (s *vdrSet) sample(size int) ([]ids.NodeID, error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	if !s.samplerInitialized {
 		if err := s.sampler.Initialize(s.weights); err != nil {
 			return nil, err
@@ -704,6 +796,7 @@ func (s *vdrSet) callWeightChangeCallbacks(node ids.NodeID, oldWeight, newWeight
 // Assumes [s.lock] is held
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *vdrSet) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
 	for _, callbackListener := range s.callbackListeners {
 		callbackListener.OnValidatorAdded(node, pk, txID, weight)
@@ -714,6 +807,9 @@ func (s *set) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, we
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 =======
 func (s *set) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+=======
+func (s *vdrSet) callValidatorAddedCallbacks(node ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	for _, callbackListener := range s.callbackListeners {
 		callbackListener.OnValidatorAdded(node, pk, txID, weight)
 >>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))

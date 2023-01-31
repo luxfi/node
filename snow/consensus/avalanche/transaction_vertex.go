@@ -111,6 +111,7 @@ func (tv *transactionVertex) HasWhitelist() bool {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (tv *transactionVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
 	return tv.vtx.Whitelist(ctx)
 =======
@@ -119,6 +120,9 @@ func (tv *transactionVertex) Whitelist() (ids.Set, error) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 =======
 func (tv *transactionVertex) Whitelist(ctx context.Context) (ids.Set, error) {
+=======
+func (tv *transactionVertex) Whitelist(ctx context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return tv.vtx.Whitelist(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 }

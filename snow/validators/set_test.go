@@ -12,9 +12,13 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 <<<<<<< HEAD
@@ -211,10 +215,14 @@ func TestSetSubsetWeight(t *testing.T) {
 	weight2 := uint64(810)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	subset := set.Set[ids.NodeID]{}
 =======
 	subset := ids.NodeIDSet{}
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	subset := set.Set[ids.NodeID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	subset.Add(nodeID0)
 	subset.Add(nodeID1)
 

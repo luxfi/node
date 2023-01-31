@@ -76,7 +76,10 @@ func TestShutdown(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -265,7 +268,10 @@ func TestShutdownTimesOut(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -429,7 +435,10 @@ func TestRouterTimeout(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -799,7 +808,10 @@ func TestRouterClearTimeouts(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1095,7 +1107,10 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1292,7 +1307,10 @@ func TestRouterCrossChainMessages(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1440,10 +1458,14 @@ func TestConnectedSubnet(t *testing.T) {
 	subnetID0 := ids.GenerateTestID()
 	subnetID1 := ids.GenerateTestID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	trackedSubnets := set.Set[ids.ID]{}
 	trackedSubnets.Add(subnetID0, subnetID1)
 =======
 	whitelistedSubnets := ids.Set{}
+=======
+	whitelistedSubnets := set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	whitelistedSubnets.Add(subnetID0, subnetID1)
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	chainRouter := ChainRouter{}
@@ -1453,11 +1475,15 @@ func TestConnectedSubnet(t *testing.T) {
 		tm,
 		time.Millisecond,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		set.Set[ids.ID]{},
 		true,
 		trackedSubnets,
 =======
 		ids.Set{},
+=======
+		set.Set[ids.ID]{},
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		whitelistedSubnets,
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		nil,

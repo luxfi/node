@@ -46,6 +46,7 @@ import (
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/math/meter"
 	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/units"
 	"github.com/ava-labs/avalanchego/version"
 >>>>>>> 5d06d0a89 (Track peers of peers for improving peerlist gossip (#2017))
@@ -254,7 +255,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		config.Beacons = beacons
 		config.Validators = vdrs
 
-		var connected ids.NodeIDSet
+		var connected set.Set[ids.NodeID]
 		net, err := NewNetwork(
 			config,
 			msgCreator,
@@ -351,7 +352,7 @@ func TestSend(t *testing.T) {
 	outboundGetMsg, err := mc.Get(ids.Empty, 1, time.Second, ids.Empty)
 	require.NoError(err)
 
-	toSend := ids.NodeIDSet{}
+	toSend := set.Set[ids.NodeID]{}
 	toSend.Add(nodeIDs[1])
 	sentTo := net0.Send(outboundGetMsg, toSend, constants.PrimaryNetworkID, false)
 	require.EqualValues(toSend, sentTo)

@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/genesis"
 	"github.com/luxdefi/luxd/ids"
@@ -25,6 +26,27 @@ import (
 	"github.com/luxdefi/luxd/utils/profiler"
 	"github.com/luxdefi/luxd/utils/timer"
 	"github.com/luxdefi/luxd/vms"
+=======
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/nat"
+	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/sender"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/dynamicip"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/profiler"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/vms"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 type IPCConfig struct {
@@ -189,7 +211,7 @@ type Config struct {
 	ConsensusGossipFrequency time.Duration `json:"consensusGossipFreq"`
 
 	// Subnet Whitelist
-	WhitelistedSubnets ids.Set `json:"whitelistedSubnets"`
+	WhitelistedSubnets set.Set[ids.ID] `json:"whitelistedSubnets"`
 
 	// SubnetConfigs
 	SubnetConfigs map[ids.ID]chains.SubnetConfig `json:"subnetConfigs"`

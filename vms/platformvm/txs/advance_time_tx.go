@@ -48,10 +48,14 @@ func (tx *AdvanceTimeTx) Timestamp() time.Time {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
 =======
 func (*AdvanceTimeTx) InputIDs() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return nil
 }
 

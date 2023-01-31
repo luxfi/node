@@ -407,10 +407,14 @@ func (b *bootstrapper) sendGetAcceptedFrontiers(ctx context.Context) {
 // their filtered accepted frontier
 func (b *bootstrapper) sendGetAccepted(ctx context.Context) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vdrs := set.NewSet[ids.NodeID](1)
 =======
 	vdrs := ids.NewNodeIDSet(1)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	vdrs := set.NewSet[ids.NodeID](1)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	for b.pendingSendAccepted.Len() > 0 && b.pendingReceiveAccepted.Len() < MaxOutstandingBroadcastRequests {
 		vdr, _ := b.pendingSendAccepted.Pop()
 		// Add the validator to the set to send the messages to

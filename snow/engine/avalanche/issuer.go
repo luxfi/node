@@ -186,10 +186,14 @@ func (i *issuer) Update(ctx context.Context) {
 type vtxIssuer struct{ i *issuer }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vi *vtxIssuer) Dependencies() set.Set[ids.ID] {
 =======
 func (vi *vtxIssuer) Dependencies() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (vi *vtxIssuer) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return vi.i.vtxDeps
 }
 
@@ -208,10 +212,14 @@ func (vi *vtxIssuer) Update(ctx context.Context) {
 type txIssuer struct{ i *issuer }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (ti *txIssuer) Dependencies() set.Set[ids.ID] {
 =======
 func (ti *txIssuer) Dependencies() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (ti *txIssuer) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return ti.i.txDeps
 }
 

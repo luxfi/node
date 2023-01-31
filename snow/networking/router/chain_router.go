@@ -52,11 +52,15 @@ type peer struct {
 	connectedSubnets set.Set[ids.ID]
 =======
 	// The subnets that this peer is currently tracking (i.e whitelisted)
-	trackedSubnets ids.Set
+	trackedSubnets set.Set[ids.ID]
 	// The subnets that this peer actually has a connection to.
 	// This is a subset of trackedSubnets.
+<<<<<<< HEAD
 	connectedSubnets ids.Set
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	connectedSubnets set.Set[ids.ID]
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 }
 
 // ChainRouter routes incoming messages from the validator network
@@ -82,7 +86,10 @@ type ChainRouter struct {
 	// invariant: if a node is benched on any chain, it is treated as disconnected on all chains
 	benched        map[ids.NodeID]set.Set[ids.ID]
 	criticalChains set.Set[ids.ID]
+<<<<<<< HEAD
 	stakingEnabled bool
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	onFatal        func(exitCode int)
 	metrics        *routerMetrics
 	// Parameters for doing health checks
@@ -102,8 +109,12 @@ func (cr *ChainRouter) Initialize(
 	timeoutManager timeout.Manager,
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
+<<<<<<< HEAD
 	stakingEnabled bool,
 	trackedSubnets set.Set[ids.ID],
+=======
+	whitelistedSubnets set.Set[ids.ID],
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
 	metricsNamespace string,

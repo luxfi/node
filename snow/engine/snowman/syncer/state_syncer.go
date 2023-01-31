@@ -82,10 +82,14 @@ type stateSyncer struct {
 	// summaries received may be different even if referring to the same height
 	// we keep a list of deduplicated height ready for voting
 <<<<<<< HEAD
+<<<<<<< HEAD
 	summariesHeights       set.Set[uint64]
 =======
 	summariesHeights       map[uint64]struct{}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	summariesHeights       set.Set[uint64]
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	uniqueSummariesHeights []uint64
 
 	// number of times the state sync has been attempted

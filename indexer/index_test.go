@@ -8,15 +8,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 )
 
 func TestIndex(t *testing.T) {
@@ -99,7 +100,7 @@ func TestIndex(t *testing.T) {
 
 	// Ensure that the data is correct
 	lastTimestamp := int64(0)
-	sawContainers := ids.Set{}
+	sawContainers := set.Set[ids.ID]{}
 	for _, container := range containersList {
 		require.False(sawContainers.Contains(container.ID)) // Should only see this container once
 		require.Contains(containers, container.ID)

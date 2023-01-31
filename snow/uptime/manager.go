@@ -47,10 +47,14 @@ type manager struct {
 	state          State
 	connections    map[ids.NodeID]map[ids.ID]time.Time // nodeID -> subnetID -> time
 <<<<<<< HEAD
+<<<<<<< HEAD
 	trackedSubnets set.Set[ids.ID]
 =======
 	trackedSubnets ids.Set
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	trackedSubnets set.Set[ids.ID]
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 }
 
 func NewManager(state State) Manager {

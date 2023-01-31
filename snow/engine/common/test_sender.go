@@ -53,7 +53,11 @@ type SenderTest struct {
 	SendAncestorsF               func(context.Context, ids.NodeID, uint32, [][]byte)
 	SendPushQueryF               func(context.Context, set.Set[ids.NodeID], uint32, []byte)
 	SendPullQueryF               func(context.Context, set.Set[ids.NodeID], uint32, ids.ID)
+<<<<<<< HEAD
 	SendChitsF                   func(context.Context, ids.NodeID, uint32, []ids.ID, []ids.ID)
+=======
+	SendChitsF                   func(context.Context, ids.NodeID, uint32, []ids.ID)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	SendGossipF                  func(context.Context, []byte)
 	SendAppRequestF              func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendAppResponseF             func(context.Context, ids.NodeID, uint32, []byte) error

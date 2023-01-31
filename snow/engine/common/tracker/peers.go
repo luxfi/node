@@ -11,9 +11,13 @@ import (
 	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	"github.com/ava-labs/avalanchego/version"
 )
 

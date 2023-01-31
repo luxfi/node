@@ -9,6 +9,11 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/set"
+<<<<<<< HEAD
+=======
+
+	ledger "github.com/ava-labs/avalanche-ledger-go"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 var (
@@ -41,7 +46,11 @@ type Keychain interface {
 // ledgerKeychain is an abstraction of the underlying ledger hardware device,
 // to be able to get a signer from a finite set of derived signers
 type ledgerKeychain struct {
+<<<<<<< HEAD
 	ledger    Ledger
+=======
+	ledger    ledger.Ledger
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	addrs     set.Set[ids.ShortID]
 	addrToIdx map[ids.ShortID]uint32
 }
@@ -93,10 +102,14 @@ func NewLedgerKeychainFromIndices(l ledger.Ledger, indices []uint32) (Keychain, 
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	addrsSet := set.NewSet[ids.ShortID](len(addrs))
 =======
 	addrsSet := ids.ShortSet{}
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))
+=======
+	addrsSet := set.NewSet[ids.ShortID](len(addrs))
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	addrsSet.Add(addrs...)
 
 	addrToIdx := map[ids.ShortID]uint32{}

@@ -96,7 +96,10 @@ func TestTimeout(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -199,6 +202,7 @@ func TestTimeout(t *testing.T) {
 	var (
 		wg           = sync.WaitGroup{}
 <<<<<<< HEAD
+<<<<<<< HEAD
 		vdrIDs       = set.Set[ids.NodeID]{}
 		chains       = set.Set[ids.ID]{}
 		requestID    uint32
@@ -216,10 +220,14 @@ func TestTimeout(t *testing.T) {
 =======
 		vdrIDs       = ids.NodeIDSet{}
 		chains       = ids.Set{}
+=======
+		vdrIDs       = set.Set[ids.NodeID]{}
+		chains       = set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		requestID    uint32
 		failedLock   sync.Mutex
-		failedVDRs   = ids.NodeIDSet{}
-		failedChains = ids.Set{}
+		failedVDRs   = set.Set[ids.NodeID]{}
+		failedChains = set.Set[ids.ID]{}
 	)
 
 	failed := func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
@@ -258,10 +266,14 @@ func TestTimeout(t *testing.T) {
 	sendAll := func() {
 		{
 <<<<<<< HEAD
+<<<<<<< HEAD
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -276,8 +288,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendGetStateSummaryFrontier(context.Background(), nodeIDs, requestID)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -292,8 +308,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, nil)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -308,8 +328,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -346,8 +370,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendGet(context.Background(), nodeID, requestID, ids.Empty)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -362,8 +390,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendPullQuery(context.Background(), nodeIDs, requestID, ids.Empty)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -378,8 +410,12 @@ func TestTimeout(t *testing.T) {
 			sender.SendPushQuery(context.Background(), nodeIDs, requestID, nil)
 		}
 		{
+<<<<<<< HEAD
 			nodeIDs := ids.NodeIDSet{
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			nodeIDs := set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
@@ -408,20 +444,28 @@ func TestTimeout(t *testing.T) {
 
 	// Send messages to disconnected peers
 <<<<<<< HEAD
+<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 =======
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		return nil
 	}
 	sendAll()
 
 	// Send messages to connected peers
 <<<<<<< HEAD
+<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 =======
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		return nodeIDs
 	}
 	sendAll()
@@ -482,7 +526,10 @@ func TestReliableMessages(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -650,7 +697,10 @@ func TestReliableMessagesToMyself(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
+<<<<<<< HEAD
 		true,
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
@@ -799,8 +849,12 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *MockExternalSender)
+<<<<<<< HEAD
 		sendF                   func(r *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet)
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+		sendF                   func(r *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	}
 
 	tests := []test{
@@ -841,15 +895,20 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
 =======
 					ids.NodeIDSet{ // Note [myNodeID] is not in this set
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
+<<<<<<< HEAD
 <<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
@@ -863,6 +922,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			},
 			sendF: func(r *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				).Return(set.Set[ids.NodeID]{
+					successNodeID: struct{}{},
+				})
+			},
+			sendF: func(r *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetStateSummaryFrontier(
 					context.Background(),
 					nodeIDs,
@@ -910,15 +976,20 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
 =======
 					ids.NodeIDSet{ // Note [myNodeID] is not in this set
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
+<<<<<<< HEAD
 <<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
@@ -932,6 +1003,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				).Return(set.Set[ids.NodeID]{
+					successNodeID: struct{}{},
+				})
+			},
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, heights)
 			},
 		},
@@ -980,15 +1058,20 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
 =======
 					ids.NodeIDSet{ // Note [myNodeID] is not in this set
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
+<<<<<<< HEAD
 <<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
@@ -1002,6 +1085,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				).Return(set.Set[ids.NodeID]{
+					successNodeID: struct{}{},
+				})
+			},
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
 			},
 		},
@@ -1051,15 +1141,20 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
 =======
 					ids.NodeIDSet{ // Note [myNodeID] is not in this set
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{ // Note [myNodeID] is not in this set
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 						successNodeID: struct{}{},
 						failedNodeID:  struct{}{},
 					}, // Node IDs
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
+<<<<<<< HEAD
 <<<<<<< HEAD
 				).Return(set.Set[ids.NodeID]{
 					successNodeID: struct{}{},
@@ -1073,6 +1168,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			},
 			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs ids.NodeIDSet) {
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				).Return(set.Set[ids.NodeID]{
+					successNodeID: struct{}{},
+				})
+			},
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				sender.SendGetAccepted(context.Background(), nodeIDs, requestID, containerIDs)
 			},
 		},
@@ -1090,19 +1192,27 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				timeoutManager = timeout.NewMockManager(ctrl)
 				router         = router.NewMockRouter(ctrl)
 <<<<<<< HEAD
+<<<<<<< HEAD
 				nodeIDs        = set.Set[ids.NodeID]{
 =======
 				nodeIDs        = ids.NodeIDSet{
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				nodeIDs        = set.Set[ids.NodeID]{
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					successNodeID: struct{}{},
 					failedNodeID:  struct{}{},
 					myNodeID:      struct{}{},
 				}
 <<<<<<< HEAD
+<<<<<<< HEAD
 				nodeIDsCopy set.Set[ids.NodeID]
 =======
 				nodeIDsCopy ids.NodeIDSet
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				nodeIDsCopy set.Set[ids.NodeID]
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 			)
 			nodeIDsCopy.Union(nodeIDs)
 			snowCtx.Registerer = prometheus.NewRegistry()
@@ -1234,10 +1344,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
 =======
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1278,10 +1392,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
 =======
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1327,10 +1445,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
 =======
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1376,10 +1498,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
 <<<<<<< HEAD
+<<<<<<< HEAD
 					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
 =======
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID, // Subnet ID
 					snowCtx.IsValidatorOnly(),
 				).Return(nil)
@@ -1485,7 +1611,7 @@ func TestSender_Single_Request(t *testing.T) {
 		assertMsgToMyself       func(r *require.Assertions, msg message.InboundMessage)
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *message.MockOutboundMsgBuilder)
-		setExternalSenderExpect func(externalSender *MockExternalSender, sentTo ids.NodeIDSet)
+		setExternalSenderExpect func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID])
 		sendF                   func(r *require.Assertions, sender common.Sender, nodeID ids.NodeID)
 >>>>>>> 340734087 (Add additional sender tests (#2254))
 	}
@@ -1536,11 +1662,15 @@ func TestSender_Single_Request(t *testing.T) {
 =======
 				).Return(nil, nil)
 			},
-			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo ids.NodeIDSet) {
+			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
+<<<<<<< HEAD
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID,
 					snowCtx.IsValidatorOnly(),
 				).Return(sentTo)
@@ -1598,11 +1728,15 @@ func TestSender_Single_Request(t *testing.T) {
 =======
 				).Return(nil, nil)
 			},
-			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo ids.NodeIDSet) {
+			setExternalSenderExpect: func(externalSender *MockExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
+<<<<<<< HEAD
 					ids.NodeIDSet{destinationNodeID: struct{}{}}, // Node IDs
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					set.Set[ids.NodeID]{destinationNodeID: struct{}{}}, // Node IDs
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 					subnetID,
 					snowCtx.IsValidatorOnly(),
 				).Return(sentTo)
@@ -1749,10 +1883,14 @@ func TestSender_Single_Request(t *testing.T) {
 
 				// Make sure we're sending the message
 <<<<<<< HEAD
+<<<<<<< HEAD
 				tt.setExternalSenderExpect(externalSender, set.Set[ids.NodeID]{})
 =======
 				tt.setExternalSenderExpect(externalSender, ids.NodeIDSet{})
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				tt.setExternalSenderExpect(externalSender, set.Set[ids.NodeID]{})
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 				tt.sendF(require, sender, destinationNodeID)
 

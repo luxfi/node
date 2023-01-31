@@ -58,6 +58,7 @@ func (b *blockJob) ID() ids.ID {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (b *blockJob) MissingDependencies(ctx context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
 =======
@@ -67,6 +68,10 @@ func (b *blockJob) MissingDependencies(ctx context.Context) (ids.Set, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 	missing := ids.Set{}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (b *blockJob) MissingDependencies(ctx context.Context) (set.Set[ids.ID], error) {
+	missing := set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	parentID := b.blk.Parent()
 	if parent, err := b.vm.GetBlock(ctx, parentID); err != nil || parent.Status() != choices.Accepted {
 		missing.Add(parentID)

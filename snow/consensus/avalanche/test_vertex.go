@@ -53,6 +53,7 @@ func (v *TestVertex) HasWhitelist() bool {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (v *TestVertex) Whitelist(context.Context) (set.Set[ids.ID], error) {
 =======
 func (v *TestVertex) Whitelist() (ids.Set, error) {
@@ -60,6 +61,9 @@ func (v *TestVertex) Whitelist() (ids.Set, error) {
 =======
 func (v *TestVertex) Whitelist(context.Context) (ids.Set, error) {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (v *TestVertex) Whitelist(context.Context) (set.Set[ids.ID], error) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return v.WhitelistV, v.WhitelistErrV
 }
 

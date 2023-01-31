@@ -12,9 +12,13 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	"github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 func TestSendMixedQuery(t *testing.T) {

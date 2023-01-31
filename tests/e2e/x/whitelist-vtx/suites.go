@@ -8,6 +8,7 @@ import (
 	"context"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/tests"
 	"github.com/luxdefi/luxd/tests/e2e"
@@ -17,6 +18,18 @@ import (
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -66,7 +79,7 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 			for i := range wallets {
 				wallets[i] = primary.NewWalletWithOptions(
 					baseWallet,
-					common.WithCustomAddresses(ids.ShortSet{
+					common.WithCustomAddresses(set.Set[ids.ShortID]{
 						testKeys[i].PublicKey().Address(): struct{}{},
 					}),
 				)
