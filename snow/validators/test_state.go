@@ -29,6 +29,7 @@ type TestState struct {
 	CantGetValidatorSet bool
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	GetMinimumHeightF func(ctx context.Context) (uint64, error)
 	GetCurrentHeightF func(ctx context.Context) (uint64, error)
 	GetSubnetIDF      func(ctx context.Context, chainID ids.ID) (ids.ID, error)
@@ -38,6 +39,11 @@ type TestState struct {
 	GetCurrentHeightF func(context.Context) (uint64, error)
 	GetValidatorSetF  func(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error)
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+	GetMinimumHeightF func(ctx context.Context) (uint64, error)
+	GetCurrentHeightF func(ctx context.Context) (uint64, error)
+	GetValidatorSetF  func(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*Validator, error)
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 }
 
 func (vm *TestState) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -61,6 +67,7 @@ func (vm *TestState) GetCurrentHeight(ctx context.Context) (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *TestState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	if vm.GetSubnetIDF != nil {
 		return vm.GetSubnetIDF(ctx, chainID)
@@ -71,14 +78,20 @@ func (vm *TestState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, e
 	return ids.Empty, errSubnetID
 }
 
+=======
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 func (vm *TestState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	subnetID ids.ID,
+<<<<<<< HEAD
 ) (map[ids.NodeID]*GetValidatorOutput, error) {
 =======
 func (vm *TestState) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+) (map[ids.NodeID]*Validator, error) {
+>>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
 	if vm.GetValidatorSetF != nil {
 		return vm.GetValidatorSetF(ctx, height, subnetID)
 	}
