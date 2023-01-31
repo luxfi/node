@@ -74,6 +74,7 @@ func TestReload_GetNewVMsFails(t *testing.T) {
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
+<<<<<<< HEAD
 =======
 	installedVMs, failedVMs, err := resources.vmRegistry.Reload()
 =======
@@ -83,6 +84,8 @@ func TestReload_GetNewVMsFails(t *testing.T) {
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 }
 
 // Tests that if we fail to register a VM, we fail.
@@ -122,10 +125,14 @@ func TestReload_PartialRegisterFailure(t *testing.T) {
 
 	require.Len(t, failedVMs, 1)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.ErrorIs(t, failedVMs[id3], errTest)
 =======
 	require.ErrorIs(t, failedVMs[id3], errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+	require.ErrorIs(t, failedVMs[id3], errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	require.Len(t, installedVMs, 1)
 	require.Equal(t, id4, installedVMs[0])
 	require.NoError(t, err)
@@ -183,6 +190,7 @@ func TestReloadWithReadLock_GetNewVMsFails(t *testing.T) {
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
+<<<<<<< HEAD
 =======
 	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock()
 =======
@@ -192,6 +200,8 @@ func TestReloadWithReadLock_GetNewVMsFails(t *testing.T) {
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 }
 
 // Tests that if we fail to register a VM, we fail.
@@ -231,10 +241,14 @@ func TestReloadWithReadLock_PartialRegisterFailure(t *testing.T) {
 
 	require.Len(t, failedVMs, 1)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.ErrorIs(t, failedVMs[id3], errTest)
 =======
 	require.ErrorIs(t, failedVMs[id3], errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+	require.ErrorIs(t, failedVMs[id3], errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	require.Len(t, installedVMs, 1)
 	require.Equal(t, id4, installedVMs[0])
 	require.NoError(t, err)

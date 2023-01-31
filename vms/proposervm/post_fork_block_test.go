@@ -922,10 +922,14 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 
 	// set error on coreBlock.Verify and recall Verify()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	coreBlk.VerifyV = errDuplicateVerify
 =======
 	coreBlk.VerifyV = errors.New("core block verify should only be called once")
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	coreBlk.VerifyV = errDuplicateVerify
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	if err := builtBlk.Verify(context.Background()); err != nil {
 		t.Fatal(err)
 	}

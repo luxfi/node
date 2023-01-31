@@ -70,10 +70,14 @@ func TestGet_ReadDirFails(t *testing.T) {
 
 	_, _, err := resources.getter.Get()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.ErrorIs(t, err, errTest)
 =======
 	require.ErrorIs(t, err, errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+	require.ErrorIs(t, err, errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 }
 
 // Get should fail if we see an invalid VM id
@@ -103,10 +107,14 @@ func TestGet_GetFactoryFails(t *testing.T) {
 
 	_, _, err := resources.getter.Get()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.ErrorIs(t, err, errTest)
 =======
 	require.ErrorIs(t, err, errOops)
 >>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
+=======
+	require.ErrorIs(t, err, errTest)
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 }
 
 // Get should return the correct registered and unregistered VMs.

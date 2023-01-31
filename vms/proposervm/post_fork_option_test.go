@@ -7,10 +7,13 @@ import (
 	"bytes"
 	"context"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"crypto"
 =======
 	"errors"
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	"testing"
 	"time"
 

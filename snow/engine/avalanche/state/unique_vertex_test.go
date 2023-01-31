@@ -22,10 +22,15 @@ import (
 )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 var errUnknownTx = errors.New("unknown tx")
 
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+var errUnknownTx = errors.New("unknown tx")
+
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (snowstorm.Tx, error)) *Serializer {
 	vm := vertex.TestVM{}
 	vm.T = t

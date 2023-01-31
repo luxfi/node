@@ -81,9 +81,13 @@ var (
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
 <<<<<<< HEAD
+<<<<<<< HEAD
 	errMissing                  = errors.New("missing")
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	errMissing                  = errors.New("missing")
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 )
 
 type mutableSharedMemory struct {
@@ -294,10 +298,14 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 			}[chainID]
 			if !ok {
 <<<<<<< HEAD
+<<<<<<< HEAD
 				return ids.Empty, errMissing
 =======
 				return ids.Empty, errors.New("missing")
 >>>>>>> 85ab999a4 (Improve subnetID lookup to support non-whitelisted subnets (#2354))
+=======
+				return ids.Empty, errMissing
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 			}
 			return subnetID, nil
 		},

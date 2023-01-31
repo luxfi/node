@@ -596,10 +596,14 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
 		require.Empty(summaryBytes)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		return nil, errEmptySummary
 =======
 		return nil, errors.New("empty summary")
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		return nil, errEmptySummary
+>>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 	}
 
 	// assume timeout is reached and vdrs is marked as unresponsive
