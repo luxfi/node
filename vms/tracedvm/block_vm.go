@@ -21,15 +21,23 @@ import (
 )
 
 var (
+<<<<<<< HEAD
 	_ block.ChainVM                      = (*blockVM)(nil)
 	_ block.BuildBlockWithContextChainVM = (*blockVM)(nil)
 	_ block.BatchedChainVM               = (*blockVM)(nil)
 	_ block.HeightIndexedChainVM         = (*blockVM)(nil)
 	_ block.StateSyncableVM              = (*blockVM)(nil)
+=======
+	_ block.ChainVM              = (*blockVM)(nil)
+	_ block.BatchedChainVM       = (*blockVM)(nil)
+	_ block.HeightIndexedChainVM = (*blockVM)(nil)
+	_ block.StateSyncableVM      = (*blockVM)(nil)
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 )
 
 type blockVM struct {
 	block.ChainVM
+<<<<<<< HEAD
 	buildBlockVM block.BuildBlockWithContextChainVM
 	batchedVM    block.BatchedChainVM
 	hVM          block.HeightIndexedChainVM
@@ -98,6 +106,44 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 		parseStateSummaryTag:          fmt.Sprintf("%s.parseStateSummary", name),
 		getStateSummaryTag:            fmt.Sprintf("%s.getStateSummary", name),
 		tracer:                        tracer,
+=======
+	bVM              block.BatchedChainVM
+	hVM              block.HeightIndexedChainVM
+	ssVM             block.StateSyncableVM
+	initializeTag    string
+	buildBlockTag    string
+	parseBlockTag    string
+	getBlockTag      string
+	setPreferenceTag string
+	lastAcceptedTag  string
+	verifyTag        string
+	acceptTag        string
+	rejectTag        string
+	optionsTag       string
+	tracer           trace.Tracer
+}
+
+func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainVM {
+	bVM, _ := vm.(block.BatchedChainVM)
+	hVM, _ := vm.(block.HeightIndexedChainVM)
+	ssVM, _ := vm.(block.StateSyncableVM)
+	return &blockVM{
+		ChainVM:          vm,
+		bVM:              bVM,
+		hVM:              hVM,
+		ssVM:             ssVM,
+		initializeTag:    fmt.Sprintf("%s.initialize", name),
+		buildBlockTag:    fmt.Sprintf("%s.buildBlock", name),
+		parseBlockTag:    fmt.Sprintf("%s.parseBlock", name),
+		getBlockTag:      fmt.Sprintf("%s.getBlock", name),
+		setPreferenceTag: fmt.Sprintf("%s.setPreference", name),
+		lastAcceptedTag:  fmt.Sprintf("%s.lastAccepted", name),
+		verifyTag:        fmt.Sprintf("%s.verify", name),
+		acceptTag:        fmt.Sprintf("%s.accept", name),
+		rejectTag:        fmt.Sprintf("%s.reject", name),
+		optionsTag:       fmt.Sprintf("%s.options", name),
+		tracer:           tracer,
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 	}
 }
 

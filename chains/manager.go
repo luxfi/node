@@ -16,6 +16,7 @@ import (
 
 	"go.uber.org/zap"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/health"
 	"github.com/luxdefi/luxd/api/keystore"
 	"github.com/luxdefi/luxd/api/metrics"
@@ -48,6 +49,41 @@ import (
 	"github.com/luxdefi/luxd/vms"
 	"github.com/luxdefi/luxd/vms/metervm"
 	"github.com/luxdefi/luxd/vms/proposervm"
+=======
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/api/keystore"
+	"github.com/ava-labs/avalanchego/api/metrics"
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/state"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/syncer"
+	"github.com/ava-labs/avalanchego/snow/networking/handler"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/sender"
+	"github.com/ava-labs/avalanchego/snow/networking/timeout"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/utils/buffer"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms"
+	"github.com/ava-labs/avalanchego/vms/metervm"
+	"github.com/ava-labs/avalanchego/vms/proposervm"
+	"github.com/ava-labs/avalanchego/vms/tracedvm"
+>>>>>>> c7cc22f98 (Add VM tracer (#2225))
 
 	dbManager "github.com/luxdefi/luxd/database/manager"
 	timetracker "github.com/luxdefi/luxd/snow/networking/tracker"
@@ -636,6 +672,9 @@ func (m *manager) createLUXChain(
 	if m.MeterVMEnabled {
 		vm = metervm.NewVertexVM(vm)
 	}
+	if m.TracingEnabled {
+		vm = tracedvm.NewVertexVM(vm, m.Tracer)
+	}
 
 	// Handles serialization/deserialization of vertices and also the
 	// persistence of vertices
@@ -881,6 +920,12 @@ func (m *manager) createSnowmanChain(
 		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
 		zap.Duration("minBlockDelay", minBlockDelay),
 	)
+
+	chainAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
+	if m.TracingEnabled {
+		vm = tracedvm.NewBlockVM(vm, chainAlias, m.Tracer)
+	}
+
 	vm = proposervm.New(
 		vm,
 		m.ApricotPhase4Time,
@@ -891,6 +936,10 @@ func (m *manager) createSnowmanChain(
 	if m.MeterVMEnabled {
 		vm = metervm.NewBlockVM(vm)
 	}
+	if m.TracingEnabled {
+		vm = tracedvm.NewBlockVM(vm, "proposervm", m.Tracer)
+	}
+
 	if err := vm.Initialize(
 		context.TODO(),
 		ctx.Context,
@@ -1017,8 +1066,6 @@ func (m *manager) createSnowmanChain(
 	handler.SetStateSyncer(stateSyncer)
 
 	// Register health checks
-	chainAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
-
 	if err := m.Health.RegisterHealthCheck(chainAlias, handler); err != nil {
 		return nil, fmt.Errorf("couldn't add health check for chain %s: %w", chainAlias, err)
 	}
