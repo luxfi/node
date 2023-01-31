@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/utils"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -114,7 +114,7 @@ func UniformDistributionTest(t *testing.T, s Uniform) {
 	val, err := s.Sample(3)
 	require.NoError(t, err)
 
-	utils.SortUint64(val)
+	slices.Sort(val)
 	require.Equal(
 		t,
 		[]uint64{0, 1, 2},

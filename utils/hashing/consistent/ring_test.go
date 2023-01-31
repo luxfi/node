@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package consistent
@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 var (
@@ -30,7 +30,9 @@ type testKey struct {
 	hash uint64
 }
 
-func (t testKey) ConsistentHashKey() []byte { return []byte(t.key) }
+func (t testKey) ConsistentHashKey() []byte {
+	return []byte(t.key)
+}
 
 // Tests that a key routes to its closest clockwise node.
 // Test cases are described in greater detail below; see diagrams for Ring.

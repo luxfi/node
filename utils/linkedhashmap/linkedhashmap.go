@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inte. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package linkedhashmap
@@ -7,7 +7,7 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/luxdefi/luxd/utils"
+	"github.com/ava-labs/avalanchego/utils"
 )
 
 var _ LinkedHashmap[int, struct{}] = (*linkedHashmap[int, struct{}])(nil)
@@ -120,7 +120,9 @@ func (lh *linkedHashmap[K, V]) delete(key K) {
 	}
 }
 
-func (lh *linkedHashmap[K, V]) len() int { return len(lh.entryMap) }
+func (lh *linkedHashmap[K, V]) len() int {
+	return len(lh.entryMap)
+}
 
 func (lh *linkedHashmap[K, V]) oldest() (K, V, bool) {
 	if val := lh.entryList.Front(); val != nil {

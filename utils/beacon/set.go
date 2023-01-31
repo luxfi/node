@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package beacon
@@ -7,8 +7,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/ips"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/ips"
 )
 
 var (
@@ -99,7 +99,9 @@ func (s *set) RemoveByIP(ip ips.IPPort) error {
 	return s.RemoveByID(idToRemove)
 }
 
-func (s *set) Len() int { return len(s.beacons) }
+func (s *set) Len() int {
+	return len(s.beacons)
+}
 
 func (s *set) IDsArg() string {
 	sb := strings.Builder{}

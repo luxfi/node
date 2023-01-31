@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package math
@@ -6,7 +6,7 @@ package math
 import (
 	"container/heap"
 
-	"github.com/luxdefi/luxd/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 var (
@@ -111,7 +111,9 @@ func (h averagerHeap) Len() int {
 	return len(h.b.entries)
 }
 
-func (h *averagerHeapBackend) Len() int { return len(h.entries) }
+func (h *averagerHeapBackend) Len() int {
+	return len(h.entries)
+}
 
 func (h *averagerHeapBackend) Less(i, j int) bool {
 	if h.isMaxHeap {
