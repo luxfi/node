@@ -33,6 +33,7 @@ var errUnknownSummary = errors.New("unknown summary")
 =======
 var errUnknownSummary = errors.New("unknown summary")
 
+<<<<<<< HEAD
 >>>>>>> f5c02e10c (Remove dynamic constant error creation (#2392))
 func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
 	rawDB := dbMan.Current().Database
@@ -56,6 +57,8 @@ func stopHeightReindexing(t *testing.T, coreVM *fullVM, dbMan manager.Manager) {
 }
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 
+=======
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	innerVM := &fullVM{
 		TestVM: &block.TestVM{
@@ -120,6 +123,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 
 	// createVM
 <<<<<<< HEAD
+<<<<<<< HEAD
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 	dbManager = dbManager.NewPrefixDBManager([]byte{})
 
@@ -132,6 +136,11 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		pTestCert.Leaf,
 	)
 =======
+=======
+	dbManager := manager.NewMemDB(version.Semantic1_0_0)
+	dbManager = dbManager.NewPrefixDBManager([]byte{})
+
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	vm := New(innerVM, time.Time{}, 0, DefaultMinBlockDelay)
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 

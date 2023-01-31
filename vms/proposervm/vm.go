@@ -235,6 +235,7 @@ func (vm *VM) Initialize(
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vm.repair(detachedCtx); err != nil {
 =======
 	if err := vm.repair(ctx, indexerState); err != nil {
@@ -242,6 +243,9 @@ func (vm *VM) Initialize(
 =======
 	if err := vm.repair(detachedCtx, indexerState); err != nil {
 >>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
+=======
+	if err := vm.repair(detachedCtx); err != nil {
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 		return err
 	}
 
@@ -363,6 +367,7 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // repair makes sure that vm and innerVM chains are in sync.
 // Moreover it fixes vm's height index if defined.
 func (vm *VM) repair(ctx context.Context) error {
@@ -373,6 +378,13 @@ func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
 	// check and possibly rebuild height index
 	if vm.hVM == nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+// repair makes sure that vm and innerVM chains are in sync.
+// Moreover it fixes vm's height index if defined.
+func (vm *VM) repair(ctx context.Context) error {
+	if vm.hVM == nil {
+		// height index not defined. Just sync vms and innerVM chains.
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 		return vm.repairAcceptedChainByIteration(ctx)
 	}
 
@@ -382,6 +394,7 @@ func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
 		// and repair this VM height index.
 		shouldRepair, err := vm.shouldHeightIndexBeRepaired(ctx)
 		if err != nil {
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 			return fmt.Errorf("retrieving value of required index reset failed with: %w", err)
@@ -409,6 +422,8 @@ func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
 		case block.ErrIndexIncomplete:
 		default:
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 			return err
 		}
 		if !shouldRepair {
@@ -422,9 +437,13 @@ func (vm *VM) repair(ctx context.Context, indexerState state.State) error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// innerVM height index is incomplete. Sync vm and innerVM chains first.
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	// innerVM height index is incomplete. Sync vm and innerVM chains first.
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	if err := vm.repairAcceptedChainByIteration(ctx); err != nil {
 		return err
 	}
@@ -585,9 +604,12 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return err
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 275404c51 (Remove proposervm height index reset (#2414))
 	proLastAccepted, err := vm.getPostForkBlock(ctx, proLastAcceptedID)
 	if err != nil {
 		return err
