@@ -6,9 +6,12 @@ package proposer
 import (
 	"context"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"sort"
 >>>>>>> f94b52cf8 ( Pass message context through the validators.State interface (#2242))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"

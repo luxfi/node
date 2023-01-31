@@ -9,6 +9,7 @@ import (
 
 	stdcontext "context"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/math"
 	"github.com/luxdefi/luxd/vms/avm/txs"
@@ -18,6 +19,18 @@ import (
 	"github.com/luxdefi/luxd/vms/propertyfx"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
 	"github.com/luxdefi/luxd/wallet/subnet/primary/common"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 )
 
 var (
@@ -260,7 +273,7 @@ func (b *builder) NewCreateAssetTx(
 		Denomination: denomination,
 		States:       states,
 	}
-	tx.Sort() // sort the initial states
+	utils.Sort(tx.States) // sort the initial states
 	return tx, nil
 }
 
@@ -393,7 +406,11 @@ func (b *builder) NewImportTx(
 		}
 		importedAmounts[assetID] = newImportedAmount
 	}
+<<<<<<< HEAD
 	lux.SortTransferableInputs(importedInputs) // sort imported inputs
+=======
+	utils.Sort(importedInputs) // sort imported inputs
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 
 	if len(importedAmounts) == 0 {
 		return nil, fmt.Errorf(
@@ -613,8 +630,13 @@ func (b *builder) spend(
 		}
 	}
 
+<<<<<<< HEAD
 	lux.SortTransferableInputs(inputs)                   // sort inputs
 	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the change outputs
+=======
+	utils.Sort(inputs)                                    // sort inputs
+	avax.SortTransferableOutputs(outputs, Parser.Codec()) // sort the change outputs
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 	return inputs, outputs, nil
 }
 

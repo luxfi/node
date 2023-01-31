@@ -162,6 +162,7 @@ func (in *TransferableInput) Verify() error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (in *TransferableInput) Less(other *TransferableInput) bool {
 	return in.UTXOID.Less(&other.UTXOID)
 =======
@@ -196,6 +197,10 @@ func SortTransferableInputs(ins []*TransferableInput) {
 func IsSortedAndUniqueTransferableInputs(ins []*TransferableInput) bool {
 	return utils.IsSortedAndUnique(innerSortTransferableInputs(ins))
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (in *TransferableInput) Less(other *TransferableInput) bool {
+	return in.UTXOID.Less(&other.UTXOID)
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 }
 
 type innerSortTransferableInputsWithSigners struct {

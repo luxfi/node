@@ -15,6 +15,7 @@ type Genesis struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 func (g *Genesis) Less(i, j int) bool {
 	return strings.Compare(g.Txs[i].Alias, g.Txs[j].Alias) == -1
@@ -37,6 +38,8 @@ func (g *Genesis) IsSortedAndUnique() bool {
 }
 
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 type GenesisAsset struct {
 	Alias             string `serialize:"true"`
 	txs.CreateAssetTx `serialize:"true"`

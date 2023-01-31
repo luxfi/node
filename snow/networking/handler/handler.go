@@ -514,7 +514,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	case *message.GetStateSummaryFrontierFailed:
 		return engine.GetStateSummaryFrontierFailed(ctx, nodeID, msg.RequestID)
 
+<<<<<<< HEAD
 	case *p2p.GetAcceptedStateSummary:
+=======
+	case *p2ppb.GetAcceptedStateSummary:
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 		// TODO: Enforce that the numbers are sorted to make this verification
 		//       more efficient.
 		if !utils.IsUnique(msg.Heights) {

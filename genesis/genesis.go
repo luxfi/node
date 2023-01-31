@@ -4,12 +4,11 @@
 package genesis
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"sort"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/constants"
 	"github.com/luxdefi/luxd/utils/formatting"
@@ -22,6 +21,21 @@ import (
 	"github.com/luxdefi/luxd/vms/platformvm/genesis"
 	"github.com/luxdefi/luxd/vms/propertyfx"
 	"github.com/luxdefi/luxd/vms/secp256k1fx"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/api"
+	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 
 	xchaintxs "github.com/luxdefi/luxd/vms/avm/txs"
 	pchaintxs "github.com/luxdefi/luxd/vms/platformvm/txs"
@@ -274,7 +288,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 				xAllocations = append(xAllocations, allocation)
 			}
 		}
-		sortXAllocation(xAllocations)
+		utils.Sort(xAllocations)
 
 		for _, allocation := range xAllocations {
 			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
@@ -557,6 +571,7 @@ func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
 	}
 	return tx.ID(), nil
 }
+<<<<<<< HEAD
 
 type innerSortXAllocation []Allocation
 
@@ -577,3 +592,5 @@ func (xa innerSortXAllocation) Swap(i, j int) {
 func sortXAllocation(a []Allocation) {
 	sort.Sort(innerSortXAllocation(a))
 }
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))

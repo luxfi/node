@@ -63,6 +63,9 @@ func TestUTXOID(t *testing.T) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 func TestUTXOIDLess(t *testing.T) {
 	type test struct {
 		name     string
@@ -118,8 +121,11 @@ func TestUTXOIDLess(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 7b681477c (Add `avax.UTXOIDFromString` helper (#2138))
+=======
+>>>>>>> e7024bd25 (Use generic sorting (#1850))
 func TestUTXOIDFromString(t *testing.T) {
 	tests := []struct {
 		description string
