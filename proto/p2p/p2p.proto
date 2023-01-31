@@ -121,6 +121,9 @@ message PeerList {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 // "peer_ack" is sent in response to a "peer_list" message. The "tx_id" should
 // correspond to a "tx_id" in the "peer_list" message. The sender should set
 // "timestamp" to be the latest known timestamp of a signed IP corresponding to
@@ -133,6 +136,7 @@ message PeerAck {
   uint64 timestamp = 2;
 }
 
+<<<<<<< HEAD
 // Message that responds to a peer_list message containing the AddValidatorTxIDs
 // from the peer_list message that we currently have in our validator set.
 message PeerListAck {
@@ -145,6 +149,14 @@ message PeerListAck {
 message PeerListAck {
   repeated bytes tx_ids = 1;
 >>>>>>> d55aa59f9 (Add PeerListAck message (#2316))
+=======
+// Message that responds to a peer_list message containing the AddValidatorTxIDs
+// from the peer_list message that we currently have in our validator set.
+message PeerListAck {
+  reserved 1; // deprecated; used to be tx_ids
+
+  repeated PeerAck peer_acks = 2;
+>>>>>>> 8fe3833a0 (Support IP updates in PeerList gossip tracking (#2374))
 }
 
 message GetStateSummaryFrontier {
