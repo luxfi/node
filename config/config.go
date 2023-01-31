@@ -87,7 +87,6 @@ import (
 )
 
 const (
-	pluginsDirName       = "plugins"
 	chainConfigFileName  = "config"
 	chainUpgradeFileName = "upgrade"
 	subnetConfigFileExt  = ".json"
@@ -112,14 +111,15 @@ var (
 	errStakingCertContentUnset       = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errMissingStakingSigningKeyFile  = errors.New("missing staking signing key file")
 	errTracingEndpointEmpty          = fmt.Errorf("%s cannot be empty", TracingEndpointKey)
+	errPluginDirNotADirectory        = errors.New("plugin dir is not a directory")
 )
 
-func GetRunnerConfig(v *viper.Viper) (runner.Config, error) {
-	config := runner.Config{
+func GetRunnerConfig(v *viper.Viper) runner.Config {
+	return runner.Config{
 		DisplayVersionAndExit: v.GetBool(VersionKey),
-		BuildDir:              GetExpandedArg(v, BuildDirKey),
 		PluginMode:            v.GetBool(PluginModeKey),
 	}
+<<<<<<< HEAD
 
 	// Build directory should have this structure:
 	//
@@ -157,6 +157,8 @@ func GetRunnerConfig(v *viper.Viper) (runner.Config, error) {
 		)
 	}
 	return config, nil
+=======
+>>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
 }
 
 func getConsensusConfig(v *viper.Viper) lux.Parameters {
@@ -1281,11 +1283,39 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 	}, nil
 }
 
-func GetNodeConfig(v *viper.Viper, buildDir string) (node.Config, error) {
-	nodeConfig := node.Config{}
+// Returns the path to the directory that contains VM binaries.
+func getPluginDir(v *viper.Viper) (string, error) {
+	pluginDir := GetExpandedString(v, v.GetString(PluginDirKey))
 
-	// Plugin directory defaults to [buildDir]/[pluginsDirName]
-	nodeConfig.PluginDir = filepath.Join(buildDir, pluginsDirName)
+	if v.IsSet(PluginDirKey) {
+		// If the flag was given, assert it exists and is a directory
+		info, err := os.Stat(pluginDir)
+		if err != nil {
+			return "", fmt.Errorf("plugin dir %q not found: %w", pluginDir, err)
+		}
+		if !info.IsDir() {
+			return "", fmt.Errorf("%w: %q", errPluginDirNotADirectory, pluginDir)
+		}
+	} else {
+		// If the flag wasn't given, make sure the default location exists.
+		if err := os.MkdirAll(pluginDir, perms.ReadWriteExecute); err != nil {
+			return "", fmt.Errorf("failed to create plugin dir at %s: %w", pluginDir, err)
+		}
+	}
+
+	return pluginDir, nil
+}
+
+func GetNodeConfig(v *viper.Viper) (node.Config, error) {
+	var (
+		nodeConfig node.Config
+		err        error
+	)
+
+	nodeConfig.PluginDir, err = getPluginDir(v)
+	if err != nil {
+		return node.Config{}, err
+	}
 
 	// Consensus Parameters
 	nodeConfig.ConsensusParams = getConsensusConfig(v)
@@ -1305,7 +1335,6 @@ func GetNodeConfig(v *viper.Viper, buildDir string) (node.Config, error) {
 
 	nodeConfig.UseCurrentHeight = v.GetBool(ProposerVMUseCurrentHeightKey)
 
-	var err error
 	// Logging
 	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
 	if err != nil {
