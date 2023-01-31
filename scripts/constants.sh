@@ -10,10 +10,14 @@ avalanchego_path="$AVALANCHE_PATH/build/avalanchego"
 plugin_dir=${PLUGIN_DIR:-$HOME/.avalanchego/plugins}
 evm_path=${EVM_PATH:-$plugin_dir/evm}
 <<<<<<< HEAD
+<<<<<<< HEAD
 coreth_version=${CORETH_VERSION:-'v0.11.6-rc.0'}
 =======
 coreth_version=${CORETH_VERSION:-'v0.11.6-0.20221228194216-966a5923da9b'}
 >>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
+=======
+coreth_version=${CORETH_VERSION:-'v0.11.6-rc.0'}
+>>>>>>> e153cf552 (Update versions for v1.9.6 (#2440))
 
 # Set the PATHS
 GOPATH="$(go env GOPATH)"
