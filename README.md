@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="resources/luxlogo.png?raw=true">
+▼
 </div>
 
 ---
 
-Node implementation for the [Lux](https://lux.network) network -
+Node implementation for the [Lux Network](https://lux.network) -
 a decentralized network of blockchains designed for real world assets (RWAs).
 
 ## Installation

@@ -20,7 +20,7 @@ import (
 	appplugin "github.com/luxdefi/node/app/plugin"
 )
 
-// Run an Node node.
+// Run an AvalancheGo node.
 // If specified in the config, serves a hashicorp plugin that can be consumed by
 // the daemon (see node/main).
 func Run(config Config, nodeConfig node.Config) {

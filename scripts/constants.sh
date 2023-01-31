@@ -5,7 +5,7 @@
 
 AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
-# Where Node binary goes
+# Where AvalancheGo binary goes
 node_path="$AVALANCHE_PATH/build/node"
 plugin_dir=${PLUGIN_DIR:-$HOME/.node/plugins}
 evm_path=${EVM_PATH:-$plugin_dir/evm}

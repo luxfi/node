@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/crypto"
 	"github.com/luxdefi/node/utils/hashing"
 	"github.com/luxdefi/node/utils/wrappers"
@@ -52,7 +53,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log.Debug("initializing secp256k1 fx")
 
 	fx.SECPFactory = crypto.FactorySECP256K1R{
-		Cache: cache.LRU{Size: defaultCacheSize},
+		Cache: cache.LRU[ids.ID, *crypto.PublicKeySECP256K1R]{Size: defaultCacheSize},
 	}
 	c := fx.VM.CodecRegistry()
 	errs := wrappers.Errs{}

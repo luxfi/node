@@ -52,24 +52,24 @@ fi
 find /tmp/node-v${VERSION}
 
 #################################
-# download netrunner
-# https://github.com/luxdefi/netrunner
+# download avalanche-network-runner
+# https://github.com/luxdefi/avalanche-network-runner
 NETWORK_RUNNER_VERSION=1.3.5-rc.0
-DOWNLOAD_PATH=/tmp/netrunner.tar.gz
-DOWNLOAD_URL="https://github.com/luxdefi/netrunner/releases/download/v${NETWORK_RUNNER_VERSION}/netrunner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
+DOWNLOAD_URL="https://github.com/luxdefi/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
 if [[ ${GOOS} == "darwin" ]]; then
-  DOWNLOAD_URL="https://github.com/luxdefi/netrunner/releases/download/v${NETWORK_RUNNER_VERSION}/netrunner_${NETWORK_RUNNER_VERSION}_darwin_amd64.tar.gz"
+  DOWNLOAD_URL="https://github.com/luxdefi/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_darwin_amd64.tar.gz"
 fi
 
 rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/netrunner
+rm -f /tmp/avalanche-network-runner
 
-echo "downloading netrunner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL}"
+echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL}"
 curl -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
 
-echo "extracting downloaded netrunner"
+echo "extracting downloaded avalanche-network-runner"
 tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/netrunner -h
+/tmp/avalanche-network-runner -h
 
 #################################
 echo "building upgrade.test"
@@ -79,9 +79,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################
-# run "netrunner" server
-echo "launch netrunner in the background"
-/tmp/netrunner \
+# run "avalanche-network-runner" server
+echo "launch avalanche-network-runner in the background"
+/tmp/avalanche-network-runner \
 server \
 --log-level debug \
 --port=":12340" \
