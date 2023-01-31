@@ -355,7 +355,11 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 			dummyHeight := uint64(1)
 
 			subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 			env.config.TrackedSubnets.Add(subnetID)
+=======
+			env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 			env.config.Validators.Add(subnetID, validators.NewSet())
 
 			for _, staker := range test.stakers {
@@ -455,7 +459,11 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	}()
 
 	subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 	env.config.TrackedSubnets.Add(subnetID)
+=======
+	env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 	env.config.Validators.Add(subnetID, validators.NewSet())
 
 	dummyHeight := uint64(1)
@@ -557,8 +565,13 @@ func TestTrackedSubnet(t *testing.T) {
 			dummyHeight := uint64(1)
 
 			subnetID := testSubnet1.ID()
+<<<<<<< HEAD
 			if tracked {
 				env.config.TrackedSubnets.Add(subnetID)
+=======
+			if whitelist {
+				env.config.WhitelistedSubnets.Add(subnetID)
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 				env.config.Validators.Add(subnetID, validators.NewSet())
 			}
 
@@ -612,8 +625,13 @@ func TestTrackedSubnet(t *testing.T) {
 
 			executor.OnCommitState.Apply(env.state)
 			env.state.SetHeight(dummyHeight)
+<<<<<<< HEAD
 			require.NoError(env.state.Commit())
 			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
+=======
+			require.NoError(t, env.state.Commit())
+			require.Equal(t, whitelist, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
+>>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 		})
 	}
 }
