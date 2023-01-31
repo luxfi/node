@@ -21,7 +21,12 @@ jobs:
 >>>>>>> 51f21a85b (Update buf to v1.9.0 (#2239))
 =======
       - uses: bufbuild/buf-setup-action@v1.9.0 # TODO: use "v1.10.0"
+<<<<<<< HEAD
 >>>>>>> 1c0e00460 (Bump buf dependency to v1.10.0 (#2339))
+=======
+        with:
+          github_token: ${{ github.token }}
+>>>>>>> 6bf817bb8 (Add proposer list to proposer.Windower (#2366))
       - uses: bufbuild/buf-lint-action@v1
         with:
           input: "proto"
