@@ -1685,7 +1685,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 	// TODO: Move validator set management out of the state package
 	//
 	// Attempt to update the stake metrics
-	primaryValidators, ok := s.cfg.Validators.GetValidators(constants.PrimaryNetworkID)
+	primaryValidators, ok := s.cfg.Validators.Get(constants.PrimaryNetworkID)
 	if !ok {
 		return nil
 	}
