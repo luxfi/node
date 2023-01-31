@@ -1027,7 +1027,13 @@ func newRemoveSubnetValidatorTx(t *testing.T) (*txs.RemoveSubnetValidatorTx, *tx
 		Unsigned: unsignedTx,
 		Creds:    creds,
 	}
+<<<<<<< HEAD
 	require.NoError(t, tx.Initialize(txs.Codec))
+=======
+	if err := tx.Initialize(txs.Codec); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 	return unsignedTx, tx
 }
 
@@ -1408,7 +1414,13 @@ func newTransformSubnetTx(t *testing.T) (*txs.TransformSubnetTx, *txs.Tx) {
 		Unsigned: unsignedTx,
 		Creds:    creds,
 	}
+<<<<<<< HEAD
 	require.NoError(t, tx.Initialize(txs.Codec))
+=======
+	if err := tx.Initialize(txs.Codec); err != nil {
+		t.Fatal(err)
+	}
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 	return unsignedTx, tx
 }
 

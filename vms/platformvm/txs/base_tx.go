@@ -41,10 +41,14 @@ type BaseTx struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (tx *BaseTx) SetBytes(unsignedBytes []byte) {
 =======
 func (tx *BaseTx) Initialize(unsignedBytes []byte) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (tx *BaseTx) SetBytes(unsignedBytes []byte) {
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 	tx.unsignedBytes = unsignedBytes
 }
 

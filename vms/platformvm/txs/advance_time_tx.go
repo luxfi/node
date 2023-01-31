@@ -28,10 +28,14 @@ type AdvanceTimeTx struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
 =======
 func (tx *AdvanceTimeTx) Initialize(unsignedBytes []byte) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
+>>>>>>> 3c968fec6 (Add codec.Size (#2343))
 	tx.unsignedBytes = unsignedBytes
 }
 
