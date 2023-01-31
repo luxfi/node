@@ -174,6 +174,7 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, startupAlpha/2))
 =======
 	require.NoError(vdrs.AddWeight(vdr0, startupAlpha/2))
@@ -184,6 +185,9 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(vdrs.Add(vdr0, nil, startupAlpha/2))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, startupAlpha/2))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(syncer.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.False(commonCfg.StartupTracker.ShouldStart())
@@ -192,6 +196,7 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -205,6 +210,9 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 =======
 	require.NoError(vdrs.Add(vdr, nil, startupAlpha))
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+	require.NoError(vdrs.Add(vdr, nil, ids.Empty, startupAlpha))
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	require.NoError(syncer.Connected(context.Background(), vdr, version.CurrentApp))
 
 	require.True(commonCfg.StartupTracker.ShouldStart())

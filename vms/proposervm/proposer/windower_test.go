@@ -26,6 +26,7 @@ func TestWindowerNoValidators(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 =======
 		GetValidatorSetF: func(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
@@ -36,6 +37,9 @@ func TestWindowerNoValidators(t *testing.T) {
 =======
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 			return nil, nil
 		},
 	}
@@ -59,12 +63,17 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			return map[ids.NodeID]*validators.GetValidatorOutput{
 =======
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.Validator, error) {
 			return map[ids.NodeID]*validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+			return map[ids.NodeID]*validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				validatorID: {
 					NodeID: validatorID,
 					Weight: 10,
@@ -109,6 +118,7 @@ func TestWindowerChangeByHeight(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
 =======
@@ -126,6 +136,12 @@ func TestWindowerChangeByHeight(t *testing.T) {
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
+			for _, id := range validatorIDs {
+				vdrs[id] = &validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: id,
 					Weight: 1,
 				}
@@ -187,6 +203,7 @@ func TestWindowerChangeByChain(t *testing.T) {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
 =======
@@ -204,6 +221,12 @@ func TestWindowerChangeByChain(t *testing.T) {
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.Validator{
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxWindows)
+			for _, id := range validatorIDs {
+				vdrs[id] = &validators.GetValidatorOutput{
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					NodeID: id,
 					Weight: 1,
 				}

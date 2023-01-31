@@ -1471,7 +1471,7 @@ func (s *state) initValidatorSets() error {
 func (s *state) validatorSet(subnetID ids.ID, vdrs validators.Set) error {
 	for nodeID, validator := range s.currentStakers.validators[subnetID] {
 		staker := validator.validator
-		if err := vdrs.Add(nodeID, staker.PublicKey, staker.Weight); err != nil {
+		if err := vdrs.Add(nodeID, staker.PublicKey, staker.TxID, staker.Weight); err != nil {
 			return err
 		}
 
@@ -1895,7 +1895,6 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			var (
 				weightDiff     = &ValidatorWeightDiff{}
 				isNewValidator bool
-				pk             *bls.PublicKey
 			)
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
 			if validatorDiff.validatorModified {
@@ -1966,7 +1965,6 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 =======
 					err = database.PutUInt64(s.currentSubnetValidatorList, staker.TxID[:], staker.PotentialReward)
 					isNewValidator = true
-					pk = staker.PublicKey
 				}
 				if err != nil {
 					return fmt.Errorf("failed to update current subnet staker: %w", err)
@@ -2028,6 +2026,9 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			} else {
 				if isNewValidator {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 					staker := validatorDiff.validator
 					err = validators.Add(
 						s.cfg.Validators,
@@ -2037,6 +2038,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 						staker.TxID,
 						weightDiff.Amount,
 					)
+<<<<<<< HEAD
 				} else {
 					err = validators.AddWeight(s.cfg.Validators, subnetID, nodeID, weightDiff.Amount)
 =======
@@ -2058,6 +2060,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 >>>>>>> f171d317d (Remove unnecessary functions from validators.Manager interface (#2277))
 =======
 					err = validators.Add(s.cfg.Validators, subnetID, nodeID, pk, weightDiff.Amount)
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 				} else {
 					err = validators.AddWeight(s.cfg.Validators, subnetID, nodeID, weightDiff.Amount)
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))

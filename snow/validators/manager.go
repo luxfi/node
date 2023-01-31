@@ -172,6 +172,7 @@ func (m *manager) String() string {
 // - adding [nodeID] to the validator set returns an error
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 =======
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
@@ -179,12 +180,18 @@ func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
 =======
 func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, weight uint64) error {
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+func Add(m Manager, subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	vdrs, ok := m.Get(subnetID)
 	if !ok {
 		return fmt.Errorf("%w: %s", errMissingValidators, subnetID)
 	}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	return vdrs.Add(nodeID, pk, txID, weight)
 }
 
