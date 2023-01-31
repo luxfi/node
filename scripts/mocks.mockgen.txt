@@ -3,10 +3,14 @@ github.com/ava-labs/avalanchego/chains/atomic=SharedMemory=chains/atomic/mock_sh
 github.com/ava-labs/avalanchego/database=Batch=database/mock_batch.go
 github.com/ava-labs/avalanchego/message=OutboundMessage=message/mock_message.go
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/message=OutboundMsgBuilder=message/mock_outbound_message_builder.go
 github.com/ava-labs/avalanchego/network/peer=GossipTracker=network/peer/mock_gossip_tracker.go
 =======
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
+=======
+github.com/ava-labs/avalanchego/network/peer=GossipTracker=network/peer/mock_gossip_tracker.go
+>>>>>>> 636c924dc (Implement gossip tracker (#2036))
 github.com/ava-labs/avalanchego/snow/consensus/snowman=Block=snow/consensus/snowman/mock_block.go
 github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex=DAGVM=snow/engine/avalanche/vertex/mock_vm.go
 github.com/ava-labs/avalanchego/snow/engine/avalanche=Engine=snow/engine/avalanche/mock_engine.go
