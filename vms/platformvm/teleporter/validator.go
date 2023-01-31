@@ -16,7 +16,10 @@ import (
 	"github.com/ava-labs/avalanchego/utils"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/math"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 )
 
 var (
@@ -91,7 +94,11 @@ func GetCanonicalValidatorSet(
 //
 // Returns an error if [indices] references an unknown validator.
 func FilterValidators(
+<<<<<<< HEAD
 	indices set.Bits,
+=======
+	indices ids.BigBitSet,
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 	vdrs []*Validator,
 ) ([]*Validator, error) {
 	// Verify that all alleged signers exist
