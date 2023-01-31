@@ -2898,10 +2898,14 @@ func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Own
 // 1) The total amount staked by addresses in [addrs]
 // 2) The staked outputs
 <<<<<<< HEAD
+<<<<<<< HEAD
 func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
 =======
 func getStakeHelper(tx *txs.Tx, addrs ids.ShortSet, totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked map[ids.ID]uint64) []avax.TransferableOutput {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	staker, ok := tx.Unsigned.(txs.PermissionlessStaker)
 	if !ok {
 		return nil

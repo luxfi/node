@@ -6,6 +6,7 @@ package primary
 import (
 	"context"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/info"
 	"github.com/luxdefi/luxd/codec"
 	"github.com/luxdefi/luxd/ids"
@@ -17,6 +18,20 @@ import (
 	"github.com/luxdefi/luxd/vms/platformvm/txs"
 	"github.com/luxdefi/luxd/wallet/chain/p"
 	"github.com/luxdefi/luxd/wallet/chain/x"
+=======
+	"github.com/ava-labs/avalanchego/api/info"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/wallet/chain/p"
+	"github.com/ava-labs/avalanchego/wallet/chain/x"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 )
 
 const (
@@ -46,7 +61,7 @@ type UTXOClient interface {
 	) ([][]byte, ids.ShortID, ids.ID, error)
 }
 
-func FetchState(ctx context.Context, uri string, addrs ids.ShortSet) (p.Context, x.Context, UTXOs, error) {
+func FetchState(ctx context.Context, uri string, addrs set.Set[ids.ShortID]) (p.Context, x.Context, UTXOs, error) {
 	infoClient := info.NewClient(uri)
 	xClient := avm.NewClient(uri, "X")
 

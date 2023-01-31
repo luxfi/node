@@ -2079,19 +2079,27 @@ func TestEngineAggressivePolling(t *testing.T) {
 
 	numPushed := new(int)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
 =======
 	sender.SendPushQueryF = func(context.Context, ids.NodeIDSet, uint32, []byte) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	sender.SendPushQueryF = func(context.Context, set.Set[ids.NodeID], uint32, []byte) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		*numPushed++
 	}
 
 	numPulled := new(int)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
 =======
 	sender.SendPullQueryF = func(context.Context, ids.NodeIDSet, uint32, ids.ID) {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+	sender.SendPullQueryF = func(context.Context, set.Set[ids.NodeID], uint32, ids.ID) {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		*numPulled++
 	}
 
@@ -3410,6 +3418,9 @@ func TestSendMixedQuery(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 				vdrs := set.Set[ids.NodeID]{}
 				te.Validators = validators.NewSet()
 				for i := 0; i < te.Params.K; i++ {

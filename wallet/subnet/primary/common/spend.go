@@ -4,15 +4,16 @@
 package common
 
 import (
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 // MatchOwners attempts to match a list of addresses up to the provided
 // threshold.
 func MatchOwners(
 	owners *secp256k1fx.OutputOwners,
-	addrs ids.ShortSet,
+	addrs set.Set[ids.ShortID],
 	minIssuanceTime uint64,
 ) ([]uint32, bool) {
 	if owners.Locktime > minIssuanceTime {

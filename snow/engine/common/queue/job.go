@@ -14,10 +14,14 @@ import (
 type Job interface {
 	ID() ids.ID
 <<<<<<< HEAD
+<<<<<<< HEAD
 	MissingDependencies(context.Context) (set.Set[ids.ID], error)
 =======
 	MissingDependencies(context.Context) (ids.Set, error)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	MissingDependencies(context.Context) (set.Set[ids.ID], error)
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	// Returns true if this job has at least 1 missing dependency
 	HasMissingDependencies(context.Context) (bool, error)
 	Execute(context.Context) error

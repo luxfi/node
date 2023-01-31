@@ -88,12 +88,17 @@ type testBlockable struct {
 func newTestBlockable() *testBlockable {
 	return &testBlockable{
 <<<<<<< HEAD
+<<<<<<< HEAD
 		dependencies: func() set.Set[ids.ID] {
 			return set.Set[ids.ID]{}
 =======
 		dependencies: func() ids.Set {
 			return ids.Set{}
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+		dependencies: func() set.Set[ids.ID] {
+			return set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		},
 		fulfill: func(context.Context, ids.ID) {},
 		abandon: func(context.Context, ids.ID) {},
@@ -102,10 +107,14 @@ func newTestBlockable() *testBlockable {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (b *testBlockable) Dependencies() set.Set[ids.ID] {
 =======
 func (b *testBlockable) Dependencies() ids.Set {
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+=======
+func (b *testBlockable) Dependencies() set.Set[ids.ID] {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	return b.dependencies()
 }
 

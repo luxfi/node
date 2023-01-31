@@ -53,12 +53,17 @@ func (v *vertexJob) ID() ids.ID {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (v *vertexJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
 	missing := set.Set[ids.ID]{}
 =======
 func (v *vertexJob) MissingDependencies(context.Context) (ids.Set, error) {
 	missing := ids.Set{}
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (v *vertexJob) MissingDependencies(context.Context) (set.Set[ids.ID], error) {
+	missing := set.Set[ids.ID]{}
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	parents, err := v.vtx.Parents()
 	if err != nil {
 		return missing, err

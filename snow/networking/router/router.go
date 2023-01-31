@@ -31,8 +31,12 @@ type Router interface {
 		timeouts timeout.Manager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],
+<<<<<<< HEAD
 		stakingEnabled bool,
 		trackedSubnets set.Set[ids.ID],
+=======
+		whiteListedSubnets set.Set[ids.ID],
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
 		metricsNamespace string,

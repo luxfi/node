@@ -11,9 +11,13 @@ import (
 	reflect "reflect"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	set "github.com/ava-labs/avalanchego/utils/set"
 =======
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+	set "github.com/ava-labs/avalanchego/utils/set"
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	ids "github.com/ava-labs/avalanchego/ids"
 	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
 	gomock "github.com/golang/mock/gomock"
@@ -236,10 +240,14 @@ func (mr *MockSetMockRecorder) String() *gomock.Call {
 
 // SubsetWeight mocks base method.
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (m *MockSet) SubsetWeight(arg0 set.Set[ids.NodeID]) uint64 {
 =======
 func (m *MockSet) SubsetWeight(arg0 ids.NodeIDSet) uint64 {
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+func (m *MockSet) SubsetWeight(arg0 set.Set[ids.NodeID]) uint64 {
+>>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubsetWeight", arg0)
 	ret0, _ := ret[0].(uint64)
