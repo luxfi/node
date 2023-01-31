@@ -49,7 +49,15 @@ type Context struct {
 	TeleporterSigner teleporter.Signer
 
 	// snowman++ attributes
+<<<<<<< HEAD
 	ValidatorState validators.State // interface for P-Chain validators
+=======
+	ValidatorState    validators.State  // interface for P-Chain validators
+	StakingLeafSigner crypto.Signer     // block signer
+	StakingCertLeaf   *x509.Certificate // block certificate
+	StakingBLSKey     *bls.SecretKey    // bls signer
+
+>>>>>>> d2d78be9f (Add chain specific data dir for custom disk access (#2307))
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
 }
