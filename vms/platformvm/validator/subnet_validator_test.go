@@ -21,7 +21,11 @@ func TestSubnetValidatorVerifySubnetID(t *testing.T) {
 			Subnet: constants.PrimaryNetworkID,
 		}
 
+<<<<<<< HEAD
 		require.ErrorIs(vdr.Verify(), errBadSubnetID)
+=======
+		require.Equal(errBadSubnetID, vdr.Verify())
+>>>>>>> a8631aa5c (Add Fx tests (#1838))
 	}
 
 	// Happy path
@@ -33,6 +37,10 @@ func TestSubnetValidatorVerifySubnetID(t *testing.T) {
 			},
 		}
 
+<<<<<<< HEAD
 		require.NoError(vdr.Verify())
+=======
+		require.Equal(nil, vdr.Verify())
+>>>>>>> a8631aa5c (Add Fx tests (#1838))
 	}
 }
