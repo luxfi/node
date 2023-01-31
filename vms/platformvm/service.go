@@ -747,10 +747,14 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(currentStaker.TxID)
 =======
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+		tx, _, err := s.vm.state.GetTx(currentStaker.TxID)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		if err != nil {
 			return err
 		}
@@ -772,14 +776,19 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 			uptime, err := s.getAPIUptime(currentStaker)
 =======
 			primaryNetworkStaker, err := s.vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+			uptime, err := s.getAPIUptime(currentStaker)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			if err != nil {
 				return err
 			}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
 =======
@@ -794,12 +803,16 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			tracksSubnet := args.SubnetID == constants.PrimaryNetworkID || s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
 
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			var (
 				validationRewardOwner *platformapi.Owner
 				delegationRewardOwner *platformapi.Owner
 			)
 			validationOwner, ok := staker.ValidationRewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
+<<<<<<< HEAD
 <<<<<<< HEAD
 				validationRewardOwner, err = s.getAPIOwner(validationOwner)
 				if err != nil {
@@ -816,10 +829,16 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 					}
 					validationRewardOwner.Addresses = append(validationRewardOwner.Addresses, addrStr)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+				validationRewardOwner, err = s.getAPIOwner(validationOwner)
+				if err != nil {
+					return err
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 			delegationOwner, ok := staker.DelegationRewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
+<<<<<<< HEAD
 <<<<<<< HEAD
 				delegationRewardOwner, err = s.getAPIOwner(delegationOwner)
 				if err != nil {
@@ -836,6 +855,11 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 					}
 					delegationRewardOwner.Addresses = append(delegationRewardOwner.Addresses, addrStr)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+				delegationRewardOwner, err = s.getAPIOwner(delegationOwner)
+				if err != nil {
+					return err
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 
@@ -863,6 +887,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			owner, ok := staker.RewardsOwner().(*secp256k1fx.OutputOwners)
 			if ok {
 <<<<<<< HEAD
+<<<<<<< HEAD
 				rewardOwner, err = s.getAPIOwner(owner)
 				if err != nil {
 					return err
@@ -878,6 +903,11 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 					}
 					rewardOwner.Addresses = append(rewardOwner.Addresses, addrStr)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+				rewardOwner, err = s.getAPIOwner(owner)
+				if err != nil {
+					return err
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 				}
 			}
 
@@ -889,15 +919,21 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 		case *txs.AddSubnetValidatorTx:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			uptime, err := s.getAPIUptime(currentStaker)
 			if err != nil {
 				return err
 			}
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+<<<<<<< HEAD
 =======
 			connected := s.vm.uptimeManager.IsConnected(nodeID)
 			tracksSubnet := s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -967,10 +1003,14 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		tx, _, err := s.vm.state.GetTx(pendingStaker.TxID)
 =======
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+		tx, _, err := s.vm.state.GetTx(pendingStaker.TxID)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		if err != nil {
 			return err
 		}
@@ -991,11 +1031,15 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
 =======
 			connected := s.vm.uptimeManager.IsConnected(nodeID)
 			tracksSubnet := args.SubnetID == constants.PrimaryNetworkID || s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			vdr := platformapi.PermissionlessValidator{
 				Staker:        apiStaker,
 				DelegationFee: delegationFee,
@@ -1015,11 +1059,15 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 
 		case *txs.AddSubnetValidatorTx:
 <<<<<<< HEAD
+<<<<<<< HEAD
 			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
 =======
 			connected := s.vm.uptimeManager.IsConnected(nodeID)
 			tracksSubnet := s.vm.SubnetTracker.TracksSubnet(nodeID, args.SubnetID)
 >>>>>>> 4dcaaf3a5 (Rename service receivers (#2266))
+=======
+			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -2481,6 +2529,7 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 	vdrs, ok := s.vm.Validators.Get(args.SubnetID)
 	if !ok {
 		return errMissingValidatorSet
+<<<<<<< HEAD
 =======
 func (service *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
 	vdrs, ok := service.vm.Validators.GetValidators(args.SubnetID)
@@ -2495,6 +2544,8 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 	if !ok {
 		return errNoValidators
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	}
 	weight := json.Uint64(vdrs.Weight())
 	reply.Weight = weight
@@ -2787,9 +2838,15 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
 	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
+=======
+func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
+	// Only report uptimes that we have been actively tracking.
+	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.WhitelistedSubnets.Contains(staker.SubnetID) {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		return nil, nil
 	}
 
@@ -2816,8 +2873,11 @@ func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Own
 	return apiOwner, nil
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 // Takes in a staker and a set of addresses
 // Returns:
 // 1) The total amount staked by addresses in [addrs]

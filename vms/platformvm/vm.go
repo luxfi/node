@@ -319,6 +319,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 	if !exists {
 		return errMissingValidatorSet
@@ -344,6 +345,17 @@ func (vm *VM) onNormalOperationsStarted() error {
 	}
 
 	for subnetID := range vm.TrackedSubnets {
+=======
+	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
+	if !exists {
+		return errMissingValidatorSet
+	}
+	if err := vm.uptimeManager.StartTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
+		return err
+	}
+
+	for subnetID := range vm.WhitelistedSubnets {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		vdrIDs, exists := vm.getValidatorIDs(subnetID)
 		if !exists {
 			return errMissingValidatorSet
@@ -383,6 +395,7 @@ func (vm *VM) Shutdown(context.Context) error {
 
 	if vm.bootstrapped.GetValue() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
 		if !exists {
 			return errMissingValidatorSet
@@ -408,6 +421,17 @@ func (vm *VM) Shutdown(context.Context) error {
 		}
 
 		for subnetID := range vm.TrackedSubnets {
+=======
+		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
+		if !exists {
+			return errMissingValidatorSet
+		}
+		if err := vm.uptimeManager.StopTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
+			return err
+		}
+
+		for subnetID := range vm.WhitelistedSubnets {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			vdrIDs, exists := vm.getValidatorIDs(subnetID)
 			if !exists {
 				return errMissingValidatorSet
@@ -431,6 +455,9 @@ func (vm *VM) Shutdown(context.Context) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	validatorSet, exist := vm.Validators.Get(subnetID)
 	if !exist {
@@ -446,8 +473,11 @@ func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
 	return validatorIDs, true
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
@@ -539,6 +569,7 @@ func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
 	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
 }
@@ -557,6 +588,18 @@ func (vm *VM) Connected(_ context.Context, vdrID ids.NodeID, _ *version.Applicat
 func (vm *VM) Disconnected(_ context.Context, vdrID ids.NodeID) error {
 	if err := vm.uptimeManager.Disconnect(vdrID); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
+	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
+}
+
+func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids.ID) error {
+	return vm.uptimeManager.Connect(nodeID, subnetID)
+}
+
+func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
+	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		return err
 	}
 	return vm.state.Commit()
@@ -572,8 +615,13 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
 	if !exists {
 		validatorSetsCache = &cache.LRU{Size: validatorSetsCacheSize}
+<<<<<<< HEAD
 		// Only cache tracked subnets
 		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
+=======
+		// Only cache whitelisted subnets
+		if subnetID == constants.PrimaryNetworkID || vm.WhitelistedSubnets.Contains(subnetID) {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			vm.validatorSetCaches[subnetID] = validatorSetsCache
 		}
 	}
@@ -879,10 +927,14 @@ func (vm *VM) getPercentConnected(subnetID ids.ID) (float64, error) {
 	)
 	for _, vdr := range vdrSet.List() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
 =======
 		if !vm.uptimeManager.IsConnected(vdr.NodeID) {
 >>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
+=======
+		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 			continue // not connected to us --> don't include
 		}
 		connectedStake, err = math.Add64(connectedStake, vdr.Weight)

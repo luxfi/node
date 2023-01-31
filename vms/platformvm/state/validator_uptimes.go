@@ -9,7 +9,10 @@ import (
 	"github.com/ava-labs/avalanchego/database"
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/constants"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/set"
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
@@ -68,13 +71,21 @@ type validatorUptimes interface {
 type uptimes struct {
 	uptimes map[ids.NodeID]map[ids.ID]*uptimeAndReward // vdrID -> subnetID -> uptimes
 	// updatedUptimes tracks the updates since the last call to WriteUptimes
+<<<<<<< HEAD
 	updatedUptimes map[ids.NodeID]set.Set[ids.ID] // vdrID -> subnetIDs
+=======
+	updatedUptimes map[ids.NodeID]map[ids.ID]struct{} // vdrID -> subnetID -> nil
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 }
 
 func newValidatorUptimes() validatorUptimes {
 	return &uptimes{
 		uptimes:        make(map[ids.NodeID]map[ids.ID]*uptimeAndReward),
+<<<<<<< HEAD
 		updatedUptimes: make(map[ids.NodeID]set.Set[ids.ID]),
+=======
+		updatedUptimes: make(map[ids.NodeID]map[ids.ID]struct{}),
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	}
 }
 
@@ -117,10 +128,17 @@ func (u *uptimes) SetUptime(
 
 	updatedSubnetUptimes, ok := u.updatedUptimes[vdrID]
 	if !ok {
+<<<<<<< HEAD
 		updatedSubnetUptimes = set.Set[ids.ID]{}
 		u.updatedUptimes[vdrID] = updatedSubnetUptimes
 	}
 	updatedSubnetUptimes.Add(subnetID)
+=======
+		updatedSubnetUptimes = make(map[ids.ID]struct{})
+		u.updatedUptimes[vdrID] = updatedSubnetUptimes
+	}
+	updatedSubnetUptimes[subnetID] = struct{}{}
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	return nil
 }
 

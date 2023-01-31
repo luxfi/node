@@ -22,11 +22,15 @@ github.com/ava-labs/avalanchego/snow/engine/snowman/block=ChainVM=snow/engine/sn
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=BuildBlockWithContextChainVM=snow/engine/snowman/block/mocks/build_block_with_context_vm.go
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=StateSyncableVM=snow/engine/snowman/block/mocks/state_syncable_vm.go
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
 github.com/ava-labs/avalanchego/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
 github.com/ava-labs/avalanchego/snow/networking/handler=Handler=snow/networking/handler/mock_handler.go
 github.com/ava-labs/avalanchego/snow/networking/timeout=Manager=snow/networking/timeout/mock_manager.go
 =======
+=======
+github.com/ava-labs/avalanchego/snow/networking/handler=Handler=snow/networking/handler/mock_handler.go
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 github.com/ava-labs/avalanchego/snow/networking/timeout=Manager=snow/networking/timeout/mock_manager.go
 github.com/ava-labs/avalanchego/snow/networking/router=Router=snow/networking/router/mock_router.go
 github.com/ava-labs/avalanchego/snow/networking/sender=ExternalSender=snow/networking/sender/mock_external_sender.go
@@ -37,7 +41,10 @@ github.com/ava-labs/avalanchego/snow/uptime=Calculator=snow/uptime/mock_calculat
 github.com/ava-labs/avalanchego/snow/validators=Manager=snow/validators/mock_manager.go
 github.com/ava-labs/avalanchego/snow/validators=State=snow/validators/mock_state.go
 github.com/ava-labs/avalanchego/snow/validators=SubnetConnector=snow/validators/mock_subnet_connector.go
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/utils/crypto/keychain=Ledger=utils/crypto/keychain/mock_ledger.go
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 github.com/ava-labs/avalanchego/utils/filesystem=Reader=utils/filesystem/mock_io.go
 github.com/ava-labs/avalanchego/utils/hashing=Hasher=utils/hashing/mock_hasher.go
 github.com/ava-labs/avalanchego/utils/logging=Logger=utils/logging/mock_logger.go

@@ -1415,17 +1415,27 @@ func TestConnectedSubnet(t *testing.T) {
 	peerNodeID := ids.GenerateTestNodeID()
 	subnetID0 := ids.GenerateTestID()
 	subnetID1 := ids.GenerateTestID()
+<<<<<<< HEAD
 	trackedSubnets := set.Set[ids.ID]{}
 	trackedSubnets.Add(subnetID0, subnetID1)
+=======
+	whitelistedSubnets := ids.Set{}
+	whitelistedSubnets.Add(subnetID0, subnetID1)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	chainRouter := ChainRouter{}
 	err = chainRouter.Initialize(
 		myNodeID,
 		logging.NoLog{},
 		tm,
 		time.Millisecond,
+<<<<<<< HEAD
 		set.Set[ids.ID]{},
 		true,
 		trackedSubnets,
+=======
+		ids.Set{},
+		whitelistedSubnets,
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		nil,
 		HealthConfig{},
 		"",

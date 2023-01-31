@@ -422,7 +422,11 @@ func TestHandlerDispatchInternal(t *testing.T) {
 func TestHandlerSubnetConnector(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.Add(ids.GenerateTestNodeID(), nil, 1)
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 	require.NoError(t, err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
@@ -445,7 +449,10 @@ func TestHandlerSubnetConnector(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+<<<<<<< HEAD
 		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 		resourceTracker,
 		connector,
 	)
