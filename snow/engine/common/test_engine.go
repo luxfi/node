@@ -106,6 +106,9 @@ type EngineTest struct {
 	CantGetVM bool
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 007ea3cdf (Apply accepted frontier rather than failing a query (#2135))
 	StartF                                     func(ctx context.Context, startReqID uint32) error
 	IsBootstrappedF                            func() bool
 	ContextF                                   func() *snow.ConsensusContext
@@ -117,6 +120,7 @@ type EngineTest struct {
 	AncestorsF                                 func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) error
 	AcceptedFrontierF, GetAcceptedF, AcceptedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs []ids.ID) error
 	ChitsF                                     func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs []ids.ID, acceptedIDs []ids.ID) error
+<<<<<<< HEAD
 =======
 	StartF                                             func(ctx context.Context, startReqID uint32) error
 	IsBootstrappedF                                    func() bool
@@ -129,6 +133,8 @@ type EngineTest struct {
 	AncestorsF                                         func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) error
 	AcceptedFrontierF, GetAcceptedF, AcceptedF, ChitsF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 007ea3cdf (Apply accepted frontier rather than failing a query (#2135))
 	GetStateSummaryFrontierF, GetStateSummaryFrontierFailedF, GetAcceptedStateSummaryFailedF,
 	GetAcceptedFrontierF, GetFailedF, GetAncestorsFailedF,
 	QueryFailedF, GetAcceptedFrontierFailedF, GetAcceptedFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32) error
