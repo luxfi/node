@@ -6,15 +6,21 @@ package metervm
 import (
 	"context"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	"errors"
 	"fmt"
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+<<<<<<< HEAD
 =======
 
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 )
 
 var (

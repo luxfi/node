@@ -209,9 +209,13 @@ message BuildBlockRequest {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Note: The status of a freshly built block is assumed to be Processing.
 =======
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+// Note: The status of a freshly built block is assumed to be Processing.
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 message BuildBlockResponse {
   bytes id = 1;
   bytes parent_id = 2;
@@ -245,7 +249,11 @@ message GetBlockResponse {
   uint64 height = 4;
   google.protobuf.Timestamp timestamp = 5;
   // used to propagate database.ErrNotFound through RPC
+<<<<<<< HEAD
   Error err = 6;
+=======
+  uint32 err = 6;
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
   bool verify_with_context = 7;
 }
 

@@ -573,6 +573,9 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		vm:                  vm,
 		id:                  blkID,
 		parentID:            parentID,
@@ -581,6 +584,7 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
+<<<<<<< HEAD
 =======
 		vm:       vm,
 		id:       blkID,
@@ -590,6 +594,8 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 		height:   resp.Height,
 		time:     time,
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	}, err
 }
 
@@ -909,6 +915,9 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 		vm:                  vm,
 		id:                  id,
 		parentID:            parentID,
@@ -917,6 +926,7 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
+<<<<<<< HEAD
 =======
 		vm:       vm,
 		id:       id,
@@ -926,6 +936,8 @@ func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*bloc
 		height:   resp.Height,
 		time:     time,
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	}, err
 }
 
@@ -1012,6 +1024,23 @@ func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 }
 =======
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
+
+func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {
+	return b.shouldVerifyWithCtx, nil
+}
+
+func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
+	resp, err := b.vm.client.BlockVerify(ctx, &vmpb.BlockVerifyRequest{
+		Bytes:        b.bytes,
+		PChainHeight: &blockCtx.PChainHeight,
+	})
+	if err != nil {
+		return err
+	}
+
+	b.time, err = grpcutils.TimestampAsTime(resp.Timestamp)
+	return err
+}
 
 type summaryClient struct {
 	vm *VMClient
