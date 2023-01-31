@@ -35,24 +35,24 @@ fi
 echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
 
 #################################
-# download netrunner
-# https://github.com/luxdefi/netrunner
-# TODO: migrate to upstream netrunner
+# download avalanche-network-runner
+# https://github.com/luxdefi/avalanche-network-runner
+# TODO: migrate to upstream avalanche-network-runner
 GOARCH=$(go env GOARCH)
 GOOS=$(go env GOOS)
 NETWORK_RUNNER_VERSION=1.3.5-rc.0
-DOWNLOAD_PATH=/tmp/netrunner.tar.gz
-DOWNLOAD_URL="https://github.com/luxdefi/netrunner/releases/download/v${NETWORK_RUNNER_VERSION}/netrunner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
+DOWNLOAD_URL="https://github.com/luxdefi/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
 
 rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/netrunner
+rm -f /tmp/avalanche-network-runner
 
-echo "downloading netrunner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
+echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
 curl --fail -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
 
-echo "extracting downloaded netrunner"
+echo "extracting downloaded avalanche-network-runner"
 tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/netrunner -h
+/tmp/avalanche-network-runner -h
 
 GOPATH="$(go env GOPATH)"
 PATH="${GOPATH}/bin:${PATH}"
@@ -65,9 +65,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "netrunner" server
-echo "launch netrunner in the background"
-/tmp/netrunner \
+# run "avalanche-network-runner" server
+echo "launch avalanche-network-runner in the background"
+/tmp/avalanche-network-runner \
 server \
 --log-level debug \
 --port=":12342" \

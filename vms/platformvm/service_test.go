@@ -17,6 +17,7 @@ import (
 
 	"github.com/luxdefi/node/api"
 	"github.com/luxdefi/node/api/keystore"
+	"github.com/luxdefi/node/cache"
 	"github.com/luxdefi/node/chains/atomic"
 	"github.com/luxdefi/node/database/manager"
 	"github.com/luxdefi/node/database/prefixdb"
@@ -77,6 +78,9 @@ func defaultService(t *testing.T) (*Service, *mutableSharedMemory) {
 	return &Service{
 		vm:          vm,
 		addrManager: avax.NewAddressManager(vm.ctx),
+		stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
+			Size: stakerAttributesCacheSize,
+		},
 	}, mutableSharedMemory
 }
 

@@ -6,12 +6,10 @@ github.com/luxdefi/node/message=OutboundMsgBuilder=message/mock_outbound_message
 github.com/luxdefi/node/network/peer=GossipTracker=network/peer/mock_gossip_tracker.go
 github.com/luxdefi/node/snow/consensus/snowman=Block=snow/consensus/snowman/mock_block.go
 github.com/luxdefi/node/snow/engine/avalanche/vertex=DAGVM=snow/engine/avalanche/vertex/mock_vm.go
-github.com/luxdefi/node/snow/engine/avalanche=Engine=snow/engine/avalanche/mock_engine.go
 github.com/luxdefi/node/snow/engine/snowman/block=BuildBlockWithContextChainVM=snow/engine/snowman/block/mocks/build_block_with_context_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=ChainVM=snow/engine/snowman/block/mocks/chain_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=StateSyncableVM=snow/engine/snowman/block/mocks/state_syncable_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
-github.com/luxdefi/node/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
 github.com/luxdefi/node/snow/networking/handler=Handler=snow/networking/handler/mock_handler.go
 github.com/luxdefi/node/snow/networking/timeout=Manager=snow/networking/timeout/mock_manager.go
 github.com/luxdefi/node/snow/networking/tracker=Targeter=snow/networking/tracker/mock_targeter.go

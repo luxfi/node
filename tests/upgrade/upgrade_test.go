@@ -27,9 +27,9 @@ func TestUpgrade(t *testing.T) {
 var (
 	logLevel                                  string
 	networkRunnerGRPCEp                       string
-	networkRunnerNodeExecPath          string
-	networkRunnerNodeExecPathToUpgrade string
-	networkRunnerNodeLogLevel          string
+	networkRunnerAvalancheGoExecPath          string
+	networkRunnerAvalancheGoExecPathToUpgrade string
+	networkRunnerAvalancheGoLogLevel          string
 )
 
 func init() {
@@ -46,19 +46,19 @@ func init() {
 		"gRPC server endpoint for network-runner",
 	)
 	flag.StringVar(
-		&networkRunnerNodeExecPath,
+		&networkRunnerAvalancheGoExecPath,
 		"network-runner-node-path",
 		"",
 		"node executable path",
 	)
 	flag.StringVar(
-		&networkRunnerNodeExecPathToUpgrade,
+		&networkRunnerAvalancheGoExecPathToUpgrade,
 		"network-runner-node-path-to-upgrade",
 		"",
 		"node executable path (to upgrade to, only required for upgrade tests with local network-runner)",
 	)
 	flag.StringVar(
-		&networkRunnerNodeLogLevel,
+		&networkRunnerAvalancheGoLogLevel,
 		"network-runner-node-log-level",
 		"INFO",
 		"node log-level",
@@ -68,10 +68,10 @@ func init() {
 var runnerCli runner_sdk.Client
 
 var _ = ginkgo.BeforeSuite(func() {
-	_, err := os.Stat(networkRunnerNodeExecPath)
+	_, err := os.Stat(networkRunnerAvalancheGoExecPath)
 	gomega.Expect(err).Should(gomega.BeNil())
 
-	_, err = os.Stat(networkRunnerNodeExecPathToUpgrade)
+	_, err = os.Stat(networkRunnerAvalancheGoExecPathToUpgrade)
 	gomega.Expect(err).Should(gomega.BeNil())
 
 	runnerCli, err = runner_sdk.New(runner_sdk.Config{
@@ -87,11 +87,11 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).Should(gomega.BeNil())
 	tests.Outf("{{green}}network-runner running in PID %d{{/}}\n", presp.Pid)
 
-	tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", networkRunnerNodeExecPath)
+	tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", networkRunnerAvalancheGoExecPath)
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	resp, err := runnerCli.Start(ctx, networkRunnerNodeExecPath,
+	resp, err := runnerCli.Start(ctx, networkRunnerAvalancheGoExecPath,
 		runner_sdk.WithNumNodes(5),
-		runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, networkRunnerNodeLogLevel)),
+		runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, networkRunnerAvalancheGoLogLevel)),
 	)
 	cancel()
 	gomega.Expect(err).Should(gomega.BeNil())
@@ -120,16 +120,16 @@ var _ = ginkgo.AfterSuite(func() {
 
 var _ = ginkgo.Describe("[Upgrade]", func() {
 	ginkgo.It("can upgrade versions", func() {
-		tests.Outf("{{magenta}}starting upgrade tests %q{{/}}\n", networkRunnerNodeExecPathToUpgrade)
+		tests.Outf("{{magenta}}starting upgrade tests %q{{/}}\n", networkRunnerAvalancheGoExecPathToUpgrade)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		sresp, err := runnerCli.Status(ctx)
 		cancel()
 		gomega.Expect(err).Should(gomega.BeNil())
 
 		for _, name := range sresp.ClusterInfo.NodeNames {
-			tests.Outf("{{magenta}}restarting the node %q{{/}} with %q\n", name, networkRunnerNodeExecPathToUpgrade)
+			tests.Outf("{{magenta}}restarting the node %q{{/}} with %q\n", name, networkRunnerAvalancheGoExecPathToUpgrade)
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			resp, err := runnerCli.RestartNode(ctx, name, runner_sdk.WithExecPath(networkRunnerNodeExecPathToUpgrade))
+			resp, err := runnerCli.RestartNode(ctx, name, runner_sdk.WithExecPath(networkRunnerAvalancheGoExecPathToUpgrade))
 			cancel()
 			gomega.Expect(err).Should(gomega.BeNil())
 
@@ -139,7 +139,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 			_, err = runnerCli.Health(ctx)
 			cancel()
 			gomega.Expect(err).Should(gomega.BeNil())
-			tests.Outf("{{green}}successfully upgraded %q to %q{{/}} (current info: %+v)\n", name, networkRunnerNodeExecPathToUpgrade, resp.ClusterInfo.NodeInfos)
+			tests.Outf("{{green}}successfully upgraded %q to %q{{/}} (current info: %+v)\n", name, networkRunnerAvalancheGoExecPathToUpgrade, resp.ClusterInfo.NodeInfos)
 		}
 	})
 })

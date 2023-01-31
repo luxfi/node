@@ -241,7 +241,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxdefi/node
 - Added `keychain.NewLedgerKeychainFromIndices`
 - Removed usage of `Temporary` error handling after `listener#Accept`
 - Removed `Parameters` from all `Consensus` interfaces
-- Updated `netrunner` to `v1.3.0`
+- Updated `avalanche-network-runner` to `v1.3.0`
 - Added `ids.BigBitSet` to extend `ids.BitSet64` for arbitrarily large sets
 - Added support for parsing future subnet uptime tracking data to the P-chain's state implementation
 - Increased validator set cache size
@@ -675,7 +675,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using Node APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/node/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using AvalancheGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -840,8 +840,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 ### Logging
 
-- Replaced Node's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
-- Replaced Node's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
+- Replaced AvalancheGo's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced AvalancheGo's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.
 
@@ -852,8 +852,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
 - Increased `coreth` trie tip buffer size to 32
-- Added CPU usage metrics for Node and all sub-processes
-- Added Disk IO usage metrics for Node and all sub-processes
+- Added CPU usage metrics for AvalancheGo and all sub-processes
+- Added Disk IO usage metrics for AvalancheGo and all sub-processes
 
 ### Cleanup
 
@@ -901,7 +901,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
-- Added Node custom log formatting to the logs.
+- Added AvalancheGo custom log formatting to the logs.
 - Removed support for the JS Tracer.
 
 ### Logging
@@ -1162,7 +1162,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for Node (not Coreth).
+- Fixed 32-bit architecture builds for AvalancheGo (not Coreth).
 
 ## [v1.7.2](https://github.com/luxdefi/node/releases/tag/v1.7.2)
 

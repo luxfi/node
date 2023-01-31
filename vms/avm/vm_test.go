@@ -19,9 +19,11 @@ import (
 
 	"github.com/luxdefi/node/api/keystore"
 	"github.com/luxdefi/node/chains/atomic"
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/database/manager"
-	"github.com/luxdefi/node/database/mockdb"
+	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/database/prefixdb"
+	"github.com/luxdefi/node/database/versiondb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/common"
@@ -61,7 +63,6 @@ var (
 	otherAssetName = "OTHER"
 
 	errMissing = errors.New("missing")
-	errTest    = errors.New("non-nil error")
 )
 
 func init() {
@@ -1114,24 +1115,22 @@ func TestTxCached(t *testing.T) {
 	_, err := vm.ParseTx(context.Background(), txBytes)
 	require.NoError(t, err)
 
-	db := mockdb.New()
-	called := new(bool)
-	db.OnGet = func([]byte) ([]byte, error) {
-		*called = true
-		return nil, errTest
-	}
-
 	registerer := prometheus.NewRegistry()
 
 	err = vm.metrics.Initialize("", registerer)
 	require.NoError(t, err)
 
-	vm.state, err = states.New(prefixdb.New([]byte("tx"), db), vm.parser, registerer)
+	db := memdb.New()
+	vdb := versiondb.New(db)
+	vm.state, err = states.New(vdb, vm.parser, registerer)
 	require.NoError(t, err)
 
 	_, err = vm.ParseTx(context.Background(), txBytes)
 	require.NoError(t, err)
-	require.False(t, *called, "shouldn't have called the DB")
+
+	count, err := database.Count(vdb)
+	require.NoError(t, err)
+	require.Zero(t, count)
 }
 
 func TestTxNotCached(t *testing.T) {
@@ -1150,30 +1149,25 @@ func TestTxNotCached(t *testing.T) {
 	_, err := vm.ParseTx(context.Background(), txBytes)
 	require.NoError(t, err)
 
-	db := mockdb.New()
-	called := new(bool)
-	db.OnGet = func([]byte) ([]byte, error) {
-		*called = true
-		return nil, errTest
-	}
-	db.OnPut = func([]byte, []byte) error {
-		return nil
-	}
-
 	registerer := prometheus.NewRegistry()
 	require.NoError(t, err)
 
 	err = vm.metrics.Initialize("", registerer)
 	require.NoError(t, err)
 
-	vm.state, err = states.New(db, vm.parser, registerer)
+	db := memdb.New()
+	vdb := versiondb.New(db)
+	vm.state, err = states.New(vdb, vm.parser, registerer)
 	require.NoError(t, err)
 
 	vm.uniqueTxs.Flush()
 
 	_, err = vm.ParseTx(context.Background(), txBytes)
 	require.NoError(t, err)
-	require.True(t, *called, "should have called the DB")
+
+	count, err := database.Count(vdb)
+	require.NoError(t, err)
+	require.NotZero(t, count)
 }
 
 func TestTxVerifyAfterIssueTx(t *testing.T) {

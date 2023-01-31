@@ -26,8 +26,8 @@ const (
 	DefaultHTTPPort    = 9650
 	DefaultStakingPort = 9651
 
-	NodeDataDirVar    = "AVALANCHEGO_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + NodeDataDirVar
+	AvalancheGoDataDirVar    = "AVALANCHEGO_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + AvalancheGoDataDirVar
 )
 
 var (
@@ -151,6 +151,14 @@ func addNodeFlags(fs *flag.FlagSet) {
 	fs.Bool(NetworkRequireValidatorToConnectKey, false, "If true, this node will only maintain a connection with another node if this node is a validator, the other node is a validator, or the other node is a beacon")
 	fs.Uint(NetworkPeerReadBufferSizeKey, 8*units.KiB, "Size, in bytes, of the buffer that we read peer messages into (there is one buffer per peer)")
 	fs.Uint(NetworkPeerWriteBufferSizeKey, 8*units.KiB, "Size, in bytes, of the buffer that we write peer messages into (there is one buffer per peer)")
+
+	fs.Bool(NetworkTCPProxyEnabledKey, false, "Require all P2P connections to be initiated with a TCP proxy header")
+	// The PROXY protocol specification recommends setting this value to be at
+	// least 3 seconds to cover a TCP retransmit.
+	// Ref: https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt
+	// Specifying a timeout of 0 will actually result in a timeout of 200ms, but
+	// a timeout of 0 should generally not be provided.
+	fs.Duration(NetworkTCPProxyReadTimeoutKey, 3*time.Second, "Maximum duration to wait for a TCP proxy header")
 
 	fs.String(NetworkTLSKeyLogFileKey, "", "TLS key log file path. Should only be specified for debugging")
 
@@ -367,7 +375,7 @@ func BuildFlagSet() *flag.FlagSet {
 }
 
 // GetExpandedArg gets the string in viper corresponding to [key] and expands
-// any variables using the OS env. If the [NodeDataDirVar] var is used,
+// any variables using the OS env. If the [AvalancheGoDataDirVar] var is used,
 // we expand the value of the variable with the string in viper corresponding to
 // [DataDirKey].
 func GetExpandedArg(v *viper.Viper, key string) string {
@@ -375,13 +383,13 @@ func GetExpandedArg(v *viper.Viper, key string) string {
 }
 
 // GetExpandedString expands [s] with any variables using the OS env. If the
-// [NodeDataDirVar] var is used, we expand the value of the variable with
+// [AvalancheGoDataDirVar] var is used, we expand the value of the variable with
 // the string in viper corresponding to [DataDirKey].
 func GetExpandedString(v *viper.Viper, s string) string {
 	return os.Expand(
 		s,
 		func(strVar string) string {
-			if strVar == NodeDataDirVar {
+			if strVar == AvalancheGoDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)

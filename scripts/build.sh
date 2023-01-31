@@ -38,7 +38,7 @@ build_args="$race"
 # Build node
 "$AVALANCHE_PATH"/scripts/build_avalanche.sh $build_args
 
-# Exit build successfully if the Node binary is created successfully
+# Exit build successfully if the AvalancheGo binary is created successfully
 if [[ -f "$node_path" ]]; then
         echo "Build Successful"
         exit 0

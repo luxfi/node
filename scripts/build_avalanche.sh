@@ -49,7 +49,7 @@ version_lt() {
 }
 
 if version_lt "$(go_version)" "$go_version_minimum"; then
-    echo "Node requires Go >= $go_version_minimum, Go $(go_version) found." >&2
+    echo "AvalancheGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1
 fi
 
@@ -59,5 +59,5 @@ AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 source "$AVALANCHE_PATH"/scripts/constants.sh
 
 build_args="$race"
-echo "Building Node..."
+echo "Building Lux Node..."
 go build $build_args -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$AVALANCHE_PATH/main/"*.go
