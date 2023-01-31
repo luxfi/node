@@ -426,15 +426,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	h.ctx.Log.Debug("forwarding sync message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
 	)
 	h.ctx.Log.Verbo("forwarding sync message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
 	)
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	h.ctx.Lock.Lock()
@@ -457,11 +453,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 				zap.Duration("processingTime", processingTime),
 				zap.Stringer("nodeID", nodeID),
 				zap.Stringer("messageOp", op),
-<<<<<<< HEAD
 				zap.Any("message", body),
-=======
-				zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
 			)
 		}
 	}()
@@ -714,15 +706,11 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg message.InboundMessag
 	h.ctx.Log.Debug("forwarding async message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
 	)
 	h.ctx.Log.Verbo("forwarding async message to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
 	)
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	defer func() {
@@ -803,14 +791,10 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 	)
 	h.ctx.Log.Debug("forwarding chan message to consensus",
 		zap.Stringer("messageOp", op),
-<<<<<<< HEAD
 	)
 	h.ctx.Log.Verbo("forwarding chan message to consensus",
 		zap.Stringer("messageOp", op),
 		zap.Any("message", body),
-=======
-		zap.Any("message", msg),
->>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
 	)
 	h.ctx.Lock.Lock()
 	defer func() {
