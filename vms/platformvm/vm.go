@@ -679,11 +679,14 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 		if err := vm.state.ValidatorSet(subnetID, currentSubnetValidators); err != nil {
 			return nil, err
 		}
+<<<<<<< HEAD
 	}
 	currentPrimaryNetworkValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
 	if !ok {
 		// This should never happen
 		return nil, errMissingValidatorSet
+=======
+>>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
 	}
 <<<<<<< HEAD
 
