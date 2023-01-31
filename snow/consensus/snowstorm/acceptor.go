@@ -31,9 +31,13 @@ func (a *acceptor) Fulfill(ctx context.Context, id ids.ID) {
 	a.Update(ctx)
 }
 
+<<<<<<< HEAD
 func (a *acceptor) Abandon(context.Context, ids.ID) {
 	a.rejected = true
 }
+=======
+func (a *acceptor) Abandon(context.Context, ids.ID) { a.rejected = true }
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 func (a *acceptor) Update(ctx context.Context) {
 	// If I was rejected or I am still waiting on dependencies to finish or an

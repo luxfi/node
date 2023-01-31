@@ -11,11 +11,18 @@ import (
 
 	"golang.org/x/net/context"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/snow/networking/tracker"
 	"github.com/luxdefi/luxd/snow/validators"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
 	"github.com/luxdefi/luxd/utils/wrappers"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 )
 
 const epsilon = time.Millisecond
@@ -92,7 +99,6 @@ func NewSystemThrottler(
 	namespace string,
 	reg prometheus.Registerer,
 	config SystemThrottlerConfig,
-	vdrs validators.Set,
 	tracker tracker.Tracker,
 	targeter tracker.Targeter,
 ) (SystemThrottler, error) {

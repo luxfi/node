@@ -123,9 +123,15 @@ type EngineTest struct {
 	StateSummaryFrontierF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error
 	GetAcceptedStateSummaryF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, keys []uint64) error
 	AcceptedStateSummaryF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error
+<<<<<<< HEAD
 	ConnectedF                  func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
 	DisconnectedF               func(ctx context.Context, nodeID ids.NodeID) error
 	HealthF                     func(context.Context) (interface{}, error)
+=======
+	ConnectedF                  func(nodeID ids.NodeID, nodeVersion *version.Application) error
+	DisconnectedF               func(nodeID ids.NodeID) error
+	HealthF                     func() (interface{}, error)
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	GetVMF                      func() VM
 	AppRequestF                 func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
 	AppResponseF                func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error

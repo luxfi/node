@@ -157,10 +157,14 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) error {
 =======
 func (*preForkBlock) verifyPostForkOption(child *postForkOption) error {
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+func (*preForkBlock) verifyPostForkOption(*postForkOption) error {
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 	return errUnexpectedBlockType
 }
 

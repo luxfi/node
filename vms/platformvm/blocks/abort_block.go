@@ -55,6 +55,7 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (*ApricotAbortBlock) InitCtx(*snow.Context) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
@@ -64,6 +65,11 @@ func (*ApricotAbortBlock) Txs() []*txs.Tx {
 func (b *ApricotAbortBlock) Visit(v Visitor) error {
 	return v.ApricotAbortBlock(b)
 }
+=======
+func (*ApricotAbortBlock) InitCtx(*snow.Context)   {}
+func (*ApricotAbortBlock) Txs() []*txs.Tx          { return nil }
+func (b *ApricotAbortBlock) Visit(v Visitor) error { return v.ApricotAbortBlock(b) }
+>>>>>>> 3a7ebb1da (Add UnusedParameter linter (#2226))
 
 // NewApricotAbortBlock is kept for testing purposes only.
 // Following Banff activation and subsequent code cleanup, Apricot Abort blocks
