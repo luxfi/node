@@ -13,6 +13,9 @@ jobs:
       - uses: actions/checkout@v3
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0c35cf20c (Increase buf version to v1.11.0 (#2388))
       - uses: bufbuild/buf-setup-action@v1.11.0
         with:
           github_token: ${{ github.token }}
