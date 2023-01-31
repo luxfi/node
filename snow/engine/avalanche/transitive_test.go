@@ -5851,7 +5851,11 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 	manager.Default(true)
 	engCfg.Manager = manager
 
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+=======
+	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
+>>>>>>> 007ea3cdf (Apply accepted frontier rather than failing a query (#2135))
 	vm.Default(true)
 	engCfg.VM = vm
 
