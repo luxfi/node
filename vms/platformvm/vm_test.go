@@ -3229,6 +3229,9 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			expectedErr: nil,
 		},
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6544a43f1 (Handle unrelated BLS key removal during subnet validator set lookback (#2460))
 		{
 			name:               "unrelated primary network key removal on subnet lookup",
 			height:             4,
@@ -3257,8 +3260,11 @@ func TestVM_GetValidatorSet(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+<<<<<<< HEAD
 =======
 >>>>>>> 117ff9a78 (Add BLS keys to `GetValidatorSet` (#2111))
+=======
+>>>>>>> 6544a43f1 (Handle unrelated BLS key removal during subnet validator set lookback (#2460))
 	}
 
 	for _, tt := range tests {
