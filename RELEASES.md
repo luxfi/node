@@ -2,6 +2,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 ## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -63,6 +64,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Added `SetLevel` to the `Logger` interface
 - Updated `auth` API to use the new `jwt` standard
 
+=======
+>>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
 ## [v1.9.5](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.5)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
@@ -101,8 +104,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Moved bit sets from the `ids` package to the `set` package
 - Added more wallet examples
 
+<<<<<<< HEAD
 =======
 >>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
+=======
+>>>>>>> 609bc7d36 (Increase versions for v1.9.5 (#2383))
 ## [v1.9.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.4)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
