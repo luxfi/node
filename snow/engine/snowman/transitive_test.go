@@ -3374,6 +3374,7 @@ func TestSendMixedQuery(t *testing.T) {
 				_, _, sender, vm, te, gBlk := setup(t, commonCfg, engConfig)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 				vdrs := set.Set[ids.NodeID]{}
 				te.Validators = validators.NewSet()
 				for i := 0; i < te.Params.K; i++ {
@@ -3389,14 +3390,21 @@ func TestSendMixedQuery(t *testing.T) {
 					err := te.Validators.Add(te.Ctx.NodeID, nil, ids.Empty, 1)
 =======
 				vdrsList := []validators.Validator{}
+=======
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 				vdrs := ids.NodeIDSet{}
+				te.Validators = validators.NewSet()
 				for i := 0; i < te.Params.K; i++ {
-					vdr := ids.GenerateTestNodeID()
-					vdrs.Add(vdr)
-					vdrsList = append(vdrsList, validators.NewValidator(vdr, nil, 1))
+					vdrID := ids.GenerateTestNodeID()
+					vdrs.Add(vdrID)
+					err := te.Validators.Add(vdrID, nil, 1)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 				if tt.isVdr {
 					vdrs.Add(te.Ctx.NodeID)
+<<<<<<< HEAD
 					vdrsList = append(vdrsList, validators.NewValidator(te.Ctx.NodeID, nil, 1))
 				}
 				te.Validators = validators.NewSet()
@@ -3411,6 +3419,9 @@ func TestSendMixedQuery(t *testing.T) {
 =======
 					err := te.Validators.Add(vdr.ID(), nil, vdr.Weight())
 >>>>>>> 4d169e12a (Add BLS keys to validator set (#2073))
+=======
+					err := te.Validators.Add(te.Ctx.NodeID, nil, 1)
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -3481,10 +3492,14 @@ func TestSendMixedQuery(t *testing.T) {
 				// Give the engine blk1. It should insert it into consensus and send a mixed query
 				// consisting of 12 push queries and 8 pull queries.
 <<<<<<< HEAD
+<<<<<<< HEAD
 				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
 =======
 				if err := te.Put(context.Background(), te.Validators.List()[0].ID(), constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+				if err := te.Put(context.Background(), te.Validators.List()[0].NodeID, constants.GossipMsgRequestID, blk1.Bytes()); err != nil {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 					t.Fatal(err)
 				}
 

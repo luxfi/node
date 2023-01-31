@@ -436,9 +436,12 @@ func shutdownEnvironment(env *environment) error {
 		validatorIDs := make([]ids.NodeID, len(primaryValidators))
 		for i, vdr := range primaryValidators {
 			validatorIDs[i] = vdr.NodeID
+<<<<<<< HEAD
 		}
 		if err := env.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID); err != nil {
 			return err
+=======
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 		}
 
 		for subnetID := range env.config.TrackedSubnets {

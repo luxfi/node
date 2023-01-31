@@ -328,7 +328,18 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return errNoPrimaryValidators
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 	}
+<<<<<<< HEAD
 	if err := vm.uptimeManager.StartTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
+=======
+	primaryValidators := primaryValidatorSet.List()
+
+	validatorIDs := make([]ids.NodeID, len(primaryValidators))
+	for i, vdr := range primaryValidators {
+		validatorIDs[i] = vdr.NodeID
+	}
+
+	if err := vm.uptimeManager.StartTracking(validatorIDs); err != nil {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 		return err
 	}
 
@@ -381,7 +392,18 @@ func (vm *VM) Shutdown(context.Context) error {
 			return errNoPrimaryValidators
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 		}
+<<<<<<< HEAD
 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
+=======
+		primaryValidators := primaryValidatorSet.List()
+
+		validatorIDs := make([]ids.NodeID, len(primaryValidators))
+		for i, vdr := range primaryValidators {
+			validatorIDs[i] = vdr.NodeID
+		}
+
+		if err := vm.uptimeManager.Shutdown(validatorIDs); err != nil {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 			return err
 		}
 
@@ -593,6 +615,7 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 		return nil, errMissingValidatorSet
 	}
 
+<<<<<<< HEAD
 	currentSubnetValidatorList := currentSubnetValidators.List()
 	vdrSet := make(map[ids.NodeID]*validators.GetValidatorOutput, len(currentSubnetValidatorList))
 	for _, vdr := range currentSubnetValidatorList {
@@ -606,6 +629,11 @@ func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.I
 			PublicKey: primaryVdr.PublicKey,
 			Weight:    vdr.Weight,
 		}
+=======
+	vdrSet := make(map[ids.NodeID]uint64, len(currentValidatorList))
+	for _, vdr := range currentValidatorList {
+		vdrSet[vdr.NodeID] = vdr.Weight
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 	}
 
 	for i := lastAcceptedHeight; i > height; i-- {
@@ -850,7 +878,11 @@ func (vm *VM) getPercentConnected(subnetID ids.ID) (float64, error) {
 		err            error
 	)
 	for _, vdr := range vdrSet.List() {
+<<<<<<< HEAD
 		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
+=======
+		if !vm.uptimeManager.IsConnected(vdr.NodeID) {
+>>>>>>> 3e2b5865d (Convert validators.Validator into a struct (#2185))
 			continue // not connected to us --> don't include
 		}
 		connectedStake, err = math.Add64(connectedStake, vdr.Weight)
