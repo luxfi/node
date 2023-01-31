@@ -5,7 +5,10 @@ package validators
 
 import (
 	"github.com/ava-labs/avalanchego/ids"
+<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 )
 
 // Validator is a struct that contains the base values representing a validator
@@ -36,22 +39,6 @@ func (v *validator) ID() ids.NodeID {
 
 func (v *validator) Weight() uint64 {
 	return v.weight
-}
-
-func (v *validator) addWeight(weight uint64) {
-	newTotalWeight, err := safemath.Add64(weight, v.weight)
-	if err != nil {
-		newTotalWeight = math.MaxUint64
-	}
-	v.weight = newTotalWeight
-}
-
-func (v *validator) removeWeight(weight uint64) {
-	newTotalWeight, err := safemath.Sub(v.weight, weight)
-	if err != nil {
-		newTotalWeight = 0
-	}
-	v.weight = newTotalWeight
 }
 
 // NewValidator returns a validator object that implements the Validator

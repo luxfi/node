@@ -68,6 +68,7 @@ var (
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	errWrongCacheType      = errors.New("unexpectedly cached type")
 	errMissingValidatorSet = errors.New("missing validator set")
 	errMissingValidator    = errors.New("missing validator")
@@ -82,6 +83,10 @@ var (
 	errValidatorSetAlreadyPopulated = errors.New("validator set already populated")
 	errDuplicateValidatorSet        = errors.New("duplicate validator set")
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+	errWrongCacheType      = errors.New("unexpectedly cached type")
+	errMissingValidatorSet = errors.New("missing validator set")
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 )
 
 type VM struct {
@@ -230,12 +235,15 @@ func (vm *VM) Initialize(
 	)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	if err := vm.initValidators(); err != nil {
 		return fmt.Errorf("failed to initialize validator sets: %w", err)
 	}
 
 >>>>>>> 86c8b65dd (Replace validators.Manager#Set with Add (#2278))
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 	// Create all of the chains that the database says exist
 	if err := vm.initBlockchains(); err != nil {
 		return fmt.Errorf(
@@ -765,6 +773,7 @@ func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 =======
@@ -808,6 +817,8 @@ func (vm *VM) Clock() *mockable.Clock {
 }
 
 =======
+=======
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }

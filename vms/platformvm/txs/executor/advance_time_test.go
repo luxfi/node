@@ -689,7 +689,7 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
 =======
 	require.True(t, ok)
-	vdrWeight, _ := primarySet.GetWeight(nodeID)
+	vdrWeight := primarySet.GetWeight(nodeID)
 	require.Equal(t, env.config.MinValidatorStake, vdrWeight)
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 
@@ -748,7 +748,11 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 
 	// Test validator weight after delegation
 	vdrWeight = primarySet.GetWeight(nodeID)
+<<<<<<< HEAD
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
+=======
+	require.Equal(t, env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 }
 
 func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
@@ -798,7 +802,7 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
 =======
 	require.True(t, ok)
-	vdrWeight, _ := primarySet.GetWeight(nodeID)
+	vdrWeight := primarySet.GetWeight(nodeID)
 	require.Equal(t, env.config.MinValidatorStake, vdrWeight)
 >>>>>>> f6ea8e56f (Rename validators.Manager#GetValidators to Get (#2279))
 
@@ -852,7 +856,11 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 
 	// Test validator weight after delegation
 	vdrWeight = primarySet.GetWeight(nodeID)
+<<<<<<< HEAD
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
+=======
+	require.Equal(t, env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
+>>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
 }
 
 // Test method InitiallyPrefersCommit
