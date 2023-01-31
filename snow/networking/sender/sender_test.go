@@ -217,6 +217,7 @@ func TestTimeout(t *testing.T) {
 	failed := func(ctx context.Context, nodeID ids.NodeID, _ uint32) error {
 		require.NoError(ctx.Err())
 
+<<<<<<< HEAD
 =======
 		vdrIDs       = ids.NodeIDSet{}
 		chains       = ids.Set{}
@@ -232,6 +233,8 @@ func TestTimeout(t *testing.T) {
 
 	failed := func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -249,12 +252,18 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.QueryFailedF = failed
 	bootstrapper.AppRequestFailedF = failed
 <<<<<<< HEAD
+<<<<<<< HEAD
 	bootstrapper.CrossChainAppRequestFailedF = func(ctx context.Context, chainID ids.ID, _ uint32) error {
 		require.NoError(ctx.Err())
 
 =======
 	bootstrapper.CrossChainAppRequestFailedF = func(_ context.Context, chainID ids.ID, _ uint32) error {
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+	bootstrapper.CrossChainAppRequestFailedF = func(ctx context.Context, chainID ids.ID, _ uint32) error {
+		require.NoError(ctx.Err())
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -280,12 +289,16 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 			sender.SendGetStateSummaryFrontier(cancelledCtx, nodeIDs, requestID)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			sender.SendGetStateSummaryFrontier(context.Background(), nodeIDs, requestID)
+=======
+			sender.SendGetStateSummaryFrontier(cancelledCtx, nodeIDs, requestID)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 <<<<<<< HEAD
@@ -299,6 +312,7 @@ func TestTimeout(t *testing.T) {
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 <<<<<<< HEAD
 			sender.SendGetAcceptedStateSummary(cancelledCtx, nodeIDs, requestID, nil)
 		}
@@ -306,6 +320,9 @@ func TestTimeout(t *testing.T) {
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, nil)
+=======
+			sender.SendGetAcceptedStateSummary(cancelledCtx, nodeIDs, requestID, nil)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 <<<<<<< HEAD
@@ -319,6 +336,7 @@ func TestTimeout(t *testing.T) {
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 <<<<<<< HEAD
 			sender.SendGetAcceptedFrontier(cancelledCtx, nodeIDs, requestID)
 		}
@@ -326,6 +344,9 @@ func TestTimeout(t *testing.T) {
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
+=======
+			sender.SendGetAcceptedFrontier(cancelledCtx, nodeIDs, requestID)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 <<<<<<< HEAD
@@ -340,10 +361,14 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 			sender.SendGetAccepted(cancelledCtx, nodeIDs, requestID, nil)
 =======
 			sender.SendGetAccepted(context.Background(), nodeIDs, requestID, nil)
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			sender.SendGetAccepted(cancelledCtx, nodeIDs, requestID, nil)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
@@ -351,16 +376,21 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 			sender.SendGetAncestors(cancelledCtx, nodeID, requestID, ids.Empty)
 =======
 			sender.SendGetAncestors(context.Background(), nodeID, requestID, ids.Empty)
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			sender.SendGetAncestors(cancelledCtx, nodeID, requestID, ids.Empty)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
 			vdrIDs.Add(nodeID)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 <<<<<<< HEAD
 			sender.SendGet(cancelledCtx, nodeID, requestID, ids.Empty)
 		}
@@ -368,6 +398,9 @@ func TestTimeout(t *testing.T) {
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			sender.SendGet(context.Background(), nodeID, requestID, ids.Empty)
+=======
+			sender.SendGet(cancelledCtx, nodeID, requestID, ids.Empty)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 <<<<<<< HEAD
@@ -381,6 +414,7 @@ func TestTimeout(t *testing.T) {
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 <<<<<<< HEAD
 			sender.SendPullQuery(cancelledCtx, nodeIDs, requestID, ids.Empty)
 		}
@@ -388,6 +422,9 @@ func TestTimeout(t *testing.T) {
 			nodeIDs := set.Set[ids.NodeID]{
 =======
 			sender.SendPullQuery(context.Background(), nodeIDs, requestID, ids.Empty)
+=======
+			sender.SendPullQuery(cancelledCtx, nodeIDs, requestID, ids.Empty)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		}
 		{
 <<<<<<< HEAD
@@ -402,6 +439,9 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			sender.SendPushQuery(cancelledCtx, nodeIDs, requestID, nil)
 		}
 		{
@@ -422,10 +462,14 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 			err := sender.SendAppRequest(cancelledCtx, nodeIDs, requestID, nil)
 =======
 			err := sender.SendAppRequest(context.Background(), nodeIDs, requestID, nil)
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			err := sender.SendAppRequest(cancelledCtx, nodeIDs, requestID, nil)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			require.NoError(err)
 		}
 		{
@@ -434,10 +478,14 @@ func TestTimeout(t *testing.T) {
 			wg.Add(1)
 			requestID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 			err := sender.SendCrossChainAppRequest(cancelledCtx, chainID, requestID, nil)
 =======
 			err := sender.SendCrossChainAppRequest(context.Background(), chainID, requestID, nil)
 >>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
+=======
+			err := sender.SendCrossChainAppRequest(cancelledCtx, chainID, requestID, nil)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 			require.NoError(err)
 		}
 	}

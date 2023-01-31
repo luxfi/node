@@ -247,6 +247,7 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	dispatchSync := func() {
 		h.dispatchSync(detachedCtx)
@@ -257,15 +258,22 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	dispatchChans := func() {
 		h.dispatchChans(detachedCtx)
 =======
+=======
+	detachedCtx := utils.Detach(ctx)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	dispatchSync := func() {
-		h.dispatchSync(ctx)
+		h.dispatchSync(detachedCtx)
 	}
 	dispatchAsync := func() {
-		h.dispatchAsync(ctx)
+		h.dispatchAsync(detachedCtx)
 	}
 	dispatchChans := func() {
+<<<<<<< HEAD
 		h.dispatchChans(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		h.dispatchChans(detachedCtx)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	}
 	if recoverPanic {
 		go h.ctx.Log.RecoverAndExit(dispatchSync, func() {
