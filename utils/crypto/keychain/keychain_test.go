@@ -11,12 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/ids"
-=======
-	"github.com/luxdefi/lux-ledger-go/mocks"
-	"github.com/luxdefi/luxd/ids"
->>>>>>> 04d685aa2 (Update consensus)
 )
 
 var errTest = errors.New("test")

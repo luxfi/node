@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-<<<<<<< HEAD
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/set"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -26,6 +26,8 @@ import (
 	ledger "github.com/luxdefi/lux-ledger-go"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 var (

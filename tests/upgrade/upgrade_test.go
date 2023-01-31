@@ -16,6 +16,7 @@ import (
 	"github.com/onsi/gomega"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 	"github.com/luxdefi/luxd/tests"
 =======
@@ -27,6 +28,10 @@ import (
 	"github.com/luxdefi/luxd/tests"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
+	"github.com/ava-labs/avalanchego/tests"
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 func TestUpgrade(t *testing.T) {

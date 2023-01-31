@@ -36,13 +36,13 @@ import (
 )
 
 const (
-	metricVtxIssueSuccess = "lux_X_whitelist_vtx_issue_success"
-	metricVtxIssueFailure = "lux_X_whitelist_vtx_issue_failure"
-	metricTxProcessing    = "lux_X_whitelist_tx_processing"
-	metricTxAccepted      = "lux_X_whitelist_tx_accepted_count"
-	metricTxRejected      = "lux_X_whitelist_tx_rejected_count"
-	metricTxPollsAccepted = "lux_X_whitelist_tx_polls_accepted_count"
-	metricTxPollsRejected = "lux_X_whitelist_tx_polls_rejected_count"
+	metricVtxIssueSuccess = "avalanche_X_whitelist_vtx_issue_success"
+	metricVtxIssueFailure = "avalanche_X_whitelist_vtx_issue_failure"
+	metricTxProcessing    = "avalanche_X_whitelist_tx_processing"
+	metricTxAccepted      = "avalanche_X_whitelist_tx_accepted_count"
+	metricTxRejected      = "avalanche_X_whitelist_tx_rejected_count"
+	metricTxPollsAccepted = "avalanche_X_whitelist_tx_polls_accepted_count"
+	metricTxPollsRejected = "avalanche_X_whitelist_tx_polls_rejected_count"
 )
 
 var _ = e2e.DescribeXChain("[WhitelistTx]", func() {

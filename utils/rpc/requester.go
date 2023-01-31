@@ -8,23 +8,23 @@ import (
 	"net/url"
 )
 
-var _ EndpointRequester = (*luxEndpointRequester)(nil)
+var _ EndpointRequester = (*avalancheEndpointRequester)(nil)
 
 type EndpointRequester interface {
 	SendRequest(ctx context.Context, method string, params interface{}, reply interface{}, options ...Option) error
 }
 
-type luxEndpointRequester struct {
+type avalancheEndpointRequester struct {
 	uri string
 }
 
 func NewEndpointRequester(uri string) EndpointRequester {
-	return &luxEndpointRequester{
+	return &avalancheEndpointRequester{
 		uri: uri,
 	}
 }
 
-func (e *luxEndpointRequester) SendRequest(
+func (e *avalancheEndpointRequester) SendRequest(
 	ctx context.Context,
 	method string,
 	params interface{},

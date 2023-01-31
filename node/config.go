@@ -9,6 +9,7 @@ import (
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/genesis"
 	"github.com/luxdefi/luxd/ids"
@@ -30,6 +31,8 @@ import (
 =======
 =======
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/genesis"
 	"github.com/ava-labs/avalanchego/ids"
@@ -49,6 +52,7 @@ import (
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/timer"
 	"github.com/ava-labs/avalanchego/vms"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 =======
@@ -73,6 +77,8 @@ import (
 	"github.com/luxdefi/luxd/vms"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 type IPCConfig struct {
@@ -220,7 +226,7 @@ type Config struct {
 	FdLimit uint64 `json:"fdLimit"`
 
 	// Consensus configuration
-	ConsensusParams lux.Parameters `json:"consensusParams"`
+	ConsensusParams avalanche.Parameters `json:"consensusParams"`
 
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`

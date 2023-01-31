@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/api/server"
 	"github.com/luxdefi/luxd/database/memdb"
 	"github.com/luxdefi/luxd/database/versiondb"
@@ -32,6 +33,8 @@ import (
 	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/api/server"
 	"github.com/ava-labs/avalanchego/database/memdb"
 	"github.com/ava-labs/avalanchego/database/versiondb"
@@ -48,6 +51,7 @@ import (
 
 	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
 	smblockmocks "github.com/ava-labs/avalanchego/snow/engine/snowman/block/mocks"
+<<<<<<< HEAD
 =======
 	"github.com/luxdefi/luxd/api/server"
 	"github.com/luxdefi/luxd/database/memdb"
@@ -67,6 +71,8 @@ import (
 	smblockmocks "github.com/luxdefi/luxd/snow/engine/snowman/block/mocks"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 var (
@@ -334,6 +340,7 @@ func TestIndexer(t *testing.T) {
 	// Mocked VM knows about this block now
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	dagEngine.EXPECT().GetVtx(vtxID).Return(
 		&lux.TestVertex{
 =======
@@ -348,6 +355,10 @@ func TestIndexer(t *testing.T) {
 		&lux.TestVertex{
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	dagEngine.EXPECT().GetVtx(gomock.Any(), vtxID).Return(
+		&avalanche.TestVertex{
+>>>>>>> c5eafdb72 (Update LICENSE)
 			TestDecidable: choices.TestDecidable{
 				StatusV: choices.Accepted,
 				IDV:     vtxID,

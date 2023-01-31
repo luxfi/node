@@ -1,7 +1,7 @@
 module github.com/ava-labs/avalanchego
 
 // Changes to the minimum golang version must also be replicated in
-// scripts/build_lux.sh
+// scripts/build_avalanche.sh
 // scripts/local.Dockerfile
 // Dockerfile
 // README.md
@@ -15,12 +15,16 @@ require (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 	github.com/ava-labs/coreth v0.11.6-rc.0
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
 	github.com/btcsuite/btcd/btcutil v1.1.3
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 	github.com/ava-labs/avalanche-ledger-go v0.0.12
@@ -84,6 +88,8 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0-20200627015759-01fd2de07837
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/golang/mock v1.6.0
