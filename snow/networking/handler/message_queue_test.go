@@ -142,12 +142,17 @@ func TestQueue(t *testing.T) {
 	// Non-validators should be able to put messages onto [u]
 	nonVdrNodeID1, nonVdrNodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
 	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
 =======
 	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1)
 	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	msg3 := message.InboundPullQuery(ids.Empty, 0, 0, ids.Empty, nonVdrNodeID1, engineType)
+	msg4 := message.InboundPushQuery(ids.Empty, 0, 0, nil, nonVdrNodeID2, engineType)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	u.Push(context.Background(), msg3)
 	u.Push(context.Background(), msg4)
 	u.Push(context.Background(), msg1)

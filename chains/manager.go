@@ -61,6 +61,7 @@ import (
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/message"
 	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
 	"github.com/ava-labs/avalanchego/snow"
 	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
 	"github.com/ava-labs/avalanchego/snow/engine/avalanche/state"
@@ -681,6 +682,7 @@ func (m *manager) createLUXChain(
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
 		gossipConfig,
+		p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize sender: %w", err)
@@ -745,6 +747,7 @@ func (m *manager) createLUXChain(
 		msgChan,
 		sb.afterBootstrapped(),
 		m.ConsensusGossipFrequency,
+		p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 		m.ResourceTracker,
 		validators.UnhandledSubnetConnector, // avalanche chains don't use subnet connector
 	)
@@ -896,6 +899,7 @@ func (m *manager) createSnowmanChain(
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
 		gossipConfig,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize sender: %w", err)
@@ -1018,6 +1022,7 @@ func (m *manager) createSnowmanChain(
 		msgChan,
 		sb.afterBootstrapped(),
 		m.ConsensusGossipFrequency,
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 		m.ResourceTracker,
 		subnetConnector,
 	)

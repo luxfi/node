@@ -20,9 +20,13 @@ import (
 	"github.com/luxdefi/luxd/utils/units"
 =======
 	"github.com/ava-labs/avalanchego/ids"
+<<<<<<< HEAD
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 
 	p2ppb "github.com/luxdefi/luxd/proto/pb/p2p"
+=======
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 var (
@@ -50,9 +54,9 @@ func BenchmarkMarshalVersion(b *testing.B) {
 	require := require.New(b)
 
 	id := ids.GenerateTestID()
-	msg := p2ppb.Message{
-		Message: &p2ppb.Message_Version{
-			Version: &p2ppb.Version{
+	msg := p2p.Message{
+		Message: &p2p.Message_Version{
+			Version: &p2p.Version{
 				NetworkId:      uint32(1337),
 				MyTime:         uint64(time.Now().Unix()),
 				IpAddr:         []byte(net.IPv4(1, 2, 3, 4).To16()),
@@ -106,9 +110,9 @@ func BenchmarkUnmarshalVersion(b *testing.B) {
 	b.StopTimer()
 
 	id := ids.GenerateTestID()
-	msg := p2ppb.Message{
-		Message: &p2ppb.Message_Version{
-			Version: &p2ppb.Version{
+	msg := p2p.Message{
+		Message: &p2p.Message_Version{
+			Version: &p2p.Version{
 				NetworkId:      uint32(1337),
 				MyTime:         uint64(time.Now().Unix()),
 				IpAddr:         []byte(net.IPv4(1, 2, 3, 4).To16()),
@@ -133,7 +137,7 @@ func BenchmarkUnmarshalVersion(b *testing.B) {
 		if useBuilder {
 			_, err = codec.parseInbound(rawMsg, dummyNodeID, dummyOnFinishedHandling)
 		} else {
-			var msg p2ppb.Message
+			var msg p2p.Message
 			err = proto.Unmarshal(rawMsg, &msg)
 		}
 		require.NoError(err)

@@ -883,9 +883,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		heights       = []uint64{1, 2, 3}
 		containerIDs  = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 <<<<<<< HEAD
+<<<<<<< HEAD
 		engineType    = p2p.EngineType_ENGINE_TYPE_SNOWMAN
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+		engineType    = p2p.EngineType_ENGINE_TYPE_SNOWMAN
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -1112,6 +1116,9 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					chainID,
 					requestID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1122,6 +1129,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				)
 			},
@@ -1139,6 +1147,8 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 >>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AcceptedFrontierOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1147,9 +1157,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					requestID,
 					deadline,
 <<<<<<< HEAD
+<<<<<<< HEAD
 					engineType,
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					engineType,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 				).Return(nil, nil)
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
@@ -1201,6 +1215,9 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					chainID,
 					requestID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1211,6 +1228,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				)
 			},
@@ -1228,6 +1246,8 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				require.Equal(requestID, innerMsg.RequestId)
 				require.Equal(uint64(deadline), innerMsg.Deadline)
 >>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AcceptedOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1237,9 +1257,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					deadline,
 					containerIDs,
 <<<<<<< HEAD
+<<<<<<< HEAD
 					engineType,
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+					engineType,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 				).Return(nil, nil)
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
@@ -1330,9 +1354,13 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				timeoutManager,
 				defaultGossipConfig,
 <<<<<<< HEAD
+<<<<<<< HEAD
 				engineType,
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				engineType,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 
@@ -1392,9 +1420,13 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
 <<<<<<< HEAD
+<<<<<<< HEAD
 		engineType        = p2p.EngineType_ENGINE_TYPE_AVALANCHE
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+		engineType        = p2p.EngineType_ENGINE_TYPE_AVALANCHE
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -1545,6 +1577,9 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					requestID,
 					summaryIDs,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1557,6 +1592,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1569,6 +1605,8 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
@@ -1598,6 +1636,9 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					requestID,
 					summaryIDs,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1610,6 +1651,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				).Return(nil, nil) // Don't care about the message
 			},
@@ -1622,6 +1664,8 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 					require.Equal(summaryID[:], innerMsg.ContainerIds[i])
 				}
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			setExternalSenderExpect: func(externalSender *MockExternalSender) {
 				externalSender.EXPECT().Send(
@@ -1667,9 +1711,13 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				timeoutManager,
 				defaultGossipConfig,
 <<<<<<< HEAD
+<<<<<<< HEAD
 				engineType,
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				engineType,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 
@@ -1715,9 +1763,13 @@ func TestSender_Single_Request(t *testing.T) {
 		ctx               = snow.DefaultContextTest()
 		containerID       = ids.GenerateTestID()
 <<<<<<< HEAD
+<<<<<<< HEAD
 		engineType        = p2p.EngineType_ENGINE_TYPE_SNOWMAN
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+		engineType        = p2p.EngineType_ENGINE_TYPE_SNOWMAN
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -1762,6 +1814,9 @@ func TestSender_Single_Request(t *testing.T) {
 					chainID,
 					requestID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1771,6 +1826,7 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				)
 			},
@@ -1786,6 +1842,8 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 >>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.AncestorsOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1795,6 +1853,9 @@ func TestSender_Single_Request(t *testing.T) {
 					deadline,
 					containerID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil)
 			},
@@ -1838,6 +1899,9 @@ func TestSender_Single_Request(t *testing.T) {
 					chainID,
 					requestID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				)
 			},
@@ -1847,6 +1911,7 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 				require.Equal(engineType, innerMsg.EngineType)
+<<<<<<< HEAD
 =======
 				)
 			},
@@ -1862,6 +1927,8 @@ func TestSender_Single_Request(t *testing.T) {
 				require.Equal(chainID, innerMsg.ChainID)
 				require.Equal(requestID, innerMsg.RequestID)
 >>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			},
 			expectedResponseOp: message.PutOp,
 			setMsgCreatorExpect: func(msgCreator *message.MockOutboundMsgBuilder) {
@@ -1871,6 +1938,9 @@ func TestSender_Single_Request(t *testing.T) {
 					deadline,
 					containerID,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 					engineType,
 				).Return(nil, nil)
 			},
@@ -1930,9 +2000,13 @@ func TestSender_Single_Request(t *testing.T) {
 				timeoutManager,
 				defaultGossipConfig,
 <<<<<<< HEAD
+<<<<<<< HEAD
 				engineType,
 =======
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+				engineType,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 			)
 			require.NoError(err)
 

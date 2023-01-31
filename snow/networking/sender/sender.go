@@ -1210,7 +1210,11 @@ func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uin
 	}
 
 	// Create the outbound message.
+<<<<<<< HEAD
 	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, accepted, s.engineType)
+=======
+	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, s.engineType)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.ChitsOp),

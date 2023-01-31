@@ -15,10 +15,14 @@ import (
 =======
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
 	"github.com/ava-labs/avalanchego/utils/logging"
+<<<<<<< HEAD
 
 	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
 >>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -42,7 +46,7 @@ func TestMessageQueue(t *testing.T) {
 		testID := ids.GenerateTestID()
 		testID2 := ids.GenerateTestID()
 		m, err := mc.Pong(uint32(i),
-			[]*p2ppb.SubnetUptime{
+			[]*p2p.SubnetUptime{
 				{SubnetId: testID[:], Uptime: uint32(i)},
 				{SubnetId: testID2[:], Uptime: uint32(i)},
 			})
