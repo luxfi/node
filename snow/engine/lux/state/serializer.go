@@ -40,16 +40,16 @@ import (
 	"github.com/luxdefi/node/utils/set"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/math"
+	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/versiondb"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/math"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/serializer.go

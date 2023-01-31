@@ -38,12 +38,12 @@ import (
 	"github.com/luxdefi/node/utils/set"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common/queue"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/snow/engine/common/queue"
+	"github.com/luxdefi/node/utils/logging"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/vertex_job.go

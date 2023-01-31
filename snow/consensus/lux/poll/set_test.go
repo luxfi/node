@@ -26,9 +26,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/wrappers"
 =======
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/logging"

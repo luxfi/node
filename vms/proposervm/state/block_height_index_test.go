@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/versiondb"
-	"github.com/luxdefi/luxd/utils/logging"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/database/versiondb"
+	"github.com/luxdefi/node/utils/logging"
 )
 
 func TestHasIndexReset(t *testing.T) {

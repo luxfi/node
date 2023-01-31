@@ -21,16 +21,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/voter_test.go
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
 	"github.com/luxdefi/node/utils/set"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/voter_test.go
 >>>>>>> 53a8245a8 (Update consensus)
 )

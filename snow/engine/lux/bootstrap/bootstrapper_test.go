@@ -38,31 +38,31 @@ import (
 	"github.com/luxdefi/node/snow/validators"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/database/prefixdb"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/common/queue"
-	"github.com/luxdefi/luxd/snow/engine/common/tracker"
-	"github.com/luxdefi/luxd/snow/validators"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/database/prefixdb"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/engine/common/queue"
+	"github.com/luxdefi/node/snow/engine/common/tracker"
+	"github.com/luxdefi/node/snow/validators"
 
 <<<<<<< HEAD
 <<<<<<< HEAD
-	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	luxgetter "github.com/luxdefi/node/snow/engine/lux/getter"
 =======
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	avagetter "github.com/luxdefi/node/snow/engine/lux/getter"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
 >>>>>>> 53a8245a8 (Update consensus)
 =======
-	avagetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	avagetter "github.com/luxdefi/node/snow/engine/lux/getter"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper_test.go
 =======
-	luxgetter "github.com/luxdefi/luxd/snow/engine/lux/getter"
+	luxgetter "github.com/luxdefi/node/snow/engine/lux/getter"
 >>>>>>> 6ce5514cf (Update getters, constants)
 >>>>>>> 30c258f70 (Update getters, constants)
 )

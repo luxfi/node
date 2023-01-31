@@ -18,9 +18,9 @@ import (
 <<<<<<< HEAD
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/engine/common"
 =======
 	"context"
 	"errors"
@@ -30,9 +30,9 @@ import (
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/snow/engine/common"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/engine/common"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/test_engine.go
 >>>>>>> 53a8245a8 (Update consensus)
 )

@@ -30,11 +30,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/snowball"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
 =======
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"

@@ -4,7 +4,7 @@
 package common
 
 import (
-	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/node/ids"
 )
 
 // SubnetTracker describes the interface for checking if a node is tracking a

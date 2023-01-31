@@ -22,9 +22,9 @@ import (
 <<<<<<< HEAD
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/common"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/common"
 )
 
 var (

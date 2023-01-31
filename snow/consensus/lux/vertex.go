@@ -20,9 +20,9 @@ package lux
 
 import (
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/vms/components/verify"
 =======
 	"context"
 

@@ -37,14 +37,14 @@ import (
 	"github.com/luxdefi/node/version"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/version"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/bootstrap/bootstrapper.go

@@ -81,7 +81,7 @@ sudo apt install luxd
 
 ### Binary Install
 
-Download the [latest build](https://github.com/luxdefi/luxd/releases/latest) for your operating system and architecture.
+Download the [latest build](https://github.com/luxdefi/node/releases/latest) for your operating system and architecture.
 
 The Lux binary to be executed is named `luxd`.
 

@@ -16,8 +16,8 @@ package vertex
 
 import (
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/vertex/storage.go
 	"context"
@@ -25,8 +25,8 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/storage.go
 >>>>>>> 53a8245a8 (Update consensus)
 )

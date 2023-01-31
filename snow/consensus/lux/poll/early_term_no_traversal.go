@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/node/ids"
 =======
 	"github.com/luxdefi/node/ids"
 

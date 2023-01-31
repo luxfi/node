@@ -38,14 +38,14 @@ import (
 	"github.com/luxdefi/node/utils/set"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/utils/formatting"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxdefi/node/utils/hashing"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/unique_vertex.go

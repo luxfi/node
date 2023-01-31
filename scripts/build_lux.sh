@@ -67,7 +67,7 @@ source "$LUX_PATH"/scripts/versions.sh
 source "$LUX_PATH"/scripts/constants.sh
 
 echo "Building LUXGo..."
-go build -ldflags "-X github.com/luxdefi/luxd/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$LUX_PATH/main/"*.go
+go build -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$LUX_PATH/main/"*.go
 =======
     echo "AvalancheGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1

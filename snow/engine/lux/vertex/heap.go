@@ -18,16 +18,16 @@ import (
 	"container/heap"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/vertex/heap.go
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/utils/set"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/heap.go
 >>>>>>> 53a8245a8 (Update consensus)
 )

@@ -6,10 +6,10 @@ package gsubnetlookup
 import (
 	"context"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
 
-	subnetlookuppb "github.com/luxdefi/luxd/proto/pb/subnetlookup"
+	subnetlookuppb "github.com/luxdefi/node/proto/pb/subnetlookup"
 )
 
 var _ subnetlookuppb.SubnetLookupServer = (*Server)(nil)

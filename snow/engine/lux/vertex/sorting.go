@@ -15,8 +15,8 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/hashing"
 )
 
 type sortHashOfData [][]byte

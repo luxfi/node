@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/constants"
 )
 
 func Test_newOutboundBuilder(t *testing.T) {

@@ -29,13 +29,13 @@ import (
 	"github.com/luxdefi/node/snow/engine/common/queue"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/database/memdb"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
-	"github.com/luxdefi/luxd/snow/engine/lux/bootstrap"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/engine/common/queue"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/consensus/snowball"
+	"github.com/luxdefi/node/snow/engine/lux/bootstrap"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/engine/common/queue"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/config_test.go

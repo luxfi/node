@@ -19,8 +19,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 =======
 	"context"
 	"errors"
@@ -30,8 +30,8 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/lux"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/test_storage.go
 >>>>>>> 53a8245a8 (Update consensus)
 )
