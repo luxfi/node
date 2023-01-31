@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
 =======
 // Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
@@ -10,6 +11,9 @@
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
 >>>>>>> 34554f662 (Update LICENSE)
 >>>>>>> c5eafdb72 (Update LICENSE)
+=======
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+>>>>>>> 8fb2bec88 (Must keep bloodline pure)
 // See the file LICENSE for licensing terms.
 
 package lux
