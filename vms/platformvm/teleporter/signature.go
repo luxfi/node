@@ -4,6 +4,7 @@
 package teleporter
 
 import (
+<<<<<<< HEAD
 	"context"
 	"errors"
 	"fmt"
@@ -41,10 +42,26 @@ type Signature interface {
 type BitSetSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed this
 	// message.
+=======
+	"errors"
+
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+)
+
+var _ Signature = (*BitSetSignature)(nil)
+
+// TODO: Update this interface when implementing signature verification
+type Signature interface {
+	Verify() error
+}
+
+type BitSetSignature struct {
+>>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
 	Signers   []byte                 `serialize:"true"`
 	Signature [bls.SignatureLen]byte `serialize:"true"`
 }
 
+<<<<<<< HEAD
 func (s *BitSetSignature) Verify(
 	ctx context.Context,
 	msg *UnsignedMessage,
@@ -134,4 +151,8 @@ func VerifyWeight(
 		)
 	}
 	return nil
+=======
+func (*BitSetSignature) Verify() error {
+	return errors.New("unimplemented")
+>>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
 }
