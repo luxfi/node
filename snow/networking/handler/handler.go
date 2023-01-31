@@ -691,10 +691,14 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 
 	case *p2p.Chits:
 <<<<<<< HEAD
+<<<<<<< HEAD
 		votes, err := getIDs(msg.PreferredContainerIds)
 =======
 		votes, err := getIDs(msg.ContainerIds)
 >>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
+=======
+		votes, err := getIDs(msg.PreferredContainerIds)
+>>>>>>> 5c16945e9 (Add accepted frontier in Chits proto (#2106))
 		if err != nil {
 			h.ctx.Log.Debug("message with invalid field",
 				zap.Stringer("nodeID", nodeID),
