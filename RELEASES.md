@@ -1,6 +1,7 @@
 # Release Notes
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -100,6 +101,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Moved bit sets from the `ids` package to the `set` package
 - Added more wallet examples
 
+=======
+>>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
 ## [v1.9.4](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.4)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `20`.
@@ -173,8 +176,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Converted all sorting to utilize generics
 - Converted all set management to utilize generics
 
+<<<<<<< HEAD
 =======
 >>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
+=======
+>>>>>>> 481dee9c3 (Increase versions for v1.9.4 (#2313))
 ## [v1.9.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.3)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
