@@ -9,8 +9,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/message"
 	"github.com/luxdefi/luxd/utils/logging"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/utils/logging"
+
+	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
+>>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -31,7 +39,13 @@ func TestMessageQueue(t *testing.T) {
 
 	// Assert that the messages are popped in the same order they were pushed
 	for i := 0; i < numToSend; i++ {
-		m, err := mc.Pong(uint32(i))
+		testID := ids.GenerateTestID()
+		testID2 := ids.GenerateTestID()
+		m, err := mc.Pong(uint32(i),
+			[]*p2ppb.SubnetUptime{
+				{SubnetId: testID[:], Uptime: uint32(i)},
+				{SubnetId: testID2[:], Uptime: uint32(i)},
+			})
 		require.NoError(err)
 		msgs = append(msgs, m)
 	}
