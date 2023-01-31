@@ -7,10 +7,15 @@ import (
 	"context"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"golang.org/x/exp/maps"
 
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	"golang.org/x/exp/maps"
+
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
 )

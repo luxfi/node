@@ -118,7 +118,11 @@ func (m *manager) String() string {
 	defer m.lock.RUnlock()
 
 	subnets := maps.Keys(m.subnetToVdrs)
+<<<<<<< HEAD
 	utils.Sort(subnets)
+=======
+	ids.SortIDs(subnets)
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 
 	sb := strings.Builder{}
 

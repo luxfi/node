@@ -7,11 +7,21 @@ import (
 	"context"
 	"sync"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/database"
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/vms/components/lux"
 	"github.com/luxdefi/luxd/wallet/chain/p"
 	"github.com/luxdefi/luxd/wallet/chain/x"
+=======
+	"golang.org/x/exp/maps"
+
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/wallet/chain/p"
+	"github.com/ava-labs/avalanchego/wallet/chain/x"
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 )
 
 var (
@@ -110,11 +120,15 @@ func (u *utxos) UTXOs(_ context.Context, sourceChainID, destinationChainID ids.I
 
 	destToUTXOIDToUTXO := u.sourceToDestToUTXOIDToUTXO[sourceChainID]
 	utxoIDToUTXO := destToUTXOIDToUTXO[destinationChainID]
+<<<<<<< HEAD
 	utxos := make([]*lux.UTXO, 0, len(utxoIDToUTXO))
 	for _, utxo := range utxoIDToUTXO {
 		utxos = append(utxos, utxo)
 	}
 	return utxos, nil
+=======
+	return maps.Values(utxoIDToUTXO), nil
+>>>>>>> 78e44f3a8 (Use maps library where possible (#2280))
 }
 
 func (u *utxos) GetUTXO(_ context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*lux.UTXO, error) {
