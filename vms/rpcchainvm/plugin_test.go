@@ -29,7 +29,10 @@ const (
 	acceptStateSummaryTestKey                      = "acceptStateSummaryTest"
 	lastAcceptedBlockPostStateSummaryAcceptTestKey = "lastAcceptedBlockPostStateSummaryAcceptTest"
 	contextTestKey                                 = "contextTest"
+<<<<<<< HEAD
 	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
+=======
+>>>>>>> 53e970f42 (Support block.WithVerifyContext in chain.BlockWrapper (#2341))
 )
 
 var (
@@ -53,7 +56,10 @@ var (
 		acceptStateSummaryTestKey:                      acceptStateSummaryTestPlugin,
 		lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
 		contextTestKey:                                 contextEnabledTestPlugin,
+<<<<<<< HEAD
 		batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
+=======
+>>>>>>> 53e970f42 (Support block.WithVerifyContext in chain.BlockWrapper (#2341))
 	}
 )
 
