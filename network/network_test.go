@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/message"
 	"github.com/luxdefi/luxd/network/dialer"
@@ -30,6 +31,24 @@ import (
 	"github.com/luxdefi/luxd/utils/resource"
 	"github.com/luxdefi/luxd/utils/units"
 	"github.com/luxdefi/luxd/version"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/network/dialer"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math/meter"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/version"
+>>>>>>> 5d06d0a89 (Track peers of peers for improving peerlist gossip (#2017))
 )
 
 var (
@@ -194,20 +213,6 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 
 	dialer, listeners, nodeIDs, configs := newTestNetwork(t, len(handlers))
 
-	beacons := validators.NewSet()
-	err := beacons.Add(nodeIDs[0], nil, 1)
-	require.NoError(err)
-
-	primaryVdrs := validators.NewSet()
-	for _, nodeID := range nodeIDs {
-		err := primaryVdrs.Add(nodeID, nil, 1)
-		require.NoError(err)
-	}
-	vdrs := validators.NewManager()
-	_ = vdrs.Add(constants.PrimaryNetworkID, primaryVdrs)
-
-	msgCreator := newMessageCreator(t)
-
 	var (
 		networks = make([]Network, len(configs))
 
@@ -217,8 +222,35 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		onAllConnected = make(chan struct{})
 	)
 	for i, config := range configs {
+		msgCreator := newMessageCreator(t)
+		registry := prometheus.NewRegistry()
+
+		g, err := peer.NewGossipTracker(registry, "foobar")
+		require.NoError(err)
+
+		log := logging.NoLog{}
+		gossipTrackerCallback := peer.GossipTrackerCallback{
+			Log:           log,
+			GossipTracker: g,
+		}
+
+		beacons := validators.NewSet()
+		err = beacons.Add(nodeIDs[0], nil, 1)
+		require.NoError(err)
+
+		primaryVdrs := validators.NewSet()
+		primaryVdrs.RegisterCallbackListener(&gossipTrackerCallback)
+		for _, nodeID := range nodeIDs {
+			err := primaryVdrs.Add(nodeID, nil, 1)
+			require.NoError(err)
+		}
+
+		vdrs := validators.NewManager()
+		_ = vdrs.Add(constants.PrimaryNetworkID, primaryVdrs)
+
 		config := config
 
+		config.GossipTracker = g
 		config.Beacons = beacons
 		config.Validators = vdrs
 
@@ -226,8 +258,8 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		net, err := NewNetwork(
 			config,
 			msgCreator,
-			prometheus.NewRegistry(),
-			logging.NoLog{},
+			registry,
+			log,
 			listeners[i],
 			dialer,
 			&testHandler{

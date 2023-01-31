@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/network/dialer"
 	"github.com/luxdefi/luxd/network/throttling"
@@ -15,6 +16,16 @@ import (
 	"github.com/luxdefi/luxd/snow/uptime"
 	"github.com/luxdefi/luxd/snow/validators"
 	"github.com/luxdefi/luxd/utils/ips"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network/dialer"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/ips"
+>>>>>>> 5d06d0a89 (Track peers of peers for improving peerlist gossip (#2017))
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -170,4 +181,7 @@ type Config struct {
 	// Specifies how much disk usage each peer can cause before
 	// we rate-limit them.
 	DiskTargeter tracker.Targeter `json:"-"`
+
+	// Tracks which validators have been sent to which peers
+	GossipTracker peer.GossipTracker `json:"-"`
 }
