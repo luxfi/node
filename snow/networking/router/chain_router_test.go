@@ -478,6 +478,7 @@ func TestRouterTimeout(t *testing.T) {
 <<<<<<< HEAD
 	err = vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
 	require.NoError(err)
+<<<<<<< HEAD
 =======
 	err = vdrs.Add(ids.GenerateTestNodeID(), 1)
 =======
@@ -488,6 +489,8 @@ func TestRouterTimeout(t *testing.T) {
 >>>>>>> 62b728221 (Add txID to `validators.Set#Add` (#2312))
 	r.NoError(err)
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),

@@ -238,6 +238,7 @@ func TestBuildGenesisReturnsSortedValidators(t *testing.T) {
 
 	validators := genesis.Validators
 	require.Len(validators, 3)
+<<<<<<< HEAD
 }
 
 func TestUTXOLess(t *testing.T) {
@@ -325,6 +326,8 @@ func TestUTXOLess(t *testing.T) {
 			require.Equal(t, tt.expected, tt.utxo1.Less(tt.utxo2))
 		})
 	}
+=======
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 }
 
 func TestUTXOLess(t *testing.T) {
@@ -409,8 +412,7 @@ func TestUTXOLess(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-			require.Equal(tt.expected, tt.utxo1.Less(tt.utxo2))
+			require.Equal(t, tt.expected, tt.utxo1.Less(tt.utxo2))
 		})
 	}
 }

@@ -14,6 +14,7 @@ import (
 
 func TestSigner(t *testing.T) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	for _, test := range SignerTests {
 		sk, err := bls.NewSecretKey()
 		require.NoError(t, err)
@@ -24,6 +25,11 @@ func TestSigner(t *testing.T) {
 		sk, err := bls.NewSecretKey()
 		require.NoError(err)
 >>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
+=======
+	for _, test := range SignerTests {
+		sk, err := bls.NewSecretKey()
+		require.NoError(t, err)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 
 		chainID := ids.GenerateTestID()
 		s := NewSigner(sk, chainID)

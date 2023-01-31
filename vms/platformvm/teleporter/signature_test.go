@@ -107,10 +107,14 @@ func TestSignatureVerification(t *testing.T) {
 		quorumNum uint64
 		quorumDen uint64
 <<<<<<< HEAD
+<<<<<<< HEAD
 		msgF      func(*require.Assertions) *Message
 =======
 		msgF      func(require *require.Assertions) *Message
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+		msgF      func(*require.Assertions) *Message
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 		err       error
 	}{
 		{

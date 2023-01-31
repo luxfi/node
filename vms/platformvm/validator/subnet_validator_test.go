@@ -22,10 +22,14 @@ func TestSubnetValidatorVerifySubnetID(t *testing.T) {
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.ErrorIs(vdr.Verify(), errBadSubnetID)
 =======
 		require.Equal(errBadSubnetID, vdr.Verify())
 >>>>>>> a8631aa5c (Add Fx tests (#1838))
+=======
+		require.ErrorIs(vdr.Verify(), errBadSubnetID)
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	}
 
 	// Happy path
@@ -38,9 +42,13 @@ func TestSubnetValidatorVerifySubnetID(t *testing.T) {
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		require.NoError(vdr.Verify())
 =======
 		require.Equal(nil, vdr.Verify())
 >>>>>>> a8631aa5c (Add Fx tests (#1838))
+=======
+		require.NoError(vdr.Verify())
+>>>>>>> 7c09e7074 (Standardize `require` usage and remove `t.Fatal` from platformvm (#2297))
 	}
 }
