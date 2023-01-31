@@ -382,6 +382,9 @@ func TestSignatureVerification(t *testing.T) {
 		},
 		{
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d8b08bd26 (Add teleporter verification test with no validators (#2389))
 			name: "no validators",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
@@ -417,8 +420,11 @@ func TestSignatureVerification(t *testing.T) {
 			err: bls.ErrNoPublicKeys,
 		},
 		{
+<<<<<<< HEAD
 =======
 >>>>>>> 479196a9c (Add Teleporter message verification (#2207))
+=======
+>>>>>>> d8b08bd26 (Add teleporter verification test with no validators (#2389))
 			name: "invalid signature (substitute)",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
