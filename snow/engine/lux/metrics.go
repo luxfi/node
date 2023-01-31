@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/luxdefi/node/utils/wrappers"
 =======
 	"github.com/luxdefi/node/utils/wrappers"
 >>>>>>> 53a8245a8 (Update consensus)

@@ -23,8 +23,8 @@ import (
 	"fmt"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/vms/components/verify"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/vms/components/verify"
 =======
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils"

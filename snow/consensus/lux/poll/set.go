@@ -28,10 +28,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/linkedhashmap"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/metric"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/linkedhashmap"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/metric"
 =======
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/linkedhashmap"

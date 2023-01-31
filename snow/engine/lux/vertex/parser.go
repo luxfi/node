@@ -16,8 +16,8 @@ package vertex
 
 import (
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/utils/hashing"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/vertex/parser.go
 	"context"
@@ -25,8 +25,8 @@ import (
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/utils/hashing"
 =======
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/utils/hashing"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/vertex/parser.go
 >>>>>>> 53a8245a8 (Update consensus)
 )

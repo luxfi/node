@@ -20,10 +20,10 @@ package vertex
 
 import (
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/codec"
-	"github.com/luxdefi/luxd/codec/linearcodec"
-	"github.com/luxdefi/luxd/codec/reflectcodec"
-	"github.com/luxdefi/luxd/utils/units"
+	"github.com/luxdefi/node/codec"
+	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxdefi/node/codec/reflectcodec"
+	"github.com/luxdefi/node/utils/units"
 =======
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"

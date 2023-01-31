@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/snow/consensus/snowball"
+	"github.com/luxdefi/node/snow/consensus/snowball"
 =======
 	"github.com/luxdefi/node/snow/consensus/snowball"
 >>>>>>> 53a8245a8 (Update consensus)

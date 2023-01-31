@@ -22,8 +22,8 @@ import (
 	"fmt"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/formatting"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/formatting"
 =======
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/formatting"

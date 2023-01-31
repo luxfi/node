@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package subnetlookup;
 
-option go_package = "github.com/luxdefi/luxd/proto/pb/subnetlookup";
+option go_package = "github.com/luxdefi/node/proto/pb/subnetlookup";
 
 service SubnetLookup {
   rpc SubnetID(SubnetIDRequest) returns (SubnetIDResponse);

@@ -39,17 +39,17 @@ import (
 	"github.com/luxdefi/node/version"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow"
-	"github.com/luxdefi/luxd/snow/consensus/lux"
-	"github.com/luxdefi/luxd/snow/consensus/lux/poll"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/snow/engine/common"
-	"github.com/luxdefi/luxd/snow/events"
-	"github.com/luxdefi/luxd/utils/sampler"
-	"github.com/luxdefi/luxd/utils/wrappers"
-	"github.com/luxdefi/luxd/version"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxdefi/node/snow/consensus/lux/poll"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/snow/events"
+	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/version"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/transitive.go

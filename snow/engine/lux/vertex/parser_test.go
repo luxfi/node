@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
+	"github.com/luxdefi/node/ids"
 =======
 	"github.com/luxdefi/node/ids"
 >>>>>>> 53a8245a8 (Update consensus)

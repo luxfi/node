@@ -30,14 +30,14 @@ import (
 	"github.com/luxdefi/node/utils/wrappers"
 =======
 >>>>>>> 53a8245a8 (Update consensus)
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/choices"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
-	"github.com/luxdefi/luxd/utils/hashing"
-	"github.com/luxdefi/luxd/utils/logging"
-	"github.com/luxdefi/luxd/utils/wrappers"
+	"github.com/luxdefi/node/cache"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/wrappers"
 <<<<<<< HEAD
 =======
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/state/state.go

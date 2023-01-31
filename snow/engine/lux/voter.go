@@ -20,9 +20,9 @@ import (
 	"go.uber.org/zap"
 
 <<<<<<< HEAD
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 =======
 <<<<<<< HEAD:snow/engine/avalanche/voter.go
 	"github.com/luxdefi/node/ids"
@@ -30,9 +30,9 @@ import (
 	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
 	"github.com/luxdefi/node/utils/set"
 =======
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/snow/consensus/snowstorm"
-	"github.com/luxdefi/luxd/snow/engine/lux/vertex"
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 >>>>>>> 04d685aa2 (Update consensus):snow/engine/lux/voter.go
 >>>>>>> 53a8245a8 (Update consensus)
 )
