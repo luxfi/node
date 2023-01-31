@@ -26,11 +26,16 @@ type State struct {
 	getBlock func(context.Context, ids.ID) (snowman.Block, error)
 	// unmarshals [b] into a block
 <<<<<<< HEAD
+<<<<<<< HEAD
 	unmarshalBlock        func(context.Context, []byte) (snowman.Block, error)
 	batchedUnmarshalBlock func(context.Context, [][]byte) ([]snowman.Block, error)
 =======
 	unmarshalBlock func(context.Context, []byte) (snowman.Block, error)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	unmarshalBlock        func(context.Context, []byte) (snowman.Block, error)
+	batchedUnmarshalBlock func(context.Context, [][]byte) ([]snowman.Block, error)
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 	// buildBlock attempts to build a block on top of the currently preferred block
 	// buildBlock should always return a block with status Processing since it should never
 	// create an unknown block, and building on top of the preferred block should never yield
@@ -92,6 +97,7 @@ type Config struct {
 	LastAcceptedBlock     snowman.Block
 	GetBlock              func(context.Context, ids.ID) (snowman.Block, error)
 	UnmarshalBlock        func(context.Context, []byte) (snowman.Block, error)
+	BatchedUnmarshalBlock func(context.Context, [][]byte) ([]snowman.Block, error)
 	BuildBlock            func(context.Context) (snowman.Block, error)
 	BuildBlockWithContext func(context.Context, *block.Context) (snowman.Block, error)
 	GetBlockIDAtHeight    func(context.Context, uint64) (ids.ID, error)
@@ -321,12 +327,17 @@ func (s *State) GetBlockInternal(ctx context.Context, blkID ids.ID) (snowman.Blo
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // ParseBlock attempts to parse [b] into an internal Block and adds it to the
 // appropriate caching layer if successful.
 =======
 // ParseBlock attempts to parse [b] into an internal Block and adds it to the appropriate
 // caching layer if successful.
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+// ParseBlock attempts to parse [b] into an internal Block and adds it to the
+// appropriate caching layer if successful.
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 func (s *State) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
 	// See if we've cached this block's ID by its byte repr.
 	blkIDIntf, blkIDCached := s.bytesToIDCache.Get(string(b))
@@ -366,6 +377,9 @@ func (s *State) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error)
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 // BatchedParseBlock implements part of the block.BatchedChainVM interface. In
 // addition to performing all the caching as the ParseBlock function, it
 // performs at most one call to the underlying VM if [batchedUnmarshalBlock] was
@@ -448,8 +462,11 @@ func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]sn
 	return blks, nil
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+>>>>>>> 49ce35bae (Fix BatchedParseBlock over rpcchainvm (#2328))
 // BuildBlockWithContext attempts to build a new internal Block, wraps it, and
 // adds it to the appropriate caching layer if successful.
 // If [s.buildBlockWithContext] is nil, returns [BuildBlock].
