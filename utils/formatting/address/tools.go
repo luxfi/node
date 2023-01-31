@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
 =======
 // Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 >>>>>>> d7a7925ff (Update various imports)
+=======
+// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+>>>>>>> c5eafdb72 (Update LICENSE)
 // See the file LICENSE for licensing terms.
 
 //go:build tools

@@ -118,6 +118,7 @@ const (
 	SnowVirtuousCommitThresholdKey                     = "snow-virtuous-commit-threshold"
 	SnowRogueCommitThresholdKey                        = "snow-rogue-commit-threshold"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	SnowLUXNumParentsKey                         = "snow-lux-num-parents"
 	SnowLUXBatchSizeKey                          = "snow-lux-batch-size"
 =======
@@ -129,6 +130,10 @@ const (
 	SnowLUXBatchSizeKey                          = "snow-lux-batch-size"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	SnowAvalancheNumParentsKey                         = "snow-avalanche-num-parents"
+	SnowAvalancheBatchSizeKey                          = "snow-avalanche-batch-size"
+>>>>>>> c5eafdb72 (Update LICENSE)
 	SnowConcurrentRepollsKey                           = "snow-concurrent-repolls"
 	SnowOptimalProcessingKey                           = "snow-optimal-processing"
 	SnowMaxProcessingKey                               = "snow-max-processing"

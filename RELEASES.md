@@ -428,11 +428,7 @@ The supported plugin version is `16`.
 
 - Fixed stale block reference by evicting blocks upon successful verification
 
-<<<<<<< HEAD
 ### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
-=======
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
->>>>>>> 04d685aa2 (Update consensus)
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
@@ -447,11 +443,7 @@ The supported plugin version is `16`.
 - Added temporarily invalid block caching to reduce repeated network requests
 - Added caching to the proposervm's inner block parsing
 
-<<<<<<< HEAD
 ### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
-=======
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
->>>>>>> 04d685aa2 (Update consensus)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
@@ -464,11 +456,7 @@ The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on bot
 
 The supported plugin version is `16`.
 
-<<<<<<< HEAD
 ### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
-=======
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
->>>>>>> 04d685aa2 (Update consensus)
 
 - Fixed live-lock in bootstrapping, after performing state-sync, by properly reporting `database.ErrNotFound` in `GetBlockIDAtHeight` rather than a formatted error
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
@@ -486,11 +474,7 @@ The supported plugin version is `16`.
 
 - Reduced the severity of not quickly connecting to bootstrap nodes from `FATAL` to `WARN`
 
-<<<<<<< HEAD
 ### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
-=======
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
->>>>>>> 04d685aa2 (Update consensus)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
@@ -573,7 +557,7 @@ The supported plugin version is `16`.
 
 - Defined `p2p.proto` to be used for future network messages
 - Added `--network-tls-key-log-file-unsafe` to support inspecting p2p messages
-- Added `lux_network_accept_failed` metrics to track networking `Accept` errors
+- Added `avalanche_network_accept_failed` metrics to track networking `Accept` errors
 
 ### Miscellaneous
 
@@ -587,11 +571,7 @@ The supported plugin version is `16`.
   - `timer.NewStagedTimer`
   - `timer.TimedMeter`
 
-<<<<<<< HEAD
 ### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
-=======
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
->>>>>>> 04d685aa2 (Update consensus)
 
 - Incorrectly deprecated Native Asset Call
 - Migrated to go-ethereum v1.10.23
@@ -772,7 +752,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/ava-labs/ava
 - Improved `coreth` state sync request retry logic
 - Improved `coreth` state sync handler metrics
 - Improved `coreth` state sync ETA
-- Added `lux_{chainID}_handler_async_expired` metric
+- Added `avalanche_{chainID}_handler_async_expired` metric
 
 ### Miscellaneous
 
@@ -1302,7 +1282,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/ava
 
 ### Metrics
 
-- Added `lux_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
+- Added `avalanche_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
 
 ### APIs
 
@@ -1330,16 +1310,16 @@ This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/ava
 
 ### Metrics
 
-- Updated `lux_{ChainID}_handler_gossip_{count,sum}` to `lux_{ChainID}_handler_gossip_request_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_{count,sum}` to `lux_{ChainID}_lat_accepted_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `lux_{ChainID}_lat_accepted_frontier_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_ancestors_{count,sum}` to `lux_{ChainID}_lat_multi_put_{count,sum}`.
-- Combined `lux_{ChainID}_lat_pull_query_{count,sum}` and `lux_{ChainID}_lat_push_query_{count,sum}` to `lux_{ChainID}_lat_chits_{count,sum}`.
-- Added `lux_{ChainID}_app_response_{count,sum}`.
-- Added `lux_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
-- Added `lux_network_bandwidth_throttler_inbound_awaiting_acquire`
-- Added `lux_P_vm_votes_won`
-- Added `lux_P_vm_votes_lost`
+- Updated `avalanche_{ChainID}_handler_gossip_{count,sum}` to `avalanche_{ChainID}_handler_gossip_request_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_{count,sum}` to `avalanche_{ChainID}_lat_accepted_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `avalanche_{ChainID}_lat_accepted_frontier_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_ancestors_{count,sum}` to `avalanche_{ChainID}_lat_multi_put_{count,sum}`.
+- Combined `avalanche_{ChainID}_lat_pull_query_{count,sum}` and `avalanche_{ChainID}_lat_push_query_{count,sum}` to `avalanche_{ChainID}_lat_chits_{count,sum}`.
+- Added `avalanche_{ChainID}_app_response_{count,sum}`.
+- Added `avalanche_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
+- Added `avalanche_network_bandwidth_throttler_inbound_awaiting_acquire`
+- Added `avalanche_P_vm_votes_won`
+- Added `avalanche_P_vm_votes_lost`
 
 ### Indexer
 
@@ -1370,22 +1350,22 @@ This version is backwards compatible to [v1.6.0](https://github.com/ava-labs/ava
 
 ### Metrics
 
-- Changed the behavior of `lux_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
-- Changed the behavior of `lux_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
 - Added `Block/Tx` metrics on `meterVM`s.
-  - Added `lux_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_reject_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_reject_{count,sum}`.
 
 ### Coreth
 

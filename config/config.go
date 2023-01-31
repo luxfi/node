@@ -21,6 +21,7 @@ import (
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/app/runner"
 	"github.com/luxdefi/luxd/chains"
 	"github.com/luxdefi/luxd/genesis"
@@ -54,6 +55,8 @@ import (
 =======
 =======
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/app/runner"
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/genesis"
@@ -86,6 +89,7 @@ import (
 	"github.com/ava-labs/avalanchego/vms"
 	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 	"github.com/ava-labs/avalanchego/vms/proposervm"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 =======
@@ -122,6 +126,8 @@ import (
 	"github.com/luxdefi/luxd/vms/platformvm/reward"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 const (
@@ -201,8 +207,8 @@ func GetRunnerConfig(v *viper.Viper) runner.Config {
 >>>>>>> 374536bc0 (Replace `--build-dir` with `--plugin-dir` (#1741))
 }
 
-func getConsensusConfig(v *viper.Viper) lux.Parameters {
-	return lux.Parameters{
+func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
+	return avalanche.Parameters{
 		Parameters: snowball.Parameters{
 			K:                       v.GetInt(SnowSampleSizeKey),
 			Alpha:                   v.GetInt(SnowQuorumSizeKey),

@@ -16,6 +16,7 @@ import (
 	"github.com/onsi/gomega"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 =======
 <<<<<<< HEAD
@@ -24,6 +25,9 @@ import (
 	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
+>>>>>>> c5eafdb72 (Update LICENSE)
 
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/tests"
@@ -66,8 +70,8 @@ type testEnvironmentConfig struct {
 	clusterType               ClusterType
 	logLevel                  string
 	networkRunnerGRPCEndpoint string
-	luxGoExecPath       string
-	luxGoLogLevel       string
+	avalancheGoExecPath       string
+	avalancheGoLogLevel       string
 	testKeysFile              string
 
 	// we snapshot initial state, right after starting cluster
@@ -98,11 +102,12 @@ type TestEnvinronment struct {
 func (te *TestEnvinronment) ConfigCluster(
 	logLevel string,
 	networkRunnerGRPCEp string,
-	luxGoExecPath string,
-	luxGoLogLevel string,
+	avalancheGoExecPath string,
+	avalancheGoLogLevel string,
 	uris string,
 	testKeysFile string,
 ) error {
+<<<<<<< HEAD
 <<<<<<< HEAD
 	if luxGoExecPath != "" {
 		if _, err := os.Stat(luxGoExecPath); err != nil {
@@ -118,6 +123,11 @@ func (te *TestEnvinronment) ConfigCluster(
 			return fmt.Errorf("could not find luxd binary: %w", err)
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+	if avalancheGoExecPath != "" {
+		if _, err := os.Stat(avalancheGoExecPath); err != nil {
+			return fmt.Errorf("could not find avalanchego binary: %w", err)
+>>>>>>> c5eafdb72 (Update LICENSE)
 		}
 	}
 
@@ -128,8 +138,8 @@ func (te *TestEnvinronment) ConfigCluster(
 		te.clusterType = StandAlone
 		te.logLevel = logLevel
 		te.networkRunnerGRPCEndpoint = networkRunnerGRPCEp
-		te.luxGoExecPath = luxGoExecPath
-		te.luxGoLogLevel = luxGoLogLevel
+		te.avalancheGoExecPath = avalancheGoExecPath
+		te.avalancheGoLogLevel = avalancheGoLogLevel
 
 		err := te.setRunnerClient(te.logLevel, te.networkRunnerGRPCEndpoint)
 		if err != nil {
@@ -175,11 +185,11 @@ func (te *TestEnvinronment) LoadKeys() error {
 func (te *TestEnvinronment) StartCluster() error {
 	switch te.clusterType {
 	case StandAlone:
-		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.luxGoExecPath)
+		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.avalancheGoExecPath)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		resp, err := te.GetRunnerClient().Start(ctx, te.luxGoExecPath,
+		resp, err := te.GetRunnerClient().Start(ctx, te.avalancheGoExecPath,
 			runner_sdk.WithNumNodes(5),
-			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.luxGoLogLevel)),
+			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.avalancheGoLogLevel)),
 		)
 		cancel()
 		if err != nil {

@@ -11,6 +11,6 @@ import (
 type Registrant interface {
 	// Called when the chain described by [engine] is created
 	// This function is called before the chain starts processing messages
-	// [engine] should be an lux.Engine or snowman.Engine
+	// [engine] should be an avalanche.Engine or snowman.Engine
 	RegisterChain(name string, engine common.Engine)
 }

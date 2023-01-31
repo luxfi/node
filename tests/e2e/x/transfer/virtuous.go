@@ -38,9 +38,9 @@ import (
 )
 
 const (
-	metricVtxProcessing = "lux_X_vtx_processing"
-	metricVtxAccepted   = "lux_X_vtx_accepted_count"
-	metricVtxRejected   = "lux_X_vtx_rejected_count"
+	metricVtxProcessing = "avalanche_X_vtx_processing"
+	metricVtxAccepted   = "avalanche_X_vtx_accepted_count"
+	metricVtxRejected   = "avalanche_X_vtx_rejected_count"
 )
 
 const totalRounds = 50

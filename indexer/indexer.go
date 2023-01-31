@@ -14,8 +14,11 @@ import (
 	"go.uber.org/zap"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 	"github.com/ava-labs/avalanchego/api/server"
 	"github.com/ava-labs/avalanchego/chains"
 	"github.com/ava-labs/avalanchego/codec"
@@ -33,6 +36,7 @@ import (
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
+<<<<<<< HEAD
 =======
 >>>>>>> 53a8245a8 (Update consensus)
 	"github.com/luxdefi/luxd/api/server"
@@ -56,6 +60,8 @@ import (
 =======
 >>>>>>> 04d685aa2 (Update consensus)
 >>>>>>> 53a8245a8 (Update consensus)
+=======
+>>>>>>> c5eafdb72 (Update LICENSE)
 )
 
 const (
@@ -303,7 +309,7 @@ func (i *indexer) RegisterChain(name string, engine common.Engine) {
 			return
 		}
 		i.blockIndices[chainID] = index
-	case lux.Engine:
+	case avalanche.Engine:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, name, "vtx", i.consensusAcceptorGroup)
 		if err != nil {
 			i.log.Fatal("couldn't create vertex index",

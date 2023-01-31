@@ -25,7 +25,7 @@ while getopts 'r' flag; do
 done
 
 # Changes to the minimum golang version must also be replicated in
-# scripts/build_lux.sh (here)
+# scripts/build_avalanche.sh (here)
 # scripts/local.Dockerfile
 # Dockerfile
 # README.md
