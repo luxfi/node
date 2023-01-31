@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 FROM bufbuild/buf:1.11.0 AS builder
+=======
+FROM bufbuild/buf:1.9.0 AS builder
+>>>>>>> 51f21a85b (Update buf to v1.9.0 (#2239))
 
 FROM ubuntu:20.04
 
