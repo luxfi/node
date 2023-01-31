@@ -25,9 +25,13 @@ type TestVM struct {
 	CantLinearize, CantPendingTxs, CantParse, CantGet bool
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	LinearizeF  func(context.Context, ids.ID) error
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	LinearizeF  func(context.Context, ids.ID) error
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 	PendingTxsF func(context.Context) []snowstorm.Tx
 	ParseTxF    func(context.Context, []byte) (snowstorm.Tx, error)
 	GetTxF      func(context.Context, ids.ID) (snowstorm.Tx, error)
@@ -42,6 +46,9 @@ func (vm *TestVM) Default(cant bool) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 func (vm *TestVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	if vm.LinearizeF != nil {
 		return vm.LinearizeF(ctx, stopVertexID)
@@ -52,8 +59,11 @@ func (vm *TestVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return errLinearize
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 func (vm *TestVM) PendingTxs(ctx context.Context) []snowstorm.Tx {
 	if vm.PendingTxsF != nil {
 		return vm.PendingTxsF(ctx)

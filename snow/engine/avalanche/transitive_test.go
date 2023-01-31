@@ -5852,10 +5852,14 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 	engCfg.Manager = manager
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
 =======
 	vm := &vertex.TestVM{TestVM: common.TestVM{T: t}}
 >>>>>>> 007ea3cdf (Apply accepted frontier rather than failing a query (#2135))
+=======
+	vm := &vertex.TestVM{TestVM: block.TestVM{TestVM: common.TestVM{T: t}}}
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 	vm.Default(true)
 	engCfg.VM = vm
 

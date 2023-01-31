@@ -382,6 +382,9 @@ func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 /*
  ******************************************************************************
  ********************************** Chain VM **********************************
@@ -418,8 +421,11 @@ func (*VM) Linearize(context.Context, ids.ID) error {
 	return errUnimplemented
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> db5704fcd (Update DAGVM interface to support linearization (#2442))
 func (vm *VM) PendingTxs(context.Context) []snowstorm.Tx {
 	vm.timer.Cancel()
 
