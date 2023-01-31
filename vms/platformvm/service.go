@@ -2870,8 +2870,12 @@ func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 =======
 func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
+<<<<<<< HEAD
 	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.WhitelistedSubnets.Contains(staker.SubnetID) {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		return nil, nil
 	}
 

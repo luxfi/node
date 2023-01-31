@@ -1458,6 +1458,9 @@ func (s *state) initValidatorSets() error {
 	s.metrics.SetTotalStake(primaryValidators.Weight())
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	for subnetID := range s.cfg.TrackedSubnets {
 		subnetValidators := validators.NewSet()
 		err := s.ValidatorSet(subnetID, subnetValidators)
@@ -2032,12 +2035,17 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 			// We only track the current validator set of tracked subnets.
 			if subnetID != constants.PrimaryNetworkID && !s.cfg.TrackedSubnets.Contains(subnetID) {
 =======
 			// We only track the current validator set of whitelisted subnets.
 			if subnetID != constants.PrimaryNetworkID && !s.cfg.WhitelistedSubnets.Contains(subnetID) {
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+			// We only track the current validator set of tracked subnets.
+			if subnetID != constants.PrimaryNetworkID && !s.cfg.TrackedSubnets.Contains(subnetID) {
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 				continue
 			}
 

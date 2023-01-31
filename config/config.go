@@ -93,7 +93,9 @@ const (
 )
 
 var (
-	deprecatedKeys = map[string]string{}
+	deprecatedKeys = map[string]string{
+		WhitelistedSubnetsKey: fmt.Sprintf("Use --%s instead", TrackSubnetsKey),
+	}
 
 	errInvalidStakerWeights          = errors.New("staking weights must be positive")
 	errStakingDisableOnPublicNetwork = errors.New("staking disabled on public network")
@@ -106,7 +108,7 @@ var (
 	errStakeMaxConsumptionTooLarge   = fmt.Errorf("max stake consumption must be less than or equal to %d", reward.PercentDenominator)
 	errStakeMaxConsumptionBelowMin   = errors.New("stake max consumption can't be less than min stake consumption")
 	errStakeMintingPeriodBelowMin    = errors.New("stake minting period can't be less than max stake duration")
-	errCannotWhitelistPrimaryNetwork = errors.New("cannot whitelist primary network")
+	errCannotTrackPrimaryNetwork     = errors.New("cannot track primary network")
 	errStakingKeyContentUnset        = fmt.Errorf("%s key not set but %s set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errStakingCertContentUnset       = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errMissingStakingSigningKeyFile  = errors.New("missing staking signing key file")
@@ -908,9 +910,16 @@ func getGenesisData(v *viper.Viper, networkID uint32) ([]byte, ids.ID, error) {
 	return genesis.FromConfig(config)
 }
 
-func getWhitelistedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
-	whitelistedSubnetIDs := set.Set[ids.ID]{}
-	for _, subnet := range strings.Split(v.GetString(WhitelistedSubnetsKey), ",") {
+func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
+	var trackSubnets string
+	if v.IsSet(TrackSubnetsKey) {
+		trackSubnets = v.GetString(TrackSubnetsKey)
+	} else {
+		trackSubnets = v.GetString(WhitelistedSubnetsKey)
+	}
+
+	trackedSubnetIDs := set.Set[ids.ID]{}
+	for _, subnet := range strings.Split(trackSubnets, ",") {
 		if subnet == "" {
 			continue
 		}
@@ -919,11 +928,11 @@ func getWhitelistedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 			return nil, fmt.Errorf("couldn't parse subnetID %q: %w", subnet, err)
 		}
 		if subnetID == constants.PrimaryNetworkID {
-			return nil, errCannotWhitelistPrimaryNetwork
+			return nil, errCannotTrackPrimaryNetwork
 		}
-		whitelistedSubnetIDs.Add(subnetID)
+		trackedSubnetIDs.Add(subnetID)
 	}
-	return whitelistedSubnetIDs, nil
+	return trackedSubnetIDs, nil
 }
 
 func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, error) {
@@ -1365,8 +1374,8 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	// Whitelisted Subnets
-	nodeConfig.WhitelistedSubnets, err = getWhitelistedSubnets(v)
+	// Tracked Subnets
+	nodeConfig.TrackedSubnets, err = getTrackedSubnets(v)
 	if err != nil {
 		return node.Config{}, err
 	}
@@ -1443,7 +1452,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Subnet Configs
-	subnetConfigs, err := getSubnetConfigs(v, nodeConfig.WhitelistedSubnets.List())
+	subnetConfigs, err := getSubnetConfigs(v, nodeConfig.TrackedSubnets.List())
 	if err != nil {
 		return node.Config{}, fmt.Errorf("couldn't read subnet configs: %w", err)
 	}

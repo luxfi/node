@@ -35,12 +35,15 @@ type Router interface {
 <<<<<<< HEAD
 		stakingEnabled bool,
 		trackedSubnets set.Set[ids.ID],
+<<<<<<< HEAD
 =======
 =======
 		stakingEnabled bool,
 >>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		whiteListedSubnets set.Set[ids.ID],
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
 		metricsNamespace string,

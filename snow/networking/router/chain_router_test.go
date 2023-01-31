@@ -1510,6 +1510,7 @@ func TestConnectedSubnet(t *testing.T) {
 	subnetID1 := ids.GenerateTestID()
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	trackedSubnets := set.Set[ids.ID]{}
 	trackedSubnets.Add(subnetID0, subnetID1)
 =======
@@ -1519,6 +1520,10 @@ func TestConnectedSubnet(t *testing.T) {
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	whitelistedSubnets.Add(subnetID0, subnetID1)
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+	trackedSubnets := set.Set[ids.ID]{}
+	trackedSubnets.Add(subnetID0, subnetID1)
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 	chainRouter := ChainRouter{}
 	err = chainRouter.Initialize(
 		myNodeID,
@@ -1530,6 +1535,7 @@ func TestConnectedSubnet(t *testing.T) {
 		set.Set[ids.ID]{},
 		true,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		trackedSubnets,
 =======
 		ids.Set{},
@@ -1540,6 +1546,9 @@ func TestConnectedSubnet(t *testing.T) {
 >>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		whitelistedSubnets,
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+		trackedSubnets,
+>>>>>>> 10f440542 (Add `--track-subnets` to replace `--whitelisted-subnets` (#2439))
 		nil,
 		HealthConfig{},
 		"",
