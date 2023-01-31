@@ -33,8 +33,8 @@ If you plan to build Lux Node from source, you will also need the following soft
 Clone the Lux Node repository:
 
 ```sh
-git clone git@github.com:luxdefi/luxd.git
-cd luxd
+git clone git@github.com:luxdefi/node.git
+cd node
 ```
 
 This will clone and checkout the `master` branch.
@@ -47,10 +47,10 @@ Build Lux Node by running the build script:
 ./scripts/build.sh
 ```
 
-The `luxd` binary is now in the `build` directory. To run:
+The `lux` binary is now in the `build` directory. To run:
 
 ```sh
-./build/luxd
+./build/lux
 ```
 
 ### Binary Repository
@@ -72,18 +72,18 @@ exit
 
 #### Installing the Latest Version
 
-After adding the APT repository, install luxd by running:
+After adding the APT repository, install lux by running:
 
 ```sh
 sudo apt update
-sudo apt install luxd
+sudo apt install lux
 ```
 
 ### Binary Install
 
 Download the [latest build](https://github.com/luxdefi/node/releases/latest) for your operating system and architecture.
 
-The Lux binary to be executed is named `luxd`.
+The Lux binary to be executed is named `lux`.
 
 ### Docker Install
 
@@ -104,7 +104,7 @@ docker image ls
 The image should be tagged as `luxdefi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 luxdefi/node:xxxxxxxx /node/build/luxd
+docker run -ti -p 9650:9650 -p 9651:9651 luxdefi/node:xxxxxxxx /node/build/lux
 ```
 
 ## Running Lux
