@@ -39,13 +39,19 @@ type BuildBlockWithContextChainVM interface {
 	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (snowman.Block, error)
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 
 type WithVerifyContext interface {
 	// Returns true if [VerifyWithContext] should be called.
 	// Returns false if [Verify] should be called.
+<<<<<<< HEAD
 	//
 	// This method will be called if and only if the proposervm is activated.
 	// Otherwise [Verify] will be called.
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
 	ShouldVerifyWithContext(context.Context) (bool, error)
 
 	// Verify that the state transition this block would make if accepted is
@@ -57,5 +63,8 @@ type WithVerifyContext interface {
 	// This method may be called again with a different context.
 	VerifyWithContext(context.Context, *Context) error
 }
+<<<<<<< HEAD
 =======
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+>>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
