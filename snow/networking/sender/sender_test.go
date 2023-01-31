@@ -45,7 +45,11 @@ var defaultGossipConfig = GossipConfig{
 func TestTimeout(t *testing.T) {
 	require := require.New(t)
 	vdrs := validators.NewSet()
+<<<<<<< HEAD
 	err := vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
+=======
+	err := vdrs.AddWeight(ids.GenerateTestNodeID(), 1)
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 	require.NoError(err)
 	benchlist := benchlist.NewNoBenchlist()
 	tm, err := timeout.NewManager(
@@ -143,12 +147,15 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.ConnectedF = func(ids.NodeID, *version.Application) error {
 		return nil
 	}
+<<<<<<< HEAD
 	bootstrapper.QueryFailedF = func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
 		failedVDRs.Add(nodeID)
 		wg.Done()
 >>>>>>> 55bd9343c (Add EmptyLines linter (#2233))
 		return nil
 	}
+=======
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 	handler.SetBootstrapper(bootstrapper)
 	ctx2.SetState(snow.Bootstrapping) // assumed bootstrap is ongoing
 
@@ -168,6 +175,7 @@ func TestTimeout(t *testing.T) {
 
 	var (
 		wg           = sync.WaitGroup{}
+<<<<<<< HEAD
 		vdrIDs       = set.Set[ids.NodeID]{}
 		chains       = set.Set[ids.ID]{}
 		requestID    uint32
@@ -182,6 +190,17 @@ func TestTimeout(t *testing.T) {
 	failed := func(ctx context.Context, nodeID ids.NodeID, _ uint32) error {
 		require.NoError(ctx.Err())
 
+=======
+		vdrIDs       = ids.NodeIDSet{}
+		chains       = ids.Set{}
+		requestID    uint32
+		failedLock   sync.Mutex
+		failedVDRs   = ids.NodeIDSet{}
+		failedChains = ids.Set{}
+	)
+
+	failed := func(_ context.Context, nodeID ids.NodeID, _ uint32) error {
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -198,9 +217,13 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.GetFailedF = failed
 	bootstrapper.QueryFailedF = failed
 	bootstrapper.AppRequestFailedF = failed
+<<<<<<< HEAD
 	bootstrapper.CrossChainAppRequestFailedF = func(ctx context.Context, chainID ids.ID, _ uint32) error {
 		require.NoError(ctx.Err())
 
+=======
+	bootstrapper.CrossChainAppRequestFailedF = func(_ context.Context, chainID ids.ID, _ uint32) error {
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		failedLock.Lock()
 		defer failedLock.Unlock()
 
@@ -211,81 +234,139 @@ func TestTimeout(t *testing.T) {
 
 	sendAll := func() {
 		{
+<<<<<<< HEAD
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGetStateSummaryFrontier(cancelledCtx, nodeIDs, requestID)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendGetStateSummaryFrontier(context.Background(), nodeIDs, requestID)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGetAcceptedStateSummary(cancelledCtx, nodeIDs, requestID, nil)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, nil)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGetAcceptedFrontier(cancelledCtx, nodeIDs, requestID)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGetAccepted(cancelledCtx, nodeIDs, requestID, nil)
+=======
+			sender.SendGetAccepted(context.Background(), nodeIDs, requestID, nil)
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
 			vdrIDs.Add(nodeID)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGetAncestors(cancelledCtx, nodeID, requestID, ids.Empty)
+=======
+			sender.SendGetAncestors(context.Background(), nodeID, requestID, ids.Empty)
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		}
 		{
 			nodeID := ids.GenerateTestNodeID()
 			vdrIDs.Add(nodeID)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendGet(cancelledCtx, nodeID, requestID, ids.Empty)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendGet(context.Background(), nodeID, requestID, ids.Empty)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendPullQuery(cancelledCtx, nodeIDs, requestID, ids.Empty)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendPullQuery(context.Background(), nodeIDs, requestID, ids.Empty)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			sender.SendPushQuery(cancelledCtx, nodeIDs, requestID, nil)
 		}
 		{
 			nodeIDs := set.Set[ids.NodeID]{
+=======
+			sender.SendPushQuery(context.Background(), nodeIDs, requestID, nil)
+		}
+		{
+			nodeIDs := ids.NodeIDSet{
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 				ids.GenerateTestNodeID(): struct{}{},
 			}
 			vdrIDs.Union(nodeIDs)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			err := sender.SendAppRequest(cancelledCtx, nodeIDs, requestID, nil)
+=======
+			err := sender.SendAppRequest(context.Background(), nodeIDs, requestID, nil)
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 			require.NoError(err)
 		}
 		{
@@ -293,19 +374,31 @@ func TestTimeout(t *testing.T) {
 			chains.Add(chainID)
 			wg.Add(1)
 			requestID++
+<<<<<<< HEAD
 			err := sender.SendCrossChainAppRequest(cancelledCtx, chainID, requestID, nil)
+=======
+			err := sender.SendCrossChainAppRequest(context.Background(), chainID, requestID, nil)
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 			require.NoError(err)
 		}
 	}
 
 	// Send messages to disconnected peers
+<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+=======
+	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		return nil
 	}
 	sendAll()
 
 	// Send messages to connected peers
+<<<<<<< HEAD
 	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
+=======
+	externalSender.SendF = func(_ message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+>>>>>>> 91c5e26ba (Use correct nodeID when sending AppRequestFailed messages (#2245))
 		return nodeIDs
 	}
 	sendAll()
