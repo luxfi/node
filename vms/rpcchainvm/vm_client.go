@@ -382,10 +382,14 @@ func (vm *VMClient) getInitServer(opts []grpc.ServerOption) *grpc.Server {
 func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 <<<<<<< HEAD
+<<<<<<< HEAD
 		State: vmpb.State(state),
 =======
 		State: uint32(state),
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		State: vmpb.State(state),
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 	})
 	if err != nil {
 		return err
@@ -1121,8 +1125,12 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 		return block.StateSyncSkipped, err
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
 =======
 	return block.StateSyncMode(resp.Mode), errCodeToError[resp.Err]
 >>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
+=======
+	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 }

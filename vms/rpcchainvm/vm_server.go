@@ -495,10 +495,14 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 		Id:                blkID[:],
 		ParentId:          parentID[:],
 <<<<<<< HEAD
+<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
 =======
 		Status:            uint32(blk.Status()),
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+		Status:            vmpb.Status(blk.Status()),
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -530,10 +534,14 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
 <<<<<<< HEAD
+<<<<<<< HEAD
 		Status:            vmpb.Status(blk.Status()),
 =======
 		Status:            uint32(blk.Status()),
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+		Status:            vmpb.Status(blk.Status()),
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -992,9 +1000,13 @@ func (vm *VMServer) StateSummaryAccept(
 	return &vmpb.StateSummaryAcceptResponse{
 		Mode: vmpb.StateSummaryAcceptResponse_Mode(mode),
 <<<<<<< HEAD
+<<<<<<< HEAD
 		Err:  errorToErrEnum[err],
 =======
 		Err:  errorToErrCode[err],
 >>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
+=======
+		Err:  errorToErrEnum[err],
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 	}, errorToRPCError(err)
 }

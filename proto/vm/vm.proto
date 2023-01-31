@@ -250,10 +250,14 @@ message GetBlockResponse {
   google.protobuf.Timestamp timestamp = 5;
   // used to propagate database.ErrNotFound through RPC
 <<<<<<< HEAD
+<<<<<<< HEAD
   Error err = 6;
 =======
   uint32 err = 6;
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+  Error err = 6;
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
   bool verify_with_context = 7;
 }
 
@@ -447,8 +451,12 @@ message StateSummaryAcceptResponse {
   }
   Mode mode = 1;
 <<<<<<< HEAD
+<<<<<<< HEAD
   Error err = 2;
 =======
   uint32 err = 2;
 >>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
+=======
+  Error err = 2;
+>>>>>>> 9710dc54c (Use enums where possible in protos (#2404))
 }
