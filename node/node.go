@@ -742,6 +742,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		AtomicMemory:                            n.sharedMemory,
 		LUXAssetID:                             luxAssetID,
 		XChainID:                                xChainID,
+		CChainID:                                cChainID,
 		CriticalChains:                          criticalChains,
 		TimeoutManager:                          timeoutManager,
 		Health:                                  n.health,
