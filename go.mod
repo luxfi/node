@@ -24,11 +24,15 @@ require (
 	github.com/ava-labs/avalanche-ledger-go v0.0.13
 	github.com/ava-labs/avalanche-network-runner-sdk v0.3.0
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 084d4d523 (Update E2E test dependencies with network runner 1.3 (#2183))
 	github.com/ava-labs/coreth v0.11.2-rc.0
 =======
 	github.com/ava-labs/coreth v0.11.3-rc.0
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	github.com/ava-labs/coreth v0.11.3-rc.1
+>>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
 	github.com/btcsuite/btcd v0.23.1
 	github.com/btcsuite/btcd/btcutil v1.1.1
 >>>>>>> f00fd86f8 (Add `keychain.NewLedgerKeychainFromIndices` (#2189))

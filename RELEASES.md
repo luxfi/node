@@ -1,5 +1,6 @@
 # Release Notes
 
+<<<<<<< HEAD
 ## [v1.9.7](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.7)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `22`.
@@ -172,6 +173,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/ava
 - Converted all sorting to utilize generics
 - Converted all set management to utilize generics
 
+=======
+>>>>>>> 51c5edd85 (Update versions for v1.9.3 (#2260))
 ## [v1.9.3](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.3)
 
 This version is backwards compatible to [v1.9.0](https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
