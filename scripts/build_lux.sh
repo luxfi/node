@@ -69,7 +69,7 @@ source "$LUX_PATH"/scripts/constants.sh
 echo "Building LUXGo..."
 go build -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$luxd_path" "$LUX_PATH/main/"*.go
 =======
-    echo "AvalancheGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
+    echo "Node requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1
 fi
 
@@ -79,6 +79,6 @@ AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 source "$AVALANCHE_PATH"/scripts/constants.sh
 
 build_args="$race"
-echo "Building AvalancheGo..."
+echo "Building Node..."
 go build $build_args -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$AVALANCHE_PATH/main/"*.go
 >>>>>>> 1bad4e38e (Update spec)
