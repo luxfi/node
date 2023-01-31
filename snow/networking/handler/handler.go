@@ -34,11 +34,7 @@ const (
 	numDispatchersToClose = 3
 	// If a consensus message takes longer than this to process, the handler
 	// will log a warning.
-<<<<<<< HEAD
 	syncProcessingTimeWarnLimit = 30 * time.Second
-=======
-	syncProcessingTimeWarnLimit = time.Second
->>>>>>> 8e33e184e (Add warn log when handling a synchronous message takes longer than expected (#1830))
 )
 
 var _ Handler = (*handler)(nil)
@@ -456,12 +452,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 			h.ctx.Log.Warn("handling sync message took longer than expected",
 				zap.Duration("processingTime", processingTime),
 				zap.Stringer("nodeID", nodeID),
-<<<<<<< HEAD
 				zap.Stringer("messageOp", op),
 				zap.Any("message", body),
-=======
-				zap.Stringer("message", msg),
->>>>>>> 8e33e184e (Add warn log when handling a synchronous message takes longer than expected (#1830))
 			)
 		}
 	}()
