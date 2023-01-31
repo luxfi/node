@@ -95,10 +95,15 @@ func New(
 
 func (s *sender) SendGetStateSummaryFrontier(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -236,10 +241,15 @@ func (s *sender) SendStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID
 
 func (s *sender) SendGetAcceptedStateSummary(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, heights []uint64) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -373,10 +383,15 @@ func (s *sender) SendAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID
 
 func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -513,10 +528,15 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 
 func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, containerIDs []ids.ID) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Note that this timeout duration won't exactly match the one that gets
 	// registered. That's OK.
 	deadline := s.timeouts.TimeoutDuration()
@@ -907,10 +927,15 @@ func (s *sender) SendPut(_ context.Context, nodeID ids.NodeID, requestID uint32,
 // container.
 func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, container []byte) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail
@@ -1038,10 +1063,15 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 // node to send their preferred frontier.
 func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, containerID ids.ID) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail
@@ -1157,7 +1187,11 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 }
 
 // SendChits sends chits
+<<<<<<< HEAD
 func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes, accepted []ids.ID) {
+=======
+func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes []ids.ID) {
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	ctx = utils.Detach(ctx)
 
 	// If [nodeID] is myself, send this message directly
@@ -1259,10 +1293,15 @@ func (s *sender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, 
 // VM.
 func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ctx = utils.Detach(ctx)
 
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	ctx = utils.Detach(ctx)
+
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	// Tell the router to expect a response message or a message notifying
 	// that we won't get a response from each of these nodes.
 	// We register timeouts for all nodes, regardless of whether we fail

@@ -205,11 +205,16 @@ func (vm *VM) Initialize(
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	detachedCtx := utils.Detach(ctx)
 	context, cancel := context.WithCancel(detachedCtx)
 =======
 	context, cancel := context.WithCancel(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	detachedCtx := utils.Detach(ctx)
+	context, cancel := context.WithCancel(detachedCtx)
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 	vm.context = context
 	vm.onShutdown = cancel
 
@@ -229,10 +234,14 @@ func (vm *VM) Initialize(
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if err := vm.repair(detachedCtx); err != nil {
 =======
 	if err := vm.repair(ctx, indexerState); err != nil {
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	if err := vm.repair(detachedCtx, indexerState); err != nil {
+>>>>>>> d1e4c8fed (Detach contexts at goroutine boundaries (#2333))
 		return err
 	}
 
