@@ -771,6 +771,7 @@ func (vm *VM) storePostForkBlock(blk PostForkBlock) error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
 	postForkID := postFork.ID()
@@ -797,6 +798,9 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 			}
 =======
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBlock) error {
+=======
+func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	innerBlk := postFork.getInnerBlk()
 	postForkID := postFork.ID()
 	originalInnerBlock, previouslyVerified := vm.Tree.Get(innerBlk)
@@ -808,13 +812,25 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBloc
 		vm.innerBlkCache.Put(postForkID, originalInnerBlock)
 	}
 
-	var err error
-	blkWithCtx, shouldVerifyWithCtx := innerBlk.(block.WithVerifyContext)
+	var (
+		shouldVerifyWithCtx = blockCtx != nil
+		blkWithCtx          block.WithVerifyContext
+		err                 error
+	)
 	if shouldVerifyWithCtx {
+<<<<<<< HEAD
 		shouldVerifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
 		if err != nil {
 			return err
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+		blkWithCtx, shouldVerifyWithCtx = innerBlk.(block.WithVerifyContext)
+		if shouldVerifyWithCtx {
+			shouldVerifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
+			if err != nil {
+				return err
+			}
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		}
 	}
 
@@ -827,6 +843,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBloc
 		// Note that [VerifyWithContext] with context may be called multiple
 		// times with multiple contexts.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 		blockCtx := &block.Context{}
 		blockCtx.PChainHeight, err = postFork.pChainHeight(ctx)
@@ -834,6 +851,8 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, postFork PostForkBloc
 			return err
 		}
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	} else if !previouslyVerified {
 		// This isn't a [block.WithVerifyContext] so we only call [Verify] once.

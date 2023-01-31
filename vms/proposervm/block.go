@@ -165,6 +165,9 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	return p.vm.verifyAndRecordInnerBlk(
 		ctx,
 		&smblock.Context{
@@ -172,9 +175,12 @@ func (p *postForkCommonComponents) Verify(
 		},
 		child,
 	)
+<<<<<<< HEAD
 =======
 	return p.vm.verifyAndRecordInnerBlk(ctx, child)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 }
 
 // Return the child (a *postForkBlock) of this block
@@ -235,8 +241,12 @@ func (p *postForkCommonComponents) buildChild(
 	var innerBlock snowman.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
+<<<<<<< HEAD
 			PChainHeight: pChainHeight,
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+			PChainHeight: parentPChainHeight,
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 		})
 	} else {
 		innerBlock, err = p.vm.ChainVM.BuildBlock(ctx)
