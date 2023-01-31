@@ -226,17 +226,27 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	var innerBlock snowman.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: parentPChainHeight,
+=======
+	var innerBlock snowman.Block
+	if p.vm.blockBuilderVM != nil {
+		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
+			PChainHeight: pChainHeight,
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 		})
 	} else {
 		innerBlock, err = p.vm.ChainVM.BuildBlock(ctx)
 	}
+<<<<<<< HEAD
 =======
 	innerBlock, err := p.vm.ChainVM.BuildBlock(ctx)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
 	if err != nil {
 		return nil, err
 	}
