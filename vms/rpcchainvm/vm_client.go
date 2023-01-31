@@ -56,6 +56,10 @@ import (
 	messengerpb "github.com/ava-labs/avalanchego/proto/pb/messenger"
 	rpcdbpb "github.com/ava-labs/avalanchego/proto/pb/rpcdb"
 	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
+<<<<<<< HEAD
+=======
+	subnetlookuppb "github.com/ava-labs/avalanchego/proto/pb/subnetlookup"
+>>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
 	teleporterpb "github.com/ava-labs/avalanchego/proto/pb/teleporter"
 	validatorstatepb "github.com/ava-labs/avalanchego/proto/pb/validatorstate"
 	vmpb "github.com/ava-labs/avalanchego/proto/pb/vm"
@@ -97,6 +101,10 @@ type VMClient struct {
 	keystore               *gkeystore.Server
 	sharedMemory           *gsharedmemory.Server
 	bcLookup               *galiasreader.Server
+<<<<<<< HEAD
+=======
+	snLookup               *gsubnetlookup.Server
+>>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
 	appSender              *appsender.Server
 	validatorStateServer   *gvalidators.Server
 	teleporterSignerServer *gteleporter.Server
@@ -193,7 +201,11 @@ func (vm *VMClient) Initialize(
 	vm.snLookup = gsubnetlookup.NewServer(chainCtx.SNLookup)
 	vm.appSender = appsender.NewServer(appSender)
 	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
+<<<<<<< HEAD
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	vm.teleporterSignerServer = gteleporter.NewServer(chainCtx.TeleporterSigner)
+>>>>>>> 978209904 (Add Teleporter message signing to snow.Context (#2197))
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
