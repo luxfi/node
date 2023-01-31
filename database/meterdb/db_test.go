@@ -8,8 +8,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/luxd/database"
-	"github.com/luxdefi/luxd/database/memdb"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
 )
 
 func TestInterface(t *testing.T) {
@@ -21,6 +23,17 @@ func TestInterface(t *testing.T) {
 		}
 
 		test(t, db)
+	}
+}
+
+func FuzzInterface(f *testing.F) {
+	for _, test := range database.FuzzTests {
+		baseDB := memdb.New()
+		db, err := New("", prometheus.NewRegistry(), baseDB)
+		if err != nil {
+			require.NoError(f, err)
+		}
+		test(f, db)
 	}
 }
 
