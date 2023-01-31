@@ -5,6 +5,7 @@ package teleporter
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"context"
 	"errors"
 	"fmt"
@@ -43,25 +44,57 @@ type BitSetSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed this
 	// message.
 =======
+=======
+	"context"
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 	"errors"
+	"fmt"
+	"math/big"
 
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/validators"
 	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 )
 
-var _ Signature = (*BitSetSignature)(nil)
+var (
+	_ Signature = (*BitSetSignature)(nil)
 
-// TODO: Update this interface when implementing signature verification
+	ErrInvalidBitSet      = errors.New("bitset is invalid")
+	ErrInsufficientWeight = errors.New("signature weight is insufficient")
+	ErrInvalidSignature   = errors.New("signature is invalid")
+	ErrParseSignature     = errors.New("failed to parse signature")
+)
+
 type Signature interface {
-	Verify() error
+	// Verify that this signature was signed by at least [quorumNum]/[quorumDen]
+	// of the validators of [msg.SourceChainID] at [pChainHeight].
+	//
+	// Invariant: [msg] is correctly initialized.
+	Verify(
+		ctx context.Context,
+		msg *UnsignedMessage,
+		pChainState validators.State,
+		pChainHeight uint64,
+		quorumNum uint64,
+		quorumDen uint64,
+	) error
 }
 
 type BitSetSignature struct {
+<<<<<<< HEAD
 >>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
+=======
+	// Signers is a big-endian byte slice encoding which validators signed this
+	// message.
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 	Signers   []byte                 `serialize:"true"`
 	Signature [bls.SignatureLen]byte `serialize:"true"`
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 func (s *BitSetSignature) Verify(
 	ctx context.Context,
 	msg *UnsignedMessage,
@@ -81,7 +114,11 @@ func (s *BitSetSignature) Verify(
 	}
 
 	// Parse signer bit vector
+<<<<<<< HEAD
 	signerIndices := set.BitsFromBytes(s.Signers)
+=======
+	signerIndices := ids.BigBitSetFromBytes(s.Signers)
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 	if len(signerIndices.Bytes()) != len(s.Signers) {
 		return ErrInvalidBitSet
 	}
@@ -151,8 +188,11 @@ func VerifyWeight(
 		)
 	}
 	return nil
+<<<<<<< HEAD
 =======
 func (*BitSetSignature) Verify() error {
 	return errors.New("unimplemented")
 >>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
+=======
+>>>>>>> 479196a9c (Add Teleporter message verification (#2207))
 }
