@@ -213,6 +213,9 @@ func (vm *VMClient) Initialize(
 		NodeId:       chainCtx.NodeID.Bytes(),
 		XChainId:     chainCtx.XChainID[:],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 149e77cdf (Add CChain ID to snow.Context (#2303))
 		CChainId:     chainCtx.CChainID[:],
 		AvaxAssetId:  chainCtx.AVAXAssetID[:],
 		ChainDataDir: chainCtx.ChainDataDir,
