@@ -29,6 +29,13 @@ func TestUnsignedMessage(t *testing.T) {
 }
 
 func TestParseUnsignedMessageJunk(t *testing.T) {
+<<<<<<< HEAD
 	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
 	require.Error(t, err)
+=======
+	require := require.New(t)
+
+	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
+	require.Error(err)
+>>>>>>> 9f0e87c33 (Add Teleporter message format (#2180))
 }
