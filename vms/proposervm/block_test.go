@@ -50,10 +50,14 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	innerBlockBuilderVM := mocks.NewMockBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
 <<<<<<< HEAD
+<<<<<<< HEAD
 		PChainHeight: pChainHeight - 1,
 =======
 		PChainHeight: pChainHeight,
 >>>>>>> 37ccd9a48 (Add BuildBlockWithContext as an optional VM method (#2210))
+=======
+		PChainHeight: pChainHeight - 1,
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 	}).Return(builtBlk, nil).AnyTimes()
 	vdrState := validators.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()

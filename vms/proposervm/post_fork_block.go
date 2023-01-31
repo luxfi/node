@@ -161,10 +161,14 @@ func (b *postForkBlock) verifyPostForkOption(ctx context.Context, child *postFor
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return child.vm.verifyAndRecordInnerBlk(ctx, nil, child)
 =======
 	return child.vm.verifyAndRecordInnerBlk(ctx, child)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	return child.vm.verifyAndRecordInnerBlk(ctx, nil, child)
+>>>>>>> f083e702f (Provide same P-chain to inner vm as proposervm verification (#2330))
 }
 
 // Return the child (a *postForkBlock) of this block
