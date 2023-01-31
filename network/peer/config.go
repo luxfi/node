@@ -6,6 +6,7 @@ package peer
 import (
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/message"
 	"github.com/luxdefi/luxd/network/throttling"
@@ -15,6 +16,18 @@ import (
 	"github.com/luxdefi/luxd/utils/logging"
 	"github.com/luxdefi/luxd/utils/timer/mockable"
 	"github.com/luxdefi/luxd/version"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/version"
+>>>>>>> 624d97c11 (Gossip subnet uptimes (#2319))
 )
 
 type Config struct {
@@ -47,4 +60,7 @@ type Config struct {
 
 	// Tracks which peer knows about which peers
 	GossipTracker GossipTracker
+
+	// Calculates uptime of peers
+	UptimeCalculator uptime.Calculator
 }
