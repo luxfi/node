@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inte. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package linkedhashmap
@@ -6,7 +6,7 @@ package linkedhashmap
 import (
 	"container/list"
 
-	"github.com/luxdefi/luxd/utils"
+	"github.com/ava-labs/avalanchego/utils"
 )
 
 var _ Iter[int, struct{}] = (*iterator[int, struct{}])(nil)
@@ -66,5 +66,10 @@ func (it *iterator[K, V]) Next() bool {
 	return true
 }
 
-func (it *iterator[K, V]) Key() K   { return it.key }
-func (it *iterator[K, V]) Value() V { return it.value }
+func (it *iterator[K, V]) Key() K {
+	return it.key
+}
+
+func (it *iterator[K, V]) Value() V {
+	return it.value
+}

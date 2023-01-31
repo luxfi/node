@@ -11,25 +11,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/constants"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 func Test_newInboundBuilder(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
-	mb, err := newMsgBuilder("test", prometheus.NewRegistry(), int64(constants.DefaultMaxMessageSize), 5*time.Second)
+	mb, err := newMsgBuilder(
+		"test",
+		prometheus.NewRegistry(),
+		10*time.Second,
+	)
 	require.NoError(err)
 
 	builder := newInboundBuilder(mb)
 
-	inMsg := builder.InboundAccepted(
+	_ = builder.InboundAccepted(
 		ids.GenerateTestID(),
-		uint32(12345),
+		12345,
 		[]ids.ID{ids.GenerateTestID()},
 		ids.GenerateTestNodeID(),
 	)
-
-	t.Logf("outbound message built %q", inMsg.Op().String())
 }

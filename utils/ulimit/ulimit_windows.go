@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build windows
@@ -6,7 +6,7 @@
 
 package ulimit
 
-import "github.com/luxdefi/luxd/utils/logging"
+import "github.com/ava-labs/avalanchego/utils/logging"
 
 const DefaultFDLimit = 16384
 
