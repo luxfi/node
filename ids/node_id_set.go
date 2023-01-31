@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 // Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+=======
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
+>>>>>>> d7a7925ff (Update various imports)
 // See the file LICENSE for licensing terms.
 
 package ids
 
+<<<<<<< HEAD
 import (
 	"strings"
 
@@ -10,6 +15,9 @@ import (
 
 	"github.com/ava-labs/avalanchego/utils"
 )
+=======
+import "strings"
+>>>>>>> d7a7925ff (Update various imports)
 
 // NodeIDSet is a set of NodeIDs
 type NodeIDSet map[NodeID]struct{}
@@ -65,9 +73,13 @@ func (ids *NodeIDSet) Contains(id NodeID) bool {
 }
 
 // Len returns the number of ids in this set
+<<<<<<< HEAD
 func (ids NodeIDSet) Len() int {
 	return len(ids)
 }
+=======
+func (ids NodeIDSet) Len() int { return len(ids) }
+>>>>>>> d7a7925ff (Update various imports)
 
 // Remove all the id from this set, if the id isn't in the set, nothing happens
 func (ids *NodeIDSet) Remove(idList ...NodeID) {
@@ -78,9 +90,13 @@ func (ids *NodeIDSet) Remove(idList ...NodeID) {
 }
 
 // Clear empties this set
+<<<<<<< HEAD
 func (ids *NodeIDSet) Clear() {
 	*ids = nil
 }
+=======
+func (ids *NodeIDSet) Clear() { *ids = nil }
+>>>>>>> d7a7925ff (Update various imports)
 
 // CappedList returns a list of length at most [size].
 // Size should be >= 0. If size < 0, returns nil.
@@ -105,19 +121,45 @@ func (ids NodeIDSet) CappedList(size int) []NodeID {
 
 // List converts this set into a list
 func (ids NodeIDSet) List() []NodeID {
+<<<<<<< HEAD
 	return maps.Keys(ids)
+=======
+	idList := make([]NodeID, len(ids))
+	i := 0
+	for id := range ids {
+		idList[i] = id
+		i++
+	}
+	return idList
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 // SortedList returns this set as a sorted list
 func (ids NodeIDSet) SortedList() []NodeID {
 	lst := ids.List()
+<<<<<<< HEAD
 	utils.Sort(lst)
+=======
+	SortNodeIDs(lst)
+>>>>>>> d7a7925ff (Update various imports)
 	return lst
 }
 
 // Equals returns true if the sets contain the same elements
 func (ids NodeIDSet) Equals(oIDs NodeIDSet) bool {
+<<<<<<< HEAD
 	return maps.Equal(ids, oIDs)
+=======
+	if ids.Len() != oIDs.Len() {
+		return false
+	}
+	for key := range oIDs {
+		if _, contains := ids[key]; !contains {
+			return false
+		}
+	}
+	return true
+>>>>>>> d7a7925ff (Update various imports)
 }
 
 // String returns the string representation of a set
