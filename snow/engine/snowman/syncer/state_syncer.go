@@ -350,10 +350,14 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		ss.Ctx.RunningStateSync(true)
 		return nil
 <<<<<<< HEAD
+<<<<<<< HEAD
 	case block.StateSyncDynamic:
 =======
 	case block.StateSummaryDynamic:
 >>>>>>> f1ee6f5ba (Add dynamic state sync support (#2362))
+=======
+	case block.StateSyncDynamic:
+>>>>>>> e480f4dcc (Fix typo `StateSummaryDynamic` to `StateSyncDynamic` (#2419))
 		// Summary was accepted and VM is state syncing.
 		// Engine will continue into bootstrapping and the VM will sync in the
 		// background.
