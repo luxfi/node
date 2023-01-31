@@ -68,10 +68,17 @@ func TestReload_GetNewVMsFails(t *testing.T) {
 
 	resources.mockVMGetter.EXPECT().Get().Times(1).Return(nil, nil, errTest)
 
+<<<<<<< HEAD
 	installedVMs, failedVMs, err := resources.vmRegistry.Reload(context.Background())
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
+=======
+	installedVMs, failedVMs, err := resources.vmRegistry.Reload()
+	require.Empty(t, installedVMs)
+	require.Empty(t, failedVMs)
+	require.ErrorIs(t, err, errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 }
 
 // Tests that if we fail to register a VM, we fail.
@@ -110,7 +117,11 @@ func TestReload_PartialRegisterFailure(t *testing.T) {
 	installedVMs, failedVMs, err := resources.vmRegistry.Reload(context.Background())
 
 	require.Len(t, failedVMs, 1)
+<<<<<<< HEAD
 	require.ErrorIs(t, failedVMs[id3], errTest)
+=======
+	require.ErrorIs(t, failedVMs[id3], errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 	require.Len(t, installedVMs, 1)
 	require.Equal(t, id4, installedVMs[0])
 	require.NoError(t, err)
@@ -162,10 +173,17 @@ func TestReloadWithReadLock_GetNewVMsFails(t *testing.T) {
 
 	resources.mockVMGetter.EXPECT().Get().Times(1).Return(nil, nil, errTest)
 
+<<<<<<< HEAD
 	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock(context.Background())
 	require.Empty(t, installedVMs)
 	require.Empty(t, failedVMs)
 	require.ErrorIs(t, err, errTest)
+=======
+	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock()
+	require.Empty(t, installedVMs)
+	require.Empty(t, failedVMs)
+	require.ErrorIs(t, err, errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 }
 
 // Tests that if we fail to register a VM, we fail.
@@ -204,7 +222,11 @@ func TestReloadWithReadLock_PartialRegisterFailure(t *testing.T) {
 	installedVMs, failedVMs, err := resources.vmRegistry.ReloadWithReadLock(context.Background())
 
 	require.Len(t, failedVMs, 1)
+<<<<<<< HEAD
 	require.ErrorIs(t, failedVMs[id3], errTest)
+=======
+	require.ErrorIs(t, failedVMs[id3], errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 	require.Len(t, installedVMs, 1)
 	require.Equal(t, id4, installedVMs[0])
 	require.NoError(t, err)

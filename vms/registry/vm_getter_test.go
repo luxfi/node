@@ -69,7 +69,11 @@ func TestGet_ReadDirFails(t *testing.T) {
 	resources.mockReader.EXPECT().ReadDir(pluginDir).Times(1).Return(nil, errTest)
 
 	_, _, err := resources.getter.Get()
+<<<<<<< HEAD
 	require.ErrorIs(t, err, errTest)
+=======
+	require.ErrorIs(t, err, errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 }
 
 // Get should fail if we see an invalid VM id
@@ -98,7 +102,11 @@ func TestGet_GetFactoryFails(t *testing.T) {
 	resources.mockManager.EXPECT().GetFactory(vm).Times(1).Return(nil, errTest)
 
 	_, _, err := resources.getter.Get()
+<<<<<<< HEAD
 	require.ErrorIs(t, err, errTest)
+=======
+	require.ErrorIs(t, err, errOops)
+>>>>>>> f7e111e25 (Fix vm registry tests and error handling (#2235))
 }
 
 // Get should return the correct registered and unregistered VMs.
