@@ -105,10 +105,14 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	reqID := uint32(1)
 	chainID := ids.ID{}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
 =======
 	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	msg := message.InboundGetAcceptedFrontier(chainID, reqID, 0*time.Second, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
 	currentTime := time.Now().Add(time.Second)
@@ -116,10 +120,14 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	reqID++
 <<<<<<< HEAD
+<<<<<<< HEAD
 	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
 =======
 	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	msg = message.InboundGetAccepted(chainID, reqID, 1*time.Second, nil, nodeID, p2p.EngineType_ENGINE_TYPE_SNOWMAN)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
 <<<<<<< HEAD
@@ -240,10 +248,14 @@ func TestHandlerClosesOnError(t *testing.T) {
 	reqID := uint32(1)
 	deadline := time.Nanosecond
 <<<<<<< HEAD
+<<<<<<< HEAD
 	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID, 0)
 =======
 	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID)
 >>>>>>> 707ffe48f (Add UnusedReceiver linter (#2224))
+=======
+	msg := message.InboundGetAcceptedFrontier(ids.ID{}, reqID, deadline, nodeID, 0)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	handler.Push(context.Background(), msg)
 
 	ticker := time.NewTicker(time.Second)
@@ -470,9 +482,13 @@ func TestHandlerSubnetConnector(t *testing.T) {
 		nil,
 		time.Second,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 =======
 >>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
+=======
+		p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 		resourceTracker,
 		connector,
 	)

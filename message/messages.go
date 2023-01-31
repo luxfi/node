@@ -20,15 +20,19 @@ import (
 	"github.com/luxdefi/luxd/utils/wrappers"
 =======
 	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
 	"github.com/ava-labs/avalanchego/utils/compression"
 	"github.com/ava-labs/avalanchego/utils/constants"
 	"github.com/ava-labs/avalanchego/utils/math"
 	"github.com/ava-labs/avalanchego/utils/metric"
 	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
+<<<<<<< HEAD
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 
 	p2ppb "github.com/luxdefi/luxd/proto/pb/p2p"
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 )
 
 var (
@@ -178,7 +182,7 @@ func newMsgBuilder(
 }
 
 func (mb *msgBuilder) marshal(
-	uncompressedMsg *p2ppb.Message,
+	uncompressedMsg *p2p.Message,
 	gzipCompress bool,
 ) ([]byte, int, time.Duration, error) {
 	uncompressedMsgBytes, err := proto.Marshal(uncompressedMsg)
@@ -202,8 +206,8 @@ func (mb *msgBuilder) marshal(
 		return nil, 0, 0, err
 	}
 
-	compressedMsg := p2ppb.Message{
-		Message: &p2ppb.Message_CompressedGzip{
+	compressedMsg := p2p.Message{
+		Message: &p2p.Message_CompressedGzip{
 			CompressedGzip: compressedBytes,
 		},
 	}
@@ -217,8 +221,8 @@ func (mb *msgBuilder) marshal(
 	return compressedMsgBytes, bytesSaved, compressTook, nil
 }
 
-func (mb *msgBuilder) unmarshal(b []byte) (*p2ppb.Message, bool, int, time.Duration, error) {
-	m := new(p2ppb.Message)
+func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, bool, int, time.Duration, error) {
+	m := new(p2p.Message)
 	if err := proto.Unmarshal(b, m); err != nil {
 		return nil, false, 0, 0, err
 	}
@@ -244,7 +248,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2ppb.Message, bool, int, time.Durat
 	return m, true, bytesSavedCompression, decompressTook, nil
 }
 
-func (mb *msgBuilder) createOutbound(m *p2ppb.Message, gzipCompress bool, bypassThrottling bool) (*outboundMessage, error) {
+func (mb *msgBuilder) createOutbound(m *p2p.Message, gzipCompress bool, bypassThrottling bool) (*outboundMessage, error) {
 	b, saved, compressTook, err := mb.marshal(m, gzipCompress)
 	if err != nil {
 		return nil, err

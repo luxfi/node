@@ -17,22 +17,30 @@ github.com/ava-labs/avalanchego/network/peer=GossipTracker=network/peer/mock_gos
 github.com/ava-labs/avalanchego/snow/consensus/snowman=Block=snow/consensus/snowman/mock_block.go
 github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex=DAGVM=snow/engine/avalanche/vertex/mock_vm.go
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/snow/engine/avalanche=Engine=snow/engine/avalanche/mock_engine.go
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=BuildBlockWithContextChainVM=snow/engine/snowman/block/mocks/build_block_with_context_vm.go
 =======
 github.com/ava-labs/avalanchego/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=ChainVM=snow/engine/snowman/block/mocks/chain_vm.go
+=======
+github.com/ava-labs/avalanchego/snow/engine/avalanche=Engine=snow/engine/avalanche/mock_engine.go
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=BuildBlockWithContextChainVM=snow/engine/snowman/block/mocks/build_block_with_context_vm.go
+github.com/ava-labs/avalanchego/snow/engine/snowman/block=ChainVM=snow/engine/snowman/block/mocks/chain_vm.go
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=StateSyncableVM=snow/engine/snowman/block/mocks/state_syncable_vm.go
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
 github.com/ava-labs/avalanchego/snow/engine/snowman=Engine=snow/engine/snowman/mock_engine.go
+<<<<<<< HEAD
 =======
 github.com/ava-labs/avalanchego/snow/engine/snowman/block=WithVerifyContext=snow/engine/snowman/block/mocks/with_verify_context.go
 >>>>>>> 552ae0539 (Add optional VerifyWithContext to block (#2145))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 github.com/ava-labs/avalanchego/snow/networking/handler=Handler=snow/networking/handler/mock_handler.go
 github.com/ava-labs/avalanchego/snow/networking/timeout=Manager=snow/networking/timeout/mock_manager.go
 <<<<<<< HEAD
@@ -60,9 +68,13 @@ github.com/ava-labs/avalanchego/utils/filesystem=Reader=utils/filesystem/mock_io
 github.com/ava-labs/avalanchego/utils/hashing=Hasher=utils/hashing/mock_hasher.go
 github.com/ava-labs/avalanchego/utils/logging=Logger=utils/logging/mock_logger.go
 github.com/ava-labs/avalanchego/utils/resource=User=utils/resource/mock_user.go
+<<<<<<< HEAD
 github.com/ava-labs/avalanchego/vms/components/avax=TransferableIn=vms/components/avax/mock_transferable_in.go
 github.com/ava-labs/avalanchego/vms/components/avax=TransferableOut=vms/components/avax/mock_transferable_out.go
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 github.com/ava-labs/avalanchego/vms/components/avax=TransferableIn=vms/components/avax/mock_transferable_in.go
+github.com/ava-labs/avalanchego/vms/components/avax=TransferableOut=vms/components/avax/mock_transferable_out.go
 github.com/ava-labs/avalanchego/vms/components/verify=Verifiable=vms/components/verify/mock_verifiable.go
 github.com/ava-labs/avalanchego/vms/platformvm/blocks/executor=Manager=vms/platformvm/blocks/executor/mock_manager.go
 github.com/ava-labs/avalanchego/vms/platformvm/blocks=Block=vms/platformvm/blocks/mock_block.go

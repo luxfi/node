@@ -64,7 +64,6 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
-	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
 	smcon "github.com/ava-labs/avalanchego/snow/consensus/snowman"
 	smeng "github.com/ava-labs/avalanchego/snow/engine/snowman"
 	snowgetter "github.com/ava-labs/avalanchego/snow/engine/snowman/getter"
@@ -2239,6 +2238,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2p.GetAccepted)
+<<<<<<< HEAD
 =======
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
 =======
@@ -2249,6 +2249,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 
 		reqID = inMsg.RequestId
 		return nodeIDs
@@ -2265,6 +2267,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2p.GetAncestors)
+<<<<<<< HEAD
 =======
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
 =======
@@ -2275,6 +2278,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2ppb.GetAncestors)
 >>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
+=======
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 
 		reqID = inMsg.RequestId
 

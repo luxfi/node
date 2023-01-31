@@ -511,7 +511,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 	//            the timeout has already been cleared. This means the engine
 	//            should be invoked with a failure message if parsing of the
 	//            response fails.
+<<<<<<< HEAD
 	switch msg := body.(type) {
+=======
+	switch msg := msg.Message().(type) {
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	// State messages should always be sent to the snowman engine
 	case *p2p.GetStateSummaryFrontier:
 		return engine.GetStateSummaryFrontier(ctx, nodeID, msg.RequestId)
@@ -523,10 +527,14 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 		return engine.GetStateSummaryFrontierFailed(ctx, nodeID, msg.RequestID)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	case *p2p.GetAcceptedStateSummary:
 =======
 	case *p2ppb.GetAcceptedStateSummary:
 >>>>>>> e7024bd25 (Use generic sorting (#1850))
+=======
+	case *p2p.GetAcceptedStateSummary:
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 		// TODO: Enforce that the numbers are sorted to make this verification
 		//       more efficient.
 		if !utils.IsUnique(msg.Heights) {
@@ -682,7 +690,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 		return engine.PullQuery(ctx, nodeID, msg.RequestId, containerID)
 
 	case *p2p.Chits:
+<<<<<<< HEAD
 		votes, err := getIDs(msg.PreferredContainerIds)
+=======
+		votes, err := getIDs(msg.ContainerIds)
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 		if err != nil {
 			h.ctx.Log.Debug("message with invalid field",
 				zap.Stringer("nodeID", nodeID),
@@ -787,7 +799,11 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg message.InboundMessag
 		return err
 	}
 
+<<<<<<< HEAD
 	switch m := body.(type) {
+=======
+	switch m := msg.Message().(type) {
+>>>>>>> d4644818b (Add EngineType for ambiguous p2p messages (#2272))
 	case *p2p.AppRequest:
 		return engine.AppRequest(
 			ctx,
