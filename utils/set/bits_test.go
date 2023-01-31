@@ -29,6 +29,7 @@ func Test_Bits_New(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
 			b := NewBits(test.bits...)
 
@@ -37,6 +38,16 @@ func Test_Bits_New(t *testing.T) {
 			}
 
 			require.Equal(test.length, b.Len())
+=======
+			r := require.New(t)
+			b := NewBits(test.bits...)
+
+			for _, bit := range test.bits {
+				r.True(b.Contains(bit))
+			}
+
+			r.Equal(test.length, b.Len())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -109,7 +120,11 @@ func Test_Bits_AddRemove(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			b := NewBits()
 
 			for _, add := range test.toAdd {
@@ -121,10 +136,17 @@ func Test_Bits_AddRemove(t *testing.T) {
 			}
 
 			for _, element := range test.expectedElements {
+<<<<<<< HEAD
 				require.True(b.Contains(element))
 			}
 
 			require.Equal(test.expectedLen, b.Len())
+=======
+				r.True(b.Contains(element))
+			}
+
+			r.Equal(test.expectedLen, b.Len())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -183,7 +205,11 @@ func Test_Bits_Union(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			b := NewBits()
 
 			for _, add := range test.left {
@@ -194,10 +220,17 @@ func Test_Bits_Union(t *testing.T) {
 			}
 
 			for _, element := range test.expected {
+<<<<<<< HEAD
 				require.True(b.Contains(element))
 			}
 
 			require.Equal(test.expectedLen, b.Len())
+=======
+				r.True(b.Contains(element))
+			}
+
+			r.Equal(test.expectedLen, b.Len())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -256,7 +289,11 @@ func Test_Bits_Intersection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			left := NewBits()
 			right := NewBits()
 			for _, add := range test.left {
@@ -273,7 +310,11 @@ func Test_Bits_Intersection(t *testing.T) {
 				expected.Add(element)
 			}
 
+<<<<<<< HEAD
 			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
+=======
+			r.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -332,7 +373,11 @@ func Test_Bits_Difference(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			left := NewBits()
 			right := NewBits()
 			for _, add := range test.left {
@@ -349,7 +394,11 @@ func Test_Bits_Difference(t *testing.T) {
 				expected.Add(element)
 			}
 
+<<<<<<< HEAD
 			require.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
+=======
+			r.ElementsMatch(left.bits.Bits(), expected.bits.Bits())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -374,7 +423,11 @@ func Test_Bits_Clear(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			b := NewBits()
 
 			for bit := range test.bitset {
@@ -383,7 +436,11 @@ func Test_Bits_Clear(t *testing.T) {
 
 			b.Clear()
 
+<<<<<<< HEAD
 			require.Zero(b.Len())
+=======
+			r.Zero(b.Len())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -407,14 +464,22 @@ func Test_Bits_String(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			b := NewBits()
 
 			for _, bit := range test.bitset {
 				b.Add(bit)
 			}
 
+<<<<<<< HEAD
 			require.Equal(test.expected, b.String())
+=======
+			r.Equal(test.expected, b.String())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
@@ -458,14 +523,22 @@ func Test_Bits_HammingWeight(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			require := require.New(t)
+=======
+			r := require.New(t)
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 			b := NewBits()
 
 			for _, bit := range test.bitset {
 				b.Add(bit)
 			}
 
+<<<<<<< HEAD
 			require.Equal(test.expected, b.HammingWeight())
+=======
+			r.Equal(test.expected, b.HammingWeight())
+>>>>>>> 483d9bd18 (Move bit sets to the set package (#2365))
 		})
 	}
 }
