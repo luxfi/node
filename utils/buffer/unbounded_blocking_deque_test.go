@@ -15,19 +15,26 @@ func TestUnboundedBlockingDequePush(t *testing.T) {
 
 	deque := NewUnboundedBlockingDeque[int](2)
 	require.Empty(deque.List())
+<<<<<<< HEAD
 	_, ok := deque.Index(0)
 	require.False(ok)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 
 	ok = deque.PushRight(1)
 	require.True(ok)
 	require.Equal([]int{1}, deque.List())
+<<<<<<< HEAD
 	got, ok := deque.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 
 	ok = deque.PushRight(2)
 	require.True(ok)
 	require.Equal([]int{1, 2}, deque.List())
+<<<<<<< HEAD
 	got, ok = deque.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
@@ -36,14 +43,19 @@ func TestUnboundedBlockingDequePush(t *testing.T) {
 	require.Equal(2, got)
 	_, ok = deque.Index(2)
 	require.False(ok)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 
 	ch, ok := deque.PopLeft()
 	require.True(ok)
 	require.Equal(1, ch)
 	require.Equal([]int{2}, deque.List())
+<<<<<<< HEAD
 	got, ok = deque.Index(0)
 	require.True(ok)
 	require.Equal(2, got)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 }
 
 func TestUnboundedBlockingDequePop(t *testing.T) {
@@ -55,9 +67,12 @@ func TestUnboundedBlockingDequePop(t *testing.T) {
 	ok := deque.PushRight(1)
 	require.True(ok)
 	require.Equal([]int{1}, deque.List())
+<<<<<<< HEAD
 	got, ok := deque.Index(0)
 	require.True(ok)
 	require.Equal(1, got)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 
 	ch, ok := deque.PopLeft()
 	require.True(ok)
@@ -77,8 +92,11 @@ func TestUnboundedBlockingDequePop(t *testing.T) {
 	require.True(ok)
 	wg.Wait()
 	require.Empty(deque.List())
+<<<<<<< HEAD
 	_, ok = deque.Index(0)
 	require.False(ok)
+=======
+>>>>>>> 6945e5d93 (add `List() []T` method to deque (#2403))
 }
 
 func TestUnboundedBlockingDequeClose(t *testing.T) {
