@@ -130,9 +130,6 @@ type network struct {
 	config     *Config
 	peerConfig *peer.Config
 	metrics    *metrics
-	// Signs my IP so I can send my signed IP address to other nodes in Version
-	// messages
-	ipSigner *ipSigner
 
 	outboundMsgThrottler throttling.OutboundMsgThrottler
 
@@ -255,6 +252,7 @@ func NewNetwork(
 		ResourceTracker:      config.ResourceTracker,
 		GossipTracker:        config.GossipTracker,
 		UptimeCalculator:     config.UptimeCalculator,
+		IPSigner:             peer.NewIPSigner(config.MyIPPort, config.TLSKey),
 	}
 
 	onCloseCtx, cancel := context.WithCancel(context.Background())
@@ -262,7 +260,6 @@ func NewNetwork(
 		config:               config,
 		peerConfig:           peerConfig,
 		metrics:              metrics,
-		ipSigner:             newIPSigner(config.MyIPPort, &peerConfig.Clock, config.TLSKey),
 		outboundMsgThrottler: outboundMsgThrottler,
 
 		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(log, config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
@@ -498,22 +495,6 @@ func (n *network) Disconnected(nodeID ids.NodeID) {
 	if connected {
 		n.disconnectedFromConnected(peer, nodeID)
 	}
-}
-
-func (n *network) Version() (message.OutboundMessage, error) {
-	mySignedIP, err := n.ipSigner.getSignedIP()
-	if err != nil {
-		return nil, err
-	}
-	return n.peerConfig.MessageCreator.Version(
-		n.peerConfig.NetworkID,
-		n.peerConfig.Clock.Unix(),
-		mySignedIP.IP.IP,
-		n.peerConfig.VersionCompatibility.Version().String(),
-		mySignedIP.IP.Timestamp,
-		mySignedIP.Signature,
-		n.peerConfig.MySubnets.List(),
-	)
 }
 
 func (n *network) Peers(peerID ids.NodeID) ([]ips.ClaimedIPPort, error) {
