@@ -116,14 +116,20 @@ type State interface {
 	avax.UTXOReader
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fd7a2d154 (Simplify minor P-chain state handling (#2412))
 	GetLastAccepted() ids.ID
 	SetLastAccepted(blkID ids.ID)
 
 	GetStatelessBlock(blockID ids.ID) (blocks.Block, choices.Status, error)
 	AddStatelessBlock(block blocks.Block, status choices.Status)
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5731b9a81 (Support non-whitelisted subnets in GetValidatorSet (#2369))
+=======
+>>>>>>> fd7a2d154 (Simplify minor P-chain state handling (#2412))
 	// ValidatorSet adds all the validators and delegators of [subnetID] into
 	// [vdrs].
 	ValidatorSet(subnetID ids.ID, vdrs validators.Set) error
