@@ -73,6 +73,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 
 	// createVM
+<<<<<<< HEAD
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 	dbManager = dbManager.NewPrefixDBManager([]byte{})
 
@@ -84,6 +85,9 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		pTestCert.PrivateKey.(crypto.Signer),
 		pTestCert.Leaf,
 	)
+=======
+	vm := New(innerVM, time.Time{}, 0, DefaultMinBlockDelay)
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	ctx := snow.DefaultContextTest()
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)

@@ -67,10 +67,13 @@ type VM struct {
 	activationTime      time.Time
 	minimumPChainHeight uint64
 	minBlkDelay         time.Duration
+<<<<<<< HEAD
 	// block signer
 	stakingLeafSigner crypto.Signer
 	// block certificate
 	stakingCertLeaf *x509.Certificate
+=======
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 
 	state.State
 	hIndexer indexer.HeightIndexer
@@ -114,8 +117,11 @@ func New(
 	activationTime time.Time,
 	minimumPChainHeight uint64,
 	minBlkDelay time.Duration,
+<<<<<<< HEAD
 	stakingLeafSigner crypto.Signer,
 	stakingCertLeaf *x509.Certificate,
+=======
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 ) *VM {
 	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)
@@ -131,8 +137,11 @@ func New(
 		activationTime:      activationTime,
 		minimumPChainHeight: minimumPChainHeight,
 		minBlkDelay:         minBlkDelay,
+<<<<<<< HEAD
 		stakingLeafSigner:   stakingLeafSigner,
 		stakingCertLeaf:     stakingCertLeaf,
+=======
+>>>>>>> c2bbcf98e (Add proposerMinBlockDelay to subnet config (#2202))
 	}
 }
 
