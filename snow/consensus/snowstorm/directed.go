@@ -150,6 +150,7 @@ func (dg *Directed) Initialize(
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (dg *Directed) Virtuous() set.Set[ids.ID] {
 	return dg.virtuous
 }
@@ -164,6 +165,8 @@ func (dg *Directed) Parameters() sbcon.Parameters {
 	return dg.params
 }
 
+=======
+>>>>>>> 95d66853a (Remove Parameters() from consensus interfaces (#2236))
 func (dg *Directed) Virtuous() ids.Set {
 	return dg.virtuous
 }
