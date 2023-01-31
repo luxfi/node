@@ -1,13 +1,11 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package crypto
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	stdecdsa "crypto/ecdsa"
@@ -16,11 +14,10 @@ import (
 
 	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v3"
 
-	"github.com/luxdefi/luxd/cache"
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/cb58"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/cb58"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 const (
@@ -287,18 +284,4 @@ func verifySECP256K1RSignatureFormat(sig []byte) error {
 		return errMutatedSig
 	}
 	return nil
-}
-
-type innerSortSECP2561RSigs [][SECP256K1RSigLen]byte
-
-func (lst innerSortSECP2561RSigs) Less(i, j int) bool { return bytes.Compare(lst[i][:], lst[j][:]) < 0 }
-func (lst innerSortSECP2561RSigs) Len() int           { return len(lst) }
-func (lst innerSortSECP2561RSigs) Swap(i, j int)      { lst[j], lst[i] = lst[i], lst[j] }
-
-// SortSECP2561RSigs sorts a slice of SECP2561R signatures
-func SortSECP2561RSigs(lst [][SECP256K1RSigLen]byte) { sort.Sort(innerSortSECP2561RSigs(lst)) }
-
-// IsSortedAndUniqueSECP2561RSigs returns true if [sigs] is sorted
-func IsSortedAndUniqueSECP2561RSigs(sigs [][SECP256K1RSigLen]byte) bool {
-	return utils.IsSortedAndUnique(innerSortSECP2561RSigs(sigs))
 }

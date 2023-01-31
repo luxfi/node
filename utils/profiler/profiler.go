@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package profiler
@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/luxdefi/luxd/utils/perms"
+	"github.com/ava-labs/avalanchego/utils/perms"
 )
 
 const (
@@ -52,7 +52,9 @@ type profiler struct {
 	cpuProfileFile *os.File
 }
 
-func New(dir string) Profiler { return new(dir) }
+func New(dir string) Profiler {
+	return new(dir)
+}
 
 func new(dir string) *profiler {
 	return &profiler{

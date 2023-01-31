@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bls
@@ -50,7 +50,9 @@ func SecretKeyFromBytes(skBytes []byte) (*SecretKey, error) {
 	if sk == nil {
 		return nil, errFailedSecretKeyDeserialize
 	}
-	runtime.SetFinalizer(sk, func(sk *SecretKey) { sk.Zeroize() })
+	runtime.SetFinalizer(sk, func(sk *SecretKey) {
+		sk.Zeroize()
+	})
 	return sk, nil
 }
 

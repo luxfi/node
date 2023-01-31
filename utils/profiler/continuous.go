@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package profiler
@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxdefi/luxd/utils/filesystem"
+	"github.com/ava-labs/avalanchego/utils/filesystem"
 )
 
 // Config that is used to describe the options of the continuous profiler.
@@ -82,9 +82,15 @@ func (p *continuousProfiler) stop() error {
 
 func (p *continuousProfiler) rotate() error {
 	g := errgroup.Group{}
-	g.Go(func() error { return rotate(p.profiler.cpuProfileName, p.maxNumFiles) })
-	g.Go(func() error { return rotate(p.profiler.memProfileName, p.maxNumFiles) })
-	g.Go(func() error { return rotate(p.profiler.lockProfileName, p.maxNumFiles) })
+	g.Go(func() error {
+		return rotate(p.profiler.cpuProfileName, p.maxNumFiles)
+	})
+	g.Go(func() error {
+		return rotate(p.profiler.memProfileName, p.maxNumFiles)
+	})
+	g.Go(func() error {
+		return rotate(p.profiler.lockProfileName, p.maxNumFiles)
+	})
 	return g.Wait()
 }
 

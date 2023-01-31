@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package crypto
@@ -10,9 +10,11 @@ import (
 	"crypto/x509"
 	"errors"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
+
+const rsaSize = 3072
 
 var (
 	errWrongKeyType = errors.New("wrong key type")
@@ -21,8 +23,6 @@ var (
 	_ PublicKey  = (*PublicKeyRSA)(nil)
 	_ PrivateKey = (*PrivateKeyRSA)(nil)
 )
-
-const rsaSize = 3072
 
 type FactoryRSA struct{}
 

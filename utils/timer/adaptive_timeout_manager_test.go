@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timer
@@ -12,8 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/luxd/ids"
-	"github.com/luxdefi/luxd/message"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 // Test that Initialize works
@@ -125,14 +124,14 @@ func TestAdaptiveTimeoutManager(t *testing.T) {
 
 		numSuccessful--
 		if numSuccessful > 0 {
-			tm.Put(ids.RequestID{Op: byte(numSuccessful)}, message.PullQuery, *callback)
+			tm.Put(ids.RequestID{Op: byte(numSuccessful)}, true, *callback)
 		}
 		if numSuccessful >= 0 {
 			wg.Done()
 		}
 		if numSuccessful%2 == 0 {
 			tm.Remove(ids.RequestID{Op: byte(numSuccessful)})
-			tm.Put(ids.RequestID{Op: byte(numSuccessful)}, message.PullQuery, *callback)
+			tm.Put(ids.RequestID{Op: byte(numSuccessful)}, true, *callback)
 		}
 	}
 	(*callback)()

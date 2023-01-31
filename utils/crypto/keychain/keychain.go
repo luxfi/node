@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keychain
@@ -7,15 +7,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/luxd/ids"
-
-	ledger "github.com/luxdefi/lux-ledger-go"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var (
 	_ Keychain = (*ledgerKeychain)(nil)
 	_ Signer   = (*ledgerSigner)(nil)
 
+	ErrInvalidIndicesLength    = errors.New("number of indices should be greater than 0")
 	ErrInvalidNumAddrsToDerive = errors.New("number of addresses to derive should be greater than 0")
 	ErrInvalidNumAddrsDerived  = errors.New("incorrect number of ledger derived addresses")
 	ErrInvalidNumSignatures    = errors.New("incorrect number of signatures")
@@ -35,51 +35,65 @@ type Keychain interface {
 	Get(addr ids.ShortID) (Signer, bool)
 	// Returns the set of addresses for which the accessor keeps an associated
 	// signer
-	Addresses() ids.ShortSet
+	Addresses() set.Set[ids.ShortID]
 }
 
 // ledgerKeychain is an abstraction of the underlying ledger hardware device,
 // to be able to get a signer from a finite set of derived signers
 type ledgerKeychain struct {
-	ledger    ledger.Ledger
-	addrs     ids.ShortSet
+	ledger    Ledger
+	addrs     set.Set[ids.ShortID]
 	addrToIdx map[ids.ShortID]uint32
 }
 
 // ledgerSigner is an abstraction of the underlying ledger hardware device,
 // to be able sign for a specific address
 type ledgerSigner struct {
-	ledger ledger.Ledger
+	ledger Ledger
 	idx    uint32
 	addr   ids.ShortID
 }
 
 // NewLedgerKeychain creates a new Ledger with [numToDerive] addresses.
-func NewLedgerKeychain(l ledger.Ledger, numToDerive int) (Keychain, error) {
+func NewLedgerKeychain(l Ledger, numToDerive int) (Keychain, error) {
 	if numToDerive < 1 {
 		return nil, ErrInvalidNumAddrsToDerive
 	}
 
-	addrs, err := l.Addresses(numToDerive)
+	indices := make([]uint32, numToDerive)
+	for i := range indices {
+		indices[i] = uint32(i)
+	}
+
+	return NewLedgerKeychainFromIndices(l, indices)
+}
+
+// NewLedgerKeychainFromIndices creates a new Ledger with addresses taken from the given [indices].
+func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) {
+	if len(indices) == 0 {
+		return nil, ErrInvalidIndicesLength
+	}
+
+	addrs, err := l.Addresses(indices)
 	if err != nil {
 		return nil, err
 	}
 
-	addrsLen := len(addrs)
-	if addrsLen != numToDerive {
+	if len(addrs) != len(indices) {
 		return nil, fmt.Errorf(
 			"%w. expected %d, got %d",
 			ErrInvalidNumAddrsDerived,
-			numToDerive,
-			addrsLen,
+			len(indices),
+			len(addrs),
 		)
 	}
 
-	addrsSet := ids.NewShortSet(addrsLen)
+	addrsSet := set.NewSet[ids.ShortID](len(addrs))
 	addrsSet.Add(addrs...)
-	addrToIdx := make(map[ids.ShortID]uint32, addrsLen)
-	for i, addr := range addrs {
-		addrToIdx[addr] = uint32(i)
+
+	addrToIdx := map[ids.ShortID]uint32{}
+	for i := range indices {
+		addrToIdx[addrs[i]] = indices[i]
 	}
 
 	return &ledgerKeychain{
@@ -89,7 +103,7 @@ func NewLedgerKeychain(l ledger.Ledger, numToDerive int) (Keychain, error) {
 	}, nil
 }
 
-func (l *ledgerKeychain) Addresses() ids.ShortSet {
+func (l *ledgerKeychain) Addresses() set.Set[ids.ShortID] {
 	return l.addrs
 }
 

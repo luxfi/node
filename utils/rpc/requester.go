@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpc
@@ -8,23 +8,23 @@ import (
 	"net/url"
 )
 
-var _ EndpointRequester = (*luxEndpointRequester)(nil)
+var _ EndpointRequester = (*avalancheEndpointRequester)(nil)
 
 type EndpointRequester interface {
 	SendRequest(ctx context.Context, method string, params interface{}, reply interface{}, options ...Option) error
 }
 
-type luxEndpointRequester struct {
+type avalancheEndpointRequester struct {
 	uri string
 }
 
 func NewEndpointRequester(uri string) EndpointRequester {
-	return &luxEndpointRequester{
+	return &avalancheEndpointRequester{
 		uri: uri,
 	}
 }
 
-func (e *luxEndpointRequester) SendRequest(
+func (e *avalancheEndpointRequester) SendRequest(
 	ctx context.Context,
 	method string,
 	params interface{},

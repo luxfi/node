@@ -64,6 +64,7 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
+	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
 	smcon "github.com/ava-labs/avalanchego/snow/consensus/snowman"
 	smeng "github.com/ava-labs/avalanchego/snow/engine/snowman"
 	snowgetter "github.com/ava-labs/avalanchego/snow/engine/snowman/getter"
@@ -1739,9 +1740,14 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		logging.NoLog{},
 		timeoutManager,
 		time.Second,
+<<<<<<< HEAD
 		set.Set[ids.ID]{},
 		true,
 		set.Set[ids.ID]{},
+=======
+		ids.Set{},
+		ids.Set{},
+>>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 		nil,
 		router.HealthConfig{},
 		"",
@@ -1886,11 +1892,19 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	err = bootstrapper.Connected(context.Background(), peerID, version.CurrentApp)
 	require.NoError(err)
 
+<<<<<<< HEAD
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2p.GetAccepted)
+=======
+	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+		require.NoError(err)
+		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
+		inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
+>>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 
 		reqID = inMsg.RequestId
 		return nodeIDs
@@ -1900,17 +1914,32 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	err = bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, frontier)
 	require.NoError(err)
 
+<<<<<<< HEAD
 	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ bool) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
 		inMsg := inMsgIntf.Message().(*p2p.GetAncestors)
+=======
+	externalSender.SendF = func(msg message.OutboundMessage, nodeIDs ids.NodeIDSet, _ ids.ID, _ bool) ids.NodeIDSet {
+		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+		require.NoError(err)
+		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
+		inMsg := inMsgIntf.Message().(*p2ppb.GetAncestors)
+>>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 
 		reqID = inMsg.RequestId
 
 		containerID, err := ids.ToID(inMsg.ContainerId)
 		require.NoError(err)
+<<<<<<< HEAD
 		require.Equal(advanceTimeBlkID, containerID)
+=======
+		if containerID != advanceTimeBlkID {
+			t.Fatalf("wrong block requested")
+		}
+
+>>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 		return nodeIDs
 	}
 

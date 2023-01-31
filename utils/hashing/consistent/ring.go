@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package consistent
@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxdefi/luxd/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 	"github.com/google/btree"
 )
 
@@ -278,4 +278,6 @@ type ringItem struct {
 	value Hashable
 }
 
-func (r ringItem) Less(than btree.Item) bool { return r.hash < than.(ringItem).hash }
+func (r ringItem) Less(than btree.Item) bool {
+	return r.hash < than.(ringItem).hash
+}

@@ -15,8 +15,12 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+<<<<<<< HEAD
 	"github.com/luxdefi/luxd/ids"
 	"github.com/luxdefi/luxd/utils/units"
+=======
+	"github.com/ava-labs/avalanchego/ids"
+>>>>>>> 3eceeca80 (Remove `InboundMessage#Get` and expose `InboundMessage#Message` (#2006))
 
 	p2ppb "github.com/luxdefi/luxd/proto/pb/p2p"
 )
@@ -64,7 +68,7 @@ func BenchmarkMarshalVersion(b *testing.B) {
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
 
-	codec, err := newMsgBuilder("", prometheus.NewRegistry(), 2*units.MiB, 10*time.Second)
+	codec, err := newMsgBuilder("", prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.Logf("proto length %d-byte (use builder %v)", msgLen, useBuilder)
@@ -72,7 +76,7 @@ func BenchmarkMarshalVersion(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if useBuilder {
-			_, err = codec.createOutbound(Version, &msg, false, false)
+			_, err = codec.createOutbound(&msg, false, false)
 		} else {
 			_, err = proto.Marshal(&msg)
 		}
@@ -121,7 +125,7 @@ func BenchmarkUnmarshalVersion(b *testing.B) {
 	require.NoError(err)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
-	codec, err := newMsgBuilder("", prometheus.NewRegistry(), 2*units.MiB, 10*time.Second)
+	codec, err := newMsgBuilder("", prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.StartTimer()

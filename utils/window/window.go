@@ -1,4 +1,4 @@
-// Copyright (C) 2022, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package window
@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/luxd/utils"
-	"github.com/luxdefi/luxd/utils/buffer"
-	"github.com/luxdefi/luxd/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/buffer"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 )
 
 var _ Window[struct{}] = (*window[struct{}])(nil)
