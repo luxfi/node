@@ -713,6 +713,9 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg message.InboundMessage)
 =======
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
 
+	case *message.ConnectedSubnet:
+		return h.subnetConnector.ConnectedSubnet(ctx, nodeID, msg.SubnetID)
+
 	case *message.Disconnected:
 		return engine.Disconnected(ctx, nodeID)
 

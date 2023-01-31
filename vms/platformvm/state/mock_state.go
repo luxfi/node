@@ -517,6 +517,7 @@ func (m *MockState) GetUptime(arg0 ids.NodeID, arg1 ids.ID) (time.Duration, time
 func (mr *MockStateMockRecorder) GetUptime(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), arg0, arg1)
+<<<<<<< HEAD
 }
 
 // GetValidatorPublicKeyDiffs mocks base method.
@@ -532,6 +533,8 @@ func (m *MockState) GetValidatorPublicKeyDiffs(arg0 uint64) (map[ids.NodeID]*bls
 func (mr *MockStateMockRecorder) GetValidatorPublicKeyDiffs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorPublicKeyDiffs", reflect.TypeOf((*MockState)(nil).GetValidatorPublicKeyDiffs), arg0)
+=======
+>>>>>>> d6c7e2094 (Track subnet uptimes (#1427))
 }
 
 // GetValidatorWeightDiffs mocks base method.
