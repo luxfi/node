@@ -281,16 +281,21 @@ func (b *bootstrapper) GetAcceptedFailed(ctx context.Context, nodeID ids.NodeID,
 
 func (b *bootstrapper) Startup(ctx context.Context) error {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	beaconIDs, err := b.Beacons.Sample(b.Config.SampleK)
 =======
 	beacons, err := b.Beacons.Sample(b.Config.SampleK)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+	beaconIDs, err := b.Beacons.Sample(b.Config.SampleK)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	if err != nil {
 		return err
 	}
 
 	b.sampledBeacons = validators.NewSet()
 	b.pendingSendAcceptedFrontier.Clear()
+<<<<<<< HEAD
 <<<<<<< HEAD
 	for _, nodeID := range beaconIDs {
 		if !b.sampledBeacons.Contains(nodeID) {
@@ -308,14 +313,23 @@ func (b *bootstrapper) Startup(ctx context.Context) error {
 		vdrID := vdr.ID()
 		if !b.sampledBeacons.Contains(vdrID) {
 			err = b.sampledBeacons.Add(vdrID, 1)
+=======
+	for _, nodeID := range beaconIDs {
+		if !b.sampledBeacons.Contains(nodeID) {
+			err = b.sampledBeacons.Add(nodeID, 1)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 		} else {
-			err = b.sampledBeacons.AddWeight(vdrID, 1)
+			err = b.sampledBeacons.AddWeight(nodeID, 1)
 		}
 		if err != nil {
 			return err
 		}
+<<<<<<< HEAD
 		b.pendingSendAcceptedFrontier.Add(vdrID)
 >>>>>>> 1437bfe45 (Remove validators.Set#Set from the interface (#2275))
+=======
+		b.pendingSendAcceptedFrontier.Add(nodeID)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 	}
 
 	b.pendingReceiveAcceptedFrontier.Clear()

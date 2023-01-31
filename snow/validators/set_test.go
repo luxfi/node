@@ -546,6 +546,7 @@ func TestSetSample(t *testing.T) {
 	sampled, err = s.Sample(1)
 	require.NoError(err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	require.Equal([]ids.NodeID{nodeID0}, sampled)
 =======
 	require.Len(sampled, 1)
@@ -554,6 +555,9 @@ func TestSetSample(t *testing.T) {
 	require.Equal(nodeID0, sampled0.ID())
 	require.EqualValues(1, sampled0.Weight())
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.Equal([]ids.NodeID{nodeID0}, sampled)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 
 	_, err = s.Sample(2)
 	require.Error(err)
@@ -568,6 +572,7 @@ func TestSetSample(t *testing.T) {
 
 	sampled, err = s.Sample(1)
 	require.NoError(err)
+<<<<<<< HEAD
 <<<<<<< HEAD
 	require.Equal([]ids.NodeID{nodeID1}, sampled)
 
@@ -584,21 +589,17 @@ func TestSetSample(t *testing.T) {
 	sampled0 = sampled[0]
 	require.Equal(nodeID1, sampled0.ID())
 	require.EqualValues(math.MaxInt64-1, sampled0.Weight())
+=======
+	require.Equal([]ids.NodeID{nodeID1}, sampled)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 
 	sampled, err = s.Sample(2)
 	require.NoError(err)
-	require.Len(sampled, 2)
-
-	sampled0 = sampled[0]
-	require.Equal(nodeID1, sampled0.ID())
-	require.EqualValues(math.MaxInt64-1, sampled0.Weight())
-
-	sampled1 := sampled[1]
-	require.Equal(nodeID1, sampled1.ID())
-	require.EqualValues(math.MaxInt64-1, sampled1.Weight())
+	require.Equal([]ids.NodeID{nodeID1, nodeID1}, sampled)
 
 	sampled, err = s.Sample(3)
 	require.NoError(err)
+<<<<<<< HEAD
 	require.Len(sampled, 3)
 
 	sampled0 = sampled[0]
@@ -613,6 +614,9 @@ func TestSetSample(t *testing.T) {
 	require.Equal(nodeID1, sampled2.ID())
 	require.EqualValues(math.MaxInt64-1, sampled2.Weight())
 >>>>>>> 749a0d8e9 (Add validators.Set#Add function and report errors (#2276))
+=======
+	require.Equal([]ids.NodeID{nodeID1, nodeID1, nodeID1}, sampled)
+>>>>>>> 98ebbad72 (Simplify validators.Set#Sample return signature (#2292))
 }
 
 func TestSetString(t *testing.T) {
