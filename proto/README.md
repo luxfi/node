@@ -1,6 +1,10 @@
 # Avalanche gRPC
 
+<<<<<<< HEAD
 Now Serving: **Protocol Version 22**
+=======
+Now Serving: **Protocol Version 19**
+>>>>>>> 364581b75 (Bump versions for v1.9.2 (#2196))
 
 Protobuf files are hosted at [https://buf.build/ava-labs/avalanche](https://buf.build/ava-labs/avalanche) and can be used as dependencies in other projects.
 
