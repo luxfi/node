@@ -131,6 +131,7 @@ func (mr *MockRouterMockRecorder) HealthCheck(arg0 interface{}) *gomock.Call {
 // Initialize mocks base method.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4 set.Set[ids.ID], arg5 bool, arg6 set.Set[ids.ID], arg7 func(int), arg8 HealthConfig, arg9 string, arg10 prometheus.Registerer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
@@ -142,11 +143,17 @@ func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeo
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+func (m *MockRouter) Initialize(arg0 ids.NodeID, arg1 logging.Logger, arg2 timeout.Manager, arg3 time.Duration, arg4 set.Set[ids.ID], arg5 bool, arg6 set.Set[ids.ID], arg7 func(int), arg8 HealthConfig, arg9 string, arg10 prometheus.Registerer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Initialize", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Initialize indicates an expected call of Initialize.
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
@@ -156,6 +163,11 @@ func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5,
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 >>>>>>> 340734087 (Add additional sender tests (#2254))
+=======
+func (mr *MockRouterMockRecorder) Initialize(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 }
 
 // RegisterRequest mocks base method.

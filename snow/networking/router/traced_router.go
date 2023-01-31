@@ -44,9 +44,13 @@ func (r *tracedRouter) Initialize(
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
 <<<<<<< HEAD
+<<<<<<< HEAD
 	stakingEnabled bool,
 	trackedSubnets set.Set[ids.ID],
 =======
+=======
+	stakingEnabled bool,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	whitelistedSubnets set.Set[ids.ID],
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	onFatal func(exitCode int),
@@ -61,7 +65,11 @@ func (r *tracedRouter) Initialize(
 		closeTimeout,
 		criticalChains,
 		stakingEnabled,
+<<<<<<< HEAD
 		trackedSubnets,
+=======
+		whitelistedSubnets,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		onFatal,
 		healthConfig,
 		metricsNamespace,

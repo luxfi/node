@@ -87,9 +87,13 @@ type ChainRouter struct {
 	benched        map[ids.NodeID]set.Set[ids.ID]
 	criticalChains set.Set[ids.ID]
 <<<<<<< HEAD
+<<<<<<< HEAD
 	stakingEnabled bool
 =======
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
+=======
+	stakingEnabled bool
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	onFatal        func(exitCode int)
 	metrics        *routerMetrics
 	// Parameters for doing health checks
@@ -110,9 +114,13 @@ func (cr *ChainRouter) Initialize(
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
 <<<<<<< HEAD
+<<<<<<< HEAD
 	stakingEnabled bool,
 	trackedSubnets set.Set[ids.ID],
 =======
+=======
+	stakingEnabled bool,
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	whitelistedSubnets set.Set[ids.ID],
 >>>>>>> 87ce2da8a (Replace type specific sets with a generic implementation (#1861))
 	onFatal func(exitCode int),
@@ -380,17 +388,23 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	subnetID := chain.Context().SubnetID
 	for validatorID, peer := range cr.peers {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		// If this validator is benched on any chain, treat them as disconnected
 		// on all chains
 		_, benched := cr.benched[validatorID]
 		if benched {
 			continue
+<<<<<<< HEAD
 =======
 		// If this validator is benched on any chain, treat them as disconnected on all chains
 		if _, benched := cr.benched[validatorID]; !benched && peer.trackedSubnets.Contains(subnetID) {
 			msg := message.InternalConnected(validatorID, peer.version)
 			chain.Push(ctx, msg)
 >>>>>>> 5be92660b (Pass message context through the VM interface (#2219))
+=======
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 		}
 
 		// If this peer isn't running this chain, then we shouldn't mark them as
@@ -401,6 +415,7 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 
 		msg := message.InternalConnected(validatorID, peer.version)
 		chain.Push(ctx, msg)
+<<<<<<< HEAD
 	}
 
 	// When we register the P-chain, we mark ourselves as connected on all of
@@ -420,6 +435,8 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	myself := cr.peers[cr.myNodeID]
 	for subnetID := range myself.trackedSubnets {
 		cr.connectedSubnet(myself, cr.myNodeID, subnetID)
+=======
+>>>>>>> 93122fa25 (Fix staking disabled HealthChecks and connectivity (#2390))
 	}
 
 	// When we register the P-chain, we mark ourselves as connected on all of
