@@ -166,7 +166,7 @@ func validateConfig(networkID uint32, config *Config) error {
 
 // FromFile returns the genesis data of the Platform Chain.
 //
-// Since an Avalanche network has exactly one Platform Chain, and the Platform
+// Since Lux Network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -182,7 +182,7 @@ func validateConfig(networkID uint32, config *Config) error {
 // FromFile returns:
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
@@ -207,7 +207,7 @@ func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 
 // FromFlag returns the genesis data of the Platform Chain.
 //
-// Since an Avalanche network has exactly one Platform Chain, and the Platform
+// Since Lux Network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -223,7 +223,7 @@ func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 // FromFlag returns:
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromFlag(networkID uint32, genesisContent string) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
@@ -249,7 +249,7 @@ func FromFlag(networkID uint32, genesisContent string) ([]byte, ids.ID, error) {
 // FromConfig returns:
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
@@ -262,8 +262,8 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	{
 		avax := avm.AssetDefinition{
-			Name:         "Avalanche",
-			Symbol:       "AVAX",
+			Name:         "Lux",
+			Symbol:       "LUX",
 			Denomination: 9,
 			InitialState: map[string][]interface{}{},
 		}
@@ -296,7 +296,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, fmt.Errorf("couldn't parse memo bytes to string: %w", err)
 		}
 		avmArgs.GenesisData = map[string]avm.AssetDefinition{
-			"AVAX": avax, // The AVM starts out with one asset: AVAX
+			"LUX": avax, // The AVM starts out with one asset: AVAX
 		}
 	}
 	avmReply := avm.BuildGenesisReply{}
@@ -313,7 +313,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	avaxAssetID, err := AVAXAssetID(bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't generate AVAX asset ID: %w", err)
+		return nil, ids.ID{}, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
