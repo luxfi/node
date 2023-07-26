@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -34,8 +34,9 @@ const targetBlockSize = 128 * units.KiB
 var (
 	_ Builder = (*builder)(nil)
 
-	errEndOfTime       = errors.New("program time is suspiciously far in the future")
-	errNoPendingBlocks = errors.New("no pending blocks")
+	ErrEndOfTime       = errors.New("program time is suspiciously far in the future")
+	ErrNoPendingBlocks = errors.New("no pending blocks")
+	ErrChainNotSynced  = errors.New("chain not synced")
 )
 
 type Builder interface {
@@ -124,6 +125,10 @@ func (b *builder) Preferred() (snowman.Block, error) {
 
 // AddUnverifiedTx verifies a transaction and attempts to add it to the mempool
 func (b *builder) AddUnverifiedTx(tx *txs.Tx) error {
+	if !b.txExecutorBackend.Bootstrapped.Get() {
+		return ErrChainNotSynced
+	}
+
 	txID := tx.ID()
 	if b.Mempool.Has(txID) {
 		// If the transaction is already in the mempool - then it looks the same
@@ -138,7 +143,7 @@ func (b *builder) AddUnverifiedTx(tx *txs.Tx) error {
 		Tx:            tx,
 	}
 	if err := tx.Unsigned.Visit(&verifier); err != nil {
-		b.MarkDropped(txID, err.Error())
+		b.MarkDropped(txID, err)
 		return err
 	}
 
@@ -250,17 +255,17 @@ func (b *builder) dropExpiredStakerTxs(timestamp time.Time) {
 		}
 
 		txID := tx.ID()
-		errMsg := fmt.Sprintf(
+		err := fmt.Errorf(
 			"synchrony bound (%s) is later than staker start time (%s)",
 			minStartTime,
 			startTime,
 		)
 
 		b.Mempool.Remove([]*txs.Tx{tx})
-		b.Mempool.MarkDropped(txID, errMsg) // cache tx as dropped
+		b.Mempool.MarkDropped(txID, err) // cache tx as dropped
 		b.txExecutorBackend.Ctx.Log.Debug("dropping tx",
-			zap.String("reason", errMsg),
 			zap.Stringer("txID", txID),
+			zap.Error(err),
 		)
 	}
 }
@@ -273,7 +278,7 @@ func (b *builder) setNextBuildBlockTime() {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	if !b.txExecutorBackend.Bootstrapped.GetValue() {
+	if !b.txExecutorBackend.Bootstrapped.Get() {
 		ctx.Log.Verbo("skipping block timer reset",
 			zap.String("reason", "not bootstrapped"),
 		)
@@ -364,7 +369,7 @@ func buildBlock(
 	// If there is no reason to build a block, don't.
 	if !builder.Mempool.HasTxs() && !forceAdvanceTime {
 		builder.txExecutorBackend.Ctx.Log.Debug("no pending txs to issue into a block")
-		return nil, errNoPendingBlocks
+		return nil, ErrNoPendingBlocks
 	}
 
 	// Issue a block with as many transactions as possible.
@@ -389,7 +394,7 @@ func getNextStakerToReward(
 	preferredState state.Chain,
 ) (ids.ID, bool, error) {
 	if !chainTimestamp.Before(mockable.MaxTime) {
-		return ids.Empty, false, errEndOfTime
+		return ids.Empty, false, ErrEndOfTime
 	}
 
 	currentStakerIterator, err := preferredState.GetCurrentStakerIterator()

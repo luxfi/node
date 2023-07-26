@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
 
 import (
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/bag"
 )
 
 var (
@@ -31,7 +32,7 @@ func (b *Byzantine) Preference() ids.ID {
 	return b.preference
 }
 
-func (*Byzantine) RecordPoll(ids.Bag) bool {
+func (*Byzantine) RecordPoll(bag.Bag[ids.ID]) bool {
 	return false
 }
 

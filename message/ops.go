@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -296,7 +296,7 @@ func (op Op) String() string {
 	}
 }
 
-func Unwrap(m *p2p.Message) (interface{}, error) {
+func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 	switch msg := m.GetMessage().(type) {
 	// Handshake:
 	case *p2p.Message_Ping:

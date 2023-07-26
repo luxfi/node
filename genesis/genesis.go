@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -33,12 +33,19 @@ const (
 )
 
 var (
-	errNoInitiallyStakedFunds = errors.New("initial staked funds cannot be empty")
-	errNoSupply               = errors.New("initial supply must be > 0")
-	errNoStakeDuration        = errors.New("initial stake duration must be > 0")
-	errNoStakers              = errors.New("initial stakers must be > 0")
-	errNoCChainGenesis        = errors.New("C-Chain genesis cannot be empty")
-	errNoTxs                  = errors.New("genesis creates no transactions")
+	errStakeDurationTooHigh            = errors.New("initial stake duration larger than maximum configured")
+	errNoInitiallyStakedFunds          = errors.New("initial staked funds cannot be empty")
+	errNoSupply                        = errors.New("initial supply must be > 0")
+	errNoStakeDuration                 = errors.New("initial stake duration must be > 0")
+	errNoStakers                       = errors.New("initial stakers must be > 0")
+	errNoCChainGenesis                 = errors.New("C-Chain genesis cannot be empty")
+	errNoTxs                           = errors.New("genesis creates no transactions")
+	errNoAllocationToStake             = errors.New("no allocation to stake")
+	errDuplicateInitiallyStakedAddress = errors.New("duplicate initially staked address")
+	errConflictingNetworkIDs           = errors.New("conflicting networkIDs")
+	errFutureStartTime                 = errors.New("startTime cannot be in the future")
+	errInitialStakeDurationTooLow      = errors.New("initial stake duration is too low")
+	errOverridesStandardNetworkConfig  = errors.New("overrides standard network genesis config")
 )
 
 // validateInitialStakedFunds ensures all staked
@@ -56,13 +63,13 @@ func validateInitialStakedFunds(config *Config) error {
 	initialStakedFundsSet := set.Set[ids.ShortID]{}
 	for _, allocation := range config.Allocations {
 		// It is ok to have duplicates as different
-		// ethAddrs could claim to the same avaxAddr.
+		// ethAddrs could claim to the same luxAddr.
 		allocationSet.Add(allocation.AVAXAddr)
 	}
 
 	for _, staker := range config.InitialStakedFunds {
 		if initialStakedFundsSet.Contains(staker) {
-			avaxAddr, err := address.Format(
+			luxAddr, err := address.Format(
 				configChainIDAlias,
 				constants.GetHRP(config.NetworkID),
 				staker.Bytes(),
@@ -75,14 +82,15 @@ func validateInitialStakedFunds(config *Config) error {
 			}
 
 			return fmt.Errorf(
-				"address %s is duplicated in initial staked funds",
-				avaxAddr,
+				"%w: %s",
+				errDuplicateInitiallyStakedAddress,
+				luxAddr,
 			)
 		}
 		initialStakedFundsSet.Add(staker)
 
 		if !allocationSet.Contains(staker) {
-			avaxAddr, err := address.Format(
+			luxAddr, err := address.Format(
 				configChainIDAlias,
 				constants.GetHRP(config.NetworkID),
 				staker.Bytes(),
@@ -95,8 +103,9 @@ func validateInitialStakedFunds(config *Config) error {
 			}
 
 			return fmt.Errorf(
-				"address %s does not have an allocation to stake",
-				avaxAddr,
+				"%w in address %s",
+				errNoAllocationToStake,
+				luxAddr,
 			)
 		}
 	}
@@ -106,10 +115,11 @@ func validateInitialStakedFunds(config *Config) error {
 
 // validateConfig returns an error if the provided
 // *Config is not considered valid.
-func validateConfig(networkID uint32, config *Config) error {
+func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig) error {
 	if networkID != config.NetworkID {
 		return fmt.Errorf(
-			"networkID %d specified but genesis config contains networkID %d",
+			"%w: expected %d but config contains %d",
+			errConflictingNetworkIDs,
 			networkID,
 			config.NetworkID,
 		)
@@ -126,7 +136,8 @@ func validateConfig(networkID uint32, config *Config) error {
 	startTime := time.Unix(int64(config.StartTime), 0)
 	if time.Since(startTime) < 0 {
 		return fmt.Errorf(
-			"start time cannot be in the future: %s",
+			"%w: %s",
+			errFutureStartTime,
 			startTime,
 		)
 	}
@@ -139,6 +150,12 @@ func validateConfig(networkID uint32, config *Config) error {
 		return errNoStakeDuration
 	}
 
+	// Initial stake duration of genesis validators must be
+	// not larger than maximal stake duration specified for any validator.
+	if config.InitialStakeDuration > uint64(stakingCfg.MaxStakeDuration.Seconds()) {
+		return errStakeDurationTooHigh
+	}
+
 	if len(config.InitialStakers) == 0 {
 		return errNoStakers
 	}
@@ -146,10 +163,9 @@ func validateConfig(networkID uint32, config *Config) error {
 	offsetTimeRequired := config.InitialStakeDurationOffset * uint64(len(config.InitialStakers)-1)
 	if offsetTimeRequired > config.InitialStakeDuration {
 		return fmt.Errorf(
-			"initial stake duration is %d but need at least %d with offset of %d",
-			config.InitialStakeDuration,
+			"%w must be at least %d",
+			errInitialStakeDurationTooLow,
 			offsetTimeRequired,
-			config.InitialStakeDurationOffset,
 		)
 	}
 
@@ -166,7 +182,7 @@ func validateConfig(networkID uint32, config *Config) error {
 
 // FromFile returns the genesis data of the Platform Chain.
 //
-// Since Lux Network has exactly one Platform Chain, and the Platform
+// Since an Avalanche network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -180,16 +196,17 @@ func validateConfig(networkID uint32, config *Config) error {
 // loads the network genesis data from the config at [filepath].
 //
 // FromFile returns:
+//
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of LUX
-func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
+//  2. The asset ID of AVAX
+func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
 		return nil, ids.ID{}, fmt.Errorf(
-			"cannot override genesis config for standard network %s (%d)",
+			"%w: %s",
+			errOverridesStandardNetworkConfig,
 			constants.NetworkName(networkID),
-			networkID,
 		)
 	}
 
@@ -198,7 +215,7 @@ func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 		return nil, ids.ID{}, fmt.Errorf("unable to load provided genesis config at %s: %w", filepath, err)
 	}
 
-	if err := validateConfig(networkID, config); err != nil {
+	if err := validateConfig(networkID, config, stakingCfg); err != nil {
 		return nil, ids.ID{}, fmt.Errorf("genesis config validation failed: %w", err)
 	}
 
@@ -207,7 +224,7 @@ func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 
 // FromFlag returns the genesis data of the Platform Chain.
 //
-// Since Lux Network has exactly one Platform Chain, and the Platform
+// Since an Avalanche network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -221,16 +238,17 @@ func FromFile(networkID uint32, filepath string) ([]byte, ids.ID, error) {
 // loads the network genesis data from [genesisContent].
 //
 // FromFlag returns:
+//
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of LUX
-func FromFlag(networkID uint32, genesisContent string) ([]byte, ids.ID, error) {
+//  2. The asset ID of AVAX
+func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
 		return nil, ids.ID{}, fmt.Errorf(
-			"cannot override genesis config for standard network %s (%d)",
+			"%w: %s",
+			errOverridesStandardNetworkConfig,
 			constants.NetworkName(networkID),
-			networkID,
 		)
 	}
 
@@ -239,7 +257,7 @@ func FromFlag(networkID uint32, genesisContent string) ([]byte, ids.ID, error) {
 		return nil, ids.ID{}, fmt.Errorf("unable to load genesis content from flag: %w", err)
 	}
 
-	if err := validateConfig(networkID, customConfig); err != nil {
+	if err := validateConfig(networkID, customConfig, stakingCfg); err != nil {
 		return nil, ids.ID{}, fmt.Errorf("genesis config validation failed: %w", err)
 	}
 
@@ -247,9 +265,10 @@ func FromFlag(networkID uint32, genesisContent string) ([]byte, ids.ID, error) {
 }
 
 // FromConfig returns:
+//
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of LUX
+//  2. The asset ID of AVAX
 func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
@@ -261,9 +280,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		Encoding:  defaultEncoding,
 	}
 	{
-		avax := avm.AssetDefinition{
-			Name:         "Lux",
-			Symbol:       "LUX",
+		lux := avm.AssetDefinition{
+			Name:         "Avalanche",
+			Symbol:       "AVAX",
 			Denomination: 9,
 			InitialState: map[string][]interface{}{},
 		}
@@ -282,7 +301,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 				return nil, ids.ID{}, err
 			}
 
-			avax.InitialState["fixedCap"] = append(avax.InitialState["fixedCap"], avm.Holder{
+			lux.InitialState["fixedCap"] = append(lux.InitialState["fixedCap"], avm.Holder{
 				Amount:  json.Uint64(allocation.InitialAmount),
 				Address: addr,
 			})
@@ -291,12 +310,12 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		}
 
 		var err error
-		avax.Memo, err = formatting.Encode(defaultEncoding, memoBytes)
+		lux.Memo, err = formatting.Encode(defaultEncoding, memoBytes)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't parse memo bytes to string: %w", err)
 		}
 		avmArgs.GenesisData = map[string]avm.AssetDefinition{
-			"LUX": avax, // The AVM starts out with one asset: AVAX
+			"AVAX": lux, // The AVM starts out with one asset: AVAX
 		}
 	}
 	avmReply := avm.BuildGenesisReply{}
@@ -311,9 +330,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.ID{}, fmt.Errorf("couldn't parse avm genesis reply: %w", err)
 	}
-	avaxAssetID, err := AVAXAssetID(bytes)
+	luxAssetID, err := AVAXAssetID(bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
+		return nil, ids.ID{}, fmt.Errorf("couldn't generate AVAX asset ID: %w", err)
 	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
@@ -328,7 +347,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 	// Specify the initial state of the Platform Chain
 	platformvmArgs := api.BuildGenesisArgs{
-		AvaxAssetID:   avaxAssetID,
+		LuxAssetID:   luxAssetID,
 		NetworkID:     json.Uint32(config.NetworkID),
 		Time:          json.Uint64(config.StartTime),
 		InitialSupply: json.Uint64(initialSupply),
@@ -452,7 +471,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		return nil, ids.ID{}, fmt.Errorf("problem parsing platformvm genesis bytes: %w", err)
 	}
 
-	return genesisBytes, avaxAssetID, nil
+	return genesisBytes, luxAssetID, nil
 }
 
 func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {

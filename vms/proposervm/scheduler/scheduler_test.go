@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package scheduler
@@ -6,6 +6,8 @@ package scheduler
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/utils/logging"
@@ -22,9 +24,7 @@ func TestDelayFromNew(t *testing.T) {
 	fromVM <- common.PendingTxs
 
 	<-toEngine
-	if time.Until(startTime) > 0 {
-		t.Fatalf("passed message too soon")
-	}
+	require.LessOrEqual(t, time.Until(startTime), time.Duration(0))
 }
 
 func TestDelayFromSetTime(t *testing.T) {
@@ -41,9 +41,7 @@ func TestDelayFromSetTime(t *testing.T) {
 	fromVM <- common.PendingTxs
 
 	<-toEngine
-	if time.Until(startTime) > 0 {
-		t.Fatalf("passed message too soon")
-	}
+	require.LessOrEqual(t, time.Until(startTime), time.Duration(0))
 }
 
 func TestReceipt(*testing.T) {

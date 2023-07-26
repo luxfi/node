@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,9 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/chains"
 	"github.com/luxdefi/node/chains/atomic"
@@ -26,7 +29,7 @@ import (
 	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/formatting"
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
@@ -35,7 +38,7 @@ import (
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/api"
 	"github.com/luxdefi/node/vms/platformvm/config"
 	"github.com/luxdefi/node/vms/platformvm/fx"
@@ -50,8 +53,8 @@ import (
 )
 
 const (
-	testNetworkID = 10 // To be used in tests
-	defaultWeight = 10000
+	defaultWeight = 5 * units.MilliLux
+	trackChecksum = false
 )
 
 var (
@@ -59,11 +62,11 @@ var (
 	defaultMaxStakingDuration = 365 * 24 * time.Hour
 	defaultGenesisTime        = time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC)
 	defaultValidateStartTime  = defaultGenesisTime
-	defaultValidateEndTime    = defaultValidateStartTime.Add(10 * defaultMinStakingDuration)
-	defaultMinValidatorStake  = 5 * units.MilliAvax
+	defaultValidateEndTime    = defaultValidateStartTime.Add(20 * defaultMinStakingDuration)
+	defaultMinValidatorStake  = 5 * units.MilliLux
 	defaultBalance            = 100 * defaultMinValidatorStake
-	preFundedKeys             = crypto.BuildTestKeys()
-	avaxAssetID               = ids.ID{'y', 'e', 'e', 't'}
+	preFundedKeys             = secp256k1.TestKeys()
+	luxAssetID               = ids.ID{'y', 'e', 'e', 't'}
 	defaultTxFee              = uint64(100)
 	xChainID                  = ids.Empty.Prefix(0)
 	cChainID                  = ids.Empty.Prefix(1)
@@ -73,7 +76,7 @@ var (
 	testSubnet1ControlKeys = preFundedKeys[0:3]
 
 	// Used to create and use keys.
-	testKeyfactory crypto.FactorySECP256K1R
+	testKeyfactory secp256k1.Factory
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
 	errMissing                  = errors.New("missing")
@@ -84,7 +87,7 @@ type mutableSharedMemory struct {
 }
 
 type environment struct {
-	isBootstrapped *utils.AtomicBool
+	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
@@ -93,7 +96,7 @@ type environment struct {
 	fx             fx.Fx
 	state          state.State
 	states         map[ids.ID]state.Chain
-	atomicUTXOs    avax.AtomicUTXOManager
+	atomicUTXOs    lux.AtomicUTXOManager
 	uptimes        uptime.Manager
 	utxosHandler   utxo.Handler
 	txBuilder      builder.Builder
@@ -112,30 +115,30 @@ func (e *environment) SetState(blkID ids.ID, chainState state.Chain) {
 	e.states[blkID] = chainState
 }
 
-func newEnvironment(postBanff bool) *environment {
-	var isBootstrapped utils.AtomicBool
-	isBootstrapped.SetValue(true)
+func newEnvironment(t *testing.T, postBanff, postCortina bool) *environment {
+	var isBootstrapped utils.Atomic[bool]
+	isBootstrapped.Set(true)
 
-	config := defaultConfig(postBanff)
-	clk := defaultClock(postBanff)
+	config := defaultConfig(postBanff, postCortina)
+	clk := defaultClock(postBanff || postCortina)
 
 	baseDBManager := manager.NewMemDB(version.CurrentDatabase)
 	baseDB := versiondb.New(baseDBManager.Current().Database)
 	ctx, msm := defaultCtx(baseDB)
 
-	fx := defaultFx(&clk, ctx.Log, isBootstrapped.GetValue())
+	fx := defaultFx(clk, ctx.Log, isBootstrapped.Get())
 
 	rewards := reward.NewCalculator(config.RewardConfig)
 	baseState := defaultState(&config, ctx, baseDB, rewards)
 
-	atomicUTXOs := avax.NewAtomicUTXOManager(ctx.SharedMemory, txs.Codec)
+	atomicUTXOs := lux.NewAtomicUTXOManager(ctx.SharedMemory, txs.Codec)
 	uptimes := uptime.NewManager(baseState)
-	utxoHandler := utxo.NewHandler(ctx, &clk, baseState, fx)
+	utxoHandler := utxo.NewHandler(ctx, clk, fx)
 
 	txBuilder := builder.New(
 		ctx,
 		&config,
-		&clk,
+		clk,
 		fx,
 		baseState,
 		atomicUTXOs,
@@ -145,7 +148,7 @@ func newEnvironment(postBanff bool) *environment {
 	backend := Backend{
 		Config:       &config,
 		Ctx:          ctx,
-		Clk:          &clk,
+		Clk:          clk,
 		Bootstrapped: &isBootstrapped,
 		Fx:           fx,
 		FlowChecker:  utxoHandler,
@@ -156,7 +159,7 @@ func newEnvironment(postBanff bool) *environment {
 	env := &environment{
 		isBootstrapped: &isBootstrapped,
 		config:         &config,
-		clk:            &clk,
+		clk:            clk,
 		baseDB:         baseDB,
 		ctx:            ctx,
 		msm:            msm,
@@ -170,15 +173,18 @@ func newEnvironment(postBanff bool) *environment {
 		backend:        backend,
 	}
 
-	addSubnet(env, txBuilder)
+	addSubnet(t, env, txBuilder)
 
 	return env
 }
 
 func addSubnet(
+	t *testing.T,
 	env *environment,
 	txBuilder builder.Builder,
 ) {
+	require := require.New(t)
+
 	// Create a subnet
 	var err error
 	testSubnet1, err = txBuilder.NewCreateSubnetTx(
@@ -188,31 +194,24 @@ func addSubnet(
 			preFundedKeys[1].PublicKey().Address(),
 			preFundedKeys[2].PublicKey().Address(),
 		},
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		preFundedKeys[0].PublicKey().Address(),
 	)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(err)
 
 	// store it
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(err)
 
 	executor := StandardTxExecutor{
 		Backend: &env.backend,
 		State:   stateDiff,
 		Tx:      testSubnet1,
 	}
-	err = testSubnet1.Unsigned.Visit(&executor)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(testSubnet1.Unsigned.Visit(&executor))
 
 	stateDiff.AddTx(testSubnet1, status.Committed)
-	stateDiff.Apply(env.state)
+	require.NoError(stateDiff.Apply(env.state))
 }
 
 func defaultState(
@@ -230,6 +229,8 @@ func defaultState(
 		ctx,
 		metrics.Noop,
 		rewards,
+		&utils.Atomic[bool]{},
+		trackChecksum,
 	)
 	if err != nil {
 		panic(err)
@@ -237,10 +238,6 @@ func defaultState(
 
 	// persist and reload to init a bunch of in-memory stuff
 	state.SetHeight(0)
-	if err := state.Commit(); err != nil {
-		panic(err)
-	}
-	state.SetHeight( /*height*/ 0)
 	if err := state.Commit(); err != nil {
 		panic(err)
 	}
@@ -253,7 +250,7 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 	ctx.NetworkID = 10
 	ctx.XChainID = xChainID
 	ctx.CChainID = cChainID
-	ctx.AVAXAssetID = avaxAssetID
+	ctx.AVAXAssetID = luxAssetID
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
@@ -280,46 +277,51 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 	return ctx, msm
 }
 
-func defaultConfig(postBanff bool) config.Config {
+func defaultConfig(postBanff, postCortina bool) config.Config {
 	banffTime := mockable.MaxTime
 	if postBanff {
 		banffTime = defaultValidateEndTime.Add(-2 * time.Second)
+	}
+	cortinaTime := mockable.MaxTime
+	if postCortina {
+		cortinaTime = defaultValidateStartTime.Add(-2 * time.Second)
 	}
 
 	vdrs := validators.NewManager()
 	primaryVdrs := validators.NewSet()
 	_ = vdrs.Add(constants.PrimaryNetworkID, primaryVdrs)
 	return config.Config{
-		Chains:                 chains.MockManager{},
+		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             vdrs,
 		TxFee:                  defaultTxFee,
 		CreateSubnetTxFee:      100 * defaultTxFee,
 		CreateBlockchainTxFee:  100 * defaultTxFee,
-		MinValidatorStake:      5 * units.MilliAvax,
-		MaxValidatorStake:      500 * units.MilliAvax,
-		MinDelegatorStake:      1 * units.MilliAvax,
+		MinValidatorStake:      5 * units.MilliLux,
+		MaxValidatorStake:      500 * units.MilliLux,
+		MinDelegatorStake:      1 * units.MilliLux,
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig: reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
+			SupplyCap:          720 * units.MegaLux,
 		},
 		ApricotPhase3Time: defaultValidateEndTime,
 		ApricotPhase5Time: defaultValidateEndTime,
 		BanffTime:         banffTime,
+		CortinaTime:       cortinaTime,
 	}
 }
 
-func defaultClock(postBanff bool) mockable.Clock {
+func defaultClock(postFork bool) *mockable.Clock {
 	now := defaultGenesisTime
-	if postBanff {
+	if postFork {
 		// 1 second after Banff fork
 		now = defaultValidateEndTime.Add(-2 * time.Second)
 	}
-	clk := mockable.Clock{}
+	clk := &mockable.Clock{}
 	clk.Set(now)
 	return clk
 }
@@ -362,10 +364,9 @@ func defaultFx(clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.
 
 func buildGenesisTest(ctx *snow.Context) []byte {
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))
-	hrp := constants.NetworkIDToHRP[testNetworkID]
 	for i, key := range preFundedKeys {
 		id := key.PublicKey().Address()
-		addr, err := address.FormatBech32(hrp, id.Bytes())
+		addr, err := address.FormatBech32(constants.UnitTestHRP, id.Bytes())
 		if err != nil {
 			panic(err)
 		}
@@ -378,7 +379,7 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 	genesisValidators := make([]api.PermissionlessValidator, len(preFundedKeys))
 	for i, key := range preFundedKeys {
 		nodeID := ids.NodeID(key.PublicKey().Address())
-		addr, err := address.FormatBech32(hrp, nodeID.Bytes())
+		addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
 		if err != nil {
 			panic(err)
 		}
@@ -401,13 +402,13 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 	}
 
 	buildGenesisArgs := api.BuildGenesisArgs{
-		NetworkID:     json.Uint32(testNetworkID),
-		AvaxAssetID:   ctx.AVAXAssetID,
+		NetworkID:     json.Uint32(constants.UnitTestID),
+		LuxAssetID:   ctx.AVAXAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,
 		Time:          json.Uint64(defaultGenesisTime.Unix()),
-		InitialSupply: json.Uint64(360 * units.MegaAvax),
+		InitialSupply: json.Uint64(360 * units.MegaLux),
 		Encoding:      formatting.Hex,
 	}
 
@@ -426,7 +427,7 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 }
 
 func shutdownEnvironment(env *environment) error {
-	if env.isBootstrapped.GetValue() {
+	if env.isBootstrapped.Get() {
 		primaryValidatorSet, exist := env.config.Validators.Get(constants.PrimaryNetworkID)
 		if !exist {
 			return errMissingPrimaryValidators

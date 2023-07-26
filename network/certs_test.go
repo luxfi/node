@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -7,6 +7,8 @@ import (
 	"crypto/tls"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/network/peer"
@@ -25,9 +27,7 @@ func getTLS(t *testing.T, index int) (ids.NodeID, *tls.Certificate, *tls.Config)
 
 	for len(tlsCerts) <= index {
 		cert, err := staking.NewTLSCert()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		tlsConfig := peer.TLSConfig(*cert, nil)
 
 		tlsCerts = append(tlsCerts, cert)

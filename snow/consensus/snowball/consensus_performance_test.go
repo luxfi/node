@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -6,10 +6,14 @@ package snowball
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/luxdefi/node/utils/sampler"
 )
 
 func TestSnowballOptimized(t *testing.T) {
+	require := require.New(t)
+
 	numColors := 10
 	numNodes := 100
 	params := Parameters{
@@ -42,16 +46,11 @@ func TestSnowballOptimized(t *testing.T) {
 		numRounds++
 	}
 
-	if nBitwise.Disagreement() || nNaive.Disagreement() {
-		t.Fatalf("Network agreed on inconsistent values")
-	}
+	require.False(nBitwise.Disagreement())
+	require.False(nNaive.Disagreement())
 
 	// Although this can theoretically fail with a correct implementation, it
 	// shouldn't in practice
-	if !nBitwise.Finalized() {
-		t.Fatalf("Network agreed on values faster with naive implementation")
-	}
-	if !nBitwise.Agreement() {
-		t.Fatalf("Network agreed on inconsistent values")
-	}
+	require.True(nBitwise.Finalized())
+	require.True(nBitwise.Agreement())
 }

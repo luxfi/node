@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -135,20 +135,16 @@ func InboundGetAcceptedFrontier(
 func InboundAcceptedFrontier(
 	chainID ids.ID,
 	requestID uint32,
-	containerIDs []ids.ID,
+	containerID ids.ID,
 	nodeID ids.NodeID,
-	engineType p2p.EngineType,
 ) InboundMessage {
-	containerIDBytes := make([][]byte, len(containerIDs))
-	encodeIDs(containerIDs, containerIDBytes)
 	return &inboundMessage{
 		nodeID: nodeID,
 		op:     AcceptedFrontierOp,
 		message: &p2p.AcceptedFrontier{
-			ChainId:      chainID[:],
-			RequestId:    requestID,
-			ContainerIds: containerIDBytes,
-			EngineType:   engineType,
+			ChainId:     chainID[:],
+			RequestId:   requestID,
+			ContainerId: containerID[:],
 		},
 		expiration: mockable.MaxTime,
 	}
@@ -183,7 +179,6 @@ func InboundAccepted(
 	requestID uint32,
 	containerIDs []ids.ID,
 	nodeID ids.NodeID,
-	engineType p2p.EngineType,
 ) InboundMessage {
 	containerIDBytes := make([][]byte, len(containerIDs))
 	encodeIDs(containerIDs, containerIDBytes)
@@ -194,7 +189,6 @@ func InboundAccepted(
 			ChainId:      chainID[:],
 			RequestId:    requestID,
 			ContainerIds: containerIDBytes,
-			EngineType:   engineType,
 		},
 		expiration: mockable.MaxTime,
 	}
@@ -247,24 +241,18 @@ func InboundPullQuery(
 func InboundChits(
 	chainID ids.ID,
 	requestID uint32,
-	preferredContainerIDs []ids.ID,
-	acceptedContainerIDs []ids.ID,
+	preferredID ids.ID,
+	acceptedID ids.ID,
 	nodeID ids.NodeID,
-	engineType p2p.EngineType,
 ) InboundMessage {
-	preferredContainerIDBytes := make([][]byte, len(preferredContainerIDs))
-	encodeIDs(preferredContainerIDs, preferredContainerIDBytes)
-	acceptedContainerIDBytes := make([][]byte, len(acceptedContainerIDs))
-	encodeIDs(acceptedContainerIDs, acceptedContainerIDBytes)
 	return &inboundMessage{
 		nodeID: nodeID,
 		op:     ChitsOp,
 		message: &p2p.Chits{
-			ChainId:               chainID[:],
-			RequestId:             requestID,
-			PreferredContainerIds: preferredContainerIDBytes,
-			AcceptedContainerIds:  acceptedContainerIDBytes,
-			EngineType:            engineType,
+			ChainId:     chainID[:],
+			RequestId:   requestID,
+			PreferredId: preferredID[:],
+			AcceptedId:  acceptedID[:],
 		},
 		expiration: mockable.MaxTime,
 	}

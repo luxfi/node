@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -12,6 +12,7 @@ import (
 	"github.com/luxdefi/node/api/health"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/message"
+	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow/networking/benchlist"
 	"github.com/luxdefi/node/snow/networking/handler"
 	"github.com/luxdefi/node/snow/networking/timeout"
@@ -31,7 +32,7 @@ type Router interface {
 		timeouts timeout.Manager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],
-		stakingEnabled bool,
+		sybilProtectionEnabled bool,
 		trackedSubnets set.Set[ids.ID],
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
@@ -55,5 +56,6 @@ type InternalHandler interface {
 		requestID uint32,
 		op message.Op,
 		failedMsg message.InboundMessage,
+		engineType p2p.EngineType,
 	)
 }

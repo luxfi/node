@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/luxdefi/node/api"
 	"github.com/luxdefi/node/ids"
@@ -106,13 +105,13 @@ func (c *client) SetLoggerLevel(
 	if len(logLevel) > 0 {
 		logLevelArg, err = logging.ToLevel(logLevel)
 		if err != nil {
-			return fmt.Errorf("couldn't parse %q to log level", logLevel)
+			return err
 		}
 	}
 	if len(displayLevel) > 0 {
 		displayLevelArg, err = logging.ToLevel(displayLevel)
 		if err != nil {
-			return fmt.Errorf("couldn't parse %q to log level", displayLevel)
+			return err
 		}
 	}
 	return c.requester.SendRequest(ctx, "admin.setLoggerLevel", &SetLoggerLevelArgs{

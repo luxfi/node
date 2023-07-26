@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/node/utils/rpc"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/vms/avm"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/wallet/chain/p"
@@ -21,15 +21,15 @@ import (
 )
 
 const (
-	MainnetAPIURI = "https://api.avax.network"
-	FujiAPIURI    = "https://api.avax-test.network"
+	MainnetAPIURI = "https://api.lux.network"
+	FujiAPIURI    = "https://api.lux-test.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
 )
 
-// TODO: refactor UTXOClient definition to allow the client implementations to
-//       perform their own assertions.
+// TODO: Refactor UTXOClient definition to allow the client implementations to
+// perform their own assertions.
 var (
 	_ UTXOClient = platformvm.Client(nil)
 	_ UTXOClient = avm.Client(nil)
@@ -130,7 +130,7 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			var utxo avax.UTXO
+			var utxo lux.UTXO
 			_, err := codec.Unmarshal(utxoBytes, &utxo)
 			if err != nil {
 				return err

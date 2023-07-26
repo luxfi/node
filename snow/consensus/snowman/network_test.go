@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -12,6 +12,7 @@ import (
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowball"
 	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/bag"
 	"github.com/luxdefi/node/utils/sampler"
 )
 
@@ -23,7 +24,7 @@ type Network struct {
 
 func (n *Network) shuffleColors() {
 	s := sampler.NewUniform()
-	_ = s.Initialize(uint64(len(n.colors)))
+	s.Initialize(uint64(len(n.colors)))
 	indices, _ := s.Sample(len(n.colors))
 	colors := []*TestBlock(nil)
 	for _, index := range indices {
@@ -104,9 +105,9 @@ func (n *Network) Round() error {
 	running := n.running[runningInd]
 
 	s := sampler.NewUniform()
-	_ = s.Initialize(uint64(len(n.nodes)))
+	s.Initialize(uint64(len(n.nodes)))
 	indices, _ := s.Sample(n.params.K)
-	sampledColors := ids.Bag{}
+	sampledColors := bag.Bag[ids.ID]{}
 	for _, index := range indices {
 		peer := n.nodes[int(index)]
 		sampledColors.Add(peer.Preference())

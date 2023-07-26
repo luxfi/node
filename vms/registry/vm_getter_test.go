@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -11,10 +11,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/filesystem"
+	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/resource"
 	"github.com/luxdefi/node/vms"
 )
@@ -143,13 +146,23 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystem.NewMockReader(ctrl)
 	mockManager := vms.NewMockManager(ctrl)
+	mockRegistry := prometheus.NewRegistry()
+	mockCPUTracker, err := resource.NewManager(
+		logging.NoLog{},
+		"",
+		time.Hour,
+		time.Hour,
+		time.Hour,
+		mockRegistry,
+	)
+	require.NoError(t, err)
 
 	getter := NewVMGetter(
 		VMGetterConfig{
 			FileReader:      mockReader,
 			Manager:         mockManager,
 			PluginDirectory: pluginDir,
-			CPUTracker:      resource.NewManager("", time.Hour, time.Hour, time.Hour),
+			CPUTracker:      mockCPUTracker,
 		},
 	)
 

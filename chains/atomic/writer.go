@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
 
-import (
-	"github.com/luxdefi/node/database"
-)
+import "github.com/luxdefi/node/database"
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.
 // Assumes all batches have the same underlying database.

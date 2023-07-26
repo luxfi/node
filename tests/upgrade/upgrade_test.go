@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Runs upgrade tests.
@@ -15,7 +15,8 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/luxdefi/netrunner-sdk"
+	runner_sdk "github.com/luxdefi/avalanche-network-runner-sdk"
+
 	"github.com/luxdefi/node/tests"
 )
 

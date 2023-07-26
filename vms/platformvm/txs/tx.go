@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -10,9 +10,9 @@ import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
@@ -31,14 +31,14 @@ type Tx struct {
 	// The credentials of this transaction
 	Creds []verify.Verifiable `serialize:"true" json:"credentials"`
 
-	id    ids.ID
+	TxID  ids.ID `json:"id"`
 	bytes []byte
 }
 
 func NewSigned(
 	unsigned UnsignedTx,
 	c codec.Manager,
-	signers [][]*crypto.PrivateKeySECP256K1R,
+	signers [][]*secp256k1.PrivateKey,
 ) (*Tx, error) {
 	res := &Tx{Unsigned: unsigned}
 	return res, res.Sign(c, signers)
@@ -63,7 +63,7 @@ func (tx *Tx) Initialize(c codec.Manager) error {
 func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 	tx.Unsigned.SetBytes(unsignedBytes)
 	tx.bytes = signedBytes
-	tx.id = hashing.ComputeHash256Array(signedBytes)
+	tx.TxID = hashing.ComputeHash256Array(signedBytes)
 }
 
 // Parse signed tx starting from its byte representation.
@@ -90,20 +90,20 @@ func (tx *Tx) Bytes() []byte {
 }
 
 func (tx *Tx) ID() ids.ID {
-	return tx.id
+	return tx.TxID
 }
 
 // UTXOs returns the UTXOs transaction is producing.
-func (tx *Tx) UTXOs() []*avax.UTXO {
+func (tx *Tx) UTXOs() []*lux.UTXO {
 	outs := tx.Unsigned.Outputs()
-	utxos := make([]*avax.UTXO, len(outs))
+	utxos := make([]*lux.UTXO, len(outs))
 	for i, out := range outs {
-		utxos[i] = &avax.UTXO{
-			UTXOID: avax.UTXOID{
-				TxID:        tx.id,
+		utxos[i] = &lux.UTXO{
+			UTXOID: lux.UTXOID{
+				TxID:        tx.TxID,
 				OutputIndex: uint32(i),
 			},
-			Asset: avax.Asset{ID: out.AssetID()},
+			Asset: lux.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 	}
@@ -114,7 +114,7 @@ func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx
-	case tx.id == ids.Empty:
+	case tx.TxID == ids.Empty:
 		return errSignedTxNotInitialized
 	default:
 		return tx.Unsigned.SyntacticVerify(ctx)
@@ -124,7 +124,7 @@ func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
 // Sign this transaction with the provided signers
 // Note: We explicitly pass the codec in Sign since we may need to sign P-Chain
 // genesis txs whose length exceed the max length of txs.Codec.
-func (tx *Tx) Sign(c codec.Manager, signers [][]*crypto.PrivateKeySECP256K1R) error {
+func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
 	unsignedBytes, err := c.Marshal(Version, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal UnsignedTx: %w", err)
@@ -134,7 +134,7 @@ func (tx *Tx) Sign(c codec.Manager, signers [][]*crypto.PrivateKeySECP256K1R) er
 	hash := hashing.ComputeHash256(unsignedBytes)
 	for _, keys := range signers {
 		cred := &secp256k1fx.Credential{
-			Sigs: make([][crypto.SECP256K1RSigLen]byte, len(keys)),
+			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
 		}
 		for i, key := range keys {
 			sig, err := key.SignHash(hash) // Sign hash

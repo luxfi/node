@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -58,10 +58,10 @@ func (b *Block) Status() choices.Status {
 		return choices.Processing
 	}
 	// Block isn't in memory. Check in the database.
-	_, status, err := b.manager.state.GetStatelessBlock(blkID)
+	_, err := b.manager.state.GetStatelessBlock(blkID)
 	switch err {
 	case nil:
-		return status
+		return choices.Accepted
 
 	case database.ErrNotFound:
 		// choices.Unknown means we don't have the bytes of the block.

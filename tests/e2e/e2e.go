@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // e2e implements the e2e tests.
@@ -15,11 +15,11 @@ import (
 
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/luxdefi/netrunner-sdk"
+	runner_sdk "github.com/luxdefi/avalanche-network-runner-sdk"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -37,12 +37,12 @@ const (
 	// Enough for test/custom networks.
 	DefaultConfirmTxTimeout = 20 * time.Second
 
-	DefaultShutdownTimeout = 2 * time.Minute
+	DefaultTimeout = 2 * time.Minute
 )
 
 // Env is the global struct containing all we need to test
 var (
-	Env = &TestEnvinronment{
+	Env = &TestEnvironment{
 		testEnvironmentConfig: &testEnvironmentConfig{
 			clusterType: Unknown,
 		},
@@ -67,7 +67,7 @@ type testEnvironmentConfig struct {
 	snapshotName string
 }
 
-type TestEnvinronment struct {
+type TestEnvironment struct {
 	*testEnvironmentConfig
 
 	runnerMu     sync.RWMutex
@@ -78,7 +78,7 @@ type TestEnvinronment struct {
 	uris   []string
 
 	testKeysMu sync.RWMutex
-	testKeys   []*crypto.PrivateKeySECP256K1R
+	testKeys   []*secp256k1.PrivateKey
 
 	snapMu  sync.RWMutex
 	snapped bool
@@ -87,7 +87,7 @@ type TestEnvinronment struct {
 // should be called only once
 // must be called before StartCluster
 // Note that either networkRunnerGRPCEp or uris must be specified
-func (te *TestEnvinronment) ConfigCluster(
+func (te *TestEnvironment) ConfigCluster(
 	logLevel string,
 	networkRunnerGRPCEp string,
 	avalancheGoExecPath string,
@@ -116,7 +116,7 @@ func (te *TestEnvinronment) ConfigCluster(
 			return fmt.Errorf("could not setup network-runner client: %w", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		presp, err := te.GetRunnerClient().Ping(ctx)
 		cancel()
 		if err != nil {
@@ -139,7 +139,7 @@ func (te *TestEnvinronment) ConfigCluster(
 	}
 }
 
-func (te *TestEnvinronment) LoadKeys() error {
+func (te *TestEnvironment) LoadKeys() error {
 	// load test keys
 	if len(te.testKeysFile) == 0 {
 		return errNoKeyFile
@@ -152,11 +152,11 @@ func (te *TestEnvinronment) LoadKeys() error {
 	return nil
 }
 
-func (te *TestEnvinronment) StartCluster() error {
+func (te *TestEnvironment) StartCluster() error {
 	switch te.clusterType {
 	case StandAlone:
 		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.avalancheGoExecPath)
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		resp, err := te.GetRunnerClient().Start(ctx, te.avalancheGoExecPath,
 			runner_sdk.WithNumNodes(5),
 			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.avalancheGoLogLevel)),
@@ -167,10 +167,7 @@ func (te *TestEnvinronment) StartCluster() error {
 		}
 		tests.Outf("{{green}}successfully started network-runner: {{/}} %+v\n", resp.ClusterInfo.NodeNames)
 
-		// start is async, so wait some time for cluster health
-		time.Sleep(time.Minute)
-
-		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
+		ctx, cancel = context.WithTimeout(context.Background(), DefaultTimeout)
 		_, err = te.GetRunnerClient().Health(ctx)
 		cancel()
 		if err != nil {
@@ -187,8 +184,8 @@ func (te *TestEnvinronment) StartCluster() error {
 	}
 }
 
-func (te *TestEnvinronment) refreshURIs() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (te *TestEnvironment) refreshURIs() error {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	uriSlice, err := te.GetRunnerClient().URIs(ctx)
 	cancel()
 	if err != nil {
@@ -199,7 +196,7 @@ func (te *TestEnvinronment) refreshURIs() error {
 	return nil
 }
 
-func (te *TestEnvinronment) setRunnerClient(logLevel string, gRPCEp string) error {
+func (te *TestEnvironment) setRunnerClient(logLevel string, gRPCEp string) error {
 	te.runnerMu.Lock()
 	defer te.runnerMu.Unlock()
 
@@ -219,47 +216,47 @@ func (te *TestEnvinronment) setRunnerClient(logLevel string, gRPCEp string) erro
 	return err
 }
 
-func (te *TestEnvinronment) GetRunnerClient() (cli runner_sdk.Client) {
+func (te *TestEnvironment) GetRunnerClient() (cli runner_sdk.Client) {
 	te.runnerMu.RLock()
 	cli = te.runnerCli
 	te.runnerMu.RUnlock()
 	return cli
 }
 
-func (te *TestEnvinronment) closeRunnerClient() (err error) {
+func (te *TestEnvironment) closeRunnerClient() (err error) {
 	te.runnerMu.Lock()
 	err = te.runnerCli.Close()
 	te.runnerMu.Unlock()
 	return err
 }
 
-func (te *TestEnvinronment) GetRunnerGRPCEndpoint() (ep string) {
+func (te *TestEnvironment) GetRunnerGRPCEndpoint() (ep string) {
 	te.runnerMu.RLock()
 	ep = te.runnerGRPCEp
 	te.runnerMu.RUnlock()
 	return ep
 }
 
-func (te *TestEnvinronment) setURIs(us []string) {
+func (te *TestEnvironment) setURIs(us []string) {
 	te.urisMu.Lock()
 	te.uris = us
 	te.urisMu.Unlock()
 }
 
-func (te *TestEnvinronment) GetURIs() []string {
+func (te *TestEnvironment) GetURIs() []string {
 	te.urisMu.RLock()
 	us := te.uris
 	te.urisMu.RUnlock()
 	return us
 }
 
-func (te *TestEnvinronment) setTestKeys(ks []*crypto.PrivateKeySECP256K1R) {
+func (te *TestEnvironment) setTestKeys(ks []*secp256k1.PrivateKey) {
 	te.testKeysMu.Lock()
 	te.testKeys = ks
 	te.testKeysMu.Unlock()
 }
 
-func (te *TestEnvinronment) GetTestKeys() ([]*crypto.PrivateKeySECP256K1R, []ids.ShortID, *secp256k1fx.Keychain) {
+func (te *TestEnvironment) GetTestKeys() ([]*secp256k1.PrivateKey, []ids.ShortID, *secp256k1fx.Keychain) {
 	te.testKeysMu.RLock()
 	testKeys := te.testKeys
 	te.testKeysMu.RUnlock()
@@ -271,7 +268,7 @@ func (te *TestEnvinronment) GetTestKeys() ([]*crypto.PrivateKeySECP256K1R, []ids
 	return testKeys, testKeyAddrs, keyChain
 }
 
-func (te *TestEnvinronment) ShutdownCluster() error {
+func (te *TestEnvironment) ShutdownCluster() error {
 	if te.GetRunnerGRPCEndpoint() == "" {
 		// we connected directly to existing cluster
 		// nothing to shutdown
@@ -284,7 +281,7 @@ func (te *TestEnvinronment) ShutdownCluster() error {
 	}
 
 	tests.Outf("{{red}}shutting down network-runner cluster{{/}}\n")
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	_, err := runnerCli.Stop(ctx)
 	cancel()
 	if err != nil {
@@ -295,7 +292,7 @@ func (te *TestEnvinronment) ShutdownCluster() error {
 	return te.closeRunnerClient()
 }
 
-func (te *TestEnvinronment) SnapInitialState() error {
+func (te *TestEnvironment) SnapInitialState() error {
 	te.snapMu.RLock()
 	defer te.snapMu.RUnlock()
 
@@ -303,7 +300,7 @@ func (te *TestEnvinronment) SnapInitialState() error {
 		return nil // initial state snapshot already captured
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	_, err := te.runnerCli.SaveSnapshot(ctx, te.snapshotName)
 	cancel()
 	if err != nil {
@@ -313,18 +310,18 @@ func (te *TestEnvinronment) SnapInitialState() error {
 	return nil
 }
 
-func (te *TestEnvinronment) RestoreInitialState(switchOffNetworkFirst bool) error {
+func (te *TestEnvironment) RestoreInitialState(switchOffNetworkFirst bool) error {
 	te.snapMu.Lock()
 	defer te.snapMu.Unlock()
 
 	if switchOffNetworkFirst {
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		_, err := te.GetRunnerClient().Stop(ctx)
 		cancel()
 		gomega.Expect(err).Should(gomega.BeNil())
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	_, err := te.GetRunnerClient().LoadSnapshot(ctx, te.snapshotName)
 	cancel()
 	if err != nil {
@@ -332,7 +329,7 @@ func (te *TestEnvinronment) RestoreInitialState(switchOffNetworkFirst bool) erro
 	}
 
 	// make sure cluster goes back to health before moving on
-	ctx, cancel = context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+	ctx, cancel = context.WithTimeout(context.Background(), DefaultTimeout)
 	_, err = te.GetRunnerClient().Health(ctx)
 	cancel()
 	if err != nil {

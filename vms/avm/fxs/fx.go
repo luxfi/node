@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fxs
@@ -6,7 +6,7 @@ package fxs
 import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/nftfx"
 	"github.com/luxdefi/node/vms/propertyfx"
@@ -52,7 +52,7 @@ type Fx interface {
 type FxOperation interface {
 	verify.Verifiable
 	snow.ContextInitializable
-	avax.Coster
+	lux.Coster
 
 	Outs() []verify.State
 }

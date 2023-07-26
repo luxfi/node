@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -12,35 +12,71 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"go.uber.org/zap"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxdefi/node/utils/set"
 )
 
-var errDuplicateCheck = errors.New("duplicated check")
+var (
+	allTags = []string{AllTag}
+
+	errRestrictedTag  = errors.New("restricted tag")
+	errDuplicateCheck = errors.New("duplicated check")
+)
 
 type worker struct {
+	log        logging.Logger
+	namespace  string
 	metrics    *metrics
 	checksLock sync.RWMutex
-	checks     map[string]Checker
+	checks     map[string]*taggedChecker
 
-	resultsLock sync.RWMutex
-	results     map[string]Result
+	resultsLock                 sync.RWMutex
+	results                     map[string]Result
+	numFailingApplicationChecks int
+	tags                        map[string]set.Set[string] // tag -> set of check names
 
 	startOnce sync.Once
 	closeOnce sync.Once
+	wg        sync.WaitGroup
 	closer    chan struct{}
 }
 
-func newWorker(namespace string, registerer prometheus.Registerer) (*worker, error) {
+type taggedChecker struct {
+	checker            Checker
+	isApplicationCheck bool
+	tags               []string
+}
+
+func newWorker(
+	log logging.Logger,
+	namespace string,
+	registerer prometheus.Registerer,
+) (*worker, error) {
 	metrics, err := newMetrics(namespace, registerer)
 	return &worker{
-		metrics: metrics,
-		checks:  make(map[string]Checker),
-		results: make(map[string]Result),
-		closer:  make(chan struct{}),
+		log:       log,
+		namespace: namespace,
+		metrics:   metrics,
+		checks:    make(map[string]*taggedChecker),
+		results:   make(map[string]Result),
+		closer:    make(chan struct{}),
+		tags:      make(map[string]set.Set[string]),
 	}, err
 }
 
-func (w *worker) RegisterCheck(name string, checker Checker) error {
+func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error {
+	// We ensure [AllTag] isn't contained in [tags] to prevent metrics from
+	// double counting.
+	if slices.Contains(tags, AllTag) {
+		return fmt.Errorf("%w: %q", errRestrictedTag, AllTag)
+	}
+
 	w.checksLock.Lock()
 	defer w.checksLock.Unlock()
 
@@ -51,39 +87,81 @@ func (w *worker) RegisterCheck(name string, checker Checker) error {
 	w.resultsLock.Lock()
 	defer w.resultsLock.Unlock()
 
-	w.checks[name] = checker
+	// Add the check to each tag
+	for _, tag := range tags {
+		names := w.tags[tag]
+		names.Add(name)
+		w.tags[tag] = names
+	}
+	// Add the special AllTag descriptor
+	names := w.tags[AllTag]
+	names.Add(name)
+	w.tags[AllTag] = names
+
+	applicationChecks := w.tags[ApplicationTag]
+	tc := &taggedChecker{
+		checker:            check,
+		isApplicationCheck: applicationChecks.Contains(name),
+		tags:               tags,
+	}
+	w.checks[name] = tc
 	w.results[name] = notYetRunResult
 
 	// Whenever a new check is added - it is failing
-	w.metrics.failingChecks.Inc()
+	w.log.Info("registered new check and initialized its state to failing",
+		zap.String("namespace", w.namespace),
+		zap.String("name", name),
+		zap.Strings("tags", tags),
+	)
+
+	// If this is a new application-wide check, then all of the registered tags
+	// now have one additional failing check.
+	w.updateMetrics(tc, false /*=healthy*/, true /*=register*/)
 	return nil
 }
 
-func (w *worker) RegisterMonotonicCheck(name string, checker Checker) error {
-	var result utils.AtomicInterface
-	return w.RegisterCheck(name, CheckerFunc(func(ctx context.Context) (interface{}, error) {
-		details := result.GetValue()
+func (w *worker) RegisterMonotonicCheck(name string, checker Checker, tags ...string) error {
+	var result utils.Atomic[any]
+	return w.RegisterCheck(name, CheckerFunc(func(ctx context.Context) (any, error) {
+		details := result.Get()
 		if details != nil {
 			return details, nil
 		}
 
 		details, err := checker.HealthCheck(ctx)
 		if err == nil {
-			result.SetValue(details)
+			result.Set(details)
 		}
 		return details, err
-	}))
+	}), tags...)
 }
 
-func (w *worker) Results() (map[string]Result, bool) {
+func (w *worker) Results(tags ...string) (map[string]Result, bool) {
 	w.resultsLock.RLock()
 	defer w.resultsLock.RUnlock()
 
-	results := make(map[string]Result, len(w.results))
+	// if no tags are specified, return all checks
+	if len(tags) == 0 {
+		tags = allTags
+	}
+
+	names := set.Set[string]{}
+	tagSet := set.NewSet[string](len(tags) + 1)
+	tagSet.Add(tags...)
+	tagSet.Add(ApplicationTag) // we always want to include the application tag
+	for tag := range tagSet {
+		if set, ok := w.tags[tag]; ok {
+			names.Union(set)
+		}
+	}
+
+	results := make(map[string]Result, names.Len())
 	healthy := true
-	for name, result := range w.results {
-		results[name] = result
-		healthy = healthy && result.Error == nil
+	for name := range names {
+		if result, ok := w.results[name]; ok {
+			results[name] = result
+			healthy = healthy && result.Error == nil
+		}
 	}
 	return results, healthy
 }
@@ -91,9 +169,13 @@ func (w *worker) Results() (map[string]Result, bool) {
 func (w *worker) Start(ctx context.Context, freq time.Duration) {
 	w.startOnce.Do(func() {
 		detachedCtx := utils.Detach(ctx)
+		w.wg.Add(1)
 		go func() {
 			ticker := time.NewTicker(freq)
-			defer ticker.Stop()
+			defer func() {
+				ticker.Stop()
+				w.wg.Done()
+			}()
 
 			w.runChecks(detachedCtx)
 			for {
@@ -111,6 +193,7 @@ func (w *worker) Start(ctx context.Context, freq time.Duration) {
 func (w *worker) Stop() {
 	w.closeOnce.Do(func() {
 		close(w.closer)
+		w.wg.Wait()
 	})
 }
 
@@ -120,10 +203,7 @@ func (w *worker) runChecks(ctx context.Context) {
 	// during this iteration. If [w.checks] is modified during this iteration of
 	// [runChecks], then the added check will not be run until the next
 	// iteration.
-	checks := make(map[string]Checker, len(w.checks))
-	for name, checker := range w.checks {
-		checks[name] = checker
-	}
+	checks := maps.Clone(w.checks)
 	w.checksLock.RUnlock()
 
 	var wg sync.WaitGroup
@@ -134,7 +214,7 @@ func (w *worker) runChecks(ctx context.Context) {
 	wg.Wait()
 }
 
-func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, check Checker) {
+func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, check *taggedChecker) {
 	defer wg.Done()
 
 	start := time.Now()
@@ -142,7 +222,7 @@ func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, 
 	// To avoid any deadlocks when [RegisterCheck] is called with a lock
 	// that is grabbed by [check.HealthCheck], we ensure that no locks
 	// are held when [check.HealthCheck] is called.
-	details, err := check.HealthCheck(ctx)
+	details, err := check.checker.HealthCheck(ctx)
 	end := time.Now()
 
 	result := Result{
@@ -166,10 +246,65 @@ func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, 
 		}
 
 		if prevResult.Error == nil {
-			w.metrics.failingChecks.Inc()
+			w.log.Warn("check started failing",
+				zap.String("namespace", w.namespace),
+				zap.String("name", name),
+				zap.Strings("tags", check.tags),
+				zap.Error(err),
+			)
+			w.updateMetrics(check, false /*=healthy*/, false /*=register*/)
 		}
 	} else if prevResult.Error != nil {
-		w.metrics.failingChecks.Dec()
+		w.log.Info("check started passing",
+			zap.String("namespace", w.namespace),
+			zap.String("name", name),
+			zap.Strings("tags", check.tags),
+		)
+		w.updateMetrics(check, true /*=healthy*/, false /*=register*/)
 	}
 	w.results[name] = result
+}
+
+// updateMetrics updates the metrics for the given check. If [healthy] is true,
+// then the check is considered healthy and the metrics are decremented.
+// Otherwise, the check is considered unhealthy and the metrics are incremented.
+// [register] must be true only if this is the first time the check is being
+// registered.
+func (w *worker) updateMetrics(tc *taggedChecker, healthy bool, register bool) {
+	if tc.isApplicationCheck {
+		// Note: [w.tags] will include AllTag.
+		for tag := range w.tags {
+			gauge := w.metrics.failingChecks.WithLabelValues(tag)
+			if healthy {
+				gauge.Dec()
+			} else {
+				gauge.Inc()
+			}
+		}
+		if healthy {
+			w.numFailingApplicationChecks--
+		} else {
+			w.numFailingApplicationChecks++
+		}
+	} else {
+		for _, tag := range tc.tags {
+			gauge := w.metrics.failingChecks.WithLabelValues(tag)
+			if healthy {
+				gauge.Dec()
+			} else {
+				gauge.Inc()
+				// If this is the first time this tag was registered, we also need to
+				// account for the currently failing application-wide checks.
+				if register && w.tags[tag].Len() == 1 {
+					gauge.Add(float64(w.numFailingApplicationChecks))
+				}
+			}
+		}
+		gauge := w.metrics.failingChecks.WithLabelValues(AllTag)
+		if healthy {
+			gauge.Dec()
+		} else {
+			gauge.Inc()
+		}
+	}
 }

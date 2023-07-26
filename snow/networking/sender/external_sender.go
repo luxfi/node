@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sender
@@ -6,6 +6,7 @@ package sender
 import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/message"
+	"github.com/luxdefi/node/subnets"
 	"github.com/luxdefi/node/utils/set"
 )
 
@@ -17,7 +18,7 @@ type ExternalSender interface {
 		msg message.OutboundMessage,
 		nodeIDs set.Set[ids.NodeID],
 		subnetID ids.ID,
-		validatorOnly bool,
+		allower subnets.Allower,
 	) set.Set[ids.NodeID]
 
 	// Send a message to a random group of nodes in a subnet.
@@ -25,9 +26,9 @@ type ExternalSender interface {
 	Gossip(
 		msg message.OutboundMessage,
 		subnetID ids.ID,
-		validatorOnly bool,
 		numValidatorsToSend int,
 		numNonValidatorsToSend int,
 		numPeersToSend int,
+		allower subnets.Allower,
 	) set.Set[ids.NodeID]
 }

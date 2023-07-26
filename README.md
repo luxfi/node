@@ -1,15 +1,15 @@
 <div align="center">
-▼
+  <img src="resources/AvalancheLogoRed.png?raw=true">
 </div>
 
 ---
 
-Node implementation for the [Lux Network](https://lux.network) -
-a decentralized network of blockchains designed for real world assets (RWAs).
+Node implementation for the [Avalanche](https://lux.network) network -
+a blockchains platform with high throughput, and blazing fast transactions.
 
 ## Installation
 
-Lux is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
+Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 Note that as network usage increases, hardware requirements may change.
 
 The minimum recommended hardware specification for nodes connected to Mainnet is:
@@ -20,9 +20,9 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 - OS: Ubuntu 20.04/22.04 or macOS >= 12
 - Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-If you plan to build Lux Node from source, you will also need the following software:
+If you plan to build AvalancheGo from source, you will also need the following software:
 
-- [Go](https://golang.org/doc/install) version >= 1.18.1
+- [Go](https://golang.org/doc/install) version >= 1.19.6
 - [gcc](https://gcc.gnu.org/)
 - g++
 
@@ -30,7 +30,7 @@ If you plan to build Lux Node from source, you will also need the following soft
 
 #### Clone The Repository
 
-Clone the Lux Node repository:
+Clone the AvalancheGo repository:
 
 ```sh
 git clone git@github.com:luxdefi/node.git
@@ -39,57 +39,57 @@ cd node
 
 This will clone and checkout the `master` branch.
 
-#### Building Lux Node
+#### Building AvalancheGo
 
-Build Lux Node by running the build script:
+Build AvalancheGo by running the build script:
 
 ```sh
 ./scripts/build.sh
 ```
 
-The `lux` binary is now in the `build` directory. To run:
+The `node` binary is now in the `build` directory. To run:
 
 ```sh
-./build/lux
+./build/node
 ```
 
 ### Binary Repository
 
-Install Lux Node using an `apt` repository.
+Install AvalancheGo using an `apt` repository.
 
 #### Adding the APT Repository
 
-If you have already added the APT repository, you do not need to add it again.
+If you already have the APT repository added, you do not need to add it again.
 
 To add the repository on Ubuntu, run:
 
 ```sh
 sudo su -
-wget -qO - https://downloads.avax.network/luxd.gpg.key | tee /etc/apt/trusted.gpg.d/luxd.asc
-source /etc/os-release && echo "deb https://downloads.avax.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/lux.list
+wget -qO - https://downloads.lux.network/node.gpg.key | tee /etc/apt/trusted.gpg.d/node.asc
+source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/avalanche.list
 exit
 ```
 
 #### Installing the Latest Version
 
-After adding the APT repository, install lux by running:
+After adding the APT repository, install `node` by running:
 
 ```sh
 sudo apt update
-sudo apt install lux
+sudo apt install node
 ```
 
 ### Binary Install
 
 Download the [latest build](https://github.com/luxdefi/node/releases/latest) for your operating system and architecture.
 
-The Lux binary to be executed is named `lux`.
+The Avalanche binary to be executed is named `node`.
 
 ### Docker Install
 
-Make sure docker is installed on the machine - so commands like `docker run` etc. are available.
+Make sure Docker is installed on the machine - so commands like `docker run` etc. are available.
 
-Building the docker image of latest luxd branch can be done by running:
+Building the Docker image of latest `node` branch can be done by running:
 
 ```sh
 ./scripts/build_image.sh
@@ -101,43 +101,43 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `luxdefi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the lux node, run:
+The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Avalanche source it was built from. To run the Avalanche node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 luxdefi/node:xxxxxxxx /node/build/lux
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
 ```
 
-## Running Lux
+## Running Avalanche
 
-### Connecting to Lux Mainnet
+### Connecting to Mainnet
 
-To connect to the Lux Mainnet, run:
+To connect to the Avalanche Mainnet, run:
 
 ```sh
-./build/lux
+./build/node
 ```
 
 You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to Lux Testnet
+### Connecting to Fuji
 
-To connect to the Lux Testnet, run:
+To connect to the Fuji Testnet, run:
 
 ```sh
-./build/lux --network-id=testnet
+./build/node --network-id=fuji
 ```
 
 ### Creating a Local Testnet
 
-See [this tutorial.](https://docs.avax.network/build/tutorials/platform/create-a-local-test-network/)
+See [this tutorial.](https://docs.lux.network/build/tutorials/platform/create-a-local-test-network/)
 
 ## Bootstrapping
 
-A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process, called bootstrapping, currently takes several days for a new node connected to Mainnet.
+A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://docs.avax.network/build/node-apis/health) until it is done bootstrapping.
+A node will not [report healthy](https://docs.lux.network/build/node-apis/health) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
@@ -145,7 +145,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-Luxgo uses multiple tools to generate efficient and boilerplate code.
+AvalancheGo uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
@@ -153,7 +153,7 @@ To regenerate the protobuf go code, run `scripts/protobuf_codegen.sh` from the r
 
 This should only be necessary when upgrading protobuf versions or modifying .proto definition files.
 
-To use this script, you must have [buf](https://docs.buf.build/installation) (v1.10.0), protoc-gen-go (v1.28.0) and protoc-gen-go-grpc (v1.2.0) installed.
+To use this script, you must have [buf](https://docs.buf.build/installation) (v1.23.1), protoc-gen-go (v1.28.0) and protoc-gen-go-grpc (v1.2.0) installed.
 
 To install the buf dependencies:
 
@@ -182,8 +182,8 @@ For more information, refer to the [GRPC Golang Quick Start Guide](https://grpc.
 ### Running protobuf codegen from docker
 
 ```sh
-docker build -t lux:protobuf_codegen -f api/Dockerfile.buf .
-docker run -t -i -v $(pwd):/opt/lux -w/opt/lux lux:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
+docker build -t avalanche:protobuf_codegen -f api/Dockerfile.buf .
+docker run -t -i -v $(pwd):/opt/avalanche -w/opt/avalanche avalanche:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
 ```
 
 ### Running mock codegen
@@ -196,7 +196,7 @@ This should only be necessary when modifying exported interfaces or after modify
 
 ### Version Semantics
 
-Lux Node is first and foremost a client for the Lux network. The versioning of Lux Node follows that of the Lux network.
+AvalancheGo is first and foremost a client for the Avalanche network. The versioning of AvalancheGo follows that of the Avalanche network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -205,15 +205,15 @@ Lux Node is first and foremost a client for the Lux network. The versioning of L
 
 ### Library Compatibility Guarantees
 
-Because Lux Node's version denotes the network version, it is expected that interfaces exported by Lux Node's packages may change in `Patch` version updates.
+Because AvalancheGo's version denotes the network version, it is expected that interfaces exported by AvalancheGo's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running Lux Node will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running AvalancheGo will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-Lux Node can run on different platforms, with different support tiers:
+AvalancheGo can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
@@ -221,21 +221,21 @@ Lux Node can run on different platforms, with different support tiers:
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
 The following table lists currently supported platforms and their corresponding
-Lux Node support tiers:
+AvalancheGo support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
-|    arm64     |      Darwin      |       1       |
-|    arm64     |      Linux       |       1       |
+|    amd64     |      Linux       |       1       |
+|    arm64     |      Linux       |       2       |
 |    amd64     |      Darwin      |       2       |
-|    amd64     |      Linux       |       2       |
+|    amd64     |     Windows      |       3       |
 |     arm      |      Linux       | Not supported |
 |     i386     |      Linux       | Not supported |
-|      any     |     Windows      | Not supported |
+|    arm64     |      Darwin      | Not supported |
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| Lux Node continuous integration | Tier 1  | Tier 2  | Tier 3  |
+| AvalancheGo continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |
@@ -245,4 +245,4 @@ To officially support a new platform, one must satisfy the following requirement
 
 **We and our community welcome responsible disclosures.**
 
-If you've discovered a security vulnerability, please report it via our [bug bounty program](mailto:security@lux.network/). Valid reports will be eligible for a reward (terms and conditions apply).
+Please refer to our [Security Policy](SECURITY.md) and [Security Advisories](https://github.com/luxdefi/node/security/advisories).

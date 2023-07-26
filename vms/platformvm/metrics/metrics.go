@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/metric"
-	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 )
@@ -43,35 +42,15 @@ type Metrics interface {
 	SetTimeUntilUnstake(time.Duration)
 	// Mark when this node will unstake from a subnet.
 	SetTimeUntilSubnetUnstake(subnetID ids.ID, timeUntilUnstake time.Duration)
-	// Mark that this node is connected to this percent of a subnet's stake.
-	SetSubnetPercentConnected(subnetID ids.ID, percent float64)
-	// Mark that this node is connected to this percent of the Primary Network's
-	// stake.
-	SetPercentConnected(percent float64)
 }
 
 func New(
 	namespace string,
 	registerer prometheus.Registerer,
-	trackedSubnets set.Set[ids.ID],
 ) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(namespace, registerer)
 	m := &metrics{
 		blockMetrics: blockMetrics,
-
-		percentConnected: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "percent_connected",
-			Help:      "Percent of connected stake",
-		}),
-		subnetPercentConnected: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace: namespace,
-				Name:      "percent_connected_subnet",
-				Help:      "Percent of connected subnet weight",
-			},
-			[]string{"subnetID"},
-		),
 		timeUntilUnstake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "time_until_unstake",
@@ -134,9 +113,6 @@ func New(
 	m.APIInterceptor = apiRequestMetrics
 	errs.Add(
 		err,
-
-		registerer.Register(m.percentConnected),
-		registerer.Register(m.subnetPercentConnected),
 		registerer.Register(m.timeUntilUnstake),
 		registerer.Register(m.timeUntilSubnetUnstake),
 		registerer.Register(m.localStake),
@@ -151,11 +127,6 @@ func New(
 		registerer.Register(m.validatorSetsDuration),
 	)
 
-	// init subnet tracker metrics with tracked subnets
-	for subnetID := range trackedSubnets {
-		// initialize to 0
-		m.subnetPercentConnected.WithLabelValues(subnetID.String()).Set(0)
-	}
 	return m, errs.Err
 }
 
@@ -164,8 +135,6 @@ type metrics struct {
 
 	blockMetrics *blockMetrics
 
-	percentConnected       prometheus.Gauge
-	subnetPercentConnected *prometheus.GaugeVec
 	timeUntilUnstake       prometheus.Gauge
 	timeUntilSubnetUnstake *prometheus.GaugeVec
 	localStake             prometheus.Gauge
@@ -221,12 +190,4 @@ func (m *metrics) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
 
 func (m *metrics) SetTimeUntilSubnetUnstake(subnetID ids.ID, timeUntilUnstake time.Duration) {
 	m.timeUntilSubnetUnstake.WithLabelValues(subnetID.String()).Set(float64(timeUntilUnstake))
-}
-
-func (m *metrics) SetSubnetPercentConnected(subnetID ids.ID, percent float64) {
-	m.subnetPercentConnected.WithLabelValues(subnetID.String()).Set(percent)
-}
-
-func (m *metrics) SetPercentConnected(percent float64) {
-	m.percentConnected.Set(percent)
 }

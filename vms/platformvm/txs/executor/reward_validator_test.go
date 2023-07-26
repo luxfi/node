@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,12 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/reward"
 	"github.com/luxdefi/node/vms/platformvm/state"
 	"github.com/luxdefi/node/vms/platformvm/status"
@@ -24,7 +25,7 @@ import (
 
 func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment( /*postBanff*/ false)
+	env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
 	defer func() {
 		require.NoError(shutdownEnvironment(env))
 	}()
@@ -57,7 +58,8 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	require.Error(tx.Unsigned.Visit(&txExecutor))
+	err = tx.Unsigned.Visit(&txExecutor)
+	require.ErrorIs(err, ErrRemoveStakerTooEarly)
 
 	// Advance chain timestamp to time that next validator leaves
 	env.state.SetTimestamp(stakerToRemove.EndTime)
@@ -78,7 +80,8 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	require.Error(tx.Unsigned.Visit(&txExecutor))
+	err = tx.Unsigned.Visit(&txExecutor)
+	require.ErrorIs(err, ErrRemoveWrongStaker)
 
 	// Case 3: Happy path
 	tx, err = env.txBuilder.NewRewardValidatorTx(stakerToRemove.TxID)
@@ -110,21 +113,22 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 	stakeOwners := stakerToRemoveTx.StakeOuts[0].Out.(*secp256k1fx.TransferOutput).AddressesSet()
 
 	// Get old balances
-	oldBalance, err := avax.GetBalance(env.state, stakeOwners)
+	oldBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 
-	txExecutor.OnCommitState.Apply(env.state)
+	require.NoError(txExecutor.OnCommitState.Apply(env.state))
+
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
-	onCommitBalance, err := avax.GetBalance(env.state, stakeOwners)
+	onCommitBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
-	require.Equal(oldBalance+stakerToRemove.Weight+27, onCommitBalance)
+	require.Equal(oldBalance+stakerToRemove.Weight+27697, onCommitBalance)
 }
 
 func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment( /*postBanff*/ false)
+	env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
 	defer func() {
 		require.NoError(shutdownEnvironment(env))
 	}()
@@ -157,7 +161,8 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	require.Error(tx.Unsigned.Visit(&txExecutor))
+	err = tx.Unsigned.Visit(&txExecutor)
+	require.ErrorIs(err, ErrRemoveStakerTooEarly)
 
 	// Advance chain timestamp to time that next validator leaves
 	env.state.SetTimestamp(stakerToRemove.EndTime)
@@ -172,7 +177,8 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	require.Error(tx.Unsigned.Visit(&txExecutor))
+	err = tx.Unsigned.Visit(&txExecutor)
+	require.ErrorIs(err, ErrRemoveWrongStaker)
 
 	// Case 3: Happy path
 	tx, err = env.txBuilder.NewRewardValidatorTx(stakerToRemove.TxID)
@@ -204,21 +210,22 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 	stakeOwners := stakerToRemoveTx.StakeOuts[0].Out.(*secp256k1fx.TransferOutput).AddressesSet()
 
 	// Get old balances
-	oldBalance, err := avax.GetBalance(env.state, stakeOwners)
+	oldBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 
-	txExecutor.OnAbortState.Apply(env.state)
+	require.NoError(txExecutor.OnAbortState.Apply(env.state))
+
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
-	onAbortBalance, err := avax.GetBalance(env.state, stakeOwners)
+	onAbortBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
 	require.Equal(oldBalance+stakerToRemove.Weight, onAbortBalance)
 }
 
-func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
+func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment( /*postBanff*/ false)
+	env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
 	defer func() {
 		require.NoError(shutdownEnvironment(env))
 	}()
@@ -238,7 +245,7 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 		vdrNodeID,        // node ID
 		vdrRewardAddress, // reward address
 		reward.PercentDenominator/4,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		ids.ShortEmpty,
 	)
 	require.NoError(err)
@@ -252,7 +259,7 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 		delEndTime,
 		vdrNodeID,
 		delRewardAddress,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		ids.ShortEmpty, // Change address
 	)
 	require.NoError(err)
@@ -301,8 +308,7 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	err = tx.Unsigned.Visit(&txExecutor)
-	require.NoError(err)
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
 
 	vdrDestSet := set.Set[ids.ShortID]{}
 	vdrDestSet.Add(vdrRewardAddress)
@@ -311,24 +317,25 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 
 	expectedReward := uint64(1000000)
 
-	oldVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
-	oldDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 
-	txExecutor.OnCommitState.Apply(env.state)
+	require.NoError(txExecutor.OnCommitState.Apply(env.state))
+
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
-	// If tx is committed, delegator and delegatee should get reward
-	// and the delegator's reward should be greater because the delegatee's share is 25%
-	commitVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	// Since the tx was committed, the delegator and the delegatee should be rewarded.
+	// The delegator reward should be higher since the delegatee's share is 25%.
+	commitVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
 	vdrReward, err := math.Sub(commitVdrBalance, oldVdrBalance)
 	require.NoError(err)
 	require.NotZero(vdrReward, "expected delegatee balance to increase because of reward")
 
-	commitDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	commitDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 	delReward, err := math.Sub(commitDelBalance, oldDelBalance)
 	require.NoError(err)
@@ -340,9 +347,389 @@ func TestRewardDelegatorTxExecuteOnCommit(t *testing.T) {
 	require.Equal(env.config.MinValidatorStake, vdrSet.GetWeight(vdrNodeID))
 }
 
+func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
+	require := require.New(t)
+	env := newEnvironment(t, true /*=postBanff*/, true /*=postCortina*/)
+	defer func() {
+		require.NoError(shutdownEnvironment(env))
+	}()
+	dummyHeight := uint64(1)
+
+	vdrRewardAddress := ids.GenerateTestShortID()
+	delRewardAddress := ids.GenerateTestShortID()
+
+	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
+	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrNodeID := ids.GenerateTestNodeID()
+
+	vdrTx, err := env.txBuilder.NewAddValidatorTx(
+		env.config.MinValidatorStake,
+		vdrStartTime,
+		vdrEndTime,
+		vdrNodeID,
+		vdrRewardAddress,
+		reward.PercentDenominator/4,
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
+		ids.ShortEmpty, /*=changeAddr*/
+	)
+	require.NoError(err)
+
+	delStartTime := vdrStartTime
+	delEndTime := vdrEndTime
+
+	delTx, err := env.txBuilder.NewAddDelegatorTx(
+		env.config.MinDelegatorStake,
+		delStartTime,
+		delEndTime,
+		vdrNodeID,
+		delRewardAddress,
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
+		ids.ShortEmpty, /*=changeAddr*/
+	)
+	require.NoError(err)
+
+	vdrRewardAmt := uint64(2000000)
+	vdrStaker, err := state.NewCurrentStaker(
+		vdrTx.ID(),
+		vdrTx.Unsigned.(*txs.AddValidatorTx),
+		vdrRewardAmt,
+	)
+	require.NoError(err)
+
+	delRewardAmt := uint64(1000000)
+	delStaker, err := state.NewCurrentStaker(
+		delTx.ID(),
+		delTx.Unsigned.(*txs.AddDelegatorTx),
+		delRewardAmt,
+	)
+	require.NoError(err)
+
+	env.state.PutCurrentValidator(vdrStaker)
+	env.state.AddTx(vdrTx, status.Committed)
+	env.state.PutCurrentDelegator(delStaker)
+	env.state.AddTx(delTx, status.Committed)
+	env.state.SetTimestamp(time.Unix(int64(vdrEndTime), 0))
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	vdrDestSet := set.Set[ids.ShortID]{}
+	vdrDestSet.Add(vdrRewardAddress)
+	delDestSet := set.Set[ids.ShortID]{}
+	delDestSet.Add(delRewardAddress)
+
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
+	require.NoError(err)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
+	require.NoError(err)
+
+	// test validator stake
+	vdrSet, ok := env.config.Validators.Get(constants.PrimaryNetworkID)
+	require.True(ok)
+
+	stake := vdrSet.GetWeight(vdrNodeID)
+	require.Equal(env.config.MinValidatorStake+env.config.MinDelegatorStake, stake)
+
+	tx, err := env.txBuilder.NewRewardValidatorTx(delTx.ID())
+	require.NoError(err)
+
+	// Create Delegator Diff
+	onCommitState, err := state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	onAbortState, err := state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	txExecutor := ProposalTxExecutor{
+		OnCommitState: onCommitState,
+		OnAbortState:  onAbortState,
+		Backend:       &env.backend,
+		Tx:            tx,
+	}
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
+
+	// The delegator should be rewarded if the ProposalTx is committed. Since the
+	// delegatee's share is 25%, we expect the delegator to receive 75% of the reward.
+	// Since this is post [CortinaTime], the delegatee should not be rewarded until a
+	// RewardValidatorTx is issued for the delegatee.
+	numDelStakeUTXOs := uint32(len(delTx.Unsigned.InputIDs()))
+	delRewardUTXOID := &lux.UTXOID{
+		TxID:        delTx.ID(),
+		OutputIndex: numDelStakeUTXOs + 1,
+	}
+
+	utxo, err := onCommitState.GetUTXO(delRewardUTXOID.InputID())
+	require.NoError(err)
+	require.IsType(&secp256k1fx.TransferOutput{}, utxo.Out)
+	castUTXO := utxo.Out.(*secp256k1fx.TransferOutput)
+	require.Equal(delRewardAmt*3/4, castUTXO.Amt, "expected delegator balance to increase by 3/4 of reward amount")
+	require.True(delDestSet.Equals(castUTXO.AddressesSet()), "expected reward UTXO to be issued to delDestSet")
+
+	preCortinaVdrRewardUTXOID := &lux.UTXOID{
+		TxID:        delTx.ID(),
+		OutputIndex: numDelStakeUTXOs + 2,
+	}
+	_, err = onCommitState.GetUTXO(preCortinaVdrRewardUTXOID.InputID())
+	require.ErrorIs(err, database.ErrNotFound)
+
+	// Commit Delegator Diff
+	require.NoError(txExecutor.OnCommitState.Apply(env.state))
+
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	tx, err = env.txBuilder.NewRewardValidatorTx(vdrStaker.TxID)
+	require.NoError(err)
+
+	// Create Validator Diff
+	onCommitState, err = state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	onAbortState, err = state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	txExecutor = ProposalTxExecutor{
+		OnCommitState: onCommitState,
+		OnAbortState:  onAbortState,
+		Backend:       &env.backend,
+		Tx:            tx,
+	}
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
+
+	require.NotEqual(vdrStaker.TxID, delStaker.TxID)
+
+	numVdrStakeUTXOs := uint32(len(delTx.Unsigned.InputIDs()))
+
+	// check for validator reward here
+	vdrRewardUTXOID := &lux.UTXOID{
+		TxID:        vdrTx.ID(),
+		OutputIndex: numVdrStakeUTXOs + 1,
+	}
+
+	utxo, err = onCommitState.GetUTXO(vdrRewardUTXOID.InputID())
+	require.NoError(err)
+	require.IsType(&secp256k1fx.TransferOutput{}, utxo.Out)
+	castUTXO = utxo.Out.(*secp256k1fx.TransferOutput)
+	require.Equal(vdrRewardAmt, castUTXO.Amt, "expected validator to be rewarded")
+	require.True(vdrDestSet.Equals(castUTXO.AddressesSet()), "expected reward UTXO to be issued to vdrDestSet")
+
+	// check for validator's batched delegator rewards here
+	onCommitVdrDelRewardUTXOID := &lux.UTXOID{
+		TxID:        vdrTx.ID(),
+		OutputIndex: numVdrStakeUTXOs + 2,
+	}
+
+	utxo, err = onCommitState.GetUTXO(onCommitVdrDelRewardUTXOID.InputID())
+	require.NoError(err)
+	require.IsType(&secp256k1fx.TransferOutput{}, utxo.Out)
+	castUTXO = utxo.Out.(*secp256k1fx.TransferOutput)
+	require.Equal(delRewardAmt/4, castUTXO.Amt, "expected validator to be rewarded with accrued delegator rewards")
+	require.True(vdrDestSet.Equals(castUTXO.AddressesSet()), "expected reward UTXO to be issued to vdrDestSet")
+
+	// aborted validator tx should still distribute accrued delegator rewards
+	onAbortVdrDelRewardUTXOID := &lux.UTXOID{
+		TxID:        vdrTx.ID(),
+		OutputIndex: numVdrStakeUTXOs + 1,
+	}
+
+	utxo, err = onAbortState.GetUTXO(onAbortVdrDelRewardUTXOID.InputID())
+	require.NoError(err)
+	require.IsType(&secp256k1fx.TransferOutput{}, utxo.Out)
+	castUTXO = utxo.Out.(*secp256k1fx.TransferOutput)
+	require.Equal(delRewardAmt/4, castUTXO.Amt, "expected validator to be rewarded with accrued delegator rewards")
+	require.True(vdrDestSet.Equals(castUTXO.AddressesSet()), "expected reward UTXO to be issued to vdrDestSet")
+
+	_, err = onCommitState.GetUTXO(preCortinaVdrRewardUTXOID.InputID())
+	require.ErrorIs(err, database.ErrNotFound)
+
+	// Commit Validator Diff
+	require.NoError(txExecutor.OnCommitState.Apply(env.state))
+
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	// Since the tx was committed, the delegator and the delegatee should be rewarded.
+	// The delegator reward should be higher since the delegatee's share is 25%.
+	commitVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
+	require.NoError(err)
+	vdrReward, err := math.Sub(commitVdrBalance, oldVdrBalance)
+	require.NoError(err)
+	delegateeReward, err := math.Sub(vdrReward, 2000000)
+	require.NoError(err)
+	require.NotZero(delegateeReward, "expected delegatee balance to increase because of reward")
+
+	commitDelBalance, err := lux.GetBalance(env.state, delDestSet)
+	require.NoError(err)
+	delReward, err := math.Sub(commitDelBalance, oldDelBalance)
+	require.NoError(err)
+	require.NotZero(delReward, "expected delegator balance to increase because of reward")
+
+	require.Less(delegateeReward, delReward, "the delegator's reward should be greater than the delegatee's because the delegatee's share is 25%")
+	require.Equal(delRewardAmt, delReward+delegateeReward, "expected total reward to be %d but is %d", delRewardAmt, delReward+vdrReward)
+}
+
+func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
+	require := require.New(t)
+	env := newEnvironment(t, true /*=postBanff*/, true /*=postCortina*/)
+	defer func() {
+		require.NoError(shutdownEnvironment(env))
+	}()
+	dummyHeight := uint64(1)
+
+	vdrRewardAddress := ids.GenerateTestShortID()
+	delRewardAddress := ids.GenerateTestShortID()
+
+	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
+	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrNodeID := ids.GenerateTestNodeID()
+
+	vdrTx, err := env.txBuilder.NewAddValidatorTx(
+		env.config.MinValidatorStake, // stakeAmt
+		vdrStartTime,
+		vdrEndTime,
+		vdrNodeID,        // node ID
+		vdrRewardAddress, // reward address
+		reward.PercentDenominator/4,
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
+		ids.ShortEmpty,
+	)
+	require.NoError(err)
+
+	delStartTime := vdrStartTime
+	delEndTime := vdrEndTime
+
+	delTx, err := env.txBuilder.NewAddDelegatorTx(
+		env.config.MinDelegatorStake,
+		delStartTime,
+		delEndTime,
+		vdrNodeID,
+		delRewardAddress,
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
+		ids.ShortEmpty, // Change address
+	)
+	require.NoError(err)
+
+	vdrRewardAmt := uint64(2000000)
+	vdrStaker, err := state.NewCurrentStaker(
+		vdrTx.ID(),
+		vdrTx.Unsigned.(*txs.AddValidatorTx),
+		vdrRewardAmt,
+	)
+	require.NoError(err)
+
+	delRewardAmt := uint64(1000000)
+	delStaker, err := state.NewCurrentStaker(
+		delTx.ID(),
+		delTx.Unsigned.(*txs.AddDelegatorTx),
+		delRewardAmt,
+	)
+	require.NoError(err)
+
+	env.state.PutCurrentValidator(vdrStaker)
+	env.state.AddTx(vdrTx, status.Committed)
+	env.state.PutCurrentDelegator(delStaker)
+	env.state.AddTx(delTx, status.Committed)
+	env.state.SetTimestamp(time.Unix(int64(vdrEndTime), 0))
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	vdrDestSet := set.Set[ids.ShortID]{}
+	vdrDestSet.Add(vdrRewardAddress)
+	delDestSet := set.Set[ids.ShortID]{}
+	delDestSet.Add(delRewardAddress)
+
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
+	require.NoError(err)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
+	require.NoError(err)
+
+	tx, err := env.txBuilder.NewRewardValidatorTx(delTx.ID())
+	require.NoError(err)
+
+	// Create Delegator Diffs
+	delOnCommitState, err := state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	delOnAbortState, err := state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	txExecutor := ProposalTxExecutor{
+		OnCommitState: delOnCommitState,
+		OnAbortState:  delOnAbortState,
+		Backend:       &env.backend,
+		Tx:            tx,
+	}
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
+
+	// Create Validator Diffs
+	testID := ids.GenerateTestID()
+	env.SetState(testID, delOnCommitState)
+
+	vdrOnCommitState, err := state.NewDiff(testID, env)
+	require.NoError(err)
+
+	vdrOnAbortState, err := state.NewDiff(testID, env)
+	require.NoError(err)
+
+	tx, err = env.txBuilder.NewRewardValidatorTx(vdrTx.ID())
+	require.NoError(err)
+
+	txExecutor = ProposalTxExecutor{
+		OnCommitState: vdrOnCommitState,
+		OnAbortState:  vdrOnAbortState,
+		Backend:       &env.backend,
+		Tx:            tx,
+	}
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
+
+	// aborted validator tx should still distribute accrued delegator rewards
+	numVdrStakeUTXOs := uint32(len(delTx.Unsigned.InputIDs()))
+	onAbortVdrDelRewardUTXOID := &lux.UTXOID{
+		TxID:        vdrTx.ID(),
+		OutputIndex: numVdrStakeUTXOs + 1,
+	}
+
+	utxo, err := vdrOnAbortState.GetUTXO(onAbortVdrDelRewardUTXOID.InputID())
+	require.NoError(err)
+	require.IsType(&secp256k1fx.TransferOutput{}, utxo.Out)
+	castUTXO := utxo.Out.(*secp256k1fx.TransferOutput)
+	require.Equal(delRewardAmt/4, castUTXO.Amt, "expected validator to be rewarded with accrued delegator rewards")
+	require.True(vdrDestSet.Equals(castUTXO.AddressesSet()), "expected reward UTXO to be issued to vdrDestSet")
+
+	// Commit Delegator Diff
+	require.NoError(delOnCommitState.Apply(env.state))
+
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	// Commit Validator Diff
+	require.NoError(vdrOnCommitState.Apply(env.state))
+
+	env.state.SetHeight(dummyHeight)
+	require.NoError(env.state.Commit())
+
+	// Since the tx was committed, the delegator and the delegatee should be rewarded.
+	// The delegator reward should be higher since the delegatee's share is 25%.
+	commitVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
+	require.NoError(err)
+	vdrReward, err := math.Sub(commitVdrBalance, oldVdrBalance)
+	require.NoError(err)
+	delegateeReward, err := math.Sub(vdrReward, vdrRewardAmt)
+	require.NoError(err)
+	require.NotZero(delegateeReward, "expected delegatee balance to increase because of reward")
+
+	commitDelBalance, err := lux.GetBalance(env.state, delDestSet)
+	require.NoError(err)
+	delReward, err := math.Sub(commitDelBalance, oldDelBalance)
+	require.NoError(err)
+	require.NotZero(delReward, "expected delegator balance to increase because of reward")
+
+	require.Less(delegateeReward, delReward, "the delegator's reward should be greater than the delegatee's because the delegatee's share is 25%")
+	require.Equal(delRewardAmt, delReward+delegateeReward, "expected total reward to be %d but is %d", delRewardAmt, delReward+vdrReward)
+}
+
 func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment( /*postBanff*/ false)
+	env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
 	defer func() {
 		require.NoError(shutdownEnvironment(env))
 	}()
@@ -365,7 +752,7 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 		vdrNodeID,        // node ID
 		vdrRewardAddress, // reward address
 		reward.PercentDenominator/4,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		ids.ShortEmpty,
 	)
 	require.NoError(err)
@@ -378,7 +765,7 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 		delEndTime,
 		vdrNodeID,
 		delRewardAddress,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		ids.ShortEmpty,
 	)
 	require.NoError(err)
@@ -420,8 +807,7 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 		Backend:       &env.backend,
 		Tx:            tx,
 	}
-	err = tx.Unsigned.Visit(&txExecutor)
-	require.NoError(err)
+	require.NoError(tx.Unsigned.Visit(&txExecutor))
 
 	vdrDestSet := set.Set[ids.ShortID]{}
 	vdrDestSet.Add(vdrRewardAddress)
@@ -430,23 +816,24 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 
 	expectedReward := uint64(1000000)
 
-	oldVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	oldVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
-	oldDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	oldDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 
-	txExecutor.OnAbortState.Apply(env.state)
+	require.NoError(txExecutor.OnAbortState.Apply(env.state))
+
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
 
 	// If tx is aborted, delegator and delegatee shouldn't get reward
-	newVdrBalance, err := avax.GetBalance(env.state, vdrDestSet)
+	newVdrBalance, err := lux.GetBalance(env.state, vdrDestSet)
 	require.NoError(err)
 	vdrReward, err := math.Sub(newVdrBalance, oldVdrBalance)
 	require.NoError(err)
 	require.Zero(vdrReward, "expected delegatee balance not to increase")
 
-	newDelBalance, err := avax.GetBalance(env.state, delDestSet)
+	newDelBalance, err := lux.GetBalance(env.state, delDestSet)
 	require.NoError(err)
 	delReward, err := math.Sub(newDelBalance, oldDelBalance)
 	require.NoError(err)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -76,7 +76,7 @@ func TestStatus(t *testing.T) {
 				statelessBlk.EXPECT().ID().Return(blkID)
 
 				state := state.NewMockState(ctrl)
-				state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, choices.Accepted, nil)
+				state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, nil)
 
 				manager := &manager{
 					backend: &backend{
@@ -98,7 +98,7 @@ func TestStatus(t *testing.T) {
 				statelessBlk.EXPECT().ID().Return(blkID)
 
 				state := state.NewMockState(ctrl)
-				state.EXPECT().GetStatelessBlock(blkID).Return(nil, choices.Unknown, database.ErrNotFound)
+				state.EXPECT().GetStatelessBlock(blkID).Return(nil, database.ErrNotFound)
 
 				manager := &manager{
 					backend: &backend{
@@ -246,8 +246,8 @@ func TestBlockOptions(t *testing.T) {
 
 			blk := tt.blkF()
 			options, err := blk.Options(context.Background())
+			require.ErrorIs(err, tt.expectedErr)
 			if tt.expectedErr != nil {
-				require.ErrorIs(err, tt.expectedErr)
 				return
 			}
 			require.IsType(tt.expectedPreferenceType, options[0].(*Block).Block)

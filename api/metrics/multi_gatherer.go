@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	errDuplicatedPrefix = errors.New("duplicated prefix")
-
 	_ MultiGatherer = (*multiGatherer)(nil)
+
+	errReregisterGatherer = errors.New("attempt to register existing gatherer")
 )
 
 // MultiGatherer extends the Gatherer interface by allowing additional gatherers
@@ -77,8 +77,13 @@ func (g *multiGatherer) Register(namespace string, gatherer prometheus.Gatherer)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	if _, exists := g.gatherers[namespace]; exists {
-		return errDuplicatedPrefix
+	if existingGatherer, exists := g.gatherers[namespace]; exists {
+		return fmt.Errorf("%w for namespace %q; existing: %#v; new: %#v",
+			errReregisterGatherer,
+			namespace,
+			existingGatherer,
+			gatherer,
+		)
 	}
 
 	g.gatherers[namespace] = gatherer

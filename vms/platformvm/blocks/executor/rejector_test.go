@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
@@ -142,13 +141,8 @@ func TestRejectBlock(t *testing.T) {
 			for _, tx := range blk.Txs() {
 				mempool.EXPECT().Add(tx).Return(nil).Times(1)
 			}
-			gomock.InOrder(
-				state.EXPECT().AddStatelessBlock(blk, choices.Rejected).Times(1),
-				state.EXPECT().Commit().Return(nil).Times(1),
-			)
 
-			err = tt.rejectFunc(rejector, blk)
-			require.NoError(err)
+			require.NoError(tt.rejectFunc(rejector, blk))
 			// Make sure block and its parent are removed from the state map.
 			require.NotContains(rejector.blkIDToState, blk.ID())
 		})

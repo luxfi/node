@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/node/genesis"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/platformvm/validator"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 	"github.com/luxdefi/node/wallet/subnet/primary"
 )
@@ -54,8 +54,8 @@ func main() {
 	pWallet := wallet.P()
 
 	addValidatorStartTime := time.Now()
-	addValidatorTxID, err := pWallet.IssueAddSubnetValidatorTx(&validator.SubnetValidator{
-		Validator: validator.Validator{
+	addValidatorTx, err := pWallet.IssueAddSubnetValidatorTx(&txs.SubnetValidator{
+		Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(startTime.Unix()),
 			End:    uint64(startTime.Add(duration).Unix()),
@@ -66,5 +66,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue add subnet validator transaction: %s\n", err)
 	}
-	log.Printf("added new subnet validator %s to %s with %s in %s\n", nodeID, subnetID, addValidatorTxID, time.Since(addValidatorStartTime))
+	log.Printf("added new subnet validator %s to %s with %s in %s\n", nodeID, subnetID, addValidatorTx.ID(), time.Since(addValidatorStartTime))
 }

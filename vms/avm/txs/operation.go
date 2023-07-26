@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,21 +11,21 @@ import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/avm/fxs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 )
 
 var (
-	errNilOperation              = errors.New("nil operation is not valid")
-	errNilFxOperation            = errors.New("nil fx operation is not valid")
-	errNotSortedAndUniqueUTXOIDs = errors.New("utxo IDs not sorted and unique")
+	ErrNilOperation              = errors.New("nil operation is not valid")
+	ErrNilFxOperation            = errors.New("nil fx operation is not valid")
+	ErrNotSortedAndUniqueUTXOIDs = errors.New("utxo IDs not sorted and unique")
 )
 
 type Operation struct {
-	avax.Asset `serialize:"true"`
-	UTXOIDs    []*avax.UTXOID  `serialize:"true" json:"inputIDs"`
+	lux.Asset `serialize:"true"`
+	UTXOIDs    []*lux.UTXOID  `serialize:"true" json:"inputIDs"`
 	FxID       ids.ID          `serialize:"false" json:"fxID"`
 	Op         fxs.FxOperation `serialize:"true" json:"operation"`
 }
@@ -33,56 +33,62 @@ type Operation struct {
 func (op *Operation) Verify() error {
 	switch {
 	case op == nil:
-		return errNilOperation
+		return ErrNilOperation
 	case op.Op == nil:
-		return errNilFxOperation
-	case !utils.IsSortedAndUniqueSortable(op.UTXOIDs):
-		return errNotSortedAndUniqueUTXOIDs
+		return ErrNilFxOperation
+	case !utils.IsSortedAndUnique(op.UTXOIDs):
+		return ErrNotSortedAndUniqueUTXOIDs
 	default:
 		return verify.All(&op.Asset, op.Op)
 	}
 }
 
-type innerSortOperation struct {
-	ops   []*Operation
+type operationAndCodec struct {
+	op    *Operation
 	codec codec.Manager
 }
 
-func (ops *innerSortOperation) Less(i, j int) bool {
-	iOp := ops.ops[i]
-	jOp := ops.ops[j]
-
-	iBytes, err := ops.codec.Marshal(CodecVersion, iOp)
+func (o *operationAndCodec) Less(other *operationAndCodec) bool {
+	oBytes, err := o.codec.Marshal(CodecVersion, o.op)
 	if err != nil {
 		return false
 	}
-	jBytes, err := ops.codec.Marshal(CodecVersion, jOp)
+	otherBytes, err := o.codec.Marshal(CodecVersion, other.op)
 	if err != nil {
 		return false
 	}
-	return bytes.Compare(iBytes, jBytes) == -1
-}
-
-func (ops *innerSortOperation) Len() int {
-	return len(ops.ops)
-}
-
-func (ops *innerSortOperation) Swap(i, j int) {
-	o := ops.ops
-	o[j], o[i] = o[i], o[j]
+	return bytes.Compare(oBytes, otherBytes) == -1
 }
 
 func SortOperations(ops []*Operation, c codec.Manager) {
-	sort.Sort(&innerSortOperation{ops: ops, codec: c})
+	sortableOps := make([]*operationAndCodec, len(ops))
+	for i, op := range ops {
+		sortableOps[i] = &operationAndCodec{
+			op:    op,
+			codec: c,
+		}
+	}
+
+	utils.Sort(sortableOps)
+	for i, sortableOp := range sortableOps {
+		ops[i] = sortableOp.op
+	}
 }
 
 func IsSortedAndUniqueOperations(ops []*Operation, c codec.Manager) bool {
-	return utils.IsSortedAndUnique(&innerSortOperation{ops: ops, codec: c})
+	sortableOps := make([]*operationAndCodec, len(ops))
+	for i, op := range ops {
+		sortableOps[i] = &operationAndCodec{
+			op:    op,
+			codec: c,
+		}
+	}
+	return utils.IsSortedAndUnique(sortableOps)
 }
 
 type innerSortOperationsWithSigners struct {
 	ops     []*Operation
-	signers [][]*crypto.PrivateKeySECP256K1R
+	signers [][]*secp256k1.PrivateKey
 	codec   codec.Manager
 }
 
@@ -110,6 +116,6 @@ func (ops *innerSortOperationsWithSigners) Swap(i, j int) {
 	ops.signers[j], ops.signers[i] = ops.signers[i], ops.signers[j]
 }
 
-func SortOperationsWithSigners(ops []*Operation, signers [][]*crypto.PrivateKeySECP256K1R, codec codec.Manager) {
+func SortOperationsWithSigners(ops []*Operation, signers [][]*secp256k1.PrivateKey, codec codec.Manager) {
 	sort.Sort(&innerSortOperationsWithSigners{ops: ops, signers: signers, codec: codec})
 }

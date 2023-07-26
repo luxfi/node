@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e_test
@@ -19,7 +19,6 @@ import (
 	_ "github.com/luxdefi/node/tests/e2e/ping"
 	_ "github.com/luxdefi/node/tests/e2e/static-handlers"
 	_ "github.com/luxdefi/node/tests/e2e/x/transfer"
-	_ "github.com/luxdefi/node/tests/e2e/x/whitelist-vtx"
 )
 
 func TestE2E(t *testing.T) {

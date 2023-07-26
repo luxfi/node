@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,11 +12,10 @@ import (
 	"github.com/luxdefi/node/chains/atomic"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/state"
 	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/utxo"
 )
 
 var (
@@ -39,11 +38,11 @@ type StandardTxExecutor struct {
 }
 
 func (*StandardTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (*StandardTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
@@ -75,9 +74,9 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	txID := e.Tx.ID()
 
 	// Consume the UTXOS
-	utxo.Consume(e.State, tx.Ins)
+	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Produce(e.State, txID, tx.Outs)
 	// Add the new chain to the database
 	e.State.AddChain(e.Tx)
 
@@ -114,9 +113,9 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	txID := e.Tx.ID()
 
 	// Consume the UTXOS
-	utxo.Consume(e.State, tx.Ins)
+	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Produce(e.State, txID, tx.Outs)
 	// Add the new subnet to the database
 	e.State.AddSubnet(e.Tx)
 	return nil
@@ -136,7 +135,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 		utxoIDs[i] = utxoID[:]
 	}
 
-	if e.Bootstrapped.GetValue() {
+	if e.Bootstrapped.Get() {
 		if err := verify.SameSubnet(context.TODO(), e.Ctx, tx.SourceChain); err != nil {
 			return err
 		}
@@ -146,7 +145,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			return fmt.Errorf("failed to get shared memory: %w", err)
 		}
 
-		utxos := make([]*avax.UTXO, len(tx.Ins)+len(tx.ImportedInputs))
+		utxos := make([]*lux.UTXO, len(tx.Ins)+len(tx.ImportedInputs))
 		for index, input := range tx.Ins {
 			utxo, err := e.State.GetUTXO(input.InputID())
 			if err != nil {
@@ -155,14 +154,14 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			utxos[index] = utxo
 		}
 		for i, utxoBytes := range allUTXOBytes {
-			utxo := &avax.UTXO{}
+			utxo := &lux.UTXO{}
 			if _, err := txs.Codec.Unmarshal(utxoBytes, utxo); err != nil {
 				return fmt.Errorf("failed to unmarshal UTXO: %w", err)
 			}
 			utxos[i+len(tx.Ins)] = utxo
 		}
 
-		ins := make([]*avax.TransferableInput, len(tx.Ins)+len(tx.ImportedInputs))
+		ins := make([]*lux.TransferableInput, len(tx.Ins)+len(tx.ImportedInputs))
 		copy(ins, tx.Ins)
 		copy(ins[len(tx.Ins):], tx.ImportedInputs)
 
@@ -183,9 +182,9 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	txID := e.Tx.ID()
 
 	// Consume the UTXOS
-	utxo.Consume(e.State, tx.Ins)
+	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	e.AtomicRequests = map[ids.ID]*atomic.Requests{
 		tx.SourceChain: {
@@ -200,11 +199,11 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		return err
 	}
 
-	outs := make([]*avax.TransferableOutput, len(tx.Outs)+len(tx.ExportedOutputs))
+	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.ExportedOutputs))
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.ExportedOutputs)
 
-	if e.Bootstrapped.GetValue() {
+	if e.Bootstrapped.Get() {
 		if err := verify.SameSubnet(context.TODO(), e.Ctx, tx.DestinationChain); err != nil {
 			return err
 		}
@@ -227,18 +226,18 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 	txID := e.Tx.ID()
 
 	// Consume the UTXOS
-	utxo.Consume(e.State, tx.Ins)
+	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	elems := make([]*atomic.Element, len(tx.ExportedOutputs))
 	for i, out := range tx.ExportedOutputs {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(len(tx.Outs) + i),
 			},
-			Asset: avax.Asset{ID: out.AssetID()},
+			Asset: lux.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 
@@ -251,7 +250,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 			Key:   utxoID[:],
 			Value: utxoBytes,
 		}
-		if out, ok := utxo.Out.(avax.Addressable); ok {
+		if out, ok := utxo.Out.(lux.Addressable); ok {
 			elem.Traits = out.Addresses()
 		}
 
@@ -286,8 +285,8 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	}
 
 	e.State.PutPendingValidator(newStaker)
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }
@@ -309,8 +308,8 @@ func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 	}
 
 	e.State.PutPendingValidator(newStaker)
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }
@@ -332,8 +331,8 @@ func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	}
 
 	e.State.PutPendingDelegator(newStaker)
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }
@@ -363,8 +362,8 @@ func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidat
 	// Invariant: There are no permissioned subnet delegators to remove.
 
 	txID := e.Tx.ID()
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }
@@ -406,9 +405,9 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 	txID := e.Tx.ID()
 
 	// Consume the UTXOS
-	utxo.Consume(e.State, tx.Ins)
+	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Produce(e.State, txID, tx.Outs)
 	// Transform the new subnet in the database
 	e.State.AddSubnetTransformation(e.Tx)
 	e.State.SetCurrentSupply(tx.Subnet, tx.InitialSupply)
@@ -432,8 +431,8 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 	}
 
 	e.State.PutPendingValidator(newStaker)
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }
@@ -455,8 +454,8 @@ func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionl
 	}
 
 	e.State.PutPendingDelegator(newStaker)
-	utxo.Consume(e.State, tx.Ins)
-	utxo.Produce(e.State, txID, tx.Outs)
+	lux.Consume(e.State, tx.Ins)
+	lux.Produce(e.State, txID, tx.Outs)
 
 	return nil
 }

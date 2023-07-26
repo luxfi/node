@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
 )
@@ -34,7 +36,7 @@ func (vm *TestHeightIndexedVM) VerifyHeightIndex(ctx context.Context) error {
 		return vm.VerifyHeightIndexF(ctx)
 	}
 	if vm.CantVerifyHeightIndex && vm.T != nil {
-		vm.T.Fatal(errVerifyHeightIndex)
+		require.FailNow(vm.T, errVerifyHeightIndex.Error())
 	}
 	return errVerifyHeightIndex
 }
@@ -44,7 +46,7 @@ func (vm *TestHeightIndexedVM) GetBlockIDAtHeight(ctx context.Context, height ui
 		return vm.GetBlockIDAtHeightF(ctx, height)
 	}
 	if vm.CantGetBlockIDAtHeight && vm.T != nil {
-		vm.T.Fatal(errGetAncestor)
+		require.FailNow(vm.T, errGetAncestor.Error())
 	}
 	return ids.Empty, errGetBlockIDAtHeight
 }

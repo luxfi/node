@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
@@ -70,12 +70,12 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 		err := b.b.AddUTXO(
 			b.ctx,
 			tx.DestinationChain,
-			&avax.UTXO{
-				UTXOID: avax.UTXOID{
+			&lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        b.txID,
 					OutputIndex: uint32(len(tx.Outs) + i),
 				},
-				Asset: avax.Asset{ID: out.AssetID()},
+				Asset: lux.Asset{ID: out.AssetID()},
 				Out:   out.Out,
 			},
 		)

@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package avax
+package lux
 
 import (
 	"bytes"
@@ -68,12 +68,12 @@ func UTXOIDFromString(s string) (*UTXOID, error) {
 
 	txID, err := ids.FromString(ss[0])
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errFailedDecodingUTXOIDTxID, err)
+		return nil, fmt.Errorf("%w: %v", errFailedDecodingUTXOIDTxID, err)
 	}
 
 	idx, err := strconv.ParseUint(ss[1], 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errFailedDecodingUTXOIDIndex, err)
+		return nil, fmt.Errorf("%w: %v", errFailedDecodingUTXOIDIndex, err)
 	}
 
 	return &UTXOID{

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -45,11 +45,10 @@ func TestBuild(t *testing.T) {
 	require.Equal(timestamp, builtBlock.Timestamp())
 	require.Equal(innerBlockBytes, builtBlock.Block())
 
-	err = builtBlock.Verify(true, chainID)
-	require.NoError(err)
+	require.NoError(builtBlock.Verify(true, chainID))
 
 	err = builtBlock.Verify(false, chainID)
-	require.Error(err)
+	require.ErrorIs(err, errUnexpectedProposer)
 }
 
 func TestBuildUnsigned(t *testing.T) {
@@ -69,11 +68,10 @@ func TestBuildUnsigned(t *testing.T) {
 	require.Equal(innerBlockBytes, builtBlock.Block())
 	require.Equal(ids.EmptyNodeID, builtBlock.Proposer())
 
-	err = builtBlock.Verify(false, ids.Empty)
-	require.NoError(err)
+	require.NoError(builtBlock.Verify(false, ids.Empty))
 
 	err = builtBlock.Verify(true, ids.Empty)
-	require.Error(err)
+	require.ErrorIs(err, errMissingProposer)
 }
 
 func TestBuildHeader(t *testing.T) {

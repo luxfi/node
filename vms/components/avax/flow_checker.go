@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package avax
+package lux
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"github.com/luxdefi/node/utils/wrappers"
 )
 
-var errInsufficientFunds = errors.New("insufficient funds")
+var ErrInsufficientFunds = errors.New("insufficient funds")
 
 type FlowChecker struct {
 	consumed, produced map[ids.ID]uint64
@@ -44,7 +44,7 @@ func (fc *FlowChecker) Verify() error {
 		for assetID, producedAssetAmount := range fc.produced {
 			consumedAssetAmount := fc.consumed[assetID]
 			if producedAssetAmount > consumedAssetAmount {
-				fc.errs.Add(errInsufficientFunds)
+				fc.errs.Add(ErrInsufficientFunds)
 				break
 			}
 		}

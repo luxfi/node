@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package manager
@@ -211,7 +211,7 @@ func NewManagerFromDBs(dbs []*VersionedDatabase) (Manager, error) {
 		return nil, errNoDBs
 	}
 	utils.Sort(dbs)
-	sortedAndUnique := utils.IsSortedAndUniqueSortable(dbs)
+	sortedAndUnique := utils.IsSortedAndUnique(dbs)
 	if !sortedAndUnique {
 		return nil, errNonSortedAndUniqueDBs
 	}

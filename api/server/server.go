@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package server
@@ -33,10 +33,7 @@ import (
 	"github.com/luxdefi/node/utils/logging"
 )
 
-const (
-	baseURL           = "/ext"
-	readHeaderTimeout = 10 * time.Second
-)
+const baseURL = "/ext"
 
 var (
 	errUnknownLockOption = errors.New("invalid lock options")
@@ -71,16 +68,19 @@ type Server interface {
 	Dispatch() error
 	// DispatchTLS starts the API server with the provided TLS certificate
 	DispatchTLS(certBytes, keyBytes []byte) error
-	// RegisterChain registers the API endpoints associated with this chain. That is,
-	// add <route, handler> pairs to server so that API calls can be made to the VM.
-	// This method runs in a goroutine to avoid a deadlock in the event that the caller
-	// holds the engine's context lock. Namely, this could happen when the P-Chain is
-	// creating a new chain and holds the P-Chain's lock when this function is held,
-	// and at the same time the server's lock is held due to an API call and is trying
-	// to grab the P-Chain's lock.
-	RegisterChain(chainName string, engine common.Engine)
+	// RegisterChain registers the API endpoints associated with this chain.
+	// That is, add <route, handler> pairs to server so that API calls can be
+	// made to the VM.
+	RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM)
 	// Shutdown this server
 	Shutdown() error
+}
+
+type HTTPConfig struct {
+	ReadTimeout       time.Duration `json:"readTimeout"`
+	ReadHeaderTimeout time.Duration `json:"readHeaderTimeout"`
+	WriteTimeout      time.Duration `json:"writeHeaderTimeout"`
+	IdleTimeout       time.Duration `json:"idleTimeout"`
 }
 
 type server struct {
@@ -90,7 +90,7 @@ type server struct {
 	factory logging.Factory
 	// Listens for HTTP traffic on this address
 	listenHost string
-	listenPort uint16
+	listenPort string
 
 	shutdownTimeout time.Duration
 
@@ -118,6 +118,8 @@ func New(
 	tracer trace.Tracer,
 	namespace string,
 	registerer prometheus.Registerer,
+	httpConfig HTTPConfig,
+	allowedHosts []string,
 	wrappers ...Wrapper,
 ) (Server, error) {
 	m, err := newMetrics(namespace, registerer)
@@ -126,10 +128,11 @@ func New(
 	}
 
 	router := newRouter()
+	allowedHostsHandler := filterInvalidHosts(router, allowedHosts)
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowCredentials: true,
-	}).Handler(router)
+	}).Handler(allowedHostsHandler)
 	gzipHandler := gziphandler.GzipHandler(corsHandler)
 	var handler http.Handler = http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +154,7 @@ func New(
 		log:             log,
 		factory:         factory,
 		listenHost:      host,
-		listenPort:      port,
+		listenPort:      fmt.Sprintf("%d", port),
 		shutdownTimeout: shutdownTimeout,
 		tracingEnabled:  tracingEnabled,
 		tracer:          tracer,
@@ -159,13 +162,16 @@ func New(
 		router:          router,
 		srv: &http.Server{
 			Handler:           handler,
-			ReadHeaderTimeout: readHeaderTimeout,
+			ReadTimeout:       httpConfig.ReadTimeout,
+			ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
+			WriteTimeout:      httpConfig.WriteTimeout,
+			IdleTimeout:       httpConfig.IdleTimeout,
 		},
 	}, nil
 }
 
 func (s *server) Dispatch() error {
-	listenAddress := fmt.Sprintf("%s:%d", s.listenHost, s.listenPort)
+	listenAddress := net.JoinHostPort(s.listenHost, s.listenPort)
 	listener, err := net.Listen("tcp", listenAddress)
 	if err != nil {
 		return err
@@ -187,7 +193,7 @@ func (s *server) Dispatch() error {
 }
 
 func (s *server) DispatchTLS(certBytes, keyBytes []byte) error {
-	listenAddress := fmt.Sprintf("%s:%d", s.listenHost, s.listenPort)
+	listenAddress := net.JoinHostPort(s.listenHost, s.listenPort)
 	cert, err := tls.X509KeyPair(certBytes, keyBytes)
 	if err != nil {
 		return err
@@ -217,19 +223,14 @@ func (s *server) DispatchTLS(certBytes, keyBytes []byte) error {
 	return s.srv.Serve(listener)
 }
 
-func (s *server) RegisterChain(chainName string, engine common.Engine) {
-	go s.registerChain(chainName, engine)
-}
-
-func (s *server) registerChain(chainName string, engine common.Engine) {
+func (s *server) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
 	var (
 		handlers map[string]*common.HTTPHandler
 		err      error
 	)
 
-	ctx := engine.Context()
 	ctx.Lock.Lock()
-	handlers, err = engine.GetVM().CreateHandlers(context.TODO())
+	handlers, err = vm.CreateHandlers(context.TODO())
 	ctx.Lock.Unlock()
 	if err != nil {
 		s.log.Error("failed to create handlers",
@@ -377,10 +378,8 @@ func lockMiddleware(
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx *snow.ConsensusContext) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.GetState() != snow.NormalOp {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			// Doesn't matter if there's an error while writing. They'll get the StatusServiceUnavailable code.
-			_, _ = w.Write([]byte("API call rejected because chain is not done bootstrapping"))
+		if ctx.State.Get().State != snow.NormalOp {
+			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)
 		}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -7,16 +7,16 @@ import (
 	"crypto/tls"
 	"time"
 
+	"github.com/luxdefi/node/api/server"
 	"github.com/luxdefi/node/chains"
 	"github.com/luxdefi/node/genesis"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/nat"
 	"github.com/luxdefi/node/network"
-	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/snow/networking/benchlist"
 	"github.com/luxdefi/node/snow/networking/router"
-	"github.com/luxdefi/node/snow/networking/sender"
 	"github.com/luxdefi/node/snow/networking/tracker"
+	"github.com/luxdefi/node/subnets"
 	"github.com/luxdefi/node/trace"
 	"github.com/luxdefi/node/utils/crypto/bls"
 	"github.com/luxdefi/node/utils/dynamicip"
@@ -25,7 +25,6 @@ import (
 	"github.com/luxdefi/node/utils/profiler"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/timer"
-	"github.com/luxdefi/node/vms"
 )
 
 type IPCConfig struct {
@@ -45,6 +44,7 @@ type APIIndexerConfig struct {
 }
 
 type HTTPConfig struct {
+	server.HTTPConfig
 	APIConfig `json:"apiConfig"`
 	HTTPHost  string `json:"httpHost"`
 	HTTPPort  uint16 `json:"httpPort"`
@@ -53,7 +53,8 @@ type HTTPConfig struct {
 	HTTPSKey     []byte `json:"-"`
 	HTTPSCert    []byte `json:"-"`
 
-	APIAllowedOrigins []string `json:"apiAllowedOrigins"`
+	HTTPAllowedOrigins []string `json:"httpAllowedOrigins"`
+	HTTPAllowedHosts   []string `json:"httpAllowedHosts"`
 
 	ShutdownTimeout time.Duration `json:"shutdownTimeout"`
 	ShutdownWait    time.Duration `json:"shutdownWait"`
@@ -80,17 +81,23 @@ type IPConfig struct {
 	AttemptedNATTraversal bool `json:"attemptedNATTraversal"`
 	// Tries to perform network address translation
 	Nat nat.Router `json:"-"`
+	// The host portion of the address to listen on. The port to
+	// listen on will be sourced from IPPort.
+	//
+	// - If empty, listen on all interfaces (both ipv4 and ipv6).
+	// - If populated, listen only on the specified address.
+	ListenHost string `json:"listenHost"`
 }
 
 type StakingConfig struct {
 	genesis.StakingConfig
-	EnableStaking         bool            `json:"enableStaking"`
-	StakingTLSCert        tls.Certificate `json:"-"`
-	StakingSigningKey     *bls.SecretKey  `json:"-"`
-	DisabledStakingWeight uint64          `json:"disabledStakingWeight"`
-	StakingKeyPath        string          `json:"stakingKeyPath"`
-	StakingCertPath       string          `json:"stakingCertPath"`
-	StakingSignerPath     string          `json:"stakingSignerPath"`
+	SybilProtectionEnabled        bool            `json:"sybilProtectionEnabled"`
+	StakingTLSCert                tls.Certificate `json:"-"`
+	StakingSigningKey             *bls.SecretKey  `json:"-"`
+	SybilProtectionDisabledWeight uint64          `json:"sybilProtectionDisabledWeight"`
+	StakingKeyPath                string          `json:"stakingKeyPath"`
+	StakingCertPath               string          `json:"stakingCertPath"`
+	StakingSignerPath             string          `json:"stakingSignerPath"`
 }
 
 type StateSyncConfig struct {
@@ -119,8 +126,7 @@ type BootstrapConfig struct {
 	// ancestors while responding to a GetAncestors message
 	BootstrapMaxTimeGetAncestors time.Duration `json:"bootstrapMaxTimeGetAncestors"`
 
-	BootstrapIDs []ids.NodeID `json:"bootstrapIDs"`
-	BootstrapIPs []ips.IPPort `json:"bootstrapIPs"`
+	Bootstrappers []genesis.Bootstrapper `json:"bootstrappers"`
 }
 
 type DatabaseConfig struct {
@@ -146,7 +152,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	AvaxAssetID  ids.ID `json:"avaxAssetID"`
+	LuxAssetID  ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`
@@ -156,8 +162,6 @@ type Config struct {
 
 	// Network configuration
 	NetworkConfig network.Config `json:"networkConfig"`
-
-	GossipConfig sender.GossipConfig `json:"gossipConfig"`
 
 	AdaptiveTimeoutConfig timer.AdaptiveTimeoutConfig `json:"adaptiveTimeoutConfig"`
 
@@ -172,9 +176,6 @@ type Config struct {
 	// File Descriptor Limit
 	FdLimit uint64 `json:"fdLimit"`
 
-	// Consensus configuration
-	ConsensusParams avalanche.Parameters `json:"consensusParams"`
-
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
@@ -182,17 +183,20 @@ type Config struct {
 	ConsensusRouter          router.Router       `json:"-"`
 	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
-	// Gossip a container in the accepted frontier every [ConsensusGossipFrequency]
-	ConsensusGossipFrequency time.Duration `json:"consensusGossipFreq"`
+	// Gossip a container in the accepted frontier every [AcceptedFrontierGossipFrequency]
+	AcceptedFrontierGossipFrequency time.Duration `json:"consensusGossipFreq"`
+	// ConsensusAppConcurrency defines the maximum number of goroutines to
+	// handle App messages per chain.
+	ConsensusAppConcurrency int `json:"consensusAppConcurrency"`
 
 	TrackedSubnets set.Set[ids.ID] `json:"trackedSubnets"`
 
-	SubnetConfigs map[ids.ID]chains.SubnetConfig `json:"subnetConfigs"`
+	SubnetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"`
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`
 
-	VMManager vms.Manager `json:"-"`
+	VMAliaser ids.Aliaser `json:"-"`
 
 	// Halflife to use for the processing requests tracker.
 	// Larger halflife --> usage metrics change more slowly.
@@ -219,9 +223,6 @@ type Config struct {
 	WarningThresholdAvailableDiskSpace uint64 `json:"warningThresholdAvailableDiskSpace"`
 
 	TraceConfig trace.Config `json:"traceConfig"`
-
-	// See comment on [MinPercentConnectedStakeHealthy] in platformvm.Config
-	MinPercentConnectedStakeHealthy map[ids.ID]float64 `json:"minPercentConnectedStakeHealthy"`
 
 	// See comment on [UseCurrentHeight] in platformvm.Config
 	UseCurrentHeight bool `json:"useCurrentHeight"`

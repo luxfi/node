@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -11,16 +11,15 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/config"
 	"github.com/luxdefi/node/vms/platformvm/fx"
 	"github.com/luxdefi/node/vms/platformvm/state"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/platformvm/utxo"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -30,7 +29,7 @@ const MaxPageSize = 1024
 var (
 	_ Builder = (*builder)(nil)
 
-	errNoFunds = errors.New("no spendable funds were found")
+	ErrNoFunds = errors.New("no spendable funds were found")
 )
 
 type Builder interface {
@@ -47,7 +46,7 @@ type AtomicTxBuilder interface {
 	NewImportTx(
 		chainID ids.ID,
 		to ids.ShortID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -60,7 +59,7 @@ type AtomicTxBuilder interface {
 		amount uint64,
 		chainID ids.ID,
 		to ids.ShortID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 }
@@ -79,7 +78,7 @@ type DecisionTxBuilder interface {
 		vmID ids.ID,
 		fxIDs []ids.ID,
 		chainName string,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -90,7 +89,7 @@ type DecisionTxBuilder interface {
 	NewCreateSubnetTx(
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 }
@@ -111,7 +110,7 @@ type ProposalTxBuilder interface {
 		nodeID ids.NodeID,
 		rewardAddress ids.ShortID,
 		shares uint32,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -128,7 +127,7 @@ type ProposalTxBuilder interface {
 		endTime uint64,
 		nodeID ids.NodeID,
 		rewardAddress ids.ShortID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -145,7 +144,7 @@ type ProposalTxBuilder interface {
 		endTime uint64,
 		nodeID ids.NodeID,
 		subnetID ids.ID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -156,7 +155,7 @@ type ProposalTxBuilder interface {
 	NewRemoveSubnetValidatorTx(
 		nodeID ids.NodeID,
 		subnetID ids.ID,
-		keys []*crypto.PrivateKeySECP256K1R,
+		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
@@ -174,8 +173,8 @@ func New(
 	cfg *config.Config,
 	clk *mockable.Clock,
 	fx fx.Fx,
-	state state.Chain,
-	atomicUTXOManager avax.AtomicUTXOManager,
+	state state.State,
+	atomicUTXOManager lux.AtomicUTXOManager,
 	utxoSpender utxo.Spender,
 ) Builder {
 	return &builder{
@@ -190,9 +189,9 @@ func New(
 }
 
 type builder struct {
-	avax.AtomicUTXOManager
+	lux.AtomicUTXOManager
 	utxo.Spender
-	state state.Chain
+	state state.State
 
 	cfg *config.Config
 	ctx *snow.Context
@@ -203,7 +202,7 @@ type builder struct {
 func (b *builder) NewImportTx(
 	from ids.ID,
 	to ids.ShortID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	kc := secp256k1fx.NewKeychain(keys...)
@@ -213,8 +212,8 @@ func (b *builder) NewImportTx(
 		return nil, fmt.Errorf("problem retrieving atomic UTXOs: %w", err)
 	}
 
-	importedInputs := []*avax.TransferableInput{}
-	signers := [][]*crypto.PrivateKeySECP256K1R{}
+	importedInputs := []*lux.TransferableInput{}
+	signers := [][]*secp256k1.PrivateKey{}
 
 	importedAmounts := make(map[ids.ID]uint64)
 	now := b.clk.Unix()
@@ -223,7 +222,7 @@ func (b *builder) NewImportTx(
 		if err != nil {
 			continue
 		}
-		input, ok := inputIntf.(avax.TransferableIn)
+		input, ok := inputIntf.(lux.TransferableIn)
 		if !ok {
 			continue
 		}
@@ -232,27 +231,27 @@ func (b *builder) NewImportTx(
 		if err != nil {
 			return nil, err
 		}
-		importedInputs = append(importedInputs, &avax.TransferableInput{
+		importedInputs = append(importedInputs, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
 			Asset:  utxo.Asset,
 			In:     input,
 		})
 		signers = append(signers, utxoSigners)
 	}
-	avax.SortTransferableInputsWithSigners(importedInputs, signers)
+	lux.SortTransferableInputsWithSigners(importedInputs, signers)
 
 	if len(importedAmounts) == 0 {
-		return nil, errNoFunds // No imported UTXOs were spendable
+		return nil, ErrNoFunds // No imported UTXOs were spendable
 	}
 
 	importedAVAX := importedAmounts[b.ctx.AVAXAssetID]
 
-	ins := []*avax.TransferableInput{}
-	outs := []*avax.TransferableOutput{}
+	ins := []*lux.TransferableInput{}
+	outs := []*lux.TransferableOutput{}
 	switch {
 	case importedAVAX < b.cfg.TxFee: // imported amount goes toward paying tx fee
-		var baseSigners [][]*crypto.PrivateKeySECP256K1R
-		ins, outs, _, baseSigners, err = b.Spend(keys, 0, b.cfg.TxFee-importedAVAX, changeAddr)
+		var baseSigners [][]*secp256k1.PrivateKey
+		ins, outs, _, baseSigners, err = b.Spend(b.state, keys, 0, b.cfg.TxFee-importedAVAX, changeAddr)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 		}
@@ -265,8 +264,8 @@ func (b *builder) NewImportTx(
 	}
 
 	for assetID, amount := range importedAmounts {
-		outs = append(outs, &avax.TransferableOutput{
-			Asset: avax.Asset{ID: assetID},
+		outs = append(outs, &lux.TransferableOutput{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -278,11 +277,11 @@ func (b *builder) NewImportTx(
 		})
 	}
 
-	avax.SortTransferableOutputs(outs, txs.Codec) // sort imported outputs
+	lux.SortTransferableOutputs(outs, txs.Codec) // sort imported outputs
 
 	// Create the transaction
 	utx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Outs:         outs,
@@ -303,29 +302,29 @@ func (b *builder) NewExportTx(
 	amount uint64,
 	chainID ids.ID,
 	to ids.ShortID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	toBurn, err := math.Add64(amount, b.cfg.TxFee)
 	if err != nil {
 		return nil, fmt.Errorf("amount (%d) + tx fee(%d) overflows", amount, b.cfg.TxFee)
 	}
-	ins, outs, _, signers, err := b.Spend(keys, 0, toBurn, changeAddr)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, toBurn, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 
 	// Create the transaction
 	utx := &txs.ExportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
 			Outs:         outs, // Non-exported outputs
 		}},
 		DestinationChain: chainID,
-		ExportedOutputs: []*avax.TransferableOutput{{ // Exported to X-Chain
-			Asset: avax.Asset{ID: b.ctx.AVAXAssetID},
+		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
+			Asset: lux.Asset{ID: b.ctx.AVAXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -349,12 +348,12 @@ func (b *builder) NewCreateChainTx(
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	timestamp := b.state.GetTimestamp()
 	createBlockchainTxFee := b.cfg.GetCreateBlockchainTxFee(timestamp)
-	ins, outs, _, signers, err := b.Spend(keys, 0, createBlockchainTxFee, changeAddr)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createBlockchainTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -370,7 +369,7 @@ func (b *builder) NewCreateChainTx(
 
 	// Create the tx
 	utx := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -393,12 +392,12 @@ func (b *builder) NewCreateChainTx(
 func (b *builder) NewCreateSubnetTx(
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	timestamp := b.state.GetTimestamp()
 	createSubnetTxFee := b.cfg.GetCreateSubnetTxFee(timestamp)
-	ins, outs, _, signers, err := b.Spend(keys, 0, createSubnetTxFee, changeAddr)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createSubnetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -408,7 +407,7 @@ func (b *builder) NewCreateSubnetTx(
 
 	// Create the tx
 	utx := &txs.CreateSubnetTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
@@ -433,22 +432,22 @@ func (b *builder) NewAddValidatorTx(
 	nodeID ids.NodeID,
 	rewardAddress ids.ShortID,
 	shares uint32,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	ins, unstakedOuts, stakedOuts, signers, err := b.Spend(keys, stakeAmount, b.cfg.AddPrimaryNetworkValidatorFee, changeAddr)
+	ins, unstakedOuts, stakedOuts, signers, err := b.Spend(b.state, keys, stakeAmount, b.cfg.AddPrimaryNetworkValidatorFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 	// Create the tx
 	utx := &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
 			Outs:         unstakedOuts,
 		}},
-		Validator: validator.Validator{
+		Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  startTime,
 			End:    endTime,
@@ -475,22 +474,22 @@ func (b *builder) NewAddDelegatorTx(
 	endTime uint64,
 	nodeID ids.NodeID,
 	rewardAddress ids.ShortID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	ins, unlockedOuts, lockedOuts, signers, err := b.Spend(keys, stakeAmount, b.cfg.AddPrimaryNetworkDelegatorFee, changeAddr)
+	ins, unlockedOuts, lockedOuts, signers, err := b.Spend(b.state, keys, stakeAmount, b.cfg.AddPrimaryNetworkDelegatorFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 	// Create the tx
 	utx := &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
 			Outs:         unlockedOuts,
 		}},
-		Validator: validator.Validator{
+		Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  startTime,
 			End:    endTime,
@@ -516,10 +515,10 @@ func (b *builder) NewAddSubnetValidatorTx(
 	endTime uint64,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	ins, outs, _, signers, err := b.Spend(keys, 0, b.cfg.TxFee, changeAddr)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, b.cfg.TxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -532,14 +531,14 @@ func (b *builder) NewAddSubnetValidatorTx(
 
 	// Create the tx
 	utx := &txs.AddSubnetValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Validator: validator.SubnetValidator{
-			Validator: validator.Validator{
+		SubnetValidator: txs.SubnetValidator{
+			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  startTime,
 				End:    endTime,
@@ -559,10 +558,10 @@ func (b *builder) NewAddSubnetValidatorTx(
 func (b *builder) NewRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	ins, outs, _, signers, err := b.Spend(keys, 0, b.cfg.TxFee, changeAddr)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, b.cfg.TxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -575,7 +574,7 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 
 	// Create the tx
 	utx := &txs.RemoveSubnetValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.ctx.NetworkID,
 			BlockchainID: b.ctx.ChainID,
 			Ins:          ins,

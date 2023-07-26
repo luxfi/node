@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -11,19 +11,31 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
 var (
-	networkID uint32 = 10
-	chainID          = ids.GenerateTestID()
-	keys             = crypto.BuildTestKeys()
-	assetID          = ids.GenerateTestID()
+	chainID = ids.GenerateTestID()
+	keys    = secp256k1.TestKeys()
+	assetID = ids.GenerateTestID()
 )
+
+func TestInvalidBlock(t *testing.T) {
+	require := require.New(t)
+
+	parser, err := NewParser([]fxs.Fx{
+		&secp256k1fx.Fx{},
+	})
+	require.NoError(err)
+
+	_, err = parser.ParseBlock(nil)
+	require.ErrorIs(err, codec.ErrCantUnpackVersion)
+}
 
 func TestStandardBlocks(t *testing.T) {
 	// check standard block can be built and parsed
@@ -55,8 +67,8 @@ func TestStandardBlocks(t *testing.T) {
 	require.Equal(standardBlk.Bytes(), parsed.Bytes())
 	require.Equal(standardBlk.Timestamp(), parsed.Timestamp())
 
-	parsedStandardBlk, ok := parsed.(*StandardBlock)
-	require.True(ok)
+	require.IsType(&StandardBlock{}, parsed)
+	parsedStandardBlk := parsed.(*StandardBlock)
 
 	require.Equal(txs, parsedStandardBlk.Txs())
 	require.Equal(parsed.Txs(), parsedStandardBlk.Txs())
@@ -67,11 +79,11 @@ func createTestTxs(cm codec.Manager) ([]*txs.Tx, error) {
 	testTxs := make([]*txs.Tx, 0, countTxs)
 	for i := 0; i < countTxs; i++ {
 		// Create the tx
-		tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
-			NetworkID:    networkID,
+		tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    constants.UnitTestID,
 			BlockchainID: chainID,
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{ID: assetID},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(12345),
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -80,12 +92,12 @@ func createTestTxs(cm codec.Manager) ([]*txs.Tx, error) {
 					},
 				},
 			}},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID:        ids.ID{'t', 'x', 'I', 'D'},
 					OutputIndex: 1,
 				},
-				Asset: avax.Asset{ID: assetID},
+				Asset: lux.Asset{ID: assetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: uint64(54321),
 					Input: secp256k1fx.Input{
@@ -95,7 +107,7 @@ func createTestTxs(cm codec.Manager) ([]*txs.Tx, error) {
 			}},
 			Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}}}
-		if err := tx.SignSECP256K1Fx(cm, [][]*crypto.PrivateKeySECP256K1R{{keys[0]}}); err != nil {
+		if err := tx.SignSECP256K1Fx(cm, [][]*secp256k1.PrivateKey{{keys[0]}}); err != nil {
 			return nil, err
 		}
 		testTxs = append(testTxs, tx)

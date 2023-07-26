@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,8 +12,8 @@ import (
 	"github.com/luxdefi/node/chains/atomic"
 	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/status"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
@@ -28,7 +28,7 @@ func TestAtomicTxImports(t *testing.T) {
 		require.NoError(shutdownEnvironment(env))
 	}()
 
-	utxoID := avax.UTXOID{
+	utxoID := lux.UTXOID{
 		TxID:        ids.Empty.Prefix(1),
 		OutputIndex: 1,
 	}
@@ -39,9 +39,9 @@ func TestAtomicTxImports(t *testing.T) {
 
 	env.msm.SharedMemory = m.NewSharedMemory(env.ctx.ChainID)
 	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
-	utxo := &avax.UTXO{
+	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  avax.Asset{ID: avaxAssetID},
+		Asset:  lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -54,7 +54,7 @@ func TestAtomicTxImports(t *testing.T) {
 	require.NoError(err)
 
 	inputID := utxo.InputID()
-	err = peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
+	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
 		env.ctx.ChainID: {PutRequests: []*atomic.Element{{
 			Key:   inputID[:],
 			Value: utxoBytes,
@@ -62,13 +62,12 @@ func TestAtomicTxImports(t *testing.T) {
 				recipientKey.PublicKey().Address().Bytes(),
 			},
 		}}},
-	})
-	require.NoError(err)
+	}))
 
 	tx, err := env.txBuilder.NewImportTx(
 		env.ctx.XChainID,
 		recipientKey.PublicKey().Address(),
-		[]*crypto.PrivateKeySECP256K1R{recipientKey},
+		[]*secp256k1.PrivateKey{recipientKey},
 		ids.ShortEmpty, // change addr
 	)
 	require.NoError(err)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -17,7 +17,7 @@ import (
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/nftfx"
 	"github.com/luxdefi/node/vms/propertyfx"
@@ -27,9 +27,9 @@ import (
 var (
 	errUnknownAssetType = errors.New("unknown asset type")
 
-	_ avax.TransferableIn  = (*secp256k1fx.TransferInput)(nil)
+	_ lux.TransferableIn  = (*secp256k1fx.TransferInput)(nil)
 	_ verify.State         = (*secp256k1fx.MintOutput)(nil)
-	_ avax.TransferableOut = (*secp256k1fx.TransferOutput)(nil)
+	_ lux.TransferableOut = (*secp256k1fx.TransferOutput)(nil)
 	_ fxs.FxOperation      = (*secp256k1fx.MintOperation)(nil)
 	_ verify.Verifiable    = (*secp256k1fx.Credential)(nil)
 
@@ -96,7 +96,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		asset := GenesisAsset{
 			Alias: assetAlias,
 			CreateAssetTx: txs.CreateAssetTx{
-				BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    uint32(args.NetworkID),
 					BlockchainID: ids.Empty,
 					Memo:         assetMemo,

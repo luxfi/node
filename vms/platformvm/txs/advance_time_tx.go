@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 )
 
 var _ UnsignedTx = (*AdvanceTimeTx)(nil)
@@ -46,7 +46,7 @@ func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
 	return nil
 }
 
-func (*AdvanceTimeTx) Outputs() []*avax.TransferableOutput {
+func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 

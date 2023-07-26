@@ -1,17 +1,13 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/database/corruptabledb"
@@ -21,10 +17,6 @@ import (
 	rpcdbpb "github.com/luxdefi/node/proto/pb/rpcdb"
 )
 
-const (
-	bufSize = 1024 * 1024
-)
-
 type testDatabase struct {
 	client  *DatabaseClient
 	server  *memdb.Database
@@ -32,34 +24,24 @@ type testDatabase struct {
 }
 
 func setupDB(t testing.TB) *testDatabase {
+	require := require.New(t)
+
 	db := &testDatabase{
 		server: memdb.New(),
 	}
 
-	listener := bufconn.Listen(bufSize)
+	listener, err := grpcutils.NewListener()
+	require.NoError(err)
 	serverCloser := grpcutils.ServerCloser{}
 
-	serverFunc := func(opts []grpc.ServerOption) *grpc.Server {
-		server := grpcutils.NewDefaultServer(opts)
-		rpcdbpb.RegisterDatabaseServer(server, NewServer(db.server))
-		serverCloser.Add(server)
-		return server
-	}
+	server := grpcutils.NewServer()
+	rpcdbpb.RegisterDatabaseServer(server, NewServer(db.server))
+	serverCloser.Add(server)
 
-	go grpcutils.Serve(listener, serverFunc)
+	go grpcutils.Serve(listener, server)
 
-	dialer := grpc.WithContextDialer(
-		func(context.Context, string) (net.Conn, error) {
-			return listener.Dial()
-		},
-	)
-
-	dopts := grpcutils.DefaultDialOptions
-	dopts = append(dopts, dialer)
-	conn, err := grpcutils.Dial("", dopts...)
-	if err != nil {
-		t.Fatalf("Failed to dial: %s", err)
-	}
+	conn, err := grpcutils.Dial(listener.Addr().String())
+	require.NoError(err)
 
 	db.client = NewClient(rpcdbpb.NewDatabaseClient(conn))
 	db.closeFn = func() {
@@ -100,8 +82,6 @@ func BenchmarkInterface(b *testing.B) {
 }
 
 func TestHealthCheck(t *testing.T) {
-	require := require.New(t)
-
 	scenarios := []struct {
 		name         string
 		testDatabase *testDatabase
@@ -128,6 +108,8 @@ func TestHealthCheck(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
+			require := require.New(t)
+
 			baseDB := setupDB(t)
 			db := corruptabledb.New(baseDB.server)
 			defer db.Close()
@@ -135,26 +117,15 @@ func TestHealthCheck(t *testing.T) {
 
 			// check db HealthCheck
 			_, err := db.HealthCheck(context.Background())
-			if err == nil && scenario.wantErr {
-				t.Fatalf("wanted error got nil")
-				return
-			}
 			if scenario.wantErr {
-				require.Containsf(err.Error(), scenario.wantErrMsg, "expected error containing %q, got %s", scenario.wantErrMsg, err)
+				require.Error(err) //nolint:forbidigo
+				require.Contains(err.Error(), scenario.wantErrMsg)
 				return
 			}
 			require.NoError(err)
 
 			// check rpc HealthCheck
 			_, err = baseDB.client.HealthCheck(context.Background())
-			if err == nil && scenario.wantErr {
-				t.Fatalf("wanted error got nil")
-				return
-			}
-			if scenario.wantErr {
-				require.Containsf(err.Error(), scenario.wantErrMsg, "expected error containing %q, got %s", scenario.wantErrMsg, err)
-				return
-			}
 			require.NoError(err)
 		})
 	}

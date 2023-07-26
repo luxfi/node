@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -135,7 +135,7 @@ func RemoveWeight(m Manager, subnetID ids.ID, nodeID ids.NodeID, weight uint64) 
 	return vdrs.RemoveWeight(nodeID, weight)
 }
 
-// AddWeight is a helper that fetches the validator set of [subnetID] from [m]
+// Contains is a helper that fetches the validator set of [subnetID] from [m]
 // and returns if the validator set contains [nodeID]. If [m] does not contain a
 // validator set for [subnetID], false is returned.
 func Contains(m Manager, subnetID ids.ID, nodeID ids.NodeID) bool {
@@ -144,4 +144,18 @@ func Contains(m Manager, subnetID ids.ID, nodeID ids.NodeID) bool {
 		return false
 	}
 	return vdrs.Contains(nodeID)
+}
+
+func NodeIDs(m Manager, subnetID ids.ID) ([]ids.NodeID, error) {
+	vdrs, exist := m.Get(subnetID)
+	if !exist {
+		return nil, fmt.Errorf("%w: %s", errMissingValidators, subnetID)
+	}
+
+	vdrsList := vdrs.List()
+	nodeIDs := make([]ids.NodeID, len(vdrsList))
+	for i, vdr := range vdrsList {
+		nodeIDs[i] = vdr.NodeID
+	}
+	return nodeIDs, nil
 }

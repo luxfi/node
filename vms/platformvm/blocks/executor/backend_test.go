@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 	"github.com/luxdefi/node/vms/platformvm/state"
 )
@@ -98,7 +97,7 @@ func TestBackendGetBlock(t *testing.T) {
 	{
 		// Case: block isn't in the map or database.
 		blkID := ids.GenerateTestID()
-		state.EXPECT().GetStatelessBlock(blkID).Return(nil, choices.Unknown, database.ErrNotFound)
+		state.EXPECT().GetStatelessBlock(blkID).Return(nil, database.ErrNotFound)
 		_, err := b.GetBlock(blkID)
 		require.Equal(database.ErrNotFound, err)
 	}
@@ -106,7 +105,7 @@ func TestBackendGetBlock(t *testing.T) {
 	{
 		// Case: block isn't in the map and is in database.
 		blkID := ids.GenerateTestID()
-		state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, choices.Accepted, nil)
+		state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, nil)
 		gotBlk, err := b.GetBlock(blkID)
 		require.NoError(err)
 		require.Equal(statelessBlk, gotBlk)

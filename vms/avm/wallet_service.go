@@ -1,39 +1,66 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
-	"container/list"
+	"errors"
 	"fmt"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	"golang.org/x/exp/maps"
 
 	"github.com/luxdefi/node/api"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxdefi/node/utils/linkedhashmap"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
-type WalletService struct {
-	vm *VM
+var errMissingUTXO = errors.New("missing utxo")
 
-	pendingTxMap      map[ids.ID]*list.Element
-	pendingTxOrdering *list.List
+type WalletService struct {
+	vm         *VM
+	pendingTxs linkedhashmap.LinkedHashmap[ids.ID, *txs.Tx]
 }
 
 func (w *WalletService) decided(txID ids.ID) {
-	e, ok := w.pendingTxMap[txID]
-	if !ok {
+	if _, ok := w.pendingTxs.Get(txID); !ok {
 		return
 	}
-	delete(w.pendingTxMap, txID)
-	w.pendingTxOrdering.Remove(e)
+
+	w.vm.ctx.Log.Info("tx decided over wallet API",
+		zap.Stringer("txID", txID),
+	)
+	w.pendingTxs.Delete(txID)
+
+	for {
+		txID, tx, ok := w.pendingTxs.Oldest()
+		if !ok {
+			return
+		}
+
+		txBytes := tx.Bytes()
+		_, err := w.vm.IssueTx(txBytes)
+		if err == nil {
+			w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+				zap.Stringer("txID", txID),
+			)
+			return
+		}
+
+		w.pendingTxs.Delete(txID)
+		w.vm.ctx.Log.Warn("dropping tx issued over wallet API",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+	}
 }
 
 func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
@@ -42,27 +69,47 @@ func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
 		return ids.ID{}, err
 	}
 
-	txID, err := w.vm.IssueTx(txBytes)
-	if err != nil {
-		return ids.ID{}, err
-	}
+	txID := tx.ID()
+	w.vm.ctx.Log.Info("issuing tx over wallet API",
+		zap.Stringer("txID", txID),
+	)
 
-	if _, dup := w.pendingTxMap[txID]; dup {
+	if _, ok := w.pendingTxs.Get(txID); ok {
+		w.vm.ctx.Log.Warn("issuing duplicate tx over wallet API",
+			zap.Stringer("txID", txID),
+		)
 		return txID, nil
 	}
 
-	w.pendingTxMap[txID] = w.pendingTxOrdering.PushBack(tx)
+	if w.pendingTxs.Len() == 0 {
+		_, err := w.vm.IssueTx(txBytes)
+		if err != nil {
+			return ids.ID{}, err
+		}
+
+		w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+			zap.Stringer("txID", txID),
+		)
+	} else {
+		w.vm.ctx.Log.Info("enqueueing tx over wallet API",
+			zap.Stringer("txID", txID),
+		)
+	}
+
+	w.pendingTxs.Put(txID, tx)
 	return txID, nil
 }
 
-func (w *WalletService) update(utxos []*avax.UTXO) ([]*avax.UTXO, error) {
-	utxoMap := make(map[ids.ID]*avax.UTXO, len(utxos))
+func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
+	utxoMap := make(map[ids.ID]*lux.UTXO, len(utxos))
 	for _, utxo := range utxos {
 		utxoMap[utxo.InputID()] = utxo
 	}
 
-	for e := w.pendingTxOrdering.Front(); e != nil; e = e.Next() {
-		tx := e.Value.(*txs.Tx)
+	iter := w.pendingTxs.NewIterator()
+
+	for iter.Next() {
+		tx := iter.Value()
 		for _, inputUTXO := range tx.Unsigned.InputUTXOs() {
 			if inputUTXO.Symbolic() {
 				continue
@@ -78,12 +125,15 @@ func (w *WalletService) update(utxos []*avax.UTXO) ([]*avax.UTXO, error) {
 			utxoMap[utxo.InputID()] = utxo
 		}
 	}
+
 	return maps.Values(utxoMap), nil
 }
 
 // IssueTx attempts to issue a transaction into consensus
 func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
-	w.vm.ctx.Log.Debug("AVM Wallet: IssueTx called",
+	w.vm.ctx.Log.Warn("deprecated API called",
+		zap.String("service", "wallet"),
+		zap.String("method", "issueTx"),
 		logging.UserString("tx", args.Tx),
 	)
 
@@ -107,22 +157,24 @@ func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxI
 
 // SendMultiple sends a transaction with multiple outputs.
 func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
-	w.vm.ctx.Log.Debug("AVM Wallet: SendMultiple",
+	w.vm.ctx.Log.Warn("deprecated API called",
+		zap.String("service", "wallet"),
+		zap.String("method", "sendMultiple"),
 		logging.UserString("username", args.Username),
 	)
 
 	// Validate the memo field
 	memoBytes := []byte(args.Memo)
-	if l := len(memoBytes); l > avax.MaxMemoSize {
+	if l := len(memoBytes); l > lux.MaxMemoSize {
 		return fmt.Errorf("max memo length is %d but provided memo field is length %d",
-			avax.MaxMemoSize,
+			lux.MaxMemoSize,
 			l)
 	} else if len(args.Outputs) == 0 {
 		return errNoOutputs
 	}
 
 	// Parse the from addresses
-	fromAddrs, err := avax.ParseServiceAddresses(w.vm, args.From)
+	fromAddrs, err := lux.ParseServiceAddresses(w.vm, args.From)
 	if err != nil {
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
@@ -153,7 +205,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	// Asset ID --> amount of that asset being sent
 	amounts := make(map[ids.ID]uint64)
 	// Outputs of our tx
-	outs := []*avax.TransferableOutput{}
+	outs := []*lux.TransferableOutput{}
 	for _, output := range args.Outputs {
 		if output.Amount == 0 {
 			return errZeroAmount
@@ -174,14 +226,14 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		amounts[assetID] = newAmount
 
 		// Parse the to address
-		to, err := avax.ParseServiceAddress(w.vm, output.To)
+		to, err := lux.ParseServiceAddress(w.vm, output.To)
 		if err != nil {
 			return fmt.Errorf("problem parsing to address %q: %w", output.To, err)
 		}
 
 		// Create the Output
-		outs = append(outs, &avax.TransferableOutput{
-			Asset: avax.Asset{ID: assetID},
+		outs = append(outs, &lux.TransferableOutput{
+			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(output.Amount),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -193,10 +245,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		})
 	}
 
-	amountsWithFee := make(map[ids.ID]uint64, len(amounts)+1)
-	for assetKey, amount := range amounts {
-		amountsWithFee[assetKey] = amount
-	}
+	amountsWithFee := maps.Clone(amounts)
 
 	amountWithFee, err := math.Add64(amounts[w.vm.feeAssetID], w.vm.TxFee)
 	if err != nil {
@@ -218,8 +267,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		amountSpent := amountsSpent[assetID]
 
 		if amountSpent > amountWithFee {
-			outs = append(outs, &avax.TransferableOutput{
-				Asset: avax.Asset{ID: assetID},
+			outs = append(outs, &lux.TransferableOutput{
+				Asset: lux.Asset{ID: assetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amountSpent - amountWithFee,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -233,9 +282,9 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	}
 
 	codec := w.vm.parser.Codec()
-	avax.SortTransferableOutputs(outs, codec)
+	lux.SortTransferableOutputs(outs, codec)
 
-	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
+	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    w.vm.ctx.NetworkID,
 		BlockchainID: w.vm.ctx.ChainID,
 		Outs:         outs,

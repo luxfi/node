@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -8,7 +8,7 @@ import (
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 )
 
 var _ txs.Visitor = (*executeTx)(nil)
@@ -46,12 +46,12 @@ func (et *executeTx) ExportTx(t *txs.ExportTx) error {
 	elems := make([]*atomic.Element, len(t.ExportedOuts))
 	codec := et.parser.Codec()
 	for i, out := range t.ExportedOuts {
-		utxo := &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(len(t.Outs) + i),
 			},
-			Asset: avax.Asset{ID: out.AssetID()},
+			Asset: lux.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 
@@ -65,7 +65,7 @@ func (et *executeTx) ExportTx(t *txs.ExportTx) error {
 			Key:   inputID[:],
 			Value: utxoBytes,
 		}
-		if out, ok := utxo.Out.(avax.Addressable); ok {
+		if out, ok := utxo.Out.(lux.Addressable); ok {
 			elem.Traits = out.Addresses()
 		}
 

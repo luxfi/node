@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracedvm
@@ -11,7 +11,6 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/luxdefi/node/database/manager"
-	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
@@ -19,17 +18,17 @@ import (
 	"github.com/luxdefi/node/trace"
 )
 
-var _ vertex.DAGVM = (*vertexVM)(nil)
+var _ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
 
 type vertexVM struct {
-	vertex.DAGVM
+	vertex.LinearizableVMWithEngine
 	tracer trace.Tracer
 }
 
-func NewVertexVM(vm vertex.DAGVM, tracer trace.Tracer) vertex.DAGVM {
+func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex.LinearizableVMWithEngine {
 	return &vertexVM{
-		DAGVM:  vm,
-		tracer: tracer,
+		LinearizableVMWithEngine: vm,
+		tracer:                   tracer,
 	}
 }
 
@@ -47,7 +46,7 @@ func (vm *vertexVM) Initialize(
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.Initialize")
 	defer span.End()
 
-	return vm.DAGVM.Initialize(
+	return vm.LinearizableVMWithEngine.Initialize(
 		ctx,
 		chainCtx,
 		db,
@@ -60,33 +59,13 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) PendingTxs(ctx context.Context) []snowstorm.Tx {
-	ctx, span := vm.tracer.Start(ctx, "vertexVM.PendingTxs")
-	defer span.End()
-
-	return vm.DAGVM.PendingTxs(ctx)
-}
-
 func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (snowstorm.Tx, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))
 	defer span.End()
 
-	tx, err := vm.DAGVM.ParseTx(ctx, txBytes)
-	return &tracedTx{
-		Tx:     tx,
-		tracer: vm.tracer,
-	}, err
-}
-
-func (vm *vertexVM) GetTx(ctx context.Context, txID ids.ID) (snowstorm.Tx, error) {
-	ctx, span := vm.tracer.Start(ctx, "vertexVM.GetTx", oteltrace.WithAttributes(
-		attribute.Stringer("txID", txID),
-	))
-	defer span.End()
-
-	tx, err := vm.DAGVM.GetTx(ctx, txID)
+	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, txBytes)
 	return &tracedTx{
 		Tx:     tx,
 		tracer: vm.tracer,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -17,15 +17,14 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 	"github.com/luxdefi/node/vms/platformvm/state"
 	"github.com/luxdefi/node/vms/platformvm/status"
 	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxdefi/node/vms/platformvm/txs/executor"
 	"github.com/luxdefi/node/vms/secp256k1fx"
-
-	txexecutor "github.com/luxdefi/node/vms/platformvm/txs/executor"
 )
 
 func TestApricotStandardBlockTimeVerification(t *testing.T) {
@@ -71,7 +70,8 @@ func TestApricotStandardBlockTimeVerification(t *testing.T) {
 	)
 	require.NoError(err)
 	block := env.blkManager.NewBlock(apricotChildBlk)
-	require.Error(block.Verify(context.Background()))
+	err = block.Verify(context.Background())
+	require.ErrorIs(err, errIncorrectBlockHeight)
 
 	// valid height
 	apricotChildBlk, err = blocks.NewApricotStandardBlock(
@@ -123,7 +123,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	env.mockedState.EXPECT().GetLastAccepted().Return(parentID).AnyTimes()
 	env.mockedState.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 
-	nextStakerTime := chainTime.Add(txexecutor.SyncBound).Add(-1 * time.Second)
+	nextStakerTime := chainTime.Add(executor.SyncBound).Add(-1 * time.Second)
 
 	// store just once current staker to mark next staker time.
 	currentStakerIt := state.NewMockStakerIterator(ctrl)
@@ -146,12 +146,12 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 
 	txID := ids.GenerateTestID()
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{
 			TxID: txID,
 		},
-		Asset: avax.Asset{
-			ID: avaxAssetID,
+		Asset: lux.Asset{
+			ID: luxAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: env.config.CreateSubnetTxFee,
@@ -162,10 +162,10 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 
 	// Create the tx
 	utx := &txs.CreateSubnetTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    env.ctx.NetworkID,
 			BlockchainID: env.ctx.ChainID,
-			Ins: []*avax.TransferableInput{{
+			Ins: []*lux.TransferableInput{{
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,
 				In: &secp256k1fx.TransferInput{
@@ -176,7 +176,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		Owner: &secp256k1fx.OutputOwners{},
 	}
 	tx := &txs.Tx{Unsigned: utx}
-	require.NoError(tx.Sign(txs.Codec, [][]*crypto.PrivateKeySECP256K1R{{}}))
+	require.NoError(tx.Sign(txs.Codec, [][]*secp256k1.PrivateKey{{}}))
 
 	{
 		// wrong version
@@ -187,7 +187,8 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.Error(block.Verify(context.Background()))
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, errApricotBlockIssuedAfterFork)
 	}
 
 	{
@@ -201,7 +202,8 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.Error(block.Verify(context.Background()))
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, errIncorrectBlockHeight)
 	}
 
 	{
@@ -215,21 +217,25 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.Error(block.Verify(context.Background()))
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, errChildBlockEarlierThanParent)
 	}
 
 	{
 		// wrong timestamp, violated synchrony bound
-		childTimestamp := parentTime.Add(txexecutor.SyncBound).Add(time.Second)
+		initClkTime := env.clk.Time()
+		env.clk.Set(parentTime.Add(-executor.SyncBound))
 		banffChildBlk, err := blocks.NewBanffStandardBlock(
-			childTimestamp,
+			parentTime.Add(time.Second),
 			banffParentBlk.ID(),
 			banffParentBlk.Height()+1,
 			[]*txs.Tx{tx},
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.Error(block.Verify(context.Background()))
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, executor.ErrChildBlockBeyondSyncBound)
+		env.clk.Set(initClkTime)
 	}
 
 	{
@@ -243,7 +249,8 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.Error(block.Verify(context.Background()))
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, executor.ErrChildBlockAfterStakerChangeTime)
 	}
 
 	{
@@ -257,7 +264,8 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		)
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
-		require.ErrorIs(block.Verify(context.Background()), errBanffStandardBlockWithoutChanges)
+		err = block.Verify(context.Background())
+		require.ErrorIs(err, errBanffStandardBlockWithoutChanges)
 	}
 
 	{
@@ -310,13 +318,13 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 		pendingValidatorEndTime,
 		nodeID,
 		rewardAddress,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 	)
 	require.NoError(err)
 
 	// build standard block moving ahead chain time
 	preferredID := env.state.GetLastAccepted()
-	parentBlk, _, err := env.state.GetStatelessBlock(preferredID)
+	parentBlk, err := env.state.GetStatelessBlock(preferredID)
 	require.NoError(err)
 	statelessStandardBlock, err := blocks.NewBanffStandardBlock(
 		pendingValidatorStartTime,
@@ -336,7 +344,7 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 	currentValidator, err := updatedState.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
 	require.NoError(err)
 	require.Equal(addPendingValidatorTx.ID(), currentValidator.TxID)
-	require.EqualValues(1370, currentValidator.PotentialReward) // See rewards tests to explain why 1370
+	require.Equal(uint64(1370), currentValidator.PotentialReward) // See rewards tests to explain why 1370
 
 	_, err = updatedState.GetPendingValidator(constants.PrimaryNetworkID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
@@ -501,7 +509,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 					staker.endTime,
 					staker.nodeID,
 					staker.rewardAddress,
-					[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+					[]*secp256k1.PrivateKey{preFundedKeys[0]},
 				)
 				require.NoError(err)
 			}
@@ -513,7 +521,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 					uint64(staker.endTime.Unix()),
 					staker.nodeID, // validator ID
 					subnetID,      // Subnet ID
-					[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0], preFundedKeys[1]},
+					[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
 					ids.ShortEmpty,
 				)
 				require.NoError(err)
@@ -535,7 +543,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 
 				// build standard block moving ahead chain time
 				preferredID := env.state.GetLastAccepted()
-				parentBlk, _, err := env.state.GetStatelessBlock(preferredID)
+				parentBlk, err := env.state.GetStatelessBlock(preferredID)
 				require.NoError(err)
 				statelessStandardBlock, err := blocks.NewBanffStandardBlock(
 					newTime,
@@ -604,7 +612,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 		uint64(subnetVdr1EndTime.Unix()),   // end time
 		subnetValidatorNodeID,              // Node ID
 		subnetID,                           // Subnet ID
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0], preFundedKeys[1]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
 		ids.ShortEmpty,
 	)
 	require.NoError(err)
@@ -630,7 +638,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 		uint64(subnetVdr1EndTime.Add(time.Second).Add(defaultMinStakingDuration).Unix()), // end time
 		subnetVdr2NodeID, // Node ID
 		subnetID,         // Subnet ID
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0], preFundedKeys[1]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
 		ids.ShortEmpty,
 	)
 	require.NoError(err)
@@ -651,7 +659,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 	env.clk.Set(subnetVdr1EndTime)
 	// build standard block moving ahead chain time
 	preferredID := env.state.GetLastAccepted()
-	parentBlk, _, err := env.state.GetStatelessBlock(preferredID)
+	parentBlk, err := env.state.GetStatelessBlock(preferredID)
 	require.NoError(err)
 	statelessStandardBlock, err := blocks.NewBanffStandardBlock(
 		subnetVdr1EndTime,
@@ -703,7 +711,7 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 				uint64(subnetVdr1EndTime.Unix()),   // end time
 				subnetValidatorNodeID,              // Node ID
 				subnetID,                           // Subnet ID
-				[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0], preFundedKeys[1]},
+				[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
 				ids.ShortEmpty,
 			)
 			require.NoError(err)
@@ -723,7 +731,7 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 
 			// build standard block moving ahead chain time
 			preferredID := env.state.GetLastAccepted()
-			parentBlk, _, err := env.state.GetStatelessBlock(preferredID)
+			parentBlk, err := env.state.GetStatelessBlock(preferredID)
 			require.NoError(err)
 			statelessStandardBlock, err := blocks.NewBanffStandardBlock(
 				subnetVdr1StartTime,
@@ -762,13 +770,13 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 		pendingValidatorEndTime,
 		nodeID,
 		rewardAddress,
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 	)
 	require.NoError(err)
 
 	// build standard block moving ahead chain time
 	preferredID := env.state.GetLastAccepted()
-	parentBlk, _, err := env.state.GetStatelessBlock(preferredID)
+	parentBlk, err := env.state.GetStatelessBlock(preferredID)
 	require.NoError(err)
 	statelessStandardBlock, err := blocks.NewBanffStandardBlock(
 		pendingValidatorStartTime,
@@ -798,7 +806,7 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 		uint64(pendingDelegatorEndTime.Unix()),
 		nodeID,
 		preFundedKeys[0].PublicKey().Address(),
-		[]*crypto.PrivateKeySECP256K1R{
+		[]*secp256k1.PrivateKey{
 			preFundedKeys[0],
 			preFundedKeys[1],
 			preFundedKeys[4],
@@ -820,7 +828,7 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 
 	// Advance Time
 	preferredID = env.state.GetLastAccepted()
-	parentBlk, _, err = env.state.GetStatelessBlock(preferredID)
+	parentBlk, err = env.state.GetStatelessBlock(preferredID)
 	require.NoError(err)
 	statelessStandardBlock, err = blocks.NewBanffStandardBlock(
 		pendingDelegatorStartTime,

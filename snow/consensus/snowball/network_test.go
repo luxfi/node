@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/bag"
 	"github.com/luxdefi/node/utils/sampler"
 )
 
@@ -27,7 +28,7 @@ func (n *Network) Initialize(params Parameters, numColors int) {
 
 func (n *Network) AddNode(sb Consensus) {
 	s := sampler.NewUniform()
-	_ = s.Initialize(uint64(len(n.colors)))
+	s.Initialize(uint64(len(n.colors)))
 	indices, _ := s.Sample(len(n.colors))
 	sb.Initialize(n.params, n.colors[int(indices[0])])
 	for _, index := range indices[1:] {
@@ -69,13 +70,13 @@ func (n *Network) Round() {
 		running := n.running[runningInd]
 
 		s := sampler.NewUniform()
-		_ = s.Initialize(uint64(len(n.nodes)))
+		s.Initialize(uint64(len(n.nodes)))
 		count := len(n.nodes)
 		if count > n.params.K {
 			count = n.params.K
 		}
 		indices, _ := s.Sample(count)
-		sampledColors := ids.Bag{}
+		sampledColors := bag.Bag[ids.ID]{}
 		for _, index := range indices {
 			peer := n.nodes[int(index)]
 			sampledColors.Add(peer.Preference())

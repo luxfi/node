@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/vms/platformvm/reward"
-	"github.com/luxdefi/node/vms/platformvm/validator"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 	"github.com/luxdefi/node/wallet/subnet/primary"
 )
@@ -24,7 +24,7 @@ func main() {
 	kc := secp256k1fx.NewKeychain(key)
 	startTime := time.Now().Add(time.Minute)
 	duration := 3 * 7 * 24 * time.Hour // 3 weeks
-	weight := 2_000 * units.Avax
+	weight := 2_000 * units.Lux
 	validatorRewardAddr := key.Address()
 	delegatorRewardAddr := key.Address()
 	delegationFee := uint32(reward.PercentDenominator / 2) // 50%
@@ -50,18 +50,18 @@ func main() {
 
 	// Get the P-chain wallet
 	pWallet := wallet.P()
-	avaxAssetID := pWallet.AVAXAssetID()
+	luxAssetID := pWallet.AVAXAssetID()
 
 	addValidatorStartTime := time.Now()
-	addValidatorTxID, err := pWallet.IssueAddPermissionlessValidatorTx(
-		&validator.SubnetValidator{Validator: validator.Validator{
+	addValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(startTime.Unix()),
 			End:    uint64(startTime.Add(duration).Unix()),
 			Wght:   weight,
 		}},
 		nodePOP,
-		avaxAssetID,
+		luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{validatorRewardAddr},
@@ -75,5 +75,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue add permissionless validator transaction: %s\n", err)
 	}
-	log.Printf("added new primary network validator %s with %s in %s\n", nodeID, addValidatorTxID, time.Since(addValidatorStartTime))
+	log.Printf("added new primary network validator %s with %s in %s\n", nodeID, addValidatorTx.ID(), time.Since(addValidatorStartTime))
 }

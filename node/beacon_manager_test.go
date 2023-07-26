@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -66,7 +66,7 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	wg.Wait()
 
 	// we should have a weight of numValidators now
-	require.EqualValues(numValidators, b.numConns)
+	require.Equal(int64(numValidators), b.numConns)
 
 	// disconnect numValidators validators
 	wg.Add(numValidators)

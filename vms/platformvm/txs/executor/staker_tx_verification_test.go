@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -17,13 +17,12 @@ import (
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/config"
 	"github.com/luxdefi/node/vms/platformvm/state"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/platformvm/utxo"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -56,23 +55,23 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 		verifiedTx = txs.AddPermissionlessValidatorTx{
 			BaseTx: txs.BaseTx{
 				SyntacticallyVerified: true,
-				BaseTx: avax.BaseTx{
+				BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: ids.GenerateTestID(),
-					Outs:         []*avax.TransferableOutput{},
-					Ins:          []*avax.TransferableInput{},
+					Outs:         []*lux.TransferableOutput{},
+					Ins:          []*lux.TransferableInput{},
 				},
 			},
-			Validator: validator.Validator{
+			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  1,
 				End:    1 + uint64(unsignedTransformTx.MinStakeDuration),
 				Wght:   unsignedTransformTx.MinValidatorStake,
 			},
 			Subnet: subnetID,
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: avax.Asset{
+					Asset: lux.Asset{
 						ID: customAssetID,
 					},
 				},
@@ -118,7 +117,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			backendF: func(*gomock.Controller) *Backend {
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
-					Bootstrapped: &utils.AtomicBool{},
+					Bootstrapped: &utils.Atomic[bool]{},
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
@@ -135,8 +134,8 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 		{
 			name: "start time too early",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -153,13 +152,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
-			expectedErr: errTimestampNotBeforeStartTime,
+			expectedErr: ErrTimestampNotBeforeStartTime,
 		},
 		{
 			name: "weight too low",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -179,13 +178,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.Validator.Wght = unsignedTransformTx.MinValidatorStake - 1
 				return &tx
 			},
-			expectedErr: errWeightTooSmall,
+			expectedErr: ErrWeightTooSmall,
 		},
 		{
 			name: "weight too high",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -205,13 +204,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.Validator.Wght = unsignedTransformTx.MaxValidatorStake + 1
 				return &tx
 			},
-			expectedErr: errWeightTooLarge,
+			expectedErr: ErrWeightTooLarge,
 		},
 		{
 			name: "insufficient delegation fee",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -232,13 +231,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.DelegationShares = unsignedTransformTx.MinDelegationFee - 1
 				return &tx
 			},
-			expectedErr: errInsufficientDelegationFee,
+			expectedErr: ErrInsufficientDelegationFee,
 		},
 		{
 			name: "duration too short",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -262,13 +261,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.Validator.End = uint64(unsignedTransformTx.MinStakeDuration)
 				return &tx
 			},
-			expectedErr: errStakeTooShort,
+			expectedErr: ErrStakeTooShort,
 		},
 		{
 			name: "duration too long",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -292,13 +291,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.Validator.End = 2 + uint64(unsignedTransformTx.MaxStakeDuration)
 				return &tx
 			},
-			expectedErr: errStakeTooLong,
+			expectedErr: ErrStakeTooLong,
 		},
 		{
 			name: "wrong assetID",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -315,22 +314,22 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			},
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				tx := verifiedTx // Note that this copies [verifiedTx]
-				tx.StakeOuts = []*avax.TransferableOutput{
+				tx.StakeOuts = []*lux.TransferableOutput{
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 					},
 				}
 				return &tx
 			},
-			expectedErr: errWrongStakedAssetID,
+			expectedErr: ErrWrongStakedAssetID,
 		},
 		{
 			name: "duplicate validator",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -350,13 +349,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
-			expectedErr: errDuplicateValidator,
+			expectedErr: ErrDuplicateValidator,
 		},
 		{
 			name: "validator not subset of primary network validator",
 			backendF: func(*gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 				return &Backend{
 					Ctx:          snow.DefaultContextTest(),
 					Bootstrapped: bootstrapped,
@@ -382,13 +381,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
-			expectedErr: errValidatorSubset,
+			expectedErr: ErrPeriodMismatch,
 		},
 		{
 			name: "flow check fails",
 			backendF: func(ctrl *gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 
 				flowChecker := utxo.NewMockVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
@@ -398,7 +397,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 					gomock.Any(),
 					gomock.Any(),
 					gomock.Any(),
-				).Return(errFlowCheckFailed)
+				).Return(ErrFlowCheckFailed)
 
 				return &Backend{
 					FlowChecker: flowChecker,
@@ -428,13 +427,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			txF: func() *txs.AddPermissionlessValidatorTx {
 				return &verifiedTx
 			},
-			expectedErr: errFlowCheckFailed,
+			expectedErr: ErrFlowCheckFailed,
 		},
 		{
 			name: "starts too far in the future",
 			backendF: func(ctrl *gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 
 				flowChecker := utxo.NewMockVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
@@ -478,13 +477,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				tx.Validator.End = tx.Validator.Start + uint64(unsignedTransformTx.MinStakeDuration)
 				return &tx
 			},
-			expectedErr: errFutureStakeTime,
+			expectedErr: ErrFutureStakeTime,
 		},
 		{
 			name: "success",
 			backendF: func(ctrl *gomock.Controller) *Backend {
-				bootstrapped := &utils.AtomicBool{}
-				bootstrapped.SetValue(true)
+				bootstrapped := &utils.Atomic[bool]{}
+				bootstrapped.Set(true)
 
 				flowChecker := utxo.NewMockVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
@@ -564,7 +563,7 @@ func TestGetValidatorRules(t *testing.T) {
 			MaxStakeDuration:  2 * time.Second,
 			MinDelegationFee:  1337,
 		}
-		avaxAssetID   = ids.GenerateTestID()
+		luxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 	)
@@ -576,14 +575,14 @@ func TestGetValidatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					AVAXAssetID: avaxAssetID,
+					AVAXAssetID: luxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addValidatorRules{
-				assetID:           avaxAssetID,
+				assetID:           luxAssetID,
 				minValidatorStake: config.MinValidatorStake,
 				maxValidatorStake: config.MaxValidatorStake,
 				minStakeDuration:  config.MinStakeDuration,
@@ -616,7 +615,7 @@ func TestGetValidatorRules(t *testing.T) {
 				return state
 			},
 			expectedRules: &addValidatorRules{},
-			expectedErr:   errIsNotTransformSubnetTx,
+			expectedErr:   ErrIsNotTransformSubnetTx,
 		},
 		{
 			name:     "subnet",
@@ -641,8 +640,8 @@ func TestGetValidatorRules(t *testing.T) {
 				assetID:           customAssetID,
 				minValidatorStake: config.MinValidatorStake,
 				maxValidatorStake: config.MaxValidatorStake,
-				minStakeDuration:  time.Duration(1337) * time.Second,
-				maxStakeDuration:  time.Duration(42) * time.Second,
+				minStakeDuration:  1337 * time.Second,
+				maxStakeDuration:  42 * time.Second,
 				minDelegationFee:  config.MinDelegationFee,
 			},
 			expectedErr: nil,
@@ -658,7 +657,7 @@ func TestGetValidatorRules(t *testing.T) {
 			chainState := tt.chainStateF(ctrl)
 			rules, err := getValidatorRules(tt.backend, chainState, tt.subnetID)
 			if tt.expectedErr != nil {
-				require.ErrorIs(tt.expectedErr, err)
+				require.ErrorIs(err, tt.expectedErr)
 				return
 			}
 			require.NoError(err)
@@ -683,7 +682,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			MinStakeDuration:  time.Second,
 			MaxStakeDuration:  2 * time.Second,
 		}
-		avaxAssetID   = ids.GenerateTestID()
+		luxAssetID   = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 	)
@@ -694,14 +693,14 @@ func TestGetDelegatorRules(t *testing.T) {
 			backend: &Backend{
 				Config: config,
 				Ctx: &snow.Context{
-					AVAXAssetID: avaxAssetID,
+					AVAXAssetID: luxAssetID,
 				},
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
 			},
 			expectedRules: &addDelegatorRules{
-				assetID:                  avaxAssetID,
+				assetID:                  luxAssetID,
 				minDelegatorStake:        config.MinDelegatorStake,
 				maxValidatorStake:        config.MaxValidatorStake,
 				minStakeDuration:         config.MinStakeDuration,
@@ -734,7 +733,7 @@ func TestGetDelegatorRules(t *testing.T) {
 				return state
 			},
 			expectedRules: &addDelegatorRules{},
-			expectedErr:   errIsNotTransformSubnetTx,
+			expectedErr:   ErrIsNotTransformSubnetTx,
 		},
 		{
 			name:     "subnet",
@@ -761,8 +760,8 @@ func TestGetDelegatorRules(t *testing.T) {
 				assetID:                  customAssetID,
 				minDelegatorStake:        config.MinDelegatorStake,
 				maxValidatorStake:        config.MaxValidatorStake,
-				minStakeDuration:         time.Duration(1337) * time.Second,
-				maxStakeDuration:         time.Duration(42) * time.Second,
+				minStakeDuration:         1337 * time.Second,
+				maxStakeDuration:         42 * time.Second,
 				maxValidatorWeightFactor: 21,
 			},
 			expectedErr: nil,
@@ -777,7 +776,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			chainState := tt.chainStateF(ctrl)
 			rules, err := getDelegatorRules(tt.backend, chainState, tt.subnetID)
 			if tt.expectedErr != nil {
-				require.ErrorIs(tt.expectedErr, err)
+				require.ErrorIs(err, tt.expectedErr)
 				return
 			}
 			require.NoError(err)

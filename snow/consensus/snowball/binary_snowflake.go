@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
 
-import (
-	"fmt"
-)
+import "fmt"
 
 var _ BinarySnowflake = (*binarySnowflake)(nil)
 
@@ -34,7 +32,7 @@ func (sf *binarySnowflake) Initialize(beta, choice int) {
 
 func (sf *binarySnowflake) RecordSuccessfulPoll(choice int) {
 	if sf.finalized {
-		return // This instace is already decided.
+		return // This instance is already decided.
 	}
 
 	if preference := sf.Preference(); preference == choice {

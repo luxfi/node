@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -8,15 +8,12 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/consensus/avalanche"
-	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/hashing"
 )
 
 // Builder builds a vertex given a set of parentIDs and transactions.
 type Builder interface {
-	// Build a new vertex from the contents of a vertex
-	BuildVtx(ctx context.Context, parentIDs []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error)
 	// Build a new stop vertex from the parents
 	BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (avalanche.Vertex, error)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/pubsub"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -28,8 +28,8 @@ func TestFilter(t *testing.T) {
 	require := require.New(t)
 
 	addrID := ids.ShortID{1}
-	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: avax.BaseTx{
-		Outs: []*avax.TransferableOutput{
+	tx := txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+		Outs: []*lux.TransferableOutput{
 			{
 				Out: &secp256k1fx.TransferOutput{
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -42,8 +42,7 @@ func TestFilter(t *testing.T) {
 	addrBytes := addrID[:]
 
 	fp := pubsub.NewFilterParam()
-	err := fp.Add(addrBytes)
-	require.NoError(err)
+	require.NoError(fp.Add(addrBytes))
 
 	parser := NewPubSubFilterer(&tx)
 	fr, _ := parser.Filter([]pubsub.Filter{&mockFilter{addr: addrBytes}})
