@@ -1,12 +1,13 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
-	"math"
 	"testing"
 	"time"
+
+	stdmath "math"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -17,20 +18,23 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/bls"
+	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 	"github.com/luxdefi/node/vms/platformvm/config"
 	"github.com/luxdefi/node/vms/platformvm/genesis"
 	"github.com/luxdefi/node/vms/platformvm/metrics"
 	"github.com/luxdefi/node/vms/platformvm/reward"
 	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
+
+const trackChecksum = false
 
 var (
 	initialTxID             = ids.GenerateTestID()
@@ -425,17 +429,17 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 	s, db := newUninitializedState(require)
 
 	initialValidator := &txs.AddValidatorTx{
-		Validator: validator.Validator{
+		Validator: txs.Validator{
 			NodeID: initialNodeID,
 			Start:  uint64(initialTime.Unix()),
 			End:    uint64(initialValidatorEndTime.Unix()),
-			Wght:   units.Avax,
+			Wght:   units.Lux,
 		},
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{ID: initialTxID},
+				Asset: lux.Asset{ID: initialTxID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: units.Avax,
+					Amt: units.Lux,
 				},
 			},
 		},
@@ -456,13 +460,13 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 
 	genesisBlkID := ids.GenerateTestID()
 	genesisState := &genesis.State{
-		UTXOs: []*avax.UTXO{
+		UTXOs: []*lux.UTXO{
 			{
-				UTXOID: avax.UTXOID{
+				UTXOID: lux.UTXOID{
 					TxID:        initialTxID,
 					OutputIndex: 0,
 				},
-				Asset: avax.Asset{ID: initialTxID},
+				Asset: lux.Asset{ID: initialTxID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: units.Schmeckle,
 				},
@@ -475,7 +479,7 @@ func newInitializedState(require *require.Assertions) (State, database.Database)
 			initialChainTx,
 		},
 		Timestamp:     uint64(initialTime.Unix()),
-		InitialSupply: units.Schmeckle + units.Avax,
+		InitialSupply: units.Schmeckle + units.Lux,
 	}
 
 	genesisBlk, err := blocks.NewApricotCommitBlock(genesisBlkID, 0)
@@ -506,8 +510,10 @@ func newStateFromDB(require *require.Assertions, db database.Database) State {
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
+			SupplyCap:          720 * units.MegaLux,
 		}),
+		&utils.Atomic[bool]{},
+		trackChecksum,
 	)
 	require.NoError(err)
 	require.NotNil(state)
@@ -516,18 +522,18 @@ func newStateFromDB(require *require.Assertions, db database.Database) State {
 
 func TestValidatorWeightDiff(t *testing.T) {
 	type test struct {
-		name      string
-		ops       []func(*ValidatorWeightDiff) error
-		shouldErr bool
-		expected  ValidatorWeightDiff
+		name        string
+		ops         []func(*ValidatorWeightDiff) error
+		expected    *ValidatorWeightDiff
+		expectedErr error
 	}
 
 	tests := []test{
 		{
-			name:      "no ops",
-			ops:       []func(*ValidatorWeightDiff) error{},
-			shouldErr: false,
-			expected:  ValidatorWeightDiff{},
+			name:        "no ops",
+			ops:         []func(*ValidatorWeightDiff) error{},
+			expected:    &ValidatorWeightDiff{},
+			expectedErr: nil,
 		},
 		{
 			name: "simple decrease",
@@ -539,24 +545,24 @@ func TestValidatorWeightDiff(t *testing.T) {
 					return d.Add(true, 1)
 				},
 			},
-			shouldErr: false,
-			expected: ValidatorWeightDiff{
+			expected: &ValidatorWeightDiff{
 				Decrease: true,
 				Amount:   2,
 			},
+			expectedErr: nil,
 		},
 		{
 			name: "decrease overflow",
 			ops: []func(*ValidatorWeightDiff) error{
 				func(d *ValidatorWeightDiff) error {
-					return d.Add(true, math.MaxUint64)
+					return d.Add(true, stdmath.MaxUint64)
 				},
 				func(d *ValidatorWeightDiff) error {
 					return d.Add(true, 1)
 				},
 			},
-			shouldErr: true,
-			expected:  ValidatorWeightDiff{},
+			expected:    &ValidatorWeightDiff{},
+			expectedErr: math.ErrOverflow,
 		},
 		{
 			name: "simple increase",
@@ -568,24 +574,24 @@ func TestValidatorWeightDiff(t *testing.T) {
 					return d.Add(false, 1)
 				},
 			},
-			shouldErr: false,
-			expected: ValidatorWeightDiff{
+			expected: &ValidatorWeightDiff{
 				Decrease: false,
 				Amount:   2,
 			},
+			expectedErr: nil,
 		},
 		{
 			name: "increase overflow",
 			ops: []func(*ValidatorWeightDiff) error{
 				func(d *ValidatorWeightDiff) error {
-					return d.Add(false, math.MaxUint64)
+					return d.Add(false, stdmath.MaxUint64)
 				},
 				func(d *ValidatorWeightDiff) error {
 					return d.Add(false, 1)
 				},
 			},
-			shouldErr: true,
-			expected:  ValidatorWeightDiff{},
+			expected:    &ValidatorWeightDiff{},
+			expectedErr: math.ErrOverflow,
 		},
 		{
 			name: "varied use",
@@ -629,11 +635,11 @@ func TestValidatorWeightDiff(t *testing.T) {
 					return d.Add(true, 2) // Value -2
 				},
 			},
-			shouldErr: false,
-			expected: ValidatorWeightDiff{
+			expected: &ValidatorWeightDiff{
 				Decrease: true,
 				Amount:   2,
 			},
+			expectedErr: nil,
 		},
 	}
 
@@ -645,12 +651,11 @@ func TestValidatorWeightDiff(t *testing.T) {
 			for _, op := range tt.ops {
 				errs.Add(op(diff))
 			}
-			if tt.shouldErr {
-				require.Error(errs.Err)
+			require.ErrorIs(errs.Err, tt.expectedErr)
+			if tt.expectedErr != nil {
 				return
 			}
-			require.NoError(errs.Err)
-			require.Equal(tt.expected, *diff)
+			require.Equal(tt.expected, diff)
 		})
 	}
 }

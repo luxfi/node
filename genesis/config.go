@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,7 +20,11 @@ import (
 	"github.com/luxdefi/node/utils/wrappers"
 )
 
-var _ utils.Sortable[Allocation] = Allocation{}
+var (
+	_ utils.Sortable[Allocation] = Allocation{}
+
+	errInvalidGenesisJSON = errors.New("could not unmarshal genesis JSON")
+)
 
 type LockedAmount struct {
 	Amount   uint64 `json:"amount"`
@@ -28,7 +33,7 @@ type LockedAmount struct {
 
 type Allocation struct {
 	ETHAddr        ids.ShortID    `json:"ethAddr"`
-	AVAXAddr       ids.ShortID    `json:"avaxAddr"`
+	AVAXAddr       ids.ShortID    `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -39,12 +44,12 @@ func (a Allocation) Unparse(networkID uint32) (UnparsedAllocation, error) {
 		UnlockSchedule: a.UnlockSchedule,
 		ETHAddr:        "0x" + hex.EncodeToString(a.ETHAddr.Bytes()),
 	}
-	avaxAddr, err := address.Format(
+	luxAddr, err := address.Format(
 		"X",
 		constants.GetHRP(networkID),
 		a.AVAXAddr.Bytes(),
 	)
-	ua.AVAXAddr = avaxAddr
+	ua.AVAXAddr = luxAddr
 	return ua, err
 }
 
@@ -60,14 +65,14 @@ type Staker struct {
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
-	avaxAddr, err := address.Format(
+	luxAddr, err := address.Format(
 		"X",
 		constants.GetHRP(networkID),
 		s.RewardAddress.Bytes(),
 	)
 	return UnparsedStaker{
 		NodeID:        s.NodeID,
-		RewardAddress: avaxAddr,
+		RewardAddress: luxAddr,
 		DelegationFee: s.DelegationFee,
 	}, err
 }
@@ -109,7 +114,7 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 		uc.Allocations[i] = ua
 	}
 	for i, isa := range c.InitialStakedFunds {
-		avaxAddr, err := address.Format(
+		luxAddr, err := address.Format(
 			"X",
 			constants.GetHRP(uc.NetworkID),
 			isa.Bytes(),
@@ -117,7 +122,7 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 		if err != nil {
 			return uc, err
 		}
-		uc.InitialStakedFunds[i] = avaxAddr
+		uc.InitialStakedFunds[i] = luxAddr
 	}
 	for i, is := range c.InitialStakers {
 		uis, err := is.Unparse(c.NetworkID)
@@ -230,7 +235,7 @@ func GetConfigContent(genesisContent string) (*Config, error) {
 func parseGenesisJSONBytesToConfig(bytes []byte) (*Config, error) {
 	var unparsedConfig UnparsedConfig
 	if err := json.Unmarshal(bytes, &unparsedConfig); err != nil {
-		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
+		return nil, fmt.Errorf("%w: %s", errInvalidGenesisJSON, err)
 	}
 
 	config, err := unparsedConfig.Parse()

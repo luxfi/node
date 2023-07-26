@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package index
@@ -19,14 +19,15 @@ import (
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 )
 
 var (
-	idxKey                         = []byte("idx")
-	idxCompleteKey                 = []byte("complete")
-	errIndexingRequiredFromGenesis = errors.New("running would create incomplete index. Allow incomplete indices or re-sync from genesis with indexing enabled")
-	errCausesIncompleteIndex       = errors.New("running would create incomplete index. Allow incomplete indices or enable indexing")
+	ErrIndexingRequiredFromGenesis = errors.New("running would create incomplete index. Allow incomplete indices or re-sync from genesis with indexing enabled")
+	ErrCausesIncompleteIndex       = errors.New("running would create incomplete index. Allow incomplete indices or enable indexing")
+
+	idxKey         = []byte("idx")
+	idxCompleteKey = []byte("complete")
 
 	_ AddressTxsIndexer = (*indexer)(nil)
 	_ AddressTxsIndexer = (*noIndexer)(nil)
@@ -46,8 +47,8 @@ type AddressTxsIndexer interface {
 	// If the error is non-nil, do not persist [txID] to disk as accepted in the VM
 	Accept(
 		txID ids.ID,
-		inputUTXOs []*avax.UTXO,
-		outputUTXOs []*avax.UTXO,
+		inputUTXOs []*lux.UTXO,
+		outputUTXOs []*lux.UTXO,
 	) error
 
 	// Read returns the IDs of transactions that changed [address]'s balance of [assetID].
@@ -97,7 +98,7 @@ func NewIndexer(
 // |  | "0"   => txID1
 // |  | "1"   => txID1
 // See interface documentation AddressTxsIndexer.Accept
-func (i *indexer) Accept(txID ids.ID, inputUTXOs []*avax.UTXO, outputUTXOs []*avax.UTXO) error {
+func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux.UTXO) error {
 	utxos := inputUTXOs
 	// Fetch and add the output UTXOs
 	utxos = append(utxos, outputUTXOs...)
@@ -108,7 +109,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*avax.UTXO, outputUTXOs []*av
 	// we do this step separately to simplify the write process later
 	balanceChanges := map[string]set.Set[ids.ID]{}
 	for _, utxo := range utxos {
-		out, ok := utxo.Out.(avax.Addressable)
+		out, ok := utxo.Out.(lux.Addressable)
 		if !ok {
 			i.log.Verbo("skipping UTXO for indexing",
 				zap.Stringer("utxoID", utxo.InputID()),
@@ -229,7 +230,7 @@ func checkIndexStatus(db database.KeyValueReaderWriter, enableIndexing, allowInc
 	if !idxComplete && enableIndexing && !allowIncomplete {
 		// In a previous run, we did not index so it's incomplete.
 		// indexing was disabled before but now we want to index.
-		return errIndexingRequiredFromGenesis
+		return ErrIndexingRequiredFromGenesis
 	} else if !idxComplete {
 		// either indexing is disabled, or incomplete indices are ok, so we don't care that index is incomplete
 		return nil
@@ -237,7 +238,7 @@ func checkIndexStatus(db database.KeyValueReaderWriter, enableIndexing, allowInc
 
 	// the index is complete
 	if !enableIndexing && !allowIncomplete { // indexing is disabled this run
-		return errCausesIncompleteIndex
+		return ErrCausesIncompleteIndex
 	} else if !enableIndexing {
 		// running without indexing makes it incomplete
 		return database.PutBool(db, idxCompleteKey, false)
@@ -252,7 +253,7 @@ func NewNoIndexer(db database.Database, allowIncomplete bool) (AddressTxsIndexer
 	return &noIndexer{}, checkIndexStatus(db, false, allowIncomplete)
 }
 
-func (*noIndexer) Accept(ids.ID, []*avax.UTXO, []*avax.UTXO) error {
+func (*noIndexer) Accept(ids.ID, []*lux.UTXO, []*lux.UTXO) error {
 	return nil
 }
 

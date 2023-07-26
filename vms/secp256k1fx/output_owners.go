@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -17,16 +17,16 @@ import (
 )
 
 var (
-	errNilOutput            = errors.New("nil output")
-	errOutputUnspendable    = errors.New("output is unspendable")
-	errOutputUnoptimized    = errors.New("output representation should be optimized")
-	errAddrsNotSortedUnique = errors.New("addresses not sorted and unique")
-	errMarshal              = errors.New("cannot marshal without ctx")
-
-	_ verify.State = (*OutputOwners)(nil)
+	ErrNilOutput            = errors.New("nil output")
+	ErrOutputUnspendable    = errors.New("output is unspendable")
+	ErrOutputUnoptimized    = errors.New("output representation should be optimized")
+	ErrAddrsNotSortedUnique = errors.New("addresses not sorted and unique")
+	ErrMarshal              = errors.New("cannot marshal without ctx")
 )
 
 type OutputOwners struct {
+	verify.IsNotState `json:"-"`
+
 	Locktime  uint64        `serialize:"true" json:"locktime"`
 	Threshold uint32        `serialize:"true" json:"threshold"`
 	Addrs     []ids.ShortID `serialize:"true" json:"addresses"`
@@ -57,13 +57,13 @@ func (out *OutputOwners) MarshalJSON() ([]byte, error) {
 }
 
 // Fields returns JSON keys in a map that can be used with marshal JSON
-// to serialise OutputOwners struct
+// to serialize OutputOwners struct
 func (out *OutputOwners) Fields() (map[string]interface{}, error) {
 	addrsLen := len(out.Addrs)
 
 	// we need out.ctx to do this, if its absent, throw error
 	if addrsLen > 0 && out.ctx == nil {
-		return nil, errMarshal
+		return nil, ErrMarshal
 	}
 
 	addresses := make([]string, addrsLen)
@@ -123,20 +123,16 @@ func (out *OutputOwners) Equals(other *OutputOwners) bool {
 func (out *OutputOwners) Verify() error {
 	switch {
 	case out == nil:
-		return errNilOutput
+		return ErrNilOutput
 	case out.Threshold > uint32(len(out.Addrs)):
-		return errOutputUnspendable
+		return ErrOutputUnspendable
 	case out.Threshold == 0 && len(out.Addrs) > 0:
-		return errOutputUnoptimized
-	case !utils.IsSortedAndUniqueSortable(out.Addrs):
-		return errAddrsNotSortedUnique
+		return ErrOutputUnoptimized
+	case !utils.IsSortedAndUnique(out.Addrs):
+		return ErrAddrsNotSortedUnique
 	default:
 		return nil
 	}
-}
-
-func (out *OutputOwners) VerifyState() error {
-	return out.Verify()
 }
 
 func (out *OutputOwners) Sort() {

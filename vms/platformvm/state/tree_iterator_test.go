@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -31,7 +31,7 @@ func TestTreeIterator(t *testing.T) {
 		},
 	}
 
-	tree := btree.New(defaultTreeDegree)
+	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}
@@ -68,7 +68,7 @@ func TestTreeIteratorEarlyRelease(t *testing.T) {
 		},
 	}
 
-	tree := btree.New(defaultTreeDegree)
+	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -93,6 +93,16 @@ func (id ID) Prefix(prefixes ...uint64) ID {
 	packer.PackFixedBytes(id[:])
 
 	return hashing.ComputeHash256Array(packer.Bytes)
+}
+
+// XOR this id and the provided id and return the resulting id.
+//
+// Note: this id is not modified.
+func (id ID) XOR(other ID) ID {
+	for i, b := range other {
+		id[i] ^= b
+	}
+	return id
 }
 
 // Bit returns the bit value at the ith index of the byte array. Returns 0 or 1

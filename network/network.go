@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -14,6 +14,8 @@ import (
 	"time"
 
 	gomath "math"
+
+	"github.com/pires/go-proxyproto"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -31,6 +33,7 @@ import (
 	"github.com/luxdefi/node/snow/networking/router"
 	"github.com/luxdefi/node/snow/networking/sender"
 	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/subnets"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/ips"
 	"github.com/luxdefi/node/utils/logging"
@@ -56,6 +59,8 @@ var (
 	errNotValidator             = errors.New("node is not a validator")
 	errNotTracked               = errors.New("subnet is not tracked")
 	errSubnetNotExist           = errors.New("subnet does not exist")
+	errExpectedProxy            = errors.New("expected proxy")
+	errExpectedTCPProtocol      = errors.New("expected TCP protocol")
 )
 
 // Network defines the functionality of the networking library.
@@ -189,6 +194,28 @@ func NewNetwork(
 		return nil, errMissingPrimaryValidators
 	}
 
+	if config.ProxyEnabled {
+		// Wrap the listener to process the proxy header.
+		listener = &proxyproto.Listener{
+			Listener: listener,
+			Policy: func(net.Addr) (proxyproto.Policy, error) {
+				// Do not perform any fuzzy matching, the header must be
+				// provided.
+				return proxyproto.REQUIRE, nil
+			},
+			ValidateHeader: func(h *proxyproto.Header) error {
+				if !h.Command.IsProxy() {
+					return errExpectedProxy
+				}
+				if h.TransportProtocol != proxyproto.TCPv4 && h.TransportProtocol != proxyproto.TCPv6 {
+					return errExpectedTCPProtocol
+				}
+				return nil
+			},
+			ReadHeaderTimeout: config.ProxyReadHeaderTimeout,
+		}
+	}
+
 	inboundMsgThrottler, err := throttling.NewInboundMsgThrottler(
 		log,
 		config.Namespace,
@@ -279,8 +306,8 @@ func NewNetwork(
 	return n, nil
 }
 
-func (n *network) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], subnetID ids.ID, validatorOnly bool) set.Set[ids.NodeID] {
-	peers := n.getPeers(nodeIDs, subnetID, validatorOnly)
+func (n *network) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID] {
+	peers := n.getPeers(nodeIDs, subnetID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
 		nodeIDs.Len()-len(peers),
@@ -291,12 +318,12 @@ func (n *network) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID],
 func (n *network) Gossip(
 	msg message.OutboundMessage,
 	subnetID ids.ID,
-	validatorOnly bool,
 	numValidatorsToSend int,
 	numNonValidatorsToSend int,
 	numPeersToSend int,
+	allower subnets.Allower,
 ) set.Set[ids.NodeID] {
-	peers := n.samplePeers(subnetID, validatorOnly, numValidatorsToSend, numNonValidatorsToSend, numPeersToSend)
+	peers := n.samplePeers(subnetID, numValidatorsToSend, numNonValidatorsToSend, numPeersToSend, allower)
 	return n.send(msg, peers)
 }
 
@@ -320,20 +347,28 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	// Make sure we've received an incoming message within the threshold
 	now := n.peerConfig.Clock.Time()
 
-	lastMsgReceivedAt := time.Unix(atomic.LoadInt64(&n.peerConfig.LastReceived), 0)
-	timeSinceLastMsgReceived := now.Sub(lastMsgReceivedAt)
-	wasMsgReceivedRecently := timeSinceLastMsgReceived <= n.config.HealthConfig.MaxTimeSinceMsgReceived
+	lastMsgReceivedAt, msgReceived := n.getLastReceived()
+	wasMsgReceivedRecently := msgReceived
+	timeSinceLastMsgReceived := time.Duration(0)
+	if msgReceived {
+		timeSinceLastMsgReceived = now.Sub(lastMsgReceivedAt)
+		wasMsgReceivedRecently = timeSinceLastMsgReceived <= n.config.HealthConfig.MaxTimeSinceMsgReceived
+		details[TimeSinceLastMsgReceivedKey] = timeSinceLastMsgReceived.String()
+		n.metrics.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
+	}
 	healthy = healthy && wasMsgReceivedRecently
-	details[TimeSinceLastMsgReceivedKey] = timeSinceLastMsgReceived.String()
-	n.metrics.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
 
 	// Make sure we've sent an outgoing message within the threshold
-	lastMsgSentAt := time.Unix(atomic.LoadInt64(&n.peerConfig.LastSent), 0)
-	timeSinceLastMsgSent := now.Sub(lastMsgSentAt)
-	wasMsgSentRecently := timeSinceLastMsgSent <= n.config.HealthConfig.MaxTimeSinceMsgSent
+	lastMsgSentAt, msgSent := n.getLastSent()
+	wasMsgSentRecently := msgSent
+	timeSinceLastMsgSent := time.Duration(0)
+	if msgSent {
+		timeSinceLastMsgSent = now.Sub(lastMsgSentAt)
+		wasMsgSentRecently = timeSinceLastMsgSent <= n.config.HealthConfig.MaxTimeSinceMsgSent
+		details[TimeSinceLastMsgSentKey] = timeSinceLastMsgSent.String()
+		n.metrics.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
+	}
 	healthy = healthy && wasMsgSentRecently
-	details[TimeSinceLastMsgSentKey] = timeSinceLastMsgSent.String()
-	n.metrics.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
 
 	// Make sure the message send failed rate isn't too high
 	isMsgFailRate := sendFailRate <= n.config.HealthConfig.MaxSendFailRate
@@ -353,12 +388,17 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	if !isConnected {
 		errorReasons = append(errorReasons, fmt.Sprintf("not connected to a minimum of %d peer(s) only %d", n.config.HealthConfig.MinConnectedPeers, connectedTo))
 	}
-	if !wasMsgReceivedRecently {
+	if !msgReceived {
+		errorReasons = append(errorReasons, "no messages received from network")
+	} else if !wasMsgReceivedRecently {
 		errorReasons = append(errorReasons, fmt.Sprintf("no messages from network received in %s > %s", timeSinceLastMsgReceived, n.config.HealthConfig.MaxTimeSinceMsgReceived))
 	}
-	if !wasMsgSentRecently {
+	if !msgSent {
+		errorReasons = append(errorReasons, "no messages sent to network")
+	} else if !wasMsgSentRecently {
 		errorReasons = append(errorReasons, fmt.Sprintf("no messages from network sent in %s > %s", timeSinceLastMsgSent, n.config.HealthConfig.MaxTimeSinceMsgSent))
 	}
+
 	if !isMsgFailRate {
 		errorReasons = append(errorReasons, fmt.Sprintf("messages failure send rate %g > %g", sendFailRate, n.config.HealthConfig.MaxSendFailRate))
 	}
@@ -643,9 +683,7 @@ func (n *network) Peers(peerID ids.NodeID) ([]ips.ClaimedIPPort, error) {
 	// We select a random sample of validators to gossip to avoid starving out a
 	// validator from being gossiped for an extended period of time.
 	s := sampler.NewUniform()
-	if err := s.Initialize(uint64(len(unknownValidators))); err != nil {
-		return nil, err
-	}
+	s.Initialize(uint64(len(unknownValidators)))
 
 	// Calculate the unknown information we need to send to this peer.
 	validatorIPs := make([]ips.ClaimedIPPort, 0, int(n.config.PeerListNumValidatorIPs))
@@ -705,34 +743,43 @@ func (n *network) Dispatch() error {
 			continue
 		}
 
-		// We pessimistically drop an incoming connection if the remote
-		// address is found in connectedIPs, myIPs, or peerAliasIPs.
-		// This protects our node from spending CPU cycles on TLS
-		// handshakes to upgrade connections from existing peers.
-		// Specifically, this can occur when one of our existing
-		// peers attempts to connect to one our IP aliases (that they
-		// aren't yet aware is an alias).
-		remoteAddr := conn.RemoteAddr().String()
-		ip, err := ips.ToIPPort(remoteAddr)
-		if err != nil {
-			errs.Add(fmt.Errorf("unable to convert remote address %s to IP: %w", remoteAddr, err))
-			break
-		}
+		// Note: listener.Accept is rate limited outside of this package, so a
+		// peer can not just arbitrarily spin up goroutines here.
+		go func() {
+			// Note: Calling [RemoteAddr] with the Proxy protocol enabled may
+			// block for up to ProxyReadHeaderTimeout. Therefore, we ensure to
+			// call this function inside the go-routine, rather than the main
+			// accept loop.
+			remoteAddr := conn.RemoteAddr().String()
+			ip, err := ips.ToIPPort(remoteAddr)
+			if err != nil {
+				n.peerConfig.Log.Error("failed to parse remote address",
+					zap.String("peerIP", remoteAddr),
+					zap.Error(err),
+				)
+				_ = conn.Close()
+				return
+			}
 
-		if !n.inboundConnUpgradeThrottler.ShouldUpgrade(ip) {
-			n.peerConfig.Log.Debug("failed to upgrade connection",
-				zap.String("reason", "rate-limiting"),
+			if !n.inboundConnUpgradeThrottler.ShouldUpgrade(ip) {
+				n.peerConfig.Log.Debug("failed to upgrade connection",
+					zap.String("reason", "rate-limiting"),
+					zap.Stringer("peerIP", ip),
+				)
+				n.metrics.inboundConnRateLimited.Inc()
+				_ = conn.Close()
+				return
+			}
+			n.metrics.inboundConnAllowed.Inc()
+
+			n.peerConfig.Log.Verbo("starting to upgrade connection",
+				zap.String("direction", "inbound"),
 				zap.Stringer("peerIP", ip),
 			)
-			n.metrics.inboundConnRateLimited.Inc()
-			_ = conn.Close()
-			continue
-		}
-		n.metrics.inboundConnAllowed.Inc()
 
-		go func() {
 			if err := n.upgrade(conn, n.serverUpgrader); err != nil {
-				n.peerConfig.Log.Verbo("failed to upgrade inbound connection",
+				n.peerConfig.Log.Verbo("failed to upgrade connection",
+					zap.String("direction", "inbound"),
 					zap.Error(err),
 				)
 			}
@@ -788,16 +835,16 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, ip ips.IPPort) {
 
 // getPeers returns a slice of connected peers from a set of [nodeIDs].
 //
-// - [nodeIDs] the IDs of the peers that should be returned if they are
-//   connected.
-// - [subnetID] the subnetID whose membership should be considered if
-//   [validatorOnly] is set to true.
-// - [validatorOnly] is the flag to drop any nodes from [nodeIDs] that are not
-//   validators in [subnetID].
+//   - [nodeIDs] the IDs of the peers that should be returned if they are
+//     connected.
+//   - [subnetID] the subnetID whose membership should be considered if
+//     [validatorOnly] is set to true.
+//   - [validatorOnly] is the flag to drop any nodes from [nodeIDs] that are not
+//     validators in [subnetID].
 func (n *network) getPeers(
 	nodeIDs set.Set[ids.NodeID],
 	subnetID ids.ID,
-	validatorOnly bool,
+	allower subnets.Allower,
 ) []peer.Peer {
 	peers := make([]peer.Peer, 0, nodeIDs.Len())
 
@@ -815,7 +862,9 @@ func (n *network) getPeers(
 			continue
 		}
 
-		if validatorOnly && !validators.Contains(n.config.Validators, subnetID, nodeID) {
+		isValidator := validators.Contains(n.config.Validators, subnetID, nodeID)
+		// check if the peer is allowed to connect to the subnet
+		if !allower.IsAllowed(nodeID, isValidator) {
 			continue
 		}
 
@@ -827,15 +876,21 @@ func (n *network) getPeers(
 
 func (n *network) samplePeers(
 	subnetID ids.ID,
-	validatorOnly bool,
 	numValidatorsToSample,
 	numNonValidatorsToSample int,
 	numPeersToSample int,
+	allower subnets.Allower,
 ) []peer.Peer {
-	if validatorOnly {
-		numValidatorsToSample += numNonValidatorsToSample + numPeersToSample
-		numNonValidatorsToSample = 0
-		numPeersToSample = 0
+	subnetValidators, ok := n.config.Validators.Get(subnetID)
+	if !ok {
+		return nil
+	}
+
+	// If there are fewer validators than [numValidatorsToSample], then only
+	// sample [numValidatorsToSample] validators.
+	subnetValidatorsLen := subnetValidators.Len()
+	if subnetValidatorsLen < numValidatorsToSample {
+		numValidatorsToSample = subnetValidatorsLen
 	}
 
 	n.peersLock.RLock()
@@ -850,12 +905,19 @@ func (n *network) samplePeers(
 				return false
 			}
 
+			peerID := p.ID()
+			isValidator := subnetValidators.Contains(peerID)
+			// check if the peer is allowed to connect to the subnet
+			if !allower.IsAllowed(peerID, isValidator) {
+				return false
+			}
+
 			if numPeersToSample > 0 {
 				numPeersToSample--
 				return true
 			}
 
-			if validators.Contains(n.config.Validators, subnetID, p.ID()) {
+			if isValidator {
 				numValidatorsToSample--
 				return numValidatorsToSample >= 0
 			}
@@ -978,9 +1040,8 @@ func (n *network) authenticateIPs(ips []*ips.ClaimedIPPort) ([]*ipAuth, error) {
 // peerIPStatus assumes the caller holds [peersLock]
 func (n *network) peerIPStatus(nodeID ids.NodeID, ip *ips.ClaimedIPPort) (*ips.ClaimedIPPort, bool, bool, bool) {
 	prevIP, previouslyTracked := n.peerIPs[nodeID]
-	_, connected := n.connectedPeers.GetByID(nodeID)
 	shouldUpdateOurIP := previouslyTracked && prevIP.Timestamp < ip.Timestamp
-	shouldDial := !previouslyTracked && !connected && n.wantsConnection(nodeID)
+	shouldDial := !previouslyTracked && n.wantsConnection(nodeID)
 	return prevIP, previouslyTracked, shouldUpdateOurIP, shouldDial
 }
 
@@ -1019,6 +1080,10 @@ func (n *network) dial(ctx context.Context, nodeID ids.NodeID, ip *trackedIP) {
 			}
 
 			n.peersLock.Lock()
+			// If we no longer desire a connect to nodeID, we should cleanup
+			// trackedIPs and this goroutine. This prevents a memory leak when
+			// the tracked nodeID leaves the validator set and is never able to
+			// be connected to.
 			if !n.wantsConnection(nodeID) {
 				// Typically [n.trackedIPs[nodeID]] will already equal [ip], but
 				// the reference to [ip] is refreshed to avoid any potential
@@ -1057,6 +1122,25 @@ func (n *network) dial(ctx context.Context, nodeID ids.NodeID, ip *trackedIP) {
 				n.config.MaxReconnectDelay,
 			)
 
+			// If the network is configured to disallow private IPs and the
+			// provided IP is private, we skip all attempts to initiate a
+			// connection.
+			//
+			// Invariant: We perform this check inside of the looping goroutine
+			// because this goroutine must clean up the trackedIPs entry if
+			// nodeID leaves the validator set. This is why we continue the loop
+			// rather than returning even though we will never initiate an
+			// outbound connection with this IP.
+			if !n.config.AllowPrivateIPs && ip.ip.IP.IsPrivate() {
+				n.peerConfig.Log.Verbo("skipping connection dial",
+					zap.String("reason", "outbound connections to private IPs are prohibited"),
+					zap.Stringer("nodeID", nodeID),
+					zap.Stringer("peerIP", ip.ip.IP),
+					zap.Duration("delay", ip.delay),
+				)
+				continue
+			}
+
 			conn, err := n.dialer.Dial(ctx, ip.ip)
 			if err != nil {
 				n.peerConfig.Log.Verbo(
@@ -1066,6 +1150,11 @@ func (n *network) dial(ctx context.Context, nodeID ids.NodeID, ip *trackedIP) {
 				)
 				continue
 			}
+
+			n.peerConfig.Log.Verbo("starting to upgrade connection",
+				zap.String("direction", "outbound"),
+				zap.Stringer("peerIP", ip.ip.IP),
+			)
 
 			err = n.upgrade(conn, n.clientUpgrader)
 			if err != nil {
@@ -1135,9 +1224,9 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	}
 
 	n.peersLock.Lock()
-	defer n.peersLock.Unlock()
-
 	if n.closing {
+		n.peersLock.Unlock()
+
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Verbo(
 			"dropping connection",
@@ -1148,6 +1237,8 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	}
 
 	if _, connecting := n.connectingPeers.GetByID(nodeID); connecting {
+		n.peersLock.Unlock()
+
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Verbo(
 			"dropping connection",
@@ -1158,6 +1249,8 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	}
 
 	if _, connected := n.connectedPeers.GetByID(nodeID); connected {
+		n.peersLock.Unlock()
+
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Verbo(
 			"dropping connection",
@@ -1194,6 +1287,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 		),
 	)
 	n.connectingPeers.Add(peer)
+	n.peersLock.Unlock()
 	return nil
 }
 
@@ -1340,13 +1434,29 @@ func (n *network) runTimers() {
 func (n *network) gossipPeerLists() {
 	peers := n.samplePeers(
 		constants.PrimaryNetworkID,
-		false,
 		int(n.config.PeerListValidatorGossipSize),
 		int(n.config.PeerListNonValidatorGossipSize),
 		int(n.config.PeerListPeersGossipSize),
+		subnets.NoOpAllower,
 	)
 
 	for _, p := range peers {
 		p.StartSendPeerList()
 	}
+}
+
+func (n *network) getLastReceived() (time.Time, bool) {
+	lastReceived := atomic.LoadInt64(&n.peerConfig.LastReceived)
+	if lastReceived == 0 {
+		return time.Time{}, false
+	}
+	return time.Unix(lastReceived, 0), true
+}
+
+func (n *network) getLastSent() (time.Time, bool) {
+	lastSent := atomic.LoadInt64(&n.peerConfig.LastSent)
+	if lastSent == 0 {
+		return time.Time{}, false
+	}
+	return time.Unix(lastSent, 0), true
 }

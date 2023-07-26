@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/platformvm/state"
 )
 
 func TestNewExportTx(t *testing.T) {
-	env := newEnvironment( /*postBanff*/ true)
+	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
 	env.ctx.Lock.Lock()
 	defer func() {
 		require.NoError(t, shutdownEnvironment(env))
@@ -26,10 +26,8 @@ func TestNewExportTx(t *testing.T) {
 	type test struct {
 		description        string
 		destinationChainID ids.ID
-		sourceKeys         []*crypto.PrivateKeySECP256K1R
+		sourceKeys         []*secp256k1.PrivateKey
 		timestamp          time.Time
-		shouldErr          bool
-		shouldVerify       bool
 	}
 
 	sourceKey := preFundedKeys[0]
@@ -38,18 +36,14 @@ func TestNewExportTx(t *testing.T) {
 		{
 			description:        "P->X export",
 			destinationChainID: xChainID,
-			sourceKeys:         []*crypto.PrivateKeySECP256K1R{sourceKey},
+			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          defaultValidateStartTime,
-			shouldErr:          false,
-			shouldVerify:       true,
 		},
 		{
 			description:        "P->C export",
 			destinationChainID: cChainID,
-			sourceKeys:         []*crypto.PrivateKeySECP256K1R{sourceKey},
+			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          env.config.ApricotPhase5Time,
-			shouldErr:          false,
-			shouldVerify:       true,
 		},
 	}
 
@@ -67,10 +61,6 @@ func TestNewExportTx(t *testing.T) {
 				tt.sourceKeys,
 				ids.ShortEmpty, // Change address
 			)
-			if tt.shouldErr {
-				require.Error(err)
-				return
-			}
 			require.NoError(err)
 
 			fakedState, err := state.NewDiff(lastAcceptedID, env)
@@ -87,12 +77,7 @@ func TestNewExportTx(t *testing.T) {
 				StateVersions: env,
 				Tx:            tx,
 			}
-			err = tx.Unsigned.Visit(&verifier)
-			if tt.shouldVerify {
-				require.NoError(err)
-			} else {
-				require.Error(err)
-			}
+			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
@@ -33,6 +34,8 @@ var (
 	errUnexpectedTimeout = errors.New("unexpected timeout fired")
 )
 
+// Invariant: The VM is not guaranteed to be initialized until Start has been
+// called, so it must be guaranteed the VM is not used until after Start.
 type bootstrapper struct {
 	Config
 
@@ -80,7 +83,7 @@ type bootstrapper struct {
 	bootstrappedOnce sync.Once
 }
 
-func New(ctx context.Context, config Config, onFinished func(ctx context.Context, lastReqID uint32) error) (common.BootstrapableEngine, error) {
+func New(config Config, onFinished func(ctx context.Context, lastReqID uint32) error) (common.BootstrapableEngine, error) {
 	metrics, err := newMetrics("bs", config.Ctx.Registerer)
 	if err != nil {
 		return nil, err
@@ -94,22 +97,12 @@ func New(ctx context.Context, config Config, onFinished func(ctx context.Context
 		PutHandler:                  common.NewNoOpPutHandler(config.Ctx.Log),
 		QueryHandler:                common.NewNoOpQueryHandler(config.Ctx.Log),
 		ChitsHandler:                common.NewNoOpChitsHandler(config.Ctx.Log),
-		AppHandler:                  common.NewNoOpAppHandler(config.Ctx.Log),
+		AppHandler:                  config.VM,
 
 		Fetcher: common.Fetcher{
 			OnFinished: onFinished,
 		},
 		executedStateTransitions: math.MaxInt32,
-	}
-
-	b.parser = &parser{
-		log:         config.Ctx.Log,
-		numAccepted: b.numAccepted,
-		numDropped:  b.numDropped,
-		vm:          b.VM,
-	}
-	if err := b.Blocked.SetParser(ctx, b.parser); err != nil {
-		return nil, err
 	}
 
 	config.Bootstrapable = b
@@ -121,10 +114,23 @@ func New(ctx context.Context, config Config, onFinished func(ctx context.Context
 func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrapper")
 
-	b.Ctx.SetState(snow.Bootstrapping)
+	b.Ctx.State.Set(snow.EngineState{
+		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping,
+	})
 	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w",
 			err)
+	}
+
+	b.parser = &parser{
+		log:         b.Ctx.Log,
+		numAccepted: b.numAccepted,
+		numDropped:  b.numDropped,
+		vm:          b.VM,
+	}
+	if err := b.Blocked.SetParser(ctx, b.parser); err != nil {
+		return err
 	}
 
 	// Set the starting height
@@ -276,7 +282,7 @@ func (b *bootstrapper) Timeout(ctx context.Context) error {
 	}
 	b.awaitingTimeout = false
 
-	if !b.Config.Subnet.IsBootstrapped() {
+	if !b.Config.BootstrapTracker.IsBootstrapped() {
 		return b.Restart(ctx, true)
 	}
 	b.fetchETA.Set(0)
@@ -300,7 +306,7 @@ func (b *bootstrapper) Notify(_ context.Context, msg common.Message) error {
 		return nil
 	}
 
-	b.Ctx.RunningStateSync(false)
+	b.Ctx.StateSyncing.Set(false)
 	return nil
 }
 
@@ -452,7 +458,6 @@ func (b *bootstrapper) process(ctx context.Context, blk snowman.Block, processin
 		}
 
 		pushed, err := b.Blocked.Push(ctx, &blockJob{
-			parser:      b.parser,
 			log:         b.Ctx.Log,
 			numAccepted: b.numAccepted,
 			numDropped:  b.numDropped,
@@ -560,8 +565,7 @@ func (b *bootstrapper) checkFinish(ctx context.Context) error {
 		b.Config.Ctx,
 		b,
 		b.Config.SharedCfg.Restarted,
-		b.Ctx.ConsensusAcceptor,
-		b.Ctx.DecisionAcceptor,
+		b.Ctx.BlockAcceptor,
 	)
 	if err != nil || b.Halted() {
 		return err
@@ -586,11 +590,11 @@ func (b *bootstrapper) checkFinish(ctx context.Context) error {
 	}
 
 	// Notify the subnet that this chain is synced
-	b.Config.Subnet.Bootstrapped(b.Ctx.ChainID)
+	b.Config.BootstrapTracker.Bootstrapped(b.Ctx.ChainID)
 
 	// If the subnet hasn't finished bootstrapping, this chain should remain
 	// syncing.
-	if !b.Config.Subnet.IsBootstrapped() {
+	if !b.Config.BootstrapTracker.IsBootstrapped() {
 		if !b.Config.SharedCfg.Restarted {
 			b.Ctx.Log.Info("waiting for the remaining chains in this subnet to finish syncing")
 		} else {

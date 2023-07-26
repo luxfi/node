@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-
-	"github.com/hashicorp/go-plugin"
 
 	"github.com/stretchr/testify/require"
 
@@ -49,7 +47,7 @@ type ContextEnabledBlockMock struct {
 	*mocks.MockWithVerifyContext
 }
 
-func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) (plugin.Plugin, *gomock.Controller) {
+func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) (block.ChainVM, *gomock.Controller) {
 	// test key is "contextTestKey"
 
 	// create mock
@@ -90,25 +88,21 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) (plugin.Plugi
 		)
 	}
 
-	return New(ctxVM), ctrl
+	return ctxVM, ctrl
 }
 
 func TestContextVMSummary(t *testing.T) {
 	require := require.New(t)
 	testKey := contextTestKey
 
-	mockedPlugin, ctrl := contextEnabledTestPlugin(t, false /*loadExpectations*/)
-	defer ctrl.Finish()
-
 	// Create and start the plugin
-	vm, c := buildClientHelper(require, testKey, mockedPlugin)
-	defer c.Kill()
+	vm, stopper := buildClientHelper(require, testKey)
+	defer stopper.Stop(context.Background())
 
 	ctx := snow.DefaultContextTest()
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 
-	err := vm.Initialize(context.Background(), ctx, dbManager, nil, nil, nil, nil, nil, nil)
-	require.NoError(err)
+	require.NoError(vm.Initialize(context.Background(), ctx, dbManager, nil, nil, nil, nil, nil, nil))
 
 	blkIntf, err := vm.BuildBlockWithContext(context.Background(), blockContext)
 	require.NoError(err)
@@ -120,6 +114,5 @@ func TestContextVMSummary(t *testing.T) {
 	require.NoError(err)
 	require.True(shouldVerify)
 
-	err = blk.VerifyWithContext(context.Background(), blockContext)
-	require.NoError(err)
+	require.NoError(blk.VerifyWithContext(context.Background(), blockContext))
 }

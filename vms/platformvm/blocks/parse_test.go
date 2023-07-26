@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocks
@@ -11,13 +11,13 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
-var preFundedKeys = crypto.BuildTestKeys()
+var preFundedKeys = secp256k1.TestKeys()
 
 func TestStandardBlocks(t *testing.T) {
 	// check Apricot standard block can be built and parsed
@@ -43,8 +43,7 @@ func TestStandardBlocks(t *testing.T) {
 		require.Equal(apricotStandardBlk.Parent(), parsed.Parent())
 		require.Equal(apricotStandardBlk.Height(), parsed.Height())
 
-		_, ok := parsed.(*ApricotStandardBlock)
-		require.True(ok)
+		require.IsType(&ApricotStandardBlock{}, parsed)
 		require.Equal(txs, parsed.Txs())
 
 		// check that banff standard block can be built and parsed
@@ -60,8 +59,8 @@ func TestStandardBlocks(t *testing.T) {
 		require.Equal(banffStandardBlk.Bytes(), parsed.Bytes())
 		require.Equal(banffStandardBlk.Parent(), parsed.Parent())
 		require.Equal(banffStandardBlk.Height(), parsed.Height())
-		parsedBanffStandardBlk, ok := parsed.(*BanffStandardBlock)
-		require.True(ok)
+		require.IsType(&BanffStandardBlock{}, parsed)
+		parsedBanffStandardBlk := parsed.(*BanffStandardBlock)
 		require.Equal(txs, parsedBanffStandardBlk.Txs())
 
 		// timestamp check for banff blocks only
@@ -100,8 +99,8 @@ func TestProposalBlocks(t *testing.T) {
 		require.Equal(apricotProposalBlk.Parent(), parsed.Parent())
 		require.Equal(apricotProposalBlk.Height(), parsed.Height())
 
-		parsedApricotProposalBlk, ok := parsed.(*ApricotProposalBlock)
-		require.True(ok)
+		require.IsType(&ApricotProposalBlock{}, parsed)
+		parsedApricotProposalBlk := parsed.(*ApricotProposalBlock)
 		require.Equal([]*txs.Tx{tx}, parsedApricotProposalBlk.Txs())
 
 		// check that banff proposal block can be built and parsed
@@ -122,8 +121,8 @@ func TestProposalBlocks(t *testing.T) {
 		require.Equal(banffProposalBlk.Bytes(), parsed.Bytes())
 		require.Equal(banffProposalBlk.Parent(), banffProposalBlk.Parent())
 		require.Equal(banffProposalBlk.Height(), parsed.Height())
-		parsedBanffProposalBlk, ok := parsed.(*BanffProposalBlock)
-		require.True(ok)
+		require.IsType(&BanffProposalBlock{}, parsed)
+		parsedBanffProposalBlk := parsed.(*BanffProposalBlock)
 		require.Equal([]*txs.Tx{tx}, parsedBanffProposalBlk.Txs())
 
 		// timestamp check for banff blocks only
@@ -171,8 +170,8 @@ func TestCommitBlock(t *testing.T) {
 		require.Equal(banffCommitBlk.Height(), parsed.Height())
 
 		// timestamp check for banff blocks only
-		parsedBanffCommitBlk, ok := parsed.(*BanffCommitBlock)
-		require.True(ok)
+		require.IsType(&BanffCommitBlock{}, parsed)
+		parsedBanffCommitBlk := parsed.(*BanffCommitBlock)
 		require.Equal(banffCommitBlk.Timestamp(), parsedBanffCommitBlk.Timestamp())
 	}
 }
@@ -214,8 +213,8 @@ func TestAbortBlock(t *testing.T) {
 		require.Equal(banffAbortBlk.Height(), parsed.Height())
 
 		// timestamp check for banff blocks only
-		parsedBanffAbortBlk, ok := parsed.(*BanffAbortBlock)
-		require.True(ok)
+		require.IsType(&BanffAbortBlock{}, parsed)
+		parsedBanffAbortBlk := parsed.(*BanffAbortBlock)
 		require.Equal(banffAbortBlk.Timestamp(), parsedBanffAbortBlk.Timestamp())
 	}
 }
@@ -247,19 +246,19 @@ func TestAtomicBlock(t *testing.T) {
 		require.Equal(atomicBlk.Parent(), parsed.Parent())
 		require.Equal(atomicBlk.Height(), parsed.Height())
 
-		parsedAtomicBlk, ok := parsed.(*ApricotAtomicBlock)
-		require.True(ok)
+		require.IsType(&ApricotAtomicBlock{}, parsed)
+		parsedAtomicBlk := parsed.(*ApricotAtomicBlock)
 		require.Equal([]*txs.Tx{tx}, parsedAtomicBlk.Txs())
 	}
 }
 
 func testAtomicTx() (*txs.Tx, error) {
 	utx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    10,
 			BlockchainID: ids.ID{'c', 'h', 'a', 'i', 'n', 'I', 'D'},
-			Outs: []*avax.TransferableOutput{{
-				Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(1234),
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -268,12 +267,12 @@ func testAtomicTx() (*txs.Tx, error) {
 					},
 				},
 			}},
-			Ins: []*avax.TransferableInput{{
-				UTXOID: avax.UTXOID{
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
 					TxID:        ids.ID{'t', 'x', 'I', 'D'},
 					OutputIndex: 2,
 				},
-				Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 				In: &secp256k1fx.TransferInput{
 					Amt:   uint64(5678),
 					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -282,19 +281,19 @@ func testAtomicTx() (*txs.Tx, error) {
 			Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SourceChain: ids.ID{'c', 'h', 'a', 'i', 'n'},
-		ImportedInputs: []*avax.TransferableInput{{
-			UTXOID: avax.UTXOID{
+		ImportedInputs: []*lux.TransferableInput{{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+			Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 			In: &secp256k1fx.TransferInput{
 				Amt:   50000,
 				Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 			},
 		}},
 	}
-	signers := [][]*crypto.PrivateKeySECP256K1R{{preFundedKeys[0]}}
+	signers := [][]*secp256k1.PrivateKey{{preFundedKeys[0]}}
 	return txs.NewSigned(utx, txs.Codec, signers)
 }
 
@@ -304,11 +303,11 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 	for i := 0; i < countTxs; i++ {
 		// Create the tx
 		utx := &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    10,
 				BlockchainID: ids.ID{'c', 'h', 'a', 'i', 'n', 'I', 'D'},
-				Outs: []*avax.TransferableOutput{{
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Outs: []*lux.TransferableOutput{{
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: uint64(1234),
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -317,12 +316,12 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 						},
 					},
 				}},
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID:        ids.ID{'t', 'x', 'I', 'D'},
 						OutputIndex: 2,
 					},
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					In: &secp256k1fx.TransferInput{
 						Amt:   uint64(5678),
 						Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -338,7 +337,7 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 			SubnetAuth:  &secp256k1fx.Input{SigIndices: []uint32{1}},
 		}
 
-		signers := [][]*crypto.PrivateKeySECP256K1R{{preFundedKeys[0]}}
+		signers := [][]*secp256k1.PrivateKey{{preFundedKeys[0]}}
 		tx, err := txs.NewSigned(utx, txs.Codec, signers)
 		if err != nil {
 			return nil, err
@@ -353,6 +352,6 @@ func testProposalTx() (*txs.Tx, error) {
 		TxID: ids.ID{'r', 'e', 'w', 'a', 'r', 'd', 'I', 'D'},
 	}
 
-	signers := [][]*crypto.PrivateKeySECP256K1R{{preFundedKeys[0]}}
+	signers := [][]*secp256k1.PrivateKey{{preFundedKeys[0]}}
 	return txs.NewSigned(utx, txs.Codec, signers)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package states
@@ -17,7 +17,7 @@ import (
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/nftfx"
 	"github.com/luxdefi/node/vms/propertyfx"
 	"github.com/luxdefi/node/vms/secp256k1fx"
@@ -51,17 +51,17 @@ func TestTxState(t *testing.T) {
 
 	tx := &txs.Tx{
 		Unsigned: &txs.BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    networkID,
 				BlockchainID: chainID,
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID:        ids.Empty,
 						OutputIndex: 0,
 					},
-					Asset: avax.Asset{ID: assetID},
+					Asset: lux.Asset{ID: assetID},
 					In: &secp256k1fx.TransferInput{
-						Amt: 20 * units.KiloAvax,
+						Amt: 20 * units.KiloLux,
 						Input: secp256k1fx.Input{
 							SigIndices: []uint32{
 								0,

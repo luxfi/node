@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -12,11 +12,11 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/reward"
 	"github.com/luxdefi/node/vms/platformvm/signer"
-	"github.com/luxdefi/node/vms/platformvm/validator"
+	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -49,14 +49,14 @@ func ExampleWallet() {
 
 	// Create a custom asset to send to the P-chain.
 	createAssetStartTime := time.Now()
-	createAssetTxID, err := xWallet.IssueCreateAssetTx(
+	createAssetTx, err := xWallet.IssueCreateAssetTx(
 		"RnM",
 		"RNM",
 		9,
 		map[uint32][]verify.State{
 			0: {
 				&secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaAvax,
+					Amt:          100 * units.MegaLux,
 					OutputOwners: *owner,
 				},
 			},
@@ -66,19 +66,20 @@ func ExampleWallet() {
 		log.Fatalf("failed to create new X-chain asset with: %s\n", err)
 		return
 	}
+	createAssetTxID := createAssetTx.ID()
 	log.Printf("created X-chain asset %s in %s\n", createAssetTxID, time.Since(createAssetStartTime))
 
-	// Send 100 MegaAvax to the P-chain.
+	// Send 100 MegaLux to the P-chain.
 	exportStartTime := time.Now()
-	exportTxID, err := xWallet.IssueExportTx(
+	exportTx, err := xWallet.IssueExportTx(
 		constants.PlatformChainID,
-		[]*avax.TransferableOutput{
+		[]*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
+				Asset: lux.Asset{
 					ID: createAssetTxID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaAvax,
+					Amt:          100 * units.MegaLux,
 					OutputOwners: *owner,
 				},
 			},
@@ -88,35 +89,38 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue X->P export transaction with: %s\n", err)
 		return
 	}
+	exportTxID := exportTx.ID()
 	log.Printf("issued X->P export %s in %s\n", exportTxID, time.Since(exportStartTime))
 
-	// Import the 100 MegaAvax from the X-chain into the P-chain.
+	// Import the 100 MegaLux from the X-chain into the P-chain.
 	importStartTime := time.Now()
-	importTxID, err := pWallet.IssueImportTx(xChainID, owner)
+	importTx, err := pWallet.IssueImportTx(xChainID, owner)
 	if err != nil {
 		log.Fatalf("failed to issue X->P import transaction with: %s\n", err)
 		return
 	}
+	importTxID := importTx.ID()
 	log.Printf("issued X->P import %s in %s\n", importTxID, time.Since(importStartTime))
 
 	createSubnetStartTime := time.Now()
-	createSubnetTxID, err := pWallet.IssueCreateSubnetTx(owner)
+	createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
 	if err != nil {
 		log.Fatalf("failed to issue create subnet transaction with: %s\n", err)
 		return
 	}
+	createSubnetTxID := createSubnetTx.ID()
 	log.Printf("issued create subnet transaction %s in %s\n", createSubnetTxID, time.Since(createSubnetStartTime))
 
 	transformSubnetStartTime := time.Now()
-	transformSubnetTxID, err := pWallet.IssueTransformSubnetTx(
+	transformSubnetTx, err := pWallet.IssueTransformSubnetTx(
 		createSubnetTxID,
 		createAssetTxID,
-		50*units.MegaAvax,
-		100*units.MegaAvax,
+		50*units.MegaLux,
+		100*units.MegaLux,
 		reward.PercentDenominator,
 		reward.PercentDenominator,
 		1,
-		100*units.MegaAvax,
+		100*units.MegaLux,
 		time.Second,
 		365*24*time.Hour,
 		0,
@@ -128,22 +132,23 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue transform subnet transaction with: %s\n", err)
 		return
 	}
+	transformSubnetTxID := transformSubnetTx.ID()
 	log.Printf("issued transform subnet transaction %s in %s\n", transformSubnetTxID, time.Since(transformSubnetStartTime))
 
 	addPermissionlessValidatorStartTime := time.Now()
 	startTime := time.Now().Add(time.Minute)
-	addSubnetValidatorTxID, err := pWallet.IssueAddPermissionlessValidatorTx(
-		&validator.SubnetValidator{
-			Validator: validator.Validator{
+	addSubnetValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaAvax,
+				Wght:   25 * units.MegaLux,
 			},
 			Subnet: createSubnetTxID,
 		},
 		&signer.Empty{},
-		createAssetTxID,
+		createAssetTx.ID(),
 		&secp256k1fx.OutputOwners{},
 		&secp256k1fx.OutputOwners{},
 		reward.PercentDenominator,
@@ -152,16 +157,17 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue add subnet validator with: %s\n", err)
 		return
 	}
+	addSubnetValidatorTxID := addSubnetValidatorTx.ID()
 	log.Printf("issued add subnet validator transaction %s in %s\n", addSubnetValidatorTxID, time.Since(addPermissionlessValidatorStartTime))
 
 	addPermissionlessDelegatorStartTime := time.Now()
-	addSubnetDelegatorTxID, err := pWallet.IssueAddPermissionlessDelegatorTx(
-		&validator.SubnetValidator{
-			Validator: validator.Validator{
+	addSubnetDelegatorTx, err := pWallet.IssueAddPermissionlessDelegatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaAvax,
+				Wght:   25 * units.MegaLux,
 			},
 			Subnet: createSubnetTxID,
 		},
@@ -172,5 +178,6 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue add subnet delegator with: %s\n", err)
 		return
 	}
+	addSubnetDelegatorTxID := addSubnetDelegatorTx.ID()
 	log.Printf("issued add subnet validator delegator %s in %s\n", addSubnetDelegatorTxID, time.Since(addPermissionlessDelegatorStartTime))
 }

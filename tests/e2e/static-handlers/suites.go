@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements static handlers tests for avm and platformvm
@@ -12,7 +12,7 @@ import (
 	"github.com/luxdefi/node/tests/e2e"
 	"github.com/luxdefi/node/utils/cb58"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/formatting"
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
@@ -122,8 +122,8 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 		})
 
 	ginkgo.It("can make calls to platformvm static api", func() {
-		keys := []*crypto.PrivateKeySECP256K1R{}
-		factory := crypto.FactorySECP256K1R{}
+		keys := []*secp256k1.PrivateKey{}
+		factory := secp256k1.Factory{}
 		for _, key := range []string{
 			"24jUJ9vZexUM6expyMcT48LBx27k1m7xpraoV62oSQAHdziao5",
 			"2MMvUMsxx6zsHSNXJdFD8yc5XkancvwyKPwpw4xUK3TCGDuNBY",
@@ -135,7 +135,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 			gomega.Expect(err).Should(gomega.BeNil())
 			pk, err := factory.ToPrivateKey(privKeyBytes)
 			gomega.Expect(err).Should(gomega.BeNil())
-			keys = append(keys, pk.(*crypto.PrivateKeySECP256K1R))
+			keys = append(keys, pk)
 		}
 
 		genesisUTXOs := make([]api.UTXO, len(keys))
@@ -145,7 +145,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 			addr, err := address.FormatBech32(hrp, id.Bytes())
 			gomega.Expect(err).Should(gomega.BeNil())
 			genesisUTXOs[i] = api.UTXO{
-				Amount:  json.Uint64(50000 * units.MilliAvax),
+				Amount:  json.Uint64(50000 * units.MilliLux),
 				Address: addr,
 			}
 		}
@@ -175,12 +175,12 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 
 		buildGenesisArgs := api.BuildGenesisArgs{
 			NetworkID:     json.Uint32(constants.UnitTestID),
-			AvaxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
+			LuxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
 			UTXOs:         genesisUTXOs,
 			Validators:    genesisValidators,
 			Chains:        nil,
 			Time:          json.Uint64(time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			InitialSupply: json.Uint64(360 * units.MegaAvax),
+			InitialSupply: json.Uint64(360 * units.MegaLux),
 			Encoding:      formatting.Hex,
 		}
 

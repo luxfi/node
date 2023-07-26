@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -14,11 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -28,7 +27,7 @@ type noopBlkTimer struct{}
 
 func (*noopBlkTimer) ResetBlockTimer() {}
 
-var preFundedKeys = crypto.BuildTestKeys()
+var preFundedKeys = secp256k1.TestKeys()
 
 // shows that valid tx is not added to mempool if this would exceed its maximum
 // size
@@ -80,7 +79,7 @@ func TestDecisionTxsInMempool(t *testing.T) {
 		require.True(mpool.Has(tx.ID()))
 
 		retrieved := mpool.Get(tx.ID())
-		require.True(retrieved != nil)
+		require.NotNil(retrieved)
 		require.Equal(tx, retrieved)
 
 		// we can peek it
@@ -135,13 +134,13 @@ func TestProposalTxsInMempool(t *testing.T) {
 		require.True(mpool.Has(tx.ID()))
 
 		retrieved := mpool.Get(tx.ID())
-		require.True(retrieved != nil)
+		require.NotNil(retrieved)
 		require.Equal(tx, retrieved)
 
 		{
 			// we can peek it
 			peeked := mpool.PeekStakerTx()
-			require.True(peeked != nil)
+			require.NotNil(peeked)
 			require.Equal(tx, peeked)
 		}
 
@@ -177,22 +176,22 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 	decisionTxs := make([]*txs.Tx, 0, count)
 	for i := uint32(0); i < uint32(count); i++ {
 		utx := &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    10,
 				BlockchainID: ids.Empty.Prefix(uint64(i)),
-				Ins: []*avax.TransferableInput{{
-					UTXOID: avax.UTXOID{
+				Ins: []*lux.TransferableInput{{
+					UTXOID: lux.UTXOID{
 						TxID:        ids.ID{'t', 'x', 'I', 'D'},
 						OutputIndex: i,
 					},
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					In: &secp256k1fx.TransferInput{
 						Amt:   uint64(5678),
 						Input: secp256k1fx.Input{SigIndices: []uint32{i}},
 					},
 				}},
-				Outs: []*avax.TransferableOutput{{
-					Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Outs: []*lux.TransferableOutput{{
+					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: uint64(1234),
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -226,7 +225,7 @@ func createTestProposalTxs(count int) ([]*txs.Tx, error) {
 	for i := 0; i < count; i++ {
 		utx := &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{},
-			Validator: validator.Validator{
+			Validator: txs.Validator{
 				Start: uint64(clk.Time().Add(time.Duration(count-i) * time.Second).Unix()),
 			},
 			StakeOuts:        nil,

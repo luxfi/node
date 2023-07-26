@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,7 +10,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/luxdefi/node/app/runner"
+	"golang.org/x/term"
+
+	"github.com/luxdefi/node/app"
 	"github.com/luxdefi/node/config"
 	"github.com/luxdefi/node/version"
 )
@@ -28,8 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	runnerConfig := config.GetRunnerConfig(v)
-	if runnerConfig.DisplayVersionAndExit {
+	if v.GetBool(config.VersionKey) {
 		fmt.Print(version.String)
 		os.Exit(0)
 	}
@@ -40,5 +41,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	runner.Run(runnerConfig, nodeConfig)
+	nodeApp := app.New(nodeConfig) // Create node wrapper
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		fmt.Println(app.Header)
+	}
+
+	exitCode := app.Run(nodeApp)
+	os.Exit(exitCode)
 }

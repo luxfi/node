@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxdefi/node/api/keystore/gkeystore"
@@ -33,10 +32,11 @@ import (
 	"github.com/luxdefi/node/snow/engine/common/appsender"
 	"github.com/luxdefi/node/snow/engine/snowman/block"
 	"github.com/luxdefi/node/snow/validators/gvalidators"
+	"github.com/luxdefi/node/utils/crypto/bls"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/platformvm/teleporter/gteleporter"
+	"github.com/luxdefi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxdefi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxdefi/node/vms/rpcchainvm/messenger"
@@ -48,9 +48,9 @@ import (
 	messengerpb "github.com/luxdefi/node/proto/pb/messenger"
 	rpcdbpb "github.com/luxdefi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxdefi/node/proto/pb/sharedmemory"
-	teleporterpb "github.com/luxdefi/node/proto/pb/teleporter"
 	validatorstatepb "github.com/luxdefi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxdefi/node/proto/pb/vm"
+	warppb "github.com/luxdefi/node/proto/pb/warp"
 )
 
 var (
@@ -75,6 +75,7 @@ type VMServer struct {
 
 	processMetrics prometheus.Gatherer
 	dbManager      manager.Manager
+	log            logging.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
@@ -109,6 +110,10 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
+	publicKey, err := bls.PublicKeyFromBytes(req.PublicKey)
+	if err != nil {
+		return nil, err
+	}
 	xChainID, err := ids.ToID(req.XChainId)
 	if err != nil {
 		return nil, err
@@ -117,7 +122,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
-	avaxAssetID, err := ids.ToID(req.AvaxAssetId)
+	luxAssetID, err := ids.ToID(req.LuxAssetId)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +160,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 			return nil, err
 		}
 
-		clientConn, err := grpcutils.Dial(vDBReq.ServerAddr, grpcutils.DialOptsWithMetrics(grpcClientMetrics)...)
+		clientConn, err := grpcutils.Dial(
+			vDBReq.ServerAddr,
+			grpcutils.WithChainUnaryInterceptor(grpcClientMetrics.UnaryClientInterceptor()),
+			grpcutils.WithChainStreamInterceptor(grpcClientMetrics.StreamClientInterceptor()),
+		)
 		if err != nil {
 			// Ignore closing errors to return the original error
 			_ = vm.connCloser.Close()
@@ -176,7 +185,21 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 	vm.dbManager = dbManager
 
-	clientConn, err := grpcutils.Dial(req.ServerAddr, grpcutils.DialOptsWithMetrics(grpcClientMetrics)...)
+	// TODO: Allow the logger to be configured by the client
+	vm.log = logging.NewLogger(
+		fmt.Sprintf("<%s Chain>", chainID),
+		logging.NewWrappedCore(
+			logging.Info,
+			originalStderr,
+			logging.Colors.ConsoleEncoder(),
+		),
+	)
+
+	clientConn, err := grpcutils.Dial(
+		req.ServerAddr,
+		grpcutils.WithChainUnaryInterceptor(grpcClientMetrics.UnaryClientInterceptor()),
+		grpcutils.WithChainStreamInterceptor(grpcClientMetrics.StreamClientInterceptor()),
+	)
 	if err != nil {
 		// Ignore closing errors to return the original error
 		_ = vm.connCloser.Close()
@@ -191,7 +214,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
-	teleporterSignerClient := gteleporter.NewClient(teleporterpb.NewSignerClient(clientConn))
+	warpSignerClient := gwarp.NewClient(warppb.NewSignerClient(clientConn))
 
 	toEngine := make(chan common.Message, 1)
 	vm.closed = make(chan struct{})
@@ -215,27 +238,20 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		SubnetID:  subnetID,
 		ChainID:   chainID,
 		NodeID:    nodeID,
+		PublicKey: publicKey,
 
 		XChainID:    xChainID,
 		CChainID:    cChainID,
-		AVAXAssetID: avaxAssetID,
+		AVAXAssetID: luxAssetID,
 
-		// TODO: Allow the logger to be configured by the client
-		Log: logging.NewLogger(
-			fmt.Sprintf("<%s Chain>", chainID),
-			logging.NewWrappedCore(
-				logging.Info,
-				originalStderr,
-				logging.Colors.ConsoleEncoder(),
-			),
-		),
+		Log:          vm.log,
 		Keystore:     keystoreClient,
 		SharedMemory: sharedMemoryClient,
 		BCLookup:     bcLookupClient,
 		Metrics:      metrics.NewOptionalGatherer(),
 
-		// Signs teleporter messages
-		TeleporterSigner: teleporterSignerClient,
+		// Signs warp messages
+		WarpSigner: warpSignerClient,
 
 		ValidatorState: validatorStateClient,
 		// TODO: support remaining snowman++ fields
@@ -328,20 +344,17 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 		if err != nil {
 			return nil, err
 		}
-		serverAddr := serverListener.Addr().String()
+		server := grpcutils.NewServer()
+		vm.serverCloser.Add(server)
+		httppb.RegisterHTTPServer(server, ghttp.NewServer(handler.Handler))
 
-		// Start the gRPC server which serves the HTTP service
-		go grpcutils.Serve(serverListener, func(opts []grpc.ServerOption) *grpc.Server {
-			server := grpcutils.NewDefaultServer(opts)
-			vm.serverCloser.Add(server)
-			httppb.RegisterHTTPServer(server, ghttp.NewServer(handler.Handler))
-			return server
-		})
+		// Start HTTP service
+		go grpcutils.Serve(serverListener, server)
 
 		resp.Handlers = append(resp.Handlers, &vmpb.Handler{
 			Prefix:      prefix,
 			LockOptions: uint32(handler.LockOptions),
-			ServerAddr:  serverAddr,
+			ServerAddr:  serverListener.Addr().String(),
 		})
 	}
 	return resp, nil
@@ -360,20 +373,17 @@ func (vm *VMServer) CreateStaticHandlers(ctx context.Context, _ *emptypb.Empty) 
 		if err != nil {
 			return nil, err
 		}
-		serverAddr := serverListener.Addr().String()
+		server := grpcutils.NewServer()
+		vm.serverCloser.Add(server)
+		httppb.RegisterHTTPServer(server, ghttp.NewServer(handler.Handler))
 
-		// Start the gRPC server which serves the HTTP service
-		go grpcutils.Serve(serverListener, func(opts []grpc.ServerOption) *grpc.Server {
-			server := grpcutils.NewDefaultServer(opts)
-			vm.serverCloser.Add(server)
-			httppb.RegisterHTTPServer(server, ghttp.NewServer(handler.Handler))
-			return server
-		})
+		// Start HTTP service
+		go grpcutils.Serve(serverListener, server)
 
 		resp.Handlers = append(resp.Handlers, &vmpb.Handler{
 			Prefix:      prefix,
 			LockOptions: uint32(handler.LockOptions),
-			ServerAddr:  serverAddr,
+			ServerAddr:  serverListener.Addr().String(),
 		})
 	}
 	return resp, nil
@@ -645,6 +655,7 @@ func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequ
 
 	blocks, err := block.GetAncestors(
 		ctx,
+		vm.log,
 		vm.vm,
 		blkID,
 		maxBlksNum,

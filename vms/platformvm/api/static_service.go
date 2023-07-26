@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -14,13 +14,12 @@ import (
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/genesis"
 	"github.com/luxdefi/node/vms/platformvm/signer"
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/platformvm/txs/txheap"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -31,9 +30,10 @@ import (
 // state of the network.
 
 var (
-	errUTXOHasNoValue       = errors.New("genesis UTXO has no value")
-	errValidatorAddsNoValue = errors.New("validator would have already unstaked")
-	errStakeOverflow        = errors.New("validator stake exceeds limit")
+	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
+	errValidatorHasNoWeight   = errors.New("validator has not weight")
+	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
+	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
 	_ utils.Sortable[UTXO] = UTXO{}
 )
@@ -87,12 +87,15 @@ func (utxo UTXO) Less(other UTXO) bool {
 // [NodeID] is the node ID of the staker
 // [Uptime] is the observed uptime of this staker
 type Staker struct {
-	TxID        ids.ID       `json:"txID"`
-	StartTime   json.Uint64  `json:"startTime"`
-	EndTime     json.Uint64  `json:"endTime"`
-	Weight      *json.Uint64 `json:"weight,omitempty"`
+	TxID      ids.ID      `json:"txID"`
+	StartTime json.Uint64 `json:"startTime"`
+	EndTime   json.Uint64 `json:"endTime"`
+	Weight    json.Uint64 `json:"weight"`
+	NodeID    ids.NodeID  `json:"nodeID"`
+
+	// Deprecated: Use Weight instead
+	// TODO: remove [StakeAmount] after enough time for dependencies to update
 	StakeAmount *json.Uint64 `json:"stakeAmount,omitempty"`
-	NodeID      ids.NodeID   `json:"nodeID"`
 }
 
 // Owner is the repr. of a reward owner sent over APIs.
@@ -113,16 +116,20 @@ type PermissionlessValidator struct {
 	ValidationRewardOwner *Owner `json:"validationRewardOwner,omitempty"`
 	// The owner of the rewards from delegations during the validation period,
 	// if applicable.
-	DelegationRewardOwner *Owner                    `json:"delegationRewardOwner,omitempty"`
-	PotentialReward       *json.Uint64              `json:"potentialReward,omitempty"`
-	DelegationFee         json.Float32              `json:"delegationFee"`
-	ExactDelegationFee    *json.Uint32              `json:"exactDelegationFee,omitempty"`
-	Uptime                *json.Float32             `json:"uptime,omitempty"`
-	Connected             bool                      `json:"connected"`
-	Staked                []UTXO                    `json:"staked,omitempty"`
-	Signer                *signer.ProofOfPossession `json:"signer,omitempty"`
+	DelegationRewardOwner  *Owner                    `json:"delegationRewardOwner,omitempty"`
+	PotentialReward        *json.Uint64              `json:"potentialReward,omitempty"`
+	AccruedDelegateeReward *json.Uint64              `json:"accruedDelegateeReward,omitempty"`
+	DelegationFee          json.Float32              `json:"delegationFee"`
+	ExactDelegationFee     *json.Uint32              `json:"exactDelegationFee,omitempty"`
+	Uptime                 *json.Float32             `json:"uptime,omitempty"`
+	Connected              bool                      `json:"connected"`
+	Staked                 []UTXO                    `json:"staked,omitempty"`
+	Signer                 *signer.ProofOfPossession `json:"signer,omitempty"`
+
 	// The delegators delegating to this validator
-	Delegators []PrimaryDelegator `json:"delegators"`
+	DelegatorCount  *json.Uint64        `json:"delegatorCount,omitempty"`
+	DelegatorWeight *json.Uint64        `json:"delegatorWeight,omitempty"`
+	Delegators      *[]PrimaryDelegator `json:"delegators,omitempty"`
 }
 
 // PermissionedValidator is the repr. of a permissioned validator sent over APIs.
@@ -138,17 +145,6 @@ type PrimaryDelegator struct {
 	Staker
 	RewardOwner     *Owner       `json:"rewardOwner,omitempty"`
 	PotentialReward *json.Uint64 `json:"potentialReward,omitempty"`
-}
-
-func (v *Staker) GetWeight() uint64 {
-	switch {
-	case v.Weight != nil:
-		return uint64(*v.Weight)
-	case v.StakeAmount != nil:
-		return uint64(*v.StakeAmount)
-	default:
-		return 0
-	}
 }
 
 // Chain defines a chain that exists
@@ -174,7 +170,7 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	AvaxAssetID   ids.ID                    `json:"avaxAssetID"`
+	LuxAssetID   ids.ID                    `json:"luxAssetID"`
 	NetworkID     json.Uint32               `json:"networkID"`
 	UTXOs         []UTXO                    `json:"utxos"`
 	Validators    []PermissionlessValidator `json:"validators"`
@@ -213,12 +209,12 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			return err
 		}
 
-		utxo := avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxo := lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,
 				OutputIndex: uint32(i),
 			},
-			Asset: avax.Asset{ID: args.AvaxAssetID},
+			Asset: lux.Asset{ID: args.LuxAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(apiUTXO.Amount),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -231,7 +227,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		if apiUTXO.Locktime > args.Time {
 			utxo.Out = &stakeable.LockOut{
 				Locktime:        uint64(apiUTXO.Locktime),
-				TransferableOut: utxo.Out.(avax.TransferableOut),
+				TransferableOut: utxo.Out.(lux.TransferableOut),
 			}
 		}
 		messageBytes, err := formatting.Decode(args.Encoding, apiUTXO.Message)
@@ -248,7 +244,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 	vdrs := txheap.NewByEndTime()
 	for _, vdr := range args.Validators {
 		weight := uint64(0)
-		stake := make([]*avax.TransferableOutput, len(vdr.Staked))
+		stake := make([]*lux.TransferableOutput, len(vdr.Staked))
 		utils.Sort(vdr.Staked)
 		for i, apiUTXO := range vdr.Staked {
 			addrID, err := bech32ToID(apiUTXO.Address)
@@ -256,8 +252,8 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				return err
 			}
 
-			utxo := &avax.TransferableOutput{
-				Asset: avax.Asset{ID: args.AvaxAssetID},
+			utxo := &lux.TransferableOutput{
+				Asset: lux.Asset{ID: args.LuxAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(apiUTXO.Amount),
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -283,10 +279,10 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		}
 
 		if weight == 0 {
-			return errValidatorAddsNoValue
+			return errValidatorHasNoWeight
 		}
 		if uint64(vdr.EndTime) <= uint64(args.Time) {
-			return errValidatorAddsNoValue
+			return errValidatorAlreadyExited
 		}
 
 		owner := &secp256k1fx.OutputOwners{
@@ -308,11 +304,11 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		}
 
 		tx := &txs.Tx{Unsigned: &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
-			Validator: validator.Validator{
+			Validator: txs.Validator{
 				NodeID: vdr.NodeID,
 				Start:  uint64(args.Time),
 				End:    uint64(vdr.EndTime),
@@ -337,7 +333,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			return fmt.Errorf("problem decoding chain genesis data: %w", err)
 		}
 		tx := &txs.Tx{Unsigned: &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},

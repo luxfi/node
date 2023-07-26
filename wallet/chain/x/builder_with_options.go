@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -6,7 +6,7 @@ package x
 import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 	"github.com/luxdefi/node/wallet/subnet/primary/common"
@@ -22,10 +22,10 @@ type builderWithOptions struct {
 // NewBuilderWithOptions returns a new transaction builder that will use the
 // given options by default.
 //
-// - [builder] is the builder that will be called to perform the underlying
-//   opterations.
-// - [options] will be provided to the builder in addition to the options
-//   provided in the method calls.
+//   - [builder] is the builder that will be called to perform the underlying
+//     operations.
+//   - [options] will be provided to the builder in addition to the options
+//     provided in the method calls.
 func NewBuilderWithOptions(builder Builder, options ...common.Option) Builder {
 	return &builderWithOptions{
 		Builder: builder,
@@ -52,7 +52,7 @@ func (b *builderWithOptions) GetImportableBalance(
 }
 
 func (b *builderWithOptions) NewBaseTx(
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.BaseTx, error) {
 	return b.Builder.NewBaseTx(
@@ -147,7 +147,7 @@ func (b *builderWithOptions) NewImportTx(
 
 func (b *builderWithOptions) NewExportTx(
 	chainID ids.ID,
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
 	return b.Builder.NewExportTx(

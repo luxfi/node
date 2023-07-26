@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package formatting
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/utils/units"
 )
@@ -58,9 +60,8 @@ func BenchmarkEncodings(b *testing.B) {
 		_, _ = rand.Read(bytes) // #nosec G404
 		b.Run(fmt.Sprintf("%s-%d bytes", benchmark.encoding, benchmark.size), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				if _, err := Encode(benchmark.encoding, bytes); err != nil {
-					b.Fatal(err)
-				}
+				_, err := Encode(benchmark.encoding, bytes)
+				require.NoError(b, err)
 			}
 		})
 	}

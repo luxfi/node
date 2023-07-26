@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package avax
+package lux
 
 import (
 	"testing"
@@ -13,9 +13,10 @@ import (
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
+
+const trackChecksum = false
 
 func TestUTXOState(t *testing.T) {
 	require := require.New(t)
@@ -43,31 +44,26 @@ func TestUTXOState(t *testing.T) {
 	c := linearcodec.NewDefault()
 	manager := codec.NewDefaultManager()
 
-	errs := wrappers.Errs{}
-	errs.Add(
-		c.RegisterType(&secp256k1fx.MintOutput{}),
-		c.RegisterType(&secp256k1fx.TransferOutput{}),
-		c.RegisterType(&secp256k1fx.Input{}),
-		c.RegisterType(&secp256k1fx.TransferInput{}),
-		c.RegisterType(&secp256k1fx.Credential{}),
-		manager.RegisterCodec(codecVersion, c),
-	)
-	require.NoError(errs.Err)
+	require.NoError(c.RegisterType(&secp256k1fx.MintOutput{}))
+	require.NoError(c.RegisterType(&secp256k1fx.TransferOutput{}))
+	require.NoError(c.RegisterType(&secp256k1fx.Input{}))
+	require.NoError(c.RegisterType(&secp256k1fx.TransferInput{}))
+	require.NoError(c.RegisterType(&secp256k1fx.Credential{}))
+	require.NoError(manager.RegisterCodec(codecVersion, c))
 
 	db := memdb.New()
-	s := NewUTXOState(db, manager)
+	s, err := NewUTXOState(db, manager, trackChecksum)
+	require.NoError(err)
 
-	_, err := s.GetUTXO(utxoID)
+	_, err = s.GetUTXO(utxoID)
 	require.Equal(database.ErrNotFound, err)
 
 	_, err = s.GetUTXO(utxoID)
 	require.Equal(database.ErrNotFound, err)
 
-	err = s.DeleteUTXO(utxoID)
-	require.Equal(database.ErrNotFound, err)
+	require.NoError(s.DeleteUTXO(utxoID))
 
-	err = s.PutUTXO(utxo)
-	require.NoError(err)
+	require.NoError(s.PutUTXO(utxo))
 
 	utxoIDs, err := s.UTXOIDs(addr[:], ids.Empty, 5)
 	require.NoError(err)
@@ -77,16 +73,15 @@ func TestUTXOState(t *testing.T) {
 	require.NoError(err)
 	require.Equal(utxo, readUTXO)
 
-	err = s.DeleteUTXO(utxoID)
-	require.NoError(err)
+	require.NoError(s.DeleteUTXO(utxoID))
 
 	_, err = s.GetUTXO(utxoID)
 	require.Equal(database.ErrNotFound, err)
 
-	err = s.PutUTXO(utxo)
-	require.NoError(err)
+	require.NoError(s.PutUTXO(utxo))
 
-	s = NewUTXOState(db, manager)
+	s, err = NewUTXOState(db, manager, trackChecksum)
+	require.NoError(err)
 
 	readUTXO, err = s.GetUTXO(utxoID)
 	require.NoError(err)

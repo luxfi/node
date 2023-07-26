@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements X-chain transfer tests.
@@ -10,28 +10,28 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/onsi/gomega"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
+
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/tests"
 	"github.com/luxdefi/node/tests/e2e"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/vms/avm"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 	"github.com/luxdefi/node/wallet/subnet/primary"
 	"github.com/luxdefi/node/wallet/subnet/primary/common"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
 )
 
 const (
-	metricVtxProcessing = "avalanche_X_vtx_processing"
-	metricVtxAccepted   = "avalanche_X_vtx_accepted_count"
-	metricVtxRejected   = "avalanche_X_vtx_rejected_count"
-)
+	totalRounds = 50
 
-const totalRounds = 50
+	metricBlksProcessing = "avalanche_X_blks_processing"
+	metricBlksAccepted   = "avalanche_X_blks_accepted_count"
+)
 
 var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 	ginkgo.It("can issue a virtuous transfer tx for AVAX asset",
@@ -40,16 +40,15 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 		ginkgo.Label(
 			"require-network-runner",
 			"x",
-			"virtuous-transfer-tx-avax",
+			"virtuous-transfer-tx-lux",
 		),
 		func() {
 			rpcEps := e2e.Env.GetURIs()
 			gomega.Expect(rpcEps).ShouldNot(gomega.BeEmpty())
 
 			allMetrics := []string{
-				metricVtxProcessing,
-				metricVtxAccepted,
-				metricVtxRejected,
+				metricBlksProcessing,
+				metricBlksAccepted,
 			}
 
 			runFunc := func(round int) {
@@ -77,7 +76,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					cancel()
 					gomega.Expect(err).Should(gomega.BeNil())
 				})
-				avaxAssetID := baseWallet.X().AVAXAssetID()
+				luxAssetID := baseWallet.X().AVAXAssetID()
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))
@@ -101,9 +100,9 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					gomega.Expect(err).Should(gomega.BeNil())
 					tests.Outf("{{green}}metrics at %q:{{/}} %v\n", ep, mm)
 
-					if mm[metricVtxProcessing] > 0 {
-						tests.Outf("{{red}}{{bold}}%q already has processing vtx!!!{{/}}\n", u)
-						ginkgo.Skip("the cluster has already ongoing vtx txs thus skipping to prevent conflicts...")
+					if mm[metricBlksProcessing] > 0 {
+						tests.Outf("{{red}}{{bold}}%q already has processing block!!!{{/}}\n", u)
+						ginkgo.Skip("the cluster has already ongoing blocks thus skipping to prevent conflicts...")
 					}
 
 					metricsBeforeTx[u] = mm
@@ -114,7 +113,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					balances, err := w.X().Builder().GetFTBalance()
 					gomega.Expect(err).Should(gomega.BeNil())
 
-					bal := balances[avaxAssetID]
+					bal := balances[luxAssetID]
 					testBalances = append(testBalances, bal)
 
 					fmt.Printf(`CURRENT BALANCE %21d AVAX (SHORT ADDRESS %q)
@@ -158,9 +157,9 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 				ginkgo.By("X-Chain transfer with wrong amount must fail", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
 					_, err = wallets[fromIdx].X().IssueBaseTx(
-						[]*avax.TransferableOutput{{
-							Asset: avax.Asset{
-								ID: avaxAssetID,
+						[]*lux.TransferableOutput{{
+							Asset: lux.Asset{
+								ID: luxAssetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: senderOrigBal + 1,
@@ -200,10 +199,10 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 				)
 
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
-				txID, err := wallets[fromIdx].X().IssueBaseTx(
-					[]*avax.TransferableOutput{{
-						Asset: avax.Asset{
-							ID: avaxAssetID,
+				tx, err := wallets[fromIdx].X().IssueBaseTx(
+					[]*lux.TransferableOutput{{
+						Asset: lux.Asset{
+							ID: luxAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: amountToTransfer,
@@ -220,17 +219,18 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 
 				balances, err := wallets[fromIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				senderCurBalX := balances[avaxAssetID]
+				senderCurBalX := balances[luxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}}  %d\n", senderCurBalX)
 
 				balances, err = wallets[toIdx].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
-				receiverCurBalX := balances[avaxAssetID]
+				receiverCurBalX := balances[luxAssetID]
 				tests.Outf("{{green}}second wallet balance:{{/}} %d\n", receiverCurBalX)
 
 				gomega.Expect(senderCurBalX).Should(gomega.Equal(senderNewBal))
 				gomega.Expect(receiverCurBalX).Should(gomega.Equal(receiverNewBal))
 
+				txID := tx.ID()
 				for _, u := range rpcEps {
 					xc := avm.NewClient(u, "X")
 					ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultConfirmTxTimeout)
@@ -254,14 +254,12 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 
 					prev := metricsBeforeTx[u]
 
-					// +0 since X-chain tx must have been processed and accepted by now
-					gomega.Expect(mm[metricVtxProcessing]).Should(gomega.Equal(prev[metricVtxProcessing]))
+					// +0 since X-chain tx must have been processed and accepted
+					// by now
+					gomega.Expect(mm[metricBlksProcessing]).Should(gomega.Equal(prev[metricBlksProcessing]))
 
 					// +1 since X-chain tx must have been accepted by now
-					gomega.Expect(mm[metricVtxAccepted]).Should(gomega.Equal(prev[metricVtxAccepted] + 1))
-
-					// +0 since virtuous X-chain tx must not be rejected
-					gomega.Expect(mm[metricVtxRejected]).Should(gomega.Equal(prev[metricVtxRejected]))
+					gomega.Expect(mm[metricBlksAccepted]).Should(gomega.Equal(prev[metricBlksAccepted] + 1))
 
 					metricsBeforeTx[u] = mm
 				}

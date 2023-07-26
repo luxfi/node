@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -95,7 +95,7 @@ func NewWalletWithTxsAndState(
 
 	xChainID := xCTX.BlockchainID()
 	xUTXOs := NewChainUTXOs(xChainID, utxos)
-	xBackend := x.NewBackend(xCTX, xChainID, xUTXOs)
+	xBackend := x.NewBackend(xCTX, xUTXOs)
 	xBuilder := x.NewBuilder(addrs, xBackend)
 	xSigner := x.NewSigner(kc, xBackend)
 	xClient := avm.NewClient(uri, "X")

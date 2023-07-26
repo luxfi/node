@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -6,13 +6,13 @@ package snowman
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/luxdefi/node/cache"
 	"github.com/luxdefi/node/cache/metercacher"
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
@@ -20,9 +20,11 @@ import (
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/common/tracker"
 	"github.com/luxdefi/node/snow/events"
+	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils/bag"
+	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/version"
 )
 
 const nonVerifiedCacheSize = 128
@@ -45,6 +47,8 @@ type Transitive struct {
 	common.AcceptedFrontierHandler
 	common.AcceptedHandler
 	common.AncestorsHandler
+	common.AppHandler
+	validators.Connector
 
 	RequestID uint32
 
@@ -65,7 +69,7 @@ type Transitive struct {
 	// A block is put into this cache if it was not able to be issued. A block
 	// fails to be issued if verification on the block or one of its ancestors
 	// occurs.
-	nonVerifiedCache cache.Cacher
+	nonVerifiedCache cache.Cacher[ids.ID, snowman.Block]
 
 	// acceptedFrontiers of the other validators of this chain
 	acceptedFrontiers tracker.Accepted
@@ -85,10 +89,10 @@ type Transitive struct {
 func newTransitive(config Config) (*Transitive, error) {
 	config.Ctx.Log.Info("initializing consensus engine")
 
-	nonVerifiedCache, err := metercacher.New(
+	nonVerifiedCache, err := metercacher.New[ids.ID, snowman.Block](
 		"non_verified_cache",
 		config.Ctx.Registerer,
-		&cache.LRU{Size: nonVerifiedCacheSize},
+		&cache.LRU[ids.ID, snowman.Block]{Size: nonVerifiedCacheSize},
 	)
 	if err != nil {
 		return nil, err
@@ -105,6 +109,8 @@ func newTransitive(config Config) (*Transitive, error) {
 		AcceptedFrontierHandler:     common.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
 		AcceptedHandler:             common.NewNoOpAcceptedHandler(config.Ctx.Log),
 		AncestorsHandler:            common.NewNoOpAncestorsHandler(config.Ctx.Log),
+		AppHandler:                  config.VM,
+		Connector:                   config.VM,
 		pending:                     make(map[ids.ID]snowman.Block),
 		nonVerifieds:                NewAncestorTree(),
 		nonVerifiedCache:            nonVerifiedCache,
@@ -122,17 +128,20 @@ func newTransitive(config Config) (*Transitive, error) {
 func (t *Transitive) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkBytes []byte) error {
 	blk, err := t.VM.ParseBlock(ctx, blkBytes)
 	if err != nil {
-		t.Ctx.Log.Debug("failed to parse block",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Error(err),
-		)
-		t.Ctx.Log.Verbo("failed to parse block",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Binary("block", blkBytes),
-			zap.Error(err),
-		)
+		if t.Ctx.Log.Enabled(logging.Verbo) {
+			t.Ctx.Log.Verbo("failed to parse block",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Binary("block", blkBytes),
+				zap.Error(err),
+			)
+		} else {
+			t.Ctx.Log.Debug("failed to parse block",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Error(err),
+			)
+		}
 		// because GetFailed doesn't utilize the assumption that we actually
 		// sent a Get message, we can safely call GetFailed here to potentially
 		// abandon the request.
@@ -207,17 +216,20 @@ func (t *Transitive) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID
 	blk, err := t.VM.ParseBlock(ctx, blkBytes)
 	// If parsing fails, we just drop the request, as we didn't ask for it
 	if err != nil {
-		t.Ctx.Log.Debug("failed to parse block",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Error(err),
-		)
-		t.Ctx.Log.Verbo("failed to parse block",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Binary("block", blkBytes),
-			zap.Error(err),
-		)
+		if t.Ctx.Log.Enabled(logging.Verbo) {
+			t.Ctx.Log.Verbo("failed to parse block",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Binary("block", blkBytes),
+				zap.Error(err),
+			)
+		} else {
+			t.Ctx.Log.Debug("failed to parse block",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Error(err),
+			)
+		}
 		return nil
 	}
 
@@ -237,28 +249,18 @@ func (t *Transitive) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID
 	return t.buildBlocks(ctx)
 }
 
-func (t *Transitive) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes []ids.ID, accepted []ids.ID) error {
-	t.acceptedFrontiers.SetAcceptedFrontier(nodeID, accepted)
-
-	// Since this is a linear chain, there should only be one ID in the vote set
-	if len(votes) != 1 {
-		t.Ctx.Log.Debug("failing Chits",
-			zap.String("reason", "expected only 1 vote"),
-			zap.Int("numVotes", len(votes)),
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-		)
-		// because QueryFailed doesn't utilize the assumption that we actually
-		// sent a Query message, we can safely call QueryFailed here to
-		// potentially abandon the request.
-		return t.QueryFailed(ctx, nodeID, requestID)
-	}
-	blkID := votes[0]
+func (t *Transitive) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID, acceptedID ids.ID) error {
+	t.acceptedFrontiers.SetLastAccepted(nodeID, acceptedID)
 
 	t.Ctx.Log.Verbo("called Chits for the block",
 		zap.Stringer("blkID", blkID),
 		zap.Stringer("nodeID", nodeID),
 		zap.Uint32("requestID", requestID))
+
+	added, err := t.issueFromByID(ctx, nodeID, blkID)
+	if err != nil {
+		return err
+	}
 
 	// Will record chits once [blkID] has been issued into consensus
 	v := &voter{
@@ -268,10 +270,6 @@ func (t *Transitive) Chits(ctx context.Context, nodeID ids.NodeID, requestID uin
 		response:  blkID,
 	}
 
-	added, err := t.issueFromByID(ctx, nodeID, blkID)
-	if err != nil {
-		return err
-	}
 	// Wait until [blkID] has been issued to consensus before applying this chit.
 	if !added {
 		v.deps.Add(blkID)
@@ -283,10 +281,8 @@ func (t *Transitive) Chits(ctx context.Context, nodeID ids.NodeID, requestID uin
 }
 
 func (t *Transitive) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	lastAccepted := t.acceptedFrontiers.AcceptedFrontier(nodeID)
-	if len(lastAccepted) == 1 {
-		// Chits calls QueryFailed if [votes] doesn't have length 1, so this
-		// check is required to avoid infinite mutual recursion.
+	lastAccepted, ok := t.acceptedFrontiers.LastAccepted(nodeID)
+	if ok {
 		return t.Chits(ctx, nodeID, requestID, lastAccepted, lastAccepted)
 	}
 
@@ -300,46 +296,6 @@ func (t *Transitive) QueryFailed(ctx context.Context, nodeID ids.NodeID, request
 	)
 	t.metrics.numBlockers.Set(float64(t.blocked.Len()))
 	return t.buildBlocks(ctx)
-}
-
-func (t *Transitive) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	return t.VM.CrossChainAppRequest(ctx, chainID, requestID, deadline, request)
-}
-
-func (t *Transitive) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
-	return t.VM.CrossChainAppRequestFailed(ctx, chainID, requestID)
-}
-
-func (t *Transitive) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	return t.VM.CrossChainAppResponse(ctx, chainID, requestID, response)
-}
-
-func (t *Transitive) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
-	// Notify the VM of this request
-	return t.VM.AppRequest(ctx, nodeID, requestID, deadline, request)
-}
-
-func (t *Transitive) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	// Notify the VM that a request it made failed
-	return t.VM.AppRequestFailed(ctx, nodeID, requestID)
-}
-
-func (t *Transitive) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	// Notify the VM of a response to its request
-	return t.VM.AppResponse(ctx, nodeID, requestID, response)
-}
-
-func (t *Transitive) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	// Notify the VM of this message which has been gossiped to it
-	return t.VM.AppGossip(ctx, nodeID, msg)
-}
-
-func (t *Transitive) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	return t.VM.Connected(ctx, nodeID, nodeVersion)
-}
-
-func (t *Transitive) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	return t.VM.Disconnected(ctx, nodeID)
 }
 
 func (*Transitive) Timeout(context.Context) error {
@@ -382,7 +338,7 @@ func (t *Transitive) Notify(ctx context.Context, msg common.Message) error {
 		t.pendingBuildBlocks++
 		return t.buildBlocks(ctx)
 	case common.StateSyncDone:
-		t.Ctx.RunningStateSync(false)
+		t.Ctx.StateSyncing.Set(false)
 		return nil
 	default:
 		t.Ctx.Log.Warn("received an unexpected message from the VM",
@@ -432,7 +388,7 @@ func (t *Transitive) Start(ctx context.Context, startReqID uint32) error {
 		default:
 			for _, blk := range options {
 				// note that deliver will set the VM's preference
-				if err := t.deliver(ctx, blk); err != nil {
+				if err := t.deliver(ctx, blk, false); err != nil {
 					return err
 				}
 			}
@@ -446,7 +402,10 @@ func (t *Transitive) Start(ctx context.Context, startReqID uint32) error {
 	)
 	t.metrics.bootstrapFinished.Set(1)
 
-	t.Ctx.SetState(snow.NormalOp)
+	t.Ctx.State.Set(snow.EngineState{
+		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.NormalOp,
+	})
 	if err := t.VM.SetState(ctx, snow.NormalOp); err != nil {
 		return fmt.Errorf("failed to notify VM that consensus is starting: %w",
 			err)
@@ -467,7 +426,7 @@ func (t *Transitive) HealthCheck(ctx context.Context) (interface{}, error) {
 	if vmErr == nil {
 		return intf, consensusErr
 	}
-	return intf, fmt.Errorf("vm: %w ; consensus: %s", vmErr, consensusErr)
+	return intf, fmt.Errorf("vm: %w ; consensus: %v", vmErr, consensusErr)
 }
 
 func (t *Transitive) GetVM() common.VM {
@@ -479,7 +438,7 @@ func (t *Transitive) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 		return blk, nil
 	}
 	if blk, ok := t.nonVerifiedCache.Get(blkID); ok {
-		return blk.(snowman.Block), nil
+		return blk, nil
 	}
 
 	return t.VM.GetBlock(ctx, blkID)
@@ -487,10 +446,10 @@ func (t *Transitive) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 
 func (t *Transitive) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32) {
 	lastAccepted := t.Consensus.LastAccepted()
-	if t.Ctx.IsRunningStateSync() {
-		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{lastAccepted}, []ids.ID{lastAccepted})
+	if t.Ctx.StateSyncing.Get() {
+		t.Sender.SendChits(ctx, nodeID, requestID, lastAccepted, lastAccepted)
 	} else {
-		t.Sender.SendChits(ctx, nodeID, requestID, []ids.ID{t.Consensus.Preference()}, []ids.ID{lastAccepted})
+		t.Sender.SendChits(ctx, nodeID, requestID, t.Consensus.Preference(), lastAccepted)
 	}
 }
 
@@ -578,7 +537,7 @@ func (t *Transitive) issueFrom(ctx context.Context, nodeID ids.NodeID, blk snowm
 	// issue [blk] and its ancestors to consensus.
 	blkID := blk.ID()
 	for !t.wasIssued(blk) {
-		if err := t.issue(ctx, blk); err != nil {
+		if err := t.issue(ctx, blk, false); err != nil {
 			return false, err
 		}
 
@@ -618,7 +577,7 @@ func (t *Transitive) issueWithAncestors(ctx context.Context, blk snowman.Block) 
 	// issue [blk] and its ancestors into consensus
 	status := blk.Status()
 	for status.Fetched() && !t.wasIssued(blk) {
-		err := t.issue(ctx, blk)
+		err := t.issue(ctx, blk, true)
 		if err != nil {
 			return false, err
 		}
@@ -658,7 +617,9 @@ func (t *Transitive) wasIssued(blk snowman.Block) bool {
 }
 
 // Issue [blk] to consensus once its ancestors have been issued.
-func (t *Transitive) issue(ctx context.Context, blk snowman.Block) error {
+// If [push] is true, a push query will be used. Otherwise, a pull query will be
+// used.
+func (t *Transitive) issue(ctx context.Context, blk snowman.Block, push bool) error {
 	blkID := blk.ID()
 
 	// mark that the block is queued to be added to consensus once its ancestors have been
@@ -669,8 +630,9 @@ func (t *Transitive) issue(ctx context.Context, blk snowman.Block) error {
 
 	// Will add [blk] to consensus once its ancestors have been
 	i := &issuer{
-		t:   t,
-		blk: blk,
+		t:    t,
+		blk:  blk,
+		push: push,
 	}
 
 	// block on the parent if needed
@@ -727,7 +689,7 @@ func (t *Transitive) pullQuery(ctx context.Context, blkID ids.ID) {
 		return
 	}
 
-	vdrBag := ids.NodeIDBag{}
+	vdrBag := bag.Bag[ids.NodeID]{}
 	vdrBag.Add(vdrIDs...)
 
 	t.RequestID++
@@ -741,7 +703,9 @@ func (t *Transitive) pullQuery(ctx context.Context, blkID ids.ID) {
 
 // Send a query for this block. Some validators will be sent
 // a Push Query and some will be sent a Pull Query.
-func (t *Transitive) sendMixedQuery(ctx context.Context, blk snowman.Block) {
+// If [push] is true, a push query will be used. Otherwise, a pull query will be
+// used.
+func (t *Transitive) sendQuery(ctx context.Context, blk snowman.Block, push bool) {
 	t.Ctx.Log.Verbo("sampling from validators",
 		zap.Stringer("validators", t.Validators),
 	)
@@ -756,30 +720,28 @@ func (t *Transitive) sendMixedQuery(ctx context.Context, blk snowman.Block) {
 		return
 	}
 
-	vdrBag := ids.NodeIDBag{}
+	vdrBag := bag.Bag[ids.NodeID]{}
 	vdrBag.Add(vdrIDs...)
 
 	t.RequestID++
 	if t.polls.Add(t.RequestID, vdrBag) {
-		// Send a push query to some of the validators, and a pull query to the rest.
-		numPushTo := t.Params.MixedQueryNumPushVdr
-		if !t.Validators.Contains(t.Ctx.NodeID) {
-			numPushTo = t.Params.MixedQueryNumPushNonVdr
+		vdrs := vdrBag.List()
+		sendTo := set.NewSet[ids.NodeID](len(vdrs))
+		sendTo.Add(vdrs...)
+
+		if push {
+			t.Sender.SendPushQuery(ctx, sendTo, t.RequestID, blk.Bytes())
+			return
 		}
-		common.SendMixedQuery(
-			ctx,
-			t.Sender,
-			vdrBag.List(), // Note that this doesn't contain duplicates; length may be < k
-			numPushTo,
-			t.RequestID,
-			blkID,
-			blk.Bytes(),
-		)
+
+		t.Sender.SendPullQuery(ctx, sendTo, t.RequestID, blk.ID())
 	}
 }
 
 // issue [blk] to consensus
-func (t *Transitive) deliver(ctx context.Context, blk snowman.Block) error {
+// If [push] is true, a push query will be used. Otherwise, a pull query will be
+// used.
+func (t *Transitive) deliver(ctx context.Context, blk snowman.Block, push bool) error {
 	blkID := blk.ID()
 	if t.Consensus.Decided(blk) || t.Consensus.Processing(blkID) {
 		return nil
@@ -849,13 +811,13 @@ func (t *Transitive) deliver(ctx context.Context, blk snowman.Block) error {
 	// If the block is now preferred, query the network for its preferences
 	// with this new block.
 	if t.Consensus.IsPreferred(blk) {
-		t.sendMixedQuery(ctx, blk)
+		t.sendQuery(ctx, blk, push)
 	}
 
 	t.blocked.Fulfill(ctx, blkID)
 	for _, blk := range added {
 		if t.Consensus.IsPreferred(blk) {
-			t.sendMixedQuery(ctx, blk)
+			t.sendQuery(ctx, blk, push)
 		}
 
 		blkID := blk.ID()

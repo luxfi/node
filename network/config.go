@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -15,6 +15,7 @@ import (
 	"github.com/luxdefi/node/snow/networking/tracker"
 	"github.com/luxdefi/node/snow/uptime"
 	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxdefi/node/utils/compression"
 	"github.com/luxdefi/node/utils/ips"
 	"github.com/luxdefi/node/utils/set"
 )
@@ -109,6 +110,9 @@ type Config struct {
 	DelayConfig          `json:"delayConfig"`
 	ThrottlerConfig      ThrottlerConfig `json:"throttlerConfig"`
 
+	ProxyEnabled           bool          `json:"proxyEnabled"`
+	ProxyReadHeaderTimeout time.Duration `json:"proxyReadHeaderTimeout"`
+
 	DialerConfig dialer.Config `json:"dialerConfig"`
 	TLSConfig    *tls.Config   `json:"-"`
 
@@ -122,9 +126,9 @@ type Config struct {
 	PingFrequency      time.Duration     `json:"pingFrequency"`
 	AllowPrivateIPs    bool              `json:"allowPrivateIPs"`
 
-	// CompressionEnabled will compress available outbound messages when set to
-	// true.
-	CompressionEnabled bool `json:"compressionEnabled"`
+	// The compression type to use when compressing outbound messages.
+	// Assumes all peers support this compression type.
+	CompressionType compression.Type `json:"compressionType"`
 
 	// TLSKey is this node's TLS key that is used to sign IPs.
 	TLSKey crypto.Signer `json:"-"`

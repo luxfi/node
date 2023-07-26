@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -6,6 +6,7 @@ package ids
 import (
 	"bytes"
 	"crypto/x509"
+	"errors"
 	"fmt"
 
 	"github.com/luxdefi/node/utils"
@@ -16,6 +17,8 @@ const NodeIDPrefix = "NodeID-"
 
 var (
 	EmptyNodeID = NodeID{}
+
+	errShortNodeID = errors.New("insufficient NodeID length")
 
 	_ utils.Sortable[NodeID] = NodeID{}
 )
@@ -43,7 +46,7 @@ func (id *NodeID) UnmarshalJSON(b []byte) error {
 	if str == nullStr { // If "null", do nothing
 		return nil
 	} else if len(str) <= 2+len(NodeIDPrefix) {
-		return fmt.Errorf("expected NodeID length to be > %d", 2+len(NodeIDPrefix))
+		return fmt.Errorf("%w: expected to be > %d", errShortNodeID, 2+len(NodeIDPrefix))
 	}
 
 	lastIndex := len(str) - 1

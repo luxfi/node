@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,7 +11,7 @@ import (
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -25,7 +25,7 @@ var (
 // BaseTx contains fields common to many transaction types. It should be
 // embedded in transaction implementations.
 type BaseTx struct {
-	avax.BaseTx `serialize:"true"`
+	lux.BaseTx `serialize:"true"`
 
 	// true iff this transaction has already passed syntactic verification
 	SyntacticallyVerified bool `json:"-"`
@@ -49,7 +49,7 @@ func (tx *BaseTx) InputIDs() set.Set[ids.ID] {
 	return inputIDs
 }
 
-func (tx *BaseTx) Outputs() []*avax.TransferableOutput {
+func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 	return tx.Outs
 }
 
@@ -88,9 +88,9 @@ func (tx *BaseTx) SyntacticVerify(ctx *snow.Context) error {
 		}
 	}
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.Outs, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.Outs, Codec):
 		return errOutputsNotSorted
-	case !utils.IsSortedAndUniqueSortable(tx.Ins):
+	case !utils.IsSortedAndUnique(tx.Ins):
 		return errInputsNotSortedUnique
 	default:
 		return nil

@@ -1,22 +1,20 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/bls"
 	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/fx"
 	"github.com/luxdefi/node/vms/platformvm/reward"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -31,9 +29,9 @@ type AddValidatorTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
 	// Describes the delegatee
-	Validator validator.Validator `serialize:"true" json:"validator"`
+	Validator `serialize:"true" json:"validator"`
 	// Where to send staked tokens when done validating
-	StakeOuts []*avax.TransferableOutput `serialize:"true" json:"stake"`
+	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send staking rewards when done validating
 	RewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
 	// Fee this validator charges delegators as a percentage, times 10,000
@@ -66,18 +64,6 @@ func (*AddValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 	return nil, false, nil
 }
 
-func (tx *AddValidatorTx) StartTime() time.Time {
-	return tx.Validator.StartTime()
-}
-
-func (tx *AddValidatorTx) EndTime() time.Time {
-	return tx.Validator.EndTime()
-}
-
-func (tx *AddValidatorTx) Weight() uint64 {
-	return tx.Validator.Wght
-}
-
 func (*AddValidatorTx) PendingPriority() Priority {
 	return PrimaryNetworkValidatorPendingPriority
 }
@@ -86,7 +72,7 @@ func (*AddValidatorTx) CurrentPriority() Priority {
 	return PrimaryNetworkValidatorCurrentPriority
 }
 
-func (tx *AddValidatorTx) Stake() []*avax.TransferableOutput {
+func (tx *AddValidatorTx) Stake() []*lux.TransferableOutput {
 	return tx.StakeOuts
 }
 
@@ -133,15 +119,15 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {
 
 		assetID := out.AssetID()
 		if assetID != ctx.AVAXAssetID {
-			return fmt.Errorf("stake output must be AVAX but is %q", assetID)
+			return fmt.Errorf("%w but is %q", errStakeMustBeAVAX, assetID)
 		}
 	}
 
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
 		return errOutputsNotSorted
-	case totalStakeWeight != tx.Validator.Wght:
-		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Validator.Wght, totalStakeWeight)
+	case totalStakeWeight != tx.Wght:
+		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Wght, totalStakeWeight)
 	}
 
 	// cache that this is valid

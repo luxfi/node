@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -23,6 +23,7 @@ var (
 	errApricotBlockIssuedAfterFork                = errors.New("apricot block issued after fork")
 	errBanffProposalBlockWithMultipleTransactions = errors.New("BanffProposalBlock contains multiple transactions")
 	errBanffStandardBlockWithoutChanges           = errors.New("BanffStandardBlock performs no state changes")
+	errIncorrectBlockHeight                       = errors.New("incorrect block height")
 	errChildBlockEarlierThanParent                = errors.New("proposed timestamp before current chain time")
 	errConflictingBatchTxs                        = errors.New("block contains conflicting transactions")
 	errConflictingParentTxs                       = errors.New("block contains a transaction that conflicts with a transaction in a parent block")
@@ -196,7 +197,7 @@ func (v *verifier) ApricotAtomicBlock(b *blocks.ApricotAtomicBlock) error {
 
 	if err := b.Tx.Unsigned.Visit(&atomicExecutor); err != nil {
 		txID := b.Tx.ID()
-		v.MarkDropped(txID, err.Error()) // cache tx as dropped
+		v.MarkDropped(txID, err) // cache tx as dropped
 		return fmt.Errorf("tx %s failed semantic verification: %w", txID, err)
 	}
 
@@ -307,7 +308,8 @@ func (v *verifier) commonBlock(b blocks.Block) error {
 	height := b.Height()
 	if expectedHeight != height {
 		return fmt.Errorf(
-			"expected block to have height %d, but found %d",
+			"%w expected %d, but found %d",
+			errIncorrectBlockHeight,
 			expectedHeight,
 			height,
 		)
@@ -364,7 +366,7 @@ func (v *verifier) proposalBlock(
 
 	if err := b.Tx.Unsigned.Visit(&txExecutor); err != nil {
 		txID := b.Tx.ID()
-		v.MarkDropped(txID, err.Error()) // cache tx as dropped
+		v.MarkDropped(txID, err) // cache tx as dropped
 		return err
 	}
 
@@ -411,7 +413,7 @@ func (v *verifier) standardBlock(
 		}
 		if err := tx.Unsigned.Visit(&txExecutor); err != nil {
 			txID := tx.ID()
-			v.MarkDropped(txID, err.Error()) // cache tx as dropped
+			v.MarkDropped(txID, err) // cache tx as dropped
 			return err
 		}
 		// ensure it doesn't overlap with current input batch

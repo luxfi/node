@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,12 +11,11 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/reward"
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -25,7 +24,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
 	ctx.AVAXAssetID = ids.GenerateTestID()
-	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
+	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
 		stx            *Tx
@@ -34,26 +33,28 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	)
 
 	// Case : signed tx is nil
-	require.ErrorIs(stx.SyntacticVerify(ctx), ErrNilSignedTx)
+	err = stx.SyntacticVerify(ctx)
+	require.ErrorIs(err, ErrNilSignedTx)
 
 	// Case : unsigned tx is nil
-	require.ErrorIs(addValidatorTx.SyntacticVerify(ctx), ErrNilTx)
+	err = addValidatorTx.SyntacticVerify(ctx)
+	require.ErrorIs(err, ErrNilTx)
 
 	validatorWeight := uint64(2022)
 	rewardAddress := preFundedKeys[0].PublicKey().Address()
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.AVAXAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.AVAXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -62,8 +63,8 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ctx.AVAXAssetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ctx.AVAXAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -76,13 +77,13 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
-		Validator: validator.Validator{
+		Validator: Validator{
 			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
@@ -108,7 +109,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, lux.ErrWrongNetworkID)
 	addValidatorTx.NetworkID--
 
 	// Case: Stake owner has no addresses
@@ -120,7 +121,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, secp256k1fx.ErrOutputUnspendable)
 	addValidatorTx.StakeOuts = stakes
 
 	// Case: Rewards owner has no addresses
@@ -129,7 +130,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, secp256k1fx.ErrOutputUnspendable)
 	addValidatorTx.RewardsOwner.(*secp256k1fx.OutputOwners).Addrs = []ids.ShortID{rewardAddress}
 
 	// Case: Too many shares
@@ -138,7 +139,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, errTooManyShares)
 	addValidatorTx.DelegationShares--
 }
 
@@ -147,7 +148,7 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
 	ctx.AVAXAssetID = ids.GenerateTestID()
-	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
+	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
 		stx            *Tx
@@ -158,19 +159,19 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 	assetID := ids.GenerateTestID()
 	validatorWeight := uint64(2022)
 	rewardAddress := preFundedKeys[0].PublicKey().Address()
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: lux.Asset{ID: assetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -179,8 +180,8 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 			},
 		},
 	}}
-	stakes := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: assetID},
+	stakes := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: assetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -193,13 +194,13 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 		},
 	}}
 	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
-		Validator: validator.Validator{
+		Validator: Validator{
 			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
@@ -216,7 +217,9 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 
 	stx, err = NewSigned(addValidatorTx, Codec, signers)
 	require.NoError(err)
-	require.Error(stx.SyntacticVerify(ctx))
+
+	err = stx.SyntacticVerify(ctx)
+	require.ErrorIs(err, errStakeMustBeAVAX)
 }
 
 func TestAddValidatorTxNotDelegatorTx(t *testing.T) {

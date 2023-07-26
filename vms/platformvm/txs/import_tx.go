@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,7 +11,7 @@ import (
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -29,7 +29,7 @@ type ImportTx struct {
 	SourceChain ids.ID `serialize:"true" json:"sourceChain"`
 
 	// Inputs that consume UTXOs produced on the chain
-	ImportedInputs []*avax.TransferableInput `serialize:"true" json:"importedInputs"`
+	ImportedInputs []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
 }
 
 // InitCtx sets the FxID fields in the inputs and outputs of this
@@ -78,7 +78,7 @@ func (tx *ImportTx) SyntacticVerify(ctx *snow.Context) error {
 			return fmt.Errorf("input failed verification: %w", err)
 		}
 	}
-	if !utils.IsSortedAndUniqueSortable(tx.ImportedInputs) {
+	if !utils.IsSortedAndUnique(tx.ImportedInputs) {
 		return errInputsNotSortedUnique
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -23,11 +23,11 @@ type MempoolTxVerifier struct {
 }
 
 func (*MempoolTxVerifier) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (*MempoolTxVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (v *MempoolTxVerifier) AddValidatorTx(tx *txs.AddValidatorTx) error {
@@ -88,7 +88,7 @@ func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	err = tx.Visit(&executor)
 	// We ignore [errFutureStakeTime] here because the time will be advanced
 	// when this transaction is issued.
-	if errors.Is(err, errFutureStakeTime) {
+	if errors.Is(err, ErrFutureStakeTime) {
 		return nil
 	}
 	return err

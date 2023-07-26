@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
 
-import (
-	"github.com/luxdefi/node/ids"
-)
+import "github.com/luxdefi/node/ids"
 
 // Benchable is notified when a validator is benched or unbenched from a given chain
 type Benchable interface {

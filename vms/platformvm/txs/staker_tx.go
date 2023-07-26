@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/fx"
 )
 
@@ -16,20 +16,6 @@ import (
 // delegation.
 type ValidatorTx interface {
 	UnsignedTx
-	Validator
-}
-
-type DelegatorTx interface {
-	UnsignedTx
-	Delegator
-}
-
-type StakerTx interface {
-	UnsignedTx
-	Staker
-}
-
-type Validator interface {
 	PermissionlessStaker
 
 	ValidationRewardsOwner() fx.Owner
@@ -37,17 +23,23 @@ type Validator interface {
 	Shares() uint32
 }
 
-type Delegator interface {
+type DelegatorTx interface {
+	UnsignedTx
 	PermissionlessStaker
 
 	RewardsOwner() fx.Owner
 }
 
+type StakerTx interface {
+	UnsignedTx
+	Staker
+}
+
 type PermissionlessStaker interface {
 	Staker
 
-	Outputs() []*avax.TransferableOutput
-	Stake() []*avax.TransferableOutput
+	Outputs() []*lux.TransferableOutput
+	Stake() []*lux.TransferableOutput
 }
 
 type Staker interface {

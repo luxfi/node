@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -15,7 +15,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/status"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 )
@@ -109,6 +109,7 @@ func TestDiffCurrentValidator(t *testing.T) {
 	d.DeleteCurrentValidator(currentValidator)
 
 	// Make sure the deletion worked
+	state.EXPECT().GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
 	_, err = d.GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
@@ -146,6 +147,7 @@ func TestDiffPendingValidator(t *testing.T) {
 	d.DeletePendingValidator(pendingValidator)
 
 	// Make sure the deletion worked
+	state.EXPECT().GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
 	_, err = d.GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
@@ -390,8 +392,8 @@ func TestDiffRewardUTXO(t *testing.T) {
 
 	// Put a reward UTXO
 	txID := ids.GenerateTestID()
-	rewardUTXO := &avax.UTXO{
-		UTXOID: avax.UTXOID{TxID: txID},
+	rewardUTXO := &lux.UTXO{
+		UTXOID: lux.UTXOID{TxID: txID},
 	}
 	d.AddRewardUTXO(txID, rewardUTXO)
 
@@ -407,10 +409,10 @@ func TestDiffRewardUTXO(t *testing.T) {
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
 		txID2 := ids.GenerateTestID()
-		parentRewardUTXO := &avax.UTXO{
-			UTXOID: avax.UTXOID{TxID: txID2},
+		parentRewardUTXO := &lux.UTXO{
+			UTXOID: lux.UTXOID{TxID: txID2},
 		}
-		state.EXPECT().GetRewardUTXOs(txID2).Return([]*avax.UTXO{parentRewardUTXO}, nil).Times(1)
+		state.EXPECT().GetRewardUTXOs(txID2).Return([]*lux.UTXO{parentRewardUTXO}, nil).Times(1)
 		gotParentRewardUTXOs, err := d.GetRewardUTXOs(txID2)
 		require.NoError(err)
 		require.Len(gotParentRewardUTXOs, 1)
@@ -435,8 +437,8 @@ func TestDiffUTXO(t *testing.T) {
 	require.NoError(err)
 
 	// Put a UTXO
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
+	utxo := &lux.UTXO{
+		UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
 	}
 	d.AddUTXO(utxo)
 
@@ -450,8 +452,8 @@ func TestDiffUTXO(t *testing.T) {
 	{
 		// Assert that we can get a UTXO from the parent state
 		// [state] returns 1 UTXO.
-		parentUTXO := &avax.UTXO{
-			UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
+		parentUTXO := &lux.UTXO{
+			UTXOID: lux.UTXOID{TxID: ids.GenerateTestID()},
 		}
 		state.EXPECT().GetUTXO(parentUTXO.InputID()).Return(parentUTXO, nil).Times(1)
 		gotParentUTXO, err := d.GetUTXO(parentUTXO.InputID())
@@ -465,52 +467,55 @@ func TestDiffUTXO(t *testing.T) {
 
 		// Make sure it's gone
 		_, err = d.GetUTXO(utxo.InputID())
-		require.Error(err)
+		require.ErrorIs(err, database.ErrNotFound)
 	}
 }
 
 func assertChainsEqual(t *testing.T, expected, actual Chain) {
+	require := require.New(t)
+
 	t.Helper()
 
 	expectedCurrentStakerIterator, expectedErr := expected.GetCurrentStakerIterator()
 	actualCurrentStakerIterator, actualErr := actual.GetCurrentStakerIterator()
-	require.Equal(t, expectedErr, actualErr)
+	require.Equal(expectedErr, actualErr)
 	if expectedErr == nil {
 		assertIteratorsEqual(t, expectedCurrentStakerIterator, actualCurrentStakerIterator)
 	}
 
 	expectedPendingStakerIterator, expectedErr := expected.GetPendingStakerIterator()
 	actualPendingStakerIterator, actualErr := actual.GetPendingStakerIterator()
-	require.Equal(t, expectedErr, actualErr)
+	require.Equal(expectedErr, actualErr)
 	if expectedErr == nil {
 		assertIteratorsEqual(t, expectedPendingStakerIterator, actualPendingStakerIterator)
 	}
 
-	require.Equal(t, expected.GetTimestamp(), actual.GetTimestamp())
+	require.Equal(expected.GetTimestamp(), actual.GetTimestamp())
 
 	expectedCurrentSupply, err := expected.GetCurrentSupply(constants.PrimaryNetworkID)
-	require.NoError(t, err)
+	require.NoError(err)
 
 	actualCurrentSupply, err := actual.GetCurrentSupply(constants.PrimaryNetworkID)
-	require.NoError(t, err)
+	require.NoError(err)
 
-	require.Equal(t, expectedCurrentSupply, actualCurrentSupply)
+	require.Equal(expectedCurrentSupply, actualCurrentSupply)
 
 	expectedSubnets, expectedErr := expected.GetSubnets()
 	actualSubnets, actualErr := actual.GetSubnets()
-	require.Equal(t, expectedErr, actualErr)
+	require.Equal(expectedErr, actualErr)
 	if expectedErr == nil {
-		require.Equal(t, expectedSubnets, actualSubnets)
+		require.Equal(expectedSubnets, actualSubnets)
 
 		for _, subnet := range expectedSubnets {
 			subnetID := subnet.ID()
 
 			expectedChains, expectedErr := expected.GetChains(subnetID)
 			actualChains, actualErr := actual.GetChains(subnetID)
-			require.Equal(t, expectedErr, actualErr)
-			if expectedErr == nil {
-				require.Equal(t, expectedChains, actualChains)
+			require.Equal(expectedErr, actualErr)
+			if expectedErr != nil {
+				continue
 			}
+			require.Equal(expectedChains, actualChains)
 		}
 	}
 }

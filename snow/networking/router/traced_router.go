@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -15,6 +15,7 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/message"
+	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow/networking/handler"
 	"github.com/luxdefi/node/snow/networking/timeout"
 	"github.com/luxdefi/node/trace"
@@ -43,7 +44,7 @@ func (r *tracedRouter) Initialize(
 	timeoutManager timeout.Manager,
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
-	stakingEnabled bool,
+	sybilProtectionEnabled bool,
 	trackedSubnets set.Set[ids.ID],
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
@@ -56,7 +57,7 @@ func (r *tracedRouter) Initialize(
 		timeoutManager,
 		closeTimeout,
 		criticalChains,
-		stakingEnabled,
+		sybilProtectionEnabled,
 		trackedSubnets,
 		onFatal,
 		healthConfig,
@@ -73,6 +74,7 @@ func (r *tracedRouter) RegisterRequest(
 	requestID uint32,
 	op message.Op,
 	failedMsg message.InboundMessage,
+	engineType p2p.EngineType,
 ) {
 	r.router.RegisterRequest(
 		ctx,
@@ -82,6 +84,7 @@ func (r *tracedRouter) RegisterRequest(
 		requestID,
 		op,
 		failedMsg,
+		engineType,
 	)
 }
 

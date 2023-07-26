@@ -6,7 +6,6 @@ set -o pipefail
 # e.g.,
 # ./scripts/build.sh
 # ./scripts/tests.e2e.sh ./build/node
-# ENABLE_WHITELIST_VTX_TESTS=true ./scripts/tests.e2e.sh ./build/node
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -15,47 +14,20 @@ fi
 AVALANCHEGO_PATH="${1-}"
 if [[ -z "${AVALANCHEGO_PATH}" ]]; then
   echo "Missing AVALANCHEGO_PATH argument!"
-  echo "Usage: ${0} [AVALANCHEGO_PATH]" >> /dev/stderr
+  echo "Usage: ${0} [AVALANCHEGO_PATH]" >>/dev/stderr
   exit 255
 fi
 
-# Set the CGO flags to use the portable version of BLST
-#
-# We use "export" here instead of just setting a bash variable because we need
-# to pass this flag to all child processes spawned by the shell.
-export CGO_CFLAGS="-O -D__BLST_PORTABLE__"
-
-ENABLE_WHITELIST_VTX_TESTS=${ENABLE_WHITELIST_VTX_TESTS:-false}
-# ref. https://onsi.github.io/ginkgo/#spec-labels
-GINKGO_LABEL_FILTER="!whitelist-tx"
-if [[ ${ENABLE_WHITELIST_VTX_TESTS} == true ]]; then
-  # run only "whitelist-tx" tests, no other test
-  GINKGO_LABEL_FILTER="whitelist-tx"
-fi
-echo GINKGO_LABEL_FILTER: ${GINKGO_LABEL_FILTER}
-
 #################################
-# download avalanche-network-runner
-# https://github.com/luxdefi/avalanche-network-runner
-# TODO: migrate to upstream avalanche-network-runner
-GOARCH=$(go env GOARCH)
-GOOS=$(go env GOOS)
-NETWORK_RUNNER_VERSION=1.3.5-rc.0
-DOWNLOAD_PATH=/tmp/avalanche-network-runner.tar.gz
-DOWNLOAD_URL="https://github.com/luxdefi/avalanche-network-runner/releases/download/v${NETWORK_RUNNER_VERSION}/avalanche-network-runner_${NETWORK_RUNNER_VERSION}_${GOOS}_${GOARCH}.tar.gz"
+echo "installing avalanche-network-runner"
+ANR_WORKDIR="/tmp"
+./scripts/install_anr.sh
 
-rm -f ${DOWNLOAD_PATH}
-rm -f /tmp/avalanche-network-runner
-
-echo "downloading avalanche-network-runner ${NETWORK_RUNNER_VERSION} at ${DOWNLOAD_URL} to ${DOWNLOAD_PATH}"
-curl --fail -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
-
-echo "extracting downloaded avalanche-network-runner"
-tar xzvf ${DOWNLOAD_PATH} -C /tmp
-/tmp/avalanche-network-runner -h
-
-GOPATH="$(go env GOPATH)"
-PATH="${GOPATH}/bin:${PATH}"
+# Sourcing constants.sh ensures that the necessary CGO flags are set to
+# build the portable version of BLST. Without this, ginkgo may fail to
+# build the test binary if run on a host (e.g. github worker) that lacks
+# the instructions to build non-portable BLST.
+source ./scripts/constants.sh
 
 #################################
 echo "building e2e.test"
@@ -67,23 +39,23 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 #################################
 # run "avalanche-network-runner" server
 echo "launch avalanche-network-runner in the background"
-/tmp/avalanche-network-runner \
-server \
---log-level debug \
---port=":12342" \
---disable-grpc-gateway &
+$ANR_WORKDIR/avalanche-network-runner \
+  server \
+  --log-level debug \
+  --port=":12342" \
+  --disable-grpc-gateway &
 PID=${!}
 
 #################################
 echo "running e2e tests against the local cluster with ${AVALANCHEGO_PATH}"
 ./tests/e2e/e2e.test \
---ginkgo.v \
---log-level debug \
---network-runner-grpc-endpoint="0.0.0.0:12342" \
---network-runner-node-path=${AVALANCHEGO_PATH} \
---network-runner-node-log-level="WARN" \
---test-keys-file=tests/test.insecure.secp256k1.keys --ginkgo.label-filter="${GINKGO_LABEL_FILTER}" \
-&& EXIT_CODE=$? || EXIT_CODE=$?
+  --ginkgo.v \
+  --log-level debug \
+  --network-runner-grpc-endpoint="0.0.0.0:12342" \
+  --network-runner-node-path=${AVALANCHEGO_PATH} \
+  --network-runner-node-log-level="WARN" \
+  --test-keys-file=tests/test.insecure.secp256k1.keys &&
+  EXIT_CODE=$? || EXIT_CODE=$?
 
 kill ${PID}
 

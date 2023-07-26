@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 )
 
@@ -69,7 +69,7 @@ func (t *txSemanticVerify) ImportTx(tx *txs.ImportTx) error {
 	codec := t.vm.parser.Codec()
 	offset := tx.BaseTx.NumCredentials()
 	for i, in := range tx.ImportedIns {
-		utxo := avax.UTXO{}
+		utxo := lux.UTXO{}
 		if _, err := codec.Unmarshal(allUTXOBytes[i], &utxo); err != nil {
 			return err
 		}

@@ -1,143 +1,74 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/window"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 	"github.com/luxdefi/node/vms/platformvm/metrics"
 	"github.com/luxdefi/node/vms/platformvm/state"
+	"github.com/luxdefi/node/vms/platformvm/validators"
 )
 
-var _ blocks.Visitor = (*acceptor)(nil)
+var (
+	_ blocks.Visitor = (*acceptor)(nil)
+
+	errMissingBlockState = errors.New("missing state of block")
+)
 
 // acceptor handles the logic for accepting a block.
 // All errors returned by this struct are fatal and should result in the chain
 // being shutdown.
 type acceptor struct {
 	*backend
-	metrics          metrics.Metrics
-	recentlyAccepted window.Window[ids.ID]
-	bootstrapped     *utils.AtomicBool
+	metrics      metrics.Metrics
+	validators   validators.Manager
+	bootstrapped *utils.Atomic[bool]
 }
 
 func (a *acceptor) BanffAbortBlock(b *blocks.BanffAbortBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "banff abort"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.abortBlock(b)
+	return a.abortBlock(b, "banff abort")
 }
 
 func (a *acceptor) BanffCommitBlock(b *blocks.BanffCommitBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "banff commit"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.commitBlock(b)
+	return a.commitBlock(b, "apricot commit")
 }
 
 func (a *acceptor) BanffProposalBlock(b *blocks.BanffProposalBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "banff proposal"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	a.proposalBlock(b)
+	a.proposalBlock(b, "banff proposal")
 	return nil
 }
 
 func (a *acceptor) BanffStandardBlock(b *blocks.BanffStandardBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "banff standard"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.standardBlock(b)
+	return a.standardBlock(b, "banff standard")
 }
 
 func (a *acceptor) ApricotAbortBlock(b *blocks.ApricotAbortBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "apricot abort"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.abortBlock(b)
+	return a.abortBlock(b, "apricot abort")
 }
 
 func (a *acceptor) ApricotCommitBlock(b *blocks.ApricotCommitBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "apricot commit"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.commitBlock(b)
+	return a.commitBlock(b, "apricot commit")
 }
 
 func (a *acceptor) ApricotProposalBlock(b *blocks.ApricotProposalBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "apricot proposal"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	a.proposalBlock(b)
+	a.proposalBlock(b, "apricot proposal")
 	return nil
 }
 
 func (a *acceptor) ApricotStandardBlock(b *blocks.ApricotStandardBlock) error {
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "apricot standard"),
-		zap.Stringer("blkID", b.ID()),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
-
-	return a.standardBlock(b)
+	return a.standardBlock(b, "apricot standard")
 }
 
 func (a *acceptor) ApricotAtomicBlock(b *blocks.ApricotAtomicBlock) error {
 	blkID := b.ID()
 	defer a.free(blkID)
-
-	a.ctx.Log.Debug(
-		"accepting block",
-		zap.String("blockType", "apricot atomic"),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-	)
 
 	if err := a.commonAccept(b); err != nil {
 		return err
@@ -145,11 +76,13 @@ func (a *acceptor) ApricotAtomicBlock(b *blocks.ApricotAtomicBlock) error {
 
 	blkState, ok := a.blkIDToState[blkID]
 	if !ok {
-		return fmt.Errorf("couldn't find state of block %s", blkID)
+		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}
 
 	// Update the state to reflect the changes made in [onAcceptState].
-	blkState.onAcceptState.Apply(a.state)
+	if err := blkState.onAcceptState.Apply(a.state); err != nil {
+		return err
+	}
 
 	defer a.state.Abort()
 	batch, err := a.state.CommitBatch()
@@ -170,17 +103,27 @@ func (a *acceptor) ApricotAtomicBlock(b *blocks.ApricotAtomicBlock) error {
 			err,
 		)
 	}
+
+	a.ctx.Log.Trace(
+		"accepted block",
+		zap.String("blockType", "apricot atomic"),
+		zap.Stringer("blkID", blkID),
+		zap.Uint64("height", b.Height()),
+		zap.Stringer("parentID", b.Parent()),
+		zap.Stringer("utxoChecksum", a.state.Checksum()),
+	)
+
 	return nil
 }
 
-func (a *acceptor) abortBlock(b blocks.Block) error {
+func (a *acceptor) abortBlock(b blocks.Block, blockType string) error {
 	parentID := b.Parent()
 	parentState, ok := a.blkIDToState[parentID]
 	if !ok {
 		return fmt.Errorf("%w: %s", state.ErrMissingParentState, parentID)
 	}
 
-	if a.bootstrapped.GetValue() {
+	if a.bootstrapped.Get() {
 		if parentState.initiallyPreferCommit {
 			a.metrics.MarkOptionVoteLost()
 		} else {
@@ -188,17 +131,17 @@ func (a *acceptor) abortBlock(b blocks.Block) error {
 		}
 	}
 
-	return a.optionBlock(b, parentState.statelessBlock)
+	return a.optionBlock(b, parentState.statelessBlock, blockType)
 }
 
-func (a *acceptor) commitBlock(b blocks.Block) error {
+func (a *acceptor) commitBlock(b blocks.Block, blockType string) error {
 	parentID := b.Parent()
 	parentState, ok := a.blkIDToState[parentID]
 	if !ok {
 		return fmt.Errorf("%w: %s", state.ErrMissingParentState, parentID)
 	}
 
-	if a.bootstrapped.GetValue() {
+	if a.bootstrapped.Get() {
 		if parentState.initiallyPreferCommit {
 			a.metrics.MarkOptionVoteWon()
 		} else {
@@ -206,10 +149,10 @@ func (a *acceptor) commitBlock(b blocks.Block) error {
 		}
 	}
 
-	return a.optionBlock(b, parentState.statelessBlock)
+	return a.optionBlock(b, parentState.statelessBlock, blockType)
 }
 
-func (a *acceptor) optionBlock(b, parent blocks.Block) error {
+func (a *acceptor) optionBlock(b, parent blocks.Block, blockType string) error {
 	blkID := b.ID()
 	parentID := parent.ID()
 
@@ -231,13 +174,29 @@ func (a *acceptor) optionBlock(b, parent blocks.Block) error {
 
 	blkState, ok := a.blkIDToState[blkID]
 	if !ok {
-		return fmt.Errorf("couldn't find state of block %s", blkID)
+		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}
-	blkState.onAcceptState.Apply(a.state)
-	return a.state.Commit()
+	if err := blkState.onAcceptState.Apply(a.state); err != nil {
+		return err
+	}
+
+	if err := a.state.Commit(); err != nil {
+		return err
+	}
+
+	a.ctx.Log.Trace(
+		"accepted block",
+		zap.String("blockType", blockType),
+		zap.Stringer("blkID", blkID),
+		zap.Uint64("height", b.Height()),
+		zap.Stringer("parentID", parentID),
+		zap.Stringer("utxoChecksum", a.state.Checksum()),
+	)
+
+	return nil
 }
 
-func (a *acceptor) proposalBlock(b blocks.Block) {
+func (a *acceptor) proposalBlock(b blocks.Block, blockType string) {
 	// Note that:
 	//
 	// * We don't free the proposal block in this method.
@@ -254,10 +213,20 @@ func (a *acceptor) proposalBlock(b blocks.Block) {
 	//   (The VM's Shutdown method commits the database.)
 	//   The snowman.Engine requires that the last committed block is a decision block
 
-	a.backend.lastAccepted = b.ID()
+	blkID := b.ID()
+	a.backend.lastAccepted = blkID
+
+	a.ctx.Log.Trace(
+		"accepted block",
+		zap.String("blockType", blockType),
+		zap.Stringer("blkID", blkID),
+		zap.Uint64("height", b.Height()),
+		zap.Stringer("parentID", b.Parent()),
+		zap.Stringer("utxoChecksum", a.state.Checksum()),
+	)
 }
 
-func (a *acceptor) standardBlock(b blocks.Block) error {
+func (a *acceptor) standardBlock(b blocks.Block, blockType string) error {
 	blkID := b.ID()
 	defer a.free(blkID)
 
@@ -267,11 +236,13 @@ func (a *acceptor) standardBlock(b blocks.Block) error {
 
 	blkState, ok := a.blkIDToState[blkID]
 	if !ok {
-		return fmt.Errorf("couldn't find state of block %s", blkID)
+		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}
 
 	// Update the state to reflect the changes made in [onAcceptState].
-	blkState.onAcceptState.Apply(a.state)
+	if err := blkState.onAcceptState.Apply(a.state); err != nil {
+		return err
+	}
 
 	defer a.state.Abort()
 	batch, err := a.state.CommitBatch()
@@ -291,6 +262,16 @@ func (a *acceptor) standardBlock(b blocks.Block) error {
 	if onAcceptFunc := blkState.onAcceptFunc; onAcceptFunc != nil {
 		onAcceptFunc()
 	}
+
+	a.ctx.Log.Trace(
+		"accepted block",
+		zap.String("blockType", blockType),
+		zap.Stringer("blkID", blkID),
+		zap.Uint64("height", b.Height()),
+		zap.Stringer("parentID", b.Parent()),
+		zap.Stringer("utxoChecksum", a.state.Checksum()),
+	)
+
 	return nil
 }
 
@@ -304,7 +285,7 @@ func (a *acceptor) commonAccept(b blocks.Block) error {
 	a.backend.lastAccepted = blkID
 	a.state.SetLastAccepted(blkID)
 	a.state.SetHeight(b.Height())
-	a.state.AddStatelessBlock(b, choices.Accepted)
-	a.recentlyAccepted.Add(blkID)
+	a.state.AddStatelessBlock(b)
+	a.validators.OnAcceptedBlockID(blkID)
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -68,9 +68,9 @@ func (b *backend) GetBlock(blkID ids.ID) (blocks.Block, error) {
 	if blk, ok := b.blkIDToState[blkID]; ok {
 		return blk.statelessBlock, nil
 	}
+
 	// The block isn't in memory. Check the database.
-	statelessBlk, _, err := b.state.GetStatelessBlock(blkID)
-	return statelessBlk, err
+	return b.state.GetStatelessBlock(blkID)
 }
 
 func (b *backend) LastAccepted() ids.ID {

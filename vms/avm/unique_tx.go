@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -16,7 +16,7 @@ import (
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 )
 
 var (
@@ -47,8 +47,8 @@ type TxCachedState struct {
 	validity                          error
 
 	inputs     []ids.ID
-	inputUTXOs []*avax.UTXOID
-	utxos      []*avax.UTXO
+	inputUTXOs []*lux.UTXOID
+	utxos      []*lux.UTXO
 	deps       []snowstorm.Tx
 
 	status choices.Status
@@ -133,7 +133,7 @@ func (tx *UniqueTx) Accept(context.Context) error {
 
 	// Fetch the input UTXOs
 	inputUTXOIDs := tx.InputUTXOs()
-	inputUTXOs := make([]*avax.UTXO, 0, len(inputUTXOIDs))
+	inputUTXOs := make([]*lux.UTXO, 0, len(inputUTXOIDs))
 	for _, utxoID := range inputUTXOIDs {
 		// Don't bother fetching the input UTXO if its symbolic
 		if utxoID.Symbolic() {
@@ -299,7 +299,7 @@ func (*UniqueTx) Whitelist(context.Context) (set.Set[ids.ID], error) {
 }
 
 // InputUTXOs returns the utxos that will be consumed on tx acceptance
-func (tx *UniqueTx) InputUTXOs() []*avax.UTXOID {
+func (tx *UniqueTx) InputUTXOs() []*lux.UTXOID {
 	tx.refresh()
 	if tx.Tx == nil || len(tx.inputUTXOs) != 0 {
 		return tx.inputUTXOs
@@ -309,7 +309,7 @@ func (tx *UniqueTx) InputUTXOs() []*avax.UTXOID {
 }
 
 // UTXOs returns the utxos that will be added to the UTXO set on tx acceptance
-func (tx *UniqueTx) UTXOs() []*avax.UTXO {
+func (tx *UniqueTx) UTXOs() []*lux.UTXO {
 	tx.refresh()
 	if tx.Tx == nil || len(tx.utxos) != 0 {
 		return tx.utxos

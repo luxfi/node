@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -28,17 +28,16 @@ import (
 	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/formatting"
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/timer/mockable"
 	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/utils/window"
 	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/api"
 	"github.com/luxdefi/node/vms/platformvm/config"
 	"github.com/luxdefi/node/vms/platformvm/fx"
@@ -54,16 +53,15 @@ import (
 
 	db_manager "github.com/luxdefi/node/database/manager"
 	p_tx_builder "github.com/luxdefi/node/vms/platformvm/txs/builder"
+	pvalidators "github.com/luxdefi/node/vms/platformvm/validators"
 )
 
 const (
 	pending stakerStatus = iota
 	current
 
-	testNetworkID                 = 10 // To be used in tests
-	defaultWeight                 = 10000
-	maxRecentlyAcceptedWindowSize = 256
-	recentlyAcceptedWindowTTL     = 5 * time.Minute
+	defaultWeight = 10000
+	trackChecksum = false
 )
 
 var (
@@ -74,10 +72,10 @@ var (
 	defaultGenesisTime        = time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC)
 	defaultValidateStartTime  = defaultGenesisTime
 	defaultValidateEndTime    = defaultValidateStartTime.Add(10 * defaultMinStakingDuration)
-	defaultMinValidatorStake  = 5 * units.MilliAvax
+	defaultMinValidatorStake  = 5 * units.MilliLux
 	defaultBalance            = 100 * defaultMinValidatorStake
-	preFundedKeys             = crypto.BuildTestKeys()
-	avaxAssetID               = ids.ID{'y', 'e', 'e', 't'}
+	preFundedKeys             = secp256k1.TestKeys()
+	luxAssetID               = ids.ID{'y', 'e', 'e', 't'}
 	defaultTxFee              = uint64(100)
 	xChainID                  = ids.Empty.Prefix(0)
 	cChainID                  = ids.Empty.Prefix(1)
@@ -111,7 +109,7 @@ type environment struct {
 	mempool    mempool.Mempool
 	sender     *common.SenderTest
 
-	isBootstrapped *utils.AtomicBool
+	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
@@ -119,7 +117,7 @@ type environment struct {
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
-	atomicUTXOs    avax.AtomicUTXOManager
+	atomicUTXOs    lux.AtomicUTXOManager
 	uptimes        uptime.Manager
 	utxosHandler   utxo.Handler
 	txBuilder      p_tx_builder.Builder
@@ -132,24 +130,24 @@ func (*environment) ResetBlockTimer() {
 
 func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 	res := &environment{
-		isBootstrapped: &utils.AtomicBool{},
+		isBootstrapped: &utils.Atomic[bool]{},
 		config:         defaultConfig(),
 		clk:            defaultClock(),
 	}
-	res.isBootstrapped.SetValue(true)
+	res.isBootstrapped.Set(true)
 
 	baseDBManager := db_manager.NewMemDB(version.Semantic1_0_0)
 	res.baseDB = versiondb.New(baseDBManager.Current().Database)
 	res.ctx = defaultCtx(res.baseDB)
-	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.GetValue())
+	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
-	res.atomicUTXOs = avax.NewAtomicUTXOManager(res.ctx.SharedMemory, txs.Codec)
+	res.atomicUTXOs = lux.NewAtomicUTXOManager(res.ctx.SharedMemory, txs.Codec)
 
 	if ctrl == nil {
 		res.state = defaultState(res.config, res.ctx, res.baseDB, rewardsCalc)
 		res.uptimes = uptime.NewManager(res.state)
-		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.state, res.fx)
+		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.fx)
 		res.txBuilder = p_tx_builder.New(
 			res.ctx,
 			res.config,
@@ -163,7 +161,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 		genesisBlkID = ids.GenerateTestID()
 		res.mockedState = state.NewMockState(ctrl)
 		res.uptimes = uptime.NewManager(res.mockedState)
-		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.mockedState, res.fx)
+		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.fx)
 		res.txBuilder = p_tx_builder.New(
 			res.ctx,
 			res.config,
@@ -190,13 +188,6 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 	}
 
 	registerer := prometheus.NewRegistry()
-	window := window.New[ids.ID](
-		window.Config{
-			Clock:   res.clk,
-			MaxSize: maxRecentlyAcceptedWindowSize,
-			TTL:     recentlyAcceptedWindowTTL,
-		},
-	)
 	res.sender = &common.SenderTest{T: t}
 
 	metrics := metrics.Noop
@@ -213,7 +204,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 			metrics,
 			res.state,
 			res.backend,
-			window,
+			pvalidators.TestManager,
 		)
 		addSubnet(res)
 	} else {
@@ -222,7 +213,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 			metrics,
 			res.mockedState,
 			res.backend,
-			window,
+			pvalidators.TestManager,
 		)
 		// we do not add any subnet to state, since we can mock
 		// whatever we need
@@ -241,7 +232,7 @@ func addSubnet(env *environment) {
 			preFundedKeys[1].PublicKey().Address(),
 			preFundedKeys[2].PublicKey().Address(),
 		},
-		[]*crypto.PrivateKeySECP256K1R{preFundedKeys[0]},
+		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		preFundedKeys[0].PublicKey().Address(),
 	)
 	if err != nil {
@@ -266,7 +257,9 @@ func addSubnet(env *environment) {
 	}
 
 	stateDiff.AddTx(testSubnet1, status.Committed)
-	stateDiff.Apply(env.state)
+	if err := stateDiff.Apply(env.state); err != nil {
+		panic(err)
+	}
 }
 
 func defaultState(
@@ -284,6 +277,8 @@ func defaultState(
 		ctx,
 		metrics.Noop,
 		rewards,
+		&utils.Atomic[bool]{},
+		trackChecksum,
 	)
 	if err != nil {
 		panic(err)
@@ -291,10 +286,6 @@ func defaultState(
 
 	// persist and reload to init a bunch of in-memory stuff
 	state.SetHeight(0)
-	if err := state.Commit(); err != nil {
-		panic(err)
-	}
-	state.SetHeight( /*height*/ 0)
 	if err := state.Commit(); err != nil {
 		panic(err)
 	}
@@ -307,7 +298,7 @@ func defaultCtx(db database.Database) *snow.Context {
 	ctx.NetworkID = 10
 	ctx.XChainID = xChainID
 	ctx.CChainID = cChainID
-	ctx.AVAXAssetID = avaxAssetID
+	ctx.AVAXAssetID = luxAssetID
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
@@ -336,22 +327,22 @@ func defaultConfig() *config.Config {
 	primaryVdrs := validators.NewSet()
 	_ = vdrs.Add(constants.PrimaryNetworkID, primaryVdrs)
 	return &config.Config{
-		Chains:                 chains.MockManager{},
+		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             vdrs,
 		TxFee:                  defaultTxFee,
 		CreateSubnetTxFee:      100 * defaultTxFee,
 		CreateBlockchainTxFee:  100 * defaultTxFee,
-		MinValidatorStake:      5 * units.MilliAvax,
-		MaxValidatorStake:      500 * units.MilliAvax,
-		MinDelegatorStake:      1 * units.MilliAvax,
+		MinValidatorStake:      5 * units.MilliLux,
+		MaxValidatorStake:      500 * units.MilliLux,
+		MinDelegatorStake:      1 * units.MilliLux,
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig: reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
+			SupplyCap:          720 * units.MegaLux,
 		},
 		ApricotPhase3Time: defaultValidateEndTime,
 		ApricotPhase5Time: defaultValidateEndTime,
@@ -360,9 +351,9 @@ func defaultConfig() *config.Config {
 }
 
 func defaultClock() *mockable.Clock {
-	clk := mockable.Clock{}
+	clk := &mockable.Clock{}
 	clk.Set(defaultGenesisTime)
-	return &clk
+	return clk
 }
 
 type fxVMInt struct {
@@ -403,10 +394,9 @@ func defaultFx(clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.
 
 func buildGenesisTest(ctx *snow.Context) []byte {
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))
-	hrp := constants.NetworkIDToHRP[testNetworkID]
 	for i, key := range preFundedKeys {
 		id := key.PublicKey().Address()
-		addr, err := address.FormatBech32(hrp, id.Bytes())
+		addr, err := address.FormatBech32(constants.UnitTestHRP, id.Bytes())
 		if err != nil {
 			panic(err)
 		}
@@ -419,7 +409,7 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 	genesisValidators := make([]api.PermissionlessValidator, len(preFundedKeys))
 	for i, key := range preFundedKeys {
 		nodeID := ids.NodeID(key.PublicKey().Address())
-		addr, err := address.FormatBech32(hrp, nodeID.Bytes())
+		addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
 		if err != nil {
 			panic(err)
 		}
@@ -442,13 +432,13 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 	}
 
 	buildGenesisArgs := api.BuildGenesisArgs{
-		NetworkID:     json.Uint32(testNetworkID),
-		AvaxAssetID:   ctx.AVAXAssetID,
+		NetworkID:     json.Uint32(constants.UnitTestID),
+		LuxAssetID:   ctx.AVAXAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,
 		Time:          json.Uint64(defaultGenesisTime.Unix()),
-		InitialSupply: json.Uint64(360 * units.MegaAvax),
+		InitialSupply: json.Uint64(360 * units.MegaLux),
 		Encoding:      formatting.Hex,
 	}
 
@@ -472,7 +462,7 @@ func shutdownEnvironment(t *environment) error {
 		return nil
 	}
 
-	if t.isBootstrapped.GetValue() {
+	if t.isBootstrapped.Get() {
 		primaryValidatorSet, exist := t.config.Validators.Get(constants.PrimaryNetworkID)
 		if !exist {
 			return errMissingPrimaryValidators
@@ -506,7 +496,7 @@ func addPendingValidator(
 	endTime time.Time,
 	nodeID ids.NodeID,
 	rewardAddress ids.ShortID,
-	keys []*crypto.PrivateKeySECP256K1R,
+	keys []*secp256k1.PrivateKey,
 ) (*txs.Tx, error) {
 	addPendingValidatorTx, err := env.txBuilder.NewAddValidatorTx(
 		env.config.MinValidatorStake,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -60,8 +60,7 @@ func TestAllocationLess(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-			require.Equal(tt.expected, tt.alloc1.Less(tt.alloc2))
+			require.Equal(t, tt.expected, tt.alloc1.Less(tt.alloc2))
 		})
 	}
 }

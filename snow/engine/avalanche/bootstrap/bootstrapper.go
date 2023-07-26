@@ -1,24 +1,23 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"math"
-	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/luxdefi/node/cache"
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/avalanche"
 	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
 	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/version"
 )
@@ -30,18 +29,14 @@ const (
 	stripeDistance = 2000
 	stripeWidth    = 5
 	cacheSize      = 100000
-
-	// Parameters for delaying bootstrapping to avoid potential CPU burns
-	bootstrappingDelay = 10 * time.Second
 )
 
-var (
-	_ common.BootstrapableEngine = (*bootstrapper)(nil)
+var _ common.BootstrapableEngine = (*bootstrapper)(nil)
 
-	errUnexpectedTimeout = errors.New("unexpected timeout fired")
-)
-
-func New(ctx context.Context, config Config, onFinished func(ctx context.Context, lastReqID uint32) error) (common.BootstrapableEngine, error) {
+func New(
+	config Config,
+	onFinished func(ctx context.Context, lastReqID uint32) error,
+) (common.BootstrapableEngine, error) {
 	b := &bootstrapper{
 		Config: config,
 
@@ -50,32 +45,15 @@ func New(ctx context.Context, config Config, onFinished func(ctx context.Context
 		PutHandler:                  common.NewNoOpPutHandler(config.Ctx.Log),
 		QueryHandler:                common.NewNoOpQueryHandler(config.Ctx.Log),
 		ChitsHandler:                common.NewNoOpChitsHandler(config.Ctx.Log),
-		AppHandler:                  common.NewNoOpAppHandler(config.Ctx.Log),
+		AppHandler:                  config.VM,
 
-		processedCache:           &cache.LRU{Size: cacheSize},
-		Fetcher:                  common.Fetcher{OnFinished: onFinished},
-		executedStateTransitions: math.MaxInt32,
+		processedCache: &cache.LRU[ids.ID, struct{}]{Size: cacheSize},
+		Fetcher: common.Fetcher{
+			OnFinished: onFinished,
+		},
 	}
 
-	if err := b.metrics.Initialize("bs", config.Ctx.Registerer); err != nil {
-		return nil, err
-	}
-
-	if err := b.VtxBlocked.SetParser(ctx, &vtxParser{
-		log:         config.Ctx.Log,
-		numAccepted: b.numAcceptedVts,
-		numDropped:  b.numDroppedVts,
-		manager:     b.Manager,
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := b.TxBlocked.SetParser(&txParser{
-		log:         config.Ctx.Log,
-		numAccepted: b.numAcceptedTxs,
-		numDropped:  b.numDroppedTxs,
-		vm:          b.VM,
-	}); err != nil {
+	if err := b.metrics.Initialize("bs", config.Ctx.AvalancheRegisterer); err != nil {
 		return nil, err
 	}
 
@@ -84,6 +62,8 @@ func New(ctx context.Context, config Config, onFinished func(ctx context.Context
 	return b, nil
 }
 
+// Note: To align with the Snowman invariant, it should be guaranteed the VM is
+// not used until after the bootstrapper has been Started.
 type bootstrapper struct {
 	Config
 
@@ -106,11 +86,7 @@ type bootstrapper struct {
 	needToFetch set.Set[ids.ID]
 
 	// Contains IDs of vertices that have recently been processed
-	processedCache *cache.LRU
-	// number of state transitions executed
-	executedStateTransitions int
-
-	awaitingTimeout bool
+	processedCache *cache.LRU[ids.ID, struct{}]
 }
 
 func (b *bootstrapper) Clear() error {
@@ -159,19 +135,22 @@ func (b *bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 			)
 			return nil
 		}
-		b.Ctx.Log.Debug("failed to parse requested vertex",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Stringer("vtxID", requestedVtxID),
-			zap.Error(err),
-		)
-		b.Ctx.Log.Verbo("failed to parse requested vertex",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Stringer("vtxID", requestedVtxID),
-			zap.Binary("vtxBytes", vtxs[0]),
-			zap.Error(err),
-		)
+		if b.Ctx.Log.Enabled(logging.Verbo) {
+			b.Ctx.Log.Verbo("failed to parse requested vertex",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Stringer("vtxID", requestedVtxID),
+				zap.Binary("vtxBytes", vtxs[0]),
+				zap.Error(err),
+			)
+		} else {
+			b.Ctx.Log.Debug("failed to parse requested vertex",
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Stringer("vtxID", requestedVtxID),
+				zap.Error(err),
+			)
+		}
 		return b.fetch(ctx, requestedVtxID)
 	}
 
@@ -294,16 +273,8 @@ func (b *bootstrapper) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 	return b.StartupTracker.Disconnected(ctx, nodeID)
 }
 
-func (b *bootstrapper) Timeout(ctx context.Context) error {
-	if !b.awaitingTimeout {
-		return errUnexpectedTimeout
-	}
-	b.awaitingTimeout = false
-
-	if !b.Config.Subnet.IsBootstrapped() {
-		return b.Restart(ctx, true)
-	}
-	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
+func (*bootstrapper) Timeout(context.Context) error {
+	return nil
 }
 
 func (*bootstrapper) Gossip(context.Context) error {
@@ -322,13 +293,67 @@ func (*bootstrapper) Notify(context.Context, common.Message) error {
 func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")
 
-	b.Ctx.SetState(snow.Bootstrapping)
+	b.Ctx.State.Set(snow.EngineState{
+		Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+		State: snow.Bootstrapping,
+	})
 	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w",
 			err)
 	}
 
+	if err := b.VtxBlocked.SetParser(ctx, &vtxParser{
+		log:         b.Ctx.Log,
+		numAccepted: b.numAcceptedVts,
+		numDropped:  b.numDroppedVts,
+		manager:     b.Manager,
+	}); err != nil {
+		return err
+	}
+
+	if err := b.TxBlocked.SetParser(&txParser{
+		log:         b.Ctx.Log,
+		numAccepted: b.numAcceptedTxs,
+		numDropped:  b.numDroppedTxs,
+		vm:          b.VM,
+	}); err != nil {
+		return err
+	}
+
 	b.Config.SharedCfg.RequestID = startReqID
+
+	// If the network was already linearized, don't attempt to linearize it
+	// again.
+	linearized, err := b.Manager.StopVertexAccepted(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get linearization status: %w", err)
+	}
+	if linearized {
+		edge := b.Manager.Edge(ctx)
+		return b.ForceAccepted(ctx, edge)
+	}
+
+	// If requested, assume the currently accepted state is what was linearized.
+	//
+	// Note: This is used to linearize networks that were created after the
+	// linearization occurred.
+	if b.Config.LinearizeOnStartup {
+		edge := b.Manager.Edge(ctx)
+		stopVertex, err := b.Manager.BuildStopVtx(ctx, edge)
+		if err != nil {
+			return fmt.Errorf("failed to create stop vertex: %w", err)
+		}
+		if err := stopVertex.Accept(ctx); err != nil {
+			return fmt.Errorf("failed to accept stop vertex: %w", err)
+		}
+
+		stopVertexID := stopVertex.ID()
+		b.Ctx.Log.Info("accepted stop vertex",
+			zap.Stringer("vtxID", stopVertexID),
+		)
+
+		return b.ForceAccepted(ctx, []ids.ID{stopVertexID})
+	}
 
 	if !b.StartupTracker.ShouldStart() {
 		return nil
@@ -488,7 +513,7 @@ func (b *bootstrapper) process(ctx context.Context, vtxs ...avalanche.Vertex) er
 				return err
 			}
 			if height%stripeDistance < stripeWidth { // See comment for stripeDistance
-				b.processedCache.Put(vtxID, nil)
+				b.processedCache.Put(vtxID, struct{}{})
 			}
 			if height == prevHeight {
 				vtxHeightSet.Add(vtxID)
@@ -542,7 +567,7 @@ func (b *bootstrapper) ForceAccepted(ctx context.Context, acceptedContainerIDs [
 func (b *bootstrapper) checkFinish(ctx context.Context) error {
 	// If there are outstanding requests for vertices or we still need to fetch vertices, we can't finish
 	pendingJobs := b.VtxBlocked.MissingIDs()
-	if b.IsBootstrapped() || len(pendingJobs) > 0 || b.awaitingTimeout {
+	if b.IsBootstrapped() || len(pendingJobs) > 0 {
 		return nil
 	}
 
@@ -557,7 +582,7 @@ func (b *bootstrapper) checkFinish(ctx context.Context) error {
 		b.Config.Ctx,
 		b,
 		b.Config.SharedCfg.Restarted,
-		b.Ctx.DecisionAcceptor,
+		b.Ctx.TxAcceptor,
 	)
 	if err != nil || b.Halted() {
 		return err
@@ -569,45 +594,35 @@ func (b *bootstrapper) checkFinish(ctx context.Context) error {
 		b.Ctx.Log.Debug("executing vertices")
 	}
 
-	executedVts, err := b.VtxBlocked.ExecuteAll(
+	_, err = b.VtxBlocked.ExecuteAll(
 		ctx,
 		b.Config.Ctx,
 		b,
 		b.Config.SharedCfg.Restarted,
-		b.Ctx.ConsensusAcceptor,
+		b.Ctx.VertexAcceptor,
 	)
 	if err != nil || b.Halted() {
 		return err
 	}
 
-	previouslyExecuted := b.executedStateTransitions
-	b.executedStateTransitions = executedVts
-
-	// Note that executedVts < c*previouslyExecuted is enforced so that the
-	// bootstrapping process will terminate even as new vertices are being
-	// issued.
-	if executedVts > 0 && executedVts < previouslyExecuted/2 && b.Config.RetryBootstrap {
-		b.Ctx.Log.Debug("checking for more vertices before finishing bootstrapping")
+	// If the chain is linearized, we should immediately move on to start
+	// bootstrapping snowman.
+	linearized, err := b.Manager.StopVertexAccepted(ctx)
+	if err != nil {
+		return err
+	}
+	if !linearized {
+		b.Ctx.Log.Debug("checking for stop vertex before finishing bootstrapping")
 		return b.Restart(ctx, true)
 	}
 
-	// Notify the subnet that this chain is synced
-	b.Config.Subnet.Bootstrapped(b.Ctx.ChainID)
-	b.processedCache.Flush()
-
-	// If the subnet hasn't finished bootstrapping, this chain should remain
-	// syncing.
-	if !b.Config.Subnet.IsBootstrapped() {
-		if !b.Config.SharedCfg.Restarted {
-			b.Ctx.Log.Info("waiting for the remaining chains in this subnet to finish syncing")
-		} else {
-			b.Ctx.Log.Debug("waiting for the remaining chains in this subnet to finish syncing")
-		}
-		// Restart bootstrapping after [bootstrappingDelay] to keep up to date
-		// on the latest tip.
-		b.Config.Timer.RegisterTimeout(bootstrappingDelay)
-		b.awaitingTimeout = true
-		return nil
+	// Invariant: edge will only be the stop vertex after its acceptance.
+	edge := b.Manager.Edge(ctx)
+	stopVertexID := edge[0]
+	if err := b.VM.Linearize(ctx, stopVertexID); err != nil {
+		return err
 	}
+
+	b.processedCache.Flush()
 	return b.OnFinished(ctx, b.Config.SharedCfg.RequestID)
 }

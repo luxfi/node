@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,10 +12,9 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/avax"
-	"github.com/luxdefi/node/vms/platformvm/validator"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -24,7 +23,7 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
+	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
 		stx                  *Tx
@@ -33,26 +32,28 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	)
 
 	// Case : signed tx is nil
-	require.ErrorIs(stx.SyntacticVerify(ctx), ErrNilSignedTx)
+	err = stx.SyntacticVerify(ctx)
+	require.ErrorIs(err, ErrNilSignedTx)
 
 	// Case : unsigned tx is nil
-	require.ErrorIs(addSubnetValidatorTx.SyntacticVerify(ctx), ErrNilTx)
+	err = addSubnetValidatorTx.SyntacticVerify(ctx)
+	require.ErrorIs(err, ErrNilTx)
 
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -65,15 +66,15 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
-		Validator: validator.SubnetValidator{
-			Validator: validator.Validator{
+		SubnetValidator: SubnetValidator{
+			Validator: Validator{
 				NodeID: ctx.NodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
@@ -95,26 +96,26 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addSubnetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, lux.ErrWrongNetworkID)
 	addSubnetValidatorTx.NetworkID--
 
-	// Case: Missing Subnet ID
+	// Case: Specifies primary network SubnetID
 	addSubnetValidatorTx.SyntacticallyVerified = false
-	addSubnetValidatorTx.Validator.Subnet = ids.Empty
+	addSubnetValidatorTx.Subnet = ids.Empty
 	stx, err = NewSigned(addSubnetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
-	addSubnetValidatorTx.Validator.Subnet = subnetID
+	require.ErrorIs(err, errAddPrimaryNetworkValidator)
+	addSubnetValidatorTx.Subnet = subnetID
 
 	// Case: No weight
 	addSubnetValidatorTx.SyntacticallyVerified = false
-	addSubnetValidatorTx.Validator.Wght = 0
+	addSubnetValidatorTx.Wght = 0
 	stx, err = NewSigned(addSubnetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
-	addSubnetValidatorTx.Validator.Wght = validatorWeight
+	require.ErrorIs(err, ErrWeightTooSmall)
+	addSubnetValidatorTx.Wght = validatorWeight
 
 	// Case: Subnet auth indices not unique
 	addSubnetValidatorTx.SyntacticallyVerified = false
@@ -124,12 +125,12 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	stx, err = NewSigned(addSubnetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
-	require.Error(err)
+	require.ErrorIs(err, secp256k1fx.ErrInputIndicesNotSortedUnique)
 	*input = oldInput
 
 	// Case: adding to Primary Network
 	addSubnetValidatorTx.SyntacticallyVerified = false
-	addSubnetValidatorTx.Validator.Subnet = constants.PrimaryNetworkID
+	addSubnetValidatorTx.Subnet = constants.PrimaryNetworkID
 	stx, err = NewSigned(addSubnetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
@@ -140,7 +141,7 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
+	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
 		stx                  *Tx
@@ -151,19 +152,19 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	// create a valid tx
 	validatorWeight := uint64(2022)
 	subnetID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*avax.TransferableInput{{
-		UTXOID: avax.UTXOID{
+	inputs := []*lux.TransferableInput{{
+		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	outputs := []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
+	outputs := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -176,15 +177,15 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 		SigIndices: []uint32{0, 1},
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
-		BaseTx: BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
-		Validator: validator.SubnetValidator{
-			Validator: validator.Validator{
+		SubnetValidator: SubnetValidator{
+			Validator: Validator{
 				NodeID: ctx.NodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),

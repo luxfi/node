@@ -1,21 +1,19 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/bls"
 	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/fx"
-	"github.com/luxdefi/node/vms/platformvm/validator"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
@@ -26,11 +24,11 @@ type AddPermissionlessDelegatorTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
 	// Describes the validator
-	Validator validator.Validator `serialize:"true" json:"validator"`
+	Validator `serialize:"true" json:"validator"`
 	// ID of the subnet this validator is validating
 	Subnet ids.ID `serialize:"true" json:"subnetID"`
 	// Where to send staked tokens when done validating
-	StakeOuts []*avax.TransferableOutput `serialize:"true" json:"stake"`
+	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send staking rewards when done validating
 	DelegationRewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
 }
@@ -59,18 +57,6 @@ func (*AddPermissionlessDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 	return nil, false, nil
 }
 
-func (tx *AddPermissionlessDelegatorTx) StartTime() time.Time {
-	return tx.Validator.StartTime()
-}
-
-func (tx *AddPermissionlessDelegatorTx) EndTime() time.Time {
-	return tx.Validator.EndTime()
-}
-
-func (tx *AddPermissionlessDelegatorTx) Weight() uint64 {
-	return tx.Validator.Wght
-}
-
 func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
 	if tx.Subnet == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorBanffPendingPriority
@@ -85,7 +71,7 @@ func (tx *AddPermissionlessDelegatorTx) CurrentPriority() Priority {
 	return SubnetPermissionlessDelegatorCurrentPriority
 }
 
-func (tx *AddPermissionlessDelegatorTx) Stake() []*avax.TransferableOutput {
+func (tx *AddPermissionlessDelegatorTx) Stake() []*lux.TransferableOutput {
 	return tx.StakeOuts
 }
 
@@ -134,12 +120,12 @@ func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx *snow.Context) error
 	}
 
 	switch {
-	case !avax.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
 		return errOutputsNotSorted
-	case totalStakeWeight != tx.Validator.Wght:
+	case totalStakeWeight != tx.Wght:
 		return fmt.Errorf("%w, delegator weight %d total stake weight %d",
 			errDelegatorWeightMismatch,
-			tx.Validator.Wght,
+			tx.Wght,
 			totalStakeWeight,
 		)
 	}

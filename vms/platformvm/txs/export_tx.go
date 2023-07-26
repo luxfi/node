@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/components/avax"
+	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
@@ -29,7 +29,7 @@ type ExportTx struct {
 	DestinationChain ids.ID `serialize:"true" json:"destinationChain"`
 
 	// Outputs that are exported to the chain
-	ExportedOutputs []*avax.TransferableOutput `serialize:"true" json:"exportedOutputs"`
+	ExportedOutputs []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
 // InitCtx sets the FxID fields in the inputs and outputs of this
@@ -66,7 +66,7 @@ func (tx *ExportTx) SyntacticVerify(ctx *snow.Context) error {
 			return ErrWrongLocktime
 		}
 	}
-	if !avax.IsSortedTransferableOutputs(tx.ExportedOutputs, Codec) {
+	if !lux.IsSortedTransferableOutputs(tx.ExportedOutputs, Codec) {
 		return errOutputsNotSorted
 	}
 

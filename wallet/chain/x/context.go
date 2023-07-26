@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -24,7 +24,7 @@ type Context interface {
 type context struct {
 	networkID        uint32
 	blockchainID     ids.ID
-	avaxAssetID      ids.ID
+	luxAssetID      ids.ID
 	baseTxFee        uint64
 	createAssetTxFee uint64
 }
@@ -72,14 +72,14 @@ func NewContextFromClients(
 func NewContext(
 	networkID uint32,
 	blockchainID ids.ID,
-	avaxAssetID ids.ID,
+	luxAssetID ids.ID,
 	baseTxFee uint64,
 	createAssetTxFee uint64,
 ) Context {
 	return &context{
 		networkID:        networkID,
 		blockchainID:     blockchainID,
-		avaxAssetID:      avaxAssetID,
+		luxAssetID:      luxAssetID,
 		baseTxFee:        baseTxFee,
 		createAssetTxFee: createAssetTxFee,
 	}
@@ -94,7 +94,7 @@ func (c *context) BlockchainID() ids.ID {
 }
 
 func (c *context) AVAXAssetID() ids.ID {
-	return c.avaxAssetID
+	return c.luxAssetID
 }
 
 func (c *context) BaseTxFee() uint64 {

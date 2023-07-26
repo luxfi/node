@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -16,6 +16,7 @@ import (
 	"github.com/luxdefi/node/network/throttling"
 	"github.com/luxdefi/node/snow/networking/router"
 	"github.com/luxdefi/node/snow/networking/tracker"
+	"github.com/luxdefi/node/snow/uptime"
 	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/staking"
 	"github.com/luxdefi/node/utils/constants"
@@ -69,9 +70,10 @@ func StartTestPeer(
 	}
 
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		prometheus.NewRegistry(),
 		"",
-		true,
+		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
 	if err != nil {
@@ -116,6 +118,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
+			UptimeCalculator:     uptime.NoOpCalculator,
 			IPSigner:             NewIPSigner(signerIP, tls),
 		},
 		conn,

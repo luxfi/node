@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -10,20 +10,19 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/components/verify"
 )
 
 func TestCredentialVerify(t *testing.T) {
-	require := require.New(t)
 	cred := Credential{}
-	require.NoError(cred.Verify())
+	require.NoError(t, cred.Verify())
 }
 
 func TestCredentialVerifyNil(t *testing.T) {
-	require := require.New(t)
 	cred := (*Credential)(nil)
-	require.ErrorIs(cred.Verify(), errNilCredential)
+	err := cred.Verify()
+	require.ErrorIs(t, err, ErrNilCredential)
 }
 
 func TestCredentialSerialize(t *testing.T) {
@@ -58,7 +57,7 @@ func TestCredentialSerialize(t *testing.T) {
 		0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
 		0x00,
 	}
-	cred := Credential{Sigs: [][crypto.SECP256K1RSigLen]byte{
+	cred := Credential{Sigs: [][secp256k1.SignatureLen]byte{
 		{
 			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 			0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -90,8 +89,7 @@ func TestCredentialSerialize(t *testing.T) {
 }
 
 func TestCredentialNotState(t *testing.T) {
-	require := require.New(t)
 	intf := interface{}(&Credential{})
 	_, ok := intf.(verify.State)
-	require.False(ok)
+	require.False(t, ok)
 }

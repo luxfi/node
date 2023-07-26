@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // TODO: consider moving the network implementation to a separate package
@@ -16,7 +16,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/vms/platformvm/message"
+	"github.com/luxdefi/node/vms/components/message"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
@@ -41,7 +41,7 @@ type network struct {
 
 	// gossip related attributes
 	appSender common.AppSender
-	recentTxs *cache.LRU
+	recentTxs *cache.LRU[ids.ID, struct{}]
 }
 
 func NewNetwork(
@@ -53,7 +53,7 @@ func NewNetwork(
 		ctx:        ctx,
 		blkBuilder: blkBuilder,
 		appSender:  appSender,
-		recentTxs:  &cache.LRU{Size: recentCacheSize},
+		recentTxs:  &cache.LRU[ids.ID, struct{}]{Size: recentCacheSize},
 	}
 }
 
@@ -132,7 +132,7 @@ func (n *network) AppGossip(_ context.Context, nodeID ids.NodeID, msgBytes []byt
 	n.ctx.Lock.Lock()
 	defer n.ctx.Lock.Unlock()
 
-	if _, dropped := n.blkBuilder.GetDropReason(txID); dropped {
+	if reason := n.blkBuilder.GetDropReason(txID); reason != nil {
 		// If the tx is being dropped - just ignore it
 		return nil
 	}
@@ -153,7 +153,7 @@ func (n *network) GossipTx(tx *txs.Tx) error {
 	if _, has := n.recentTxs.Get(txID); has {
 		return nil
 	}
-	n.recentTxs.Put(txID, nil)
+	n.recentTxs.Put(txID, struct{}{})
 
 	n.ctx.Log.Debug("gossiping tx",
 		zap.Stringer("txID", txID),

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keystore
@@ -8,10 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/database/encdb"
 	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto"
+	"github.com/luxdefi/node/utils/crypto/secp256k1"
 )
 
 // Test user password, must meet minimum complexity/length requirements
@@ -23,26 +24,25 @@ func TestUserClosedDB(t *testing.T) {
 	db, err := encdb.New([]byte(testPassword), memdb.New())
 	require.NoError(err)
 
-	err = db.Close()
-	require.NoError(err)
+	require.NoError(db.Close())
 
 	u := NewUserFromDB(db)
 
 	_, err = u.GetAddresses()
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
 	_, err = u.GetKey(ids.ShortEmpty)
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
 	_, err = GetKeychain(u, nil)
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
-	factory := crypto.FactorySECP256K1R{}
+	factory := secp256k1.Factory{}
 	sk, err := factory.NewPrivateKey()
 	require.NoError(err)
 
-	err = u.PutKeys(sk.(*crypto.PrivateKeySECP256K1R))
-	require.Error(err, "closed db should have caused an error")
+	err = u.PutKeys(sk)
+	require.ErrorIs(err, database.ErrClosed)
 }
 
 func TestUser(t *testing.T) {
@@ -57,16 +57,14 @@ func TestUser(t *testing.T) {
 	require.NoError(err)
 	require.Empty(addresses, "new user shouldn't have address")
 
-	factory := crypto.FactorySECP256K1R{}
+	factory := secp256k1.Factory{}
 	sk, err := factory.NewPrivateKey()
 	require.NoError(err)
 
-	err = u.PutKeys(sk.(*crypto.PrivateKeySECP256K1R))
-	require.NoError(err)
+	require.NoError(u.PutKeys(sk))
 
 	// Putting the same key multiple times should be a noop
-	err = u.PutKeys(sk.(*crypto.PrivateKeySECP256K1R))
-	require.NoError(err)
+	require.NoError(u.PutKeys(sk))
 
 	addr := sk.PublicKey().Address()
 

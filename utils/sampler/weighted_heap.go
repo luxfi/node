@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -81,7 +81,7 @@ func (s *weightedHeap) Initialize(weights []uint64) error {
 
 func (s *weightedHeap) Sample(value uint64) (int, error) {
 	if len(s.heap) == 0 || s.heap[0].cumulativeWeight <= value {
-		return 0, errOutOfRange
+		return 0, ErrOutOfRange
 	}
 
 	index := 0

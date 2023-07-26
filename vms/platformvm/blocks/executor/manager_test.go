@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 	"github.com/luxdefi/node/vms/platformvm/state"
 )
@@ -34,18 +33,18 @@ func TestGetBlock(t *testing.T) {
 
 	{
 		// Case: block isn't in memory or database
-		state.EXPECT().GetStatelessBlock(statelessBlk.ID()).Return(nil, choices.Unknown, database.ErrNotFound).Times(1)
+		state.EXPECT().GetStatelessBlock(statelessBlk.ID()).Return(nil, database.ErrNotFound).Times(1)
 		_, err := manager.GetBlock(statelessBlk.ID())
-		require.Error(err)
+		require.ErrorIs(err, database.ErrNotFound)
 	}
 	{
 		// Case: block isn't in memory but is in database.
-		state.EXPECT().GetStatelessBlock(statelessBlk.ID()).Return(statelessBlk, choices.Accepted, nil).Times(1)
+		state.EXPECT().GetStatelessBlock(statelessBlk.ID()).Return(statelessBlk, nil).Times(1)
 		gotBlk, err := manager.GetBlock(statelessBlk.ID())
 		require.NoError(err)
 		require.Equal(statelessBlk.ID(), gotBlk.ID())
-		innerBlk, ok := gotBlk.(*Block)
-		require.True(ok)
+		require.IsType(&Block{}, gotBlk)
+		innerBlk := gotBlk.(*Block)
 		require.Equal(statelessBlk, innerBlk.Block)
 		require.Equal(manager, innerBlk.manager)
 	}
@@ -57,8 +56,8 @@ func TestGetBlock(t *testing.T) {
 		gotBlk, err := manager.GetBlock(statelessBlk.ID())
 		require.NoError(err)
 		require.Equal(statelessBlk.ID(), gotBlk.ID())
-		innerBlk, ok := gotBlk.(*Block)
-		require.True(ok)
+		require.IsType(&Block{}, gotBlk)
+		innerBlk := gotBlk.(*Block)
 		require.Equal(statelessBlk, innerBlk.Block)
 		require.Equal(manager, innerBlk.manager)
 	}

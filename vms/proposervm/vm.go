@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -28,6 +28,7 @@ import (
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/snowman/block"
 	"github.com/luxdefi/node/utils"
+	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/timer/mockable"
 	"github.com/luxdefi/node/vms/proposervm/indexer"
@@ -54,8 +55,25 @@ var (
 	_ block.HeightIndexedChainVM = (*VM)(nil)
 	_ block.StateSyncableVM      = (*VM)(nil)
 
+	// TODO: remove after the X-chain supports height indexing.
+	mainnetXChainID ids.ID
+	fujiXChainID    ids.ID
+
 	dbPrefix = []byte("proposervm")
 )
+
+func init() {
+	var err error
+	mainnetXChainID, err = ids.FromString("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
+	if err != nil {
+		panic(err)
+	}
+
+	fujiXChainID, err = ids.FromString("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
+	if err != nil {
+		panic(err)
+	}
+}
 
 type VM struct {
 	block.ChainVM
@@ -92,7 +110,7 @@ type VM struct {
 	// Only contains post-fork blocks near the tip so that the cache doesn't get
 	// filled with random blocks every time this node parses blocks while
 	// processing a GetAncestors message from a bootstrapping node.
-	innerBlkCache  cache.Cacher
+	innerBlkCache  cache.Cacher[ids.ID, snowman.Block]
 	preferred      ids.ID
 	consensusState snow.State
 	context        context.Context
@@ -171,10 +189,10 @@ func (vm *VM) Initialize(
 	vm.State = state.New(vm.db)
 	vm.Windower = proposer.New(chainCtx.ValidatorState, chainCtx.SubnetID, chainCtx.ChainID)
 	vm.Tree = tree.New()
-	innerBlkCache, err := metercacher.New(
+	innerBlkCache, err := metercacher.New[ids.ID, snowman.Block](
 		"inner_block_cache",
 		registerer,
-		&cache.LRU{Size: innerBlkCacheSize},
+		&cache.LRU[ids.ID, snowman.Block]{Size: innerBlkCacheSize},
 	)
 	if err != nil {
 		return err
@@ -219,12 +237,33 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	return vm.setLastAcceptedMetadata(ctx)
+	if err := vm.setLastAcceptedMetadata(ctx); err != nil {
+		return err
+	}
+
+	forkHeight, err := vm.getForkHeight()
+	switch err {
+	case nil:
+		chainCtx.Log.Info("initialized proposervm",
+			zap.String("state", "after fork"),
+			zap.Uint64("forkHeight", forkHeight),
+			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
+		)
+	case database.ErrNotFound:
+		chainCtx.Log.Info("initialized proposervm",
+			zap.String("state", "before fork"),
+		)
+	default:
+		return err
+	}
+	return nil
 }
 
 // shutdown ops then propagate shutdown to innerVM
 func (vm *VM) Shutdown(ctx context.Context) error {
 	vm.onShutdown()
+
+	vm.Scheduler.Close()
 
 	if err := vm.db.Commit(); err != nil {
 		return err
@@ -656,6 +695,26 @@ func (vm *VM) getBlock(ctx context.Context, id ids.ID) (Block, error) {
 	return vm.getPreForkBlock(ctx, id)
 }
 
+// TODO: remove after the P-chain and X-chain support height indexing.
+func (vm *VM) getForkHeight() (uint64, error) {
+	// The fork block can be easily identified with the provided links because
+	// the `Parent Hash` is equal to the `Proposer Parent ID`.
+	switch vm.ctx.ChainID {
+	case constants.PlatformChainID:
+		switch vm.ctx.NetworkID {
+		case constants.MainnetID:
+			return 805732, nil // https://subnets.lux.network/p-chain/block/805732
+		case constants.FujiID:
+			return 47529, nil // https://subnets-test.lux.network/p-chain/block/47529
+		}
+	case mainnetXChainID:
+		return 1, nil // https://subnets.lux.network/x-chain/block/1
+	case fujiXChainID:
+		return 1, nil // https://subnets-test.lux.network/x-chain/block/1
+	}
+	return vm.GetForkHeight()
+}
+
 func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock, error) {
 	block, exists := vm.verifiedBlocks[blkID]
 	if exists {
@@ -789,8 +848,8 @@ func (vm *VM) optimalPChainHeight(ctx context.Context, minPChainHeight uint64) (
 // the inner block happens to be cached, then the inner block will not be
 // parsed.
 func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (snowman.Block, error) {
-	if innerBlkIntf, ok := vm.innerBlkCache.Get(outerBlkID); ok {
-		return innerBlkIntf.(snowman.Block), nil
+	if innerBlk, ok := vm.innerBlkCache.Get(outerBlkID); ok {
+		return innerBlk, nil
 	}
 
 	innerBlk, err := vm.ChainVM.ParseBlock(ctx, innerBlkBytes)

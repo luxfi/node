@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -11,12 +11,14 @@ import (
 )
 
 var (
-	_ verify.State = (*OutputOwners)(nil)
+	_ verify.State = (*TransferOutput)(nil)
 
-	errNoValueOutput = errors.New("output has no value")
+	ErrNoValueOutput = errors.New("output has no value")
 )
 
 type TransferOutput struct {
+	verify.IsState `json:"-"`
+
 	Amt uint64 `serialize:"true" json:"amount"`
 
 	OutputOwners `serialize:"true"`
@@ -24,7 +26,7 @@ type TransferOutput struct {
 
 // MarshalJSON marshals Amt and the embedded OutputOwners struct
 // into a JSON readable format
-// If OutputOwners cannot be serialised then this will return error
+// If OutputOwners cannot be serialized then this will return error
 func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 	result, err := out.OutputOwners.Fields()
 	if err != nil {
@@ -43,16 +45,12 @@ func (out *TransferOutput) Amount() uint64 {
 func (out *TransferOutput) Verify() error {
 	switch {
 	case out == nil:
-		return errNilOutput
+		return ErrNilOutput
 	case out.Amt == 0:
-		return errNoValueOutput
+		return ErrNoValueOutput
 	default:
 		return out.OutputOwners.Verify()
 	}
-}
-
-func (out *TransferOutput) VerifyState() error {
-	return out.Verify()
 }
 
 func (out *TransferOutput) Owners() interface{} {

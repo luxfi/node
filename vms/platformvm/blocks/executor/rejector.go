@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -6,7 +6,6 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/vms/platformvm/blocks"
 )
 
@@ -78,6 +77,5 @@ func (r *rejector) rejectBlock(b blocks.Block, blockType string) error {
 		}
 	}
 
-	r.state.AddStatelessBlock(b, choices.Rejected)
-	return r.state.Commit()
+	return nil
 }
