@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metric
@@ -12,7 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/utils"
 )
 
 type APIInterceptor interface {
@@ -55,8 +55,7 @@ func NewAPIInterceptor(namespace string, registerer prometheus.Registerer) (APII
 		[]string{"method"},
 	)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		registerer.Register(requestDurationCount),
 		registerer.Register(requestDurationSum),
 		registerer.Register(requestErrors),
@@ -65,7 +64,7 @@ func NewAPIInterceptor(namespace string, registerer prometheus.Registerer) (APII
 		requestDurationCount: requestDurationCount,
 		requestDurationSum:   requestDurationSum,
 		requestErrors:        requestErrors,
-	}, errs.Err
+	}, err
 }
 
 func (*apiInterceptor) InterceptRequest(i *rpc.RequestInfo) *http.Request {

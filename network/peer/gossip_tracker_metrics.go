@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -6,7 +6,7 @@ package peer
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/utils"
 )
 
 type gossipTrackerMetrics struct {
@@ -32,11 +32,9 @@ func newGossipTrackerMetrics(registerer prometheus.Registerer, namespace string)
 		),
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		registerer.Register(m.trackedPeersSize),
 		registerer.Register(m.validatorsSize),
 	)
-
-	return m, errs.Err
+	return m, err
 }

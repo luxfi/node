@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/secp256k1"
@@ -77,8 +78,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	require.NoError(err)
 
 	// Generate new, random key to sign tx with
-	factory := secp256k1.Factory{}
-	key, err := factory.NewPrivateKey()
+	key, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
 
 	// Replace a valid signature with one from another key
@@ -130,7 +130,7 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 		Tx:      tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
-	require.ErrorIs(err, errCantFindSubnet)
+	require.ErrorIs(err, database.ErrNotFound)
 }
 
 // Ensure valid tx passes semanticVerify

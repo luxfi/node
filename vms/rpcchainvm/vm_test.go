@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/exp/slices"
-
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/luxdefi/node/snow/engine/snowman/block"
 	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
@@ -41,7 +41,7 @@ const (
 	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
 )
 
-var TestServerPluginMap = map[string]func(*testing.T, bool) (block.ChainVM, *gomock.Controller){
+var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	stateSyncEnabledTestKey:                        stateSyncEnabledTestPlugin,
 	getOngoingSyncStateSummaryTestKey:              getOngoingSyncStateSummaryTestPlugin,
 	getLastStateSummaryTestKey:                     getLastStateSummaryTestPlugin,
@@ -92,12 +92,11 @@ func TestHelperProcess(t *testing.T) {
 		select {}
 	}
 
-	mockedVM, ctrl := TestServerPluginMap[testKey](t, true /*loadExpectations*/)
+	mockedVM := TestServerPluginMap[testKey](t, true /*loadExpectations*/)
 	err := Serve(context.Background(), mockedVM)
 	if err != nil {
 		os.Exit(1)
 	}
-	ctrl.Finish()
 
 	os.Exit(0)
 }
@@ -174,7 +173,6 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			vm := mocks.NewMockChainVM(ctrl)
-			defer ctrl.Finish()
 
 			listener, err := grpcutils.NewListener()
 			require.NoError(err)

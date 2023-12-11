@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package leveldb
@@ -201,7 +201,7 @@ func New(file string, configBytes []byte, log logging.Logger, namespace string, 
 	}
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &parsedConfig); err != nil {
-			return nil, fmt.Errorf("%w: %s", ErrInvalidConfig, err)
+			return nil, fmt.Errorf("%w: %w", ErrInvalidConfig, err)
 		}
 	}
 
@@ -231,7 +231,7 @@ func New(file string, configBytes []byte, log logging.Logger, namespace string, 
 		db, err = leveldb.RecoverFile(file, nil)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrCouldNotOpen, err)
+		return nil, fmt.Errorf("%w: %w", ErrCouldNotOpen, err)
 	}
 
 	wrappedDB := &Database{

@@ -1,9 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
 
 import (
+	stdjson "encoding/json"
+
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/formatting"
 	"github.com/luxdefi/node/utils/json"
@@ -75,7 +77,7 @@ type GetBlockByHeightArgs struct {
 
 // GetBlockResponse is the response object for the GetBlock API.
 type GetBlockResponse struct {
-	Block interface{} `json:"block"`
+	Block stdjson.RawMessage `json:"block"`
 	// If GetBlockResponse.Encoding is formatting.Hex, GetBlockResponse.Block is
 	// the string representation of the block under hex encoding.
 	// If GetBlockResponse.Encoding is formatting.JSON, GetBlockResponse.Block
@@ -105,7 +107,7 @@ type GetTxReply struct {
 	// the tx under hex encoding.
 	// If [GetTxArgs.Encoding] is [JSON], [Tx] is the actual tx, which will be
 	// returned as JSON to the caller.
-	Tx       interface{}         `json:"tx"`
+	Tx       stdjson.RawMessage  `json:"tx"`
 	Encoding formatting.Encoding `json:"encoding"`
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -98,9 +98,7 @@ func (out *OutputOwners) Addresses() [][]byte {
 
 // AddressesSet returns addresses as a set
 func (out *OutputOwners) AddressesSet() set.Set[ids.ShortID] {
-	set := set.NewSet[ids.ShortID](len(out.Addrs))
-	set.Add(out.Addrs...)
-	return set
+	return set.Of(out.Addrs...)
 }
 
 // Equals returns true if the provided owners create the same condition

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,9 +11,9 @@ import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
 	"github.com/luxdefi/node/codec/reflectcodec"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/vms/avm/fxs"
 )
 
@@ -64,8 +64,7 @@ func NewCustomParser(
 	gcm := codec.NewManager(math.MaxInt32)
 	cm := codec.NewDefaultManager()
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		c.RegisterType(&BaseTx{}),
 		c.RegisterType(&CreateAssetTx{}),
 		c.RegisterType(&OperationTx{}),
@@ -80,8 +79,8 @@ func NewCustomParser(
 		gc.RegisterType(&ExportTx{}),
 		gcm.RegisterCodec(CodecVersion, gc),
 	)
-	if errs.Errored() {
-		return nil, errs.Err
+	if err != nil {
+		return nil, err
 	}
 
 	vm := &fxVM{

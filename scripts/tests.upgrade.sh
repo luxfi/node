@@ -1,27 +1,23 @@
 #!/usr/bin/env bash
-set -e
+
+set -euo pipefail
 
 # e.g.,
-# ./scripts/build.sh
-# ./scripts/tests.upgrade.sh 1.7.16 ./build/node
+# ./scripts/tests.upgrade.sh 1.7.16
+# LUXGO_PATH=./path/to/node ./scripts/tests.upgrade.sh 1.7.16 # Customization of node path
 if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
 
-VERSION=$1
+VERSION="${1:-}"
 if [[ -z "${VERSION}" ]]; then
   echo "Missing version argument!"
-  echo "Usage: ${0} [VERSION] [NEW-BINARY]" >>/dev/stderr
+  echo "Usage: ${0} [VERSION]" >>/dev/stderr
   exit 255
 fi
 
-NEW_BINARY=$2
-if [[ -z "${NEW_BINARY}" ]]; then
-  echo "Missing new binary path argument!"
-  echo "Usage: ${0} [VERSION] [NEW-BINARY]" >>/dev/stderr
-  exit 255
-fi
+LUXGO_PATH="$(realpath ${LUXGO_PATH:-./build/node})"
 
 #################################
 # download node
@@ -51,11 +47,6 @@ elif [[ ${GOOS} == "darwin" ]]; then
 fi
 find /tmp/node-v${VERSION}
 
-#################################
-echo "installing lux-network-runner"
-ANR_WORKDIR="/tmp"
-./scripts/install_anr.sh
-
 # Sourcing constants.sh ensures that the necessary CGO flags are set to
 # build the portable version of BLST. Without this, ginkgo may fail to
 # build the test binary if run on a host (e.g. github worker) that lacks
@@ -70,34 +61,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################
-# run "lux-network-runner" server
-echo "launch lux-network-runner in the background"
-$ANR_WORKDIR/lux-network-runner \
-  server \
-  --log-level debug \
-  --port=":12340" \
-  --disable-grpc-gateway &
-PID=${!}
-
-#################################
 # By default, it runs all upgrade test cases!
-echo "running upgrade tests against the local cluster with ${NEW_BINARY}"
+echo "running upgrade tests against the local cluster with ${LUXGO_PATH}"
 ./tests/upgrade/upgrade.test \
   --ginkgo.v \
-  --log-level debug \
-  --network-runner-grpc-endpoint="0.0.0.0:12340" \
-  --network-runner-node-path=/tmp/node-v${VERSION}/node \
-  --network-runner-node-path-to-upgrade=${NEW_BINARY} \
-  --network-runner-node-log-level="WARN" || EXIT_CODE=$?
-
-# "e2e.test" already terminates the cluster
-# just in case tests are aborted, manually terminate them again
-pkill -P ${PID} || true
-kill -2 ${PID}
-
-if [[ ${EXIT_CODE} -gt 0 ]]; then
-  echo "FAILURE with exit code ${EXIT_CODE}"
-  exit ${EXIT_CODE}
-else
-  echo "ALL SUCCESS!"
-fi
+  --node-path=/tmp/node-v${VERSION}/node \
+  --node-path-to-upgrade-to=${LUXGO_PATH}

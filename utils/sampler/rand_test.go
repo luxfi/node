@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -149,7 +149,7 @@ func TestRNG(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			require := require.New(t)
 
 			source := &testSource{

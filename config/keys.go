@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -10,8 +10,6 @@ const (
 	ConfigContentKey                                   = "config-file-content"
 	ConfigContentTypeKey                               = "config-file-content-type"
 	VersionKey                                         = "version"
-	GenesisConfigFileKey                               = "genesis"         // TODO: deprecated, remove
-	GenesisConfigContentKey                            = "genesis-content" // TODO: deprecated, remove this
 	GenesisFileKey                                     = "genesis-file"
 	GenesisFileContentKey                              = "genesis-file-content"
 	NetworkNameKey                                     = "network-id"
@@ -36,16 +34,13 @@ const (
 	StakeMintingPeriodKey                              = "stake-minting-period"
 	StakeSupplyCapKey                                  = "stake-supply-cap"
 	DBTypeKey                                          = "db-type"
+	DBReadOnlyKey                                      = "db-read-only"
 	DBPathKey                                          = "db-dir"
 	DBConfigFileKey                                    = "db-config-file"
 	DBConfigContentKey                                 = "db-config-file-content"
 	PublicIPKey                                        = "public-ip"
 	PublicIPResolutionFreqKey                          = "public-ip-resolution-frequency"
 	PublicIPResolutionServiceKey                       = "public-ip-resolution-service"
-	InboundConnUpgradeThrottlerCooldownKey             = "inbound-connection-throttling-cooldown"          // TODO: deprecated, remove this
-	InboundThrottlerMaxConnsPerSecKey                  = "inbound-connection-throttling-max-conns-per-sec" // TODO: deprecated, remove this
-	OutboundConnectionThrottlingRpsKey                 = "outbound-connection-throttling-rps"              // TODO: deprecated, remove this
-	OutboundConnectionTimeoutKey                       = "outbound-connection-timeout"                     // TODO: deprecated, remove this
 	HTTPHostKey                                        = "http-host"
 	HTTPPortKey                                        = "http-port"
 	HTTPSEnabledKey                                    = "http-tls-enabled"
@@ -70,7 +65,6 @@ const (
 	BootstrapIDsKey                                    = "bootstrap-ids"
 	StakingHostKey                                     = "staking-host"
 	StakingPortKey                                     = "staking-port"
-	StakingEnabledKey                                  = "staking-enabled" // TODO: deprecated, remove this
 	StakingEphemeralCertEnabledKey                     = "staking-ephemeral-cert-enabled"
 	StakingTLSKeyPathKey                               = "staking-tls-key-file"
 	StakingTLSKeyContentKey                            = "staking-tls-key-file-content"
@@ -79,7 +73,6 @@ const (
 	StakingEphemeralSignerEnabledKey                   = "staking-ephemeral-signer-enabled"
 	StakingSignerKeyPathKey                            = "staking-signer-key-file"
 	StakingSignerKeyContentKey                         = "staking-signer-key-file-content"
-	StakingDisabledWeightKey                           = "staking-disabled-weight" // TODO: deprecated, remove this
 	SybilProtectionEnabledKey                          = "sybil-protection-enabled"
 	SybilProtectionDisabledWeightKey                   = "sybil-protection-disabled-weight"
 	NetworkInitialTimeoutKey                           = "network-initial-timeout"
@@ -104,7 +97,6 @@ const (
 	NetworkPingTimeoutKey                              = "network-ping-timeout"
 	NetworkPingFrequencyKey                            = "network-ping-frequency"
 	NetworkMaxReconnectDelayKey                        = "network-max-reconnect-delay"
-	NetworkCompressionEnabledKey                       = "network-compression-enabled" // TODO this is deprecated. Eventually remove it and constants.DefaultNetworkCompressionEnabled
 	NetworkCompressionTypeKey                          = "network-compression-type"
 	NetworkMaxClockDifferenceKey                       = "network-max-clock-difference"
 	NetworkAllowPrivateIPsKey                          = "network-allow-private-ips"
@@ -132,12 +124,15 @@ const (
 	LogDisableDisplayPluginLogsKey                     = "log-disable-display-plugin-logs"
 	SnowSampleSizeKey                                  = "snow-sample-size"
 	SnowQuorumSizeKey                                  = "snow-quorum-size"
+	SnowPreferenceQuorumSizeKey                        = "snow-preference-quorum-size"
+	SnowConfidenceQuorumSizeKey                        = "snow-confidence-quorum-size"
 	SnowVirtuousCommitThresholdKey                     = "snow-virtuous-commit-threshold"
 	SnowRogueCommitThresholdKey                        = "snow-rogue-commit-threshold"
 	SnowConcurrentRepollsKey                           = "snow-concurrent-repolls"
 	SnowOptimalProcessingKey                           = "snow-optimal-processing"
 	SnowMaxProcessingKey                               = "snow-max-processing"
 	SnowMaxTimeProcessingKey                           = "snow-max-time-processing"
+	PartialSyncPrimaryNetworkKey                       = "partial-sync-primary-network"
 	TrackSubnetsKey                                    = "track-subnets"
 	AdminAPIEnabledKey                                 = "api-admin-enabled"
 	InfoAPIEnabledKey                                  = "api-info-enabled"
@@ -148,9 +143,9 @@ const (
 	IpcsChainIDsKey                                    = "ipcs-chain-ids"
 	IpcsPathKey                                        = "ipcs-path"
 	MeterVMsEnabledKey                                 = "meter-vms-enabled"
-	ConsensusGossipFrequencyKey                        = "consensus-gossip-frequency" // TODO: deprecated, remove this
-	ConsensusAcceptedFrontierGossipFrequencyKey        = "consensus-accepted-frontier-gossip-frequency"
 	ConsensusAppConcurrencyKey                         = "consensus-app-concurrency"
+	ConsensusShutdownTimeoutKey                        = "consensus-shutdown-timeout"
+	ConsensusFrontierPollFrequencyKey                  = "consensus-frontier-poll-frequency"
 	ConsensusGossipAcceptedFrontierValidatorSizeKey    = "consensus-accepted-frontier-gossip-validator-size"
 	ConsensusGossipAcceptedFrontierNonValidatorSizeKey = "consensus-accepted-frontier-gossip-non-validator-size"
 	ConsensusGossipAcceptedFrontierPeerSizeKey         = "consensus-accepted-frontier-gossip-peer-size"
@@ -160,7 +155,6 @@ const (
 	AppGossipValidatorSizeKey                          = "consensus-app-gossip-validator-size"
 	AppGossipNonValidatorSizeKey                       = "consensus-app-gossip-non-validator-size"
 	AppGossipPeerSizeKey                               = "consensus-app-gossip-peer-size"
-	ConsensusShutdownTimeoutKey                        = "consensus-shutdown-timeout"
 	ProposerVMUseCurrentHeightKey                      = "proposervm-use-current-height"
 	FdLimitKey                                         = "fd-limit"
 	IndexEnabledKey                                    = "index-enabled"
@@ -169,8 +163,6 @@ const (
 	RouterHealthMaxOutstandingRequestsKey              = "router-health-max-outstanding-requests"
 	HealthCheckFreqKey                                 = "health-check-frequency"
 	HealthCheckAveragerHalflifeKey                     = "health-check-averager-halflife"
-	RetryBootstrapKey                                  = "bootstrap-retry-enabled"
-	RetryBootstrapWarnFrequencyKey                     = "bootstrap-retry-warn-frequency"
 	PluginDirKey                                       = "plugin-dir"
 	BootstrapBeaconConnectionTimeoutKey                = "bootstrap-beacon-connection-timeout"
 	BootstrapMaxTimeGetAncestorsKey                    = "bootstrap-max-time-get-ancestors"
@@ -219,4 +211,5 @@ const (
 	TracingSampleRateKey                               = "tracing-sample-rate"
 	TracingExporterTypeKey                             = "tracing-exporter-type"
 	TracingHeadersKey                                  = "tracing-headers"
+	ProcessContextFileKey                              = "process-context-file"
 )

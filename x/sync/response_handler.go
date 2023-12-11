@@ -1,11 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
-
-// TODO danlaine: We create a new response handler for every request.
-// Look into making a struct to handle requests/responses that uses a sync pool
-// to avoid allocations.
 
 var _ ResponseHandler = (*responseHandler)(nil)
 

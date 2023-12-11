@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package runtime
@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	ErrProtocolVersionMismatch = errors.New("protocol version mismatch")
+	ErrProtocolVersionMismatch = errors.New("RPCChainVM protocol version mismatch between LuxGo and Virtual Machine plugin")
 	ErrHandshakeFailed         = errors.New("handshake failed")
 	ErrInvalidConfig           = errors.New("invalid config")
 	ErrProcessNotFound         = errors.New("vm process not found")

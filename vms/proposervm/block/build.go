@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -6,10 +6,10 @@ package block
 import (
 	"crypto"
 	"crypto/rand"
-	"crypto/x509"
 	"time"
 
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/staking"
 	"github.com/luxdefi/node/utils/hashing"
 	"github.com/luxdefi/node/utils/wrappers"
 )
@@ -42,7 +42,7 @@ func Build(
 	parentID ids.ID,
 	timestamp time.Time,
 	pChainHeight uint64,
-	cert *x509.Certificate,
+	cert *staking.Certificate,
 	blockBytes []byte,
 	chainID ids.ID,
 	key crypto.Signer,

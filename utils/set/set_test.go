@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package set
@@ -46,33 +46,45 @@ func TestSet(t *testing.T) {
 	require.False(s.Overlaps(s2))
 }
 
-func TestSetCappedList(t *testing.T) {
-	require := require.New(t)
-	s := Set[int]{}
+func TestOf(t *testing.T) {
+	tests := []struct {
+		name     string
+		elements []int
+		expected []int
+	}{
+		{
+			name:     "nil",
+			elements: nil,
+			expected: []int{},
+		},
+		{
+			name:     "empty",
+			elements: []int{},
+			expected: []int{},
+		},
+		{
+			name:     "unique elements",
+			elements: []int{1, 2, 3},
+			expected: []int{1, 2, 3},
+		},
+		{
+			name:     "duplicate elements",
+			elements: []int{1, 2, 3, 1, 2, 3},
+			expected: []int{1, 2, 3},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
 
-	id := 0
+			s := Of(tt.elements...)
 
-	require.Empty(s.CappedList(0))
-
-	s.Add(id)
-
-	require.Empty(s.CappedList(0))
-	require.Len(s.CappedList(1), 1)
-	require.Equal(s.CappedList(1)[0], id)
-	require.Len(s.CappedList(2), 1)
-	require.Equal(s.CappedList(2)[0], id)
-
-	id2 := 1
-	s.Add(id2)
-
-	require.Empty(s.CappedList(0))
-	require.Len(s.CappedList(1), 1)
-	require.Len(s.CappedList(2), 2)
-	require.Len(s.CappedList(3), 2)
-	gotList := s.CappedList(2)
-	require.Contains(gotList, id)
-	require.Contains(gotList, id2)
-	require.NotEqual(gotList[0], gotList[1])
+			require.Len(s, len(tt.expected))
+			for _, expected := range tt.expected {
+				require.True(s.Contains(expected))
+			}
+		})
+	}
 }
 
 func TestSetClear(t *testing.T) {
@@ -186,5 +198,31 @@ func TestSetUnmarshalJSON(t *testing.T) {
 		require.NoError(set1.UnmarshalJSON([]byte(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)))))
 		require.NoError(set2.UnmarshalJSON([]byte(fmt.Sprintf("[%s,%s]", string(id2JSON), string(id1JSON)))))
 		require.Equal(set1, set2)
+	}
+}
+
+func TestSetReflectJSONMarshal(t *testing.T) {
+	require := require.New(t)
+	set := Set[int]{}
+	{
+		asJSON, err := json.Marshal(set)
+		require.NoError(err)
+		require.Equal("[]", string(asJSON))
+	}
+	id1JSON, err := json.Marshal(1)
+	require.NoError(err)
+	id2JSON, err := json.Marshal(2)
+	require.NoError(err)
+	set.Add(1)
+	{
+		asJSON, err := json.Marshal(set)
+		require.NoError(err)
+		require.Equal(fmt.Sprintf("[%s]", string(id1JSON)), string(asJSON))
+	}
+	set.Add(2)
+	{
+		asJSON, err := json.Marshal(set)
+		require.NoError(err)
+		require.Equal(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)), string(asJSON))
 	}
 }

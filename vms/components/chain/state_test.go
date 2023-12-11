@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -585,7 +585,7 @@ func TestStateBytesToIDCache(t *testing.T) {
 		DecidedCacheSize:    0,
 		MissingCacheSize:    0,
 		UnverifiedCacheSize: 0,
-		BytesToIDCacheSize:  1,
+		BytesToIDCacheSize:  1 + ids.IDLen, // Size of one block
 		LastAcceptedBlock:   genesisBlock,
 		GetBlock:            getBlock,
 		UnmarshalBlock:      parseBlock,

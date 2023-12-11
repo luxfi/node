@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metric
@@ -44,10 +44,10 @@ func NewAveragerWithErrs(namespace, name, desc string, reg prometheus.Registerer
 	}
 
 	if err := reg.Register(a.count); err != nil {
-		errs.Add(fmt.Errorf("%w: %s", ErrFailedRegistering, err))
+		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
 	}
 	if err := reg.Register(a.sum); err != nil {
-		errs.Add(fmt.Errorf("%w: %s", ErrFailedRegistering, err))
+		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
 	}
 	return &a
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -141,6 +141,10 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	if err != nil {
 		return fmt.Errorf("problem decoding transaction: %w", err)
 	}
+
+	w.vm.ctx.Lock.Lock()
+	defer w.vm.ctx.Lock.Unlock()
+
 	txID, err := w.issue(txBytes)
 	reply.TxID = txID
 	return err
@@ -178,6 +182,9 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	if err != nil {
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
+
+	w.vm.ctx.Lock.Lock()
+	defer w.vm.ctx.Lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := w.vm.LoadUser(args.Username, args.Password, fromAddrs)

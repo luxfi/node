@@ -1,26 +1,26 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
 
 import (
+	"math"
 	"testing"
 	"time"
-
-	stdmath "math"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/timer/mockable"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 	"github.com/luxdefi/node/vms/secp256k1fx"
+
+	safemath "github.com/luxdefi/node/utils/math"
 )
 
 var _ txs.UnsignedTx = (*dummyUnsignedTx)(nil)
@@ -582,7 +582,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				{
 					Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 					Out: &secp256k1fx.TransferOutput{
-						Amt: stdmath.MaxUint64,
+						Amt: math.MaxUint64,
 					},
 				},
 			},
@@ -590,7 +590,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				&secp256k1fx.Credential{},
 			},
 			producedAmounts: map[ids.ID]uint64{},
-			expectedErr:     math.ErrOverflow,
+			expectedErr:     safemath.ErrOverflow,
 		},
 		{
 			description: "attempted mint",
@@ -660,7 +660,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 					Out: &stakeable.LockOut{
 						Locktime: 1,
 						TransferableOut: &secp256k1fx.TransferOutput{
-							Amt: stdmath.MaxUint64,
+							Amt: math.MaxUint64,
 						},
 					},
 				},
@@ -669,7 +669,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				&secp256k1fx.Credential{},
 			},
 			producedAmounts: map[ids.ID]uint64{},
-			expectedErr:     math.ErrOverflow,
+			expectedErr:     safemath.ErrOverflow,
 		},
 		{
 			description: "attempted mint through mixed locking (low then high)",
@@ -701,7 +701,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 					Out: &stakeable.LockOut{
 						Locktime: 1,
 						TransferableOut: &secp256k1fx.TransferOutput{
-							Amt: stdmath.MaxUint64,
+							Amt: math.MaxUint64,
 						},
 					},
 				},
@@ -734,7 +734,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				{
 					Asset: lux.Asset{ID: h.ctx.LUXAssetID},
 					Out: &secp256k1fx.TransferOutput{
-						Amt: stdmath.MaxUint64,
+						Amt: math.MaxUint64,
 					},
 				},
 				{

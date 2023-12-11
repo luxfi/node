@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/networking/tracker"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
 )
 
 const epsilon = time.Millisecond
@@ -80,13 +80,12 @@ func newSystemThrottlerMetrics(namespace string, reg prometheus.Registerer) (*sy
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
 		}),
 	}
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		reg.Register(m.totalWaits),
 		reg.Register(m.totalNoWaits),
 		reg.Register(m.awaitingAcquire),
 	)
-	return m, errs.Err
+	return m, err
 }
 
 func NewSystemThrottler(

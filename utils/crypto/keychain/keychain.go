@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keychain
@@ -89,8 +89,7 @@ func NewLedgerKeychainFromIndices(l Ledger, indices []uint32) (Keychain, error) 
 		)
 	}
 
-	addrsSet := set.NewSet[ids.ShortID](len(addrs))
-	addrsSet.Add(addrs...)
+	addrsSet := set.Of(addrs...)
 
 	addrToIdx := map[ids.ShortID]uint32{}
 	for i := range indices {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -22,10 +22,14 @@ func main() {
 
 	ctx := context.Background()
 
-	// NewWalletFromURI fetches the available UTXOs owned by [kc] on the network
-	// that [uri] is hosting.
+	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
+	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.NewWalletFromURI(ctx, uri, kc)
+	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
+		URI:          uri,
+		LUXKeychain: kc,
+		EthKeychain:  kc,
+	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)
 	}

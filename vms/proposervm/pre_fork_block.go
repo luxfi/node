@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -128,7 +129,11 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 		return err
 	}
 	if childPChainHeight > currentPChainHeight {
-		return errPChainHeightNotReached
+		return fmt.Errorf("%w: %d > %d",
+			errPChainHeightNotReached,
+			childPChainHeight,
+			currentPChainHeight,
+		)
 	}
 	if childPChainHeight < b.vm.minimumPChainHeight {
 		return errPChainHeightTooLow
@@ -207,6 +212,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// is at least the minimum height
 	pChainHeight, err := b.vm.optimalPChainHeight(ctx, b.vm.minimumPChainHeight)
 	if err != nil {
+		b.vm.ctx.Log.Error("unexpected build block failure",
+			zap.String("reason", "failed to calculate optimal P-chain height"),
+			zap.Stringer("parentID", parentID),
+			zap.Error(err),
+		)
 		return nil, err
 	}
 

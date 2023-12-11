@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -39,7 +40,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 
 	ctx := snow.DefaultConsensusContextTest()
 
-	peers := validators.NewSet()
+	vdrs := validators.NewManager()
 
 	sender := &common.SenderTest{}
 	vm := &block.TestVM{}
@@ -64,37 +65,32 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 	sender.CantSendGetAcceptedFrontier = false
 
 	peer := ids.GenerateTestNodeID()
-	require.NoError(peers.Add(peer, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, peer, nil, ids.Empty, 1))
 
 	peerTracker := tracker.NewPeers()
-	startupTracker := tracker.NewStartup(peerTracker, peers.Weight()/2+1)
-	peers.RegisterCallbackListener(startupTracker)
+	totalWeight, err := vdrs.TotalWeight(ctx.SubnetID)
+	require.NoError(err)
+	startupTracker := tracker.NewStartup(peerTracker, totalWeight/2+1)
+	vdrs.RegisterCallbackListener(ctx.SubnetID, startupTracker)
 
 	require.NoError(startupTracker.Connected(context.Background(), peer, version.CurrentApp))
 
-	commonConfig := common.Config{
-		Ctx:                            ctx,
-		Beacons:                        peers,
-		SampleK:                        peers.Len(),
-		Alpha:                          peers.Weight()/2 + 1,
-		StartupTracker:                 startupTracker,
-		Sender:                         sender,
-		BootstrapTracker:               bootstrapTracker,
-		Timer:                          &common.TimerTest{},
-		AncestorsMaxContainersSent:     2000,
-		AncestorsMaxContainersReceived: 2000,
-		SharedCfg:                      &common.SharedConfig{},
-	}
-
-	snowGetHandler, err := getter.New(vm, commonConfig)
+	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
 	blocker, _ := queue.NewWithMissing(memdb.New(), "", prometheus.NewRegistry())
 	return Config{
-		Config:        commonConfig,
-		AllGetsServer: snowGetHandler,
-		Blocked:       blocker,
-		VM:            vm,
+		AllGetsServer:                  snowGetHandler,
+		Ctx:                            ctx,
+		Beacons:                        vdrs,
+		SampleK:                        vdrs.Count(ctx.SubnetID),
+		StartupTracker:                 startupTracker,
+		Sender:                         sender,
+		BootstrapTracker:               bootstrapTracker,
+		Timer:                          &common.TimerTest{},
+		AncestorsMaxContainersReceived: 2000,
+		Blocked:                        blocker,
+		VM:                             vm,
 	}, peer, sender, vm
 }
 
@@ -108,39 +104,32 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	sender.Default(true)
 	vm.Default(true)
-
+	ctx := snow.DefaultConsensusContextTest()
 	// create boostrapper configuration
-	peers := validators.NewSet()
+	peers := validators.NewManager()
 	sampleK := 2
 	alpha := uint64(10)
 	startupAlpha := alpha
 
 	peerTracker := tracker.NewPeers()
 	startupTracker := tracker.NewStartup(peerTracker, startupAlpha)
-	peers.RegisterCallbackListener(startupTracker)
+	peers.RegisterCallbackListener(ctx.SubnetID, startupTracker)
 
-	commonCfg := common.Config{
-		Ctx:                            snow.DefaultConsensusContextTest(),
+	blocker, _ := queue.NewWithMissing(memdb.New(), "", prometheus.NewRegistry())
+	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
+	require.NoError(err)
+	cfg := Config{
+		AllGetsServer:                  snowGetHandler,
+		Ctx:                            ctx,
 		Beacons:                        peers,
 		SampleK:                        sampleK,
-		Alpha:                          alpha,
 		StartupTracker:                 startupTracker,
 		Sender:                         sender,
 		BootstrapTracker:               &common.BootstrapTrackerTest{},
 		Timer:                          &common.TimerTest{},
-		AncestorsMaxContainersSent:     2000,
 		AncestorsMaxContainersReceived: 2000,
-		SharedCfg:                      &common.SharedConfig{},
-	}
-
-	blocker, _ := queue.NewWithMissing(memdb.New(), "", prometheus.NewRegistry())
-	snowGetHandler, err := getter.New(vm, commonCfg)
-	require.NoError(err)
-	cfg := Config{
-		Config:        commonCfg,
-		AllGetsServer: snowGetHandler,
-		Blocked:       blocker,
-		VM:            vm,
+		Blocked:                        blocker,
+		VM:                             vm,
 	}
 
 	blkID0 := ids.Empty.Prefix(0)
@@ -191,7 +180,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// attempt starting bootstrapper with not enough stake connected. Bootstrapper should stall.
 	vdr0 := ids.GenerateTestNodeID()
-	require.NoError(peers.Add(vdr0, nil, ids.Empty, startupAlpha/2))
+	require.NoError(peers.AddStaker(ctx.SubnetID, vdr0, nil, ids.Empty, startupAlpha/2))
 	require.NoError(bs.Connected(context.Background(), vdr0, version.CurrentApp))
 
 	require.NoError(bs.Start(context.Background(), 0))
@@ -199,7 +188,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// finally attempt starting bootstrapper with enough stake connected. Frontiers should be requested.
 	vdr := ids.GenerateTestNodeID()
-	require.NoError(peers.Add(vdr, nil, ids.Empty, startupAlpha))
+	require.NoError(peers.AddStaker(ctx.SubnetID, vdr, nil, ids.Empty, startupAlpha))
 	require.NoError(bs.Connected(context.Background(), vdr, version.CurrentApp))
 	require.True(frontierRequested)
 }
@@ -282,7 +271,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	require.NoError(bs.ForceAccepted(context.Background(), acceptedIDs))
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk1.Status())
 }
@@ -355,8 +344,6 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	require.NoError(bs.Start(context.Background(), 0))
 
-	acceptedIDs := []ids.ID{blkID2}
-
 	parsedBlk1 := false
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 		switch blkID {
@@ -389,31 +376,29 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	requestID := new(uint32)
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	var requestID uint32
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		require.Equal(blkID1, vtxID)
-		*requestID = reqID
+		require.Equal(blkID1, blkID)
+		requestID = reqID
 	}
 
 	vm.CantSetState = false
-	require.NoError(bs.ForceAccepted(context.Background(), acceptedIDs)) // should request blk1
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID2})) // should request blk1
 
-	oldReqID := *requestID
-	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID+1, [][]byte{blkBytes1})) // respond with wrong request ID
-	require.Equal(oldReqID, *requestID)
+	oldReqID := requestID
+	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, [][]byte{blkBytes0})) // respond with wrong block
+	require.NotEqual(oldReqID, requestID)
 
-	require.NoError(bs.Ancestors(context.Background(), ids.NodeID{1, 2, 3}, *requestID, [][]byte{blkBytes1})) // respond from wrong peer
-	require.Equal(oldReqID, *requestID)
+	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, [][]byte{blkBytes1}))
 
-	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{blkBytes0})) // respond with wrong block
-	require.NotEqual(oldReqID, *requestID)
-
-	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{blkBytes1}))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
+
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID2}))
+	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 }
 
 // There are multiple needed blocks and Ancestors returns one at a time
@@ -538,14 +523,14 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	requestID := new(uint32)
 	requested := ids.Empty
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		require.Contains([]ids.ID{blkID1, blkID2}, vtxID)
+		require.Contains([]ids.ID{blkID1, blkID2}, blkID)
 		*requestID = reqID
-		requested = vtxID
+		requested = blkID
 	}
 
-	require.NoError(bs.ForceAccepted(context.Background(), acceptedIDs)) // should request blk2
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs)) // should request blk2
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{blkBytes2})) // respond with blk2
 	require.Equal(blkID1, requested)
@@ -553,10 +538,13 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{blkBytes1})) // respond with blk1
 	require.Equal(blkID1, requested)
 
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
+
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs))
+	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 }
 
 // There are multiple needed blocks and some validators do not have all the blocks
@@ -690,16 +678,16 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	}
 
 	// should request blk2
-	require.NoError(bs.ForceAccepted(context.Background(), acceptedIDs))
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs))
 	require.Equal(peerID, requestedVdr)
 	require.Equal(blkID2, requestedBlock)
 
 	// add another two validators to the fetch set to test behavior on empty response
 	newPeerID := ids.GenerateTestNodeID()
-	bs.(*bootstrapper).fetchFrom.Add(newPeerID)
+	bs.fetchFrom.Add(newPeerID)
 
 	newPeerID = ids.GenerateTestNodeID()
-	bs.(*bootstrapper).fetchFrom.Add(newPeerID)
+	bs.fetchFrom.Add(newPeerID)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, [][]byte{blkBytes2}))
 	require.Equal(blkID1, requestedBlock)
@@ -713,13 +701,13 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), requestedVdr, requestID, [][]byte{blkBytes1})) // respond with blk1
 
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
 
 	// check peerToBlacklist was removed from the fetch set
-	require.NotContains(bs.(*bootstrapper).fetchFrom, peerToBlacklist)
+	require.NotContains(bs.fetchFrom, peerToBlacklist)
 }
 
 // There are multiple needed blocks and Ancestors returns all at once
@@ -844,21 +832,24 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	requestID := new(uint32)
 	requested := ids.Empty
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		require.Contains([]ids.ID{blkID1, blkID2}, vtxID)
+		require.Contains([]ids.ID{blkID1, blkID2}, blkID)
 		*requestID = reqID
-		requested = vtxID
+		requested = blkID
 	}
 
-	require.NoError(bs.ForceAccepted(context.Background(), acceptedIDs))                                    // should request blk2
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs))                                     // should request blk2
 	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{blkBytes2, blkBytes1})) // respond with blk2 and blk1
 	require.Equal(blkID2, requested)
 
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
+
+	require.NoError(bs.startSyncing(context.Background(), acceptedIDs))
+	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestBootstrapperFinalized(t *testing.T) {
@@ -963,22 +954,25 @@ func TestBootstrapperFinalized(t *testing.T) {
 	}
 
 	requestIDs := map[ids.ID]uint32{}
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		requestIDs[vtxID] = reqID
+		requestIDs[blkID] = reqID
 	}
 
-	require.NoError(bs.ForceAccepted(context.Background(), []ids.ID{blkID1, blkID2})) // should request blk2 and blk1
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID1, blkID2})) // should request blk2 and blk1
 
 	reqIDBlk2, ok := requestIDs[blkID2]
 	require.True(ok)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, [][]byte{blkBytes2, blkBytes1}))
 
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
+
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID2}))
+	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestRestartBootstrapping(t *testing.T) {
@@ -1105,7 +1099,7 @@ func TestRestartBootstrapping(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	bsIntf, err := New(
+	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
@@ -1116,20 +1110,18 @@ func TestRestartBootstrapping(t *testing.T) {
 		},
 	)
 	require.NoError(err)
-	require.IsType(&bootstrapper{}, bsIntf)
-	bs := bsIntf.(*bootstrapper)
 
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
 
 	requestIDs := map[ids.ID]uint32{}
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		requestIDs[vtxID] = reqID
+		requestIDs[blkID] = reqID
 	}
 
 	// Force Accept blk3
-	require.NoError(bs.ForceAccepted(context.Background(), []ids.ID{blkID3})) // should request blk3
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID3})) // should request blk3
 
 	reqID, ok := requestIDs[blkID3]
 	require.True(ok)
@@ -1138,11 +1130,12 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	require.Contains(requestIDs, blkID1)
 
-	// Remove request, so we can restart bootstrapping via ForceAccepted
-	require.True(bs.OutstandingRequests.RemoveAny(blkID1))
+	// Remove request, so we can restart bootstrapping via startSyncing
+	_, removed := bs.outstandingRequests.DeleteValue(blkID1)
+	require.True(removed)
 	requestIDs = map[ids.ID]uint32{}
 
-	require.NoError(bs.ForceAccepted(context.Background(), []ids.ID{blkID4}))
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID4}))
 
 	blk1RequestID, ok := requestIDs[blkID1]
 	require.True(ok)
@@ -1155,12 +1148,15 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk4RequestID, [][]byte{blkBytes4}))
 
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, blk0.Status())
 	require.Equal(choices.Accepted, blk1.Status())
 	require.Equal(choices.Accepted, blk2.Status())
 	require.Equal(choices.Accepted, blk3.Status())
 	require.Equal(choices.Accepted, blk4.Status())
+
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blkID4}))
+	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
@@ -1211,7 +1207,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	bsIntf, err := New(
+	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
@@ -1222,20 +1218,18 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		},
 	)
 	require.NoError(err)
-	require.IsType(&bootstrapper{}, bsIntf)
-	bs := bsIntf.(*bootstrapper)
 
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
 
 	requestIDs := map[ids.ID]uint32{}
-	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, vtxID ids.ID) {
+	sender.SendGetAncestorsF = func(_ context.Context, vdr ids.NodeID, reqID uint32, blkID ids.ID) {
 		require.Equal(peerID, vdr)
-		requestIDs[vtxID] = reqID
+		requestIDs[blkID] = reqID
 	}
 
 	// Force Accept, the already transitively accepted, blk0
-	require.NoError(bs.ForceAccepted(context.Background(), []ids.ID{blk0.ID()})) // should request blk0
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blk0.ID()})) // should request blk0
 
 	reqID, ok := requestIDs[blk0.ID()]
 	require.True(ok)
@@ -1282,7 +1276,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		return blk0.ID(), nil
 	}
 
-	bsIntf, err := New(
+	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
@@ -1293,8 +1287,6 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		},
 	)
 	require.NoError(err)
-	require.IsType(&bootstrapper{}, bsIntf)
-	bs := bsIntf.(*bootstrapper)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
 		switch blkID {
@@ -1314,7 +1306,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
 
-	require.NoError(bs.ForceAccepted(context.Background(), []ids.ID{blk2.ID()}))
+	require.NoError(bs.startSyncing(context.Background(), []ids.ID{blk2.ID()}))
 
 	require.Equal(1, bs.Blocked.NumMissingIDs())
 }
@@ -1323,7 +1315,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	require := require.New(t)
 
 	ctx := snow.DefaultConsensusContextTest()
-	peers := validators.NewSet()
+	peers := validators.NewManager()
 
 	sender := &common.SenderTest{}
 	vm := &block.TestVM{}
@@ -1348,28 +1340,16 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	sender.CantSendGetAcceptedFrontier = false
 
 	peer := ids.GenerateTestNodeID()
-	require.NoError(peers.Add(peer, nil, ids.Empty, 1))
+	require.NoError(peers.AddStaker(ctx.SubnetID, peer, nil, ids.Empty, 1))
 
 	peerTracker := tracker.NewPeers()
-	startupTracker := tracker.NewStartup(peerTracker, peers.Weight()/2+1)
-	peers.RegisterCallbackListener(startupTracker)
+	totalWeight, err := peers.TotalWeight(ctx.SubnetID)
+	require.NoError(err)
+	startupTracker := tracker.NewStartup(peerTracker, totalWeight/2+1)
+	peers.RegisterCallbackListener(ctx.SubnetID, startupTracker)
 	require.NoError(startupTracker.Connected(context.Background(), peer, version.CurrentApp))
 
-	commonConfig := common.Config{
-		Ctx:                            ctx,
-		Beacons:                        peers,
-		SampleK:                        peers.Len(),
-		Alpha:                          peers.Weight()/2 + 1,
-		StartupTracker:                 startupTracker,
-		Sender:                         sender,
-		BootstrapTracker:               bootstrapTracker,
-		Timer:                          &common.TimerTest{},
-		AncestorsMaxContainersSent:     2000,
-		AncestorsMaxContainersReceived: 2000,
-		SharedCfg:                      &common.SharedConfig{},
-	}
-
-	snowGetHandler, err := getter.New(vm, commonConfig)
+	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
 	queueDB := memdb.New()
@@ -1418,10 +1398,17 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	require.NoError(err)
 
 	config := Config{
-		Config:        commonConfig,
-		AllGetsServer: snowGetHandler,
-		Blocked:       blocker,
-		VM:            vm,
+		AllGetsServer:                  snowGetHandler,
+		Ctx:                            ctx,
+		Beacons:                        peers,
+		SampleK:                        peers.Count(ctx.SubnetID),
+		StartupTracker:                 startupTracker,
+		Sender:                         sender,
+		BootstrapTracker:               bootstrapTracker,
+		Timer:                          &common.TimerTest{},
+		AncestorsMaxContainersReceived: 2000,
+		Blocked:                        blocker,
+		VM:                             vm,
 	}
 
 	_, err = New(

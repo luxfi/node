@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txheap
@@ -6,25 +6,33 @@ package txheap
 import (
 	"time"
 
+	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/heap"
 	"github.com/luxdefi/node/vms/platformvm/txs"
 )
 
 var _ TimedHeap = (*byEndTime)(nil)
+
+type TimedHeap interface {
+	Heap
+
+	Timestamp() time.Time
+}
 
 type byEndTime struct {
 	txHeap
 }
 
 func NewByEndTime() TimedHeap {
-	h := &byEndTime{}
-	h.initialize(h)
-	return h
-}
-
-func (h *byEndTime) Less(i, j int) bool {
-	iTime := h.txs[i].tx.Unsigned.(txs.Staker).EndTime()
-	jTime := h.txs[j].tx.Unsigned.(txs.Staker).EndTime()
-	return iTime.Before(jTime)
+	return &byEndTime{
+		txHeap: txHeap{
+			heap: heap.NewMap[ids.ID, heapTx](func(a, b heapTx) bool {
+				aTime := a.tx.Unsigned.(txs.Staker).EndTime()
+				bTime := b.tx.Unsigned.(txs.Staker).EndTime()
+				return aTime.Before(bTime)
+			}),
+		},
+	}
 }
 
 func (h *byEndTime) Timestamp() time.Time {

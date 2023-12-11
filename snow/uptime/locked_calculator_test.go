@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package uptime
@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils"
@@ -19,7 +19,6 @@ import (
 func TestLockedCalculator(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	lc := NewLockedCalculator()
 	require.NotNil(lc)

@@ -1,19 +1,18 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
 
 import (
 	"fmt"
+	"math"
 	"testing"
-
-	stdmath "math"
 
 	"github.com/stretchr/testify/require"
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxdefi/node/utils/math"
 )
 
 var (
@@ -87,8 +86,8 @@ func WeightedWithoutReplacementInitializeOverflowTest(
 	t *testing.T,
 	s WeightedWithoutReplacement,
 ) {
-	err := s.Initialize([]uint64{1, stdmath.MaxUint64})
-	require.ErrorIs(t, err, math.ErrOverflow)
+	err := s.Initialize([]uint64{1, math.MaxUint64})
+	require.ErrorIs(t, err, safemath.ErrOverflow)
 }
 
 func WeightedWithoutReplacementOutOfRangeTest(

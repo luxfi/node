@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -97,8 +97,7 @@ func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
 	}
 	require.NoError(env.vm.state.Commit())
 
-	addrsSet := set.Set[ids.ShortID]{}
-	addrsSet.Add(addr)
+	addrsSet := set.Of(addr)
 
 	b.ResetTimer()
 

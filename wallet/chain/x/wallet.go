@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -303,6 +303,10 @@ func (w *wallet) IssueTx(
 	txID, err := w.client.IssueTx(ctx, tx.Bytes())
 	if err != nil {
 		return err
+	}
+
+	if f := ops.PostIssuanceFunc(); f != nil {
+		f(txID)
 	}
 
 	if ops.AssumeDecided() {

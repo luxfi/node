@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -25,9 +25,9 @@ var (
 
 type Operation struct {
 	lux.Asset `serialize:"true"`
-	UTXOIDs    []*lux.UTXOID  `serialize:"true" json:"inputIDs"`
+	UTXOIDs    []*lux.UTXOID  `serialize:"true"  json:"inputIDs"`
 	FxID       ids.ID          `serialize:"false" json:"fxID"`
-	Op         fxs.FxOperation `serialize:"true" json:"operation"`
+	Op         fxs.FxOperation `serialize:"true"  json:"operation"`
 }
 
 func (op *Operation) Verify() error {

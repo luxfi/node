@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -6,8 +6,8 @@ package message
 import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/utils/wrappers"
 )
 
 const (
@@ -23,12 +23,11 @@ func init() {
 	c = codec.NewManager(maxMessageSize)
 	lc := linearcodec.NewCustomMaxLength(maxSliceLen)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		lc.RegisterType(&Tx{}),
 		c.RegisterCodec(codecVersion, lc),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 }

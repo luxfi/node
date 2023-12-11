@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -28,7 +28,7 @@ func TestParse(t *testing.T) {
 	tlsCert, err := staking.NewTLSCert()
 	require.NoError(err)
 
-	cert := tlsCert.Leaf
+	cert := staking.CertificateFromX509(tlsCert.Leaf)
 	key := tlsCert.PrivateKey.(crypto.Signer)
 
 	builtBlock, err := Build(

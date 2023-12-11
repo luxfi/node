@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -92,6 +92,7 @@ type IPConfig struct {
 type StakingConfig struct {
 	genesis.StakingConfig
 	SybilProtectionEnabled        bool            `json:"sybilProtectionEnabled"`
+	PartialSyncPrimaryNetwork     bool            `json:"partialSyncPrimaryNetwork"`
 	StakingTLSCert                tls.Certificate `json:"-"`
 	StakingSigningKey             *bls.SecretKey  `json:"-"`
 	SybilProtectionDisabledWeight uint64          `json:"sybilProtectionDisabledWeight"`
@@ -106,12 +107,6 @@ type StateSyncConfig struct {
 }
 
 type BootstrapConfig struct {
-	// Should Bootstrap be retried
-	RetryBootstrap bool `json:"retryBootstrap"`
-
-	// Max number of times to retry bootstrap before warning the node operator
-	RetryBootstrapWarnFrequency int `json:"retryBootstrapWarnFrequency"`
-
 	// Timeout before emitting a warn log when connecting to bootstrapping beacons
 	BootstrapBeaconConnectionTimeout time.Duration `json:"bootstrapBeaconConnectionTimeout"`
 
@@ -130,6 +125,9 @@ type BootstrapConfig struct {
 }
 
 type DatabaseConfig struct {
+	// If true, all writes are to memory and are discarded at node shutdown.
+	ReadOnly bool `json:"readOnly"`
+
 	// Path to database
 	Path string `json:"path"`
 
@@ -183,8 +181,8 @@ type Config struct {
 	ConsensusRouter          router.Router       `json:"-"`
 	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
-	// Gossip a container in the accepted frontier every [AcceptedFrontierGossipFrequency]
-	AcceptedFrontierGossipFrequency time.Duration `json:"consensusGossipFreq"`
+	// Poll for new frontiers every [FrontierPollFrequency]
+	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
 	// ConsensusAppConcurrency defines the maximum number of goroutines to
 	// handle App messages per chain.
 	ConsensusAppConcurrency int `json:"consensusAppConcurrency"`
@@ -233,4 +231,8 @@ type Config struct {
 	// ChainDataDir is the root path for per-chain directories where VMs can
 	// write arbitrary data.
 	ChainDataDir string `json:"chainDataDir"`
+
+	// Path to write process context to (including PID, API URI, and
+	// staking address).
+	ProcessContextFilePath string `json:"processContextFilePath"`
 }

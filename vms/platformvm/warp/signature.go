@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -75,7 +75,7 @@ func (s *BitSetSignature) Verify(
 	quorumDen uint64,
 ) error {
 	if msg.NetworkID != networkID {
-		return errWrongNetworkID
+		return ErrWrongNetworkID
 	}
 
 	subnetID, err := pChainState.GetSubnetID(ctx, msg.SourceChainID)
@@ -121,7 +121,7 @@ func (s *BitSetSignature) Verify(
 	// Parse the aggregate signature
 	aggSig, err := bls.SignatureFromBytes(s.Signature[:])
 	if err != nil {
-		return fmt.Errorf("%w: %v", ErrParseSignature, err)
+		return fmt.Errorf("%w: %w", ErrParseSignature, err)
 	}
 
 	// Create the aggregate public key

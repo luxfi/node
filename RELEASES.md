@@ -1,5 +1,718 @@
 # Release Notes
 
+## [v1.10.17](https://github.com/luxdefi/node/releases/tag/v1.10.17)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `30` and is compatible with versions `v1.10.15-v1.10.16`.
+
+### APIs
+
+- Added `lux_{chainID}_blks_build_accept_latency` metric
+- Added `lux_{chainID}_blks_issued{source}` metric with sources:
+  -  `pull_gossip`
+  -  `push_gossip`
+  -  `put_gossip` which is deprecated
+  -  `built`
+  -  `unknown`
+- Added `lux_{chainID}_issuer_stake_sum` metric
+- Added `lux_{chainID}_issuer_stake_count` metric
+
+### Configs
+
+- Added:
+  - `--consensus-frontier-poll-frequency`
+- Removed:
+  - `--consensus-accepted-frontier-gossip-frequency`
+- Deprecated:
+  - `--consensus-accepted-frontier-gossip-validator-size`
+  - `--consensus-accepted-frontier-gossip-non-validator-size`
+  - `--consensus-accepted-frontier-gossip-peer-size`
+    - Updated the default value to 1 to align with the change in default gossip frequency
+  - `--consensus-on-accept-gossip-validator-size`
+  - `--consensus-on-accept-gossip-non-validator-size`
+  - `--consensus-on-accept-gossip-peer-size`
+
+### Fixes
+
+- Fixed `duplicated operation on provided value` error when executing atomic operations after state syncing the C-chain
+- Removed useage of atomic trie after commitment
+- Fixed atomic trie root overwrite during state sync
+- Prevented closure of `stdout` and `stderr` when shutting down the logger
+
+### What's Changed
+
+- Remove Banff check from mempool verifier by @dhrubabasu in https://github.com/luxdefi/node/pull/2360
+- Document storage growth in readme by @StephenButtolph in https://github.com/luxdefi/node/pull/2364
+- Add metric for duration between block timestamp and acceptance time by @StephenButtolph in https://github.com/luxdefi/node/pull/2366
+- `vms/platformvm`: Remove unused `withMetrics` txheap by @dhrubabasu in https://github.com/luxdefi/node/pull/2373
+- Move peerTracker from x/sync to network/p2p by @joshua-kim in https://github.com/luxdefi/node/pull/2356
+- Logging avoid closing standard outputs by @felipemadero in https://github.com/luxdefi/node/pull/2372
+- `vms/platformvm`: Adjust `Diff.Apply` signature by @dhrubabasu in https://github.com/luxdefi/node/pull/2368
+- Add bls validator info to genesis by @felipemadero in https://github.com/luxdefi/node/pull/2371
+- Remove `engine.GetVM` by @StephenButtolph in https://github.com/luxdefi/node/pull/2374
+- `vms/platformvm`: Consolidate `state` pkg mocks by @dhrubabasu in https://github.com/luxdefi/node/pull/2370
+- Remove common bootstrapper by @StephenButtolph in https://github.com/luxdefi/node/pull/2297
+- `vms/platformvm`: Move `toEngine` channel to mempool by @dhrubabasu in https://github.com/luxdefi/node/pull/2333
+- `vms/avm`: Rename `states` pkg to `state` by @dhrubabasu in https://github.com/luxdefi/node/pull/2381
+- Implement generic bimap by @StephenButtolph in https://github.com/luxdefi/node/pull/2383
+- Unexport RequestID from snowman engine by @StephenButtolph in https://github.com/luxdefi/node/pull/2384
+- Add metric to track the stake weight of block providers by @StephenButtolph in https://github.com/luxdefi/node/pull/2376
+- Add block source metrics to monitor gossip by @StephenButtolph in https://github.com/luxdefi/node/pull/2386
+- Rename `D` to `Durango` by @dhrubabasu in https://github.com/luxdefi/node/pull/2389
+- Replace periodic push accepted gossip with pull preference gossip for block discovery by @StephenButtolph in https://github.com/luxdefi/node/pull/2367
+- MerkleDB Remove ID from Node to reduce size and removal channel creation. by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2324
+- Remove method `CappedList` from `set.Set` by @danlaine in https://github.com/luxdefi/node/pull/2395
+- Periodically PullGossip only from connected validators by @StephenButtolph in https://github.com/luxdefi/node/pull/2399
+- Update bootstrap IPs by @StephenButtolph in https://github.com/luxdefi/node/pull/2396
+- Rename `testnet` fixture to `tmpnet` by @marun in https://github.com/luxdefi/node/pull/2307
+- Add `p2p.Network` component by @joshua-kim in https://github.com/luxdefi/node/pull/2283
+- `vms/platformvm`: Move `GetRewardUTXOs`, `GetSubnets`, and `GetChains` to `State` interface by @dhrubabasu in https://github.com/luxdefi/node/pull/2402
+- Add more descriptive formatted error by @aaronbuchwald in https://github.com/luxdefi/node/pull/2403
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.16...v1.10.17
+
+## [v1.10.16](https://github.com/luxdefi/node/releases/tag/v1.10.16)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
+
+### APIs
+
+- Added log level information to the result of `admin.setLoggerLevel`
+- Updated `info.peers` to return chain aliases for `benched` chains
+- Added support to sample validators of non-tracked subnets with `platform.sampleValidators`
+- Added `lux_{chainID}_max_verified_height` metric to track the highest verified block
+
+### Configs
+
+- Added `--db-read-only` to run the node without writing to disk.
+  - This flag is only expected to be used during testing as it will cause memory use to increase over time
+- Removed `--bootstrap-retry-enabled`
+- Removed `--bootstrap-retry-warn-frequency`
+
+### Fixes
+
+- Fixed packing of large block requests during C-chain state sync
+- Fixed order of updating acceptor tip and sending chain events to C-chain event subscribers
+
+### What's Changed
+
+- Return log levels from admin.SetLoggerLevel by @StephenButtolph in https://github.com/luxdefi/node/pull/2250
+- feat(api) : Peers function to return the PrimaryAlias of the chainID by @DoTheBestToGetTheBest in https://github.com/luxdefi/node/pull/2251
+- Switch to using require.TestingT interface in SenderTest struct by @marun in https://github.com/luxdefi/node/pull/2258
+- Cleanup `ipcs` `Socket` test by @danlaine in https://github.com/luxdefi/node/pull/2257
+- Require poll metrics to be registered by @StephenButtolph in https://github.com/luxdefi/node/pull/2260
+- Track all subnet validator sets in the validator manager by @StephenButtolph in https://github.com/luxdefi/node/pull/2253
+- e2e: Make NewWallet and NewEthclient regular functions by @marun in https://github.com/luxdefi/node/pull/2262
+- Fix typos in docs by @vuittont60 in https://github.com/luxdefi/node/pull/2261
+- Remove Token constants information from keys by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2197
+- Remove unused `UnsortedEquals` function by @dhrubabasu in https://github.com/luxdefi/node/pull/2264
+- Document p2p package by @joshua-kim in https://github.com/luxdefi/node/pull/2254
+- Use extended public key to derive ledger addresses by @felipemadero in https://github.com/luxdefi/node/pull/2246
+- `merkledb` -- rename nit by @danlaine in https://github.com/luxdefi/node/pull/2267
+- `merkledb` -- fix nil check in test by @danlaine in https://github.com/luxdefi/node/pull/2268
+- Add read-only database flag (`--db-read-only`)  by @danlaine in https://github.com/luxdefi/node/pull/2266
+- `merkledb` -- remove unneeded var declarations by @danlaine in https://github.com/luxdefi/node/pull/2269
+- Add fuzz test for `NewIteratorWithStartAndPrefix` by @danlaine in https://github.com/luxdefi/node/pull/1992
+- Return if element was deleted from `Hashmap` by @dhrubabasu in https://github.com/luxdefi/node/pull/2271
+- `mempool.NewMempool` -> `mempool.New` by @dhrubabasu in https://github.com/luxdefi/node/pull/2276
+- e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by coreth by @marun in https://github.com/luxdefi/node/pull/2265
+- Cleanup platformvm mempool errs by @dhrubabasu in https://github.com/luxdefi/node/pull/2278
+- MerkleDB:Naming and comments cleanup by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2274
+- Move `DropExpiredStakerTxs` to platformvm mempool by @dhrubabasu in https://github.com/luxdefi/node/pull/2279
+- Cleanup `ids.NodeID` usage by @abi87 in https://github.com/luxdefi/node/pull/2280
+- Genesis validators cleanup by @abi87 in https://github.com/luxdefi/node/pull/2282
+- Remove Lazy Initialize on Node by @joshua-kim in https://github.com/luxdefi/node/pull/1384
+- Remove sentinel node from MerkleDB proofs by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2106
+- Embed `noop` handler for all unhandled messages by @dhrubabasu in https://github.com/luxdefi/node/pull/2288
+- `merkledb` -- Add `Clearer` interface  by @danlaine in https://github.com/luxdefi/node/pull/2277
+- Simplify get server creation by @StephenButtolph in https://github.com/luxdefi/node/pull/2285
+- Move management of platformvm preferred block to `executor.Manager` by @dhrubabasu in https://github.com/luxdefi/node/pull/2292
+- Add `recentTxsLock` to platform `network` struct by @dhrubabasu in https://github.com/luxdefi/node/pull/2294
+- e2e: More fixture refinement in support of coreth integration testing  by @marun in https://github.com/luxdefi/node/pull/2275
+- Add `VerifyTx` to `executor.Manager` by @dhrubabasu in https://github.com/luxdefi/node/pull/2293
+- Simplify lux bootstrapping by @StephenButtolph in https://github.com/luxdefi/node/pull/2286
+- Replace unique slices with sets in the engine interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2317
+- Use zap.Stringer rather than zap.Any by @StephenButtolph in https://github.com/luxdefi/node/pull/2320
+- Move `AddUnverifiedTx` logic to `network.IssueTx` by @dhrubabasu in https://github.com/luxdefi/node/pull/2310
+- Remove `AddUnverifiedTx` from `Builder` by @dhrubabasu in https://github.com/luxdefi/node/pull/2311
+- Remove error from SDK AppGossip handler by @joshua-kim in https://github.com/luxdefi/node/pull/2252
+- Rename AppRequestFailed to AppError by @joshua-kim in https://github.com/luxdefi/node/pull/2321
+- Remove `Network` interface from `Builder` by @dhrubabasu in https://github.com/luxdefi/node/pull/2312
+- Update `error_code` to be sint32 instead of uint32. by @joshua-kim in https://github.com/luxdefi/node/pull/2322
+- Refactor bootstrapper implementation into consensus by @StephenButtolph in https://github.com/luxdefi/node/pull/2300
+- Pchain - Cleanup NodeID generation in UTs by @abi87 in https://github.com/luxdefi/node/pull/2291
+- nit: loop --> variadic by @danlaine in https://github.com/luxdefi/node/pull/2316
+- Update zap dependency to v1.26.0 by @danlaine in https://github.com/luxdefi/node/pull/2325
+- Remove useless anon functions by @StephenButtolph in https://github.com/luxdefi/node/pull/2326
+- Move `network` implementation to separate package by @dhrubabasu in https://github.com/luxdefi/node/pull/2296
+- Unexport lux constant from common package by @StephenButtolph in https://github.com/luxdefi/node/pull/2327
+- Remove `common.Config` functions by @StephenButtolph in https://github.com/luxdefi/node/pull/2328
+- Move engine startup into helper function by @StephenButtolph in https://github.com/luxdefi/node/pull/2329
+- Remove bootstrapping retry config by @StephenButtolph in https://github.com/luxdefi/node/pull/2301
+- Export snowman bootstrapper by @StephenButtolph in https://github.com/luxdefi/node/pull/2331
+- Remove common.Config from syncer.Config by @StephenButtolph in https://github.com/luxdefi/node/pull/2330
+- `platformvm.VM` -- replace `Config` field with `validators.Manager` by @danlaine in https://github.com/luxdefi/node/pull/2319
+- Improve height monitoring by @StephenButtolph in https://github.com/luxdefi/node/pull/2347
+- Cleanup snowman consensus metrics by @StephenButtolph in https://github.com/luxdefi/node/pull/2349
+- Expand consensus health check by @StephenButtolph in https://github.com/luxdefi/node/pull/2354
+- Reduce the size of the OracleBlock interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2355
+- [vms/proposervm] Update Build Heuristic by @patrick-ogrady in https://github.com/luxdefi/node/pull/2348
+- Use linkedhashmap for P-Chain mempool by @gyuho in https://github.com/luxdefi/node/pull/1536
+- Increase txs in pool metric when adding tx by @StephenButtolph in https://github.com/luxdefi/node/pull/2361
+
+### New Contributors
+
+- @DoTheBestToGetTheBest made their first contribution in https://github.com/luxdefi/node/pull/2251
+- @vuittont60 made their first contribution in https://github.com/luxdefi/node/pull/2261
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.15...v1.10.16
+
+## [v1.10.15](https://github.com/luxdefi/node/releases/tag/v1.10.15)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is updated to `30` all plugins must update to be compatible.
+
+### Configs
+
+- Added `pebble` as an allowed option to `--db-type`
+
+### Fixes
+
+- Fixed C-chain tracer API panic
+
+### What's Changed
+
+- Reduce allocations on insert and remove by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2201
+- `merkledb` -- shift nit by @danlaine in https://github.com/luxdefi/node/pull/2218
+- Update `golangci-lint` to `v1.55.1` by @dhrubabasu in https://github.com/luxdefi/node/pull/2228
+- Add json marshal tests to existing serialization tests in `platformvm/txs` pkg by @dhrubabasu in https://github.com/luxdefi/node/pull/2227
+- Move all blst function usage to `bls` pkg by @dhrubabasu in https://github.com/luxdefi/node/pull/2222
+- `merkledb` -- don't pass `BranchFactor` to `encodeDBNode` by @danlaine in https://github.com/luxdefi/node/pull/2217
+- Add `utils.Err` helper by @dhrubabasu in https://github.com/luxdefi/node/pull/2212
+- Enable `perfsprint` linter by @dhrubabasu in https://github.com/luxdefi/node/pull/2229
+- Trim down size of secp256k1 `Factory` struct by @dhrubabasu in https://github.com/luxdefi/node/pull/2223
+- Fix test typos by @dhrubabasu in https://github.com/luxdefi/node/pull/2233
+- P2P AppRequestFailed protobuf definition by @joshua-kim in https://github.com/luxdefi/node/pull/2111
+- Remove error from Router AppGossip by @joshua-kim in https://github.com/luxdefi/node/pull/2238
+- Document host and port behavior in help text by @StephenButtolph in https://github.com/luxdefi/node/pull/2236
+- Remove `database.Manager` by @danlaine in https://github.com/luxdefi/node/pull/2239
+- Add `BaseTx` support to platformvm by @dhrubabasu in https://github.com/luxdefi/node/pull/2232
+- Add `pebble` as valid value for `--db-type`. by @danlaine in https://github.com/luxdefi/node/pull/2244
+- Add nullable option to codec by @nytzuga in https://github.com/luxdefi/node/pull/2171
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.14...v1.10.15
+
+## [v1.10.14](https://github.com/luxdefi/node/releases/tag/v1.10.14)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `29` and compatible with version `v1.10.13`.
+
+### Configs
+
+- Deprecated `--api-ipcs-enabled`
+- Deprecated `--ipcs-chain-ids`
+- Deprecated `--ipcs-path`
+- Deprecated `--api-keystore-enabled`
+
+### Fixes
+
+- Fixed shutdown of timeout manager
+- Fixed racy access of the shutdown time
+
+### What's Changed
+
+- Remove build check from unit tests by @StephenButtolph in https://github.com/luxdefi/node/pull/2189
+- Update cgo usage by @StephenButtolph in https://github.com/luxdefi/node/pull/2184
+- Deprecate IPC configs by @danlaine in https://github.com/luxdefi/node/pull/2168
+- Update P2P proto docs by @joshua-kim in https://github.com/luxdefi/node/pull/2181
+- Merkle db Make Paths only refer to lists of nodes by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2143
+- Deprecate keystore config by @danlaine in https://github.com/luxdefi/node/pull/2195
+- Add tests for BanffBlock serialization by @dhrubabasu in https://github.com/luxdefi/node/pull/2194
+- Move Shutdown lock from Handler into Engines by @StephenButtolph in https://github.com/luxdefi/node/pull/2179
+- Move HealthCheck lock from Handler into Engines by @StephenButtolph in https://github.com/luxdefi/node/pull/2173
+- Implement Heap Map by @joshua-kim in https://github.com/luxdefi/node/pull/2137
+- Move selectStartGear lock from Handler into Engines by @StephenButtolph in https://github.com/luxdefi/node/pull/2182
+- Add Heap Set by @joshua-kim in https://github.com/luxdefi/node/pull/2136
+- Shutdown TimeoutManager during node Shutdown by @abi87 in https://github.com/luxdefi/node/pull/1707
+- Redesign validator set management to enable tracking all subnets by @ceyonur in https://github.com/luxdefi/node/pull/1857
+- Update local network readme by @StephenButtolph in https://github.com/luxdefi/node/pull/2203
+- Use custom codec for validator metadata by @abi87 in https://github.com/luxdefi/node/pull/1510
+- Add RSA max key length test by @StephenButtolph in https://github.com/luxdefi/node/pull/2205
+- Remove duplicate networking check by @StephenButtolph in https://github.com/luxdefi/node/pull/2204
+- Update TestDialContext to use ManuallyTrack by @joshua-kim in https://github.com/luxdefi/node/pull/2209
+- Remove contains from validator manager interface by @ceyonur in https://github.com/luxdefi/node/pull/2198
+- Move the overridden manager into the node by @ceyonur in https://github.com/luxdefi/node/pull/2199
+- Remove `aggregate` struct by @dhrubabasu in https://github.com/luxdefi/node/pull/2213
+- Add log for ungraceful shutdown on startup by @joshua-kim in https://github.com/luxdefi/node/pull/2215
+- Add pebble database implementation by @danlaine in https://github.com/luxdefi/node/pull/1999
+- Add `TransferSubnetOwnershipTx` by @dhrubabasu in https://github.com/luxdefi/node/pull/2178
+- Revert networking AllowConnection change by @StephenButtolph in https://github.com/luxdefi/node/pull/2219
+- Fix unexpected unlock by @StephenButtolph in https://github.com/luxdefi/node/pull/2221
+- Improve logging for block verification failure by @StephenButtolph in https://github.com/luxdefi/node/pull/2224
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.13...v1.10.14
+
+## [v1.10.13](https://github.com/luxdefi/node/releases/tag/v1.10.13)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is updated to `29` all plugins must update to be compatible.
+
+### Fixes
+
+- Added `Prefetcher` to the `merkledb` interface
+- Fixed json marshalling of `TrackedSubnets` and `AllowedNodes`
+
+### What's Changed
+
+- Fix typo in block formation logic documentation by @kyoshisuki in https://github.com/luxdefi/node/pull/2158
+- Marshal blocks and transactions inside API calls by @StephenButtolph in https://github.com/luxdefi/node/pull/2153
+- Remove lock options from the info api by @StephenButtolph in https://github.com/luxdefi/node/pull/2149
+- Remove write lock option from the avm static API by @StephenButtolph in https://github.com/luxdefi/node/pull/2154
+- Remove write lock option from the avm wallet API by @StephenButtolph in https://github.com/luxdefi/node/pull/2155
+- Fix json marshalling of Sets by @StephenButtolph in https://github.com/luxdefi/node/pull/2161
+- Rename `removeSubnetValidatorValidation` to `verifyRemoveSubnetValidatorTx` by @dhrubabasu in https://github.com/luxdefi/node/pull/2162
+- Remove lock options from the IPCs api by @StephenButtolph in https://github.com/luxdefi/node/pull/2151
+- Remove write lock option from the xsvm API by @StephenButtolph in https://github.com/luxdefi/node/pull/2152
+- Remove lock options from the admin API by @StephenButtolph in https://github.com/luxdefi/node/pull/2150
+- Remove aliasing of `math` standard lib by @dhrubabasu in https://github.com/luxdefi/node/pull/2163
+- Remove write lock option from the platformvm API by @StephenButtolph in https://github.com/luxdefi/node/pull/2157
+- Remove write lock option from the avm rpc API by @StephenButtolph in https://github.com/luxdefi/node/pull/2156
+- Remove context lock from API VM interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2165
+- Use set.Of rather than set.Add by @StephenButtolph in https://github.com/luxdefi/node/pull/2164
+- Bump google.golang.org/grpc from 1.55.0 to 1.58.3 by @dependabot in https://github.com/luxdefi/node/pull/2159
+- [x/merkledb] `Prefetcher` interface by @patrick-ogrady in https://github.com/luxdefi/node/pull/2167
+- Validator Diffs: docs and UTs cleanup by @abi87 in https://github.com/luxdefi/node/pull/2037
+- MerkleDB Reduce buffer creation/memcopy on path construction by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2124
+- Fix some P-chain UTs by @abi87 in https://github.com/luxdefi/node/pull/2117
+
+### New Contributors
+
+- @kyoshisuki made their first contribution in https://github.com/luxdefi/node/pull/2158
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.12...v1.10.13
+
+## [v1.10.12](https://github.com/luxdefi/node/releases/tag/v1.10.12)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - v1.10.11`.
+
+### APIs
+
+- Added `lux_{chainID}_total_weight` metric
+- Added `lux_{chainID}_num_validators` metric
+- Added `lux_{chainID}_num_processing_ancestor_fetches_failed` metric
+- Added `lux_{chainID}_num_processing_ancestor_fetches_dropped` metric
+- Added `lux_{chainID}_num_processing_ancestor_fetches_succeeded` metric
+- Added `lux_{chainID}_num_processing_ancestor_fetches_unneeded` metric
+- Added `lux_{chainID}_num_missing_accepted_blocks` metric
+- Added `lux_{chainID}_selected_vote_index_count` metric
+- Added `lux_{chainID}_selected_vote_index_sum` metric
+
+### Configs
+
+- Added `--snow-preference-quorum-size` flag
+- Added `--snow-confidence-quorum-size` flag
+- Added `"fx-owner-cache-size"` to the P-chain config
+
+### Fixes
+
+- Fixed concurrent node shutdown and chain creation race
+- Updated http2 implementation to patch CVE-2023-39325
+- Exited `network.dial` early to avoid goroutine leak when shutting down
+- Reduced log level of `"failed to send peer list for handshake"` messages from `ERROR` to `DEBUG`
+- Reduced log level of `"state pruning failed"` messages from `ERROR` to `WARN`
+
+### What's Changed
+
+- Add last accepted height to the snowman interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2091
+- Delete kurtosis CI jobs by @marun in https://github.com/luxdefi/node/pull/2068
+- e2e: Ensure all Issue* calls use the default context by @marun in https://github.com/luxdefi/node/pull/2069
+- Remove Finalized from the consensus interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2093
+- Remove embedding of `verify.Verifiable` in `FxCredential` by @dhrubabasu in https://github.com/luxdefi/node/pull/2089
+- Clarify decidable interface simple default parameter tests by @gyuho in https://github.com/luxdefi/node/pull/2094
+- snow/consensus/snowman/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxdefi/node/pull/2095
+- Cleanup `.golangci.yml` by @dhrubabasu in https://github.com/luxdefi/node/pull/2097
+- Refactor `ancestor.Tree` by @StephenButtolph in https://github.com/luxdefi/node/pull/2099
+- Update AMI runner image and instance type by @charlie-ava in https://github.com/luxdefi/node/pull/1939
+- Add `tagalign` linter by @dhrubabasu in https://github.com/luxdefi/node/pull/2084
+- Fix flaky BuildBlockIsIdempotent test by @StephenButtolph in https://github.com/luxdefi/node/pull/2101
+- Make `network.dial` honor context cancellation. by @danlaine in https://github.com/luxdefi/node/pull/2061
+- Add preference lookups by height to the consensus interface by @StephenButtolph in https://github.com/luxdefi/node/pull/2092
+- Remove duplicate pullQuery method by @StephenButtolph in https://github.com/luxdefi/node/pull/2103
+- Add additional validator set metrics by @aaronbuchwald in https://github.com/luxdefi/node/pull/2051
+- Remove `snowball.Initialize` and `snowball.Factory` by @danlaine in https://github.com/luxdefi/node/pull/2104
+- Remove initialize functions from the snowball package by @danlaine in https://github.com/luxdefi/node/pull/2105
+- Remove `genesis.State` by @joshua-kim in https://github.com/luxdefi/node/pull/2112
+- add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxdefi/node/pull/2031
+- Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxdefi/node/pull/2100
+- testing: Switch upgrade test to testnet fixture by @marun in https://github.com/luxdefi/node/pull/1887
+- Reduce archivedb key lengths by 1 byte by @StephenButtolph in https://github.com/luxdefi/node/pull/2113
+- Cleanup uptime manager constructor by @abi87 in https://github.com/luxdefi/node/pull/2118
+- MerkleDB Compact Path Bytes by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2010
+- MerkleDB Path changes cleanup by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2120
+- Fix consensus engine interface comments by @StephenButtolph in https://github.com/luxdefi/node/pull/2115
+- Standardize consensus variable names in tests by @StephenButtolph in https://github.com/luxdefi/node/pull/2129
+- Prevent bytesNeeded overflow by @StephenButtolph in https://github.com/luxdefi/node/pull/2130
+- Migrate xsvm from github.com/luxdefi/xsvm by @marun in https://github.com/luxdefi/node/pull/2045
+- Fix handling of wg in the networking dial test by @StephenButtolph in https://github.com/luxdefi/node/pull/2132
+- Update go.mod and add update check by @StephenButtolph in https://github.com/luxdefi/node/pull/2133
+- Reduce log level of failing to send a peerList message by @StephenButtolph in https://github.com/luxdefi/node/pull/2134
+- RPCChainVM fail-fast health RPCs by @hexfusion in https://github.com/luxdefi/node/pull/2123
+- MerkleDB allow warming node cache by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2128
+- Add vote bubbling metrics by @StephenButtolph in https://github.com/luxdefi/node/pull/2138
+- Reduce log level of an error during Prune by @StephenButtolph in https://github.com/luxdefi/node/pull/2141
+- Exit chain creation routine before shutting down chain router by @StephenButtolph in https://github.com/luxdefi/node/pull/2140
+- Merkle db fix type cast bug by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2142
+- Add Warp Payload Types by @nytzuga in https://github.com/luxdefi/node/pull/2116
+- Add height voting for chits by @StephenButtolph in https://github.com/luxdefi/node/pull/2102
+- Add Heap Queue by @joshua-kim in https://github.com/luxdefi/node/pull/2135
+- Add additional payload.Hash examples by @StephenButtolph in https://github.com/luxdefi/node/pull/2145
+- Split Alpha into AlphaPreference and AlphaConfidence by @StephenButtolph in https://github.com/luxdefi/node/pull/2125
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.11...v1.10.12
+
+## [v1.10.11](https://github.com/luxdefi/node/releases/tag/v1.10.11)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - v1.10.10`.
+
+### Fixes
+
+- Prevented overzelous benching due to dropped AppRequests
+- Populated the process file atomically to avoid racy reads
+
+### What's Changed
+
+- Rename platformvm/blocks to platformvm/block by @joshua-kim in https://github.com/luxdefi/node/pull/1980
+- RewardValidatorTx cleanup by @abi87 in https://github.com/luxdefi/node/pull/1891
+- Cancel stale SH actions by @danlaine in https://github.com/luxdefi/node/pull/2003
+- e2e: Switch assertion library from gomega to testify by @marun in https://github.com/luxdefi/node/pull/1909
+- e2e: Add bootstrap checks to migrated kurtosis tests by @marun in https://github.com/luxdefi/node/pull/1935
+- Add `GetTransformSubnetTx` helper by @dhrubabasu in https://github.com/luxdefi/node/pull/2047
+- Add readme for the staking/local folder by @StephenButtolph in https://github.com/luxdefi/node/pull/2046
+- use `IsCortinaActivated` helper by @dhrubabasu in https://github.com/luxdefi/node/pull/2048
+- add `D` upgrade boilerplate by @dhrubabasu in https://github.com/luxdefi/node/pull/2049
+- e2e: Ensure interchain workflow coverage for the P-Chain by @marun in https://github.com/luxdefi/node/pull/1882
+- e2e: Switch to using default timed context everywhere by @marun in https://github.com/luxdefi/node/pull/1910
+- Remove indentation + confusing comment by @StephenButtolph in https://github.com/luxdefi/node/pull/2053
+- Delete ErrDelegatorSubset by @joshua-kim in https://github.com/luxdefi/node/pull/2055
+- Fix default validator start time by @marun in https://github.com/luxdefi/node/pull/2058
+- Enable workflows to be triggered by merge queue by @marun in https://github.com/luxdefi/node/pull/2057
+- e2e: Migrate staking rewards test from kurtosis by @marun in https://github.com/luxdefi/node/pull/1767
+- Fix LRU documentation comment by @anusha-ctrl in https://github.com/luxdefi/node/pull/2036
+- Ignore AppResponse timeouts for benching by @StephenButtolph in https://github.com/luxdefi/node/pull/2066
+- trace: provide appName and version from Config by @najeal in https://github.com/luxdefi/node/pull/1893
+- Update perms.WriteFile to write atomically  by @marun in https://github.com/luxdefi/node/pull/2063
+- ArchiveDB by @nytzuga in https://github.com/luxdefi/node/pull/1911
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.10...v1.10.11
+
+## [v1.10.10](https://github.com/luxdefi/node/releases/tag/v1.10.10)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
+
+### APIs
+
+- Added `height` to the output of `platform.getCurrentSupply`
+
+### Configs
+
+- Added `proposerNumHistoricalBlocks` to subnet configs
+
+### Fixes
+
+- Fixed handling of `SIGTERM` signals in plugin processes prior to receiving a `Shutdown` message
+- Fixed range proof commitment of empty proofs
+
+### What's Changed
+
+- e2e: Save network data for each test run as an uploaded artifact by @marun in https://github.com/luxdefi/node/pull/1856
+- e2e: Ensure interchain workflow coverage for X-Chain and C-Chain by @marun in https://github.com/luxdefi/node/pull/1871
+- MerkleDB Adjust New View function(s) by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1927
+- e2e: Migrate duplicate node id test from kurtosis by @marun in https://github.com/luxdefi/node/pull/1573
+- Add tracing levels to merkledb by @StephenButtolph in https://github.com/luxdefi/node/pull/1933
+- [x/merkledb] Add Configuration for `RootGenConcurrency` by @patrick-ogrady in https://github.com/luxdefi/node/pull/1936
+- e2e: Ensure testnet network dir is archived on failed test run by @marun in https://github.com/luxdefi/node/pull/1930
+- Merkle db cleanup view creation by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1934
+- Add async DB deletion helper by @StephenButtolph in https://github.com/luxdefi/node/pull/1931
+- Implement SDK handler to drop messages from non-validators by @joshua-kim in https://github.com/luxdefi/node/pull/1917
+- Support proposervm historical block deletion by @StephenButtolph in https://github.com/luxdefi/node/pull/1929
+- Remove thread pool by @StephenButtolph in https://github.com/luxdefi/node/pull/1940
+- Merkledb split node storage into value and intermediate by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1918
+- `merkledb` -- remove unneeded codec test helper by @danlaine in https://github.com/luxdefi/node/pull/1943
+- `merkledb` -- add codec test and move helper by @danlaine in https://github.com/luxdefi/node/pull/1944
+- Add throttler implementation to SDK by @joshua-kim in https://github.com/luxdefi/node/pull/1905
+- Add Throttled Handler implementation to SDK by @joshua-kim in https://github.com/luxdefi/node/pull/1906
+- Change merkledb caches to be size based by @StephenButtolph in https://github.com/luxdefi/node/pull/1947
+- Rename `node.marshal` to `node.bytes` by @danlaine in https://github.com/luxdefi/node/pull/1951
+- e2e: Switch to a default network node count of 2 by @marun in https://github.com/luxdefi/node/pull/1928
+- MerkleDB Improve Node Size Calculation by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1950
+- `merkledb` -- remove unneeded return values by @danlaine in https://github.com/luxdefi/node/pull/1959
+- `sync` -- reduce test sizes by @danlaine in https://github.com/luxdefi/node/pull/1962
+- `merkledb` -- limit number of goroutines calculating node IDs by @danlaine in https://github.com/luxdefi/node/pull/1960
+- Add gossip package to p2p SDK by @joshua-kim in https://github.com/luxdefi/node/pull/1958
+- Improve state sync logging by @StephenButtolph in https://github.com/luxdefi/node/pull/1955
+- Update golang to 1.20.8 by @StephenButtolph in https://github.com/luxdefi/node/pull/1826
+- Use odd-numbered request ids for SDK by @joshua-kim in https://github.com/luxdefi/node/pull/1975
+- update iterator invariant by @danlaine in https://github.com/luxdefi/node/pull/1978
+- Document common usage of requestIDs for snow senders by @StephenButtolph in https://github.com/luxdefi/node/pull/1981
+- e2e: Diagnose and fix flakes by @marun in https://github.com/luxdefi/node/pull/1941
+- `merkledb` -- `db_test.go` cleanup by @danlaine in https://github.com/luxdefi/node/pull/1954
+- `merkledb` -- make config fields uints by @danlaine in https://github.com/luxdefi/node/pull/1963
+- Only gracefully exit rpcchainvm server after Shutdown by @StephenButtolph in https://github.com/luxdefi/node/pull/1988
+- Add contexts to SDK callbacks by @joshua-kim in https://github.com/luxdefi/node/pull/1977
+- Change max response size to target response size by @joshua-kim in https://github.com/luxdefi/node/pull/1995
+- Add sdk gossip handler metrics by @joshua-kim in https://github.com/luxdefi/node/pull/1997
+- Add p2p SDK Router metrics by @joshua-kim in https://github.com/luxdefi/node/pull/2000
+- Merkledb Attempt to reduce test runtime by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1990
+- longer timeout on windows UT by @danlaine in https://github.com/luxdefi/node/pull/2001
+- `sync` -- log tweaks by @danlaine in https://github.com/luxdefi/node/pull/2008
+- Add Validator Gossiper by @joshua-kim in https://github.com/luxdefi/node/pull/2015
+- database: comment that Get returns ErrNotFound if key is not present by @aaronbuchwald in https://github.com/luxdefi/node/pull/2018
+- Return `height` from `GetCurrentSupply` by @dhrubabasu in https://github.com/luxdefi/node/pull/2022
+- simplify platformvm `GetHeight` function by @dhrubabasu in https://github.com/luxdefi/node/pull/2023
+- Merkle db fix range proof commit bug by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2019
+- Add `bag.Of` helper by @StephenButtolph in https://github.com/luxdefi/node/pull/2027
+- Cleanup early poll termination logic by @StephenButtolph in https://github.com/luxdefi/node/pull/2029
+- fix typo by @dhrubabasu in https://github.com/luxdefi/node/pull/2030
+- Merkle db intermediate node key compression by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1987
+- Improve RPC Chain version mismatch error message by @martineckardt in https://github.com/luxdefi/node/pull/2021
+- Move subnet owner lookup to platformvm state by @dhrubabasu in https://github.com/luxdefi/node/pull/2024
+- Fix fuzz tests; add iterator fuzz test by @danlaine in https://github.com/luxdefi/node/pull/1991
+- Refactor subnet validator primary network requirements by @dhrubabasu in https://github.com/luxdefi/node/pull/2014
+- Rename events to event by @joshua-kim in https://github.com/luxdefi/node/pull/1973
+- Add function to initialize SampleableSet by @joshua-kim in https://github.com/luxdefi/node/pull/2017
+- add `IsCortinaActivated` helper by @dhrubabasu in https://github.com/luxdefi/node/pull/2013
+- Fix P-chain Import by @StephenButtolph in https://github.com/luxdefi/node/pull/2035
+- Rename avm/blocks package to avm/block by @joshua-kim in https://github.com/luxdefi/node/pull/1970
+- Merkledb Update rangeproof proto to be consistent with changeproof proto by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2040
+- `merkledb` -- encode lengths as uvarints by @danlaine in https://github.com/luxdefi/node/pull/2039
+- MerkleDB Remove GetNodeFromParent by @dboehm-avalabs in https://github.com/luxdefi/node/pull/2041
+
+### New Contributors
+
+- @martineckardt made their first contribution in https://github.com/luxdefi/node/pull/2021
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.9...v1.10.10
+
+## [v1.10.9](https://github.com/luxdefi/node/releases/tag/v1.10.9)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is updated to `28` all plugins must update to be compatible.
+
+### Configs
+
+- Changed the default value of `--network-compression-type` from `gzip` to `zstd`
+
+### Fixes
+
+- Marked corruptabledb as corrupted after encountering an error during iteration
+- Fixed proposervm error handling during startup
+
+### What's Changed
+
+- `merkledb` -- verify range proof in fuzz test; fix bound error by @danlaine in https://github.com/luxdefi/node/pull/1789
+- Update default compression type to zstd by @StephenButtolph in https://github.com/luxdefi/node/pull/1839
+- Migrate to `uber-go/mock` by @dhrubabasu in https://github.com/luxdefi/node/pull/1840
+- `corruptabledb` -- corrupt on iterator error by @danlaine in https://github.com/luxdefi/node/pull/1829
+- Add support for Maps to the reflect_codec by @nytzuga in https://github.com/luxdefi/node/pull/1790
+- Make linter fail if `github.com/golang/mock/gomock` is used by @danlaine in https://github.com/luxdefi/node/pull/1843
+- Firewoodize merkle db Part 1: Make Views ReadOnly by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1816
+- E2E tests -- use appropriate timeouts by @danlaine in https://github.com/luxdefi/node/pull/1851
+- e2e: Switch to testnet fixture by @marun in https://github.com/luxdefi/node/pull/1709
+- `secp256k1` -- add fuzz tests by @danlaine in https://github.com/luxdefi/node/pull/1809
+- Add fuzz test for complex codec unmarshalling by @StephenButtolph in https://github.com/luxdefi/node/pull/1846
+- Simplify exported interface of the primary wallet by @StephenButtolph in https://github.com/luxdefi/node/pull/1849
+- Regenerate mocks by @joshua-kim in https://github.com/luxdefi/node/pull/1860
+- Remove history btree by @danlaine in https://github.com/luxdefi/node/pull/1861
+- `merkledb` -- Remove `CommitToParent` by @danlaine in https://github.com/luxdefi/node/pull/1854
+- `merkledb` -- remove other history btree by @danlaine in https://github.com/luxdefi/node/pull/1862
+- `merkledb` -- add path fuzz test by @danlaine in https://github.com/luxdefi/node/pull/1852
+- fix range proof verification case by @danlaine in https://github.com/luxdefi/node/pull/1834
+- `merkledb` -- add change proof fuzz test; fix change proof verification by @danlaine in https://github.com/luxdefi/node/pull/1802
+- Warp readme by @aaronbuchwald in https://github.com/luxdefi/node/pull/1780
+- CODEOWNERS: add marun to tests by @hexfusion in https://github.com/luxdefi/node/pull/1863
+- Add CI check that auto-generated code is up to date by @dhrubabasu in https://github.com/luxdefi/node/pull/1828
+- `sync` -- change proof request can return range proof by @danlaine in https://github.com/luxdefi/node/pull/1772
+- Ensure consistent use of best-practice `set -o` in all scripts by @marun in https://github.com/luxdefi/node/pull/1864
+- GetCanonicalValidatorSet minimal ValidatorState iface by @darioush in https://github.com/luxdefi/node/pull/1875
+- `sync` -- handle fatal error by @danlaine in https://github.com/luxdefi/node/pull/1874
+- `merkledb` -- use `Maybe` for start bounds by @danlaine in https://github.com/luxdefi/node/pull/1872
+- Add C-chain wallet to the primary network by @StephenButtolph in https://github.com/luxdefi/node/pull/1850
+- e2e: Refactor keychain and wallet creation to test helpers by @marun in https://github.com/luxdefi/node/pull/1870
+- Update account nonce on exportTx accept by @StephenButtolph in https://github.com/luxdefi/node/pull/1881
+- `sync` -- add workheap test by @danlaine in https://github.com/luxdefi/node/pull/1879
+- `merkledb` -- commit to db only by @danlaine in https://github.com/luxdefi/node/pull/1885
+- Remove node/value lock from trieview by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1865
+- remove old todo by @danlaine in https://github.com/luxdefi/node/pull/1892
+- Fix race in TestHandlerDispatchInternal by @joshua-kim in https://github.com/luxdefi/node/pull/1895
+- Remove duplicate code from proposervm block acceptance by @StephenButtolph in https://github.com/luxdefi/node/pull/1894
+- e2e: Bump permissionless subnets timeouts by @marun in https://github.com/luxdefi/node/pull/1897
+- `merkledb` -- codec remove err checks by @danlaine in https://github.com/luxdefi/node/pull/1899
+- Merkle db fix new return type by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1898
+- Add SDK Sampling interface by @joshua-kim in https://github.com/luxdefi/node/pull/1877
+- Add NoOpHandler implementation to SDK by @joshua-kim in https://github.com/luxdefi/node/pull/1903
+- Remove unused scripts by @StephenButtolph in https://github.com/luxdefi/node/pull/1908
+- `merkledb` -- codec nits/cleanup by @danlaine in https://github.com/luxdefi/node/pull/1904
+- `merkledb` -- preallocate `bytes.Buffer` in codec by @danlaine in https://github.com/luxdefi/node/pull/1900
+- Proposervm height index repair fix by @abi87 in https://github.com/luxdefi/node/pull/1915
+- `merkledb` -- move and rename methods by @danlaine in https://github.com/luxdefi/node/pull/1919
+- Remove optional height indexing interface by @StephenButtolph in https://github.com/luxdefi/node/pull/1896
+- `merkledb` -- nits by @danlaine in https://github.com/luxdefi/node/pull/1916
+- Fix code owners file by @StephenButtolph in https://github.com/luxdefi/node/pull/1922
+- Drop invalid TLS certs during initial handshake by @StephenButtolph in https://github.com/luxdefi/node/pull/1923
+- Restricted tls metrics by @StephenButtolph in https://github.com/luxdefi/node/pull/1924
+
+### New Contributors
+
+- @nytzuga made their first contribution in https://github.com/luxdefi/node/pull/1790
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.8...v1.10.9
+
+## [v1.10.8](https://github.com/luxdefi/node/releases/tag/v1.10.8)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
+
+The plugin version is unchanged at `27` and compatible with versions `v1.10.5 - v1.10.7`.
+
+**This update changes the local network genesis. This version will not be able to join local networks with prior versions.**
+
+**The first startup of the P-Chain will perform indexing operations. This indexing runs in the background and does not impact restart time. During this indexing the node will report increased CPU, memory, and disk usage.**
+
+### APIs
+
+- Added `platform.getBlockByHeight`
+
+### Configs
+
+- Added `--partial-sync-primary-network` flag to enable non-validators to optionally sync only the P-chain on the primary network
+- Added P-chain cache size configuration `block-id-cache-size`
+
+### Fixes
+
+- Fixed P-chain GetValidatorSet regression for subnets
+- Changed `x/sync` range/change proof bounds from `[]byte` to `Maybe[[]byte]`
+- Fixed `x/sync` error handling from failure to send app messages
+
+### What's Changed
+
+- Removes calls to ctrl.Finish by @darioush in https://github.com/luxdefi/node/pull/1803
+- e2e: Remove unnecessary transaction status checking by @marun in https://github.com/luxdefi/node/pull/1786
+- fix p2p mockgen location by @dhrubabasu in https://github.com/luxdefi/node/pull/1806
+- fix end proof verification by @danlaine in https://github.com/luxdefi/node/pull/1801
+- `merkledb` -- add proof fuzz test by @danlaine in https://github.com/luxdefi/node/pull/1804
+- `sync` -- re-add network client metrics by @danlaine in https://github.com/luxdefi/node/pull/1787
+- Add function to initialize set from elements by @joshua-kim in https://github.com/luxdefi/node/pull/1808
+- Add Maybe to the end bound of proofs (Part 1) by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1793
+- add go version to --version by @amirhasanzadehpy in https://github.com/luxdefi/node/pull/1819
+- e2e: Add local network fixture by @marun in https://github.com/luxdefi/node/pull/1700
+- Fix test flake in TestProposalTxsInMempool by @StephenButtolph in https://github.com/luxdefi/node/pull/1822
+- `sync` -- remove todo by @danlaine in https://github.com/luxdefi/node/pull/1788
+- Add Maybe to the end bound of proofs (Part 2) by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1813
+- Move Maybe to its own package by @danlaine in https://github.com/luxdefi/node/pull/1817
+- `merkledb` -- clarify/improve change proof invariants by @danlaine in https://github.com/luxdefi/node/pull/1810
+- P-chain state prune + height index by @dhrubabasu in https://github.com/luxdefi/node/pull/1719
+- Update maintainer of the debian packages by @StephenButtolph in https://github.com/luxdefi/node/pull/1825
+- Make platformvm implement `block.HeightIndexedChainVM` by @dhrubabasu in https://github.com/luxdefi/node/pull/1746
+- Add P-chain `GetBlockByHeight` API method by @dhrubabasu in https://github.com/luxdefi/node/pull/1747
+- Update local genesis startTime by @ceyonur in https://github.com/luxdefi/node/pull/1811
+- `sync` -- add handling for fatal error by @danlaine in https://github.com/luxdefi/node/pull/1690
+- Add error logs for unexpected proposervm BuildBlock failures by @StephenButtolph in https://github.com/luxdefi/node/pull/1832
+- Fix subnet validator set public key initialization by @StephenButtolph in https://github.com/luxdefi/node/pull/1833
+- Document PendingTxs + BuildBlock consensus engine requirement by @StephenButtolph in https://github.com/luxdefi/node/pull/1835
+- Bump github.com/supranational/blst from 0.3.11-0.20230406105308-e9dfc5ee724b to 0.3.11 by @dependabot in https://github.com/luxdefi/node/pull/1831
+- Add Primary Network Lite Sync Option by @abi87 in https://github.com/luxdefi/node/pull/1769
+- Check P-chain ShouldPrune during Initialize by @StephenButtolph in https://github.com/luxdefi/node/pull/1836
+
+### New Contributors
+
+- @amirhasanzadehpy made their first contribution in https://github.com/luxdefi/node/pull/1819
+- @dependabot made their first contribution in https://github.com/luxdefi/node/pull/1831
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.7...v1.10.8
+
+## [v1.10.7](https://github.com/luxdefi/node/releases/tag/v1.10.7)
+
+This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). This release contains meaningful performance improvements and we recommend updating as soon as possible.
+
+The plugin version is unchanged at `27` and compatible with versions `v1.10.5 - v1.10.6`.
+
+### APIs
+
+- Modifed `platform.getValidatorsAt` to also return BLS public keys
+
+### Configs
+
+- Changed the default value of `--network-allow-private-ips` to `false` when the `--network-id` is either `fuji` or `mainnet`
+- Added P-chain cache size configurations
+  - `block-cache-size`
+  - `tx-cache-size`
+  - `transformed-subnet-tx-cache-size`
+  - `reward-utxos-cache-size`
+  - `chain-cache-size`
+  - `chain-db-cache-size`
+- Removed various long deprecated flags
+  - `--genesis` use `--genesis-file` instead
+  - `--genesis-content` use `--genesis-file-content` instead
+  - `--inbound-connection-throttling-cooldown` use `--network-inbound-connection-throttling-cooldown` instead
+  - `--inbound-connection-throttling-max-conns-per-sec` use `--network-inbound-connection-throttling-max-conns-per-sec` instead
+  - `--outbound-connection-throttling-rps` use `network-outbound-connection-throttling-rps` instead
+  - `--outbound-connection-timeout` use `network-outbound-connection-timeout` instead
+  - `--staking-enabled` use `sybil-protection-enabled` instead
+  - `--staking-disabled-weight` use `sybil-protection-disabled-weight` instead
+  - `--network-compression-enabled` use `--network-compression-type` instead
+  - `--consensus-gossip-frequency` use `--consensus-accepted-frontier-gossip-frequency` instead
+
+### Fixes
+
+- Fixed C-chain tx tracer crashes
+- Fixed merkledb panic during state sync
+- Fixed merkledb state sync stale target tracking
+
+### What's Changed
+
+- Remove deprecated configs by @ceyonur in https://github.com/luxdefi/node/pull/1712
+- upgrade: Increase all ANR timeouts to 2m to ensure CI reliability by @marun in https://github.com/luxdefi/node/pull/1737
+- fix sync panic by @danlaine in https://github.com/luxdefi/node/pull/1736
+- remove `vm.state` re-assignment in tests by @dhrubabasu in https://github.com/luxdefi/node/pull/1739
+- Expose BLS public keys from platform.getValidatorsAt by @StephenButtolph in https://github.com/luxdefi/node/pull/1740
+- Fix validator set diff tests by @StephenButtolph in https://github.com/luxdefi/node/pull/1744
+- Replace List() with Map() on validators.Set by @StephenButtolph in https://github.com/luxdefi/node/pull/1745
+- vms/platformvm: configure state cache sizes #1522 by @najeal in https://github.com/luxdefi/node/pull/1677
+- Support both `stateBlk`s and `Block`s in `blockDB` by @dhrubabasu in https://github.com/luxdefi/node/pull/1748
+- Add `DefaultExecutionConfig` var to `platformvm` by @dhrubabasu in https://github.com/luxdefi/node/pull/1749
+- Remove hanging TODO from prior change by @StephenButtolph in https://github.com/luxdefi/node/pull/1758
+- Write process context on node start to simplify test orchestration by @marun in https://github.com/luxdefi/node/pull/1729
+- x/sync: add locks for peerTracker by @darioush in https://github.com/luxdefi/node/pull/1756
+- Add ids length constants by @StephenButtolph in https://github.com/luxdefi/node/pull/1759
+- [x/sync] Update target locking by @patrick-ogrady in https://github.com/luxdefi/node/pull/1763
+- Export warp errors for external use by @aaronbuchwald in https://github.com/luxdefi/node/pull/1771
+- Remove unused networking constant by @StephenButtolph in https://github.com/luxdefi/node/pull/1774
+- Change the default value of `--network-allow-private-ips` to `false` for `mainnet` and `fuji` by @StephenButtolph in https://github.com/luxdefi/node/pull/1773
+- Remove context.TODO from tests by @StephenButtolph in https://github.com/luxdefi/node/pull/1778
+- Replace linkeddb iterator with native DB range queries by @StephenButtolph in https://github.com/luxdefi/node/pull/1752
+- Add support for measuring key size in caches by @StephenButtolph in https://github.com/luxdefi/node/pull/1781
+- Bump coreth to v0.12.5-rc.0 by @aaronbuchwald in https://github.com/luxdefi/node/pull/1775
+- Add metric for the number of elements in a cache by @StephenButtolph in https://github.com/luxdefi/node/pull/1782
+- Evict blocks based on size by @StephenButtolph in https://github.com/luxdefi/node/pull/1766
+- Add proposervm state metrics by @StephenButtolph in https://github.com/luxdefi/node/pull/1785
+- Register metercacher `len` metric by @StephenButtolph in https://github.com/luxdefi/node/pull/1791
+- Reduce block cache sizes to 64 MiB by @StephenButtolph in https://github.com/luxdefi/node/pull/1794
+- Add p2p sdk by @joshua-kim in https://github.com/luxdefi/node/pull/1799
+
+**Full Changelog**: https://github.com/luxdefi/node/compare/v1.10.5...v1.10.7
+
 ## [v1.10.5](https://github.com/luxdefi/node/releases/tag/v1.10.5)
 
 This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/node/releases/tag/v1.10.0). It is optional, but encouraged.
@@ -180,7 +893,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/nod
 - Add workflow to mark stale issues and PRs by @joshua-kim in https://github.com/luxdefi/node/pull/1443
 - Enforce inlining functions with a single error return in `require.NoError` by @dhrubabasu in https://github.com/luxdefi/node/pull/1500
 - `x/sync` / `x/merkledb` -- add `SyncableDB` interface by @danlaine in https://github.com/luxdefi/node/pull/1555
-- Rename beacon to boostrapper, define bootstrappers in JSON file for cross-language compatiblity by @gyuho in https://github.com/luxdefi/node/pull/1439
+- Rename beacon to boostrapper, define bootstrappers in JSON file for cross-language compatibility by @gyuho in https://github.com/luxdefi/node/pull/1439
 - add P-chain height indexing by @dhrubabasu in https://github.com/luxdefi/node/pull/1447
 - Add P-chain `GetBlockByHeight` API method by @dhrubabasu in https://github.com/luxdefi/node/pull/1448
 - `x/sync` -- use for sending Range Proofs by @danlaine in https://github.com/luxdefi/node/pull/1537

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -22,8 +22,7 @@ func TestFetchUTXOs(t *testing.T) {
 	txID := ids.GenerateTestID()
 	assetID := ids.GenerateTestID()
 	addr := ids.GenerateTestShortID()
-	addrs := set.Set[ids.ShortID]{}
-	addrs.Add(addr)
+	addrs := set.Of(addr)
 	utxo := &UTXO{
 		UTXOID: UTXOID{
 			TxID:        txID,
@@ -71,8 +70,7 @@ func TestGetPaginatedUTXOs(t *testing.T) {
 	addr0 := ids.GenerateTestShortID()
 	addr1 := ids.GenerateTestShortID()
 	addr2 := ids.GenerateTestShortID()
-	addrs := set.Set[ids.ShortID]{}
-	addrs.Add(addr0, addr1)
+	addrs := set.Of(addr0, addr1)
 
 	c := linearcodec.NewDefault()
 	manager := codec.NewDefaultManager()

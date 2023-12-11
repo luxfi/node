@@ -1,19 +1,22 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
 
 import (
 	"bytes"
-	"crypto/x509"
 	"errors"
 	"fmt"
 
+	"github.com/luxdefi/node/staking"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/hashing"
 )
 
-const NodeIDPrefix = "NodeID-"
+const (
+	NodeIDPrefix = "NodeID-"
+	NodeIDLen    = ShortIDLen
+)
 
 var (
 	EmptyNodeID = NodeID{}
@@ -73,7 +76,7 @@ func ToNodeID(bytes []byte) (NodeID, error) {
 	return NodeID(nodeID), err
 }
 
-func NodeIDFromCert(cert *x509.Certificate) NodeID {
+func NodeIDFromCert(cert *staking.Certificate) NodeID {
 	return hashing.ComputeHash160Array(
 		hashing.ComputeHash256(cert.Raw),
 	)

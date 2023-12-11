@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timer
@@ -22,7 +22,7 @@ func TestAdaptiveTimeoutManagerInit(t *testing.T) {
 		expectedErr error
 	}
 
-	tests := []test{
+	tests := []*test{
 		{
 			config: AdaptiveTimeoutConfig{
 				InitialTimeout:     time.Second,

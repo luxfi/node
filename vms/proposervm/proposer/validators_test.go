@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposer
@@ -19,7 +19,7 @@ func TestValidatorDataLess(t *testing.T) {
 	require.False(v2.Less(v1))
 
 	v1 = validatorData{
-		id: ids.NodeID{1},
+		id: ids.BuildTestNodeID([]byte{1}),
 	}
 	require.False(v1.Less(v2))
 	require.True(v2.Less(v1))

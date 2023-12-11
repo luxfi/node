@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -341,8 +341,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		return nil, ids.ID{}, fmt.Errorf("couldn't calculate the initial supply: %w", err)
 	}
 
-	initiallyStaked := set.Set[ids.ShortID]{}
-	initiallyStaked.Add(config.InitialStakedFunds...)
+	initiallyStaked := set.Of(config.InitialStakedFunds...)
 	skippedAllocations := []Allocation(nil)
 
 	// Specify the initial state of the Platform Chain
@@ -419,8 +418,8 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		delegationFee := json.Uint32(staker.DelegationFee)
 
 		platformvmArgs.Validators = append(platformvmArgs.Validators,
-			api.PermissionlessValidator{
-				Staker: api.Staker{
+			api.GenesisPermissionlessValidator{
+				GenesisValidator: api.GenesisValidator{
 					StartTime: json.Uint64(genesisTime.Unix()),
 					EndTime:   json.Uint64(endStakingTime.Unix()),
 					NodeID:    staker.NodeID,
@@ -431,6 +430,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 				},
 				Staked:             utxos,
 				ExactDelegationFee: &delegationFee,
+				Signer:             staker.Signer,
 			},
 		)
 	}

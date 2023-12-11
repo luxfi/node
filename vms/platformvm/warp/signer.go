@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -13,8 +13,8 @@ import (
 var (
 	_ Signer = (*signer)(nil)
 
-	errWrongSourceChainID = errors.New("wrong SourceChainID")
-	errWrongNetworkID     = errors.New("wrong networkID")
+	ErrWrongSourceChainID = errors.New("wrong SourceChainID")
+	ErrWrongNetworkID     = errors.New("wrong networkID")
 )
 
 type Signer interface {
@@ -42,10 +42,10 @@ type signer struct {
 
 func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 	if msg.SourceChainID != s.chainID {
-		return nil, errWrongSourceChainID
+		return nil, ErrWrongSourceChainID
 	}
 	if msg.NetworkID != s.networkID {
-		return nil, errWrongNetworkID
+		return nil, ErrWrongNetworkID
 	}
 
 	msgBytes := msg.Bytes()

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
@@ -530,7 +530,6 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			var (
 				backend = tt.backendF(ctrl)
@@ -652,7 +651,6 @@ func TestGetValidatorRules(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			chainState := tt.chainStateF(ctrl)
 			rules, err := getValidatorRules(tt.backend, chainState, tt.subnetID)
@@ -771,7 +769,6 @@ func TestGetDelegatorRules(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			chainState := tt.chainStateF(ctrl)
 			rules, err := getDelegatorRules(tt.backend, chainState, tt.subnetID)

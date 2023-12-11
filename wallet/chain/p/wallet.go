@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/luxdefi/node/ids"
@@ -489,6 +490,10 @@ func (w *wallet) IssueTx(
 		return err
 	}
 
+	if f := ops.PostIssuanceFunc(); f != nil {
+		f(txID)
+	}
+
 	if ops.AssumeDecided() {
 		return w.Backend.AcceptTx(ctx, tx)
 	}
@@ -503,7 +508,7 @@ func (w *wallet) IssueTx(
 	}
 
 	if txStatus.Status != status.Committed {
-		return errNotCommitted
+		return fmt.Errorf("%w: %s", errNotCommitted, txStatus.Reason)
 	}
 	return nil
 }

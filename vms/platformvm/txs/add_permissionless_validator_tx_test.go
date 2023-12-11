@@ -1,24 +1,22 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"encoding/hex"
+	"math"
 	"testing"
 
-	stdmath "math"
-
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/fx"
@@ -27,6 +25,8 @@ import (
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 	"github.com/luxdefi/node/vms/types"
+
+	safemath "github.com/luxdefi/node/utils/math"
 )
 
 func TestAddPermissionlessPrimaryValidator(t *testing.T) {
@@ -60,11 +60,11 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 	}
-	nodeID := ids.NodeID{
+	nodeID := ids.BuildTestNodeID([]byte{
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
-	}
+	})
 
 	simpleAddPrimaryTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
@@ -725,11 +725,11 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 	}
-	nodeID := ids.NodeID{
+	nodeID := ids.BuildTestNodeID([]byte{
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
-	}
+	})
 	subnetID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -1604,7 +1604,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
-								Amt: stdmath.MaxUint64,
+								Amt: math.MaxUint64,
 							},
 						},
 						{
@@ -1621,7 +1621,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					DelegationShares:      reward.PercentDenominator,
 				}
 			},
-			err: math.ErrOverflow,
+			err: safemath.ErrOverflow,
 		},
 		{
 			name: "multiple staked assets",
@@ -1822,7 +1822,6 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bag
@@ -22,6 +22,13 @@ type Bag[T comparable] struct {
 
 	threshold    int
 	metThreshold set.Set[T]
+}
+
+// Of returns a Bag initialized with [elts]
+func Of[T comparable](elts ...T) Bag[T] {
+	var b Bag[T]
+	b.Add(elts...)
+	return b
 }
 
 func (b *Bag[T]) init() {
@@ -94,8 +101,6 @@ func (b *Bag[T]) Equals(other Bag[T]) bool {
 
 // Mode returns the most common element in the bag and the count of that element.
 // If there's a tie, any of the tied element may be returned.
-// TODO for Stephen: Does the above violate an assumption made by Snowball?
-// If the bag is empty, the zero value and 0 are returned.
 func (b *Bag[T]) Mode() (T, int) {
 	var (
 		mode     T

@@ -1,6 +1,6 @@
 # Lux gRPC
 
-Now Serving: **Protocol Version 27**
+Now Serving: **Protocol Version 30**
 
 Protobuf files are hosted at
 [https://buf.build/luxdefi/lux](https://buf.build/luxdefi/lux) and

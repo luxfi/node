@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/luxdefi/node/indexer"
-	"github.com/luxdefi/node/vms/platformvm/blocks"
-	"github.com/luxdefi/node/vms/proposervm/block"
 	"github.com/luxdefi/node/wallet/subnet/primary"
+
+	platformvmblock "github.com/luxdefi/node/vms/platformvm/block"
+	proposervmblock "github.com/luxdefi/node/vms/proposervm/block"
 )
 
 // This example program continuously polls for the next P-Chain block
@@ -33,12 +34,12 @@ func main() {
 		}
 
 		platformvmBlockBytes := container.Bytes
-		proposerVMBlock, err := block.Parse(container.Bytes)
+		proposerVMBlock, err := proposervmblock.Parse(container.Bytes)
 		if err == nil {
 			platformvmBlockBytes = proposerVMBlock.Block()
 		}
 
-		platformvmBlock, err := blocks.Parse(blocks.Codec, platformvmBlockBytes)
+		platformvmBlock, err := platformvmblock.Parse(platformvmblock.Codec, platformvmBlockBytes)
 		if err != nil {
 			log.Fatalf("failed to parse platformvm block: %s\n", err)
 		}

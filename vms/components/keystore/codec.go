@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keystore
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/utils"
 )
 
 const (
@@ -28,12 +28,11 @@ func init() {
 	lc := linearcodec.NewCustomMaxLength(math.MaxUint32)
 	LegacyCodec = codec.NewManager(math.MaxInt32)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		Codec.RegisterCodec(CodecVersion, c),
 		LegacyCodec.RegisterCodec(CodecVersion, lc),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 }

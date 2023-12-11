@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -12,18 +12,12 @@ import (
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/wallet/chain/p"
-	"github.com/luxdefi/node/wallet/chain/x"
+	"github.com/luxdefi/node/wallet/subnet/primary/common"
 )
 
 var (
-	_ UTXOs      = (*utxos)(nil)
-	_ ChainUTXOs = (*chainUTXOs)(nil)
-
-	// TODO: refactor ChainUTXOs definition to allow the client implementations
-	//       to perform their own assertions.
-	_ ChainUTXOs = p.ChainUTXOs(nil)
-	_ ChainUTXOs = x.ChainUTXOs(nil)
+	_ UTXOs             = (*utxos)(nil)
+	_ common.ChainUTXOs = (*chainUTXOs)(nil)
 )
 
 type UTXOs interface {
@@ -34,21 +28,13 @@ type UTXOs interface {
 	GetUTXO(ctx context.Context, sourceChainID, destinationChainID, utxoID ids.ID) (*lux.UTXO, error)
 }
 
-type ChainUTXOs interface {
-	AddUTXO(ctx context.Context, destinationChainID ids.ID, utxo *lux.UTXO) error
-	RemoveUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) error
-
-	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	GetUTXO(ctx context.Context, sourceChainID, utxoID ids.ID) (*lux.UTXO, error)
-}
-
 func NewUTXOs() UTXOs {
 	return &utxos{
 		sourceToDestToUTXOIDToUTXO: make(map[ids.ID]map[ids.ID]map[ids.ID]*lux.UTXO),
 	}
 }
 
-func NewChainUTXOs(chainID ids.ID, utxos UTXOs) ChainUTXOs {
+func NewChainUTXOs(chainID ids.ID, utxos UTXOs) common.ChainUTXOs {
 	return &chainUTXOs{
 		utxos:   utxos,
 		chainID: chainID,

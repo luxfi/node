@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -34,7 +34,7 @@ type Config struct {
 	Router               router.InboundHandler
 	VersionCompatibility version.Compatibility
 	MySubnets            set.Set[ids.ID]
-	Beacons              validators.Set
+	Beacons              validators.Manager
 	NetworkID            uint32
 	PingFrequency        time.Duration
 	PongTimeout          time.Duration

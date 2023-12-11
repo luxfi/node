@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/vms/platformvm/signer"
 	"github.com/luxdefi/node/vms/platformvm/stakeable"
@@ -41,6 +42,10 @@ func init() {
 		c.SkipRegistrations(5)
 
 		errs.Add(RegisterUnsignedTxsTypes(c))
+
+		c.SkipRegistrations(4)
+
+		errs.Add(RegisterDUnsignedTxsTypes(c))
 	}
 	errs.Add(
 		Codec.RegisterCodec(Version, c),
@@ -96,4 +101,11 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&signer.ProofOfPossession{}),
 	)
 	return errs.Err
+}
+
+func RegisterDUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
+	return utils.Err(
+		targetCodec.RegisterType(&TransferSubnetOwnershipTx{}),
+		targetCodec.RegisterType(&BaseTx{}),
+	)
 }

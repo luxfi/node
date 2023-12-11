@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -17,7 +17,7 @@ import (
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/vms/platformvm/signer"
 )
 
 var (
@@ -59,9 +59,10 @@ func (a Allocation) Less(other Allocation) bool {
 }
 
 type Staker struct {
-	NodeID        ids.NodeID  `json:"nodeID"`
-	RewardAddress ids.ShortID `json:"rewardAddress"`
-	DelegationFee uint32      `json:"delegationFee"`
+	NodeID        ids.NodeID                `json:"nodeID"`
+	RewardAddress ids.ShortID               `json:"rewardAddress"`
+	DelegationFee uint32                    `json:"delegationFee"`
+	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
@@ -74,6 +75,7 @@ func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
 		NodeID:        s.NodeID,
 		RewardAddress: luxAddr,
 		DelegationFee: s.DelegationFee,
+		Signer:        s.Signer,
 	}, err
 }
 
@@ -172,30 +174,28 @@ func init() {
 	unparsedFujiConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
 		json.Unmarshal(fujiGenesisConfigJSON, &unparsedFujiConfig),
 		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 
-	mainnetConfig, err := unparsedMainnetConfig.Parse()
-	errs.Add(err)
-	MainnetConfig = mainnetConfig
+	MainnetConfig, err = unparsedMainnetConfig.Parse()
+	if err != nil {
+		panic(err)
+	}
 
-	fujiConfig, err := unparsedFujiConfig.Parse()
-	errs.Add(err)
-	FujiConfig = fujiConfig
+	FujiConfig, err = unparsedFujiConfig.Parse()
+	if err != nil {
+		panic(err)
+	}
 
-	localConfig, err := unparsedLocalConfig.Parse()
-	errs.Add(err)
-	LocalConfig = localConfig
-
-	if errs.Errored() {
-		panic(errs.Err)
+	LocalConfig, err = unparsedLocalConfig.Parse()
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -235,7 +235,7 @@ func GetConfigContent(genesisContent string) (*Config, error) {
 func parseGenesisJSONBytesToConfig(bytes []byte) (*Config, error) {
 	var unparsedConfig UnparsedConfig
 	if err := json.Unmarshal(bytes, &unparsedConfig); err != nil {
-		return nil, fmt.Errorf("%w: %s", errInvalidGenesisJSON, err)
+		return nil, fmt.Errorf("%w: %w", errInvalidGenesisJSON, err)
 	}
 
 	config, err := unparsedConfig.Parse()

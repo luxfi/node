@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -11,7 +11,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/metric"
 	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/blocks"
+	"github.com/luxdefi/node/vms/platformvm/block"
 )
 
 var _ Metrics = (*metrics)(nil)
@@ -24,7 +24,7 @@ type Metrics interface {
 	// Mark that an option vote that we initially preferred was rejected.
 	MarkOptionVoteLost()
 	// Mark that the given block was accepted.
-	MarkAccepted(blocks.Block) error
+	MarkAccepted(block.Block) error
 	// Mark that a validator set was created.
 	IncValidatorSetsCreated()
 	// Mark that a validator set was cached.
@@ -110,9 +110,9 @@ func New(
 
 	errs := wrappers.Errs{Err: err}
 	apiRequestMetrics, err := metric.NewAPIInterceptor(namespace, registerer)
+	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 	errs.Add(
-		err,
 		registerer.Register(m.timeUntilUnstake),
 		registerer.Register(m.timeUntilSubnetUnstake),
 		registerer.Register(m.localStake),
@@ -156,7 +156,7 @@ func (m *metrics) MarkOptionVoteLost() {
 	m.numVotesLost.Inc()
 }
 
-func (m *metrics) MarkAccepted(b blocks.Block) error {
+func (m *metrics) MarkAccepted(b block.Block) error {
 	return b.Visit(m.blockMetrics)
 }
 

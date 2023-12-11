@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -13,8 +13,6 @@ import (
 	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
 	"github.com/luxdefi/node/vms/rpcchainvm/runtime/subprocess"
-
-	vmpb "github.com/luxdefi/node/proto/pb/vm"
 )
 
 var _ vms.Factory = (*factory)(nil)
@@ -61,7 +59,7 @@ func (f *factory) New(log logging.Logger) (interface{}, error) {
 		return nil, err
 	}
 
-	vm := NewClient(vmpb.NewVMClient(clientConn))
+	vm := NewClient(clientConn)
 	vm.SetProcess(stopper, status.Pid, f.processTracker)
 
 	f.runtimeTracker.TrackRuntime(stopper)

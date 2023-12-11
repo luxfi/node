@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -20,7 +20,7 @@ import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
 	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/database/versiondb"
 	"github.com/luxdefi/node/ids"
@@ -36,8 +36,6 @@ import (
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/timer/mockable"
 	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/version"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/api"
 	"github.com/luxdefi/node/vms/platformvm/config"
@@ -75,12 +73,18 @@ var (
 	testSubnet1            *txs.Tx
 	testSubnet1ControlKeys = preFundedKeys[0:3]
 
-	// Used to create and use keys.
-	testKeyfactory secp256k1.Factory
+	// Node IDs of genesis validators. Initialized in init function
+	genesisNodeIDs []ids.NodeID
 
-	errMissingPrimaryValidators = errors.New("missing primary validator set")
-	errMissing                  = errors.New("missing")
+	errMissing = errors.New("missing")
 )
+
+func init() {
+	genesisNodeIDs = make([]ids.NodeID, len(preFundedKeys))
+	for i := range preFundedKeys {
+		genesisNodeIDs[i] = ids.GenerateTestNodeID()
+	}
+}
 
 type mutableSharedMemory struct {
 	atomic.SharedMemory
@@ -122,17 +126,16 @@ func newEnvironment(t *testing.T, postBanff, postCortina bool) *environment {
 	config := defaultConfig(postBanff, postCortina)
 	clk := defaultClock(postBanff || postCortina)
 
-	baseDBManager := manager.NewMemDB(version.CurrentDatabase)
-	baseDB := versiondb.New(baseDBManager.Current().Database)
+	baseDB := versiondb.New(memdb.New())
 	ctx, msm := defaultCtx(baseDB)
 
 	fx := defaultFx(clk, ctx.Log, isBootstrapped.Get())
 
 	rewards := reward.NewCalculator(config.RewardConfig)
-	baseState := defaultState(&config, ctx, baseDB, rewards)
+	baseState := defaultState(config.Validators, ctx, baseDB, rewards)
 
 	atomicUTXOs := lux.NewAtomicUTXOManager(ctx.SharedMemory, txs.Codec)
-	uptimes := uptime.NewManager(baseState)
+	uptimes := uptime.NewManager(baseState, clk)
 	utxoHandler := utxo.NewHandler(ctx, clk, fx)
 
 	txBuilder := builder.New(
@@ -215,22 +218,22 @@ func addSubnet(
 }
 
 func defaultState(
-	cfg *config.Config,
+	validators validators.Manager,
 	ctx *snow.Context,
 	db database.Database,
 	rewards reward.Calculator,
 ) state.State {
 	genesisBytes := buildGenesisTest(ctx)
+	execCfg, _ := config.GetExecutionConfig(nil)
 	state, err := state.New(
 		db,
 		genesisBytes,
 		prometheus.NewRegistry(),
-		cfg,
+		validators,
+		execCfg,
 		ctx,
 		metrics.Noop,
 		rewards,
-		&utils.Atomic[bool]{},
-		trackChecksum,
 	)
 	if err != nil {
 		panic(err)
@@ -287,13 +290,10 @@ func defaultConfig(postBanff, postCortina bool) config.Config {
 		cortinaTime = defaultValidateStartTime.Add(-2 * time.Second)
 	}
 
-	vdrs := validators.NewManager()
-	primaryVdrs := validators.NewSet()
-	_ = vdrs.Add(constants.PrimaryNetworkID, primaryVdrs)
 	return config.Config{
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
-		Validators:             vdrs,
+		Validators:             validators.NewManager(),
 		TxFee:                  defaultTxFee,
 		CreateSubnetTxFee:      100 * defaultTxFee,
 		CreateBlockchainTxFee:  100 * defaultTxFee,
@@ -376,15 +376,14 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 		}
 	}
 
-	genesisValidators := make([]api.PermissionlessValidator, len(preFundedKeys))
-	for i, key := range preFundedKeys {
-		nodeID := ids.NodeID(key.PublicKey().Address())
+	genesisValidators := make([]api.GenesisPermissionlessValidator, len(genesisNodeIDs))
+	for i, nodeID := range genesisNodeIDs {
 		addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
 		if err != nil {
 			panic(err)
 		}
-		genesisValidators[i] = api.PermissionlessValidator{
-			Staker: api.Staker{
+		genesisValidators[i] = api.GenesisPermissionlessValidator{
+			GenesisValidator: api.GenesisValidator{
 				StartTime: json.Uint64(defaultValidateStartTime.Unix()),
 				EndTime:   json.Uint64(defaultValidateEndTime.Unix()),
 				NodeID:    nodeID,
@@ -428,31 +427,15 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 
 func shutdownEnvironment(env *environment) error {
 	if env.isBootstrapped.Get() {
-		primaryValidatorSet, exist := env.config.Validators.Get(constants.PrimaryNetworkID)
-		if !exist {
-			return errMissingPrimaryValidators
-		}
-		primaryValidators := primaryValidatorSet.List()
+		validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-		validatorIDs := make([]ids.NodeID, len(primaryValidators))
-		for i, vdr := range primaryValidators {
-			validatorIDs[i] = vdr.NodeID
-		}
 		if err := env.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID); err != nil {
 			return err
 		}
 
 		for subnetID := range env.config.TrackedSubnets {
-			vdrs, exist := env.config.Validators.Get(subnetID)
-			if !exist {
-				return nil
-			}
-			validators := vdrs.List()
+			validatorIDs := env.config.Validators.GetValidatorIDs(subnetID)
 
-			validatorIDs := make([]ids.NodeID, len(validators))
-			for i, vdr := range validators {
-				validatorIDs[i] = vdr.NodeID
-			}
 			if err := env.uptimes.StopTracking(validatorIDs, subnetID); err != nil {
 				return err
 			}
@@ -463,10 +446,8 @@ func shutdownEnvironment(env *environment) error {
 		}
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		env.state.Close(),
 		env.baseDB.Close(),
 	)
-	return errs.Err
 }

@@ -1,17 +1,18 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
 
 import (
 	"errors"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/api/server"
 	"github.com/luxdefi/node/database/memdb"
@@ -19,7 +20,6 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/lux/vertex"
-	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
 	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/logging"
@@ -37,7 +37,7 @@ type apiServerMock struct {
 	endpoints   []string
 }
 
-func (a *apiServerMock) AddRoute(_ *common.HTTPHandler, _ *sync.RWMutex, base, endpoint string) error {
+func (a *apiServerMock) AddRoute(_ http.Handler, base, endpoint string) error {
 	a.timesCalled++
 	a.bases = append(a.bases, base)
 	a.endpoints = append(a.endpoints, endpoint)
@@ -128,7 +128,6 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 func TestIndexer(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
@@ -399,7 +398,6 @@ func TestIncompleteIndex(t *testing.T) {
 	// Create an indexer with indexing disabled
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	baseDB := memdb.New()
 	config := Config{
@@ -481,7 +479,6 @@ func TestIncompleteIndex(t *testing.T) {
 func TestIgnoreNonDefaultChains(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)

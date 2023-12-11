@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -50,10 +50,8 @@ const (
 	DefaultNetworkTimeoutCoefficient    = 2
 	DefaultNetworkReadHandshakeTimeout  = 15 * time.Second
 
-	DefaultNetworkCompressionEnabled        = true // TODO remove when NetworkCompressionEnabledKey is removed
-	DefaultNetworkCompressionType           = compression.TypeGzip
+	DefaultNetworkCompressionType           = compression.TypeZstd
 	DefaultNetworkMaxClockDifference        = time.Minute
-	DefaultNetworkAllowPrivateIPs           = true
 	DefaultNetworkRequireValidatorToConnect = false
 	DefaultNetworkPeerReadBufferSize        = 8 * units.KiB
 	DefaultNetworkPeerWriteBufferSize       = 8 * units.KiB
@@ -73,12 +71,12 @@ const (
 	DefaultBenchlistMinFailingDuration = 2*time.Minute + 30*time.Second
 
 	// Router
-	DefaultAcceptedFrontierGossipFrequency                 = 10 * time.Second
 	DefaultConsensusAppConcurrency                         = 2
 	DefaultConsensusShutdownTimeout                        = time.Minute
+	DefaultFrontierPollFrequency                           = 100 * time.Millisecond
 	DefaultConsensusGossipAcceptedFrontierValidatorSize    = 0
 	DefaultConsensusGossipAcceptedFrontierNonValidatorSize = 0
-	DefaultConsensusGossipAcceptedFrontierPeerSize         = 15
+	DefaultConsensusGossipAcceptedFrontierPeerSize         = 1
 	DefaultConsensusGossipOnAcceptValidatorSize            = 0
 	DefaultConsensusGossipOnAcceptNonValidatorSize         = 0
 	DefaultConsensusGossipOnAcceptPeerSize                 = 10

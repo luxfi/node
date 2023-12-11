@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -14,21 +14,14 @@ import (
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxdefi/node/wallet/subnet/primary/common"
 )
 
 var _ Backend = (*backend)(nil)
 
-type ChainUTXOs interface {
-	AddUTXO(ctx stdcontext.Context, destinationChainID ids.ID, utxo *lux.UTXO) error
-	RemoveUTXO(ctx stdcontext.Context, sourceChainID, utxoID ids.ID) error
-
-	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	GetUTXO(ctx stdcontext.Context, sourceChainID, utxoID ids.ID) (*lux.UTXO, error)
-}
-
 // Backend defines the full interface required to support a P-chain wallet.
 type Backend interface {
-	ChainUTXOs
+	common.ChainUTXOs
 	BuilderBackend
 	SignerBackend
 
@@ -37,14 +30,14 @@ type Backend interface {
 
 type backend struct {
 	Context
-	ChainUTXOs
+	common.ChainUTXOs
 
 	txsLock sync.RWMutex
 	// txID -> tx
 	txs map[ids.ID]*txs.Tx
 }
 
-func NewBackend(ctx Context, utxos ChainUTXOs, txs map[ids.ID]*txs.Tx) Backend {
+func NewBackend(ctx Context, utxos common.ChainUTXOs, txs map[ids.ID]*txs.Tx) Backend {
 	return &backend{
 		Context:    ctx,
 		ChainUTXOs: utxos,

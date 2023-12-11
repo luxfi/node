@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -8,15 +8,15 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/avm/blocks/executor"
+	"github.com/luxdefi/node/vms/avm/block/executor"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/avm/txs/mempool"
@@ -140,7 +140,6 @@ func TestNetworkAppGossip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			parser, err := txs.NewParser([]fxs.Fx{
 				&secp256k1fx.Fx{},
@@ -280,7 +279,6 @@ func TestNetworkIssueTx(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			parser, err := txs.NewParser([]fxs.Fx{
 				&secp256k1fx.Fx{},
@@ -307,7 +305,6 @@ func TestNetworkIssueTx(t *testing.T) {
 func TestNetworkGossipTx(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	parser, err := txs.NewParser([]fxs.Fx{
 		&secp256k1fx.Fx{},

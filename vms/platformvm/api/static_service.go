@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -98,6 +98,9 @@ type Staker struct {
 	StakeAmount *json.Uint64 `json:"stakeAmount,omitempty"`
 }
 
+// GenesisValidator should to be used for genesis validators only.
+type GenesisValidator Staker
+
 // Owner is the repr. of a reward owner sent over APIs.
 type Owner struct {
 	Locktime  json.Uint64 `json:"locktime"`
@@ -130,6 +133,16 @@ type PermissionlessValidator struct {
 	DelegatorCount  *json.Uint64        `json:"delegatorCount,omitempty"`
 	DelegatorWeight *json.Uint64        `json:"delegatorWeight,omitempty"`
 	Delegators      *[]PrimaryDelegator `json:"delegators,omitempty"`
+}
+
+// GenesisPermissionlessValidator should to be used for genesis validators only.
+type GenesisPermissionlessValidator struct {
+	GenesisValidator
+	RewardOwner        *Owner                    `json:"rewardOwner,omitempty"`
+	DelegationFee      json.Float32              `json:"delegationFee"`
+	ExactDelegationFee *json.Uint32              `json:"exactDelegationFee,omitempty"`
+	Staked             []UTXO                    `json:"staked,omitempty"`
+	Signer             *signer.ProofOfPossession `json:"signer,omitempty"`
 }
 
 // PermissionedValidator is the repr. of a permissioned validator sent over APIs.
@@ -170,15 +183,15 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	LuxAssetID   ids.ID                    `json:"luxAssetID"`
-	NetworkID     json.Uint32               `json:"networkID"`
-	UTXOs         []UTXO                    `json:"utxos"`
-	Validators    []PermissionlessValidator `json:"validators"`
-	Chains        []Chain                   `json:"chains"`
-	Time          json.Uint64               `json:"time"`
-	InitialSupply json.Uint64               `json:"initialSupply"`
-	Message       string                    `json:"message"`
-	Encoding      formatting.Encoding       `json:"encoding"`
+	LuxAssetID   ids.ID                           `json:"luxAssetID"`
+	NetworkID     json.Uint32                      `json:"networkID"`
+	UTXOs         []UTXO                           `json:"utxos"`
+	Validators    []GenesisPermissionlessValidator `json:"validators"`
+	Chains        []Chain                          `json:"chains"`
+	Time          json.Uint64                      `json:"time"`
+	InitialSupply json.Uint64                      `json:"initialSupply"`
+	Message       string                           `json:"message"`
+	Encoding      formatting.Encoding              `json:"encoding"`
 }
 
 // BuildGenesisReply is the reply from BuildGenesis
@@ -303,21 +316,39 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			delegationFee = uint32(*vdr.ExactDelegationFee)
 		}
 
-		tx := &txs.Tx{Unsigned: &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		var (
+			baseTx = txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
-			}},
-			Validator: txs.Validator{
+			}}
+			validator = txs.Validator{
 				NodeID: vdr.NodeID,
 				Start:  uint64(args.Time),
 				End:    uint64(vdr.EndTime),
 				Wght:   weight,
-			},
-			StakeOuts:        stake,
-			RewardsOwner:     owner,
-			DelegationShares: delegationFee,
-		}}
+			}
+			tx *txs.Tx
+		)
+		if vdr.Signer == nil {
+			tx = &txs.Tx{Unsigned: &txs.AddValidatorTx{
+				BaseTx:           baseTx,
+				Validator:        validator,
+				StakeOuts:        stake,
+				RewardsOwner:     owner,
+				DelegationShares: delegationFee,
+			}}
+		} else {
+			tx = &txs.Tx{Unsigned: &txs.AddPermissionlessValidatorTx{
+				BaseTx:                baseTx,
+				Validator:             validator,
+				Signer:                vdr.Signer,
+				StakeOuts:             stake,
+				ValidatorRewardsOwner: owner,
+				DelegatorRewardsOwner: owner,
+				DelegationShares:      delegationFee,
+			}}
+		}
+
 		if err := tx.Initialize(txs.GenesisCodec); err != nil {
 			return err
 		}

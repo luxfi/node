@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,7 +10,7 @@ import (
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm/states"
+	"github.com/luxdefi/node/vms/avm/state"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/components/lux"
 )
@@ -19,7 +19,7 @@ var _ txs.Visitor = (*Executor)(nil)
 
 type Executor struct {
 	Codec          codec.Manager
-	State          states.Chain // state will be modified
+	State          state.Chain // state will be modified
 	Tx             *txs.Tx
 	Inputs         set.Set[ids.ID]             // imported inputs
 	AtomicRequests map[ids.ID]*atomic.Requests // may be nil

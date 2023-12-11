@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
@@ -275,7 +275,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 		}
 	}
 
-	proVM.Set(proVM.Time().Add(proposer.MaxDelay))
+	proVM.Set(proVM.Time().Add(proposer.MaxBuildDelay))
 	prntProBlk, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
@@ -286,7 +286,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 			StatusV: choices.Processing,
 		},
 		BytesV:     []byte{2},
-		TimestampV: prntCoreBlk.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: prntCoreBlk.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	childProBlk := preForkBlock{
 		Block: childCoreBlk,
@@ -763,7 +763,6 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	pChainHeight := uint64(1337)
 	blkID := ids.GenerateTestID()

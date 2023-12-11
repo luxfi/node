@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -8,18 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/manager"
+	"go.uber.org/mock/gomock"
+
+	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
 	"github.com/luxdefi/node/snow/engine/snowman/block"
 	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
-	"github.com/luxdefi/node/version"
 	"github.com/luxdefi/node/vms/components/chain"
 )
 
@@ -38,7 +37,7 @@ var (
 	time2 = time.Unix(2, 0)
 )
 
-func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) (block.ChainVM, *gomock.Controller) {
+func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
 	// test key is "batchedParseBlockCachingTestKey"
 
 	// create mock
@@ -76,7 +75,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) (bl
 		)
 	}
 
-	return vm, ctrl
+	return vm
 }
 
 func TestBatchedParseBlockCaching(t *testing.T) {
@@ -88,9 +87,8 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	defer stopper.Stop(context.Background())
 
 	ctx := snow.DefaultContextTest()
-	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 
-	require.NoError(vm.Initialize(context.Background(), ctx, dbManager, nil, nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

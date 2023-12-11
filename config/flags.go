@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -15,6 +15,7 @@ import (
 
 	"github.com/luxdefi/node/database/leveldb"
 	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/database/pebble"
 	"github.com/luxdefi/node/genesis"
 	"github.com/luxdefi/node/snow/consensus/snowball"
 	"github.com/luxdefi/node/trace"
@@ -30,6 +31,8 @@ const (
 
 	LuxGoDataDirVar    = "LUXGO_DATA_DIR"
 	defaultUnexpandedDataDir = "$" + LuxGoDataDirVar
+
+	DefaultProcessContextFilename = "process.json"
 )
 
 var (
@@ -50,6 +53,7 @@ var (
 	defaultSubnetConfigDir      = filepath.Join(defaultConfigDir, "subnets")
 	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins")
 	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
+	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
 )
 
 func deprecateFlags(fs *pflag.FlagSet) error {
@@ -84,11 +88,6 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(GenesisFileKey, "", fmt.Sprintf("Specifies a genesis config file path. Ignored when running standard networks or if %s is specified",
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
-	// TODO: Remove this flag in the future
-	fs.String(GenesisConfigFileKey, "", fmt.Sprintf("Specifies a genesis config file (ignored when running standard networks or if %s is specified)",
-		GenesisConfigContentKey))
-	// TODO: Remove this flag in the future
-	fs.String(GenesisConfigContentKey, "", "Specifies base64 encoded genesis content")
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
@@ -105,7 +104,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new subnet delegators")
 
 	// Database
-	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Should be one of {%s, %s}", leveldb.Name, memdb.Name))
+	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebble.Name))
+	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))
 	fs.String(DBConfigContentKey, "", "Specifies base64 encoded database config content")
@@ -136,17 +136,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Inbound Connection Throttling
 	fs.Duration(NetworkInboundConnUpgradeThrottlerCooldownKey, constants.DefaultInboundConnUpgradeThrottlerCooldown, "Upgrade an inbound connection from a given IP at most once per this duration. If 0, don't rate-limit inbound connection upgrades")
 	fs.Float64(NetworkInboundThrottlerMaxConnsPerSecKey, constants.DefaultInboundThrottlerMaxConnsPerSec, "Max number of inbound connections to accept (from all peers) per second")
-	// TODO: Remove this flag in the future
-	fs.Duration(InboundConnUpgradeThrottlerCooldownKey, constants.DefaultInboundConnUpgradeThrottlerCooldown, "Upgrade an inbound connection from a given IP at most once per this duration. If 0, don't rate-limit inbound connection upgrades")
-	// TODO: Remove this flag in the future
-	fs.Float64(InboundThrottlerMaxConnsPerSecKey, constants.DefaultInboundThrottlerMaxConnsPerSec, "Max number of inbound connections to accept (from all peers) per second")
 	// Outbound Connection Throttling
 	fs.Uint(NetworkOutboundConnectionThrottlingRpsKey, constants.DefaultOutboundConnectionThrottlingRps, "Make at most this number of outgoing peer connection attempts per second")
 	fs.Duration(NetworkOutboundConnectionTimeoutKey, constants.DefaultOutboundConnectionTimeout, "Timeout when dialing a peer")
-	// TODO: Remove this flag in the future
-	fs.Uint(OutboundConnectionThrottlingRpsKey, constants.DefaultOutboundConnectionThrottlingRps, "Make at most this number of outgoing peer connection attempts per second")
-	// TODO: Remove this flag in the future
-	fs.Duration(OutboundConnectionTimeoutKey, constants.DefaultOutboundConnectionTimeout, "Timeout when dialing a peer")
 	// Timeouts
 	fs.Duration(NetworkInitialTimeoutKey, constants.DefaultNetworkInitialTimeout, "Initial timeout value of the adaptive timeout manager")
 	fs.Duration(NetworkMinimumTimeoutKey, constants.DefaultNetworkMinimumTimeout, "Minimum timeout value of the adaptive timeout manager")
@@ -158,11 +150,13 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(NetworkPingTimeoutKey, constants.DefaultPingPongTimeout, "Timeout value for Ping-Pong with a peer")
 	fs.Duration(NetworkPingFrequencyKey, constants.DefaultPingFrequency, "Frequency of pinging other peers")
 
-	fs.Bool(NetworkCompressionEnabledKey, constants.DefaultNetworkCompressionEnabled, "If true, compress certain outbound messages. This node will be able to parse compressed inbound messages regardless of this flag's value")
 	fs.String(NetworkCompressionTypeKey, constants.DefaultNetworkCompressionType.String(), fmt.Sprintf("Compression type for outbound messages. Must be one of [%s, %s, %s]", compression.TypeGzip, compression.TypeZstd, compression.TypeNone))
 
 	fs.Duration(NetworkMaxClockDifferenceKey, constants.DefaultNetworkMaxClockDifference, "Max allowed clock difference value between this node and peers")
-	fs.Bool(NetworkAllowPrivateIPsKey, constants.DefaultNetworkAllowPrivateIPs, "Allows the node to initiate outbound connection attempts to peers with private IPs")
+	// Note: The default value is set to false here because the default
+	// networkID is mainnet. The real default value of NetworkAllowPrivateIPs is
+	// based on the networkID.
+	fs.Bool(NetworkAllowPrivateIPsKey, false, fmt.Sprintf("Allows the node to initiate outbound connection attempts to peers with private IPs. If the provided --%s is one of [%s, %s] the default is false. Oterhwise, the default is true", NetworkNameKey, constants.MainnetName, constants.FujiName))
 	fs.Bool(NetworkRequireValidatorToConnectKey, constants.DefaultNetworkRequireValidatorToConnect, "If true, this node will only maintain a connection with another node if this node is a validator, the other node is a validator, or the other node is a beacon")
 	fs.Uint(NetworkPeerReadBufferSizeKey, constants.DefaultNetworkPeerReadBufferSize, "Size, in bytes, of the buffer that we read peer messages into (there is one buffer per peer)")
 	fs.Uint(NetworkPeerWriteBufferSizeKey, constants.DefaultNetworkPeerWriteBufferSize, "Size, in bytes, of the buffer that we write peer messages into (there is one buffer per peer)")
@@ -183,11 +177,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(BenchlistMinFailingDurationKey, constants.DefaultBenchlistMinFailingDuration, "Minimum amount of time messages to a peer must be failing before the peer is benched")
 
 	// Router
-	// TODO: Remove this flag in the future
-	fs.Duration(ConsensusGossipFrequencyKey, constants.DefaultAcceptedFrontierGossipFrequency, "Frequency of gossiping accepted frontiers")
-	fs.Duration(ConsensusAcceptedFrontierGossipFrequencyKey, constants.DefaultAcceptedFrontierGossipFrequency, "Frequency of gossiping accepted frontiers")
 	fs.Uint(ConsensusAppConcurrencyKey, constants.DefaultConsensusAppConcurrency, "Maximum number of goroutines to use when handling App messages on a chain")
 	fs.Duration(ConsensusShutdownTimeoutKey, constants.DefaultConsensusShutdownTimeout, "Timeout before killing an unresponsive chain")
+	fs.Duration(ConsensusFrontierPollFrequencyKey, constants.DefaultFrontierPollFrequency, "Frequency of polling for new consensus frontiers")
 	fs.Uint(ConsensusGossipAcceptedFrontierValidatorSizeKey, constants.DefaultConsensusGossipAcceptedFrontierValidatorSize, "Number of validators to gossip to when gossiping accepted frontier")
 	fs.Uint(ConsensusGossipAcceptedFrontierNonValidatorSizeKey, constants.DefaultConsensusGossipAcceptedFrontierNonValidatorSize, "Number of non-validators to gossip to when gossiping accepted frontier")
 	fs.Uint(ConsensusGossipAcceptedFrontierPeerSizeKey, constants.DefaultConsensusGossipAcceptedFrontierPeerSize, "Number of peers to gossip to when gossiping accepted frontier")
@@ -214,8 +206,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(OutboundThrottlerNodeMaxAtLargeBytesKey, constants.DefaultOutboundThrottlerNodeMaxAtLargeBytes, "Max number of bytes a node can take from the outbound message throttler's at-large allocation. Must be at least the max message size")
 
 	// HTTP APIs
-	fs.String(HTTPHostKey, "127.0.0.1", "Address of the HTTP server")
-	fs.Uint(HTTPPortKey, DefaultHTTPPort, "Port of the HTTP server")
+	fs.String(HTTPHostKey, "127.0.0.1", "Address of the HTTP server. If the address is empty or a literal unspecified IP address, the server will bind on all available unicast and anycast IP addresses of the local system")
+	fs.Uint(HTTPPortKey, DefaultHTTPPort, "Port of the HTTP server. If the port is 0 a port number is automatically chosen")
 	fs.Bool(HTTPSEnabledKey, false, "Upgrade the HTTP server to HTTPs")
 	fs.String(HTTPSKeyFileKey, "", fmt.Sprintf("TLS private key file for the HTTPs server. Ignored if %s is specified", HTTPSKeyContentKey))
 	fs.String(HTTPSKeyContentKey, "", "Specifies base64 encoded TLS private key for the HTTPs server")
@@ -258,10 +250,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(NetworkHealthMaxOutstandingDurationKey, 5*time.Minute, "Node reports unhealthy if there has been a request outstanding for this duration")
 
 	// Staking
-	fs.String(StakingHostKey, "", "Address of the consensus server") // Bind to all interfaces by default.
-	fs.Uint(StakingPortKey, DefaultStakingPort, "Port of the consensus server")
-	// TODO: Remove this flag in the future
-	fs.Bool(StakingEnabledKey, true, "Enable staking. If enabled, Network TLS is required")
+	fs.String(StakingHostKey, "", "Address of the consensus server. If the address is empty or a literal unspecified IP address, the server will bind on all available unicast and anycast IP addresses of the local system") // Bind to all interfaces by default.
+	fs.Uint(StakingPortKey, DefaultStakingPort, "Port of the consensus server. If the port is 0 a port number is automatically chosen")
 	fs.Bool(StakingEphemeralCertEnabledKey, false, "If true, the node uses an ephemeral staking TLS key and certificate, and has an ephemeral node ID")
 	fs.String(StakingTLSKeyPathKey, defaultStakingTLSKeyPath, fmt.Sprintf("Path to the TLS private key for staking. Ignored if %s is specified", StakingTLSKeyContentKey))
 	fs.String(StakingTLSKeyContentKey, "", "Specifies base64 encoded TLS private key for staking")
@@ -270,10 +260,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Bool(StakingEphemeralSignerEnabledKey, false, "If true, the node uses an ephemeral staking signer key")
 	fs.String(StakingSignerKeyPathKey, defaultStakingSignerKeyPath, fmt.Sprintf("Path to the signer private key for staking. Ignored if %s is specified", StakingSignerKeyContentKey))
 	fs.String(StakingSignerKeyContentKey, "", "Specifies base64 encoded signer private key for staking")
-	// TODO: Remove this flag in the future
-	fs.Uint64(StakingDisabledWeightKey, 100, "Weight to provide to each peer when staking is disabled")
 	fs.Bool(SybilProtectionEnabledKey, true, "Enables sybil protection. If enabled, Network TLS is required")
 	fs.Uint64(SybilProtectionDisabledWeightKey, 100, "Weight to provide to each peer when sybil protection is disabled")
+	fs.Bool(PartialSyncPrimaryNetworkKey, false, "Only sync the P-chain on the Primary Network. If the node is a Primary Network validator, it will report unhealthy")
 	// Uptime Requirement
 	fs.Float64(UptimeRequirementKey, genesis.LocalParams.UptimeRequirement, "Fraction of time a validator must be online to receive rewards")
 	// Minimum Stake required to validate the Primary Network
@@ -303,8 +292,6 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// TODO: combine "BootstrapIPsKey" and "BootstrapIDsKey" into one flag
 	fs.String(BootstrapIPsKey, "", "Comma separated list of bootstrap peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
 	fs.String(BootstrapIDsKey, "", "Comma separated list of bootstrap peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z")
-	fs.Bool(RetryBootstrapKey, true, "Specifies whether bootstrap should be retried")
-	fs.Int(RetryBootstrapWarnFrequencyKey, 50, "Specifies how many times bootstrap should be retried before warning the operator")
 	fs.Duration(BootstrapBeaconConnectionTimeoutKey, time.Minute, "Timeout before emitting a warn log when connecting to bootstrapping beacons")
 	fs.Duration(BootstrapMaxTimeGetAncestorsKey, 50*time.Millisecond, "Max Time to spend fetching a container and its ancestors when responding to a GetAncestors")
 	fs.Uint(BootstrapAncestorsMaxContainersSentKey, 2000, "Max number of containers in an Ancestors message sent by this node")
@@ -312,7 +299,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// Consensus
 	fs.Int(SnowSampleSizeKey, snowball.DefaultParameters.K, "Number of nodes to query for each network poll")
-	fs.Int(SnowQuorumSizeKey, snowball.DefaultParameters.Alpha, "Alpha value to use for required number positive results")
+	fs.Int(SnowQuorumSizeKey, snowball.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+	fs.Int(SnowPreferenceQuorumSizeKey, snowball.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
+	fs.Int(SnowConfidenceQuorumSizeKey, snowball.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
 	// TODO: Replace this temporary flag description after the X-chain
 	// linearization with "Beta value to use for virtuous transactions"
 	fs.Int(SnowVirtuousCommitThresholdKey, snowball.DefaultParameters.BetaVirtuous, "This flag is temporarily ignored due to the X-chain linearization")
@@ -387,7 +376,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Bool(TracingInsecureKey, true, "If true, don't use TLS when sending trace data")
 	fs.Float64(TracingSampleRateKey, 0.1, "The fraction of traces to sample. If >= 1, always sample. If <= 0, never sample")
 	fs.StringToString(TracingHeadersKey, map[string]string{}, "The headers to provide the trace indexer")
-	// TODO add flag to take in headers to send from exporter
+
+	fs.String(ProcessContextFileKey, defaultProcessContextPath, "The path to write process context to (including PID, API URI, and staking address).")
 }
 
 // BuildFlagSet returns a complete set of flags for node

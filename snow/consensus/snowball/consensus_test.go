@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -16,14 +16,16 @@ var (
 	_ Consensus = (*Byzantine)(nil)
 )
 
+func NewByzantine(_ Parameters, choice ids.ID) Consensus {
+	return &Byzantine{
+		preference: choice,
+	}
+}
+
 // Byzantine is a naive implementation of a multi-choice snowball instance
 type Byzantine struct {
 	// Hardcode the preference
 	preference ids.ID
-}
-
-func (b *Byzantine) Initialize(_ Parameters, choice ids.ID) {
-	b.preference = choice
 }
 
 func (*Byzantine) Add(ids.ID) {}
