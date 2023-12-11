@@ -8,7 +8,7 @@ echo "Building docker image based off of most recent local commits of node and c
 
 LUX_REMOTE="git@github.com:luxdefi/node.git"
 CORETH_REMOTE="git@github.com:luxdefi/coreth.git"
-DOCKERHUB_REPO="avaplatform/node"
+DOCKERHUB_REPO="luxdefi/node"
 
 DOCKER="${DOCKER:-docker}"
 SCRIPT_DIRPATH=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
