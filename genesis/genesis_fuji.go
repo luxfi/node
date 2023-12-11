@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	//go:embed genesis_fuji.json
-	fujiGenesisConfigJSON []byte
+	//go:embed genesis_testnet.json
+	testnetGenesisConfigJSON []byte
 
-	// FujiParams are the params used for the fuji testnet
-	FujiParams = Params{
+	// TestNetParams are the params used for the testnet testnet
+	TestNetParams = Params{
 		TxFeeConfig: TxFeeConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              10 * units.MilliLux,

@@ -122,12 +122,12 @@ You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to Fuji
+### Connecting to TestNet
 
-To connect to the Fuji Testnet, run:
+To connect to the TestNet Testnet, run:
 
 ```sh
-./build/node --network-id=fuji
+./build/node --network-id=testnet
 ```
 
 ### Creating a Local Testnet
