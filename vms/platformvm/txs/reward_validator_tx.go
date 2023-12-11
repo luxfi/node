@@ -17,11 +17,11 @@ var _ UnsignedTx = (*RewardValidatorTx)(nil)
 //
 // If this transaction is accepted and the next block accepted is a Commit
 // block, the validator is removed and the address that the validator specified
-// receives the staked AVAX as well as a validating reward.
+// receives the staked LUX as well as a validating reward.
 //
 // If this transaction is accepted and the next block accepted is an Abort
 // block, the validator is removed and the address that the validator specified
-// receives the staked AVAX but no reward.
+// receives the staked LUX but no reward.
 type RewardValidatorTx struct {
 	// ID of the tx that created the delegator/validator being removed/rewarded
 	TxID ids.ID `serialize:"true" json:"txID"`

@@ -150,7 +150,7 @@ func TestTimeout(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -433,7 +433,7 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.CantGossip = false
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -582,7 +582,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -641,7 +641,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 	snowCtx := &snow.ConsensusContext{
 		Context:             ctx,
 		Registerer:          prometheus.NewRegistry(),
-		AvalancheRegisterer: prometheus.NewRegistry(),
+		LuxRegisterer: prometheus.NewRegistry(),
 	}
 
 	type test struct {
@@ -925,7 +925,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		ctx               = snow.DefaultContextTest()
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
-		engineType        = p2p.EngineType_ENGINE_TYPE_AVALANCHE
+		engineType        = p2p.EngineType_ENGINE_TYPE_LUX
 	)
 	ctx.ChainID = chainID
 	ctx.SubnetID = subnetID
@@ -933,7 +933,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 	snowCtx := &snow.ConsensusContext{
 		Context:             ctx,
 		Registerer:          prometheus.NewRegistry(),
-		AvalancheRegisterer: prometheus.NewRegistry(),
+		LuxRegisterer: prometheus.NewRegistry(),
 	}
 
 	type test struct {
@@ -1079,7 +1079,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			// Instantiate new registerers to avoid duplicate metrics
 			// registration
 			snowCtx.Registerer = prometheus.NewRegistry()
-			snowCtx.AvalancheRegisterer = prometheus.NewRegistry()
+			snowCtx.LuxRegisterer = prometheus.NewRegistry()
 
 			sender, err := New(
 				snowCtx,
@@ -1141,7 +1141,7 @@ func TestSender_Single_Request(t *testing.T) {
 	snowCtx := &snow.ConsensusContext{
 		Context:             ctx,
 		Registerer:          prometheus.NewRegistry(),
-		AvalancheRegisterer: prometheus.NewRegistry(),
+		LuxRegisterer: prometheus.NewRegistry(),
 	}
 
 	type test struct {

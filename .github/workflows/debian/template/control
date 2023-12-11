@@ -5,4 +5,4 @@ Priority: optional
 Architecture: arm64 
 Depends:
 Maintainer: Fabio Barone <fabio@luxlabs.org>
-Description: The Avalanche platform binaries 
+Description: The Lux platform binaries 

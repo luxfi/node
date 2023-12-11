@@ -3,8 +3,8 @@ set -e
 
 SUCCESS=1
 
-# Polls AvalancheGo until it's healthy. When it is,
-# sets SUCCESS to 0 and returns. If AvalancheGo
+# Polls LuxGo until it's healthy. When it is,
+# sets SUCCESS to 0 and returns. If LuxGo
 # doesn't become healthy within 3 hours, sets
 # SUCCESS to 1 and returns.
 wait_until_healthy () {

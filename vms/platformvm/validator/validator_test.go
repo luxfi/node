@@ -14,7 +14,7 @@ import (
 
 const defaultWeight = 10000
 
-// each key controls an address that has [defaultBalance] AVAX at genesis
+// each key controls an address that has [defaultBalance] LUX at genesis
 var keys = crypto.BuildTestKeys()
 
 func TestValidatorBoundedBy(t *testing.T) {

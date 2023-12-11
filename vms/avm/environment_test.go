@@ -58,7 +58,7 @@ var (
 		luxAsset bool
 	}{
 		{
-			name:      "genesis asset is AVAX",
+			name:      "genesis asset is LUX",
 			luxAsset: true,
 		},
 		{
@@ -123,7 +123,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	var (
 		genesisArgs *BuildGenesisArgs
-		assetName   = "AVAX"
+		assetName   = "LUX"
 	)
 	if c.isCustomFeeAsset {
 		genesisArgs = makeCustomAssetGenesis(tb)
@@ -240,12 +240,12 @@ func newContext(tb testing.TB) *snow.Context {
 	require := require.New(tb)
 
 	genesisBytes := buildGenesisTest(tb)
-	tx := getCreateTxFromGenesisTest(tb, genesisBytes, "AVAX")
+	tx := getCreateTxFromGenesisTest(tb, genesisBytes, "LUX")
 
 	ctx := snow.DefaultContextTest()
 	ctx.NetworkID = constants.UnitTestID
 	ctx.ChainID = chainID
-	ctx.AVAXAssetID = tx.ID()
+	ctx.LUXAssetID = tx.ID()
 	ctx.XChainID = ids.Empty.Prefix(0)
 	ctx.CChainID = ids.Empty.Prefix(1)
 	aliaser := ctx.BCLookup.(ids.Aliaser)
@@ -395,7 +395,7 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 		Encoding: formatting.Hex,
 		GenesisData: map[string]AssetDefinition{
 			"asset1": {
-				Name:   "AVAX",
+				Name:   "LUX",
 				Symbol: "SYMB",
 				InitialState: map[string][]interface{}{
 					"fixedCap": {

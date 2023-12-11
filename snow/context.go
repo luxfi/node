@@ -39,7 +39,7 @@ type Context struct {
 
 	XChainID    ids.ID
 	CChainID    ids.ID
-	AVAXAssetID ids.ID
+	LUXAssetID ids.ID
 
 	Log          logging.Logger
 	Lock         sync.RWMutex
@@ -65,15 +65,15 @@ type Registerer interface {
 type ConsensusContext struct {
 	*Context
 
-	// Registers all common and snowman consensus metrics. Unlike the avalanche
+	// Registers all common and snowman consensus metrics. Unlike the lux
 	// consensus engine metrics, we do not prefix the name with the engine name,
 	// as snowman is used for all chains by default.
 	Registerer Registerer
-	// Only used to register Avalanche consensus metrics. Previously, all
-	// metrics were prefixed with "avalanche_{chainID}_". Now we add avalanche
-	// to the prefix, "avalanche_{chainID}_avalanche_", to differentiate
+	// Only used to register Lux consensus metrics. Previously, all
+	// metrics were prefixed with "lux_{chainID}_". Now we add lux
+	// to the prefix, "lux_{chainID}_lux_", to differentiate
 	// consensus operations after the DAG linearization.
-	AvalancheRegisterer Registerer
+	LuxRegisterer Registerer
 
 	// BlockAcceptor is the callback that will be fired whenever a VM is
 	// notified that their block was accepted.
@@ -120,7 +120,7 @@ func DefaultConsensusContextTest() *ConsensusContext {
 	return &ConsensusContext{
 		Context:             DefaultContextTest(),
 		Registerer:          prometheus.NewRegistry(),
-		AvalancheRegisterer: prometheus.NewRegistry(),
+		LuxRegisterer: prometheus.NewRegistry(),
 		BlockAcceptor:       noOpAcceptor{},
 		TxAcceptor:          noOpAcceptor{},
 		VertexAcceptor:      noOpAcceptor{},

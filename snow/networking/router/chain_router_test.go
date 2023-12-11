@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	engineType         = p2p.EngineType_ENGINE_TYPE_AVALANCHE
+	engineType         = p2p.EngineType_ENGINE_TYPE_LUX
 	testThreadPoolSize = 2
 )
 
@@ -139,7 +139,7 @@ func TestShutdown(t *testing.T) {
 	}
 	engine.HaltF = func(context.Context) {}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -276,7 +276,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -469,7 +469,7 @@ func TestRouterTimeout(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -885,7 +885,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 		return ctx
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1186,7 +1186,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	}
 	engine.Default(false)
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1608,7 +1608,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	engine.Default(false)
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},

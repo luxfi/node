@@ -64,7 +64,7 @@ func validateInitialStakedFunds(config *Config) error {
 	for _, allocation := range config.Allocations {
 		// It is ok to have duplicates as different
 		// ethAddrs could claim to the same luxAddr.
-		allocationSet.Add(allocation.AVAXAddr)
+		allocationSet.Add(allocation.LUXAddr)
 	}
 
 	for _, staker := range config.InitialStakedFunds {
@@ -182,7 +182,7 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 
 // FromFile returns the genesis data of the Platform Chain.
 //
-// Since an Avalanche network has exactly one Platform Chain, and the Platform
+// Since an Lux network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -199,7 +199,7 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 //
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
@@ -224,7 +224,7 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 
 // FromFlag returns the genesis data of the Platform Chain.
 //
-// Since an Avalanche network has exactly one Platform Chain, and the Platform
+// Since an Lux network has exactly one Platform Chain, and the Platform
 // Chain defines the genesis state of the network (who is staking, which chains
 // exist, etc.), defining the genesis state of the Platform Chain is the same as
 // defining the genesis state of the network.
@@ -241,7 +241,7 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 //
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
@@ -268,7 +268,7 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 //
 //  1. The byte representation of the genesis state of the platform chain
 //     (ie the genesis state of the network)
-//  2. The asset ID of AVAX
+//  2. The asset ID of LUX
 func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
@@ -281,8 +281,8 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	{
 		lux := avm.AssetDefinition{
-			Name:         "Avalanche",
-			Symbol:       "AVAX",
+			Name:         "Lux",
+			Symbol:       "LUX",
 			Denomination: 9,
 			InitialState: map[string][]interface{}{},
 		}
@@ -296,7 +296,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		utils.Sort(xAllocations)
 
 		for _, allocation := range xAllocations {
-			addr, err := address.FormatBech32(hrp, allocation.AVAXAddr.Bytes())
+			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 			if err != nil {
 				return nil, ids.ID{}, err
 			}
@@ -315,7 +315,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, fmt.Errorf("couldn't parse memo bytes to string: %w", err)
 		}
 		avmArgs.GenesisData = map[string]avm.AssetDefinition{
-			"AVAX": lux, // The AVM starts out with one asset: AVAX
+			"LUX": lux, // The AVM starts out with one asset: LUX
 		}
 	}
 	avmReply := avm.BuildGenesisReply{}
@@ -330,9 +330,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.ID{}, fmt.Errorf("couldn't parse avm genesis reply: %w", err)
 	}
-	luxAssetID, err := AVAXAssetID(bytes)
+	luxAssetID, err := LUXAssetID(bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't generate AVAX asset ID: %w", err)
+		return nil, ids.ID{}, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
@@ -355,11 +355,11 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		Encoding:      defaultEncoding,
 	}
 	for _, allocation := range config.Allocations {
-		if initiallyStaked.Contains(allocation.AVAXAddr) {
+		if initiallyStaked.Contains(allocation.LUXAddr) {
 			skippedAllocations = append(skippedAllocations, allocation)
 			continue
 		}
-		addr, err := address.FormatBech32(hrp, allocation.AVAXAddr.Bytes())
+		addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 		if err != nil {
 			return nil, ids.ID{}, err
 		}
@@ -397,7 +397,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 		utxos := []api.UTXO(nil)
 		for _, allocation := range nodeAllocations {
-			addr, err := address.FormatBech32(hrp, allocation.AVAXAddr.Bytes())
+			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 			if err != nil {
 				return nil, ids.ID{}, err
 			}
@@ -551,7 +551,7 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 	return nil, fmt.Errorf("couldn't find blockchain with VM ID %s", vmID)
 }
 
-func AVAXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
+func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
 	parser, err := xchaintxs.NewParser([]fxs.Fx{
 		&secp256k1fx.Fx{},
 	})

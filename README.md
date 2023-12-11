@@ -1,15 +1,11 @@
-<div align="center">
-  <img src="resources/AvalancheLogoRed.png?raw=true">
-</div>
+# node
 
----
-
-Node implementation for the [Avalanche](https://lux.network) network -
+Node implementation for the [Lux](https://lux.network) network -
 a blockchains platform with high throughput, and blazing fast transactions.
 
 ## Installation
 
-Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
+Lux is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 Note that as network usage increases, hardware requirements may change.
 
 The minimum recommended hardware specification for nodes connected to Mainnet is:
@@ -20,7 +16,7 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 - OS: Ubuntu 20.04/22.04 or macOS >= 12
 - Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-If you plan to build AvalancheGo from source, you will also need the following software:
+If you plan to build LuxGo from source, you will also need the following software:
 
 - [Go](https://golang.org/doc/install) version >= 1.19.6
 - [gcc](https://gcc.gnu.org/)
@@ -30,7 +26,7 @@ If you plan to build AvalancheGo from source, you will also need the following s
 
 #### Clone The Repository
 
-Clone the AvalancheGo repository:
+Clone the LuxGo repository:
 
 ```sh
 git clone git@github.com:luxdefi/node.git
@@ -39,9 +35,9 @@ cd node
 
 This will clone and checkout the `master` branch.
 
-#### Building AvalancheGo
+#### Building LuxGo
 
-Build AvalancheGo by running the build script:
+Build LuxGo by running the build script:
 
 ```sh
 ./scripts/build.sh
@@ -55,7 +51,7 @@ The `node` binary is now in the `build` directory. To run:
 
 ### Binary Repository
 
-Install AvalancheGo using an `apt` repository.
+Install LuxGo using an `apt` repository.
 
 #### Adding the APT Repository
 
@@ -66,7 +62,7 @@ To add the repository on Ubuntu, run:
 ```sh
 sudo su -
 wget -qO - https://downloads.lux.network/node.gpg.key | tee /etc/apt/trusted.gpg.d/node.asc
-source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/avalanche.list
+source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/lux.list
 exit
 ```
 
@@ -83,7 +79,7 @@ sudo apt install node
 
 Download the [latest build](https://github.com/luxdefi/node/releases/latest) for your operating system and architecture.
 
-The Avalanche binary to be executed is named `node`.
+The Lux binary to be executed is named `node`.
 
 ### Docker Install
 
@@ -101,17 +97,17 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Avalanche source it was built from. To run the Avalanche node, run:
+The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
 docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
 ```
 
-## Running Avalanche
+## Running Lux
 
 ### Connecting to Mainnet
 
-To connect to the Avalanche Mainnet, run:
+To connect to the Lux Mainnet, run:
 
 ```sh
 ./build/node
@@ -145,7 +141,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-AvalancheGo uses multiple tools to generate efficient and boilerplate code.
+LuxGo uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
@@ -182,8 +178,8 @@ For more information, refer to the [GRPC Golang Quick Start Guide](https://grpc.
 ### Running protobuf codegen from docker
 
 ```sh
-docker build -t avalanche:protobuf_codegen -f api/Dockerfile.buf .
-docker run -t -i -v $(pwd):/opt/avalanche -w/opt/avalanche avalanche:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
+docker build -t lux:protobuf_codegen -f api/Dockerfile.buf .
+docker run -t -i -v $(pwd):/opt/lux -w/opt/lux lux:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
 ```
 
 ### Running mock codegen
@@ -196,7 +192,7 @@ This should only be necessary when modifying exported interfaces or after modify
 
 ### Version Semantics
 
-AvalancheGo is first and foremost a client for the Avalanche network. The versioning of AvalancheGo follows that of the Avalanche network.
+LuxGo is first and foremost a client for the Lux network. The versioning of LuxGo follows that of the Lux network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -205,15 +201,15 @@ AvalancheGo is first and foremost a client for the Avalanche network. The versio
 
 ### Library Compatibility Guarantees
 
-Because AvalancheGo's version denotes the network version, it is expected that interfaces exported by AvalancheGo's packages may change in `Patch` version updates.
+Because LuxGo's version denotes the network version, it is expected that interfaces exported by LuxGo's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running AvalancheGo will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running LuxGo will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-AvalancheGo can run on different platforms, with different support tiers:
+LuxGo can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
@@ -221,7 +217,7 @@ AvalancheGo can run on different platforms, with different support tiers:
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
 The following table lists currently supported platforms and their corresponding
-AvalancheGo support tiers:
+LuxGo support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
@@ -235,7 +231,7 @@ AvalancheGo support tiers:
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| AvalancheGo continuous integration | Tier 1  | Tier 2  | Tier 3  |
+| LuxGo continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |

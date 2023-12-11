@@ -44,7 +44,7 @@ func main() {
 
 	// Get the P-chain wallet
 	pWallet := wallet.P()
-	luxAssetID := pWallet.AVAXAssetID()
+	luxAssetID := pWallet.LUXAssetID()
 
 	issueTxStartTime := time.Now()
 	tx, err := pWallet.IssueBaseTx([]*lux.TransferableOutput{

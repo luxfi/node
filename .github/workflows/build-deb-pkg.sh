@@ -1,17 +1,17 @@
 PKG_ROOT=/tmp/node
 DEBIAN_BASE_DIR=$PKG_ROOT/debian
-AVALANCHE_BUILD_BIN_DIR=$DEBIAN_BASE_DIR/usr/local/bin
-AVALANCHE_LIB_DIR=$DEBIAN_BASE_DIR/usr/local/lib/node
+LUX_BUILD_BIN_DIR=$DEBIAN_BASE_DIR/usr/local/bin
+LUX_LIB_DIR=$DEBIAN_BASE_DIR/usr/local/lib/node
 TEMPLATE=.github/workflows/debian/template 
 DEBIAN_CONF=$DEBIAN_BASE_DIR/DEBIAN
 
 mkdir -p $DEBIAN_BASE_DIR
 mkdir -p $DEBIAN_CONF
-mkdir -p $AVALANCHE_BUILD_BIN_DIR
-mkdir -p $AVALANCHE_LIB_DIR
+mkdir -p $LUX_BUILD_BIN_DIR
+mkdir -p $LUX_LIB_DIR
 
 # Assume binaries are at default locations
-OK=`cp ./build/node $AVALANCHE_BUILD_BIN_DIR`
+OK=`cp ./build/node $LUX_BUILD_BIN_DIR`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

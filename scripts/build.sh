@@ -24,10 +24,10 @@ while getopts 'r' flag; do
   esac
 done
 
-# Avalanchego root folder
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+# Luxgo root folder
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
-source "$AVALANCHE_PATH"/scripts/constants.sh
+source "$LUX_PATH"/scripts/constants.sh
 
 # Download dependencies
 echo "Downloading dependencies..."
@@ -36,9 +36,9 @@ go mod download
 build_args="$race"
 
 # Build node
-"$AVALANCHE_PATH"/scripts/build_avalanche.sh $build_args
+"$LUX_PATH"/scripts/build_lux.sh $build_args
 
-# Exit build successfully if the AvalancheGo binary is created successfully
+# Exit build successfully if the LuxGo binary is created successfully
 if [[ -f "$node_path" ]]; then
         echo "Build Successful"
         exit 0

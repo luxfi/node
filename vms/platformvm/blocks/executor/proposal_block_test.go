@@ -68,7 +68,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: env.ctx.AVAXAssetID,
+					ID: env.ctx.LUXAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,
@@ -197,7 +197,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: env.ctx.AVAXAssetID,
+					ID: env.ctx.LUXAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,

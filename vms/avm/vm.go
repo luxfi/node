@@ -26,7 +26,7 @@ import (
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/consensus/snowman"
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
-	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/snowman/block"
 	"github.com/luxdefi/node/utils/json"
@@ -529,7 +529,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 	}
 
 	// secure this by defaulting to luxAsset
-	vm.feeAssetID = vm.ctx.AVAXAssetID
+	vm.feeAssetID = vm.ctx.LUXAssetID
 
 	for index, genesisTx := range genesis.Txs {
 		if len(genesisTx.Outs) != 0 {

@@ -81,7 +81,7 @@ var (
 		SupplyCap:          720 * units.MegaLux,
 	}
 
-	// AVAX asset ID in tests
+	// LUX asset ID in tests
 	luxAssetID = ids.ID{'y', 'e', 'e', 't'}
 
 	defaultTxFee = uint64(100)
@@ -97,7 +97,7 @@ var (
 
 	banffForkTime = defaultValidateEndTime.Add(-5 * defaultMinStakingDuration)
 
-	// each key controls an address that has [defaultBalance] AVAX at genesis
+	// each key controls an address that has [defaultBalance] LUX at genesis
 	keys = secp256k1.TestKeys()
 
 	defaultMinValidatorStake = 5 * units.MilliLux
@@ -133,7 +133,7 @@ func defaultContext(t *testing.T) *snow.Context {
 	ctx.NetworkID = constants.UnitTestID
 	ctx.XChainID = xChainID
 	ctx.CChainID = cChainID
-	ctx.AVAXAssetID = luxAssetID
+	ctx.LUXAssetID = luxAssetID
 	aliaser := ids.NewAliaser()
 
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
@@ -1271,7 +1271,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1380,7 +1380,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: firstVM.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: firstVM.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1516,7 +1516,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1706,7 +1706,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1827,7 +1827,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1863,7 +1863,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(2),
 				OutputIndex: 2,
 			},
-			Asset: lux.Asset{ID: vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},

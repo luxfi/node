@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/avalanche"
+	"github.com/luxdefi/node/snow/consensus/lux"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/networking/sender"
 	"github.com/luxdefi/node/utils/set"
@@ -32,7 +32,7 @@ type SubnetConfig struct {
 
 	// ValidatorOnly indicates that this Subnet's Chains are available to only subnet validators.
 	ValidatorOnly       bool                 `json:"validatorOnly" yaml:"validatorOnly"`
-	ConsensusParameters avalanche.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters lux.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
 	// building a snowman++ block.

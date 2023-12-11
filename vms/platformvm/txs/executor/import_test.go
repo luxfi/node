@@ -99,7 +99,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee - 1,
+					env.ctx.LUXAssetID: env.config.TxFee - 1,
 				},
 			),
 			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
@@ -111,7 +111,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
@@ -123,7 +123,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				cChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 				},
 			),
 			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
@@ -136,7 +136,7 @@ func TestNewImportTx(t *testing.T) {
 			sharedMemory: fundedSharedMemory(
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.AVAXAssetID: env.config.TxFee,
+					env.ctx.LUXAssetID: env.config.TxFee,
 					customAssetID:       1,
 				},
 			),

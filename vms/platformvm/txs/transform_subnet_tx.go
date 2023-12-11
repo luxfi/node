@@ -19,7 +19,7 @@ var (
 
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
-	errAssetIDCantBeAVAX                 = errors.New("asset ID can't be AVAX")
+	errAssetIDCantBeLUX                 = errors.New("asset ID can't be LUX")
 	errInitialSupplyZero                 = errors.New("initial supply must be non-0")
 	errInitialSupplyGreaterThanMaxSupply = errors.New("initial supply can't be greater than maximum supply")
 	errMinConsumptionRateTooLarge        = errors.New("min consumption rate must be less than or equal to max consumption rate")
@@ -47,7 +47,7 @@ type TransformSubnetTx struct {
 	// Asset to use when staking on the Subnet
 	// Restrictions:
 	// - Must not be the Empty ID
-	// - Must not be the AVAX ID
+	// - Must not be the LUX ID
 	AssetID ids.ID `serialize:"true" json:"assetID"`
 	// Amount to initially specify as the current supply
 	// Restrictions:
@@ -122,8 +122,8 @@ func (tx *TransformSubnetTx) SyntacticVerify(ctx *snow.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == ctx.AVAXAssetID:
-		return errAssetIDCantBeAVAX
+	case tx.AssetID == ctx.LUXAssetID:
+		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero
 	case tx.InitialSupply > tx.MaximumSupply:

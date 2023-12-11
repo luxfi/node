@@ -45,14 +45,14 @@ func TestAllocationLess(t *testing.T) {
 			name:   "first bytes smaller",
 			alloc1: Allocation{},
 			alloc2: Allocation{
-				AVAXAddr: ids.ShortID{1},
+				LUXAddr: ids.ShortID{1},
 			},
 			expected: true,
 		},
 		{
 			name: "first bytes larger",
 			alloc1: Allocation{
-				AVAXAddr: ids.ShortID{1},
+				LUXAddr: ids.ShortID{1},
 			},
 			alloc2:   Allocation{},
 			expected: false,

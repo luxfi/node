@@ -31,8 +31,8 @@ var (
 	logLevel string
 
 	networkRunnerGRPCEp              string
-	networkRunnerAvalancheGoExecPath string
-	networkRunnerAvalancheGoLogLevel string
+	networkRunnerLuxGoExecPath string
+	networkRunnerLuxGoLogLevel string
 
 	uris string
 
@@ -54,13 +54,13 @@ func init() {
 		"[optional] gRPC server endpoint for network-runner (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerAvalancheGoExecPath,
+		&networkRunnerLuxGoExecPath,
 		"network-runner-node-path",
 		"",
 		"[optional] node executable path (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerAvalancheGoLogLevel,
+		&networkRunnerLuxGoLogLevel,
 		"network-runner-node-log-level",
 		"INFO",
 		"[optional] node log-level (only required for local network-runner tests)",
@@ -71,7 +71,7 @@ func init() {
 		&uris,
 		"uris",
 		"",
-		"HTTP RPC endpoint URIs for avalanche node (comma-separated, required to run against existing cluster)",
+		"HTTP RPC endpoint URIs for lux node (comma-separated, required to run against existing cluster)",
 	)
 
 	// file that contains a list of new-line separated secp256k1 private keys
@@ -87,8 +87,8 @@ var _ = ginkgo.BeforeSuite(func() {
 	err := e2e.Env.ConfigCluster(
 		logLevel,
 		networkRunnerGRPCEp,
-		networkRunnerAvalancheGoExecPath,
-		networkRunnerAvalancheGoLogLevel,
+		networkRunnerLuxGoExecPath,
+		networkRunnerLuxGoLogLevel,
 		uris,
 		testKeysFile,
 	)

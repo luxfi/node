@@ -29,12 +29,12 @@ import (
 const (
 	totalRounds = 50
 
-	metricBlksProcessing = "avalanche_X_blks_processing"
-	metricBlksAccepted   = "avalanche_X_blks_accepted_count"
+	metricBlksProcessing = "lux_X_blks_processing"
+	metricBlksAccepted   = "lux_X_blks_accepted_count"
 )
 
-var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
-	ginkgo.It("can issue a virtuous transfer tx for AVAX asset",
+var _ = e2e.DescribeXChain("[Virtuous Transfer Tx LUX]", func() {
+	ginkgo.It("can issue a virtuous transfer tx for LUX asset",
 		// use this for filtering tests by labels
 		// ref. https://onsi.github.io/ginkgo/#spec-labels
 		ginkgo.Label(
@@ -76,7 +76,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					cancel()
 					gomega.Expect(err).Should(gomega.BeNil())
 				})
-				luxAssetID := baseWallet.X().AVAXAssetID()
+				luxAssetID := baseWallet.X().LUXAssetID()
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))
@@ -116,7 +116,7 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 					bal := balances[luxAssetID]
 					testBalances = append(testBalances, bal)
 
-					fmt.Printf(`CURRENT BALANCE %21d AVAX (SHORT ADDRESS %q)
+					fmt.Printf(`CURRENT BALANCE %21d LUX (SHORT ADDRESS %q)
 `,
 						bal,
 						testKeys[i].PublicKey().Address(),
@@ -179,14 +179,14 @@ var _ = e2e.DescribeXChain("[Virtuous Transfer Tx AVAX]", func() {
 TRANSFERRING
 
 FROM [%q]
-SENDER    CURRENT BALANCE     : %21d AVAX
-SENDER    NEW BALANCE (AFTER) : %21d AVAX
+SENDER    CURRENT BALANCE     : %21d LUX
+SENDER    NEW BALANCE (AFTER) : %21d LUX
 
-TRANSFER AMOUNT FROM SENDER   : %21d AVAX
+TRANSFER AMOUNT FROM SENDER   : %21d LUX
 
 TO [%q]
-RECEIVER  CURRENT BALANCE     : %21d AVAX
-RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
+RECEIVER  CURRENT BALANCE     : %21d LUX
+RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 ===
 `,
 					shortAddrs[fromIdx],

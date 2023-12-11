@@ -29,8 +29,8 @@ import (
 	"github.com/luxdefi/node/network"
 	"github.com/luxdefi/node/proto/pb/p2p"
 	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/avalanche/state"
-	"github.com/luxdefi/node/snow/engine/avalanche/vertex"
+	"github.com/luxdefi/node/snow/engine/lux/state"
+	"github.com/luxdefi/node/snow/engine/lux/vertex"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/common/queue"
 	"github.com/luxdefi/node/snow/engine/common/tracker"
@@ -59,9 +59,9 @@ import (
 	dbManager "github.com/luxdefi/node/database/manager"
 	timetracker "github.com/luxdefi/node/snow/networking/tracker"
 
-	aveng "github.com/luxdefi/node/snow/engine/avalanche"
-	avbootstrap "github.com/luxdefi/node/snow/engine/avalanche/bootstrap"
-	avagetter "github.com/luxdefi/node/snow/engine/avalanche/getter"
+	aveng "github.com/luxdefi/node/snow/engine/lux"
+	avbootstrap "github.com/luxdefi/node/snow/engine/lux/bootstrap"
+	avagetter "github.com/luxdefi/node/snow/engine/lux/getter"
 
 	smcon "github.com/luxdefi/node/snow/consensus/snowman"
 	smeng "github.com/luxdefi/node/snow/engine/snowman"
@@ -87,7 +87,7 @@ var (
 	// Bootstrapping prefixes for ChainVMs
 	bootstrappingDB = []byte("bs")
 
-	errUnknownVMType          = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
+	errUnknownVMType          = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
 	errCreatePlatformVM       = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped        = errors.New("subnets not bootstrapped")
 	errNoPrimaryNetworkConfig = errors.New("no subnet config for primary network found")
@@ -188,7 +188,7 @@ type ManagerConfig struct {
 	Server                      server.Server              // Handles HTTP API calls
 	Keystore                    keystore.Keystore
 	AtomicMemory                *atomic.Memory
-	AVAXAssetID                 ids.ID
+	LUXAssetID                 ids.ID
 	XChainID                    ids.ID          // ID of the X-Chain,
 	CChainID                    ids.ID          // ID of the C-Chain,
 	CriticalChains              set.Set[ids.ID] // Chains that can't exit gracefully
@@ -442,12 +442,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, fmt.Errorf("error while registering chain's metrics %w", err)
 	}
 
-	// This converts the prefix for all the Avalanche consensus metrics from
-	// `avalanche_{chainID}_` into `avalanche_{chainID}_avalanche_` so that
+	// This converts the prefix for all the Lux consensus metrics from
+	// `lux_{chainID}_` into `lux_{chainID}_lux_` so that
 	// there are no conflicts when registering the Snowman consensus metrics.
-	avalancheConsensusMetrics := prometheus.NewRegistry()
-	avalancheDAGNamespace := fmt.Sprintf("%s_avalanche", chainNamespace)
-	if err := m.Metrics.Register(avalancheDAGNamespace, avalancheConsensusMetrics); err != nil {
+	luxConsensusMetrics := prometheus.NewRegistry()
+	luxDAGNamespace := fmt.Sprintf("%s_lux", chainNamespace)
+	if err := m.Metrics.Register(luxDAGNamespace, luxConsensusMetrics); err != nil {
 		return nil, fmt.Errorf("error while registering DAG metrics %w", err)
 	}
 
@@ -467,7 +467,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 
 			XChainID:    m.XChainID,
 			CChainID:    m.CChainID,
-			AVAXAssetID: m.AVAXAssetID,
+			LUXAssetID: m.LUXAssetID,
 
 			Log:          chainLog,
 			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),
@@ -484,7 +484,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		TxAcceptor:          m.TxAcceptorGroup,
 		VertexAcceptor:      m.VertexAcceptorGroup,
 		Registerer:          consensusMetrics,
-		AvalancheRegisterer: avalancheConsensusMetrics,
+		LuxRegisterer: luxConsensusMetrics,
 	}
 
 	// Get a factory for the vm we want to use on our chain
@@ -534,7 +534,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	var chain *chain
 	switch vm := vm.(type) {
 	case vertex.LinearizableVMWithEngine:
-		chain, err = m.createAvalancheChain(
+		chain, err = m.createLuxChain(
 			ctx,
 			chainParams.GenesisData,
 			vdrs,
@@ -543,7 +543,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			sb,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error while creating new avalanche vm %w", err)
+			return nil, fmt.Errorf("error while creating new lux vm %w", err)
 		}
 	case block.ChainVM:
 		beacons := vdrs
@@ -579,8 +579,8 @@ func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
 }
 
-// Create a DAG-based blockchain that uses Avalanche
-func (m *manager) createAvalancheChain(
+// Create a DAG-based blockchain that uses Lux
+func (m *manager) createLuxChain(
 	ctx *snow.ConsensusContext,
 	genesisData []byte,
 	vdrs validators.Set,
@@ -592,7 +592,7 @@ func (m *manager) createAvalancheChain(
 	defer ctx.Lock.Unlock()
 
 	ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+		Type:  p2p.EngineType_ENGINE_TYPE_LUX,
 		State: snow.Initializing,
 	})
 
@@ -609,11 +609,11 @@ func (m *manager) createAvalancheChain(
 	txBootstrappingDB := prefixdb.New(txBootstrappingDBPrefix, db.Database)
 	blockBootstrappingDB := prefixdb.New(blockBootstrappingDBPrefix, db.Database)
 
-	vtxBlocker, err := queue.NewWithMissing(vertexBootstrappingDB, "vtx", ctx.AvalancheRegisterer)
+	vtxBlocker, err := queue.NewWithMissing(vertexBootstrappingDB, "vtx", ctx.LuxRegisterer)
 	if err != nil {
 		return nil, err
 	}
-	txBlocker, err := queue.New(txBootstrappingDB, "tx", ctx.AvalancheRegisterer)
+	txBlocker, err := queue.New(txBootstrappingDB, "tx", ctx.LuxRegisterer)
 	if err != nil {
 		return nil, err
 	}
@@ -622,28 +622,28 @@ func (m *manager) createAvalancheChain(
 		return nil, err
 	}
 
-	// Passes messages from the avalanche engines to the network
-	avalancheMessageSender, err := sender.New(
+	// Passes messages from the lux engines to the network
+	luxMessageSender, err := sender.New(
 		ctx,
 		m.MsgCreator,
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+		p2p.EngineType_ENGINE_TYPE_LUX,
 		sb,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize avalanche sender: %w", err)
+		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
 	}
 
 	if m.TracingEnabled {
-		avalancheMessageSender = sender.Trace(avalancheMessageSender, m.Tracer)
+		luxMessageSender = sender.Trace(luxMessageSender, m.Tracer)
 	}
 
 	err = m.VertexAcceptorGroup.RegisterAcceptor(
 		ctx.ChainID,
 		"gossip",
-		avalancheMessageSender,
+		luxMessageSender,
 		false,
 	)
 	if err != nil { // Set up the event dispatcher
@@ -661,7 +661,7 @@ func (m *manager) createAvalancheChain(
 		sb,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize avalanche sender: %w", err)
+		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -703,11 +703,11 @@ func (m *manager) createAvalancheChain(
 		},
 	)
 
-	avalancheRegisterer := metrics.NewOptionalGatherer()
+	luxRegisterer := metrics.NewOptionalGatherer()
 	snowmanRegisterer := metrics.NewOptionalGatherer()
 
 	registerer := metrics.NewMultiGatherer()
-	if err := registerer.Register("avalanche", avalancheRegisterer); err != nil {
+	if err := registerer.Register("lux", luxRegisterer); err != nil {
 		return nil, err
 	}
 	if err := registerer.Register("", snowmanRegisterer); err != nil {
@@ -717,13 +717,13 @@ func (m *manager) createAvalancheChain(
 		return nil, err
 	}
 
-	ctx.Context.Metrics = avalancheRegisterer
+	ctx.Context.Metrics = luxRegisterer
 
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan common.Message, defaultChannelSize)
 
-	// The only difference between using avalancheMessageSender and
+	// The only difference between using luxMessageSender and
 	// snowmanMessageSender here is where the metrics will be placed. Because we
 	// end up using this sender after the linearization, we pass in
 	// snowmanMessageSender here.
@@ -781,7 +781,7 @@ func (m *manager) createAvalancheChain(
 		vmWrappingProposerVM = tracedvm.NewBlockVM(vmWrappingProposerVM, "proposervm", m.Tracer)
 	}
 
-	// Note: linearizableVM is the VM that the Avalanche engines should be
+	// Note: linearizableVM is the VM that the Lux engines should be
 	// using.
 	linearizableVM := &initializeOnLinearizeVM{
 		DAGVM:          dagVM,
@@ -821,7 +821,7 @@ func (m *manager) createAvalancheChain(
 		m.AcceptedFrontierGossipFrequency,
 		m.ConsensusAppConcurrency,
 		m.ResourceTracker,
-		validators.UnhandledSubnetConnector, // avalanche chains don't use subnet connector
+		validators.UnhandledSubnetConnector, // lux chains don't use subnet connector
 		sb,
 		connectedValidators,
 	)
@@ -898,13 +898,13 @@ func (m *manager) createAvalancheChain(
 		snowmanBootstrapper = common.TraceBootstrapableEngine(snowmanBootstrapper, m.Tracer)
 	}
 
-	avalancheCommonCfg := common.Config{
+	luxCommonCfg := common.Config{
 		Ctx:                            ctx,
 		Beacons:                        vdrs,
 		SampleK:                        sampleK,
 		StartupTracker:                 startupTracker,
 		Alpha:                          bootstrapWeight/2 + 1, // must be > 50%
-		Sender:                         avalancheMessageSender,
+		Sender:                         luxMessageSender,
 		BootstrapTracker:               sb,
 		Timer:                          h,
 		RetryBootstrap:                 m.RetryBootstrap,
@@ -915,22 +915,22 @@ func (m *manager) createAvalancheChain(
 		SharedCfg:                      &common.SharedConfig{},
 	}
 
-	avaGetHandler, err := avagetter.New(vtxManager, avalancheCommonCfg)
+	avaGetHandler, err := avagetter.New(vtxManager, luxCommonCfg)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize avalanche base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize lux base message handler: %w", err)
 	}
 
 	// create engine gear
-	avalancheEngine := aveng.New(ctx, avaGetHandler, linearizableVM)
+	luxEngine := aveng.New(ctx, avaGetHandler, linearizableVM)
 	if m.TracingEnabled {
-		avalancheEngine = common.TraceEngine(avalancheEngine, m.Tracer)
+		luxEngine = common.TraceEngine(luxEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
 	_, specifiedLinearizationTime := version.CortinaTimes[ctx.NetworkID]
 	specifiedLinearizationTime = specifiedLinearizationTime && ctx.ChainID == m.XChainID
-	avalancheBootstrapperConfig := avbootstrap.Config{
-		Config:             avalancheCommonCfg,
+	luxBootstrapperConfig := avbootstrap.Config{
+		Config:             luxCommonCfg,
 		AllGetsServer:      avaGetHandler,
 		VtxBlocked:         vtxBlocker,
 		TxBlocked:          txBlocker,
@@ -939,23 +939,23 @@ func (m *manager) createAvalancheChain(
 		LinearizeOnStartup: !specifiedLinearizationTime,
 	}
 
-	avalancheBootstrapper, err := avbootstrap.New(
-		avalancheBootstrapperConfig,
+	luxBootstrapper, err := avbootstrap.New(
+		luxBootstrapperConfig,
 		snowmanBootstrapper.Start,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing avalanche bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
-		avalancheBootstrapper = common.TraceBootstrapableEngine(avalancheBootstrapper, m.Tracer)
+		luxBootstrapper = common.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		Lux: &handler.Engine{
 			StateSyncer:  nil,
-			Bootstrapper: avalancheBootstrapper,
-			Consensus:    avalancheEngine,
+			Bootstrapper: luxBootstrapper,
+			Consensus:    luxEngine,
 		},
 		Snowman: &handler.Engine{
 			StateSyncer:  nil,
@@ -1262,7 +1262,7 @@ func (m *manager) createSnowmanChain(
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: nil,
+		Lux: nil,
 		Snowman: &handler.Engine{
 			StateSyncer:  stateSyncer,
 			Bootstrapper: bootstrapper,

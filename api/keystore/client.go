@@ -13,7 +13,7 @@ import (
 
 var _ Client = (*client)(nil)
 
-// Client interface for Avalanche Keystore API Endpoint
+// Client interface for Lux Keystore API Endpoint
 //
 // Deprecated: The Keystore API is deprecated. Dedicated wallets should be used
 // instead.
@@ -29,7 +29,7 @@ type Client interface {
 	DeleteUser(context.Context, api.UserPass, ...rpc.Option) error
 }
 
-// Client implementation for Avalanche Keystore API Endpoint
+// Client implementation for Lux Keystore API Endpoint
 type client struct {
 	requester rpc.EndpointRequester
 }

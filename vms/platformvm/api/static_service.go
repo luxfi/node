@@ -23,7 +23,7 @@ import (
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
 
-// Note that since an Avalanche network has exactly one Platform Chain,
+// Note that since an Lux network has exactly one Platform Chain,
 // and the Platform Chain defines the genesis state of the network
 // (who is staking, which chains exist, etc.), defining the genesis
 // state of the Platform Chain is the same as defining the genesis
@@ -196,7 +196,7 @@ func bech32ToID(addrStr string) (ids.ShortID, error) {
 	return ids.ToShortID(addrBytes)
 }
 
-// BuildGenesis build the genesis state of the Platform Chain (and thereby the Avalanche network.)
+// BuildGenesis build the genesis state of the Platform Chain (and thereby the Lux network.)
 func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, reply *BuildGenesisReply) error {
 	// Specify the UTXOs on the Platform chain that exist at genesis.
 	utxos := make([]*genesis.UTXO, 0, len(args.UTXOs))

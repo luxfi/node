@@ -3,13 +3,13 @@
 Name:           node
 Version:        %{version}
 Release:        %{release}
-Summary:        The Avalanche platform binaries
+Summary:        The Lux platform binaries
 URL:            https://github.com/luxdefi/%{name}
 License:        BSD-3
 AutoReqProv:    no
 
 %description
-Avalanche is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
+Lux is an incredibly lightweight protocol, so the minimum computer requirements are quite modest.
 
 %files
 /usr/local/bin/node

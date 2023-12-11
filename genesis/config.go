@@ -33,7 +33,7 @@ type LockedAmount struct {
 
 type Allocation struct {
 	ETHAddr        ids.ShortID    `json:"ethAddr"`
-	AVAXAddr       ids.ShortID    `json:"luxAddr"`
+	LUXAddr       ids.ShortID    `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -47,15 +47,15 @@ func (a Allocation) Unparse(networkID uint32) (UnparsedAllocation, error) {
 	luxAddr, err := address.Format(
 		"X",
 		constants.GetHRP(networkID),
-		a.AVAXAddr.Bytes(),
+		a.LUXAddr.Bytes(),
 	)
-	ua.AVAXAddr = luxAddr
+	ua.LUXAddr = luxAddr
 	return ua, err
 }
 
 func (a Allocation) Less(other Allocation) bool {
 	return a.InitialAmount < other.InitialAmount ||
-		(a.InitialAmount == other.InitialAmount && a.AVAXAddr.Less(other.AVAXAddr))
+		(a.InitialAmount == other.InitialAmount && a.LUXAddr.Less(other.LUXAddr))
 }
 
 type Staker struct {

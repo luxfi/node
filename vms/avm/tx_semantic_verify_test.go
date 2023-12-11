@@ -35,7 +35,7 @@ func TestBaseTxSemanticVerify(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -93,7 +93,7 @@ func TestBaseTxSemanticVerifyUnknownFx(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{
 		Unsigned: &txs.BaseTx{
@@ -146,7 +146,7 @@ func TestBaseTxSemanticVerifyWrongAssetID(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -235,7 +235,7 @@ func TestBaseTxSemanticVerifyUnauthorizedFx(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -274,7 +274,7 @@ func TestBaseTxSemanticVerifyInvalidSignature(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{
 		Unsigned: &txs.BaseTx{
@@ -331,7 +331,7 @@ func TestBaseTxSemanticVerifyMissingUTXO(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -377,7 +377,7 @@ func TestBaseTxSemanticVerifyInvalidUTXO(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -417,7 +417,7 @@ func TestBaseTxSemanticVerifyPendingInvalidUTXO(t *testing.T) {
 	genesisBytes, issuer, vm, _ := GenesisVM(t)
 	ctx := vm.ctx
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	pendingTx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -512,7 +512,7 @@ func TestBaseTxSemanticVerifyPendingWrongAssetID(t *testing.T) {
 	genesisBytes, issuer, vm, _ := GenesisVM(t)
 	ctx := vm.ctx
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	pendingTx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -654,7 +654,7 @@ func TestBaseTxSemanticVerifyPendingUnauthorizedFx(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	pendingTx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -802,7 +802,7 @@ func TestBaseTxSemanticVerifyPendingInvalidSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	pendingTx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -977,7 +977,7 @@ func TestBaseTxSemanticVerifyInvalidFxOutput(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -1029,7 +1029,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisTx.ID()
 	rawTx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1093,7 +1093,7 @@ func TestExportTxSemanticVerifyUnknownCredFx(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisTx.ID()
 	rawTx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1157,7 +1157,7 @@ func TestExportTxSemanticVerifyMissingUTXO(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisTx.ID()
 	rawTx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1222,7 +1222,7 @@ func TestExportTxSemanticVerifyInvalidAssetID(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisTx.ID()
 	assetID := luxID
 	// so the inputs below are sorted
@@ -1237,7 +1237,7 @@ func TestExportTxSemanticVerifyInvalidAssetID(t *testing.T) {
 						TxID:        luxID,
 						OutputIndex: 0,
 					},
-					Asset: lux.Asset{ID: vm.ctx.AVAXAssetID},
+					Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 					In: &secp256k1fx.TransferInput{
 						Amt:   startBalance,
 						Input: secp256k1fx.Input{SigIndices: []uint32{0}},
@@ -1318,7 +1318,7 @@ func TestExportTxSemanticVerifyInvalidFx(t *testing.T) {
 	}
 	ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 
 	luxID := genesisTx.ID()
 
@@ -1431,7 +1431,7 @@ func TestExportTxSemanticVerifyInvalidTransfer(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	genesisTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisTx.ID()
 	rawTx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1496,7 +1496,7 @@ func TestExportTxSemanticVerifyTransferCustomAsset(t *testing.T) {
 
 	vm.clock.Set(testBanffTime.Add(time.Second))
 
-	genesisLuxTx := GetAVAXTxFromGenesisTest(genesisBytes, t)
+	genesisLuxTx := GetLUXTxFromGenesisTest(genesisBytes, t)
 	luxID := genesisLuxTx.ID()
 
 	genesisCustomAssetTx := GetCreateTxFromGenesisTest(t, genesisBytes, "myFixedCapAsset")

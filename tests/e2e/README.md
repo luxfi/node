@@ -1,4 +1,4 @@
-# Avalanche e2e test suites
+# Lux e2e test suites
 
 - Works for any environments (e.g., local, test network).
 - Compiles to a single binary with customizable configurations.

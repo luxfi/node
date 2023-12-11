@@ -60,7 +60,7 @@ func TestServiceIssueTx(t *testing.T) {
 	err := env.service.IssueTx(nil, txArgs, txReply)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 
-	tx := newTx(t, env.genesisBytes, env.vm, "AVAX")
+	tx := newTx(t, env.genesisBytes, env.vm, "LUX")
 	txArgs.Tx, err = formatting.Encode(formatting.Hex, tx.Bytes())
 	require.NoError(err)
 	txArgs.Encoding = formatting.Hex
@@ -844,7 +844,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 }
 
 func newLuxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	luxTx := getCreateTxFromGenesisTest(t, genesisBytes, "AVAX")
+	luxTx := getCreateTxFromGenesisTest(t, genesisBytes, "LUX")
 	key := keys[0]
 	tx := buildBaseTx(luxTx, vm, key)
 	require.NoError(t, tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
@@ -852,7 +852,7 @@ func newLuxBaseTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx 
 }
 
 func newLuxExportTxWithOutputs(t *testing.T, genesisBytes []byte, vm *VM) *txs.Tx {
-	luxTx := getCreateTxFromGenesisTest(t, genesisBytes, "AVAX")
+	luxTx := getCreateTxFromGenesisTest(t, genesisBytes, "LUX")
 	key := keys[0]
 	tx := buildExportTx(luxTx, vm, key)
 	require.NoError(t, tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
@@ -1128,7 +1128,7 @@ func TestServiceGetUTXOs(t *testing.T) {
 			UTXOID: lux.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: lux.Asset{ID: env.vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: env.vm.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1150,7 +1150,7 @@ func TestServiceGetUTXOs(t *testing.T) {
 			UTXOID: lux.UTXOID{
 				TxID: ids.GenerateTestID(),
 			},
-			Asset: lux.Asset{ID: env.vm.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: env.vm.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 1,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -1377,7 +1377,7 @@ func TestGetAssetDescription(t *testing.T) {
 		AssetID: luxAssetID.String(),
 	}, &reply))
 
-	require.Equal("AVAX", reply.Name)
+	require.Equal("LUX", reply.Name)
 	require.Equal("SYMB", reply.Symbol)
 }
 
@@ -1592,7 +1592,7 @@ func TestNFTWorkflow(t *testing.T) {
 			buildAndAccept(require, env.vm, env.issuer, createReply.AssetID)
 
 			// Key: Address
-			// Value: AVAX balance
+			// Value: LUX balance
 			balances := map[ids.ShortID]uint64{}
 			for _, addr := range addrs { // get balances for all addresses
 				addrStr, err := env.vm.FormatLocalAddress(addr)

@@ -291,7 +291,7 @@ func (b *builder) NewBaseTx(
 	options ...common.Option,
 ) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.CreateSubnetTxFee(),
+		b.backend.LUXAssetID(): b.backend.CreateSubnetTxFee(),
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -329,7 +329,7 @@ func (b *builder) NewAddValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddValidatorTx, error) {
-	luxAssetID := b.backend.AVAXAssetID()
+	luxAssetID := b.backend.LUXAssetID()
 	toBurn := map[ids.ID]uint64{
 		luxAssetID: b.backend.AddPrimaryNetworkValidatorFee(),
 	}
@@ -363,7 +363,7 @@ func (b *builder) NewAddSubnetValidatorTx(
 	options ...common.Option,
 ) (*txs.AddSubnetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.AddSubnetValidatorFee(),
+		b.backend.LUXAssetID(): b.backend.AddSubnetValidatorFee(),
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -396,7 +396,7 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 	options ...common.Option,
 ) (*txs.RemoveSubnetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.BaseTxFee(),
+		b.backend.LUXAssetID(): b.backend.BaseTxFee(),
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -429,12 +429,12 @@ func (b *builder) NewAddDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddDelegatorTx, error) {
-	luxAssetID := b.backend.AVAXAssetID()
+	luxAssetID := b.backend.LUXAssetID()
 	toBurn := map[ids.ID]uint64{
 		luxAssetID: b.backend.AddPrimaryNetworkDelegatorFee(),
 	}
 	toStake := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): vdr.Wght,
+		b.backend.LUXAssetID(): vdr.Wght,
 	}
 	ops := common.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
@@ -466,7 +466,7 @@ func (b *builder) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.CreateBlockchainTxFee(),
+		b.backend.LUXAssetID(): b.backend.CreateBlockchainTxFee(),
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -503,7 +503,7 @@ func (b *builder) NewCreateSubnetTx(
 	options ...common.Option,
 ) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.CreateSubnetTxFee(),
+		b.backend.LUXAssetID(): b.backend.CreateSubnetTxFee(),
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -539,7 +539,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.backend.AVAXAssetID()
+		luxAssetID     = b.backend.LUXAssetID()
 		txFee           = b.backend.BaseTxFee()
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -588,14 +588,14 @@ func (b *builder) NewImportTx(
 	var (
 		inputs       []*lux.TransferableInput
 		outputs      = make([]*lux.TransferableOutput, 0, len(importedAmounts))
-		importedAVAX = importedAmounts[luxAssetID]
+		importedLUX = importedAmounts[luxAssetID]
 	)
-	if importedAVAX > txFee {
+	if importedLUX > txFee {
 		importedAmounts[luxAssetID] -= txFee
 	} else {
-		if importedAVAX < txFee { // imported amount goes toward paying tx fee
+		if importedLUX < txFee { // imported amount goes toward paying tx fee
 			toBurn := map[ids.ID]uint64{
-				luxAssetID: txFee - importedAVAX,
+				luxAssetID: txFee - importedLUX,
 			}
 			toStake := map[ids.ID]uint64{}
 			var err error
@@ -637,7 +637,7 @@ func (b *builder) NewExportTx(
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.BaseTxFee(),
+		b.backend.LUXAssetID(): b.backend.BaseTxFee(),
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -687,7 +687,7 @@ func (b *builder) NewTransformSubnetTx(
 	options ...common.Option,
 ) (*txs.TransformSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.AVAXAssetID(): b.backend.TransformSubnetTxFee(),
+		b.backend.LUXAssetID(): b.backend.TransformSubnetTxFee(),
 		assetID:                 maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
@@ -737,7 +737,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
-	luxAssetID := b.backend.AVAXAssetID()
+	luxAssetID := b.backend.LUXAssetID()
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Subnet == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.backend.AddPrimaryNetworkValidatorFee()
@@ -779,7 +779,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
-	luxAssetID := b.backend.AVAXAssetID()
+	luxAssetID := b.backend.LUXAssetID()
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Subnet == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.backend.AddPrimaryNetworkDelegatorFee()

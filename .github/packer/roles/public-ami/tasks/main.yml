@@ -103,7 +103,7 @@
     dest: /etc/node/C/config.json
     mode: 0644
 
-- name: Enable Avalanche
+- name: Enable Lux
   systemd:
     name: node
     enabled: yes

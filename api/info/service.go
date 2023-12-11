@@ -331,7 +331,7 @@ type GetTxFeeResponse struct {
 	AddSubnetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
-// GetTxFee returns the transaction fee in nAVAX.
+// GetTxFee returns the transaction fee in nLUX.
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
 	i.log.Debug("API called",
 		zap.String("service", "info"),

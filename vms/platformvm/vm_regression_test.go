@@ -532,7 +532,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 			TxID: ids.GenerateTestID(),
 		},
 		Asset: lux.Asset{
-			ID: vm.ctx.AVAXAssetID,
+			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          vm.TxFee,
@@ -782,7 +782,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 			TxID: ids.GenerateTestID(),
 		},
 		Asset: lux.Asset{
-			ID: vm.ctx.AVAXAssetID,
+			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          vm.TxFee,
