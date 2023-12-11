@@ -117,7 +117,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	require.NoError(simpleTransformTx.SyntacticVerify(&snow.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
-		AVAXAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 	}))
 
 	expectedUnsignedSimpleTransformTxBytes := []byte{
@@ -144,14 +144,14 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		// Tx output index
 		0x00, 0x00, 0x00, 0x01,
-		// Mainnet AVAX assetID
+		// Mainnet LUX assetID
 		0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 		0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 		0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
 		0x25, 0x91, 0xb2, 0x30, 0x27, 0xa8, 0x7d, 0xff,
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
-		// input amount = 10 AVAX
+		// input amount = 10 LUX
 		0x00, 0x00, 0x00, 0x02, 0x54, 0x0b, 0xe4, 0x00,
 		// number of signatures needed in input
 		0x00, 0x00, 0x00, 0x01,
@@ -343,7 +343,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	require.NoError(complexTransformTx.SyntacticVerify(&snow.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
-		AVAXAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 	}))
 
 	expectedUnsignedComplexTransformTxBytes := []byte{
@@ -361,7 +361,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 		// number of outputs
 		0x00, 0x00, 0x00, 0x02,
 		// outputs[0]
-		// Mainnet AVAX asset ID
+		// Mainnet LUX asset ID
 		0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 		0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 		0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
@@ -414,14 +414,14 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		// Tx output index
 		0x00, 0x00, 0x00, 0x01,
-		// Mainnet AVAX asset ID
+		// Mainnet LUX asset ID
 		0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 		0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 		0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
 		0x25, 0x91, 0xb2, 0x30, 0x27, 0xa8, 0x7d, 0xff,
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
-		// amount = 1,000 AVAX
+		// amount = 1,000 LUX
 		0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00,
 		// number of signatures indices
 		0x00, 0x00, 0x00, 0x02,
@@ -539,7 +539,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 	ctx := &snow.Context{
 		ChainID:     chainID,
 		NetworkID:   networkID,
-		AVAXAssetID: ids.GenerateTestID(),
+		LUXAssetID: ids.GenerateTestID(),
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -597,15 +597,15 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			err: errEmptyAssetID,
 		},
 		{
-			name: "AVAX assetID",
+			name: "LUX assetID",
 			txFunc: func(*gomock.Controller) *TransformSubnetTx {
 				return &TransformSubnetTx{
 					BaseTx:  validBaseTx,
 					Subnet:  ids.GenerateTestID(),
-					AssetID: ctx.AVAXAssetID,
+					AssetID: ctx.LUXAssetID,
 				}
 			},
-			err: errAssetIDCantBeAVAX,
+			err: errAssetIDCantBeLUX,
 		},
 		{
 			name: "initialSupply == 0",

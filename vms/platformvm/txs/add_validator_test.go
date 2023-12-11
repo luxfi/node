@@ -23,7 +23,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -47,14 +47,14 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
 	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -64,7 +64,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.AVAXAssetID},
+		Asset: lux.Asset{ID: ctx.LUXAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -143,11 +143,11 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	addValidatorTx.DelegationShares--
 }
 
-func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
+func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := snow.DefaultContextTest()
-	ctx.AVAXAssetID = ids.GenerateTestID()
+	ctx.LUXAssetID = ids.GenerateTestID()
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -219,7 +219,7 @@ func TestAddValidatorTxSyntacticVerifyNotAVAX(t *testing.T) {
 	require.NoError(err)
 
 	err = stx.SyntacticVerify(ctx)
-	require.ErrorIs(err, errStakeMustBeAVAX)
+	require.ErrorIs(err, errStakeMustBeLUX)
 }
 
 func TestAddValidatorTxNotDelegatorTx(t *testing.T) {

@@ -137,7 +137,7 @@ type Config struct {
 	TrackedSubnets set.Set[ids.ID] `json:"-"`
 	Beacons        validators.Set  `json:"-"`
 
-	// Validators are the current validators in the Avalanche network
+	// Validators are the current validators in the Lux network
 	Validators validators.Manager `json:"-"`
 
 	UptimeCalculator uptime.Calculator `json:"-"`

@@ -15,7 +15,7 @@ import (
 
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/luxdefi/avalanche-network-runner-sdk"
+	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/tests"
@@ -58,8 +58,8 @@ type testEnvironmentConfig struct {
 	clusterType               ClusterType
 	logLevel                  string
 	networkRunnerGRPCEndpoint string
-	avalancheGoExecPath       string
-	avalancheGoLogLevel       string
+	luxGoExecPath       string
+	luxGoLogLevel       string
 	testKeysFile              string
 
 	// we snapshot initial state, right after starting cluster
@@ -90,13 +90,13 @@ type TestEnvironment struct {
 func (te *TestEnvironment) ConfigCluster(
 	logLevel string,
 	networkRunnerGRPCEp string,
-	avalancheGoExecPath string,
-	avalancheGoLogLevel string,
+	luxGoExecPath string,
+	luxGoLogLevel string,
 	uris string,
 	testKeysFile string,
 ) error {
-	if avalancheGoExecPath != "" {
-		if _, err := os.Stat(avalancheGoExecPath); err != nil {
+	if luxGoExecPath != "" {
+		if _, err := os.Stat(luxGoExecPath); err != nil {
 			return fmt.Errorf("could not find node binary: %w", err)
 		}
 	}
@@ -108,8 +108,8 @@ func (te *TestEnvironment) ConfigCluster(
 		te.clusterType = StandAlone
 		te.logLevel = logLevel
 		te.networkRunnerGRPCEndpoint = networkRunnerGRPCEp
-		te.avalancheGoExecPath = avalancheGoExecPath
-		te.avalancheGoLogLevel = avalancheGoLogLevel
+		te.luxGoExecPath = luxGoExecPath
+		te.luxGoLogLevel = luxGoLogLevel
 
 		err := te.setRunnerClient(te.logLevel, te.networkRunnerGRPCEndpoint)
 		if err != nil {
@@ -155,11 +155,11 @@ func (te *TestEnvironment) LoadKeys() error {
 func (te *TestEnvironment) StartCluster() error {
 	switch te.clusterType {
 	case StandAlone:
-		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.avalancheGoExecPath)
+		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.luxGoExecPath)
 		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-		resp, err := te.GetRunnerClient().Start(ctx, te.avalancheGoExecPath,
+		resp, err := te.GetRunnerClient().Start(ctx, te.luxGoExecPath,
 			runner_sdk.WithNumNodes(5),
-			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.avalancheGoLogLevel)),
+			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.luxGoLogLevel)),
 		)
 		cancel()
 		if err != nil {

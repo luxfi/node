@@ -67,12 +67,12 @@ func New(
 		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "local_staked",
-			Help:      "Amount (in nAVAX) of AVAX staked on this node",
+			Help:      "Amount (in nLUX) of LUX staked on this node",
 		}),
 		totalStake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "total_staked",
-			Help:      "Amount (in nAVAX) of AVAX staked on the Primary Network",
+			Help:      "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
 		numVotesWon: prometheus.NewCounter(prometheus.CounterOpts{

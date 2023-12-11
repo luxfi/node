@@ -1,14 +1,14 @@
 PKG_ROOT=/tmp
 VERSION=$TAG
-AVALANCHE_ROOT=$PKG_ROOT/node-$VERSION
+LUX_ROOT=$PKG_ROOT/node-$VERSION
 
-mkdir -p $AVALANCHE_ROOT
+mkdir -p $LUX_ROOT
 
-OK=`cp ./build/node $AVALANCHE_ROOT`
+OK=`cp ./build/node $LUX_ROOT`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi
-OK=`cp -r ./build/plugins $AVALANCHE_ROOT`
+OK=`cp -r ./build/plugins $LUX_ROOT`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

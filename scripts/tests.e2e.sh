@@ -11,15 +11,15 @@ if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   exit 255
 fi
 
-AVALANCHEGO_PATH="${1-}"
-if [[ -z "${AVALANCHEGO_PATH}" ]]; then
-  echo "Missing AVALANCHEGO_PATH argument!"
-  echo "Usage: ${0} [AVALANCHEGO_PATH]" >>/dev/stderr
+LUXGO_PATH="${1-}"
+if [[ -z "${LUXGO_PATH}" ]]; then
+  echo "Missing LUXGO_PATH argument!"
+  echo "Usage: ${0} [LUXGO_PATH]" >>/dev/stderr
   exit 255
 fi
 
 #################################
-echo "installing avalanche-network-runner"
+echo "installing lux-network-runner"
 ANR_WORKDIR="/tmp"
 ./scripts/install_anr.sh
 
@@ -37,9 +37,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "avalanche-network-runner" server
-echo "launch avalanche-network-runner in the background"
-$ANR_WORKDIR/avalanche-network-runner \
+# run "lux-network-runner" server
+echo "launch lux-network-runner in the background"
+$ANR_WORKDIR/lux-network-runner \
   server \
   --log-level debug \
   --port=":12342" \
@@ -47,12 +47,12 @@ $ANR_WORKDIR/avalanche-network-runner \
 PID=${!}
 
 #################################
-echo "running e2e tests against the local cluster with ${AVALANCHEGO_PATH}"
+echo "running e2e tests against the local cluster with ${LUXGO_PATH}"
 ./tests/e2e/e2e.test \
   --ginkgo.v \
   --log-level debug \
   --network-runner-grpc-endpoint="0.0.0.0:12342" \
-  --network-runner-node-path=${AVALANCHEGO_PATH} \
+  --network-runner-node-path=${LUXGO_PATH} \
   --network-runner-node-log-level="WARN" \
   --test-keys-file=tests/test.insecure.secp256k1.keys &&
   EXIT_CODE=$? || EXIT_CODE=$?

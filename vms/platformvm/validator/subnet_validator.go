@@ -8,7 +8,7 @@ import (
 	"github.com/luxdefi/node/utils/constants"
 )
 
-// SubnetValidator validates a subnet on the Avalanche network.
+// SubnetValidator validates a subnet on the Lux network.
 type SubnetValidator struct {
 	Validator `serialize:"true"`
 

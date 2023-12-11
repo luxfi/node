@@ -450,7 +450,7 @@ func TestVMGenesis(t *testing.T) {
 	}
 }
 
-func TestAVAXAssetID(t *testing.T) {
+func TestLUXAssetID(t *testing.T) {
 	tests := []struct {
 		networkID  uint32
 		expectedID string
@@ -480,7 +480,7 @@ func TestAVAXAssetID(t *testing.T) {
 			require.Equal(
 				test.expectedID,
 				luxAssetID.String(),
-				"AVAX assetID with networkID %d mismatch",
+				"LUX assetID with networkID %d mismatch",
 				test.networkID,
 			)
 		})

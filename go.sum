@@ -59,12 +59,12 @@ github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156 h1:eMwmnE/GDgah
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156/go.mod h1:Cb/ax3seSYIx7SuZdm2G2xzfwmv3TPSk2ucNfQESPXM=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
-github.com/luxdefi/avalanche-network-runner-sdk v0.3.0 h1:TVi9JEdKNU/RevYZ9PyW4pULbEdS+KQDA9Ki2DUvuAs=
-github.com/luxdefi/avalanche-network-runner-sdk v0.3.0/go.mod h1:SgKJvtqvgo/Bl/c8fxEHCLaSxEbzimYfBopcfrajxQk=
+github.com/luxdefi/lux-network-runner-sdk v0.3.0 h1:TVi9JEdKNU/RevYZ9PyW4pULbEdS+KQDA9Ki2DUvuAs=
+github.com/luxdefi/lux-network-runner-sdk v0.3.0/go.mod h1:SgKJvtqvgo/Bl/c8fxEHCLaSxEbzimYfBopcfrajxQk=
 github.com/luxdefi/coreth v0.12.4-rc.4 h1:bK9He5M9TqG9Wjd4KZ5CBxkBZMm5wWVVeZFKOsvnXic=
 github.com/luxdefi/coreth v0.12.4-rc.4/go.mod h1:LZ2jvvEjotqna/qZwzeiA8zO9IIpS992DyWNZGbk7CA=
-github.com/luxdefi/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7 h1:EdxD90j5sClfL5Ngpz2TlnbnkNYdFPDXa0jDOjam65c=
-github.com/luxdefi/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7/go.mod h1:XhiXSrh90sHUbkERzaxEftCmUz53eCijshDLZ4fByVM=
+github.com/luxdefi/ledger-lux/go v0.0.0-20230105152938-00a24d05a8c7 h1:EdxD90j5sClfL5Ngpz2TlnbnkNYdFPDXa0jDOjam65c=
+github.com/luxdefi/ledger-lux/go v0.0.0-20230105152938-00a24d05a8c7/go.mod h1:XhiXSrh90sHUbkERzaxEftCmUz53eCijshDLZ4fByVM=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

@@ -1,17 +1,17 @@
 PKG_ROOT=/tmp/node
 RPM_BASE_DIR=$PKG_ROOT/yum
-AVALANCHE_BUILD_BIN_DIR=$RPM_BASE_DIR/usr/local/bin
-AVALANCHE_LIB_DIR=$RPM_BASE_DIR/usr/local/lib/node
+LUX_BUILD_BIN_DIR=$RPM_BASE_DIR/usr/local/bin
+LUX_LIB_DIR=$RPM_BASE_DIR/usr/local/lib/node
 
 mkdir -p $RPM_BASE_DIR
-mkdir -p $AVALANCHE_BUILD_BIN_DIR
-mkdir -p $AVALANCHE_LIB_DIR
+mkdir -p $LUX_BUILD_BIN_DIR
+mkdir -p $LUX_LIB_DIR
 
-OK=`cp ./build/node $AVALANCHE_BUILD_BIN_DIR`
+OK=`cp ./build/node $LUX_BUILD_BIN_DIR`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi
-OK=`cp ./build/plugins/evm $AVALANCHE_LIB_DIR`
+OK=`cp ./build/plugins/evm $LUX_LIB_DIR`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

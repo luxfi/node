@@ -3,10 +3,10 @@
 # Use lower_case variables in the scripts and UPPER_CASE variables for override
 # Use the constants.sh for env overrides
 
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
-# Where AvalancheGo binary goes
-node_path="$AVALANCHE_PATH/build/node"
+# Where LuxGo binary goes
+node_path="$LUX_PATH/build/node"
 plugin_dir=${PLUGIN_DIR:-$HOME/.node/plugins}
 evm_path=${EVM_PATH:-$plugin_dir/evm}
 coreth_version=${CORETH_VERSION:-'v0.12.4-rc.4'}
@@ -24,7 +24,7 @@ node_dockerhub_repo=${DOCKER_REPO:-"node"}
 # TODO: fix "fatal: No names found, cannot describe anything" in github CI
 current_branch=$(git symbolic-ref -q --short HEAD || git describe --tags --exact-match || true)
 
-git_commit=${AVALANCHEGO_COMMIT:-$( git rev-list -1 HEAD )}
+git_commit=${LUXGO_COMMIT:-$( git rev-list -1 HEAD )}
 
 # Static compilation
 static_ld_flags=''

@@ -65,7 +65,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createBlockchainTxFee,
+			e.Ctx.LUXAssetID: createBlockchainTxFee,
 		},
 	); err != nil {
 		return err
@@ -104,7 +104,7 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createSubnetTxFee,
+			e.Ctx.LUXAssetID: createSubnetTxFee,
 		},
 	); err != nil {
 		return err
@@ -172,7 +172,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			tx.Outs,
 			e.Tx.Creds,
 			map[ids.ID]uint64{
-				e.Ctx.AVAXAssetID: e.Config.TxFee,
+				e.Ctx.LUXAssetID: e.Config.TxFee,
 			},
 		); err != nil {
 			return err
@@ -217,7 +217,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TxFee,
+			e.Ctx.LUXAssetID: e.Config.TxFee,
 		},
 	); err != nil {
 		return fmt.Errorf("failed verifySpend: %w", err)
@@ -391,11 +391,11 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		tx.Ins,
 		tx.Outs,
 		baseTxCreds,
-		// Invariant: [tx.AssetID != e.Ctx.AVAXAssetID]. This prevents the first
+		// Invariant: [tx.AssetID != e.Ctx.LUXAssetID]. This prevents the first
 		//            entry in this map literal from being overwritten by the
 		//            second entry.
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TransformSubnetTxFee,
+			e.Ctx.LUXAssetID: e.Config.TransformSubnetTxFee,
 			tx.AssetID:        totalRewardAmount,
 		},
 	); err != nil {

@@ -16,7 +16,7 @@ var _ Context = (*context)(nil)
 type Context interface {
 	NetworkID() uint32
 	BlockchainID() ids.ID
-	AVAXAssetID() ids.ID
+	LUXAssetID() ids.ID
 	BaseTxFee() uint64
 	CreateAssetTxFee() uint64
 }
@@ -50,7 +50,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "AVAX")
+	asset, err := xChainClient.GetAssetDescription(ctx, "LUX")
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (c *context) BlockchainID() ids.ID {
 	return c.blockchainID
 }
 
-func (c *context) AVAXAssetID() ids.ID {
+func (c *context) LUXAssetID() ids.ID {
 	return c.luxAssetID
 }
 

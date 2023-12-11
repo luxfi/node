@@ -1,9 +1,9 @@
-# Avalanche gRPC
+# Lux gRPC
 
 Now Serving: **Protocol Version 27**
 
 Protobuf files are hosted at
-[https://buf.build/luxdefi/avalanche](https://buf.build/luxdefi/avalanche) and
+[https://buf.build/luxdefi/lux](https://buf.build/luxdefi/lux) and
 can be used as dependencies in other projects.
 
 Protobuf linting and generation for this project is managed by
@@ -11,10 +11,10 @@ Protobuf linting and generation for this project is managed by
 
 Please find installation instructions on
 [https://docs.buf.build/installation/](https://docs.buf.build/installation/) or
-use `Dockerfile.buf` provided in the `proto/` directory of AvalancheGo.
+use `Dockerfile.buf` provided in the `proto/` directory of LuxGo.
 
 Any changes made to proto definition can be updated by running
-`protobuf_codegen.sh` located in the `scripts/` directory of AvalancheGo.
+`protobuf_codegen.sh` located in the `scripts/` directory of LuxGo.
 
 Introduction to `buf`
 [https://docs.buf.build/tour/introduction](https://docs.buf.build/tour/introduction)
@@ -23,13 +23,13 @@ Introduction to `buf`
 
 The protobuf definitions and generated code are versioned based on the
 [RPCChainVMProtocol](../version/version.go#L13) defined for the RPCChainVM.
-Many versions of an Avalanche client can use the same
-[RPCChainVMProtocol](../version/version.go#L13). But each Avalanche client and
+Many versions of an Lux client can use the same
+[RPCChainVMProtocol](../version/version.go#L13). But each Lux client and
 subnet vm must use the same protocol version to be compatible.
 
 ## Publishing to Buf Schema Registry
 
-- Checkout appropriate tag in AvalancheGo `git checkout v1.10.1`
+- Checkout appropriate tag in LuxGo `git checkout v1.10.1`
 - Change to proto/ directory `cd proto`.
 - Publish new tag to buf registry. `buf push -t v26`
 

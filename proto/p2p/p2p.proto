@@ -176,7 +176,7 @@ message AcceptedStateSummary {
 
 enum EngineType {
   ENGINE_TYPE_UNSPECIFIED = 0;
-  ENGINE_TYPE_AVALANCHE = 1;
+  ENGINE_TYPE_LUX = 1;
   ENGINE_TYPE_SNOWMAN = 2;
 }
 
@@ -229,7 +229,7 @@ message GetAccepted {
 // the sender's accepted frontier IDs, the X-chain engine responds only with
 // the accepted vertex IDs of the X-chain DAG.
 //
-// See "snow/engine/avalanche#GetAccepted" and "SendAccepted".
+// See "snow/engine/lux#GetAccepted" and "SendAccepted".
 // See "snow/engine/common/bootstrapper.go#Accepted".
 message Accepted {
   reserved 4; // Until Cortina upgrade is activated

@@ -16,13 +16,13 @@ graph LR
 
 ## Intro
 
-The Avalanche primary network consists of 3 built-in blockchains: the X-Chain, C-Chain, and P-Chain. All three chains rely on the Snowman consensus protocol. The X-Chain, which previously used DAG-based Avalanche consensus, was upgraded to Snowman in the Cortina network update. 
+The Lux primary network consists of 3 built-in blockchains: the X-Chain, C-Chain, and P-Chain. All three chains rely on the Snowman consensus protocol. The X-Chain, which previously used DAG-based Lux consensus, was upgraded to Snowman in the Cortina network update. 
 
-The X-Chain is used to manage assets. The C-Chain is used to create and interact with smart contracts. The P-Chain is used to coordinate validators and stake. At the time of writing, the Avalanche network has ~1200 validators. A set of validators makes up a subnet. Subnets can validate 1 or more chains. It is a common misconception that 1 subnet = 1 chain and this is shown by the primary subnet of Avalanche which is made up of the X-Chain, C-Chain, and P-Chain.
+The X-Chain is used to manage assets. The C-Chain is used to create and interact with smart contracts. The P-Chain is used to coordinate validators and stake. At the time of writing, the Lux network has ~1200 validators. A set of validators makes up a subnet. Subnets can validate 1 or more chains. It is a common misconception that 1 subnet = 1 chain and this is shown by the primary subnet of Lux which is made up of the X-Chain, C-Chain, and P-Chain.
 
-A node in the Avalanche network can either be a validator or a non-validator. A validator stakes AVAX tokens and participates in consensus to earn rewards. A non-validator does not participate in consensus or have any AVAX staked but is used as a public API. Both validators and non-validator need to have their own copy of the chain and to know the current state of the mempool. At the time of writing, there are ~1200 validators and ~1800 non-validator.
+A node in the Lux network can either be a validator or a non-validator. A validator stakes LUX tokens and participates in consensus to earn rewards. A non-validator does not participate in consensus or have any LUX staked but is used as a public API. Both validators and non-validator need to have their own copy of the chain and to know the current state of the mempool. At the time of writing, there are ~1200 validators and ~1800 non-validator.
 
-Each blockchain on Avalanche has several components: the virtual machine, database, consensus engine, sender, and handler. These components help the chain run smoothly. Blockchains also interact with the P2P layer and the chain router to send and receive messages.
+Each blockchain on Lux has several components: the virtual machine, database, consensus engine, sender, and handler. These components help the chain run smoothly. Blockchains also interact with the P2P layer and the chain router to send and receive messages.
 
 ## P2P
 
@@ -43,7 +43,7 @@ All messaging functions in `OutboundMsgBuilder` can be categorized as follows:
 - **App**
   - VMs communicate application-specific messages to other nodes through app messages. A common example is mempool gossiping.
 
-Currently, Avalanchego implements its own message serialization to communicate. In the future, Avalanchego will use protocol buffers to communicate.
+Currently, Luxgo implements its own message serialization to communicate. In the future, Luxgo will use protocol buffers to communicate.
 
 ### [Network](https://github.com/luxdefi/node/blob/master/network/network.go)
 
@@ -70,7 +70,7 @@ The main role of the `sender` is to build and send outbound messages. It is actu
 
 ## [Consensus Engine](https://github.com/luxdefi/node/blob/master/snow/consensus/snowman/consensus.go)
 
-Consensus is defined as getting a group of distributed systems to agree on an outcome. In the case of the Avalanche network, consensus is achieved when validators are in agreement with the state of the blockchain. The novel consensus algorithm is documented in the [white paper](https://assets.website-files.com/5d80307810123f5ffbb34d6e/6009805681b416f34dcae012_Avalanche%20Consensus%20Whitepaper.pdf). There are two main consensus algorithms: Avalanche and Snowman. The engine is responsible for proposing a new block to consensus, repeatedly polling the network for decisions (accept/reject), and communicating that decision to the `Sender`.
+Consensus is defined as getting a group of distributed systems to agree on an outcome. In the case of the Lux network, consensus is achieved when validators are in agreement with the state of the blockchain. The novel consensus algorithm is documented in the [white paper](https://assets.website-files.com/5d80307810123f5ffbb34d6e/6009805681b416f34dcae012_Lux%20Consensus%20Whitepaper.pdf). There are two main consensus algorithms: Lux and Snowman. The engine is responsible for proposing a new block to consensus, repeatedly polling the network for decisions (accept/reject), and communicating that decision to the `Sender`.
 
 ## [Blockchain Creation](https://github.com/luxdefi/node/blob/master/chains/manager.go)
 

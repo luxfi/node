@@ -116,7 +116,7 @@ func newEventIPCSocket(
 	chainID ids.ID,
 	name string,
 	snowmanAcceptorGroup snow.AcceptorGroup,
-	avalancheAcceptorGroup snow.AcceptorGroup,
+	luxAcceptorGroup snow.AcceptorGroup,
 ) (*eventSocket, error) {
 	var (
 		url     = ipcURL(ctx, chainID, name)
@@ -136,7 +136,7 @@ func newEventIPCSocket(
 			errs := wrappers.Errs{}
 			errs.Add(
 				snowmanAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
-				avalancheAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+				luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 			)
 			return errs.Err
 		},
@@ -156,7 +156,7 @@ func newEventIPCSocket(
 		return nil, err
 	}
 
-	if err := avalancheAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
+	if err := luxAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
 		if err := eis.stop(); err != nil {
 			return nil, err
 		}

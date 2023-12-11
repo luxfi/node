@@ -11,7 +11,7 @@ import (
 
 const (
 	// Address of the runtime engine server.
-	EngineAddressKey = "AVALANCHE_VM_RUNTIME_ENGINE_ADDR"
+	EngineAddressKey = "LUX_VM_RUNTIME_ENGINE_ADDR"
 
 	// Duration before handshake timeout during bootstrap.
 	DefaultHandshakeTimeout = 5 * time.Second
@@ -28,7 +28,7 @@ var (
 )
 
 type Initializer interface {
-	// Initialize provides AvalancheGo with compatibility, networking and
+	// Initialize provides LuxGo with compatibility, networking and
 	// process information of a VM.
 	Initialize(ctx context.Context, protocolVersion uint, vmAddr string) error
 }

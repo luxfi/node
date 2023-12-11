@@ -480,12 +480,12 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		)
 	}{
 		{
-			name:                "current - avalanche, requested - unspecified",
-			currentEngineType:   p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+			name:                "current - lux, requested - unspecified",
+			currentEngineType:   p2p.EngineType_ENGINE_TYPE_LUX,
 			requestedEngineType: p2p.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Avalanche: &Engine{
+					Lux: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
@@ -495,12 +495,12 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - avalanche, requested - avalanche",
-			currentEngineType:   p2p.EngineType_ENGINE_TYPE_AVALANCHE,
-			requestedEngineType: p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+			name:                "current - lux, requested - lux",
+			currentEngineType:   p2p.EngineType_ENGINE_TYPE_LUX,
+			requestedEngineType: p2p.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Avalanche: &Engine{
+					Lux: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
@@ -515,7 +515,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			requestedEngineType: p2p.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Avalanche: nil,
+					Lux: nil,
 					Snowman: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
@@ -525,12 +525,12 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - snowman, requested - avalanche",
+			name:                "current - snowman, requested - lux",
 			currentEngineType:   p2p.EngineType_ENGINE_TYPE_SNOWMAN,
-			requestedEngineType: p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+			requestedEngineType: p2p.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Avalanche: &Engine{
+					Lux: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: nil,
 						Consensus:    e,
@@ -549,7 +549,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			requestedEngineType: p2p.EngineType_ENGINE_TYPE_SNOWMAN,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Avalanche: nil,
+					Lux: nil,
 					Snowman: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,

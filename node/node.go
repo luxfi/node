@@ -93,7 +93,7 @@ var (
 	errShuttingDown  = errors.New("server shutting down")
 )
 
-// Node is an instance of an Avalanche node.
+// Node is an instance of an Lux node.
 type Node struct {
 	Log          logging.Logger
 	VMFactoryLog logging.Logger
@@ -748,7 +748,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		Server:                                  n.APIServer,
 		Keystore:                                n.keystore,
 		AtomicMemory:                            n.sharedMemory,
-		AVAXAssetID:                             luxAssetID,
+		LUXAssetID:                             luxAssetID,
 		XChainID:                                xChainID,
 		CChainID:                                cChainID,
 		CriticalChains:                          criticalChains,
@@ -780,7 +780,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	return nil
 }
 
-// initVMs initializes the VMs Avalanche supports + any additional vms installed as plugins.
+// initVMs initializes the VMs Lux supports + any additional vms installed as plugins.
 func (n *Node) initVMs() error {
 	n.Log.Info("initializing VMs")
 
@@ -802,7 +802,7 @@ func (n *Node) initVMs() error {
 		VMManager:    n.VMManager,
 	})
 
-	// Register the VMs that Avalanche supports
+	// Register the VMs that Lux supports
 	errs := wrappers.Errs{}
 	errs.Add(
 		vmRegisterer.Register(context.TODO(), constants.PlatformVMID, &platformvm.Factory{

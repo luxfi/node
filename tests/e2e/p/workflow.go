@@ -31,8 +31,8 @@ import (
 
 // PChainWorkflow is an integration test for normal P-Chain operations
 // - Issues an Add Validator and an Add Delegator using the funding address
-// - Exports AVAX from the P-Chain funding address to the X-Chain created address
-// - Exports AVAX from the X-Chain created address to the P-Chain created address
+// - Exports LUX from the P-Chain funding address to the X-Chain created address
+// - Exports LUX from the X-Chain created address to the P-Chain created address
 // - Checks the expected value of the funding address
 
 var _ = e2e.DescribePChain("[Workflow]", func() {
@@ -60,7 +60,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			gomega.Expect(err).Should(gomega.BeNil())
 
 			pWallet := baseWallet.P()
-			luxAssetID := baseWallet.P().AVAXAssetID()
+			luxAssetID := baseWallet.P().LUXAssetID()
 			xWallet := baseWallet.X()
 			pChainClient := platformvm.NewClient(nodeURI)
 			xChainClient := avm.NewClient(nodeURI, xWallet.BlockchainID().String())

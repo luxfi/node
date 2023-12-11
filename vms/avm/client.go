@@ -198,7 +198,7 @@ type Client interface {
 	// Deprecated: Transactions should be issued using the
 	// `node/wallet/chain/x.Wallet` utility.
 	Import(ctx context.Context, user api.UserPass, to ids.ShortID, sourceChain string, options ...rpc.Option) (ids.ID, error) // Export sends an asset from this chain to the P/C-Chain.
-	// After this tx is accepted, the AVAX must be imported to the P/C-chain with an importTx.
+	// After this tx is accepted, the LUX must be imported to the P/C-chain with an importTx.
 	// Returns the ID of the newly created atomic transaction
 	//
 	// Deprecated: Transactions should be issued using the

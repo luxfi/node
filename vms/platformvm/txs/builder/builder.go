@@ -244,23 +244,23 @@ func (b *builder) NewImportTx(
 		return nil, ErrNoFunds // No imported UTXOs were spendable
 	}
 
-	importedAVAX := importedAmounts[b.ctx.AVAXAssetID]
+	importedLUX := importedAmounts[b.ctx.LUXAssetID]
 
 	ins := []*lux.TransferableInput{}
 	outs := []*lux.TransferableOutput{}
 	switch {
-	case importedAVAX < b.cfg.TxFee: // imported amount goes toward paying tx fee
+	case importedLUX < b.cfg.TxFee: // imported amount goes toward paying tx fee
 		var baseSigners [][]*secp256k1.PrivateKey
-		ins, outs, _, baseSigners, err = b.Spend(b.state, keys, 0, b.cfg.TxFee-importedAVAX, changeAddr)
+		ins, outs, _, baseSigners, err = b.Spend(b.state, keys, 0, b.cfg.TxFee-importedLUX, changeAddr)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 		}
 		signers = append(baseSigners, signers...)
-		delete(importedAmounts, b.ctx.AVAXAssetID)
-	case importedAVAX == b.cfg.TxFee:
-		delete(importedAmounts, b.ctx.AVAXAssetID)
+		delete(importedAmounts, b.ctx.LUXAssetID)
+	case importedLUX == b.cfg.TxFee:
+		delete(importedAmounts, b.ctx.LUXAssetID)
 	default:
-		importedAmounts[b.ctx.AVAXAssetID] -= b.cfg.TxFee
+		importedAmounts[b.ctx.LUXAssetID] -= b.cfg.TxFee
 	}
 
 	for assetID, amount := range importedAmounts {
@@ -297,7 +297,7 @@ func (b *builder) NewImportTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-// TODO: should support other assets than AVAX
+// TODO: should support other assets than LUX
 func (b *builder) NewExportTx(
 	amount uint64,
 	chainID ids.ID,
@@ -324,7 +324,7 @@ func (b *builder) NewExportTx(
 		}},
 		DestinationChain: chainID,
 		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
-			Asset: lux.Asset{ID: b.ctx.AVAXAssetID},
+			Asset: lux.Asset{ID: b.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{

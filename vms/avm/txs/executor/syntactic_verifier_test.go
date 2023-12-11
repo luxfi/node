@@ -598,7 +598,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 			name: "bounding whitespace in name",
 			txFunc: func() *txs.Tx {
 				tx := tx
-				tx.Name = " AVAX"
+				tx.Name = " LUX"
 				return &txs.Tx{
 					Unsigned: &tx,
 					Creds:    creds,

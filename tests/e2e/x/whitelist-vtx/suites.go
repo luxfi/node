@@ -24,13 +24,13 @@ import (
 )
 
 const (
-	metricVtxIssueSuccess = "avalanche_X_whitelist_vtx_issue_success"
-	metricVtxIssueFailure = "avalanche_X_whitelist_vtx_issue_failure"
-	metricTxProcessing    = "avalanche_X_whitelist_tx_processing"
-	metricTxAccepted      = "avalanche_X_whitelist_tx_accepted_count"
-	metricTxRejected      = "avalanche_X_whitelist_tx_rejected_count"
-	metricTxPollsAccepted = "avalanche_X_whitelist_tx_polls_accepted_count"
-	metricTxPollsRejected = "avalanche_X_whitelist_tx_polls_rejected_count"
+	metricVtxIssueSuccess = "lux_X_whitelist_vtx_issue_success"
+	metricVtxIssueFailure = "lux_X_whitelist_vtx_issue_failure"
+	metricTxProcessing    = "lux_X_whitelist_tx_processing"
+	metricTxAccepted      = "lux_X_whitelist_tx_accepted_count"
+	metricTxRejected      = "lux_X_whitelist_tx_rejected_count"
+	metricTxPollsAccepted = "lux_X_whitelist_tx_polls_accepted_count"
+	metricTxPollsRejected = "lux_X_whitelist_tx_polls_rejected_count"
 )
 
 var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
@@ -62,7 +62,7 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 					ginkgo.Skip("skipping tests (mainnet)")
 				}
 			})
-			luxAssetID := baseWallet.X().AVAXAssetID()
+			luxAssetID := baseWallet.X().LUXAssetID()
 			wallets := make([]primary.Wallet, len(testKeys))
 			for i := range wallets {
 				wallets[i] = primary.NewWalletWithOptions(
@@ -246,7 +246,7 @@ var _ = e2e.DescribeXChain("[WhitelistTx]", func() {
 				balances, err := wallets[0].X().Builder().GetFTBalance()
 				gomega.Expect(err).Should(gomega.BeNil())
 
-				luxAssetID := baseWallet.X().AVAXAssetID()
+				luxAssetID := baseWallet.X().LUXAssetID()
 				key1PrevBalX := balances[luxAssetID]
 				tests.Outf("{{green}}first wallet balance:{{/}} %d\n", key1PrevBalX)
 

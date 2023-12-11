@@ -24,7 +24,7 @@ type EngineType int32
 
 const (
 	EngineType_ENGINE_TYPE_UNSPECIFIED EngineType = 0
-	EngineType_ENGINE_TYPE_AVALANCHE   EngineType = 1
+	EngineType_ENGINE_TYPE_LUX   EngineType = 1
 	EngineType_ENGINE_TYPE_SNOWMAN     EngineType = 2
 )
 
@@ -32,12 +32,12 @@ const (
 var (
 	EngineType_name = map[int32]string{
 		0: "ENGINE_TYPE_UNSPECIFIED",
-		1: "ENGINE_TYPE_AVALANCHE",
+		1: "ENGINE_TYPE_LUX",
 		2: "ENGINE_TYPE_SNOWMAN",
 	}
 	EngineType_value = map[string]int32{
 		"ENGINE_TYPE_UNSPECIFIED": 0,
-		"ENGINE_TYPE_AVALANCHE":   1,
+		"ENGINE_TYPE_LUX":   1,
 		"ENGINE_TYPE_SNOWMAN":     2,
 	}
 )
@@ -1530,7 +1530,7 @@ func (x *GetAccepted) GetEngineType() EngineType {
 // the sender's accepted frontier IDs, the X-chain engine responds only with
 // the accepted vertex IDs of the X-chain DAG.
 //
-// See "snow/engine/avalanche#GetAccepted" and "SendAccepted".
+// See "snow/engine/lux#GetAccepted" and "SendAccepted".
 // See "snow/engine/common/bootstrapper.go#Accepted".
 type Accepted struct {
 	state         protoimpl.MessageState

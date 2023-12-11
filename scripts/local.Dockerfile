@@ -4,7 +4,7 @@
 # in order to build an image using the local version of coreth
 
 # Changes to the minimum golang version must also be replicated in
-# scripts/build_avalanche.sh
+# scripts/build_lux.sh
 # scripts/local.Dockerfile (here)
 # Dockerfile
 # README.md
@@ -17,6 +17,6 @@ WORKDIR $GOPATH/src/github.com/luxdefi
 COPY node node
 
 WORKDIR $GOPATH/src/github.com/luxdefi/node
-RUN ./scripts/build_avalanche.sh
+RUN ./scripts/build_lux.sh
 
-RUN ln -sv $GOPATH/src/github.com/luxdefi/avalanche-byzantine/ /node
+RUN ln -sv $GOPATH/src/github.com/luxdefi/lux-byzantine/ /node

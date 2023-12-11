@@ -242,7 +242,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 		XChainID:    xChainID,
 		CChainID:    cChainID,
-		AVAXAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 
 		Log:          vm.log,
 		Keystore:     keystoreClient,

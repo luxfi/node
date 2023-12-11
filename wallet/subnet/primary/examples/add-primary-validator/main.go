@@ -50,7 +50,7 @@ func main() {
 
 	// Get the P-chain wallet
 	pWallet := wallet.P()
-	luxAssetID := pWallet.AVAXAssetID()
+	luxAssetID := pWallet.LUXAssetID()
 
 	addValidatorStartTime := time.Now()
 	addValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(

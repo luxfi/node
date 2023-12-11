@@ -6,7 +6,7 @@ github.com/luxdefi/node/message=OutboundMessage=message/mock_message.go
 github.com/luxdefi/node/message=OutboundMsgBuilder=message/mock_outbound_message_builder.go
 github.com/luxdefi/node/network/peer=GossipTracker=network/peer/mock_gossip_tracker.go
 github.com/luxdefi/node/snow/consensus/snowman=Block=snow/consensus/snowman/mock_block.go
-github.com/luxdefi/node/snow/engine/avalanche/vertex=LinearizableVM=snow/engine/avalanche/vertex/mock_vm.go
+github.com/luxdefi/node/snow/engine/lux/vertex=LinearizableVM=snow/engine/lux/vertex/mock_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=BuildBlockWithContextChainVM=snow/engine/snowman/block/mocks/build_block_with_context_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=ChainVM=snow/engine/snowman/block/mocks/chain_vm.go
 github.com/luxdefi/node/snow/engine/snowman/block=StateSyncableVM=snow/engine/snowman/block/mocks/state_syncable_vm.go

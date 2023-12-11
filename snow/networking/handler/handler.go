@@ -490,7 +490,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	// we are currently in.
 	currentState := h.ctx.State.Get()
 	if msg.EngineType == p2p.EngineType_ENGINE_TYPE_SNOWMAN &&
-		currentState.Type == p2p.EngineType_ENGINE_TYPE_AVALANCHE {
+		currentState.Type == p2p.EngineType_ENGINE_TYPE_LUX {
 		// The peer is requesting an engine type that hasn't been initialized
 		// yet. This means we know that this isn't a response, so we can safely
 		// drop the message.
@@ -505,13 +505,13 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 
 	var engineType p2p.EngineType
 	switch msg.EngineType {
-	case p2p.EngineType_ENGINE_TYPE_AVALANCHE, p2p.EngineType_ENGINE_TYPE_SNOWMAN:
+	case p2p.EngineType_ENGINE_TYPE_LUX, p2p.EngineType_ENGINE_TYPE_SNOWMAN:
 		// The peer is requesting an engine type that has been initialized, so
 		// we should attempt to honor the request.
 		engineType = msg.EngineType
 	default:
 		// Note: [msg.EngineType] may have been provided by the peer as an
-		// invalid option. I.E. not one of AVALANCHE, SNOWMAN, or UNSPECIFIED.
+		// invalid option. I.E. not one of LUX, SNOWMAN, or UNSPECIFIED.
 		// In this case, we treat the value the same way as UNSPECIFIED.
 		//
 		// If the peer didn't request a specific engine type, we default to the
@@ -523,7 +523,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	if !ok {
 		// This should only happen if the peer is not following the protocol.
 		// This can happen if the chain only has a Snowman engine and the peer
-		// requested an Avalanche engine handle the message.
+		// requested an Lux engine handle the message.
 		h.ctx.Log.Debug("dropping sync message",
 			zap.String("reason", "uninitialized engine state"),
 			zap.Stringer("messageOp", op),
@@ -587,7 +587,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	case *message.GetAcceptedStateSummaryFailed:
 		return engine.GetAcceptedStateSummaryFailed(ctx, nodeID, msg.RequestID)
 
-	// Bootstrapping messages may be forwarded to either avalanche or snowman
+	// Bootstrapping messages may be forwarded to either lux or snowman
 	// engines, depending on the EngineType field
 	case *p2p.GetAcceptedFrontier:
 		return engine.GetAcceptedFrontier(ctx, nodeID, msg.RequestId)

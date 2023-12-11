@@ -442,7 +442,7 @@ func (dg *Directed) RecordPoll(ctx context.Context, votes ids.Bag) (bool, error)
 	// a transaction.
 	dg.pollNumber++
 
-	// This flag tracks if the Avalanche instance needs to recompute its
+	// This flag tracks if the Lux instance needs to recompute its
 	// frontiers. Frontiers only need to be recalculated if preferences change
 	// or if a tx was accepted.
 	changed := false

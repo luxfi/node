@@ -52,7 +52,7 @@ fi
 find /tmp/node-v${VERSION}
 
 #################################
-echo "installing avalanche-network-runner"
+echo "installing lux-network-runner"
 ANR_WORKDIR="/tmp"
 ./scripts/install_anr.sh
 
@@ -70,9 +70,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################
-# run "avalanche-network-runner" server
-echo "launch avalanche-network-runner in the background"
-$ANR_WORKDIR/avalanche-network-runner \
+# run "lux-network-runner" server
+echo "launch lux-network-runner in the background"
+$ANR_WORKDIR/lux-network-runner \
   server \
   --log-level debug \
   --port=":12340" \

@@ -15,7 +15,7 @@ var errInvalidETHAddress = errors.New("invalid eth address")
 
 type UnparsedAllocation struct {
 	ETHAddr        string         `json:"ethAddr"`
-	AVAXAddr       string         `json:"luxAddr"`
+	LUXAddr       string         `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -40,7 +40,7 @@ func (ua UnparsedAllocation) Parse() (Allocation, error) {
 	}
 	a.ETHAddr = ethAddr
 
-	_, _, luxAddrBytes, err := address.Parse(ua.AVAXAddr)
+	_, _, luxAddrBytes, err := address.Parse(ua.LUXAddr)
 	if err != nil {
 		return a, err
 	}
@@ -48,7 +48,7 @@ func (ua UnparsedAllocation) Parse() (Allocation, error) {
 	if err != nil {
 		return a, err
 	}
-	a.AVAXAddr = luxAddr
+	a.LUXAddr = luxAddr
 
 	return a, nil
 }
