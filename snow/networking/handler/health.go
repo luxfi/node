@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -12,9 +12,6 @@ import (
 var ErrNotConnectedEnoughStake = errors.New("not connected to enough stake")
 
 func (h *handler) HealthCheck(ctx context.Context) (interface{}, error) {
-	h.ctx.Lock.Lock()
-	defer h.ctx.Lock.Unlock()
-
 	state := h.ctx.State.Get()
 	engine, ok := h.engineManager.Get(state.Type).Get(state.State)
 	if !ok {
@@ -37,8 +34,7 @@ func (h *handler) HealthCheck(ctx context.Context) (interface{}, error) {
 	if networkingErr == nil {
 		return intf, engineErr
 	}
-	// TODO: Update this to return both errors with %w once we upgrade to Go 1.20
-	return intf, fmt.Errorf("engine: %v; networking: %v", engineErr, networkingErr)
+	return intf, fmt.Errorf("engine: %w; networking: %w", engineErr, networkingErr)
 }
 
 func (h *handler) networkHealthCheck() (interface{}, error) {

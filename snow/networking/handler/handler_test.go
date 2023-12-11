@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/message"
@@ -26,6 +26,7 @@ import (
 	"github.com/luxdefi/node/subnets"
 	"github.com/luxdefi/node/utils/math/meter"
 	"github.com/luxdefi/node/utils/resource"
+	"github.com/luxdefi/node/utils/set"
 
 	commontracker "github.com/luxdefi/node/snow/engine/common/tracker"
 )
@@ -41,9 +42,9 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	ctx := snow.DefaultConsensusContextTest()
 
-	vdrs := validators.NewSet()
+	vdrs := validators.NewManager()
 	vdr0 := ids.GenerateTestNodeID()
-	require.NoError(vdrs.Add(vdr0, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, vdr0, nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -67,9 +68,6 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	handler := handlerIntf.(*handler)
 
 	bootstrapper := &common.BootstrapperTest{
-		BootstrapableTest: common.BootstrapableTest{
-			T: t,
-		},
 		EngineTest: common.EngineTest{
 			T: t,
 		},
@@ -78,11 +76,11 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
-	bootstrapper.GetAcceptedFrontierF = func(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	bootstrapper.GetAcceptedFrontierF = func(context.Context, ids.NodeID, uint32) error {
 		require.FailNow("GetAcceptedFrontier message should have timed out")
 		return nil
 	}
-	bootstrapper.GetAcceptedF = func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error {
+	bootstrapper.GetAcceptedF = func(context.Context, ids.NodeID, uint32, set.Set[ids.ID]) error {
 		called <- struct{}{}
 		return nil
 	}
@@ -139,8 +137,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 	closed := make(chan struct{}, 1)
 	ctx := snow.DefaultConsensusContextTest()
 
-	vdrs := validators.NewSet()
-	require.NoError(vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+	vdrs := validators.NewManager()
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -169,9 +167,6 @@ func TestHandlerClosesOnError(t *testing.T) {
 	})
 
 	bootstrapper := &common.BootstrapperTest{
-		BootstrapableTest: common.BootstrapableTest{
-			T: t,
-		},
 		EngineTest: common.EngineTest{
 			T: t,
 		},
@@ -232,8 +227,8 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 
 	closed := make(chan struct{}, 1)
 	ctx := snow.DefaultConsensusContextTest()
-	vdrs := validators.NewSet()
-	require.NoError(vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+	vdrs := validators.NewManager()
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -259,9 +254,6 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	handler.clock.Set(time.Now())
 
 	bootstrapper := &common.BootstrapperTest{
-		BootstrapableTest: common.BootstrapableTest{
-			T: t,
-		},
 		EngineTest: common.EngineTest{
 			T: t,
 		},
@@ -311,11 +303,10 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 func TestHandlerDispatchInternal(t *testing.T) {
 	require := require.New(t)
 
-	calledNotify := make(chan struct{}, 1)
 	ctx := snow.DefaultConsensusContextTest()
 	msgFromVMChan := make(chan common.Message)
-	vdrs := validators.NewSet()
-	require.NoError(vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+	vdrs := validators.NewManager()
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -338,9 +329,6 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	bootstrapper := &common.BootstrapperTest{
-		BootstrapableTest: common.BootstrapableTest{
-			T: t,
-		},
 		EngineTest: common.EngineTest{
 			T: t,
 		},
@@ -352,8 +340,10 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
+
+	wg := &sync.WaitGroup{}
 	engine.NotifyF = func(context.Context, common.Message) error {
-		calledNotify <- struct{}{}
+		wg.Done()
 		return nil
 	}
 
@@ -373,22 +363,18 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return nil
 	}
 
+	wg.Add(1)
 	handler.Start(context.Background(), false)
 	msgFromVMChan <- 0
-
-	select {
-	case <-time.After(20 * time.Millisecond):
-		require.FailNow("should have called notify")
-	case <-calledNotify:
-	}
+	wg.Wait()
 }
 
 func TestHandlerSubnetConnector(t *testing.T) {
 	require := require.New(t)
 
 	ctx := snow.DefaultConsensusContextTest()
-	vdrs := validators.NewSet()
-	require.NoError(vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+	vdrs := validators.NewManager()
+	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -398,7 +384,6 @@ func TestHandlerSubnetConnector(t *testing.T) {
 	)
 	require.NoError(err)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 	connector := validators.NewMockSubnetConnector(ctrl)
 
 	nodeID := ids.GenerateTestNodeID()
@@ -418,9 +403,6 @@ func TestHandlerSubnetConnector(t *testing.T) {
 	require.NoError(err)
 
 	bootstrapper := &common.BootstrapperTest{
-		BootstrapableTest: common.BootstrapableTest{
-			T: t,
-		},
 		EngineTest: common.EngineTest{
 			T: t,
 		},
@@ -566,8 +548,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 
 			messageReceived := make(chan struct{})
 			ctx := snow.DefaultConsensusContextTest()
-			vdrs := validators.NewSet()
-			require.NoError(vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1))
+			vdrs := validators.NewManager()
+			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 			resourceTracker, err := tracker.NewResourceTracker(
 				prometheus.NewRegistry(),
@@ -590,9 +572,6 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(err)
 
 			bootstrapper := &common.BootstrapperTest{
-				BootstrapableTest: common.BootstrapableTest{
-					T: t,
-				},
 				EngineTest: common.EngineTest{
 					T: t,
 				},
@@ -604,7 +583,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			engine.ContextF = func() *snow.ConsensusContext {
 				return ctx
 			}
-			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID) error {
+			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID) error {
 				close(messageReceived)
 				return nil
 			}
@@ -621,10 +600,11 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			}
 
 			handler.Start(context.Background(), false)
-			handler.Push(context.TODO(), Message{
+			handler.Push(context.Background(), Message{
 				InboundMessage: message.InboundChits(
 					ids.Empty,
 					uint32(0),
+					ids.Empty,
 					ids.Empty,
 					ids.Empty,
 					ids.EmptyNodeID,
@@ -635,4 +615,42 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			<-messageReceived
 		})
 	}
+}
+
+func TestHandlerStartError(t *testing.T) {
+	require := require.New(t)
+
+	ctx := snow.DefaultConsensusContextTest()
+	resourceTracker, err := tracker.NewResourceTracker(
+		prometheus.NewRegistry(),
+		resource.NoUsage,
+		meter.ContinuousFactory{},
+		time.Second,
+	)
+	require.NoError(err)
+
+	handler, err := New(
+		ctx,
+		validators.NewManager(),
+		nil,
+		time.Second,
+		testThreadPoolSize,
+		resourceTracker,
+		nil,
+		subnets.New(ctx.NodeID, subnets.Config{}),
+		commontracker.NewPeers(),
+	)
+	require.NoError(err)
+
+	// Starting a handler with an unprovided engine should immediately cause the
+	// handler to shutdown.
+	handler.SetEngineManager(&EngineManager{})
+	ctx.State.Set(snow.EngineState{
+		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Initializing,
+	})
+	handler.Start(context.Background(), false)
+
+	_, err = handler.AwaitStopped(context.Background())
+	require.NoError(err)
 }

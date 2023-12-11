@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -17,10 +17,10 @@ import (
 	"github.com/luxdefi/node/database/versiondb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
 )
 
 // Maximum number of containers IDs that can be fetched at a time in a call to
@@ -114,14 +114,12 @@ func newIndex(
 
 // Close this index
 func (i *index) Close() error {
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		i.indexToContainer.Close(),
 		i.containerToIndex.Close(),
 		i.vDB.Close(),
 		i.baseDB.Close(),
 	)
-	return errs.Err
 }
 
 // Index that the given transaction is accepted

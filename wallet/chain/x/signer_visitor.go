@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -236,10 +236,10 @@ func sign(tx *txs.Tx, creds []verify.Verifiable, txSigners [][]keychain.Signer) 
 			fxCred = &fxs.FxCredential{}
 			tx.Creds[credIndex] = fxCred
 		}
-		credIntf := fxCred.Verifiable
+		credIntf := fxCred.Credential
 		if credIntf == nil {
 			credIntf = creds[credIndex]
-			fxCred.Verifiable = credIntf
+			fxCred.Credential = credIntf
 		}
 
 		var cred *secp256k1fx.Credential

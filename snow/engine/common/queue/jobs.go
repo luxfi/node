@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package queue
@@ -17,9 +17,9 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/timer"
-	"github.com/luxdefi/node/utils/wrappers"
 )
 
 const progressUpdateFrequency = 30 * time.Second
@@ -425,10 +425,8 @@ func (jm *JobsWithMissing) cleanRunnableStack(ctx context.Context) error {
 		}
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		runnableJobsIter.Error(),
 		jm.Commit(),
 	)
-	return errs.Err
 }

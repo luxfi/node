@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -23,8 +23,6 @@ import (
 
 func TestNewSystemThrottler(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	require := require.New(t)
 	reg := prometheus.NewRegistry()
 	clock := mockable.Clock{}
@@ -50,8 +48,6 @@ func TestNewSystemThrottler(t *testing.T) {
 
 func TestSystemThrottler(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	require := require.New(t)
 
 	// Setup
@@ -135,7 +131,6 @@ func TestSystemThrottler(t *testing.T) {
 func TestSystemThrottlerContextCancel(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Setup
 	mockTracker := tracker.NewMockTracker(ctrl)

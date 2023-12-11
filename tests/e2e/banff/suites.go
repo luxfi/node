@@ -1,60 +1,31 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements tests for the banff network upgrade.
 package banff
 
 import (
-	"context"
-
 	ginkgo "github.com/onsi/ginkgo/v2"
 
-	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/genesis"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/tests/e2e"
+	"github.com/luxdefi/node/tests/fixture/e2e"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/units"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary"
 )
 
 var _ = ginkgo.Describe("[Banff]", func() {
+	require := require.New(ginkgo.GinkgoT())
+
 	ginkgo.It("can send custom assets X->P and P->X",
-		// use this for filtering tests by labels
-		// ref. https://onsi.github.io/ginkgo/#spec-labels
-		ginkgo.Label(
-			"require-network-runner",
-			"xp",
-			"banff",
-		),
 		func() {
-			ginkgo.By("reload initial snapshot for test independence", func() {
-				err := e2e.Env.RestoreInitialState(true /*switchOffNetworkFirst*/)
-				gomega.Expect(err).Should(gomega.BeNil())
-			})
-
-			uris := e2e.Env.GetURIs()
-			gomega.Expect(uris).ShouldNot(gomega.BeEmpty())
-
-			kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
-			var wallet primary.Wallet
-			ginkgo.By("initialize wallet", func() {
-				walletURI := uris[0]
-
-				// 5-second is enough to fetch initial UTXOs for test cluster in "primary.NewWallet"
-				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultWalletCreationTimeout)
-				var err error
-				wallet, err = primary.NewWalletFromURI(ctx, walletURI, kc)
-				cancel()
-				gomega.Expect(err).Should(gomega.BeNil())
-
-				tests.Outf("{{green}}created wallet{{/}}\n")
-			})
+			keychain := e2e.Env.NewKeychain(1)
+			wallet := e2e.NewWallet(keychain, e2e.Env.GetRandomNodeURI())
 
 			// Get the P-chain and the X-chain wallets
 			pWallet := wallet.P()
@@ -65,7 +36,7 @@ var _ = ginkgo.Describe("[Banff]", func() {
 			owner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs: []ids.ShortID{
-					genesis.EWOQKey.PublicKey().Address(),
+					keychain.Keys[0].Address(),
 				},
 			}
 
@@ -83,8 +54,9 @@ var _ = ginkgo.Describe("[Banff]", func() {
 							},
 						},
 					},
+					e2e.WithDefaultContext(),
 				)
-				gomega.Expect(err).Should(gomega.BeNil())
+				require.NoError(err)
 				assetID = assetTx.ID()
 
 				tests.Outf("{{green}}created new X-chain asset{{/}}: %s\n", assetID)
@@ -104,15 +76,20 @@ var _ = ginkgo.Describe("[Banff]", func() {
 							},
 						},
 					},
+					e2e.WithDefaultContext(),
 				)
-				gomega.Expect(err).Should(gomega.BeNil())
+				require.NoError(err)
 
 				tests.Outf("{{green}}issued X-chain export{{/}}: %s\n", tx.ID())
 			})
 
 			ginkgo.By("import new asset from X-chain on the P-chain", func() {
-				tx, err := pWallet.IssueImportTx(xChainID, owner)
-				gomega.Expect(err).Should(gomega.BeNil())
+				tx, err := pWallet.IssueImportTx(
+					xChainID,
+					owner,
+					e2e.WithDefaultContext(),
+				)
+				require.NoError(err)
 
 				tests.Outf("{{green}}issued P-chain import{{/}}: %s\n", tx.ID())
 			})
@@ -131,15 +108,20 @@ var _ = ginkgo.Describe("[Banff]", func() {
 							},
 						},
 					},
+					e2e.WithDefaultContext(),
 				)
-				gomega.Expect(err).Should(gomega.BeNil())
+				require.NoError(err)
 
 				tests.Outf("{{green}}issued P-chain export{{/}}: %s\n", tx.ID())
 			})
 
 			ginkgo.By("import asset from P-chain on the X-chain", func() {
-				tx, err := xWallet.IssueImportTx(constants.PlatformChainID, owner)
-				gomega.Expect(err).Should(gomega.BeNil())
+				tx, err := xWallet.IssueImportTx(
+					constants.PlatformChainID,
+					owner,
+					e2e.WithDefaultContext(),
+				)
+				require.NoError(err)
 
 				tests.Outf("{{green}}issued X-chain import{{/}}: %s\n", tx.ID())
 			})

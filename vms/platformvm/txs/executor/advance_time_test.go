@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/secp256k1"
 	"github.com/luxdefi/node/vms/platformvm/reward"
@@ -77,7 +76,8 @@ func TestAdvanceTimeTxUpdatePrimaryNetworkStakers(t *testing.T) {
 
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
-	require.True(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, nodeID))
+	_, ok := env.config.Validators.GetValidator(constants.PrimaryNetworkID, nodeID)
+	require.True(ok)
 }
 
 // Ensure semantic verification fails when proposed timestamp is at or before current timestamp
@@ -356,7 +356,6 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			subnetID := testSubnet1.ID()
 			env.config.TrackedSubnets.Add(subnetID)
-			env.config.Validators.Add(subnetID, validators.NewSet())
 
 			for _, staker := range test.stakers {
 				_, err := addPendingValidator(
@@ -422,20 +421,24 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				case pending:
 					_, err := env.state.GetPendingValidator(constants.PrimaryNetworkID, stakerNodeID)
 					require.NoError(err)
-					require.False(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, stakerNodeID))
+					_, ok := env.config.Validators.GetValidator(constants.PrimaryNetworkID, stakerNodeID)
+					require.False(ok)
 				case current:
 					_, err := env.state.GetCurrentValidator(constants.PrimaryNetworkID, stakerNodeID)
 					require.NoError(err)
-					require.True(validators.Contains(env.config.Validators, constants.PrimaryNetworkID, stakerNodeID))
+					_, ok := env.config.Validators.GetValidator(constants.PrimaryNetworkID, stakerNodeID)
+					require.True(ok)
 				}
 			}
 
 			for stakerNodeID, status := range test.expectedSubnetStakers {
 				switch status {
 				case pending:
-					require.False(validators.Contains(env.config.Validators, subnetID, stakerNodeID))
+					_, ok := env.config.Validators.GetValidator(subnetID, stakerNodeID)
+					require.False(ok)
 				case current:
-					require.True(validators.Contains(env.config.Validators, subnetID, stakerNodeID))
+					_, ok := env.config.Validators.GetValidator(subnetID, stakerNodeID)
+					require.True(ok)
 				}
 			}
 		})
@@ -456,12 +459,10 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 
 	subnetID := testSubnet1.ID()
 	env.config.TrackedSubnets.Add(subnetID)
-	env.config.Validators.Add(subnetID, validators.NewSet())
 
 	dummyHeight := uint64(1)
 	// Add a subnet validator to the staker set
-	subnetValidatorNodeID := ids.NodeID(preFundedKeys[0].PublicKey().Address())
-	// Starts after the corre
+	subnetValidatorNodeID := genesisNodeIDs[0]
 	subnetVdr1StartTime := defaultValidateStartTime
 	subnetVdr1EndTime := defaultValidateStartTime.Add(defaultMinStakingDuration)
 	tx, err := env.txBuilder.NewAddSubnetValidatorTx(
@@ -490,7 +491,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	// The above validator is now part of the staking set
 
 	// Queue a staker that joins the staker set after the above validator leaves
-	subnetVdr2NodeID := ids.NodeID(preFundedKeys[1].PublicKey().Address())
+	subnetVdr2NodeID := genesisNodeIDs[1]
 	tx, err = env.txBuilder.NewAddSubnetValidatorTx(
 		1, // Weight
 		uint64(subnetVdr1EndTime.Add(time.Second).Unix()),                                // Start time
@@ -542,8 +543,10 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
-	require.False(validators.Contains(env.config.Validators, subnetID, subnetVdr2NodeID))
-	require.False(validators.Contains(env.config.Validators, subnetID, subnetValidatorNodeID))
+	_, ok := env.config.Validators.GetValidator(subnetID, subnetVdr2NodeID)
+	require.False(ok)
+	_, ok = env.config.Validators.GetValidator(subnetID, subnetValidatorNodeID)
+	require.False(ok)
 }
 
 func TestTrackedSubnet(t *testing.T) {
@@ -560,11 +563,10 @@ func TestTrackedSubnet(t *testing.T) {
 			subnetID := testSubnet1.ID()
 			if tracked {
 				env.config.TrackedSubnets.Add(subnetID)
-				env.config.Validators.Add(subnetID, validators.NewSet())
 			}
 
 			// Add a subnet validator to the staker set
-			subnetValidatorNodeID := preFundedKeys[0].PublicKey().Address()
+			subnetValidatorNodeID := genesisNodeIDs[0]
 
 			subnetVdr1StartTime := defaultGenesisTime.Add(1 * time.Minute)
 			subnetVdr1EndTime := defaultGenesisTime.Add(10 * defaultMinStakingDuration).Add(1 * time.Minute)
@@ -572,7 +574,7 @@ func TestTrackedSubnet(t *testing.T) {
 				1,                                  // Weight
 				uint64(subnetVdr1StartTime.Unix()), // Start time
 				uint64(subnetVdr1EndTime.Unix()),   // end time
-				ids.NodeID(subnetValidatorNodeID),  // Node ID
+				subnetValidatorNodeID,              // Node ID
 				subnetID,                           // Subnet ID
 				[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
 				ids.ShortEmpty,
@@ -613,7 +615,8 @@ func TestTrackedSubnet(t *testing.T) {
 
 			env.state.SetHeight(dummyHeight)
 			require.NoError(env.state.Commit())
-			require.Equal(tracked, validators.Contains(env.config.Validators, subnetID, ids.NodeID(subnetValidatorNodeID)))
+			_, ok := env.config.Validators.GetValidator(subnetID, subnetValidatorNodeID)
+			require.True(ok)
 		})
 	}
 }
@@ -664,9 +667,7 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	// Test validator weight before delegation
-	primarySet, ok := env.config.Validators.Get(constants.PrimaryNetworkID)
-	require.True(ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
+	vdrWeight := env.config.Validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
 
 	// Add delegator
@@ -723,7 +724,7 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	// Test validator weight after delegation
-	vdrWeight = primarySet.GetWeight(nodeID)
+	vdrWeight = env.config.Validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
 }
 
@@ -767,9 +768,7 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	// Test validator weight before delegation
-	primarySet, ok := env.config.Validators.Get(constants.PrimaryNetworkID)
-	require.True(ok)
-	vdrWeight := primarySet.GetWeight(nodeID)
+	vdrWeight := env.config.Validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
 
 	// Add delegator
@@ -821,7 +820,7 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	// Test validator weight after delegation
-	vdrWeight = primarySet.GetWeight(nodeID)
+	vdrWeight = env.config.Validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	require.Equal(env.config.MinDelegatorStake+env.config.MinValidatorStake, vdrWeight)
 }
 
@@ -923,7 +922,7 @@ func addPendingValidator(
 		uint64(startTime.Unix()),
 		uint64(endTime.Unix()),
 		nodeID,
-		ids.ShortID(nodeID),
+		ids.GenerateTestShortID(),
 		reward.PercentDenominator,
 		keys,
 		ids.ShortEmpty,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -14,6 +14,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/trace"
+	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/version"
 )
 
@@ -62,22 +63,22 @@ func (e *tracedEngine) GetStateSummaryFrontierFailed(ctx context.Context, nodeID
 	return e.engine.GetStateSummaryFrontierFailed(ctx, nodeID, requestID)
 }
 
-func (e *tracedEngine) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, heights []uint64) error {
+func (e *tracedEngine) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, heights set.Set[uint64]) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.GetAcceptedStateSummary", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
-		attribute.Int("numHeights", len(heights)),
+		attribute.Int("numHeights", heights.Len()),
 	))
 	defer span.End()
 
 	return e.engine.GetAcceptedStateSummary(ctx, nodeID, requestID, heights)
 }
 
-func (e *tracedEngine) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+func (e *tracedEngine) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.AcceptedStateSummary", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
-		attribute.Int("numSummaryIDs", len(summaryIDs)),
+		attribute.Int("numSummaryIDs", summaryIDs.Len()),
 	))
 	defer span.End()
 
@@ -125,22 +126,22 @@ func (e *tracedEngine) GetAcceptedFrontierFailed(ctx context.Context, nodeID ids
 	return e.engine.GetAcceptedFrontierFailed(ctx, nodeID, requestID)
 }
 
-func (e *tracedEngine) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error {
+func (e *tracedEngine) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.GetAccepted", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
-		attribute.Int("numContainerIDs", len(containerIDs)),
+		attribute.Int("numContainerIDs", containerIDs.Len()),
 	))
 	defer span.End()
 
 	return e.engine.GetAccepted(ctx, nodeID, requestID, containerIDs)
 }
 
-func (e *tracedEngine) Accepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error {
+func (e *tracedEngine) Accepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.Accepted", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
-		attribute.Int("numContainerIDs", len(containerIDs)),
+		attribute.Int("numContainerIDs", containerIDs.Len()),
 	))
 	defer span.End()
 
@@ -221,38 +222,41 @@ func (e *tracedEngine) GetFailed(ctx context.Context, nodeID ids.NodeID, request
 	return e.engine.GetFailed(ctx, nodeID, requestID)
 }
 
-func (e *tracedEngine) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error {
+func (e *tracedEngine) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID, requestedHeight uint64) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.PullQuery", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
 		attribute.Stringer("containerID", containerID),
+		attribute.Int64("requestedHeight", int64(requestedHeight)),
 	))
 	defer span.End()
 
-	return e.engine.PullQuery(ctx, nodeID, requestID, containerID)
+	return e.engine.PullQuery(ctx, nodeID, requestID, containerID, requestedHeight)
 }
 
-func (e *tracedEngine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
+func (e *tracedEngine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte, requestedHeight uint64) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.PushQuery", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
 		attribute.Int("containerLen", len(container)),
+		attribute.Int64("requestedHeight", int64(requestedHeight)),
 	))
 	defer span.End()
 
-	return e.engine.PushQuery(ctx, nodeID, requestID, container)
+	return e.engine.PushQuery(ctx, nodeID, requestID, container, requestedHeight)
 }
 
-func (e *tracedEngine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, acceptedID ids.ID) error {
+func (e *tracedEngine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.Chits", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
 		attribute.Stringer("preferredID", preferredID),
+		attribute.Stringer("preferredIDAtHeight", preferredIDAtHeight),
 		attribute.Stringer("acceptedID", acceptedID),
 	))
 	defer span.End()
 
-	return e.engine.Chits(ctx, nodeID, requestID, preferredID, acceptedID)
+	return e.engine.Chits(ctx, nodeID, requestID, preferredID, preferredIDAtHeight, acceptedID)
 }
 
 func (e *tracedEngine) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
@@ -413,8 +417,4 @@ func (e *tracedEngine) HealthCheck(ctx context.Context) (interface{}, error) {
 	defer span.End()
 
 	return e.engine.HealthCheck(ctx)
-}
-
-func (e *tracedEngine) GetVM() VM {
-	return e.engine.GetVM()
 }

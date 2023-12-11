@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -36,8 +36,7 @@ func TestNewImportTx(t *testing.T) {
 		expectedErr   error
 	}
 
-	factory := secp256k1.Factory{}
-	sourceKey, err := factory.NewPrivateKey()
+	sourceKey, err := secp256k1.NewPrivateKey()
 	require.NoError(t, err)
 
 	cnt := new(byte)

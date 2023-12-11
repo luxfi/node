@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxdefi/node/api/keystore"
 	"github.com/luxdefi/node/chains/atomic"
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
@@ -28,9 +28,9 @@ import (
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/utils/linkedhashmap"
+	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/avm/blocks/executor"
+	"github.com/luxdefi/node/vms/avm/block/executor"
 	"github.com/luxdefi/node/vms/avm/config"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
@@ -77,15 +77,13 @@ var (
 )
 
 func init() {
-	factory := secp256k1.Factory{}
-
 	for _, key := range []string{
 		"24jUJ9vZexUM6expyMcT48LBx27k1m7xpraoV62oSQAHdziao5",
 		"2MMvUMsxx6zsHSNXJdFD8yc5XkancvwyKPwpw4xUK3TCGDuNBY",
 		"cxb7KpGWhDMALTjNNSJ7UQkkomPesyWAPUaWRGdyeBNzR6f35",
 	} {
 		keyBytes, _ := cb58.Decode(key)
-		pk, _ := factory.ToPrivateKey(keyBytes)
+		pk, _ := secp256k1.ToPrivateKey(keyBytes)
 		keys = append(keys, pk)
 		addrs = append(addrs, pk.PublicKey().Address())
 	}
@@ -135,17 +133,15 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	genesisBytes := buildGenesisTestWithArgs(tb, genesisArgs)
 	ctx := newContext(tb)
 
-	baseDBManager := manager.NewMemDB(version.Semantic1_0_0)
-
-	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDBManager.Current().Database))
+	baseDB := memdb.New()
+	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDB))
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
 	ctx.Lock.Lock()
 
-	userKeystore, err := keystore.CreateTestKeystore()
-	require.NoError(err)
+	userKeystore := keystore.New(logging.NoLog{}, memdb.New())
 	ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
 
 	for _, user := range c.keystoreUsers {
@@ -183,7 +179,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
-		baseDBManager.NewPrefixDBManager([]byte{1}),
+		prefixdb.New([]byte{1}, baseDB),
 		genesisBytes,
 		nil,
 		configBytes,

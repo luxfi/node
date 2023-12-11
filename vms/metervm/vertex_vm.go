@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxdefi/node/api/metrics"
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/snow/engine/lux/vertex"
@@ -37,7 +37,7 @@ type vertexVM struct {
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
 	chainCtx *snow.Context,
-	db manager.Manager,
+	db database.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,

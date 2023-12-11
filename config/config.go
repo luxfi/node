@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -49,6 +49,7 @@ import (
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/storage"
 	"github.com/luxdefi/node/utils/timer"
+	"github.com/luxdefi/node/version"
 	"github.com/luxdefi/node/vms/platformvm/reward"
 	"github.com/luxdefi/node/vms/proposervm"
 )
@@ -58,22 +59,26 @@ const (
 	chainUpgradeFileName = "upgrade"
 	subnetConfigFileExt  = ".json"
 	ipResolutionTimeout  = 30 * time.Second
+
+	ipcDeprecationMsg                    = "IPC API is deprecated"
+	keystoreDeprecationMsg               = "keystore API is deprecated"
+	acceptedFrontierGossipDeprecationMsg = "push-based accepted frontier gossip is deprecated"
 )
 
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
 	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	deprecatedKeys = map[string]string{
-		NetworkCompressionEnabledKey:           fmt.Sprintf("use --%s instead", NetworkCompressionTypeKey),
-		GenesisConfigFileKey:                   fmt.Sprintf("use --%s instead", GenesisFileKey),
-		GenesisConfigContentKey:                fmt.Sprintf("use --%s instead", GenesisFileContentKey),
-		InboundConnUpgradeThrottlerCooldownKey: fmt.Sprintf("use --%s instead", NetworkInboundConnUpgradeThrottlerCooldownKey),
-		InboundThrottlerMaxConnsPerSecKey:      fmt.Sprintf("use --%s instead", NetworkInboundThrottlerMaxConnsPerSecKey),
-		OutboundConnectionThrottlingRpsKey:     fmt.Sprintf("use --%s instead", NetworkOutboundConnectionThrottlingRpsKey),
-		OutboundConnectionTimeoutKey:           fmt.Sprintf("use --%s instead", NetworkOutboundConnectionTimeoutKey),
-		StakingEnabledKey:                      fmt.Sprintf("use --%s instead", SybilProtectionEnabledKey),
-		StakingDisabledWeightKey:               fmt.Sprintf("use --%s instead", SybilProtectionDisabledWeightKey),
-		ConsensusGossipFrequencyKey:            fmt.Sprintf("use --%s instead", ConsensusAcceptedFrontierGossipFrequencyKey),
+		IpcAPIEnabledKey:      ipcDeprecationMsg,
+		IpcsChainIDsKey:       ipcDeprecationMsg,
+		IpcsPathKey:           ipcDeprecationMsg,
+		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
+		ConsensusGossipAcceptedFrontierValidatorSizeKey:    acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipAcceptedFrontierNonValidatorSizeKey: acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipAcceptedFrontierPeerSizeKey:         acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptValidatorSizeKey:            acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptNonValidatorSizeKey:         acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptPeerSizeKey:                 acceptedFrontierGossipDeprecationMsg,
 	}
 
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
@@ -99,9 +104,10 @@ var (
 )
 
 func getConsensusConfig(v *viper.Viper) snowball.Parameters {
-	return snowball.Parameters{
-		K:     v.GetInt(SnowSampleSizeKey),
-		Alpha: v.GetInt(SnowQuorumSizeKey),
+	p := snowball.Parameters{
+		K:               v.GetInt(SnowSampleSizeKey),
+		AlphaPreference: v.GetInt(SnowPreferenceQuorumSizeKey),
+		AlphaConfidence: v.GetInt(SnowConfidenceQuorumSizeKey),
 		// During the X-chain linearization we require BetaVirtuous and
 		// BetaRogue to be equal. Therefore we use the more conservative
 		// BetaRogue value for both BetaVirtuous and BetaRogue.
@@ -115,6 +121,11 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
 		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
 		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
 	}
+	if v.IsSet(SnowQuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+		p.AlphaConfidence = p.AlphaPreference
+	}
+	return p
 }
 
 func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
@@ -314,35 +325,25 @@ func getGossipConfig(v *viper.Viper) subnets.GossipConfig {
 
 func getNetworkConfig(
 	v *viper.Viper,
+	networkID uint32,
 	sybilProtectionEnabled bool,
 	halflife time.Duration,
 ) (network.Config, error) {
 	// Set the max number of recent inbound connections upgraded to be
 	// equal to the max number of inbound connections per second.
-	maxInboundConnsPerSec := v.GetFloat64(getRenamedKey(v, InboundThrottlerMaxConnsPerSecKey, NetworkInboundThrottlerMaxConnsPerSecKey))
-	upgradeCooldown := v.GetDuration(getRenamedKey(v, InboundConnUpgradeThrottlerCooldownKey, NetworkInboundConnUpgradeThrottlerCooldownKey))
+	maxInboundConnsPerSec := v.GetFloat64(NetworkInboundThrottlerMaxConnsPerSecKey)
+	upgradeCooldown := v.GetDuration(NetworkInboundConnUpgradeThrottlerCooldownKey)
 	upgradeCooldownInSeconds := upgradeCooldown.Seconds()
 	maxRecentConnsUpgraded := int(math.Ceil(maxInboundConnsPerSec * upgradeCooldownInSeconds))
 
-	var (
-		compressionType compression.Type
-		err             error
-	)
-	if v.IsSet(NetworkCompressionTypeKey) {
-		if v.IsSet(NetworkCompressionEnabledKey) {
-			return network.Config{}, fmt.Errorf("cannot set both %q and %q", NetworkCompressionTypeKey, NetworkCompressionEnabledKey)
-		}
+	compressionType, err := compression.TypeFromString(v.GetString(NetworkCompressionTypeKey))
+	if err != nil {
+		return network.Config{}, err
+	}
 
-		compressionType, err = compression.TypeFromString(v.GetString(NetworkCompressionTypeKey))
-		if err != nil {
-			return network.Config{}, err
-		}
-	} else {
-		if v.GetBool(NetworkCompressionEnabledKey) {
-			compressionType = constants.DefaultNetworkCompressionType
-		} else {
-			compressionType = compression.TypeNone
-		}
+	allowPrivateIPs := !constants.ProductionNetworkIDs.Contains(networkID)
+	if v.IsSet(NetworkAllowPrivateIPsKey) {
+		allowPrivateIPs = v.GetBool(NetworkAllowPrivateIPsKey)
 	}
 
 	config := network.Config{
@@ -393,8 +394,8 @@ func getNetworkConfig(
 		ProxyReadHeaderTimeout: v.GetDuration(NetworkTCPProxyReadTimeoutKey),
 
 		DialerConfig: dialer.Config{
-			ThrottleRps:       v.GetUint32(getRenamedKey(v, OutboundConnectionThrottlingRpsKey, NetworkOutboundConnectionThrottlingRpsKey)),
-			ConnectionTimeout: v.GetDuration(getRenamedKey(v, OutboundConnectionTimeoutKey, NetworkOutboundConnectionTimeoutKey)),
+			ThrottleRps:       v.GetUint32(NetworkOutboundConnectionThrottlingRpsKey),
+			ConnectionTimeout: v.GetDuration(NetworkOutboundConnectionTimeoutKey),
 		},
 
 		TLSKeyLogFile: v.GetString(NetworkTLSKeyLogFileKey),
@@ -420,7 +421,7 @@ func getNetworkConfig(
 		MaxClockDifference:           v.GetDuration(NetworkMaxClockDifferenceKey),
 		CompressionType:              compressionType,
 		PingFrequency:                v.GetDuration(NetworkPingFrequencyKey),
-		AllowPrivateIPs:              v.GetBool(NetworkAllowPrivateIPsKey),
+		AllowPrivateIPs:              allowPrivateIPs,
 		UptimeMetricFreq:             v.GetDuration(UptimeMetricFreqKey),
 		MaximumInboundMessageTimeout: v.GetDuration(NetworkMaximumInboundTimeoutKey),
 
@@ -467,7 +468,10 @@ func getNetworkConfig(
 }
 
 func getBenchlistConfig(v *viper.Viper, consensusParameters snowball.Parameters) (benchlist.Config, error) {
-	alpha := consensusParameters.Alpha
+	// AlphaConfidence is used here to ensure that benching can't cause a
+	// liveness failure. If AlphaPreference were used, the benchlist may grow to
+	// a point that committing would be extremely unlikely to happen.
+	alpha := consensusParameters.AlphaConfidence
 	k := consensusParameters.K
 	config := benchlist.Config{
 		Threshold:              v.GetInt(BenchlistFailThresholdKey),
@@ -524,8 +528,6 @@ func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
 
 func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig, error) {
 	config := node.BootstrapConfig{
-		RetryBootstrap:                          v.GetBool(RetryBootstrapKey),
-		RetryBootstrapWarnFrequency:             v.GetInt(RetryBootstrapWarnFrequencyKey),
 		BootstrapBeaconConnectionTimeout:        v.GetDuration(BootstrapBeaconConnectionTimeoutKey),
 		BootstrapMaxTimeGetAncestors:            v.GetDuration(BootstrapMaxTimeGetAncestorsKey),
 		BootstrapAncestorsMaxContainersSent:     int(v.GetUint(BootstrapAncestorsMaxContainersSentKey)),
@@ -796,8 +798,9 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 
 func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, error) {
 	config := node.StakingConfig{
-		SybilProtectionEnabled:        v.GetBool(getRenamedKey(v, StakingEnabledKey, SybilProtectionEnabledKey)),
-		SybilProtectionDisabledWeight: v.GetUint64(getRenamedKey(v, StakingDisabledWeightKey, SybilProtectionDisabledWeightKey)),
+		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
+		SybilProtectionDisabledWeight: v.GetUint64(SybilProtectionDisabledWeightKey),
+		PartialSyncPrimaryNetwork:     v.GetBool(PartialSyncPrimaryNetworkKey),
 		StakingKeyPath:                GetExpandedArg(v, StakingTLSKeyPathKey),
 		StakingCertPath:               GetExpandedArg(v, StakingCertPathKey),
 		StakingSignerPath:             GetExpandedArg(v, StakingSignerKeyPathKey),
@@ -874,16 +877,14 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
 	// try first loading genesis content directly from flag/env-var
-	configContentKey := getRenamedKey(v, GenesisConfigContentKey, GenesisFileContentKey)
-	if v.IsSet(configContentKey) {
-		genesisData := v.GetString(configContentKey)
+	if v.IsSet(GenesisFileContentKey) {
+		genesisData := v.GetString(GenesisFileContentKey)
 		return genesis.FromFlag(networkID, genesisData, stakingCfg)
 	}
 
-	configFileKey := getRenamedKey(v, GenesisConfigFileKey, GenesisFileKey)
 	// if content is not specified go for the file
-	if v.IsSet(configFileKey) {
-		genesisFileName := GetExpandedArg(v, configFileKey)
+	if v.IsSet(GenesisFileKey) {
+		genesisFileName := GetExpandedArg(v, GenesisFileKey)
 		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
 	}
 
@@ -932,7 +933,8 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 	}
 
 	return node.DatabaseConfig{
-		Name: v.GetString(DBTypeKey),
+		Name:     v.GetString(DBTypeKey),
+		ReadOnly: v.GetBool(DBReadOnlyKey),
 		Path: filepath.Join(
 			GetExpandedArg(v, DBPathKey),
 			constants.NetworkName(networkID),
@@ -972,7 +974,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 
 	aliasMap := make(map[ids.ID][]string)
 	if err := json.Unmarshal(fileBytes, &aliasMap); err != nil {
-		return nil, fmt.Errorf("%w on %s: %s", errUnmarshalling, name, err)
+		return nil, fmt.Errorf("%w on %s: %w", errUnmarshalling, name, err)
 	}
 	return aliasMap, nil
 }
@@ -1123,6 +1125,11 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 				return nil, err
 			}
 
+			if config.ConsensusParameters.Alpha != nil {
+				config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+				config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
+			}
+
 			if err := config.Valid(); err != nil {
 				return nil, err
 			}
@@ -1168,7 +1175,12 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 		config := getDefaultSubnetConfig(v)
 		if err := json.Unmarshal(file, &config); err != nil {
-			return nil, fmt.Errorf("%w: %s", errUnmarshalling, err)
+			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
+		}
+
+		if config.ConsensusParameters.Alpha != nil {
+			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+			config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
 		}
 
 		if err := config.Valid(); err != nil {
@@ -1183,10 +1195,11 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 	return subnets.Config{
-		ConsensusParameters:   getConsensusConfig(v),
-		ValidatorOnly:         false,
-		GossipConfig:          getGossipConfig(v),
-		ProposerMinBlockDelay: proposervm.DefaultMinBlockDelay,
+		ConsensusParameters:         getConsensusConfig(v),
+		ValidatorOnly:               false,
+		GossipConfig:                getGossipConfig(v),
+		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
+		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 	}
 }
 
@@ -1269,6 +1282,8 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 		},
 		Enabled:         true,
 		TraceSampleRate: v.GetFloat64(TracingSampleRateKey),
+		AppName:         constants.AppName,
+		Version:         version.Current.String(),
 	}, nil
 }
 
@@ -1312,9 +1327,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Gossiping
-	nodeConfig.AcceptedFrontierGossipFrequency = v.GetDuration(getRenamedKey(v, ConsensusGossipFrequencyKey, ConsensusAcceptedFrontierGossipFrequencyKey))
-	if nodeConfig.AcceptedFrontierGossipFrequency < 0 {
-		return node.Config{}, fmt.Errorf("%s must be >= 0", ConsensusAcceptedFrontierGossipFrequencyKey)
+	nodeConfig.FrontierPollFrequency = v.GetDuration(ConsensusFrontierPollFrequencyKey)
+	if nodeConfig.FrontierPollFrequency < 0 {
+		return node.Config{}, fmt.Errorf("%s must be >= 0", ConsensusFrontierPollFrequencyKey)
 	}
 
 	// App handling
@@ -1395,7 +1410,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Network Config
-	nodeConfig.NetworkConfig, err = getNetworkConfig(v, nodeConfig.SybilProtectionEnabled, healthCheckAveragerHalflife)
+	nodeConfig.NetworkConfig, err = getNetworkConfig(
+		v,
+		nodeConfig.NetworkID,
+		nodeConfig.SybilProtectionEnabled,
+		healthCheckAveragerHalflife,
+	)
 	if err != nil {
 		return node.Config{}, err
 	}
@@ -1495,6 +1515,8 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	nodeConfig.ChainDataDir = GetExpandedArg(v, ChainDataDirKey)
 
+	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
+
 	nodeConfig.ProvidedFlags = providedFlags(v)
 	return nodeConfig, nil
 }
@@ -1508,13 +1530,4 @@ func providedFlags(v *viper.Viper) map[string]interface{} {
 		}
 	}
 	return customSettings
-}
-
-// getRenamedKey returns the new key if it is set, otherwise it returns the deprecated key.
-func getRenamedKey(v *viper.Viper, deprecatedKey string, newKey string) string {
-	if v.IsSet(newKey) {
-		return newKey
-	}
-
-	return deprecatedKey
 }

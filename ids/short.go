@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -14,6 +14,8 @@ import (
 	"github.com/luxdefi/node/utils/hashing"
 )
 
+const ShortIDLen = 20
+
 // ShortEmpty is a useful all zero value
 var (
 	ShortEmpty = ShortID{}
@@ -22,7 +24,7 @@ var (
 )
 
 // ShortID wraps a 20 byte hash as an identifier
-type ShortID [20]byte
+type ShortID [ShortIDLen]byte
 
 // ToShortID attempt to convert a byte slice into an id
 func ToShortID(bytes []byte) (ShortID, error) {

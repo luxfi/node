@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -6,14 +6,12 @@ package proposervm
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/manager"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
@@ -137,7 +135,7 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 		},
 		ParentV:    oracleCoreBlk.opts[0].ID(),
 		BytesV:     []byte{4},
-		TimestampV: oracleCoreBlk.opts[0].Timestamp().Add(proposer.MaxDelay),
+		TimestampV: oracleCoreBlk.opts[0].Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return childCoreBlk, nil
@@ -665,14 +663,15 @@ func TestOptionTimestampValidity(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestCert.PrivateKey.(crypto.Signer),
-		pTestCert.Leaf,
+		DefaultNumHistoricalBlocks,
+		pTestSigner,
+		pTestCert,
 	)
 
 	coreVM.InitializeF = func(
 		context.Context,
 		*snow.Context,
-		manager.Manager,
+		database.Database,
 		[]byte,
 		[]byte,
 		[]byte,

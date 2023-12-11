@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -25,9 +25,9 @@ var (
 )
 
 type InitialState struct {
-	FxIndex uint32         `serialize:"true" json:"fxIndex"`
+	FxIndex uint32         `serialize:"true"  json:"fxIndex"`
 	FxID    ids.ID         `serialize:"false" json:"fxID"`
-	Outs    []verify.State `serialize:"true" json:"outputs"`
+	Outs    []verify.State `serialize:"true"  json:"outputs"`
 }
 
 func (is *InitialState) InitCtx(ctx *snow.Context) {

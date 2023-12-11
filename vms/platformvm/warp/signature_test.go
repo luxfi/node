@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -9,9 +9,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/validators"
@@ -56,7 +56,7 @@ func newTestValidator() *testValidator {
 		sk:     sk,
 		vdr: &Validator{
 			PublicKey:      pk,
-			PublicKeyBytes: pk.Serialize(),
+			PublicKeyBytes: bls.SerializePublicKey(pk),
 			Weight:         3,
 			NodeIDs:        []ids.NodeID{nodeID},
 		},
@@ -819,7 +819,7 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 				return msg
 			},
-			err: errWrongNetworkID,
+			err: ErrWrongNetworkID,
 		},
 	}
 
@@ -827,7 +827,6 @@ func TestSignatureVerification(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			msg := tt.msgF(require)
 			pChainState := tt.stateF(ctrl)

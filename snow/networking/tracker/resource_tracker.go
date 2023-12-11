@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracker
@@ -11,10 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/linkedhashmap"
 	"github.com/luxdefi/node/utils/math/meter"
 	"github.com/luxdefi/node/utils/resource"
-	"github.com/luxdefi/node/utils/wrappers"
 )
 
 const epsilon = 1e-9
@@ -321,13 +321,12 @@ func newCPUTrackerMetrics(namespace string, reg prometheus.Registerer) (*tracker
 			Help:      "Available space remaining (bytes) on the database volume",
 		}),
 	}
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		reg.Register(m.processingTimeMetric),
 		reg.Register(m.cpuMetric),
 		reg.Register(m.diskReadsMetric),
 		reg.Register(m.diskWritesMetric),
 		reg.Register(m.diskSpaceAvailable),
 	)
-	return m, errs.Err
+	return m, err
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/utils"
 )
 
 const codecVersion = 0
@@ -20,12 +20,11 @@ func init() {
 	c = codec.NewManager(math.MaxInt)
 	lc := linearcodec.NewCustomMaxLength(math.MaxInt32)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		lc.RegisterType(&BitSetSignature{}),
 		c.RegisterCodec(codecVersion, lc),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 }

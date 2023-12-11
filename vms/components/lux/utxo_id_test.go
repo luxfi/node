@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -57,7 +57,7 @@ func TestUTXOIDLess(t *testing.T) {
 		id2      UTXOID
 		expected bool
 	}
-	tests := []test{
+	tests := []*test{
 		{
 			name:     "same",
 			id1:      UTXOID{},

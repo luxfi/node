@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,7 +13,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/vms/avm/blocks/executor"
+	"github.com/luxdefi/node/vms/avm/block/executor"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/avm/txs/mempool"
 	"github.com/luxdefi/node/vms/components/message"
@@ -180,8 +180,6 @@ func (n *network) issueTx(tx *txs.Tx) error {
 }
 
 func (n *network) gossipTx(ctx context.Context, txID ids.ID, msgBytes []byte) {
-	// This lock is just to ensure there isn't racy behavior between checking if
-	// the tx was gossiped and marking the tx as gossiped.
 	n.recentTxsLock.Lock()
 	_, has := n.recentTxs.Get(txID)
 	n.recentTxs.Put(txID, struct{}{})

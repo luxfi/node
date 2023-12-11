@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -17,8 +17,7 @@ func TestBinarySnowflake(t *testing.T) {
 
 	beta := 2
 
-	sf := binarySnowflake{}
-	sf.Initialize(beta, red)
+	sf := newBinarySnowflake(beta, red)
 
 	require.Equal(red, sf.Preference())
 	require.False(sf.Finalized())
@@ -38,8 +37,15 @@ func TestBinarySnowflake(t *testing.T) {
 	require.Equal(blue, sf.Preference())
 	require.False(sf.Finalized())
 
-	sf.RecordSuccessfulPoll(blue)
+	sf.RecordPollPreference(red)
+	require.Equal(red, sf.Preference())
+	require.False(sf.Finalized())
 
+	sf.RecordSuccessfulPoll(blue)
+	require.Equal(blue, sf.Preference())
+	require.False(sf.Finalized())
+
+	sf.RecordSuccessfulPoll(blue)
 	require.Equal(blue, sf.Preference())
 	require.True(sf.Finalized())
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 
 	stdjson "encoding/json"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/luxdefi/node/cache"
 	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/manager"
 	"github.com/luxdefi/node/database/versiondb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/pubsub"
@@ -28,18 +28,17 @@ import (
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/snow/engine/lux/vertex"
 	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/utils/linkedhashmap"
 	"github.com/luxdefi/node/utils/set"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
 	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/avm/blocks"
+	"github.com/luxdefi/node/vms/avm/block"
 	"github.com/luxdefi/node/vms/avm/config"
 	"github.com/luxdefi/node/vms/avm/metrics"
 	"github.com/luxdefi/node/vms/avm/network"
-	"github.com/luxdefi/node/vms/avm/states"
+	"github.com/luxdefi/node/vms/avm/state"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/avm/txs/mempool"
 	"github.com/luxdefi/node/vms/avm/utxo"
@@ -48,8 +47,8 @@ import (
 	"github.com/luxdefi/node/vms/components/keystore"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 
-	blockbuilder "github.com/luxdefi/node/vms/avm/blocks/builder"
-	blockexecutor "github.com/luxdefi/node/vms/avm/blocks/executor"
+	blockbuilder "github.com/luxdefi/node/vms/avm/block/builder"
+	blockexecutor "github.com/luxdefi/node/vms/avm/block/executor"
 	extensions "github.com/luxdefi/node/vms/avm/fxs"
 	txexecutor "github.com/luxdefi/node/vms/avm/txs/executor"
 )
@@ -63,7 +62,6 @@ var (
 	errBootstrapping             = errors.New("chain is currently bootstrapping")
 
 	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
-	_ block.HeightIndexedChainVM      = (*VM)(nil)
 )
 
 type VM struct {
@@ -86,14 +84,14 @@ type VM struct {
 
 	registerer prometheus.Registerer
 
-	parser blocks.Parser
+	parser block.Parser
 
 	pubsub *pubsub.Server
 
 	appSender common.AppSender
 
 	// State management
-	state states.State
+	state state.State
 
 	// Set to true once this VM is marked as `Bootstrapped` by the engine
 	bootstrapped bool
@@ -145,7 +143,7 @@ type Config struct {
 func (vm *VM) Initialize(
 	_ context.Context,
 	ctx *snow.Context,
-	dbManager manager.Manager,
+	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
@@ -182,7 +180,6 @@ func (vm *VM) Initialize(
 	vm.AddressManager = lux.NewAddressManager(ctx)
 	vm.Aliaser = ids.NewAliaser()
 
-	db := dbManager.Current().Database
 	vm.ctx = ctx
 	vm.appSender = appSender
 	vm.baseDB = db
@@ -209,7 +206,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.typeToFxIndex = map[reflect.Type]int{}
-	vm.parser, err = blocks.NewCustomParser(
+	vm.parser, err = block.NewCustomParser(
 		vm.typeToFxIndex,
 		&vm.clock,
 		ctx.Log,
@@ -223,7 +220,7 @@ func (vm *VM) Initialize(
 	vm.AtomicUTXOManager = lux.NewAtomicUTXOManager(ctx.SharedMemory, codec)
 	vm.Spender = utxo.NewSpender(&vm.clock, codec)
 
-	state, err := states.New(
+	state, err := state.New(
 		vm.db,
 		vm.parser,
 		vm.registerer,
@@ -309,19 +306,17 @@ func (vm *VM) Shutdown(context.Context) error {
 		return nil
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		vm.state.Close(),
 		vm.baseDB.Close(),
 	)
-	return errs.Err
 }
 
 func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
 }
 
-func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	codec := json.NewCodec()
 
 	rpcServer := rpc.NewServer()
@@ -342,24 +337,22 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 	// name this service "wallet"
 	err := walletServer.RegisterService(&vm.walletService, "wallet")
 
-	return map[string]*common.HTTPHandler{
-		"":        {Handler: rpcServer},
-		"/wallet": {Handler: walletServer},
-		"/events": {LockOptions: common.NoLock, Handler: vm.pubsub},
+	return map[string]http.Handler{
+		"":        rpcServer,
+		"/wallet": walletServer,
+		"/events": vm.pubsub,
 	}, err
 }
 
-func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
-	newServer := rpc.NewServer()
+func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
+	server := rpc.NewServer()
 	codec := json.NewCodec()
-	newServer.RegisterCodec(codec, "application/json")
-	newServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-
-	// name this service "avm"
+	server.RegisterCodec(codec, "application/json")
+	server.RegisterCodec(codec, "application/json;charset=UTF-8")
 	staticService := CreateStaticService()
-	return map[string]*common.HTTPHandler{
-		"": {LockOptions: common.WriteLock, Handler: newServer},
-	}, newServer.RegisterService(staticService, "avm")
+	return map[string]http.Handler{
+		"": server,
+	}, server.RegisterService(staticService, "avm")
 }
 
 /*
@@ -447,10 +440,12 @@ func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- 
 	go func() {
 		err := vm.state.Prune(&vm.ctx.Lock, vm.ctx.Log)
 		if err != nil {
-			vm.ctx.Log.Error("state pruning failed",
+			vm.ctx.Log.Warn("state pruning failed",
 				zap.Error(err),
 			)
+			return
 		}
+		vm.ctx.Log.Info("state pruning finished")
 	}()
 
 	return nil

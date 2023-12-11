@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracker
@@ -20,11 +20,13 @@ func TestPeers(t *testing.T) {
 
 	p := NewPeers()
 
+	require.Zero(p.TotalWeight())
 	require.Zero(p.ConnectedWeight())
 	require.Empty(p.PreferredPeers())
 
 	p.OnValidatorAdded(nodeID, nil, ids.Empty, 5)
 	require.Zero(p.ConnectedWeight())
+	require.Equal(uint64(5), p.TotalWeight())
 	require.Empty(p.PreferredPeers())
 
 	require.NoError(p.Connected(context.Background(), nodeID, version.CurrentApp))
@@ -33,17 +35,21 @@ func TestPeers(t *testing.T) {
 
 	p.OnValidatorWeightChanged(nodeID, 5, 10)
 	require.Equal(uint64(10), p.ConnectedWeight())
+	require.Equal(uint64(10), p.TotalWeight())
 	require.Contains(p.PreferredPeers(), nodeID)
 
 	p.OnValidatorRemoved(nodeID, 10)
 	require.Zero(p.ConnectedWeight())
+	require.Zero(p.TotalWeight())
 	require.Contains(p.PreferredPeers(), nodeID)
 
 	p.OnValidatorAdded(nodeID, nil, ids.Empty, 5)
 	require.Equal(uint64(5), p.ConnectedWeight())
+	require.Equal(uint64(5), p.TotalWeight())
 	require.Contains(p.PreferredPeers(), nodeID)
 
 	require.NoError(p.Disconnected(context.Background(), nodeID))
 	require.Zero(p.ConnectedWeight())
+	require.Equal(uint64(5), p.TotalWeight())
 	require.Empty(p.PreferredPeers())
 }

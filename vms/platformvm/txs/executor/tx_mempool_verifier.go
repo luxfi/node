@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -74,6 +74,14 @@ func (v *MempoolTxVerifier) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 	return v.standardTx(tx)
 }
 
+func (v *MempoolTxVerifier) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	baseState, err := v.standardBaseState()
 	if err != nil {
@@ -94,9 +102,6 @@ func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	return err
 }
 
-// Upon Banff activation, txs are not verified against current chain time
-// but against the block timestamp. [baseTime] calculates
-// the right timestamp to be used to mempool tx verification
 func (v *MempoolTxVerifier) standardBaseState() (state.Diff, error) {
 	state, err := state.NewDiff(v.ParentID, v.StateVersions)
 	if err != nil {
@@ -108,14 +113,6 @@ func (v *MempoolTxVerifier) standardBaseState() (state.Diff, error) {
 		return nil, err
 	}
 
-	if !v.Backend.Config.IsBanffActivated(nextBlkTime) {
-		// next tx would be included into an Apricot block
-		// so we verify it against current chain state
-		return state, nil
-	}
-
-	// next tx would be included into a Banff block
-	// so we verify it against duly updated chain state
 	changes, err := AdvanceTimeTo(v.Backend, state, nextBlkTime)
 	if err != nil {
 		return nil, err

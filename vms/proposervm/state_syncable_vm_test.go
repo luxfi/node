@@ -1,25 +1,25 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
 
 import (
 	"context"
-	"crypto"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/consensus/snowman"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/version"
+	"github.com/luxdefi/node/vms/proposervm/summary"
 
 	statelessblock "github.com/luxdefi/node/vms/proposervm/block"
 )
@@ -32,9 +32,6 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 			TestVM: common.TestVM{
 				T: t,
 			},
-		},
-		TestHeightIndexedVM: &block.TestHeightIndexedVM{
-			T: t,
 		},
 		TestStateSyncableVM: &block.TestStateSyncableVM{
 			T: t,
@@ -54,7 +51,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		HeightV: 0,
 		BytesV:  []byte("genesis state"),
 	}
-	innerVM.InitializeF = func(context.Context, *snow.Context, manager.Manager,
+	innerVM.InitializeF = func(context.Context, *snow.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
@@ -70,26 +67,24 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		return innerGenesisBlk, nil
 	}
 
-	// createVM
-	dbManager := manager.NewMemDB(version.Semantic1_0_0)
-	dbManager = dbManager.NewPrefixDBManager([]byte{})
-
+	// create the VM
 	vm := New(
 		innerVM,
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestCert.PrivateKey.(crypto.Signer),
-		pTestCert.Leaf,
+		DefaultNumHistoricalBlocks,
+		pTestSigner,
+		pTestCert,
 	)
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
-		dbManager,
+		prefixdb.New([]byte{}, memdb.New()),
 		innerGenesisBlk.Bytes(),
 		nil,
 		nil,
@@ -205,7 +200,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 			status:   choices.Accepted,
 		},
 	}
-	require.NoError(vm.storePostForkBlock(proBlk))
+	require.NoError(vm.acceptPostForkBlock(proBlk))
 
 	summary, err = vm.GetOngoingSyncStateSummary(context.Background())
 	require.NoError(err)
@@ -290,7 +285,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 			status:   choices.Accepted,
 		},
 	}
-	require.NoError(vm.storePostForkBlock(proBlk))
+	require.NoError(vm.acceptPostForkBlock(proBlk))
 
 	summary, err = vm.GetLastStateSummary(context.Background())
 	require.NoError(err)
@@ -378,7 +373,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 			status:   choices.Accepted,
 		},
 	}
-	require.NoError(vm.storePostForkBlock(proBlk))
+	require.NoError(vm.acceptPostForkBlock(proBlk))
 
 	summary, err = vm.GetStateSummary(context.Background(), reqHeight)
 	require.NoError(err)
@@ -451,7 +446,7 @@ func TestParseStateSummary(t *testing.T) {
 			status:   choices.Accepted,
 		},
 	}
-	require.NoError(vm.storePostForkBlock(proBlk))
+	require.NoError(vm.acceptPostForkBlock(proBlk))
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 	summary, err = vm.GetStateSummary(context.Background(), reqHeight)
 	require.NoError(err)
@@ -487,14 +482,6 @@ func TestStateSummaryAccept(t *testing.T) {
 		TimestampV: vm.Time(),
 		HeightV:    innerSummary.Height(),
 	}
-	innerVM.GetStateSummaryF = func(_ context.Context, h uint64) (block.StateSummary, error) {
-		require.Equal(reqHeight, h)
-		return innerSummary, nil
-	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
-		require.Equal(innerBlk.Bytes(), b)
-		return innerBlk, nil
-	}
 
 	slb, err := statelessblock.Build(
 		vm.preferred,
@@ -506,17 +493,20 @@ func TestStateSummaryAccept(t *testing.T) {
 		vm.stakingLeafSigner,
 	)
 	require.NoError(err)
-	proBlk := &postForkBlock{
-		SignedBlock: slb,
-		postForkCommonComponents: postForkCommonComponents{
-			vm:       vm,
-			innerBlk: innerBlk,
-			status:   choices.Accepted,
-		},
-	}
-	require.NoError(vm.storePostForkBlock(proBlk))
 
-	summary, err := vm.GetStateSummary(context.Background(), reqHeight)
+	statelessSummary, err := summary.Build(innerSummary.Height()-1, slb.Bytes(), innerSummary.Bytes())
+	require.NoError(err)
+
+	innerVM.ParseStateSummaryF = func(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+		require.Equal(innerSummary.BytesV, summaryBytes)
+		return innerSummary, nil
+	}
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+		require.Equal(innerBlk.Bytes(), b)
+		return innerBlk, nil
+	}
+
+	summary, err := vm.ParseStateSummary(context.Background(), statelessSummary.Bytes())
 	require.NoError(err)
 
 	// test Accept accepted
@@ -591,7 +581,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 			status:   choices.Accepted,
 		},
 	}
-	require.NoError(vm.storePostForkBlock(proBlk))
+	require.NoError(vm.acceptPostForkBlock(proBlk))
 
 	summary, err := vm.GetStateSummary(context.Background(), reqHeight)
 	require.NoError(err)

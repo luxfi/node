@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ips
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -61,7 +60,7 @@ func TestIPPortEqual(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			require := require.New(t)
 
 			ipPort := IPDesc{}

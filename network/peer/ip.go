@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -6,8 +6,8 @@ package peer
 import (
 	"crypto"
 	"crypto/rand"
-	"crypto/x509"
 
+	"github.com/luxdefi/node/staking"
 	"github.com/luxdefi/node/utils/hashing"
 	"github.com/luxdefi/node/utils/ips"
 	"github.com/luxdefi/node/utils/wrappers"
@@ -49,9 +49,9 @@ type SignedIP struct {
 	Signature []byte
 }
 
-func (ip *SignedIP) Verify(cert *x509.Certificate) error {
-	return cert.CheckSignature(
-		cert.SignatureAlgorithm,
+func (ip *SignedIP) Verify(cert *staking.Certificate) error {
+	return staking.CheckSignature(
+		cert,
 		ip.UnsignedIP.bytes(),
 		ip.Signature,
 	)

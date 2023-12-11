@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/utils/set"
 )
 
 // Const variables to be exported
@@ -86,6 +87,7 @@ var (
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
+	ProductionNetworkIDs = set.Of(MainnetID, FujiID)
 
 	ValidNetworkPrefix = "network-"
 

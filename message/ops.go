@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -185,19 +185,19 @@ var (
 		AppRequestFailedOp:              AppResponseOp,
 		CrossChainAppRequestFailedOp:    CrossChainAppResponseOp,
 	}
-	UnrequestedOps = set.Set[Op]{
-		GetAcceptedFrontierOp:     {},
-		GetAcceptedOp:             {},
-		GetAncestorsOp:            {},
-		GetOp:                     {},
-		PushQueryOp:               {},
-		PullQueryOp:               {},
-		AppRequestOp:              {},
-		AppGossipOp:               {},
-		CrossChainAppRequestOp:    {},
-		GetStateSummaryFrontierOp: {},
-		GetAcceptedStateSummaryOp: {},
-	}
+	UnrequestedOps = set.Of(
+		GetAcceptedFrontierOp,
+		GetAcceptedOp,
+		GetAncestorsOp,
+		GetOp,
+		PushQueryOp,
+		PullQueryOp,
+		AppRequestOp,
+		AppGossipOp,
+		CrossChainAppRequestOp,
+		GetStateSummaryFrontierOp,
+		GetAcceptedStateSummaryOp,
+	)
 
 	errUnknownMessageType = errors.New("unknown message type")
 )

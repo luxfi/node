@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -61,13 +61,25 @@ func TestInterface(t *testing.T) {
 	}
 }
 
-func FuzzInterface(f *testing.F) {
-	for _, test := range database.FuzzTests {
-		db := setupDB(f)
-		test(f, db.client)
+func FuzzKeyValue(f *testing.F) {
+	db := setupDB(f)
+	database.FuzzKeyValue(f, db.client)
 
-		db.closeFn()
-	}
+	db.closeFn()
+}
+
+func FuzzNewIteratorWithPrefix(f *testing.F) {
+	db := setupDB(f)
+	database.FuzzNewIteratorWithPrefix(f, db.client)
+
+	db.closeFn()
+}
+
+func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
+	db := setupDB(f)
+	database.FuzzNewIteratorWithStartAndPrefix(f, db.client)
+
+	db.closeFn()
 }
 
 func BenchmarkInterface(b *testing.B) {

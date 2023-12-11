@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/vms/components/verify"
 	"github.com/luxdefi/node/vms/secp256k1fx"
 )
@@ -34,15 +34,13 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log.Debug("initializing nft fx")
 
 	c := fx.VM.CodecRegistry()
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		c.RegisterType(&MintOutput{}),
 		c.RegisterType(&TransferOutput{}),
 		c.RegisterType(&MintOperation{}),
 		c.RegisterType(&TransferOperation{}),
 		c.RegisterType(&Credential{}),
 	)
-	return errs.Err
 }
 
 func (fx *Fx) VerifyOperation(txIntf, opIntf, credIntf interface{}, utxosIntf []interface{}) error {

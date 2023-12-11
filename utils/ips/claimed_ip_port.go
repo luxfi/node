@@ -1,12 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ips
 
 import (
-	"crypto/x509"
-
 	"github.com/luxdefi/node/ids"
+	"github.com/luxdefi/node/staking"
 )
 
 // Can't import these from wrappers package due to circular import.
@@ -23,7 +22,7 @@ const (
 // given time.
 type ClaimedIPPort struct {
 	// The peer's certificate.
-	Cert *x509.Certificate
+	Cert *staking.Certificate
 	// The peer's claimed IP and port.
 	IPPort IPPort
 	// The time the peer claimed to own this IP and port.

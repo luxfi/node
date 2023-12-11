@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package cb58
@@ -41,7 +41,7 @@ func Encode(bytes []byte) (string, error) {
 func Decode(str string) ([]byte, error) {
 	decodedBytes, err := base58.Decode(str)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrBase58Decoding, err)
+		return nil, fmt.Errorf("%w: %w", ErrBase58Decoding, err)
 	}
 	if len(decodedBytes) < checksumLen {
 		return nil, ErrMissingChecksum

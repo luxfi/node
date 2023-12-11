@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -13,12 +13,11 @@ import (
 	"github.com/luxdefi/node/chains/atomic"
 	"github.com/luxdefi/node/codec"
 	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database/memdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/engine/common"
 	"github.com/luxdefi/node/utils/constants"
 	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/version"
 	"github.com/luxdefi/node/vms/avm/config"
 	"github.com/luxdefi/node/vms/avm/fxs"
 	"github.com/luxdefi/node/vms/avm/txs"
@@ -42,14 +41,14 @@ func TestInvalidGenesis(t *testing.T) {
 
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                                     // context
-		manager.NewMemDB(version.Semantic1_0_0), // dbManager
-		nil,                                     // genesisState
-		nil,                                     // upgradeBytes
-		nil,                                     // configBytes
-		make(chan common.Message, 1),            // engineMessenger
-		nil,                                     // fxs
-		nil,                                     // AppSender
+		ctx,                          // context
+		memdb.New(),                  // database
+		nil,                          // genesisState
+		nil,                          // upgradeBytes
+		nil,                          // configBytes
+		make(chan common.Message, 1), // engineMessenger
+		nil,                          // fxs
+		nil,                          // AppSender
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 }
@@ -68,12 +67,12 @@ func TestInvalidFx(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                                     // context
-		manager.NewMemDB(version.Semantic1_0_0), // dbManager
-		genesisBytes,                            // genesisState
-		nil,                                     // upgradeBytes
-		nil,                                     // configBytes
-		make(chan common.Message, 1),            // engineMessenger
+		ctx,                          // context
+		memdb.New(),                  // database
+		genesisBytes,                 // genesisState
+		nil,                          // upgradeBytes
+		nil,                          // configBytes
+		make(chan common.Message, 1), // engineMessenger
 		[]*common.Fx{ // fxs
 			nil,
 		},
@@ -96,12 +95,12 @@ func TestFxInitializationFailure(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                                     // context
-		manager.NewMemDB(version.Semantic1_0_0), // dbManager
-		genesisBytes,                            // genesisState
-		nil,                                     // upgradeBytes
-		nil,                                     // configBytes
-		make(chan common.Message, 1),            // engineMessenger
+		ctx,                          // context
+		memdb.New(),                  // database
+		genesisBytes,                 // genesisState
+		nil,                          // upgradeBytes
+		nil,                          // configBytes
+		make(chan common.Message, 1), // engineMessenger
 		[]*common.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
@@ -218,7 +217,9 @@ func TestIssueNFT(t *testing.T) {
 			}},
 		},
 		Creds: []*fxs.FxCredential{
-			{Verifiable: &nftfx.Credential{}},
+			{
+				Credential: &nftfx.Credential{},
+			},
 		},
 	}
 	require.NoError(env.vm.parser.InitializeTx(transferNFTTx))

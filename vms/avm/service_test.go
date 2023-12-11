@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -13,11 +13,11 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil/bech32"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/api"
 	"github.com/luxdefi/node/chains/atomic"
@@ -33,10 +33,10 @@ import (
 	"github.com/luxdefi/node/utils/formatting/address"
 	"github.com/luxdefi/node/utils/json"
 	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/avm/blocks"
-	"github.com/luxdefi/node/vms/avm/blocks/executor"
+	"github.com/luxdefi/node/vms/avm/block"
+	"github.com/luxdefi/node/vms/avm/block/executor"
 	"github.com/luxdefi/node/vms/avm/config"
-	"github.com/luxdefi/node/vms/avm/states"
+	"github.com/luxdefi/node/vms/avm/state"
 	"github.com/luxdefi/node/vms/avm/txs"
 	"github.com/luxdefi/node/vms/components/lux"
 	"github.com/luxdefi/node/vms/components/index"
@@ -50,7 +50,10 @@ func TestServiceIssueTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -73,7 +76,10 @@ func TestServiceGetTxStatus(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -93,7 +99,11 @@ func TestServiceGetTxStatus(t *testing.T) {
 	require.NoError(env.service.GetTxStatus(nil, statusArgs, statusReply))
 	require.Equal(choices.Unknown, statusReply.Status)
 
+	env.vm.ctx.Lock.Lock()
+
 	issueAndAccept(require, env.vm, env.issuer, newTx)
+
+	env.vm.ctx.Lock.Unlock()
 
 	statusReply = &GetTxStatusReply{}
 	require.NoError(env.service.GetTxStatus(nil, statusArgs, statusReply))
@@ -106,6 +116,7 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 
 	env := setup(t, &envConfig{})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -135,6 +146,8 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	env.vm.state.AddUTXO(twoOfTwoUTXO)
 	require.NoError(env.vm.state.Commit())
 
+	env.vm.ctx.Lock.Unlock()
+
 	// Check the balance with IncludePartial set to true
 	balanceArgs := &GetBalanceArgs{
 		Address:        addrStr,
@@ -158,6 +171,8 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	require.Zero(balanceReply.Balance)
 	require.Empty(balanceReply.UTXOIDs)
 
+	env.vm.ctx.Lock.Lock()
+
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
 	oneOfTwoUTXO := &lux.UTXO{
@@ -177,6 +192,8 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	// Insert the UTXO
 	env.vm.state.AddUTXO(oneOfTwoUTXO)
 	require.NoError(env.vm.state.Commit())
+
+	env.vm.ctx.Lock.Unlock()
 
 	// Check the balance with IncludePartial set to true
 	balanceArgs = &GetBalanceArgs{
@@ -201,6 +218,8 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	require.Zero(balanceReply.Balance)
 	require.Empty(balanceReply.UTXOIDs)
 
+	env.vm.ctx.Lock.Lock()
+
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
 	now := env.vm.clock.Time()
@@ -222,6 +241,8 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	// Insert the UTXO
 	env.vm.state.AddUTXO(futureUTXO)
 	require.NoError(env.vm.state.Commit())
+
+	env.vm.ctx.Lock.Unlock()
 
 	// Check the balance with IncludePartial set to true
 	balanceArgs = &GetBalanceArgs{
@@ -254,6 +275,7 @@ func TestServiceGetTxs(t *testing.T) {
 	env.vm.addressTxsIndexer, err = index.NewIndexer(env.vm.db, env.vm.ctx.Log, "", prometheus.NewRegistry(), false)
 	require.NoError(err)
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -265,6 +287,8 @@ func TestServiceGetTxs(t *testing.T) {
 
 	testTxCount := 25
 	testTxs := initTestTxIndex(t, env.vm.db, addr, assetID, testTxCount)
+
+	env.vm.ctx.Lock.Unlock()
 
 	// get the first page
 	getTxsArgs := &GetAddressTxsArgs{
@@ -290,6 +314,7 @@ func TestServiceGetAllBalances(t *testing.T) {
 
 	env := setup(t, &envConfig{})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -318,6 +343,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	env.vm.state.AddUTXO(twoOfTwoUTXO)
 	require.NoError(env.vm.state.Commit())
 
+	env.vm.ctx.Lock.Unlock()
+
 	// Check the balance with IncludePartial set to true
 	balanceArgs := &GetAllBalancesArgs{
 		JSONAddress:    api.JSONAddress{Address: addrStr},
@@ -337,6 +364,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	reply = &GetAllBalancesReply{}
 	require.NoError(env.service.GetAllBalances(nil, balanceArgs, reply))
 	require.Empty(reply.Balances)
+
+	env.vm.ctx.Lock.Lock()
 
 	// A UTXO with a 1 out of 2 multisig
 	// where one of the addresses is [addr]
@@ -358,6 +387,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	env.vm.state.AddUTXO(oneOfTwoUTXO)
 	require.NoError(env.vm.state.Commit())
 
+	env.vm.ctx.Lock.Unlock()
+
 	// Check the balance with IncludePartial set to true
 	balanceArgs = &GetAllBalancesArgs{
 		JSONAddress:    api.JSONAddress{Address: addrStr},
@@ -378,6 +409,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	require.NoError(env.service.GetAllBalances(nil, balanceArgs, reply))
 	// The balance should not include the UTXO since it is only partly owned by [addr]
 	require.Empty(reply.Balances)
+
+	env.vm.ctx.Lock.Lock()
 
 	// A UTXO with a 1 out of 1 multisig
 	// but with a locktime in the future
@@ -401,6 +434,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	env.vm.state.AddUTXO(futureUTXO)
 	require.NoError(env.vm.state.Commit())
 
+	env.vm.ctx.Lock.Unlock()
+
 	// Check the balance with IncludePartial set to true
 	balanceArgs = &GetAllBalancesArgs{
 		JSONAddress:    api.JSONAddress{Address: addrStr},
@@ -422,6 +457,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	// The balance should not include the UTXO since it is only partly owned by [addr]
 	require.Empty(reply.Balances)
 
+	env.vm.ctx.Lock.Lock()
+
 	// A UTXO for a different asset
 	otherAssetID := ids.GenerateTestID()
 	otherAssetUTXO := &lux.UTXO{
@@ -441,6 +478,8 @@ func TestServiceGetAllBalances(t *testing.T) {
 	// Insert the UTXO
 	env.vm.state.AddUTXO(otherAssetUTXO)
 	require.NoError(env.vm.state.Commit())
+
+	env.vm.ctx.Lock.Unlock()
 
 	// Check the balance with IncludePartial set to true
 	balanceArgs = &GetAllBalancesArgs{
@@ -472,7 +511,10 @@ func TestServiceGetTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -481,9 +523,14 @@ func TestServiceGetTx(t *testing.T) {
 
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
-		TxID: txID,
+		TxID:     txID,
+		Encoding: formatting.Hex,
 	}, &reply))
-	txBytes, err := formatting.Decode(reply.Encoding, reply.Tx.(string))
+
+	var txStr string
+	require.NoError(stdjson.Unmarshal(reply.Tx, &txStr))
+
+	txBytes, err := formatting.Decode(reply.Encoding, txStr)
 	require.NoError(err)
 	require.Equal(env.genesisTx.Bytes(), txBytes)
 }
@@ -493,12 +540,15 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 
 	env := setup(t, &envConfig{})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
 
 	newTx := newLuxBaseTxWithOutputs(t, env.genesisBytes, env.vm)
 	issueAndAccept(require, env.vm, env.issuer, newTx)
+
+	env.vm.ctx.Lock.Unlock()
 
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
@@ -507,9 +557,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 	require.Contains(jsonString, `"memo":"0x0102030405060708"`)
 	require.Contains(jsonString, `"inputs":[{"txID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","outputIndex":2,"assetID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","fxID":"spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ","input":{"amount":50000,"signatureIndices":[0]}}]`)
 	require.Contains(jsonString, `"outputs":[{"assetID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","fxID":"spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ","output":{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"],"amount":49000,"locktime":0,"threshold":1}}]`)
@@ -520,12 +568,15 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 
 	env := setup(t, &envConfig{})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
 
 	newTx := newLuxExportTxWithOutputs(t, env.genesisBytes, env.vm)
 	issueAndAccept(require, env.vm, env.issuer, newTx)
+
+	env.vm.ctx.Lock.Unlock()
 
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
@@ -534,9 +585,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 	require.Contains(jsonString, `"inputs":[{"txID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","outputIndex":2,"assetID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","fxID":"spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ","input":{"amount":50000,"signatureIndices":[0]}}]`)
 	require.Contains(jsonString, `"exportedOutputs":[{"assetID":"2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ","fxID":"spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ","output":{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"],"amount":49000,"locktime":0,"threshold":1}}]}`)
 }
@@ -552,12 +601,15 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
 
 	createAssetTx := newLuxCreateAssetTxWithOutputs(t, env.vm)
 	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+
+	env.vm.ctx.Lock.Unlock()
 
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
@@ -566,9 +618,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// contains the address in the right format
 	require.Contains(jsonString, `"outputs":[{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"],"groupID":1,"locktime":0,"threshold":1},{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"],"groupID":2,"locktime":0,"threshold":1}]}`)
@@ -586,6 +636,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -598,6 +649,8 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	require.NoError(mintNFTTx.SignNFTFx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintNFTTx.ID(),
@@ -605,9 +658,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 	// assert memo and payload are in hex
 	require.Contains(jsonString, `"memo":"0x"`)
 	require.Contains(jsonString, `"payload":"0x68656c6c6f"`)
@@ -629,6 +680,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -644,6 +696,8 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	require.NoError(mintNFTTx.SignNFTFx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}, {key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintNFTTx.ID(),
@@ -651,9 +705,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// contains the address in the right format
 	require.Contains(jsonString, `"outputs":[{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"]`)
@@ -674,6 +726,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -686,6 +739,8 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	require.NoError(mintSecpOpTx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintSecpOpTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintSecpOpTx.ID(),
@@ -693,9 +748,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// ensure memo is in hex
 	require.Contains(jsonString, `"memo":"0x"`)
@@ -719,6 +772,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -734,6 +788,8 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	require.NoError(mintSecpOpTx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}, {key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintSecpOpTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintSecpOpTx.ID(),
@@ -741,9 +797,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// contains the address in the right format
 	require.Contains(jsonString, `"mintOutput":{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"]`)
@@ -765,6 +819,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -777,6 +832,8 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	require.NoError(mintPropertyFxOpTx.SignPropertyFx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintPropertyFxOpTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintPropertyFxOpTx.ID(),
@@ -784,9 +841,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// ensure memo is in hex
 	require.Contains(jsonString, `"memo":"0x"`)
@@ -809,6 +864,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		}},
 	})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -824,6 +880,8 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	require.NoError(mintPropertyFxOpTx.SignPropertyFx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}, {key}}))
 	issueAndAccept(require, env.vm, env.issuer, mintPropertyFxOpTx)
 
+	env.vm.ctx.Lock.Unlock()
+
 	reply := api.GetTxReply{}
 	require.NoError(env.service.GetTx(nil, &api.GetTxArgs{
 		TxID:     mintPropertyFxOpTx.ID(),
@@ -831,9 +889,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 	}, &reply))
 
 	require.Equal(reply.Encoding, formatting.JSON)
-	jsonTxBytes, err := stdjson.Marshal(reply.Tx)
-	require.NoError(err)
-	jsonString := string(jsonTxBytes)
+	jsonString := string(reply.Tx)
 
 	// contains the address in the right format
 	require.Contains(jsonString, `"mintOutput":{"addresses":["X-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e"]`)
@@ -1087,7 +1143,10 @@ func TestServiceGetNilTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1101,7 +1160,10 @@ func TestServiceGetUnknownTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1114,6 +1176,7 @@ func TestServiceGetUnknownTx(t *testing.T) {
 func TestServiceGetUTXOs(t *testing.T) {
 	env := setup(t, &envConfig{})
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(t, env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1187,6 +1250,8 @@ func TestServiceGetUTXOs(t *testing.T) {
 	require.NoError(t, err)
 	xEmptyAddr, err := env.vm.FormatLocalAddress(rawEmptyAddr)
 	require.NoError(t, err)
+
+	env.vm.ctx.Lock.Unlock()
 
 	tests := []struct {
 		label       string
@@ -1365,7 +1430,10 @@ func TestGetAssetDescription(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1385,7 +1453,10 @@ func TestGetBalance(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1416,7 +1487,10 @@ func TestCreateFixedCapAsset(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+			env.vm.ctx.Lock.Unlock()
+
 			defer func() {
+				env.vm.ctx.Lock.Lock()
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
 			}()
@@ -1464,7 +1538,10 @@ func TestCreateVariableCapAsset(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+			env.vm.ctx.Lock.Unlock()
+
 			defer func() {
+				env.vm.ctx.Lock.Lock()
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
 			}()
@@ -1497,7 +1574,11 @@ func TestCreateVariableCapAsset(t *testing.T) {
 			}, &reply))
 			require.Equal(changeAddrStr, reply.ChangeAddr)
 
+			env.vm.ctx.Lock.Lock()
+
 			buildAndAccept(require, env.vm, env.issuer, reply.AssetID)
+
+			env.vm.ctx.Lock.Unlock()
 
 			createdAssetID := reply.AssetID.String()
 			// Test minting of the created variable cap asset
@@ -1517,7 +1598,11 @@ func TestCreateVariableCapAsset(t *testing.T) {
 			require.NoError(env.service.Mint(nil, mintArgs, mintReply))
 			require.Equal(changeAddrStr, mintReply.ChangeAddr)
 
+			env.vm.ctx.Lock.Lock()
+
 			buildAndAccept(require, env.vm, env.issuer, mintReply.TxID)
+
+			env.vm.ctx.Lock.Unlock()
 
 			sendArgs := &SendArgs{
 				JSONSpendHeader: api.JSONSpendHeader{
@@ -1554,7 +1639,10 @@ func TestNFTWorkflow(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+			env.vm.ctx.Lock.Unlock()
+
 			defer func() {
+				env.vm.ctx.Lock.Lock()
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
 			}()
@@ -1589,7 +1677,11 @@ func TestNFTWorkflow(t *testing.T) {
 			require.NoError(env.service.CreateNFTAsset(nil, createArgs, createReply))
 			require.Equal(fromAddrsStr[0], createReply.ChangeAddr)
 
+			env.vm.ctx.Lock.Lock()
+
 			buildAndAccept(require, env.vm, env.issuer, createReply.AssetID)
+
+			env.vm.ctx.Lock.Unlock()
 
 			// Key: Address
 			// Value: LUX balance
@@ -1640,8 +1732,12 @@ func TestNFTWorkflow(t *testing.T) {
 			require.NoError(env.service.MintNFT(nil, mintArgs, mintReply))
 			require.Equal(fromAddrsStr[0], createReply.ChangeAddr)
 
+			env.vm.ctx.Lock.Lock()
+
 			// Accept the transaction so that we can send the newly minted NFT
 			buildAndAccept(require, env.vm, env.issuer, mintReply.TxID)
+
+			env.vm.ctx.Lock.Unlock()
 
 			sendArgs := &SendNFTArgs{
 				JSONSpendHeader: api.JSONSpendHeader{
@@ -1672,13 +1768,15 @@ func TestImportExportKey(t *testing.T) {
 			password: password,
 		}},
 	})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
 
-	factory := secp256k1.Factory{}
-	sk, err := factory.NewPrivateKey()
+	sk, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
 
 	importArgs := &ImportKeyArgs{
@@ -1714,13 +1812,15 @@ func TestImportAVMKeyNoDuplicates(t *testing.T) {
 			password: password,
 		}},
 	})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
 
-	factory := secp256k1.Factory{}
-	sk, err := factory.NewPrivateKey()
+	sk, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
 	args := ImportKeyArgs{
 		UserPass: api.UserPass{
@@ -1763,6 +1863,8 @@ func TestSend(t *testing.T) {
 			initialKeys: keys,
 		}},
 	})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
@@ -1796,6 +1898,8 @@ func TestSend(t *testing.T) {
 	require.NoError(env.service.Send(nil, args, reply))
 	require.Equal(changeAddrStr, reply.ChangeAddr)
 
+	env.vm.ctx.Lock.Lock()
+
 	buildAndAccept(require, env.vm, env.issuer, reply.TxID)
 }
 
@@ -1812,6 +1916,8 @@ func TestSendMultiple(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+			env.vm.ctx.Lock.Unlock()
+
 			defer func() {
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
@@ -1852,6 +1958,8 @@ func TestSendMultiple(t *testing.T) {
 			require.NoError(env.service.SendMultiple(nil, args, reply))
 			require.Equal(changeAddrStr, reply.ChangeAddr)
 
+			env.vm.ctx.Lock.Lock()
+
 			buildAndAccept(require, env.vm, env.issuer, reply.TxID)
 		})
 	}
@@ -1866,7 +1974,10 @@ func TestCreateAndListAddresses(t *testing.T) {
 			password: password,
 		}},
 	})
+	env.vm.ctx.Lock.Unlock()
+
 	defer func() {
+		env.vm.ctx.Lock.Lock()
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
 	}()
@@ -1904,7 +2015,9 @@ func TestImport(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+
 			defer func() {
+				env.vm.ctx.Lock.Lock()
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
 			}()
@@ -1939,6 +2052,8 @@ func TestImport(t *testing.T) {
 				},
 			}))
 
+			env.vm.ctx.Lock.Unlock()
+
 			addrStr, err := env.vm.FormatLocalAddress(keys[0].PublicKey().Address())
 			require.NoError(err)
 			args := &ImportArgs{
@@ -1957,7 +2072,6 @@ func TestImport(t *testing.T) {
 
 func TestServiceGetBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	blockID := ids.GenerateTestID()
 
@@ -2003,7 +2117,7 @@ func TestServiceGetBlock(t *testing.T) {
 		{
 			name: "JSON format",
 			serviceAndExpectedBlockFunc: func(_ *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				block.EXPECT().InitCtx(gomock.Any())
 				block.EXPECT().Txs().Return(nil)
 
@@ -2024,7 +2138,7 @@ func TestServiceGetBlock(t *testing.T) {
 		{
 			name: "hex format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
@@ -2048,7 +2162,7 @@ func TestServiceGetBlock(t *testing.T) {
 		{
 			name: "hexc format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
@@ -2072,7 +2186,7 @@ func TestServiceGetBlock(t *testing.T) {
 		{
 			name: "hexnc format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
@@ -2112,14 +2226,17 @@ func TestServiceGetBlock(t *testing.T) {
 				return
 			}
 			require.Equal(tt.encoding, reply.Encoding)
-			require.Equal(expected, reply.Block)
+
+			expectedJSON, err := stdjson.Marshal(expected)
+			require.NoError(err)
+
+			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
 		})
 	}
 }
 
 func TestServiceGetBlockByHeight(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	blockID := ids.GenerateTestID()
 	blockHeight := uint64(1337)
@@ -2149,7 +2266,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "block height not found",
 			serviceAndExpectedBlockFunc: func(_ *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(ids.Empty, database.ErrNotFound)
 
 				manager := executor.NewMockManager(ctrl)
@@ -2169,7 +2286,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "block not found",
 			serviceAndExpectedBlockFunc: func(_ *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)
 
 				manager := executor.NewMockManager(ctrl)
@@ -2190,11 +2307,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "JSON format",
 			serviceAndExpectedBlockFunc: func(_ *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				block.EXPECT().InitCtx(gomock.Any())
 				block.EXPECT().Txs().Return(nil)
 
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)
 
 				manager := executor.NewMockManager(ctrl)
@@ -2215,11 +2332,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "hex format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)
 
 				expected, err := formatting.Encode(formatting.Hex, blockBytes)
@@ -2243,11 +2360,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "hexc format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)
 
 				expected, err := formatting.Encode(formatting.HexC, blockBytes)
@@ -2271,11 +2388,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 		{
 			name: "hexnc format",
 			serviceAndExpectedBlockFunc: func(t *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				blockBytes := []byte("hi mom")
 				block.EXPECT().Bytes().Return(blockBytes)
 
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)
 
 				expected, err := formatting.Encode(formatting.HexNC, blockBytes)
@@ -2315,14 +2432,17 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 				return
 			}
 			require.Equal(tt.encoding, reply.Encoding)
-			require.Equal(expected, reply.Block)
+
+			expectedJSON, err := stdjson.Marshal(expected)
+			require.NoError(err)
+
+			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
 		})
 	}
 }
 
 func TestServiceGetHeight(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	blockID := ids.GenerateTestID()
 	blockHeight := uint64(1337)
@@ -2350,7 +2470,7 @@ func TestServiceGetHeight(t *testing.T) {
 		{
 			name: "block not found",
 			serviceFunc: func(ctrl *gomock.Controller) *Service {
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetLastAccepted().Return(blockID)
 
 				manager := executor.NewMockManager(ctrl)
@@ -2370,10 +2490,10 @@ func TestServiceGetHeight(t *testing.T) {
 		{
 			name: "happy path",
 			serviceFunc: func(ctrl *gomock.Controller) *Service {
-				state := states.NewMockState(ctrl)
+				state := state.NewMockState(ctrl)
 				state.EXPECT().GetLastAccepted().Return(blockID)
 
-				block := blocks.NewMockBlock(ctrl)
+				block := block.NewMockBlock(ctrl)
 				block.EXPECT().Height().Return(blockHeight)
 
 				manager := executor.NewMockManager(ctrl)

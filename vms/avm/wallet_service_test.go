@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -25,6 +25,8 @@ func TestWalletService_SendMultiple(t *testing.T) {
 					initialKeys: keys,
 				}},
 			})
+			env.vm.ctx.Lock.Unlock()
+
 			defer func() {
 				require.NoError(env.vm.Shutdown(context.Background()))
 				env.vm.ctx.Lock.Unlock()
@@ -64,6 +66,8 @@ func TestWalletService_SendMultiple(t *testing.T) {
 			reply := &api.JSONTxIDChangeAddr{}
 			require.NoError(env.walletService.SendMultiple(nil, args, reply))
 			require.Equal(changeAddrStr, reply.ChangeAddr)
+
+			env.vm.ctx.Lock.Lock()
 
 			buildAndAccept(require, env.vm, env.issuer, reply.TxID)
 

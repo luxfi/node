@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -118,7 +118,7 @@ func (n *Network) Round() error {
 	}
 
 	// If this node has been finalized, remove it from the poller
-	if running.Finalized() {
+	if running.NumProcessing() == 0 {
 		newSize := len(n.running) - 1
 		n.running[runningInd] = n.running[newSize]
 		n.running = n.running[:newSize]

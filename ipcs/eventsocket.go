@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ipcs
@@ -11,6 +11,7 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/ipcs/socket"
 	"github.com/luxdefi/node/snow"
+	"github.com/luxdefi/node/utils"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/wrappers"
 )
@@ -133,12 +134,10 @@ func newEventIPCSocket(
 		url:    url,
 		socket: socket.NewSocket(url, ctx.log),
 		unregisterFn: func() error {
-			errs := wrappers.Errs{}
-			errs.Add(
+			return utils.Err(
 				snowmanAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 				luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 			)
-			return errs.Err
 		},
 	}
 
@@ -175,9 +174,10 @@ func (eis *eventSocket) Accept(_ *snow.ConsensusContext, _ ids.ID, container []b
 // stop unregisters the event handler and closes the eventSocket
 func (eis *eventSocket) stop() error {
 	eis.log.Info("closing Chain IPC")
-	errs := wrappers.Errs{}
-	errs.Add(eis.unregisterFn(), eis.socket.Close())
-	return errs.Err
+	return utils.Err(
+		eis.unregisterFn(),
+		eis.socket.Close(),
+	)
 }
 
 // URL returns the URL of the socket

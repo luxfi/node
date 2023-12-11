@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -7,9 +7,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/networking/router"
@@ -27,11 +27,11 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	require := require.New(t)
 
 	validatorIDs := make([]ids.NodeID, 0, numValidators)
-	validatorSet := validators.NewSet()
+	validatorSet := validators.NewManager()
 	for i := 0; i < numValidators; i++ {
 		nodeID := ids.GenerateTestNodeID()
 
-		require.NoError(validatorSet.Add(nodeID, nil, ids.Empty, 1))
+		require.NoError(validatorSet.AddStaker(constants.PrimaryNetworkID, nodeID, nil, ids.Empty, 1))
 		validatorIDs = append(validatorIDs, nodeID)
 	}
 

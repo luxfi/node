@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -6,13 +6,14 @@ package proposervm
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database"
+	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxdefi/node/database/prefixdb"
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/choices"
@@ -22,7 +23,6 @@ import (
 	"github.com/luxdefi/node/snow/validators"
 	"github.com/luxdefi/node/utils/math"
 	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/version"
 	"github.com/luxdefi/node/vms/proposervm/proposer"
 )
 
@@ -225,7 +225,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk2 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -235,7 +235,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 		BytesV:     []byte{2},
 		ParentV:    coreBlk1.ID(),
 		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
@@ -246,7 +246,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk3 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -431,7 +431,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		BytesV:     []byte{3},
 		ParentV:    coreBlk2.ID(),
 		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: postForkTime.Add(proposer.MaxDelay),
+		TimestampV: postForkTime.Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
@@ -443,7 +443,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk4 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -704,7 +704,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk2 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -714,7 +714,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 		BytesV:     []byte{2},
 		ParentV:    coreBlk1.ID(),
 		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
@@ -725,7 +725,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk3 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -867,7 +867,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		BytesV:     []byte{3},
 		ParentV:    coreBlk2.ID(),
 		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: postForkTime.Add(proposer.MaxDelay),
+		TimestampV: postForkTime.Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
@@ -879,7 +879,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxDelay))
+	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
 
 	coreBlk4 := &snowman.TestBlock{
 		TestDecidable: choices.TestDecidable{
@@ -985,7 +985,7 @@ func initTestRemoteProposerVM(
 	coreVM.InitializeF = func(
 		context.Context,
 		*snow.Context,
-		manager.Manager,
+		database.Database,
 		[]byte,
 		[]byte,
 		[]byte,
@@ -1014,14 +1014,18 @@ func initTestRemoteProposerVM(
 			return nil, errUnknownBlock
 		}
 	}
+	coreVM.VerifyHeightIndexF = func(context.Context) error {
+		return nil
+	}
 
 	proVM := New(
 		coreVM,
 		proBlkStartTime,
 		0,
 		DefaultMinBlockDelay,
-		pTestCert.PrivateKey.(crypto.Signer),
-		pTestCert.Leaf,
+		DefaultNumHistoricalBlocks,
+		pTestSigner,
+		pTestCert,
 	)
 
 	valState := &validators.TestState{
@@ -1034,37 +1038,40 @@ func initTestRemoteProposerVM(
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		var (
+			thisNode = proVM.ctx.NodeID
+			nodeID1  = ids.BuildTestNodeID([]byte{1})
+			nodeID2  = ids.BuildTestNodeID([]byte{2})
+			nodeID3  = ids.BuildTestNodeID([]byte{3})
+		)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			thisNode: {
+				NodeID: thisNode,
 				Weight: 10,
 			},
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID1: {
+				NodeID: nodeID1,
 				Weight: 5,
 			},
-			{2}: {
-				NodeID: ids.NodeID{2},
+			nodeID2: {
+				NodeID: nodeID2,
 				Weight: 6,
 			},
-			{3}: {
-				NodeID: ids.NodeID{3},
+			nodeID3: {
+				NodeID: nodeID3,
 				Weight: 7,
 			},
 		}, nil
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
-	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
-	// make sure that DBs are compressed correctly
-	dummyDBManager = dummyDBManager.NewPrefixDBManager([]byte{})
 	require.NoError(proVM.Initialize(
 		context.Background(),
 		ctx,
-		dummyDBManager,
+		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
 		initialState,
 		nil,
 		nil,

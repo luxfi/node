@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracedvm
@@ -10,7 +10,7 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/database/manager"
+	"github.com/luxdefi/node/database"
 	"github.com/luxdefi/node/snow"
 	"github.com/luxdefi/node/snow/consensus/snowstorm"
 	"github.com/luxdefi/node/snow/engine/lux/vertex"
@@ -35,7 +35,7 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
 	chainCtx *snow.Context,
-	db manager.Manager,
+	db database.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
