@@ -160,9 +160,9 @@ var (
 	// genesis.
 	MainnetConfig Config
 
-	// FujiConfig is the config that should be used to generate the fuji
+	// TestNetConfig is the config that should be used to generate the testnet
 	// genesis.
-	FujiConfig Config
+	TestNetConfig Config
 
 	// LocalConfig is the config that should be used to generate a local
 	// genesis.
@@ -171,12 +171,12 @@ var (
 
 func init() {
 	unparsedMainnetConfig := UnparsedConfig{}
-	unparsedFujiConfig := UnparsedConfig{}
+	unparsedTestNetConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
 	err := utils.Err(
 		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
-		json.Unmarshal(fujiGenesisConfigJSON, &unparsedFujiConfig),
+		json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestNetConfig),
 		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),
 	)
 	if err != nil {
@@ -188,7 +188,7 @@ func init() {
 		panic(err)
 	}
 
-	FujiConfig, err = unparsedFujiConfig.Parse()
+	TestNetConfig, err = unparsedTestNetConfig.Parse()
 	if err != nil {
 		panic(err)
 	}
@@ -203,8 +203,8 @@ func GetConfig(networkID uint32) *Config {
 	switch networkID {
 	case constants.MainnetID:
 		return &MainnetConfig
-	case constants.FujiID:
-		return &FujiConfig
+	case constants.TestNetID:
+		return &TestNetConfig
 	case constants.LocalID:
 		return &LocalConfig
 	default:

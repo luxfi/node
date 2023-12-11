@@ -60,7 +60,7 @@ var (
 
 	// TODO: remove after the X-chain supports height indexing.
 	mainnetXChainID ids.ID
-	fujiXChainID    ids.ID
+	testnetXChainID    ids.ID
 
 	dbPrefix = []byte("proposervm")
 
@@ -74,7 +74,7 @@ func init() {
 		panic(err)
 	}
 
-	fujiXChainID, err = ids.FromString("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
+	testnetXChainID, err = ids.FromString("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
 	if err != nil {
 		panic(err)
 	}
@@ -736,12 +736,12 @@ func (vm *VM) getForkHeight() (uint64, error) {
 		switch vm.ctx.NetworkID {
 		case constants.MainnetID:
 			return 805732, nil // https://subnets.lux.network/p-chain/block/805732
-		case constants.FujiID:
+		case constants.TestNetID:
 			return 47529, nil // https://subnets-test.lux.network/p-chain/block/47529
 		}
 	case mainnetXChainID:
 		return 1, nil // https://subnets.lux.network/x-chain/block/1
-	case fujiXChainID:
+	case testnetXChainID:
 		return 1, nil // https://subnets-test.lux.network/x-chain/block/1
 	}
 	return vm.GetForkHeight()
