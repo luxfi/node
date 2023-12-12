@@ -399,6 +399,12 @@ github.com/luxdefi/coreth v0.12.11 h1:n5muL7pFLHQNhXQr5gptN5T1qlbru5t5eR7cAQ6syT
 github.com/luxdefi/coreth v0.12.11/go.mod h1:et9y5oZYngVtOjkJ2GwwathXQM6krU+NvOvs+5wIg+c=
 github.com/luxdefi/coreth v0.12.12 h1:CMjFqb0atyHC0RE68ll5utJ0QLq2NTB9BzsK8dduNdo=
 github.com/luxdefi/coreth v0.12.12/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
+github.com/luxdefi/coreth v0.12.13 h1:XrDB3MHQOaXgCwWuL9mrIPYnd3L8nI1OFwo/K/eoskc=
+github.com/luxdefi/coreth v0.12.13/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
+github.com/luxdefi/coreth v0.12.14 h1:PpfZK/07o80IPiD8KqLaKNDcQIOYfmLgiO948md6sys=
+github.com/luxdefi/coreth v0.12.14/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
+github.com/luxdefi/coreth v0.12.15 h1:pCkkyVyLCimvPgZb/Q5ShdVeJ++DoZCZHpd6Mu7Iv+A=
+github.com/luxdefi/coreth v0.12.15/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
 github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431 h1:GKjx600wOvtCRRZ4MfRSwZ7bIbraWN8AcRDZmNZC+cg=
 github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431/go.mod h1:cpSeG5zfID3zTTZxljmq2HrYqryoSRxDwzmUg/SyI7E=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
