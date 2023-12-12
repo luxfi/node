@@ -15,7 +15,7 @@ import (
 
 	"github.com/onsi/gomega"
 
-	runner_sdk "github.com/luxdefi/lux-network-runner-sdk"
+	runner_sdk "github.com/luxdefi/netrunner-sdk"
 
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/tests"
@@ -58,8 +58,8 @@ type testEnvironmentConfig struct {
 	clusterType               ClusterType
 	logLevel                  string
 	networkRunnerGRPCEndpoint string
-	luxGoExecPath       string
-	luxGoLogLevel       string
+	luxGoExecPath             string
+	luxGoLogLevel             string
 	testKeysFile              string
 
 	// we snapshot initial state, right after starting cluster
