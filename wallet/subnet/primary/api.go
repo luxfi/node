@@ -29,7 +29,7 @@ import (
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
-	TestNetAPIURI    = "https://api.lux-test.network"
+	TestnetAPIURI = "https://test.lux.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024

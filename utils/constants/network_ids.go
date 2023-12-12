@@ -15,13 +15,11 @@ import (
 
 // Const variables to be exported
 const (
-	MainnetID uint32 = 1
-	CascadeID uint32 = 2
-	DenaliID  uint32 = 3
-	EverestID uint32 = 4
-	TestNetID    uint32 = 5
-
-	TestnetID  uint32 = TestNetID
+	MainnetID  uint32 = 1
+	CascadeID  uint32 = 2
+	DenaliID   uint32 = 3
+	EverestID  uint32 = 4
+	TestnetID  uint32 = 5
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 
@@ -29,7 +27,6 @@ const (
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
 	EverestName  = "everest"
-	TestNetName     = "testnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
@@ -38,7 +35,7 @@ const (
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	TestNetHRP     = "testnet"
+	TestnetHRP  = "testnet"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	FallbackHRP = "custom"
@@ -54,7 +51,7 @@ var (
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
 		EverestID:  EverestName,
-		TestNetID:     TestNetName,
+		TestnetID:  TestnetName,
 		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
 	}
@@ -63,7 +60,6 @@ var (
 		CascadeName:  CascadeID,
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
-		TestNetName:     TestNetID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
@@ -74,7 +70,7 @@ var (
 		CascadeID:  CascadeHRP,
 		DenaliID:   DenaliHRP,
 		EverestID:  EverestHRP,
-		TestNetID:     TestNetHRP,
+		TestnetID:  TestnetHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
 	}
@@ -83,11 +79,11 @@ var (
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		TestNetHRP:     TestNetID,
+		TestnetHRP:  TestnetID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, TestNetID)
+	ProductionNetworkIDs = set.Of(MainnetID, TestnetID)
 
 	ValidNetworkPrefix = "network-"
 

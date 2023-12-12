@@ -220,7 +220,7 @@ func TestAppRequestResponse(t *testing.T) {
 	}
 }
 
-func TestNetworkDropMessage(t *testing.T) {
+func TestnetworkDropMessage(t *testing.T) {
 	unregistered := byte(0x0)
 
 	tests := []struct {

@@ -66,7 +66,7 @@ func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
 	return true
 }
 
-func ExampleNewTestNetwork() {
+func ExampleNewTestnetwork() {
 	log := logging.NewLogger(
 		"networking",
 		logging.NewWrappedCore(
@@ -91,9 +91,9 @@ func ExampleNewTestNetwork() {
 		log: log,
 	}
 
-	network, err := NewTestNetwork(
+	network, err := NewTestnetwork(
 		log,
-		constants.TestNetID,
+		constants.TestnetID,
 		validators,
 		trackedSubnets,
 		handler,
@@ -108,7 +108,7 @@ func ExampleNewTestNetwork() {
 
 	// We need to initially connect to some nodes in the network before peer
 	// gossip will enable connecting to all the remaining nodes in the network.
-	bootstrappers := genesis.SampleBootstrappers(constants.TestNetID, 5)
+	bootstrappers := genesis.SampleBootstrappers(constants.TestnetID, 5)
 	for _, bootstrapper := range bootstrappers {
 		network.ManuallyTrack(bootstrapper.ID, ips.IPPort(bootstrapper.IP))
 	}

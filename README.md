@@ -122,9 +122,9 @@ You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to TestNet
+### Connecting to Testnet
 
-To connect to the TestNet Testnet, run:
+To connect to the Testnet Testnet, run:
 
 ```sh
 ./build/node --network-id=testnet

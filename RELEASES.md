@@ -1069,7 +1069,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxdefi/nod
 - Remove no-op changes from history results by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1335
 - Cleanup type assertions in the linkedHashmap by @StephenButtolph in https://github.com/luxdefi/node/pull/1341
 - Fix racy avm tx access by @StephenButtolph in https://github.com/luxdefi/node/pull/1349
-- Update TestNet beacon ips by @StephenButtolph in https://github.com/luxdefi/node/pull/1354
+- Update Testnet beacon ips by @StephenButtolph in https://github.com/luxdefi/node/pull/1354
 - Remove duplicate TLS verification by @StephenButtolph in https://github.com/luxdefi/node/pull/1364
 - Adjust Merkledb Trie invalidation locking by @dboehm-avalabs in https://github.com/luxdefi/node/pull/1355
 - Use require in Lux bootstrapping tests by @StephenButtolph in https://github.com/luxdefi/node/pull/1344
@@ -1152,7 +1152,7 @@ The supported plugin version is `25`.
 - defer delegatee rewards until end of validator staking period by @dhrubabasu in https://github.com/luxdefi/node/pull/1262
 - Initialize UptimeCalculator in TestPeer by @joshua-kim in https://github.com/luxdefi/node/pull/1283
 - Add Lux liveness health checks by @StephenButtolph in https://github.com/luxdefi/node/pull/1287
-- Skip AMI generation with TestNet tags by @StephenButtolph in https://github.com/luxdefi/node/pull/1288
+- Skip AMI generation with Testnet tags by @StephenButtolph in https://github.com/luxdefi/node/pull/1288
 - Use `maps.Equal` in `set.Equals` by @danlaine in https://github.com/luxdefi/node/pull/1290
 - return accrued delegator rewards in `GetCurrentValidators` by @dhrubabasu in https://github.com/luxdefi/node/pull/1291
 - Add zstd compression by @danlaine in https://github.com/luxdefi/node/pull/1278
@@ -1954,7 +1954,7 @@ The supported plugin version is `16`.
 
 Please upgrade your node as soon as possible.
 
-The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on both TestNet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
+The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on both Testnet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
 
 The supported plugin version is `16`.
 
@@ -1968,7 +1968,7 @@ The supported plugin version is `16`.
 
 Please upgrade your node as soon as possible.
 
-The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on both TestNet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
+The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on both Testnet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
 
 The supported plugin version is `16`.
 
@@ -1985,7 +1985,7 @@ The supported plugin version is `16`.
 
 This is a mandatory security upgrade. Please upgrade your node **as soon as possible.**
 
-The changes in the upgrade go into effect at **4 PM EDT on September 6th, 2022** on both TestNet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
+The changes in the upgrade go into effect at **4 PM EDT on September 6th, 2022** on both Testnet and Mainnet. You should upgrade your node before the changes go into effect, otherwise they may experience loss of uptime.
 
 You may see some extraneous ERROR logs ("BAD BLOCK") on your node after upgrading. These may continue until the Apricot Phase 6 activation (at 4 PM EDT on September 6th).
 
@@ -2204,7 +2204,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using LuxGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.lux.network and https://test.lux.network have been updated with this format. If you are using LuxGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -2476,7 +2476,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 - Reduced the number of connection flushes when sending messages.
 - Canceled outbound connection requests on shutdown.
 - Reused dialer across multiple outbound connections.
-- Exported `NewTestNetwork` for easier external testing.
+- Exported `NewTestnetwork` for easier external testing.
 
 ### Coreth
 
@@ -2650,7 +2650,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 - Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nLUX.
 - Renamed `--bootstrap-multiput-max-containers-sent` to `--bootstrap-ancestors-max-containers-sent`.
 - Renamed `--bootstrap-multiput-max-containers-received` to `--bootstrap-ancestors-max-containers-received`.
-- Enforced that `--staking-enabled=false` can not be specified on public networks (`TestNet` and `Mainnet`).
+- Enforced that `--staking-enabled=false` can not be specified on public networks (`Testnet` and `Mainnet`).
 
 ### Metrics
 

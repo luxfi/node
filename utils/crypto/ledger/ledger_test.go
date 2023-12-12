@@ -33,7 +33,7 @@ func TestLedger(t *testing.T) {
 	require.NoError(err)
 	t.Logf("version: %s\n", version)
 
-	// Get TestNet Address
+	// Get Testnet Address
 	addr, err := device.Address(hrp, 0)
 	require.NoError(err)
 	paddr, err := address.Format(chainAlias, hrp, addr[:])
