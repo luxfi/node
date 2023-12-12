@@ -11,7 +11,6 @@ import (
 	"github.com/luxdefi/node/ids"
 	"github.com/luxdefi/node/snow/choices"
 	"github.com/luxdefi/node/snow/engine/lux/vertex"
-	"github.com/luxdefi/node/utils/hashing"
 	"github.com/luxdefi/node/utils/logging"
 	"github.com/luxdefi/node/utils/wrappers"
 )
@@ -109,7 +108,7 @@ func (s *state) Edge(id ids.ID) []ids.ID {
 		frontierSize := p.UnpackInt()
 		frontier := make([]ids.ID, frontierSize)
 		for i := 0; i < int(frontierSize) && !p.Errored(); i++ {
-			id, err := ids.ToID(p.UnpackFixedBytes(hashing.HashLen))
+			id, err := ids.ToID(p.UnpackFixedBytes(ids.IDLen))
 			p.Add(err)
 			frontier[i] = id
 		}
@@ -137,7 +136,7 @@ func (s *state) SetEdge(id ids.ID, frontier []ids.ID) error {
 		return s.db.Delete(id[:])
 	}
 
-	size := wrappers.IntLen + hashing.HashLen*len(frontier)
+	size := wrappers.IntLen + ids.IDLen*len(frontier)
 	p := wrappers.Packer{Bytes: make([]byte, size)}
 	p.PackInt(uint32(len(frontier)))
 	for _, id := range frontier {

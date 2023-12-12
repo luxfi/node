@@ -8,7 +8,7 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory ab
 # Where LuxGo binary goes
 node_path="$LUX_PATH/build/node"
 
-# Avalabs docker hub
+# Lux docker hub
 # luxdefi/node - defaults to local as to avoid unintentional pushes
 # You should probably set it - export DOCKER_REPO='luxdefi/node'
 node_dockerhub_repo=${DOCKER_REPO:-"node"}
