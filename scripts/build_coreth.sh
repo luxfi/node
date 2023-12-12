@@ -6,6 +6,7 @@ set -o pipefail
 
 race=''
 coreth_path=''
+coreth_version=''
 evm_path=''
 
 # Directory above this script
@@ -23,13 +24,15 @@ print_usage() {
     -r  Build with race detector (optional)
     -c  Coreth path (optional; must be provided with -c)
     -e  EVM path (optional; must be provided with -e)
+    -e  Coreth version (required)
 "
 }
 
-while getopts 'rc:e:' flag; do
+while getopts 'rc:v:e:' flag; do
   case "${flag}" in
     r) race='-race' ;;
     c) coreth_path=${OPTARG} ;;
+    v) coreth_version=${OPTARG} ;;
     e) evm_path=${OPTARG} ;;
     *) print_usage
       exit 1 ;;
