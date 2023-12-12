@@ -160,9 +160,9 @@ var (
 	// genesis.
 	MainnetConfig Config
 
-	// TestNetConfig is the config that should be used to generate the testnet
+	// TestnetConfig is the config that should be used to generate the testnet
 	// genesis.
-	TestNetConfig Config
+	TestnetConfig Config
 
 	// LocalConfig is the config that should be used to generate a local
 	// genesis.
@@ -171,12 +171,12 @@ var (
 
 func init() {
 	unparsedMainnetConfig := UnparsedConfig{}
-	unparsedTestNetConfig := UnparsedConfig{}
+	unparsedTestnetConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
 	err := utils.Err(
 		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
-		json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestNetConfig),
+		json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestnetConfig),
 		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),
 	)
 	if err != nil {
@@ -188,7 +188,7 @@ func init() {
 		panic(err)
 	}
 
-	TestNetConfig, err = unparsedTestNetConfig.Parse()
+	TestnetConfig, err = unparsedTestnetConfig.Parse()
 	if err != nil {
 		panic(err)
 	}
@@ -203,8 +203,8 @@ func GetConfig(networkID uint32) *Config {
 	switch networkID {
 	case constants.MainnetID:
 		return &MainnetConfig
-	case constants.TestNetID:
-		return &TestNetConfig
+	case constants.TestnetID:
+		return &TestnetConfig
 	case constants.LocalID:
 		return &LocalConfig
 	default:

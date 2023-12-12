@@ -159,7 +159,7 @@ func newDefaultResourceTracker() tracker.ResourceTracker {
 	return tracker
 }
 
-func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
+func newTestnetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
 	var (
 		dialer    = newTestDialer()
 		listeners = make([]*testListener, count)
@@ -198,10 +198,10 @@ func newMessageCreator(t *testing.T) message.Creator {
 	return mc
 }
 
-func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler) ([]ids.NodeID, []*network, *sync.WaitGroup) {
+func newFullyConnectedTestnetwork(t *testing.T, handlers []router.InboundHandler) ([]ids.NodeID, []*network, *sync.WaitGroup) {
 	require := require.New(t)
 
-	dialer, listeners, nodeIDs, configs := newTestNetwork(t, len(handlers))
+	dialer, listeners, nodeIDs, configs := newTestnetwork(t, len(handlers))
 
 	var (
 		networks = make([]*network, len(configs))
@@ -303,7 +303,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 }
 
 func TestNewNetwork(t *testing.T) {
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil, nil, nil})
+	_, networks, wg := newFullyConnectedTestnetwork(t, []router.InboundHandler{nil, nil, nil})
 	for _, net := range networks {
 		net.StartClose()
 	}
@@ -314,7 +314,7 @@ func TestSend(t *testing.T) {
 	require := require.New(t)
 
 	received := make(chan message.InboundMessage)
-	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
+	nodeIDs, networks, wg := newFullyConnectedTestnetwork(
 		t,
 		[]router.InboundHandler{
 			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
@@ -352,7 +352,7 @@ func TestSendAndGossipWithFilter(t *testing.T) {
 	require := require.New(t)
 
 	received := make(chan message.InboundMessage)
-	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
+	nodeIDs, networks, wg := newFullyConnectedTestnetwork(
 		t,
 		[]router.InboundHandler{
 			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
@@ -399,7 +399,7 @@ func TestSendAndGossipWithFilter(t *testing.T) {
 func TestTrackVerifiesSignatures(t *testing.T) {
 	require := require.New(t)
 
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
+	_, networks, wg := newFullyConnectedTestnetwork(t, []router.InboundHandler{nil})
 
 	network := networks[0]
 	nodeID, tlsCert, _ := getTLS(t, 1)
@@ -430,7 +430,7 @@ func TestTrackVerifiesSignatures(t *testing.T) {
 func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	require := require.New(t)
 
-	dialer, listeners, nodeIDs, configs := newTestNetwork(t, 2)
+	dialer, listeners, nodeIDs, configs := newTestnetwork(t, 2)
 
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
@@ -520,7 +520,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 func TestDialDeletesNonValidators(t *testing.T) {
 	require := require.New(t)
 
-	dialer, listeners, nodeIDs, configs := newTestNetwork(t, 2)
+	dialer, listeners, nodeIDs, configs := newTestnetwork(t, 2)
 
 	vdrs := validators.NewManager()
 	for _, nodeID := range nodeIDs {
@@ -628,7 +628,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 // Test that cancelling the context passed into dial
 // causes dial to return immediately.
 func TestDialContext(t *testing.T) {
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
+	_, networks, wg := newFullyConnectedTestnetwork(t, []router.InboundHandler{nil})
 
 	dialer := newTestDialer()
 	network := networks[0]
@@ -687,7 +687,7 @@ func TestDialContext(t *testing.T) {
 func TestAllowConnectionAsAValidator(t *testing.T) {
 	require := require.New(t)
 
-	dialer, listeners, nodeIDs, configs := newTestNetwork(t, 2)
+	dialer, listeners, nodeIDs, configs := newTestnetwork(t, 2)
 
 	networks := make([]Network, len(configs))
 	for i, config := range configs {

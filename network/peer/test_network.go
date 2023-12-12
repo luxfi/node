@@ -9,7 +9,7 @@ import (
 	"github.com/luxdefi/node/utils/ips"
 )
 
-var TestNetwork Network = testNetwork{}
+var Testnetwork Network = testNetwork{}
 
 type testNetwork struct{}
 

@@ -116,7 +116,7 @@ func makeRawTestPeers(t *testing.T, trackedSubnets set.Set[ids.ID]) (*rawTestPee
 	tls0 := tlsCert0.PrivateKey.(crypto.Signer)
 	peerConfig0.IPSigner = NewIPSigner(ip0, tls0)
 
-	peerConfig0.Network = TestNetwork
+	peerConfig0.Network = Testnetwork
 	inboundMsgChan0 := make(chan message.InboundMessage)
 	peerConfig0.Router = router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
 		inboundMsgChan0 <- msg
@@ -126,7 +126,7 @@ func makeRawTestPeers(t *testing.T, trackedSubnets set.Set[ids.ID]) (*rawTestPee
 	tls1 := tlsCert1.PrivateKey.(crypto.Signer)
 	peerConfig1.IPSigner = NewIPSigner(ip1, tls1)
 
-	peerConfig1.Network = TestNetwork
+	peerConfig1.Network = Testnetwork
 	inboundMsgChan1 := make(chan message.InboundMessage)
 	peerConfig1.Router = router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
 		inboundMsgChan1 <- msg

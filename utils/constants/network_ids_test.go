@@ -20,11 +20,11 @@ func TestGetHRP(t *testing.T) {
 		},
 		{
 			id:  TestnetID,
-			hrp: TestNetHRP,
+			hrp: TestnetHRP,
 		},
 		{
-			id:  TestNetID,
-			hrp: TestNetHRP,
+			id:  TestnetID,
+			hrp: TestnetHRP,
 		},
 		{
 			id:  LocalID,
@@ -42,7 +42,7 @@ func TestGetHRP(t *testing.T) {
 	}
 }
 
-func TestNetworkName(t *testing.T) {
+func TestnetworkName(t *testing.T) {
 	tests := []struct {
 		id   uint32
 		name string
@@ -53,11 +53,7 @@ func TestNetworkName(t *testing.T) {
 		},
 		{
 			id:   TestnetID,
-			name: TestNetName,
-		},
-		{
-			id:   TestNetID,
-			name: TestNetName,
+			name: TestnetName,
 		},
 		{
 			id:   LocalID,
@@ -75,7 +71,7 @@ func TestNetworkName(t *testing.T) {
 	}
 }
 
-func TestNetworkID(t *testing.T) {
+func TestnetworkID(t *testing.T) {
 	tests := []struct {
 		name        string
 		id          uint32
@@ -92,10 +88,6 @@ func TestNetworkID(t *testing.T) {
 		{
 			name: TestnetName,
 			id:   TestnetID,
-		},
-		{
-			name: TestNetName,
-			id:   TestNetID,
 		},
 		{
 			name: LocalName,

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNetworkSerialization(t *testing.T) {
+func TestnetworkSerialization(t *testing.T) {
 	require := require.New(t)
 
 	tmpDir := t.TempDir()
