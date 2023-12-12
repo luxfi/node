@@ -102,10 +102,10 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `luxdefi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
+The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 luxdefi/node:xxxxxxxx /node/build/node
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
 ```
 
 ## Running Lux

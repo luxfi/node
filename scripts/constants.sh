@@ -10,7 +10,7 @@ node_path="$LUX_PATH/build/node"
 
 # Lux docker hub
 # luxdefi/node - defaults to local as to avoid unintentional pushes
-# You should probably set it - export DOCKER_REPO='luxdefi/node'
+# You should probably set it - export DOCKER_REPO='avaplatform/node'
 node_dockerhub_repo=${DOCKER_REPO:-"node"}
 
 # Current branch
