@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -15,7 +15,7 @@ import (
 
 const (
 	chainAlias = "P"
-	hrp        = "testnet"
+	hrp        = "fuji"
 )
 
 // TestLedger will be skipped if a ledger is not connected.
@@ -33,7 +33,7 @@ func TestLedger(t *testing.T) {
 	require.NoError(err)
 	t.Logf("version: %s\n", version)
 
-	// Get TestNet Address
+	// Get Fuji Address
 	addr, err := device.Address(hrp, 0)
 	require.NoError(err)
 	paddr, err := address.Format(chainAlias, hrp, addr[:])
