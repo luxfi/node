@@ -397,6 +397,8 @@ github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
 github.com/luxdefi/coreth v0.12.11 h1:n5muL7pFLHQNhXQr5gptN5T1qlbru5t5eR7cAQ6syTA=
 github.com/luxdefi/coreth v0.12.11/go.mod h1:et9y5oZYngVtOjkJ2GwwathXQM6krU+NvOvs+5wIg+c=
+github.com/luxdefi/coreth v0.12.12 h1:CMjFqb0atyHC0RE68ll5utJ0QLq2NTB9BzsK8dduNdo=
+github.com/luxdefi/coreth v0.12.12/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
 github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431 h1:GKjx600wOvtCRRZ4MfRSwZ7bIbraWN8AcRDZmNZC+cg=
 github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431/go.mod h1:cpSeG5zfID3zTTZxljmq2HrYqryoSRxDwzmUg/SyI7E=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
