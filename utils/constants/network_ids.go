@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -19,9 +19,9 @@ const (
 	CascadeID uint32 = 2
 	DenaliID  uint32 = 3
 	EverestID uint32 = 4
-	TestNetID    uint32 = 5
+	FujiID    uint32 = 5
 
-	TestnetID  uint32 = TestNetID
+	TestnetID  uint32 = FujiID
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 
@@ -29,7 +29,7 @@ const (
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
 	EverestName  = "everest"
-	TestNetName     = "testnet"
+	FujiName     = "fuji"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
@@ -38,7 +38,7 @@ const (
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	TestNetHRP     = "testnet"
+	FujiHRP     = "fuji"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	FallbackHRP = "custom"
@@ -54,7 +54,7 @@ var (
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
 		EverestID:  EverestName,
-		TestNetID:     TestNetName,
+		FujiID:     FujiName,
 		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
 	}
@@ -63,7 +63,7 @@ var (
 		CascadeName:  CascadeID,
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
-		TestNetName:     TestNetID,
+		FujiName:     FujiID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
@@ -74,7 +74,7 @@ var (
 		CascadeID:  CascadeHRP,
 		DenaliID:   DenaliHRP,
 		EverestID:  EverestHRP,
-		TestNetID:     TestNetHRP,
+		FujiID:     FujiHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
 	}
@@ -83,11 +83,11 @@ var (
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		TestNetHRP:     TestNetID,
+		FujiHRP:     FujiID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, TestNetID)
+	ProductionNetworkIDs = set.Of(MainnetID, FujiID)
 
 	ValidNetworkPrefix = "network-"
 
