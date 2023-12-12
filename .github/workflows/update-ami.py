@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import json
-import os 
+import os
 import boto3
 import uuid
 import re
@@ -24,7 +24,7 @@ for var in variables:
 if 'rc' in tag:
   print("This is a release candidate.  Nothing to do.")
   exit(0)
-  
+
 client = boto3.client('marketplace-catalog',region_name='us-east-1')
 
 def packer_build(packerfile):
@@ -58,7 +58,7 @@ try:
           'ChangeName': 'Update'
         },
       ],
-      ChangeSetName='LuxGo Update ' + tag,
+      ChangeSetName='Lux Update ' + tag,
       ClientRequestToken=uid
   )
   print(response)

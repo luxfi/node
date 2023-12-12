@@ -46,15 +46,15 @@ version_lt() {
 }
 
 if version_lt "$(go_version)" "$go_version_minimum"; then
-    echo "LuxGo requires Go >= $go_version_minimum, Go $(go_version) found." >&2
+    echo "luxd requires Go >= $go_version_minimum, Go $(go_version) found." >&2
     exit 1
 fi
 
-# Luxgo root folder
+# luxd root folder
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh
 
 build_args="$race"
-echo "Building LuxGo..."
+echo "Building luxd..."
 go build $build_args -ldflags "-X github.com/luxdefi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$LUX_PATH/main/"*.go

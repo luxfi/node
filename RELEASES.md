@@ -2204,7 +2204,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.lux.network and https://test.lux.network have been updated with this format. If you are using LuxGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.lux.network and https://test.lux.network have been updated with this format. If you are using luxd APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -2369,8 +2369,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 ### Logging
 
-- Replaced LuxGo's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
-- Replaced LuxGo's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
+- Replaced luxd's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced luxd's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.
 
@@ -2381,8 +2381,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
 - Increased `coreth` trie tip buffer size to 32
-- Added CPU usage metrics for LuxGo and all sub-processes
-- Added Disk IO usage metrics for LuxGo and all sub-processes
+- Added CPU usage metrics for luxd and all sub-processes
+- Added Disk IO usage metrics for luxd and all sub-processes
 
 ### Cleanup
 
@@ -2430,7 +2430,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
-- Added LuxGo custom log formatting to the logs.
+- Added luxd custom log formatting to the logs.
 - Removed support for the JS Tracer.
 
 ### Logging
@@ -2691,7 +2691,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxdefi/node
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for LuxGo (not Coreth).
+- Fixed 32-bit architecture builds for luxd (not Coreth).
 
 ## [v1.7.2](https://github.com/luxdefi/node/releases/tag/v1.7.2)
 

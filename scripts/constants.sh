@@ -5,19 +5,19 @@
 
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
-# Where LuxGo binary goes
-node_path="$LUX_PATH/build/node"
+# Where luxd binary goes
+node_path="$LUX_PATH/build/luxd"
 
 # Lux docker hub
 # luxdefi/node - defaults to local as to avoid unintentional pushes
-# You should probably set it - export DOCKER_REPO='avaplatform/node'
+# You should probably set it - export DOCKER_REPO='luxdefi/node'
 node_dockerhub_repo=${DOCKER_REPO:-"node"}
 
 # Current branch
 # TODO: fix "fatal: No names found, cannot describe anything" in github CI
 current_branch=$(git symbolic-ref -q --short HEAD || git describe --tags --exact-match || true)
 
-git_commit=${LUXGO_COMMIT:-$( git rev-list -1 HEAD )}
+git_commit=${LUXD_COMMIT:-$( git rev-list -1 HEAD )}
 
 # Static compilation
 static_ld_flags=''

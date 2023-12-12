@@ -14,7 +14,7 @@ set -euo pipefail
 # ./scripts/build.sh
 # ./scripts/tests.e2e.existing.sh --ginkgo.label-filter=x               # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                   # Run tests serially
-# LUXGO_PATH=./build/node ./scripts/tests.e2e.existing.sh  # Customization of node path
+# LUXD_PATH=./build/node ./scripts/tests.e2e.existing.sh  # Customization of node path
 if ! [[ "$0" =~ scripts/tests.e2e.existing.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -22,7 +22,7 @@ fi
 
 # Ensure an absolute path to avoid dependency on the working directory
 # of script execution.
-export LUXGO_PATH="$(realpath ${LUXGO_PATH:-./build/node})"
+export LUXD_PATH="$(realpath ${LUXD_PATH:-./build/node})"
 
 # Provide visual separation between testing and setup/teardown
 function print_separator {

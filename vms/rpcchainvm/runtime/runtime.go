@@ -21,14 +21,14 @@ const (
 )
 
 var (
-	ErrProtocolVersionMismatch = errors.New("RPCChainVM protocol version mismatch between LuxGo and Virtual Machine plugin")
+	ErrProtocolVersionMismatch = errors.New("RPCChainVM protocol version mismatch between luxd and Virtual Machine plugin")
 	ErrHandshakeFailed         = errors.New("handshake failed")
 	ErrInvalidConfig           = errors.New("invalid config")
 	ErrProcessNotFound         = errors.New("vm process not found")
 )
 
 type Initializer interface {
-	// Initialize provides LuxGo with compatibility, networking and
+	// Initialize provides luxd with compatibility, networking and
 	// process information of a VM.
 	Initialize(ctx context.Context, protocolVersion uint, vmAddr string) error
 }

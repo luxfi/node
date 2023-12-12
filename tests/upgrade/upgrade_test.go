@@ -25,19 +25,19 @@ func TestUpgrade(t *testing.T) {
 }
 
 var (
-	luxGoExecPath            string
-	luxGoExecPathToUpgradeTo string
+	luxdExecPath            string
+	luxdExecPathToUpgradeTo string
 )
 
 func init() {
 	flag.StringVar(
-		&luxGoExecPath,
+		&luxdExecPath,
 		"node-path",
 		"",
 		"node executable path",
 	)
 	flag.StringVar(
-		&luxGoExecPathToUpgradeTo,
+		&luxdExecPathToUpgradeTo,
 		"node-path-to-upgrade-to",
 		"",
 		"node executable path to upgrade to",
@@ -49,11 +49,11 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 
 	ginkgo.It("can upgrade versions", func() {
 		// TODO(marun) How many nodes should the target network have to best validate upgrade?
-		network := e2e.StartLocalNetwork(luxGoExecPath, e2e.DefaultNetworkDir)
+		network := e2e.StartLocalNetwork(luxdExecPath, e2e.DefaultNetworkDir)
 
-		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", luxGoExecPathToUpgradeTo))
+		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", luxdExecPathToUpgradeTo))
 		for _, node := range network.Nodes {
-			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.GetID(), luxGoExecPathToUpgradeTo))
+			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.GetID(), luxdExecPathToUpgradeTo))
 			require.NoError(node.Stop())
 
 			// A node must start with sufficient bootstrap nodes to represent a quorum. Since the node's current
@@ -69,7 +69,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 			node.Flags[config.BootstrapIPsKey] = strings.Join(bootstrapIPs, ",")
 			require.NoError(node.WriteConfig())
 
-			require.NoError(node.Start(ginkgo.GinkgoWriter, luxGoExecPath))
+			require.NoError(node.Start(ginkgo.GinkgoWriter, luxdExecPath))
 
 			ginkgo.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.GetID()))
 			e2e.WaitForHealthy(node)

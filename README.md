@@ -21,7 +21,7 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 - OS: Ubuntu 20.04/22.04 or macOS >= 12
 - Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-If you plan to build LuxGo from source, you will also need the following software:
+If you plan to build luxd from source, you will also need the following software:
 
 - [Go](https://golang.org/doc/install) version >= 1.20.10
 - [gcc](https://gcc.gnu.org/)
@@ -31,7 +31,7 @@ If you plan to build LuxGo from source, you will also need the following softwar
 
 #### Clone The Repository
 
-Clone the LuxGo repository:
+Clone the luxd repository:
 
 ```sh
 git clone git@github.com:luxdefi/node.git
@@ -40,9 +40,9 @@ cd node
 
 This will clone and checkout the `master` branch.
 
-#### Building LuxGo
+#### Building luxd
 
-Build LuxGo by running the build script:
+Build luxd by running the build script:
 
 ```sh
 ./scripts/build.sh
@@ -56,7 +56,7 @@ The `node` binary is now in the `build` directory. To run:
 
 ### Binary Repository
 
-Install LuxGo using an `apt` repository.
+Install luxd using an `apt` repository.
 
 #### Adding the APT Repository
 
@@ -151,7 +151,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-LuxGo uses multiple tools to generate efficient and boilerplate code.
+luxd uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
@@ -202,7 +202,7 @@ This should only be necessary when modifying exported interfaces or after modify
 
 ### Version Semantics
 
-LuxGo is first and foremost a client for the Lux network. The versioning of LuxGo follows that of the Lux network.
+luxd is first and foremost a client for the Lux network. The versioning of luxd follows that of the Lux network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -211,15 +211,15 @@ LuxGo is first and foremost a client for the Lux network. The versioning of LuxG
 
 ### Library Compatibility Guarantees
 
-Because LuxGo's version denotes the network version, it is expected that interfaces exported by LuxGo's packages may change in `Patch` version updates.
+Because luxd's version denotes the network version, it is expected that interfaces exported by luxd's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running LuxGo will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running luxd will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-LuxGo can run on different platforms, with different support tiers:
+luxd can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
@@ -227,7 +227,7 @@ LuxGo can run on different platforms, with different support tiers:
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
 The following table lists currently supported platforms and their corresponding
-LuxGo support tiers:
+luxd support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
@@ -241,7 +241,7 @@ LuxGo support tiers:
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| LuxGo continuous integration | Tier 1  | Tier 2  | Tier 3  |
+| luxd continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |

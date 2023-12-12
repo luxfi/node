@@ -21,7 +21,7 @@ import (
 const cliVersion = "0.0.1"
 
 var (
-	errLuxGoRequired = fmt.Errorf("--node-path or %s are required", local.LuxGoPathEnvName)
+	errluxdRequired = fmt.Errorf("--node-path or %s are required", local.luxdPathEnvName)
 	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", local.NetworkDirEnvName)
 )
 
@@ -56,7 +56,7 @@ func main() {
 		Short: "Start a new local network",
 		RunE: func(*cobra.Command, []string) error {
 			if len(execPath) == 0 {
-				return errLuxGoRequired
+				return errluxdRequired
 			}
 
 			// Root dir will be defaulted on start if not provided
@@ -93,7 +93,7 @@ func main() {
 		},
 	}
 	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(local.RootDirEnvName), "The path to the root directory for local networks")
-	startNetworkCmd.PersistentFlags().StringVar(&execPath, "node-path", os.Getenv(local.LuxGoPathEnvName), "The path to an node binary")
+	startNetworkCmd.PersistentFlags().StringVar(&execPath, "node-path", os.Getenv(local.luxdPathEnvName), "The path to an node binary")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
 	startNetworkCmd.PersistentFlags().Uint8Var(&fundedKeyCount, "funded-key-count", tmpnet.DefaultFundedKeyCount, "Number of funded keys the network should start with")
 	rootCmd.AddCommand(startNetworkCmd)
