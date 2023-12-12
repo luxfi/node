@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited All rights reserved.
+// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Do not include this in mocks.mockgen.txt as bls package won't be available.

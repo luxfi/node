@@ -19,9 +19,9 @@ const (
 	CascadeID uint32 = 2
 	DenaliID  uint32 = 3
 	EverestID uint32 = 4
-	FujiID    uint32 = 5
+	TestNetID    uint32 = 5
 
-	TestnetID  uint32 = FujiID
+	TestnetID  uint32 = TestNetID
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 
@@ -29,7 +29,7 @@ const (
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
 	EverestName  = "everest"
-	FujiName     = "fuji"
+	TestNetName     = "testnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
@@ -38,7 +38,7 @@ const (
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	FujiHRP     = "fuji"
+	TestNetHRP     = "testnet"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	FallbackHRP = "custom"
@@ -54,7 +54,7 @@ var (
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
 		EverestID:  EverestName,
-		FujiID:     FujiName,
+		TestNetID:     TestNetName,
 		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
 	}
@@ -63,7 +63,7 @@ var (
 		CascadeName:  CascadeID,
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
-		FujiName:     FujiID,
+		TestNetName:     TestNetID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
@@ -74,7 +74,7 @@ var (
 		CascadeID:  CascadeHRP,
 		DenaliID:   DenaliHRP,
 		EverestID:  EverestHRP,
-		FujiID:     FujiHRP,
+		TestNetID:     TestNetHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
 	}
@@ -83,11 +83,11 @@ var (
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		FujiHRP:     FujiID,
+		TestNetHRP:     TestNetID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, FujiID)
+	ProductionNetworkIDs = set.Of(MainnetID, TestNetID)
 
 	ValidNetworkPrefix = "network-"
 

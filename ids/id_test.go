@@ -103,7 +103,7 @@ func TestIDMarshalJSON(t *testing.T) {
 	}{
 		{"ID{}", ID{}, []byte("\"11111111111111111111111111111111LpoYY\""), nil},
 		{
-			"ID(\"luxdefi\")",
+			"ID(\"ava labs\")",
 			ID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			[]byte("\"jvYi6Tn9idMi7BaymUVi9zWjg5tpmW7trfKG1AYJLKZJ2fsU7\""),
 			nil,
@@ -129,7 +129,7 @@ func TestIDUnmarshalJSON(t *testing.T) {
 	}{
 		{"ID{}", []byte("null"), ID{}, nil},
 		{
-			"ID(\"luxdefi\")",
+			"ID(\"ava labs\")",
 			[]byte("\"jvYi6Tn9idMi7BaymUVi9zWjg5tpmW7trfKG1AYJLKZJ2fsU7\""),
 			ID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			nil,
