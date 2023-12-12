@@ -222,7 +222,7 @@ func CheckBootstrapIsPossible(network tmpnet.Network) {
 }
 
 // Start a local test-managed network with the provided node binary.
-func StartLocalNetwork(luxGoExecPath string, networkDir string) *local.LocalNetwork {
+func StartLocalNetwork(luxdExecPath string, networkDir string) *local.LocalNetwork {
 	require := require.New(ginkgo.GinkgoT())
 
 	network, err := local.StartNetwork(
@@ -231,7 +231,7 @@ func StartLocalNetwork(luxGoExecPath string, networkDir string) *local.LocalNetw
 		networkDir,
 		&local.LocalNetwork{
 			LocalConfig: local.LocalConfig{
-				ExecPath: luxGoExecPath,
+				ExecPath: luxdExecPath,
 			},
 		},
 		tmpnet.DefaultNodeCount,

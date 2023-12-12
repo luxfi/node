@@ -3,8 +3,8 @@ set -e
 
 SUCCESS=1
 
-# Polls LuxGo until it's healthy. When it is,
-# sets SUCCESS to 0 and returns. If LuxGo
+# Polls luxd until it's healthy. When it is,
+# sets SUCCESS to 0 and returns. If luxd
 # doesn't become healthy within 3 hours, sets
 # SUCCESS to 1 and returns.
 wait_until_healthy () {
@@ -22,11 +22,11 @@ wait_until_healthy () {
     # check that 3 hours haven't passed
     now=$(date +%s)
     if [ $now -ge $stop ];
-    then 
+    then
       # timeout: exit
       SUCCESS=1
       return
-    fi  
+    fi
     # no timeout yet, wait 30s until retry
     sleep 30
   done
@@ -46,17 +46,17 @@ FILENAME="mainnet-db-daily-"
 DATE=`date +'%m-%d-%Y'`
 DB_FILE="$FILENAME$DATE"
 echo "Copying database file $DB_FILE from S3 to local..."
-aws s3 cp s3://lux-db-daily/ /opt/ --no-progress --recursive --exclude "*" --include "$DB_FILE*" 
+aws s3 cp s3://lux-db-daily/ /opt/ --no-progress --recursive --exclude "*" --include "$DB_FILE*"
 echo "Done downloading database"
 
 # extract DB
 echo "Extracting database..."
-mkdir -p /var/lib/node/db 
-tar -zxf /opt/$DB_FILE*-tar.gz -C /var/lib/node/db 
+mkdir -p /var/lib/node/db
+tar -zxf /opt/$DB_FILE*-tar.gz -C /var/lib/node/db
 echo "Done extracting database"
 
 echo "Creating Docker network..."
-docker network create controlled-net 
+docker network create controlled-net
 
 echo "Starting Docker container..."
 containerID=$(docker run --name="net_outage_simulation" --memory="12g" --memory-reservation="11g" --cpus="6.0" --net=controlled-net -p 9650:9650 -p 9651:9651 -v /var/lib/node/db:/db -d luxdefi/node:latest /node/build/node --db-dir /db --http-host=0.0.0.0)
@@ -68,14 +68,14 @@ wait_until_healthy
 if [ $SUCCESS -eq 1 ];
 then
   echo "Timed out waiting for node to become healthy; exiting."
-  exit 1 
+  exit 1
 fi
 
-# To simulate internet outage, we will disable the docker network connection 
+# To simulate internet outage, we will disable the docker network connection
 echo "Disconnecting node from internet..."
 docker network disconnect controlled-net $containerID
 echo "Sleeping 60 minutes..."
-sleep 3600 
+sleep 3600
 echo "Reconnecting node to internet..."
 docker network connect controlled-net $containerID
 echo "Reconnected to internet. Waiting until healthy..."
@@ -87,7 +87,7 @@ wait_until_healthy
 if [ $SUCCESS -eq 1 ];
 then
   echo "Timed out waiting for node to become healthy after outage; exiting."
-  exit 1 
+  exit 1
 fi
 
 # The node returned healthy, print how long it took

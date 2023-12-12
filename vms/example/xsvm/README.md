@@ -22,7 +22,7 @@ Just as [Coreth] powers the [C-Chain], XSVM can be used to power its own blockch
 
 ## How it Works
 
-XSVM utilizes LuxGo's [teleporter] package to create and authenticate Subnet Messages.
+XSVM utilizes luxd's [teleporter] package to create and authenticate Subnet Messages.
 
 ### Transfer
 

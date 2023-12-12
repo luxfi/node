@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Luxgo root folder
+# luxd root folder
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh

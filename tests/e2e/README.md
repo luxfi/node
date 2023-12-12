@@ -92,7 +92,7 @@ ginkgo -v ./tests/e2e -- \
     --use-existing-network \
     --network-dir=/path/to/network
 
-# It is also possible to set the LUXGO_PATH env var instead of supplying --node-path
+# It is also possible to set the LUXD_PATH env var instead of supplying --node-path
 # and to set TMPNET_NETWORK_DIR instead of supplying --network-dir.
 ```
 

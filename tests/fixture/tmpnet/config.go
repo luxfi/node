@@ -60,7 +60,7 @@ var (
 )
 
 // Defines a mapping of flag keys to values intended to be supplied to
-// an invocation of an LuxGo node.
+// an invocation of an luxd node.
 type FlagsMap map[string]interface{}
 
 // SetDefaults ensures the effectiveness of flag overrides by only
@@ -166,7 +166,7 @@ type NodeURI struct {
 	URI    string
 }
 
-// NodeConfig defines configuration for an LuxGo node.
+// NodeConfig defines configuration for an luxd node.
 type NodeConfig struct {
 	NodeID ids.NodeID
 	Flags  FlagsMap

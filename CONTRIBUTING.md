@@ -2,7 +2,7 @@
 
 ## Setup
 
-To start developing on LuxGo, you'll need a few things installed.
+To start developing on luxd, you'll need a few things installed.
 
 - Golang version >= 1.20.8
 - gcc
@@ -12,7 +12,7 @@ To start developing on LuxGo, you'll need a few things installed.
 
 ### Security
 
-- Do not open up a GitHub issue if it relates to a security vulnerability in LuxGo, and instead refer to our [security policy](./SECURITY.md).
+- Do not open up a GitHub issue if it relates to a security vulnerability in luxd, and instead refer to our [security policy](./SECURITY.md).
 
 ### Did you fix whitespace, format code, or make a purely cosmetic patch?
 
@@ -26,7 +26,7 @@ To start developing on LuxGo, you'll need a few things installed.
 ## Features
 
 - If you want to start a discussion about the development of a new feature or the modfiication of an existing one, start a thread under GitHub [discussions](https://github.com/luxdefi/node/discussions/categories/ideas).
-- Post a thread about your idea and why it should be added to LuxGo.
+- Post a thread about your idea and why it should be added to luxd.
 - Don't start working on a pull request until you've received positive feedback from the maintainers.
 
 ## Pull Request Guidelines
@@ -81,7 +81,7 @@ To start developing on LuxGo, you'll need a few things installed.
 
 ### Do you have questions about the source code?
 
-- Ask any question about LuxGo under GitHub [discussions](https://github.com/luxdefi/node/discussions/categories/q-a).
+- Ask any question about luxd under GitHub [discussions](https://github.com/luxdefi/node/discussions/categories/q-a).
 
 ### Do you want to contribute to the Lux documentation?
 

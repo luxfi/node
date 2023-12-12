@@ -4,7 +4,7 @@ set -euo pipefail
 
 # e.g.,
 # ./scripts/tests.upgrade.sh 1.7.16
-# LUXGO_PATH=./path/to/node ./scripts/tests.upgrade.sh 1.7.16 # Customization of node path
+# LUXD_PATH=./path/to/node ./scripts/tests.upgrade.sh 1.7.16 # Customization of node path
 if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -17,7 +17,7 @@ if [[ -z "${VERSION}" ]]; then
   exit 255
 fi
 
-LUXGO_PATH="$(realpath ${LUXGO_PATH:-./build/node})"
+LUXD_PATH="$(realpath ${LUXD_PATH:-./build/node})"
 
 #################################
 # download node
@@ -62,8 +62,8 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 
 #################################
 # By default, it runs all upgrade test cases!
-echo "running upgrade tests against the local cluster with ${LUXGO_PATH}"
+echo "running upgrade tests against the local cluster with ${LUXD_PATH}"
 ./tests/upgrade/upgrade.test \
   --ginkgo.v \
   --node-path=/tmp/node-v${VERSION}/node \
-  --node-path-to-upgrade-to=${LUXGO_PATH}
+  --node-path-to-upgrade-to=${LUXD_PATH}
