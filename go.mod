@@ -27,7 +27,7 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.9
-	github.com/luxdefi/coreth v0.12.15
+	github.com/luxdefi/coreth v0.12.16
 	github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
