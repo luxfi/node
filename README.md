@@ -1,9 +1,4 @@
-<div align="center">
-  <img src="resources/LuxLogo.png?raw=true">
-</div>
-
----
-
+# luxd
 Node implementation for the [Lux](https://lux.network) network -
 a blockchains platform with high throughput, and blazing fast transactions.
 
