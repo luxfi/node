@@ -123,7 +123,7 @@ func New(
 	n.DoneShuttingDown.Add(1)
 
 	pop := signer.NewProofOfPossession(n.Config.StakingSigningKey)
-	logger.Info("initializing node",
+	logger.Info("initializing luxd",
 		zap.Stringer("version", version.CurrentApp),
 		zap.Stringer("nodeID", n.ID),
 		zap.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
@@ -1003,7 +1003,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		Server:                                  n.APIServer,
 		Keystore:                                n.keystore,
 		AtomicMemory:                            n.sharedMemory,
-		LUXAssetID:                             luxAssetID,
+		LUXAssetID:                              luxAssetID,
 		XChainID:                                xChainID,
 		CChainID:                                cChainID,
 		CriticalChains:                          criticalChains,
