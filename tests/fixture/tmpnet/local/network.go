@@ -378,8 +378,11 @@ func (ln *LocalNetwork) WaitForHealthy(ctx context.Context, w io.Writer) error {
 	defer ticker.Stop()
 
 	healthyNodes := set.NewSet[ids.NodeID](len(ln.Nodes))
+
 	for healthyNodes.Len() < len(ln.Nodes) {
 		for _, node := range ln.Nodes {
+			fmt.Fprintf(w, "NodeID %v", node.NodeID)
+
 			if healthyNodes.Contains(node.NodeID) {
 				continue
 			}
@@ -388,6 +391,7 @@ func (ln *LocalNetwork) WaitForHealthy(ctx context.Context, w io.Writer) error {
 			if err != nil && !errors.Is(err, tmpnet.ErrNotRunning) {
 				return err
 			}
+
 			if !healthy {
 				continue
 			}
