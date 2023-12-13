@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="resources/LuxLogoRed.png?raw=true">
+  <img src="resources/LuxLogo.png?raw=true">
 </div>
 
 ---
