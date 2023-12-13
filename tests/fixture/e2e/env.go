@@ -67,7 +67,7 @@ func NewTestEnvironment(flagVars *FlagVars) *TestEnvironment {
 		require.NoError(err)
 		tests.Outf("{{yellow}}Using an existing network configured at %s{{/}}\n", network.Dir)
 	} else {
-		network = StartLocalNetwork(flagVars.luxdExecPath(), DefaultNetworkDir)
+		network = StartLocalNetwork(flagVars.LuxdExecPath(), DefaultNetworkDir)
 	}
 
 	uris := network.GetURIs()

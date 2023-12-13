@@ -11,7 +11,7 @@ mkdir -p $LUX_BUILD_BIN_DIR
 mkdir -p $LUX_LIB_DIR
 
 # Assume binaries are at default locations
-OK=`cp ./build/node $LUX_BUILD_BIN_DIR`
+OK=`cp ./build/luxd $LUX_BUILD_BIN_DIR`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

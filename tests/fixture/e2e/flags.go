@@ -12,9 +12,9 @@ import (
 )
 
 type FlagVars struct {
-	luxdExecPath string
-	networkDir          string
-	useExistingNetwork  bool
+	luxdExecPath       string
+	networkDir         string
+	useExistingNetwork bool
 }
 
 func (v *FlagVars) NetworkDir() string {
@@ -27,7 +27,7 @@ func (v *FlagVars) NetworkDir() string {
 	return os.Getenv(local.NetworkDirEnvName)
 }
 
-func (v *FlagVars) luxdExecPath() string {
+func (v *FlagVars) LuxdExecPath() string {
 	return v.luxdExecPath
 }
 
@@ -40,8 +40,8 @@ func RegisterFlags() *FlagVars {
 	flag.StringVar(
 		&vars.luxdExecPath,
 		"node-path",
-		os.Getenv(local.luxdPathEnvName),
-		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", local.luxdPathEnvName),
+		os.Getenv(local.LuxdPathEnvName),
+		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", local.LuxdPathEnvName),
 	)
 	flag.StringVar(
 		&vars.networkDir,

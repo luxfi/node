@@ -11,7 +11,7 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 ./tests/e2e/e2e.test \
---node-path=./build/node
+--node-path=./build/luxd
 ```
 
 See [`tests.e2e.sh`](../../scripts/tests.e2e.sh) for an example.
@@ -28,7 +28,7 @@ primarily target the X-Chain:
 
 ```bash
 ./tests/e2e/e2e.test \
-  --node-path=./build/node \
+  --node-path=./build/luxd \
   --ginkgo.label-filter=x
 ```
 

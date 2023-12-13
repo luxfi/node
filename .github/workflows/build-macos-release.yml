@@ -42,7 +42,7 @@ jobs:
           sudo installer -pkg AWSCLIV2.pkg -target /
 
       - name: Create zip file
-        run: 7z a node-macos-${VERSION}.zip build/node
+        run: 7z a node-macos-${VERSION}.zip build/luxd
         env:
           VERSION: ${{ env.VERSION }}
 

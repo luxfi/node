@@ -51,7 +51,7 @@ Build luxd by running the build script:
 The `node` binary is now in the `build` directory. To run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 ### Binary Repository
@@ -105,7 +105,7 @@ docker image ls
 The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/luxd
 ```
 
 ## Running Lux
@@ -115,7 +115,7 @@ docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/n
 To connect to the Lux Mainnet, run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 You should see some pretty ASCII art and log messages.
@@ -127,7 +127,7 @@ You can use `Ctrl+C` to kill the node.
 To connect to the Testnet Testnet, run:
 
 ```sh
-./build/node --network-id=testnet
+./build/luxd --network-id=testnet
 ```
 
 ### Creating a Local Testnet
@@ -143,7 +143,7 @@ lux network status
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://docs.lux.network/build/node-apis/health) until it is done bootstrapping.
+A node will not [report healthy](https://docs.lux.network/build/luxd-apis/health) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 

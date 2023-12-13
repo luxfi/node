@@ -67,7 +67,6 @@ github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bits-and-blooms/bitset v1.12.0 h1:U/q1fAF7xXRhFCrhROzIfffYnu+dlS38vCZtmFVPHmA=
-github.com/bits-and-blooms/bitset v1.12.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btcd v0.22.0-beta.0.20220111032746-97732e52810c/go.mod h1:tjmYdS6MLJ5/s0Fj4DbLgSbDHbEqLJrtnHecBFkdz5M=
 github.com/btcsuite/btcd v0.23.0 h1:V2/ZgjfDFIygAX3ZapeigkVBoVUtOJKSwrhZdlpSvaA=
@@ -395,14 +394,6 @@ github.com/labstack/echo/v4 v4.5.0/go.mod h1:czIriw4a0C1dFun+ObrXp7ok03xON0N1awS
 github.com/labstack/gommon v0.3.0/go.mod h1:MULnywXg0yavhxWKc+lOruYdAhDwPK9wf0OL7NoOu+k=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
-github.com/luxdefi/coreth v0.12.11 h1:n5muL7pFLHQNhXQr5gptN5T1qlbru5t5eR7cAQ6syTA=
-github.com/luxdefi/coreth v0.12.11/go.mod h1:et9y5oZYngVtOjkJ2GwwathXQM6krU+NvOvs+5wIg+c=
-github.com/luxdefi/coreth v0.12.12 h1:CMjFqb0atyHC0RE68ll5utJ0QLq2NTB9BzsK8dduNdo=
-github.com/luxdefi/coreth v0.12.12/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
-github.com/luxdefi/coreth v0.12.13 h1:XrDB3MHQOaXgCwWuL9mrIPYnd3L8nI1OFwo/K/eoskc=
-github.com/luxdefi/coreth v0.12.13/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
-github.com/luxdefi/coreth v0.12.14 h1:PpfZK/07o80IPiD8KqLaKNDcQIOYfmLgiO948md6sys=
-github.com/luxdefi/coreth v0.12.14/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
 github.com/luxdefi/coreth v0.12.15 h1:pCkkyVyLCimvPgZb/Q5ShdVeJ++DoZCZHpd6Mu7Iv+A=
 github.com/luxdefi/coreth v0.12.15/go.mod h1:w+CD6f7lEfKzVchsPpoQSWh+hWpSRy7b+inXy4cb0AI=
 github.com/luxdefi/ledger-lux/go v0.0.0-20231212010230-18a7c8c97431 h1:GKjx600wOvtCRRZ4MfRSwZ7bIbraWN8AcRDZmNZC+cg=
