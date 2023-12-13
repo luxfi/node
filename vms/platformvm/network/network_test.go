@@ -25,7 +25,7 @@ import (
 
 var errTest = errors.New("test error")
 
-func TestnetworkAppGossip(t *testing.T) {
+func TestNetworkAppGossip(t *testing.T) {
 	testTx := &txs.Tx{
 		Unsigned: &txs.BaseTx{
 			BaseTx: lux.BaseTx{
@@ -169,7 +169,7 @@ func TestnetworkAppGossip(t *testing.T) {
 	}
 }
 
-func TestnetworkIssueTx(t *testing.T) {
+func TestNetworkIssueTx(t *testing.T) {
 	type test struct {
 		name                      string
 		mempoolFunc               func(*gomock.Controller) mempool.Mempool
@@ -322,7 +322,7 @@ func TestnetworkIssueTx(t *testing.T) {
 	}
 }
 
-func TestnetworkGossipTx(t *testing.T) {
+func TestNetworkGossipTx(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 

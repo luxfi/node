@@ -111,7 +111,7 @@ func StartTestPeer(
 			MessageCreator:       mc,
 			Log:                  logging.NoLog{},
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
-			Network:              Testnetwork,
+			Network:              TestNetwork,
 			Router:               router,
 			VersionCompatibility: version.GetCompatibility(networkID),
 			MySubnets:            set.Set[ids.ID]{},

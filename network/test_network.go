@@ -71,7 +71,7 @@ func (*noopListener) Addr() net.Addr {
 	}
 }
 
-func NewTestnetwork(
+func NewTestNetwork(
 	log logging.Logger,
 	networkID uint32,
 	currentValidators validators.Manager,
@@ -195,7 +195,7 @@ func NewTestnetwork(
 	networkConfig.UptimeCalculator = uptime.NoOpCalculator
 
 	// TODO actually monitor usage
-	// Testnetwork doesn't use disk so we don't need to track it, but we should
+	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
 	networkConfig.ResourceTracker, err = tracker.NewResourceTracker(
 		metrics,
