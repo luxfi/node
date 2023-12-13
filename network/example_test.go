@@ -66,7 +66,7 @@ func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
 	return true
 }
 
-func ExampleNewTestnetwork() {
+func ExampleNewTestNetwork() {
 	log := logging.NewLogger(
 		"networking",
 		logging.NewWrappedCore(
@@ -91,7 +91,7 @@ func ExampleNewTestnetwork() {
 		log: log,
 	}
 
-	network, err := NewTestnetwork(
+	network, err := NewTestNetwork(
 		log,
 		constants.TestnetID,
 		validators,

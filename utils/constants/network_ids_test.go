@@ -42,7 +42,7 @@ func TestGetHRP(t *testing.T) {
 	}
 }
 
-func TestnetworkName(t *testing.T) {
+func TestNetworkName(t *testing.T) {
 	tests := []struct {
 		id   uint32
 		name string
@@ -71,7 +71,7 @@ func TestnetworkName(t *testing.T) {
 	}
 }
 
-func TestnetworkID(t *testing.T) {
+func TestNetworkID(t *testing.T) {
 	tests := []struct {
 		name        string
 		id          uint32
