@@ -1,185 +1,1714 @@
 {
-  "networkID": 5,
-  "allocations": [
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "initialAmount": 0,
-      "unlockSchedule": [
+    "networkID": 5,
+    "allocations": [
         {
-          "amount": 40000000000000000
+            "ethAddr": "0xFe6CCe8b9a19a386A3765Bd9e759352637852E8C",
+            "luxAddr": "X-lux1xmgusugamlpsw937rtl94f3xjv3eg2vxg2xzsl",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9b432Db6b4d3D0fEF4D107012dBDbB04875688c4",
+            "luxAddr": "X-lux1slnu2gu2shu84vexnuveqvmpp2tst20jdvrw0w",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x86864C6aC21c9Eb4383bF5714FDb4Dcec5C52b4D",
+            "luxAddr": "X-lux16rgafpv8cmhdtcmm5c5egstdx574l6ywv2zn93",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x23035F4854575b915a4f0402dc7f12CC4928C4aC",
+            "luxAddr": "X-lux1zvf03t4cmy95j9f7awjxr350w39fxrd4leps7v",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xA9cE56194784D26E3E412a4512ACD3975b8c4b0e",
+            "luxAddr": "X-lux1x2pj5jcqusu7x9tyseef4chta59slgeuk334ms",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0f403ec0d90DE986022D4Ef3d6E9bA31C58Ffd72",
+            "luxAddr": "X-lux12rahda3kr2utetjhfqnmfnecgs9hrva0zymkup",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0Ca23A00293D65651Ec319EF5f8dE612de795953",
+            "luxAddr": "X-lux1cegg0utg4t42n5v4pgdaef9khzn0hvu9uhksfj",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0C725E32A9bC98e4Ae472280DA90D4Ad3E0C5245",
+            "luxAddr": "X-lux19fksuf04m733nrj27zvf4ztuvfystgcvh4hzjd",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x5f98f72EFD29977bD526CC0564De00a2e4f49c67",
+            "luxAddr": "X-lux149ntv72qr9xn5rmtk3arzvr04ntyw0ym6xhcw3",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0C2d976D2262193c1916E98CC1DF2de830D8f1A1",
+            "luxAddr": "X-lux18wun48fvzxmy3jwt2ahvgr4t00qf7ppym0ehvr",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xa7Fb790Bf69e416C3F57f4DFd5804B5BbE57956a",
+            "luxAddr": "X-lux1l9r7u8pe5n0t3pdkpwfz7w7dpa9evwzj0ptv36",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xa5B7C12092392adB6a11a56696bbb17c6caEfEC1",
+            "luxAddr": "X-lux1hwa2cw95yef2ylg70mgctgn5h6jkuj8g2rka22",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xb8af038bC76091bbF4C01C39baFe84a12e58b6A8",
+            "luxAddr": "X-lux1jxn7mt0gy295ln3xmqntnjkq2u63z0qfh9y74k",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x42a88210eBe9337c488C3B3Ed0dC7e142a85eAe5",
+            "luxAddr": "X-lux1kjl8gsjkeg95y3udjkvql6fl0fpg440m4c6vw6",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x2bd7A4109694300aa714E841eF72Bf09558f6213",
+            "luxAddr": "X-lux1k8u5vusd4lg7la2j2xwk7ctycz2p89a5cdsfsq",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xA1AD4b35040Cd3799cED74DDe96891A18C7e680D",
+            "luxAddr": "X-lux16a4veyzvehdlcrc3ysw4s8mz9pwlawgpv6xtqp",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x40a1891aC85dE080C8B038279EbD5a1FA5AA42d7",
+            "luxAddr": "X-lux1ltv6k5t9x07a4j0pvvxc5mhhwtyczymng6qzcj",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x3Adabda9369F9DBA11556b1B039cE6C92AA59693",
+            "luxAddr": "X-lux1yqlqdpe3ldw72k2he6pkeqax3qt3wyu6jgrr84",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x28444080E4b4532838B2D4700bF587aFa535012D",
+            "luxAddr": "X-lux1z7mceaghtjr6u4et965xejdvl5aym2xpk4zmrl",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x5D9a9e3225b593F86fb173ee2183bF4715208b7a",
+            "luxAddr": "X-lux1f3r06rnjr90dhcs6cugfgda8j42l7yjmpx548p",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x58013bCfaAc58af51e79bA8e754c8D6a08efEb53",
+            "luxAddr": "X-lux14hggzwhrd6js09u5guvd85rkfwas66ehttkuqd",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x6Cf3300E0d2B3c8D86cdeEe57f48F0F694504a7A",
+            "luxAddr": "X-lux1gf6d8sptuknjflnrul3fsa6glgmzs32600jggc",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x2B72051a667C37f67E56ffb31262Ff260FEB5Ecb",
+            "luxAddr": "X-lux10vzjuu27ju3dzwgyuhq9h8cs2v7snrdpduryes",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xA1d895D0fF1D008006f978d9A565474483c528e3",
+            "luxAddr": "X-lux1uszd40em05tgj4gpqjf4ax3vnzyau9ddt9tlg2",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x7678873668108d36e75F4C1550d84150E676fC78",
+            "luxAddr": "X-lux1gnt7y22ftj590av2l22duhyfqv94f23jcmdwn9",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x81DCb136F3549f51D648eC5AbB25Ff8F82BaeA9B",
+            "luxAddr": "X-lux1w8vf4clqkkuqkpu7qakul2wfwxutp584fqq3ug",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x703F98815B8517615aa73B1b4622D0373d1cDe1E",
+            "luxAddr": "X-lux149xs2xacsjnrczp5knxajm9a4hvwlxyf4qt8zg",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xb44912A728f5d917E8891A3611caF1FE454652eF",
+            "luxAddr": "X-lux1uwhtxfa3nzu7ymhy0d3jnv8dhmkmll9dw4rzle",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x4C259829a97De52D9bACA0D08F00ad035d2d1231",
+            "luxAddr": "X-lux1jw5hwg398knvvh4ykkzg2wj60pc3us7gquwzje",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x68b531F4cd08929EC2c5Efc257926E04A8c71fA4",
+            "luxAddr": "X-lux13t8f65mzeavzmtgtmz4u47wlprkf2552tt06vw",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xaf2b31817BAb8276b083Ca994c7688faD127d83A",
+            "luxAddr": "X-lux1fkwstqaa968g6uvgyz9hgv9j4n2hek6xcvnjez",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0C844E82E6726E14521bb922257abb5743684Bf3",
+            "luxAddr": "X-lux1w6554evtt4r5zhvlgyl77w54tm945jg7k4pnz4",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x266411625F15E29db64ED1f212BFe8A2374F6EBd",
+            "luxAddr": "X-lux1pxdnjjhhpn5jn47qcmy2tmrju5xtdc72x3esmj",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xd997Eb8977B4FaFc9019185eC8F9Fa1afE332dB5",
+            "luxAddr": "X-lux1s8qa7sls9502zfeq7a5y6scqlfd0qfdcmrkn6u",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xdD477745b29c32DAD38e051A901660661a719382",
+            "luxAddr": "X-lux1qsw9nkch5schprtcgt25g4p0ehcwsw8wy093as",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9E267CC01A798746A3a0b7a47A2796901669F222",
+            "luxAddr": "X-lux1z7shkhrx5a2fddxfnse866vythuvkyxn72gdp2",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xaD7ef979aF799392fC4b918a4272D09260bD434b",
+            "luxAddr": "X-lux1u63n4k9k7qtnajenputnnm3hwuwgf2hf88x8gr",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xA15AdF61fee3Add76770E501f4D63e6A3FfEB6F4",
+            "luxAddr": "X-lux17um3mxykl2g37uzafu5w5p5263hh6heaqmyaf2",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xCe8838CF4c013292aFd1f1BbFB116636eb8310bf",
+            "luxAddr": "X-lux1c0ad9aq4jqpy6a7xxazqhyz59l3538rgwn97f6",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xaC270e58e4699f1f22c123B77894bB4D227B4B5D",
+            "luxAddr": "X-lux1kum9mhnkpgh4h0ghxqe05ggz49l2c2sptfp44p",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xf90275ACc0f651D2A7605F3d180d6C61A0CDaEFE",
+            "luxAddr": "X-lux1y69tuaymvwjdggqr7906cn6mh45l0h68mdqz6k",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xE66fEc6ef0cfc68b157deeB4D873861c27ee893c",
+            "luxAddr": "X-lux1ut4lvzadch8hyccd62uv89dmd2wqdaalc4pv9q",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xf6F8Fc135638F78D3d1c6cE5F162b512c9398544",
+            "luxAddr": "X-lux174c8684cswyem0ulgmkqz5rjw9y8r9hfagundf",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xa3c3712dBc6fFD092a279A830707a6333f458cb4",
+            "luxAddr": "X-lux1a85tu3v6x8tjnxadc4w5n7f2raj8pzrpdldf32",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x92D472b09fd07cc7c7344D2403EF6EC99aA9681a",
+            "luxAddr": "X-lux124g58tlndl2n4jj06dd7ysgepwauvhx0s9e6py",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x087322D0e6cc38ABB1DCFB5CF1C872d453A68150",
+            "luxAddr": "X-lux1uvgdn7vtsv0uxweskae3usuwf2mgsg7nr5hkhs",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x7c8ABCE57eA37a57Aee474E390CC2962121DE0c8",
+            "luxAddr": "X-lux15ru3qar6wysdxp853vhj90cac4ekvvkpfpvw8a",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0832dEe8fE9Ad151151C4A350097D3471Bb1c25D",
+            "luxAddr": "X-lux1jx44lgp04kzjdn93aqy7cu4eycpmsk9s3c5umx",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xB8DC7A11DFDD732D2b62B3A2Ae7D611E54adb689",
+            "luxAddr": "X-lux1wa0df90hukrl0p8fajnm4w0qtzszgw88wk434c",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xB9c81514c741803097B2767B8E44c38C3EDbB1B3",
+            "luxAddr": "X-lux167nez4y5wfj4ls2phn73q5ymazvl35u6kvg60v",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x54B1ca505b52BF4457C27A2213789b51981003e4",
+            "luxAddr": "X-lux16fz7x3ukk2utx6kjfqnj79ta7d47gpe7zkq0um",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x777A0a21dF670F8Af2AC1167B7CA63A99990a543",
+            "luxAddr": "X-lux13lpf829756zvfwe7fsna555l9zp92cjrrh6s6x",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x44444a76bDb2510b76Cc867c07fD352fE5BaE9E0",
+            "luxAddr": "X-lux14lxs6jh3lyw7hkmvupewyjdn5jnan2w9uk56q8",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xca949e8DF4133F6a11577B5eF2b6C71171E08E3F",
+            "luxAddr": "X-lux1mfxjkj2kt7x2m2c5x4fezc34l2jtes5njkj05e",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x76749D052082bB3D0dc361E4BF4bd1b89DE6785F",
+            "luxAddr": "X-lux18ran6rvzm66ehlzhyslnjf5rgz0y02kraqv5nq",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xB4B0492C9aea0Ba968b83397225568FDEfc7c346",
+            "luxAddr": "X-lux14xc9yjknxz6lk06fwulcnd5zhy0cwxyksu083c",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xCDa33bCf8B74428CCF7735644561b66FA11e8f78",
+            "luxAddr": "X-lux1udgtgzxdzsx82a6etx02t83max98tv3lz7g249",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xDFEAF075bBDea9361E38AcdDc094162299D29077",
+            "luxAddr": "X-lux15vev4w4qm4e7g6f27l0d2tfn7ndngvgpacs93t",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xd5674a255a0283E20d923a687583b4e78e4EE052",
+            "luxAddr": "X-lux1p7844sd0l5axdp0enx8xkzr7u7d6hvs4a65fzs",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x564c95d6ADAb8eBC9EE2797Af3E4483d0410b02f",
+            "luxAddr": "X-lux1cfy2rxhsvy7ndn5q0aa2anrucj9nnfucesmjzu",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9fA51f66c9ebcE80078fc9d220456d3f0d289Cf4",
+            "luxAddr": "X-lux1dsw790l7m7e5nwda0mh44lmr69dytpqu39xsl5",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x2aD9F23777de91a6Fe5b378a91cc3396071B97b7",
+            "luxAddr": "X-lux1lf06sh0776p2rehewy4u4gxj6w3cq2y6k05svr",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0D593b1D3A4b8E8d435720Fcb21804628aE245B4",
+            "luxAddr": "X-lux1sjh25jv72lfupqve2956xtm4c4ktkztw47jaax",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x6E50d94E689718A4E7E2f8F816bB2171753f49DF",
+            "luxAddr": "X-lux1rh63nxxamzm8a9jecu98lpc0tejvvffyflgu92",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x3abb205421020d877384590C0dfA10a73667031C",
+            "luxAddr": "X-lux1es6436tu2kqwpr3uxsz0yl8cmw7wamgvezspee",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0f1E08dEf39a2B6583c3063D97d13A3B2735640A",
+            "luxAddr": "X-lux15vs57z5a6qklwef0csrccxddfv0amth79c6lvu",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xcCC16261569dc13fd814767BEA4DAE17b62B0Dbc",
+            "luxAddr": "X-lux1qdatsr74a8hneclaxkne564ss6545m34gkcqp4",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x09f19ef87c5583ea310167E641969148bf370fea",
+            "luxAddr": "X-lux19qzxcwhrlct70n0lglkzfr7nsrw5yvqklwy6y8",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9B0eb2F1ccbcC30b4814FFe0b21cFcdAcec3f70a",
+            "luxAddr": "X-lux1l7ghgv069zm0x5pxzgv7202mfd55pmns8e4dwu",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xcda90c1c5D23CC1f2fEf0977D9977fbC16b5F193",
+            "luxAddr": "X-lux1t9hwgw0dzzgczuz6uyjyneg0rezsvlwnnf228v",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x97f44FB1263A1bFE61f22257b06c36c19FaE5107",
+            "luxAddr": "X-lux136utn007cs46ndlluzk5w25rqsjz2mpgxd9tdm",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x7F6CE36F128CB14dC38d17cebe8AED5F01194CdE",
+            "luxAddr": "X-lux19dxwdl7pfn4kqtedremetkqhs3lf8zrj0lwkn9",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xb65Cd8fb4c69811F72Ca1cf947b2b10193Fd6E4b",
+            "luxAddr": "X-lux1lu59ttr5jxqgyk02g69eg8x5afgtfqdc5xfe8v",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x3Bb945D697BB183Fb044D06EdF7E0f8C91F72c76",
+            "luxAddr": "X-lux1fenuc8appvxa85zfh736nzd2zzlsr5dnyzlh8y",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x92a61408B8D8DE860ca3bbA07040755c1818Eb48",
+            "luxAddr": "X-lux1w9sjmtpn22axwa4r895a45a8k36g7p3y6uet3e",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xcDfB46e4766593E5c9AA1D48288dE67fC6f7C9C8",
+            "luxAddr": "X-lux18h73j3a4cwtqu963exhsnwl8ecw7mn43jcunf7",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xe68520976F3718Bb231665CD34729CD3b9160690",
+            "luxAddr": "X-lux16lppn0cd7t39c6uhgdyvqcnkf7sh7cqhthwueg",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x080E0CFF22aE5Df68d882C7bA48A52e521439947",
+            "luxAddr": "X-lux1r4rfyntgygyga9xjxngg77saccy2cqfu8ku6cl",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xbE955Edf283631990E269430B184534aADDbf2f9",
+            "luxAddr": "X-lux1hzrdg776886vxg36ehppkggaazv3u8aud2tlrg",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x90A5F6DF93F4b08Da84B8f1493af7D203FbD9FA0",
+            "luxAddr": "X-lux19ds8tp6r8m97xxm396wsrkdyp5u5zl7nsmr8zx",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0695Ca6DE3fc97A029663185f62492780cB5Fb0F",
+            "luxAddr": "X-lux1jew9z7lg0ax8u5fwsy5feydcz9m3p2gp0yktv2",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x69Aa521E8C242A6F5f90986b91b024488a7Aba91",
+            "luxAddr": "X-lux10df488lpws4fsv97u3k65nzd2cyh3eqf9uyphr",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9C361D3af40d5E31A5187A88428058273Ab9bF0d",
+            "luxAddr": "X-lux1tuvra2eud9a88seh45rqj498ecce6crp60k8x6",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x2EA7896f5dd63e53613d0CC5EF8e15855FEa368A",
+            "luxAddr": "X-lux1y6jaevnwq6eraxm0030hc05wj9g7lsvlyf394y",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xBEE264a1AD2B70E1c3d024dFa7EfD33c25CF1778",
+            "luxAddr": "X-lux1vuknmlx2vszxfsu7n9r3t86gm6xvncwwh264yp",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x115FA222841750fB65Af79557B3FeBe8291B8117",
+            "luxAddr": "X-lux16wymmwtmztxwul5f3wl0ven7tfqm44krwsngmk",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x49c14D6DE63A83776606FC772322a01f5e2Dd5Fd",
+            "luxAddr": "X-lux1j7c8geasymlxk4r0x9vfmddh2y42pk77d0a628",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x61f5cA838b20c364e75519Ab59198D69E96368EE",
+            "luxAddr": "X-lux1lf903a77dehpuc6pyzs2n9gy2rq4vzqwnm83q8",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x485F2265A0d0c668f52A0E1Ab39f8F985ffDB0C9",
+            "luxAddr": "X-lux19ea647dw6ql0vpwdjpgthq0zq6jjccdgr6v02k",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x4052e560c3139B57B6AC2590BaB6654186D490FD",
+            "luxAddr": "X-lux1xgr55r79y6p3g25kvy5mjfnhf92n8fyntcpl0z",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xc676A0a2ae67C0aEd774D8E6d355b28bCbC4eFEd",
+            "luxAddr": "X-lux12u89n63x96vphkq7szt2hcq903dt7n0ewj3y9q",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x27659C5bA283E179Ab734d70d6714967d63a0677",
+            "luxAddr": "X-lux10k4afaekppv6de2jggxe9whgsmk0prqydu0zda",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xa22bF877e29302E96aF0F25C286862bEAF5df6aA",
+            "luxAddr": "X-lux1sg35w26wlq4z48t4q6w63s862f6d8938kpydvl",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9154C1dbe07556c4e2D7A7eA7AbDF16e72E6fcea",
+            "luxAddr": "X-lux1x0nvjx4xgjl0uzfj5e4ffyjxzjpp8f63697t9y",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x9E9E6A28B1B2053C80C81b8A2031dEcD46BBd86c",
+            "luxAddr": "X-lux1rjvmy60fyrfjhxer2zytcazceqckayyagjfz9h",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xc0A3a415207eeeFe65CE5bb50FAF11c2aE2F4fb1",
+            "luxAddr": "X-lux1ahj8t4w8vann5qxjgfgkvggxgdn6daxcr3lzv3",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x3aA93f8BB8f264B1848282835fFee37282Dc3F81",
+            "luxAddr": "X-lux12dfqzlxfljlh4d2hjugm8xv4q8ns7uqhzug6pe",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0c6c3A349282b4993C0857B74335300Bccf42750",
+            "luxAddr": "X-lux1qdx94tw692e33uwzv2cptkksyly997uf29mert",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0x0ACC4C440dD46366828194DCd91eDe371DB18545",
+            "luxAddr": "X-lux1atxjufk28k660s0gqm2ly4achuzeds0j4zksfh",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
+        },
+        {
+            "ethAddr": "0xFaAA1544240cf31043DEed20b53E9F953F69C972",
+            "luxAddr": "X-lux1f6mpa88pzehajk207any3l6aaq438zpnjekpxf",
+            "initialAmount": 10000000000000000,
+            "unlockSchedule": [
+                {
+                    "amount": 10000000000000000,
+                    "locktime": 4733510400
+                }
+            ]
         }
-      ]
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1xpmx0ljrpvqexrvrj26fnggvr0ax9wm37nut0f",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1wrv92qg5x3dsqrtukdc8qxnpqust3qdazafkpl",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1qrmj7u9pquyy3mahzxeq0nnlnj2aceedxjpdh0",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1cap3ru2ghc3jtdnuyey738ru8u5ekdadvhzxse",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet18g2m7483k6swe46cpfmq96t09sp63pgv2faqh6",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1zwe0kxhg73x3ehgtkkz24k9czlfgztc4qvfwu7",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet1fqcs4m9p8gdp7gckk30n8u68d55jk0hdgq8umx",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet18lany6fjlzxc7vuqfd9x4k9wqp0yhk07p6t29z",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet18lany6fjlzxc7vuqfd9x4k9wqp0yhk07p6t29z",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    },
-    {
-      "ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-      "luxAddr": "X-testnet10d2fqjfl3ghl73z2ez65ufanxwwhccxuumx07y",
-      "initialAmount": 32000000000000000,
-      "unlockSchedule": []
-    }
-  ],
-  "startTime": 1599696000,
-  "initialStakeDuration": 31536000,
-  "initialStakeDurationOffset": 54000,
-  "initialStakedFunds": [
-    "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp"
-  ],
-  "initialStakers": [
-    {
-      "nodeID": "NodeID-NpagUxt6KQiwPch9Sd4osv8kD1TZnkjdk",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 1000000
-    },
-    {
-      "nodeID": "NodeID-2m38qc95mhHXtrhjyGbe7r2NhniqHHJRB",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 500000
-    },
-    {
-      "nodeID": "NodeID-LQwRLm4cbJ7T2kxcxp4uXCU5XD8DFrE1C",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 250000
-    },
-    {
-      "nodeID": "NodeID-hArafGhY2HFTbwaaVh1CSCUCUCiJ2Vfb",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 125000
-    },
-    {
-      "nodeID": "NodeID-4QBwET5o8kUhvt9xArhir4d3R25CtmZho",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 62500
-    },
-    {
-      "nodeID": "NodeID-HGZ8ae74J3odT8ESreAdCtdnvWG1J4X5n",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 31250
-    },
-    {
-      "nodeID": "NodeID-4KXitMCoE9p2BHA6VzXtaTxLoEjNDo2Pt",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-JyE4P8f4cTryNV8DCz2M81bMtGhFFHexG",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-EzGaipqomyK9UKx9DBHV6Ky3y68hoknrF",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-CYKruAjwH1BmV3m37sXNuprbr7dGQuJwG",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-LegbVf6qaMKcsXPnLStkdc1JVktmmiDxy",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-FesGqwKq7z5nPFHa5iwZctHE5EZV9Lpdq",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-BFa1padLXBj7VHa2JYvYGzcTBPQGjPhUy",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-4B4rc5vdD1758JSBYL1xyvE5NHGzz6xzH",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-EDESh4DfZFC15i613pMtWniQ9arbBZRnL",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-CZmZ9xpCzkWqjAyS7L4htzh5Lg6kf1k18",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-CTtkcXvVdhpNp6f97LEUXPwsRD3A2ZHqP",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-84KbQHSDnojroCVY7vQ7u9Tx7pUonPaS",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-JjvzhxnLHLUQ5HjVRkvG827ivbLXPwA9u",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    },
-    {
-      "nodeID": "NodeID-4CWTbdvgXHY1CLXqQNAp22nJDo5nAmts6",
-      "rewardAddress": "X-testnet1wycv8n7d2fg9aq6unp23pnj4q0arv03yylu2xp",
-      "delegationFee": 20000
-    }
-  ],
-  "cChainGenesis": "{\"config\":{\"chainId\":43113,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",
-  "message": "hi mom"
+    ],
+    "startTime": 1599696000,
+    "initialStakeDuration": 31536000,
+    "initialStakeDurationOffset": 54000,
+    "initialStakedFunds": [
+        "X-lux1xmgusugamlpsw937rtl94f3xjv3eg2vxg2xzsl",
+        "X-lux1slnu2gu2shu84vexnuveqvmpp2tst20jdvrw0w",
+        "X-lux16rgafpv8cmhdtcmm5c5egstdx574l6ywv2zn93",
+        "X-lux1zvf03t4cmy95j9f7awjxr350w39fxrd4leps7v",
+        "X-lux1x2pj5jcqusu7x9tyseef4chta59slgeuk334ms",
+        "X-lux12rahda3kr2utetjhfqnmfnecgs9hrva0zymkup",
+        "X-lux1cegg0utg4t42n5v4pgdaef9khzn0hvu9uhksfj",
+        "X-lux19fksuf04m733nrj27zvf4ztuvfystgcvh4hzjd",
+        "X-lux149ntv72qr9xn5rmtk3arzvr04ntyw0ym6xhcw3",
+        "X-lux18wun48fvzxmy3jwt2ahvgr4t00qf7ppym0ehvr",
+        "X-lux1l9r7u8pe5n0t3pdkpwfz7w7dpa9evwzj0ptv36",
+        "X-lux1hwa2cw95yef2ylg70mgctgn5h6jkuj8g2rka22",
+        "X-lux1jxn7mt0gy295ln3xmqntnjkq2u63z0qfh9y74k",
+        "X-lux1kjl8gsjkeg95y3udjkvql6fl0fpg440m4c6vw6",
+        "X-lux1k8u5vusd4lg7la2j2xwk7ctycz2p89a5cdsfsq",
+        "X-lux16a4veyzvehdlcrc3ysw4s8mz9pwlawgpv6xtqp",
+        "X-lux1ltv6k5t9x07a4j0pvvxc5mhhwtyczymng6qzcj",
+        "X-lux1yqlqdpe3ldw72k2he6pkeqax3qt3wyu6jgrr84",
+        "X-lux1z7mceaghtjr6u4et965xejdvl5aym2xpk4zmrl",
+        "X-lux1f3r06rnjr90dhcs6cugfgda8j42l7yjmpx548p",
+        "X-lux14hggzwhrd6js09u5guvd85rkfwas66ehttkuqd",
+        "X-lux1gf6d8sptuknjflnrul3fsa6glgmzs32600jggc",
+        "X-lux10vzjuu27ju3dzwgyuhq9h8cs2v7snrdpduryes",
+        "X-lux1uszd40em05tgj4gpqjf4ax3vnzyau9ddt9tlg2",
+        "X-lux1gnt7y22ftj590av2l22duhyfqv94f23jcmdwn9",
+        "X-lux1w8vf4clqkkuqkpu7qakul2wfwxutp584fqq3ug",
+        "X-lux149xs2xacsjnrczp5knxajm9a4hvwlxyf4qt8zg",
+        "X-lux1uwhtxfa3nzu7ymhy0d3jnv8dhmkmll9dw4rzle",
+        "X-lux1jw5hwg398knvvh4ykkzg2wj60pc3us7gquwzje",
+        "X-lux13t8f65mzeavzmtgtmz4u47wlprkf2552tt06vw",
+        "X-lux1fkwstqaa968g6uvgyz9hgv9j4n2hek6xcvnjez",
+        "X-lux1w6554evtt4r5zhvlgyl77w54tm945jg7k4pnz4",
+        "X-lux1pxdnjjhhpn5jn47qcmy2tmrju5xtdc72x3esmj",
+        "X-lux1s8qa7sls9502zfeq7a5y6scqlfd0qfdcmrkn6u",
+        "X-lux1qsw9nkch5schprtcgt25g4p0ehcwsw8wy093as",
+        "X-lux1z7shkhrx5a2fddxfnse866vythuvkyxn72gdp2",
+        "X-lux1u63n4k9k7qtnajenputnnm3hwuwgf2hf88x8gr",
+        "X-lux17um3mxykl2g37uzafu5w5p5263hh6heaqmyaf2",
+        "X-lux1c0ad9aq4jqpy6a7xxazqhyz59l3538rgwn97f6",
+        "X-lux1kum9mhnkpgh4h0ghxqe05ggz49l2c2sptfp44p",
+        "X-lux1y69tuaymvwjdggqr7906cn6mh45l0h68mdqz6k",
+        "X-lux1ut4lvzadch8hyccd62uv89dmd2wqdaalc4pv9q",
+        "X-lux174c8684cswyem0ulgmkqz5rjw9y8r9hfagundf",
+        "X-lux1a85tu3v6x8tjnxadc4w5n7f2raj8pzrpdldf32",
+        "X-lux124g58tlndl2n4jj06dd7ysgepwauvhx0s9e6py",
+        "X-lux1uvgdn7vtsv0uxweskae3usuwf2mgsg7nr5hkhs",
+        "X-lux15ru3qar6wysdxp853vhj90cac4ekvvkpfpvw8a",
+        "X-lux1jx44lgp04kzjdn93aqy7cu4eycpmsk9s3c5umx",
+        "X-lux1wa0df90hukrl0p8fajnm4w0qtzszgw88wk434c",
+        "X-lux167nez4y5wfj4ls2phn73q5ymazvl35u6kvg60v",
+        "X-lux16fz7x3ukk2utx6kjfqnj79ta7d47gpe7zkq0um",
+        "X-lux13lpf829756zvfwe7fsna555l9zp92cjrrh6s6x",
+        "X-lux14lxs6jh3lyw7hkmvupewyjdn5jnan2w9uk56q8",
+        "X-lux1mfxjkj2kt7x2m2c5x4fezc34l2jtes5njkj05e",
+        "X-lux18ran6rvzm66ehlzhyslnjf5rgz0y02kraqv5nq",
+        "X-lux14xc9yjknxz6lk06fwulcnd5zhy0cwxyksu083c",
+        "X-lux1udgtgzxdzsx82a6etx02t83max98tv3lz7g249",
+        "X-lux15vev4w4qm4e7g6f27l0d2tfn7ndngvgpacs93t",
+        "X-lux1p7844sd0l5axdp0enx8xkzr7u7d6hvs4a65fzs",
+        "X-lux1cfy2rxhsvy7ndn5q0aa2anrucj9nnfucesmjzu",
+        "X-lux1dsw790l7m7e5nwda0mh44lmr69dytpqu39xsl5",
+        "X-lux1lf06sh0776p2rehewy4u4gxj6w3cq2y6k05svr",
+        "X-lux1sjh25jv72lfupqve2956xtm4c4ktkztw47jaax",
+        "X-lux1rh63nxxamzm8a9jecu98lpc0tejvvffyflgu92",
+        "X-lux1es6436tu2kqwpr3uxsz0yl8cmw7wamgvezspee",
+        "X-lux15vs57z5a6qklwef0csrccxddfv0amth79c6lvu",
+        "X-lux1qdatsr74a8hneclaxkne564ss6545m34gkcqp4",
+        "X-lux19qzxcwhrlct70n0lglkzfr7nsrw5yvqklwy6y8",
+        "X-lux1l7ghgv069zm0x5pxzgv7202mfd55pmns8e4dwu",
+        "X-lux1t9hwgw0dzzgczuz6uyjyneg0rezsvlwnnf228v",
+        "X-lux136utn007cs46ndlluzk5w25rqsjz2mpgxd9tdm",
+        "X-lux19dxwdl7pfn4kqtedremetkqhs3lf8zrj0lwkn9",
+        "X-lux1lu59ttr5jxqgyk02g69eg8x5afgtfqdc5xfe8v",
+        "X-lux1fenuc8appvxa85zfh736nzd2zzlsr5dnyzlh8y",
+        "X-lux1w9sjmtpn22axwa4r895a45a8k36g7p3y6uet3e",
+        "X-lux18h73j3a4cwtqu963exhsnwl8ecw7mn43jcunf7",
+        "X-lux16lppn0cd7t39c6uhgdyvqcnkf7sh7cqhthwueg",
+        "X-lux1r4rfyntgygyga9xjxngg77saccy2cqfu8ku6cl",
+        "X-lux1hzrdg776886vxg36ehppkggaazv3u8aud2tlrg",
+        "X-lux19ds8tp6r8m97xxm396wsrkdyp5u5zl7nsmr8zx",
+        "X-lux1jew9z7lg0ax8u5fwsy5feydcz9m3p2gp0yktv2",
+        "X-lux10df488lpws4fsv97u3k65nzd2cyh3eqf9uyphr",
+        "X-lux1tuvra2eud9a88seh45rqj498ecce6crp60k8x6",
+        "X-lux1y6jaevnwq6eraxm0030hc05wj9g7lsvlyf394y",
+        "X-lux1vuknmlx2vszxfsu7n9r3t86gm6xvncwwh264yp",
+        "X-lux16wymmwtmztxwul5f3wl0ven7tfqm44krwsngmk",
+        "X-lux1j7c8geasymlxk4r0x9vfmddh2y42pk77d0a628",
+        "X-lux1lf903a77dehpuc6pyzs2n9gy2rq4vzqwnm83q8",
+        "X-lux19ea647dw6ql0vpwdjpgthq0zq6jjccdgr6v02k",
+        "X-lux1xgr55r79y6p3g25kvy5mjfnhf92n8fyntcpl0z",
+        "X-lux12u89n63x96vphkq7szt2hcq903dt7n0ewj3y9q",
+        "X-lux10k4afaekppv6de2jggxe9whgsmk0prqydu0zda",
+        "X-lux1sg35w26wlq4z48t4q6w63s862f6d8938kpydvl",
+        "X-lux1x0nvjx4xgjl0uzfj5e4ffyjxzjpp8f63697t9y",
+        "X-lux1rjvmy60fyrfjhxer2zytcazceqckayyagjfz9h",
+        "X-lux1ahj8t4w8vann5qxjgfgkvggxgdn6daxcr3lzv3",
+        "X-lux12dfqzlxfljlh4d2hjugm8xv4q8ns7uqhzug6pe",
+        "X-lux1qdx94tw692e33uwzv2cptkksyly997uf29mert",
+        "X-lux1atxjufk28k660s0gqm2ly4achuzeds0j4zksfh",
+        "X-lux1f6mpa88pzehajk207any3l6aaq438zpnjekpxf"
+    ],
+    "initialStakers": [
+        {
+            "nodeID": "NodeID-AHqjzKR2pGttF8VwzrkG9zCATmjsfXFct",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-8SBwr29VSS4A8yc9B6CEQPfg5abi1ASoG",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-JeM73ZXfU5HeJ2LKMKErUT3yNKxiqiod4",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-882URqqZLvzuGgmfW4TQ8o6DbSGcEpDTh",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-CWf6e5N9zDMmwZPfUVh3zGj1RtrQfsMEQ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-DbKDHSu2ntNKAwKNeQJHkKYKozmEmWq97",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-DtemVDvq1a3uLeB4CDR98CSvF8gRG123C",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-BMoDVSMFkuE81BnBpBWV5vnMmJhvzLe4j",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-AFkxHD26itzvRfcFo53cAkP2e7B6jmwUv",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-C3QZSSEYe2BJXBsbKgtr6uMRbpw1AH6PD",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-EtF21AsfgUBAZfvzXPePNpo2GqupeSjpC",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-CE5eophqPZJRP9fk8GCTWcxxEp5DcaqJy",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-HV9ZWHXgKbWtEaj9WYW21EZ71m97rtDdz",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-KJVBnJTw7Sz3YtDnVupttv5DMpvzAheDa",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-MPHqj72oMkgXs1qMjYYkDVrKTWWjWzrhx",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-MauJLhuct87eeYKdagBLsy8U7SLb4FQoa",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-GJp9cgaY7SJtMRMMPh4VmjsL89i3MSzPZ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-GXW47kVZ5NMhFogE66WQGrfa5GqS48cV8",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-43fZAe56HTKuN9cJFMHjmhzGyLyL8t6Fa",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-GNyryFg1tWBKpHoXAoCG3LvBQ6hKM337U",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-4WW175CdGybXULk9yYgRL5FyVd6VbLfEe",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-7GzsL6hGaUbGTAUN1zuqTwNz9uMyg869Z",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-9g8EgzfVo15kXNsUGiyzroNLT1Hzqfoj4",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-AyKUyyHg97CHZeKg5yf9JRNjQdxcWRk3c",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3i5YYs5momaxbvsLjygWbgWFMvwpZmSqB",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-wB4GeEKBjozVvpwXzsXXtRAU8PBCfbkk",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-FxPcB45SgW95n6QKEwoc8d1k8MQ7vKDxZ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-PVRi13vSxPUNw84X8kpthRFgdNfWuSvAF",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-DPaq2yr1mWHgCYJwgMFv9Z2dUkXBEtADE",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-7QCpCLUZWTaoiDWzQYA8A23Z64NmqWgNY",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-CsuDRgZwwgykQRWXUAbeSe5xJqPJtCfSj",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-8hYupUaTjFPY8cHTSyGnkazuNtomLgxgM",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-AMUFmaDJCdwRYphURzxBY19Q396Byb48a",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-2gUUtddha8Lh4Y9e7EnUAwzXJnTrUiVSR",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-25gKTH5i9nRZagHVhhg3U827vZY6rvb9S",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-FoHKyqSVGXdFgZyciTj1PgQhm93xSnKzo",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-K4Feto7wCaARvjVQoYAe3ZWmqZPNYaipG",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3PTQ35agaHfbEMoERC21Y29AAGBjSM5RT",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-J4hy8bwXCsRAWBVPNjVRYsKFck4S4GuPA",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-71KXgZFbiL4zny422PUNVDLvEf9vG4Bgb",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-D5TcUZjk9JNBSmWuW7bQBD9Mg2iCtDC9g",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-2S7W9X2zQdov5LA8Mp3sQrMZzadPPAm6f",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-LqU7Mo9L5uzwFqtqZNfhH8iV2gCrNuKd5",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-Kxd6DVL9gfZMCkvbGCqWNYC6bzTpjTvpZ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-9ushGVZFH6TjXiwBRzkSnyMWYjX3tbHPK",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-5DkYoENvvkXvX6aUBTmnPxhkCJvzHzVAF",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-6RMtmdUzbgWsUm442BUu9L7Mp3HvnCGAG",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-NqbLrbcJLmH4YvTQrRn8UR2bGFiAP6gNg",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-KwZqD4TV4Dc4xVFVdoKaz2Ly8djMkcWVu",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-Dcss4x1j9XgoVpsGcCkconmarEZubz5Pz",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-KKYUH7Yaq1xbvu2yvMveLzcbGBLJUYTdw",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-L1RBAkJBEJp2bGYudFievQKcZ3c8YmYEd",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-F2YdEj5BJ1LMiva1FdSqCQKidZPwHtbSe",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-LELVWJdKXukHTPpYXuBykvfCeTJmHWRdx",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-Ni253o1zfwRDCwLdEiBp81LT5LXRyPVJ3",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-H7PNeTLbnfRSsQFytuHFwvN9kiMHzgy3n",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-998TayB3yUEdtehkNxLdVnkwiNr7fdCe7",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-NLUGhN1ffTgM3nySWDthnxSMyxgT1szSM",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-9vSNj69JB93568JNiuMnMW5RdfeUXHnV2",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-12qoogNWSoBGtmVAEVDUUyydEojXV6dHj",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-G5h9utpaAPusefSBLLXDhYmrmZvDbf8Jb",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-APAAJP99vwrcUd3T7ygdzKfWD5qv6g6cT",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-CZNsxuQAuoPR7wbh4Kp41qL7YgJ5Ln17D",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-JL2mgTTdoqmazbTH9UV6wMXWstdp4ijCh",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3XgAPWQfmLQ9LRyQ9iC8Zd2V4BrFchqz7",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-EQiivMcobtAZssoGaUF2sNjHYgwyNfU95",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-2wuLHdB7ktj17zpToiwA97fu1USGfjnAB",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-F1gZDov5zty2oMYyvmcrp7RpuiAcGeuME",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3QBxhyVZArk84davWxCFSpLnjLA9XjLwQ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-ExRnR74Mga3DpfvA4VdSK76nVeyGVEMx7",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-MUCh8LrHjUi9PCchFsdtsjezv7FaJvNH8",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-22hYxHULacdQUXsHqkv4oCiU9KoW5UUom",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-A3eyZ1UWvu3WqUhF5VJV9usaMzCrY3NDa",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-BH4g7NdUSVzMLvthhtwFpYPmjyjkqxAER",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-6CUrMWAQaQgPbgiiiXDWagzn7xnbeqYB7",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-JS8jUx4MEAetrvUA32xptTdcey9nx5LgW",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-4ALW5uvevjJyZHiPCiKGR8HranLqJ3SQ8",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-C4A6ptzQ1MCJpogKzcXA3BRnwesWtvBHg",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-5h7MuS9S3uagM94xZkBBk1UDKJ5bHB7ez",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-KzDxGhACnnC1YrjUsSKfHNuSVCMktFWC2",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-FTxtRTYzXHQtM1Lyu2J1GoNyBXZfSUsBu",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-2xWj5hrA43MDGP4fKh3h6MwKKaNYb8xPg",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-NbUGG5mWDaQjyMadLUQFbaW2VZv4Vzf3K",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3DAnLhM5a3rh2j92FDrd5pZTQNDCfso4L",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-KfXXjAECBXTnaVtBo842uYKgcMHUmqxTe",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-EyGApCLJMre1fZCLKfbrNtxdyPRPNeDEo",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-8u16dB2sAnxkRsUmXXhmEXQCs2zC9BaHS",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-723ipwArmBRPCvLRZZKxBWXLUbiEk8tQW",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-EyKtLNsxVDPnSkT1zh2BEieDL9tHn1RdA",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-3ZX1dW3ihKwnnGjrwNnh1suHNdsMyEJrW",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-5JUG86FiLSLVajBQbkfzZNnU1ytUUHFzQ",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-4wrNqgNZswYSzyjrYMqfF6QX78BJFXebx",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-DERqEsusC9y1jwVTYbVQrgetPHsh2ytgE",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-8Ris641jAhgjb2yjWX7wnbZZ1pMAP2QnH",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-EsHZdkiERwqrH3zhrin1TF6xVFpzcw6nz",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-GqGNV3d7hqF6p6SsVGHJDRzXE4cgZH4Ta",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-PrBDJDiKiSFBtTKJZ4HNxQHp5Be97uL8b",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-FKPsRakUAF68W1ay92z3efZ9u8gSsckPq",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-8jwynULEEWZANcY9HH8qA38PQw69MptDj",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        },
+        {
+            "nodeID": "NodeID-41c2dubznXPZ3n2hnhPt6EvsPi1FmrFbb",
+            "rewardAddress": "X-lux1fg9dlhdtshtnxnhdtpwayvsyx2r8y8fujcvxd0",
+            "delegationFee": 80000
+        }
+    ],
+    "cChainGenesis": "{\"config\":{\"chainId\":8888,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x8cAdCCdB875C0E8F75D54833B87BDa6aaD1326fF\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",
+    "message": "Unitas in Innovatione, Societate ad Libertatem: Lux Aeternum."
 }

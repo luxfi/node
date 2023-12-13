@@ -29,15 +29,15 @@ const (
 	DefaultHTTPPort    = 9650
 	DefaultStakingPort = 9651
 
-	luxdDataDirVar          = "LUXD_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + luxdDataDirVar
+	LuxDataDirVar            = "LUX_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + LuxDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
 )
 
 var (
 	// [defaultUnexpandedDataDir] will be expanded when reading the flags
-	defaultDataDir              = filepath.Join("$HOME", ".node")
+	defaultDataDir              = filepath.Join("$HOME", ".luxd")
 	defaultDBDir                = filepath.Join(defaultUnexpandedDataDir, "db")
 	defaultLogDir               = filepath.Join(defaultUnexpandedDataDir, "logs")
 	defaultProfileDir           = filepath.Join(defaultUnexpandedDataDir, "profiles")
@@ -389,7 +389,7 @@ func BuildFlagSet() *pflag.FlagSet {
 }
 
 // GetExpandedArg gets the string in viper corresponding to [key] and expands
-// any variables using the OS env. If the [luxdDataDirVar] var is used,
+// any variables using the OS env. If the [LuxDataDirVar] var is used,
 // we expand the value of the variable with the string in viper corresponding to
 // [DataDirKey].
 func GetExpandedArg(v *viper.Viper, key string) string {
@@ -403,7 +403,7 @@ func GetExpandedString(v *viper.Viper, s string) string {
 	return os.Expand(
 		s,
 		func(strVar string) string {
-			if strVar == luxdDataDirVar {
+			if strVar == LuxDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)
