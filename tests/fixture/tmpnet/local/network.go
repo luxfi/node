@@ -324,6 +324,9 @@ func (ln *LocalNetwork) PopulateNodeConfig(node *LocalNode, nodeParentDir string
 
 // Starts a network for the first time
 func (ln *LocalNetwork) Start(w io.Writer) error {
+	fmt.Fprintf(w, "LocalNetwork.Start: %v\n", ln.CChainConfig)
+	fmt.Fprintf(w, "LocalNetwork.Start: %v\n", ln.ExecPath)
+
 	if len(ln.Dir) == 0 {
 		return errLocalNetworkDirNotSet
 	}
@@ -381,8 +384,6 @@ func (ln *LocalNetwork) WaitForHealthy(ctx context.Context, w io.Writer) error {
 
 	for healthyNodes.Len() < len(ln.Nodes) {
 		for _, node := range ln.Nodes {
-			fmt.Fprintf(w, "NodeID %v", node.NodeID)
-
 			if healthyNodes.Contains(node.NodeID) {
 				continue
 			}

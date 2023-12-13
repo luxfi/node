@@ -335,7 +335,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		return nil, ids.ID{}, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
 
-	genesisTime := time.Unix(int64(config.StartTime), 0)
+	//genesisTime := time.Unix(int64(config.StartTime), 0)
 	initialSupply, err := config.InitialSupply()
 	if err != nil {
 		return nil, ids.ID{}, fmt.Errorf("couldn't calculate the initial supply: %w", err)
@@ -346,7 +346,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 	// Specify the initial state of the Platform Chain
 	platformvmArgs := api.BuildGenesisArgs{
-		LuxAssetID:   luxAssetID,
+		LuxAssetID:    luxAssetID,
 		NetworkID:     json.Uint32(config.NetworkID),
 		Time:          json.Uint64(config.StartTime),
 		InitialSupply: json.Uint64(initialSupply),
