@@ -22,7 +22,7 @@ var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 10,
-		Patch: 17,
+		Patch: 20,
 	}
 	CurrentApp = &Application{
 		Major: Current.Major,
@@ -40,13 +40,13 @@ var (
 		Patch: 0,
 	}
 
-	CurrentDatabase = DatabaseVersion1_4_5
+	CurrentDatabase = DatabaseVersion1_5_0
 	PrevDatabase    = DatabaseVersion1_0_0
 
-	DatabaseVersion1_4_5 = &Semantic{
+	DatabaseVersion1_5_0 = &Semantic{
 		Major: 1,
-		Minor: 4,
-		Patch: 5,
+		Minor: 5,
+		Patch: 0,
 	}
 	DatabaseVersion1_0_0 = &Semantic{
 		Major: 1,
@@ -56,6 +56,7 @@ var (
 
 	//go:embed compatibility.json
 	rpcChainVMProtocolCompatibilityBytes []byte
+
 	// RPCChainVMProtocolCompatibility maps RPCChainVMProtocol versions to the
 	// set of node versions that supported that version. This is not used
 	// by node, but is useful for downstream libraries.
