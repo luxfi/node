@@ -6,7 +6,7 @@ package ledger
 import (
 	"fmt"
 
-	ledger "github.com/luxdefi/ledger-lux/go"
+	ledger "github.com/luxdefi/ledger-lux-go"
 
 	bip32 "github.com/tyler-smith/go-bip32"
 
