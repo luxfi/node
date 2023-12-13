@@ -6,7 +6,7 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
-# LUXD_PATH=./build/node ./scripts/tests.e2e.sh                          # Customization of node path
+# LUXD_PATH=./build/luxd ./scripts/tests.e2e.sh                          # Customization of node path
 # E2E_USE_EXISTING_NETWORK=1 TMPNET_NETWORK_DIR=/path/to ./scripts/tests.e2e.sh        # Execute against an existing network
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
@@ -34,7 +34,7 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 if [[ -n "${E2E_USE_EXISTING_NETWORK:-}" && -n "${TMPNET_NETWORK_DIR:-}" ]]; then
   E2E_ARGS="--use-existing-network"
 else
-  LUXD_PATH="$(realpath ${LUXD_PATH:-./build/node})"
+  LUXD_PATH="$(realpath ${LUXD_PATH:-./build/luxd})"
   E2E_ARGS="--node-path=${LUXD_PATH}"
 fi
 
@@ -60,4 +60,8 @@ fi
 
 #################################
 # - Execute in random order to identify unwanted dependency
-ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"
+if [ $# -eq 0 ]; then
+  ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS}
+else
+  ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"
+fi

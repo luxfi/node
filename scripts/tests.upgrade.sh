@@ -17,7 +17,7 @@ if [[ -z "${VERSION}" ]]; then
   exit 255
 fi
 
-LUXD_PATH="$(realpath ${LUXD_PATH:-./build/node})"
+LUXD_PATH="$(realpath ${LUXD_PATH:-./build/luxd})"
 
 #################################
 # download node

@@ -4,7 +4,7 @@ LUX_ROOT=$PKG_ROOT/node-$VERSION
 
 mkdir -p $LUX_ROOT
 
-OK=`cp ./build/node $LUX_ROOT`
+OK=`cp ./build/luxd $LUX_ROOT`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

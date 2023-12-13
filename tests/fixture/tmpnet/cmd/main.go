@@ -21,8 +21,8 @@ import (
 const cliVersion = "0.0.1"
 
 var (
-	errluxdRequired = fmt.Errorf("--node-path or %s are required", local.luxdPathEnvName)
-	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", local.NetworkDirEnvName)
+	errluxdRequired       = fmt.Errorf("--node-path or %s are required", local.LuxdPathEnvName)
+	errNetworkDirRequired = fmt.Errorf("--network-dir or %s are required", local.NetworkDirEnvName)
 )
 
 func main() {

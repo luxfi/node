@@ -25,4 +25,4 @@ jobs:
         run: ./scripts/build.sh
       - name: Run upgrade tests
         shell: bash
-        run: scripts/tests.upgrade.sh 1.9.0 ./build/node
+        run: scripts/tests.upgrade.sh 1.9.0 ./build/luxd

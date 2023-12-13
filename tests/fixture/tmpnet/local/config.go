@@ -13,9 +13,9 @@ import (
 const (
 	// Constants defining the names of shell variables whose value can
 	// configure local network orchestration.
-	luxdPathEnvName = "LUXD_PATH"
-	NetworkDirEnvName      = "TMPNET_NETWORK_DIR"
-	RootDirEnvName         = "TMPNET_ROOT_DIR"
+	LuxdPathEnvName   = "LUXD_PATH"
+	NetworkDirEnvName = "TMPNET_NETWORK_DIR"
+	RootDirEnvName    = "TMPNET_ROOT_DIR"
 
 	DefaultNetworkStartTimeout = 2 * time.Minute
 	DefaultNodeInitTimeout     = 10 * time.Second
