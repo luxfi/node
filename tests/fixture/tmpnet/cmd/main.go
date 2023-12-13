@@ -93,7 +93,7 @@ func main() {
 		},
 	}
 	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(local.RootDirEnvName), "The path to the root directory for local networks")
-	startNetworkCmd.PersistentFlags().StringVar(&execPath, "node-path", os.Getenv(local.luxdPathEnvName), "The path to an node binary")
+	startNetworkCmd.PersistentFlags().StringVar(&execPath, "node-path", os.Getenv(local.LuxdPathEnvName), "The path to an node binary")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
 	startNetworkCmd.PersistentFlags().Uint8Var(&fundedKeyCount, "funded-key-count", tmpnet.DefaultFundedKeyCount, "Number of funded keys the network should start with")
 	rootCmd.AddCommand(startNetworkCmd)
