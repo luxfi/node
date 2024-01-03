@@ -37,7 +37,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.29.0
 	github.com/pires/go-proxyproto v0.7.0
-	github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/rs/cors v1.10.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
