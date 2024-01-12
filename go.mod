@@ -16,7 +16,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/cockroachdb/pebble v1.0.0
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0
-	github.com/ethereum/go-ethereum v1.13.8
+	github.com/ethereum/go-ethereum v1.13.10
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/btree v1.1.2
 	github.com/google/renameio/v2 v2.0.0
