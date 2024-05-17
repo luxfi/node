@@ -6,7 +6,7 @@ package heap
 import (
 	"container/heap"
 
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/utils"
 )
 
 var _ heap.Interface = (*queue[int])(nil)

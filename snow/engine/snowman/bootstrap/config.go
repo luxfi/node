@@ -4,12 +4,12 @@
 package bootstrap
 
 import (
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/common/queue"
-	"github.com/luxdefi/node/snow/engine/common/tracker"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common/queue"
+	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/validators"
 )
 
 type Config struct {

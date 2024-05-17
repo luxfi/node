@@ -10,10 +10,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/vms/proposervm/block"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/vms/proposervm/block"
 )
 
 var _ Block = (*preForkBlock)(nil)

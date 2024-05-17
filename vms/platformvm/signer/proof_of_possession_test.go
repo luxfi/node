@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls"
 )
 
 func TestProofOfPossession(t *testing.T) {

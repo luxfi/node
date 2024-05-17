@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/logging"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc

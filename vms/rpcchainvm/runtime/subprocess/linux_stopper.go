@@ -16,9 +16,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {

@@ -8,18 +8,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/example/xsvm/execute"
-	"github.com/luxdefi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/example/xsvm/execute"
+	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxdefi/node/snow/engine/snowman/block"
-	xsblock "github.com/luxdefi/node/vms/example/xsvm/block"
+	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
 const maxClockSkew = 10 * time.Second

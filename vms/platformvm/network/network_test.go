@@ -12,15 +12,15 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/message"
-	"github.com/luxdefi/node/vms/platformvm/block/executor"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/message"
+	"github.com/luxfi/node/vms/platformvm/block/executor"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
 
 var errTest = errors.New("test error")

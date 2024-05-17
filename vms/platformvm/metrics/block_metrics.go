@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/block"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 var _ block.Visitor = (*blockMetrics)(nil)

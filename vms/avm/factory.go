@@ -4,9 +4,9 @@
 package avm
 
 import (
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/avm/config"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/avm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)

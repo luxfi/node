@@ -12,19 +12,19 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/avm/block/executor"
-	"github.com/luxdefi/node/vms/avm/fxs"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/avm/txs/mempool"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/message"
-	"github.com/luxdefi/node/vms/nftfx"
-	"github.com/luxdefi/node/vms/propertyfx"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/avm/block/executor"
+	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/avm/txs/mempool"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/message"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/propertyfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var errTest = errors.New("test error")

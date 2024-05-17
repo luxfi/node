@@ -4,8 +4,8 @@
 package atomic
 
 import (
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 )
 
 const codecVersion = 0

@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/validators"
 )
 
 var _ Manager = (*manager)(nil)

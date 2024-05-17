@@ -6,9 +6,9 @@ package account
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const (

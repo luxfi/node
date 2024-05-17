@@ -1,4 +1,4 @@
-module github.com/luxdefi/node
+module github.com/luxfi/node
 
 // Changes to the minimum golang version must also be replicated in
 // scripts/build_lux.sh
@@ -29,8 +29,8 @@ require (
 	github.com/jackpal/gateway v1.0.13
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.9
-	github.com/luxdefi/coreth v0.12.17
-	github.com/luxdefi/ledger-lux-go v0.0.1
+	github.com/luxfi/coreth v0.12.17
+	github.com/luxfi/ledger-lux-go v0.0.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354

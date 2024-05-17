@@ -15,8 +15,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
 )
 
 const (

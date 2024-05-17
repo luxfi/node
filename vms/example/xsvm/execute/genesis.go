@@ -4,11 +4,11 @@
 package execute
 
 import (
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/example/xsvm/block"
-	"github.com/luxdefi/node/vms/example/xsvm/genesis"
-	"github.com/luxdefi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/example/xsvm/block"
+	"github.com/luxfi/node/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/vms/example/xsvm/state"
 )
 
 func Genesis(db database.KeyValueReaderWriterDeleter, chainID ids.ID, g *genesis.Genesis) error {

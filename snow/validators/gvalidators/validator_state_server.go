@@ -8,11 +8,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/crypto/bls"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/crypto/bls"
 
-	pb "github.com/luxdefi/node/proto/pb/validatorstate"
+	pb "github.com/luxfi/node/proto/pb/validatorstate"
 )
 
 var _ pb.ValidatorStateServer = (*Server)(nil)

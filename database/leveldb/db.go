@@ -25,9 +25,9 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
 )
 
 const (

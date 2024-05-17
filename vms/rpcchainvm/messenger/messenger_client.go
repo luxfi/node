@@ -6,9 +6,9 @@ package messenger
 import (
 	"context"
 
-	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common"
 
-	messengerpb "github.com/luxdefi/node/proto/pb/messenger"
+	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
 
 // Client is an implementation of a messenger channel that talks over RPC.

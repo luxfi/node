@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
 )
 
 func TestLockedCalculator(t *testing.T) {

@@ -6,13 +6,13 @@ package executor
 import (
 	"fmt"
 
-	"github.com/luxdefi/node/chains/atomic"
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm/state"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/avm/state"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 var _ txs.Visitor = (*Executor)(nil)

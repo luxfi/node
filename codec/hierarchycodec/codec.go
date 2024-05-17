@@ -8,10 +8,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/reflectcodec"
-	"github.com/luxdefi/node/utils/bimap"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/reflectcodec"
+	"github.com/luxfi/node/utils/bimap"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (

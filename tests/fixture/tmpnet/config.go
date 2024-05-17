@@ -15,21 +15,21 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxdefi/coreth/core"
-	"github.com/luxdefi/coreth/params"
-	"github.com/luxdefi/coreth/plugin/evm"
+	"github.com/luxfi/coreth/core"
+	"github.com/luxfi/coreth/params"
+	"github.com/luxfi/coreth/plugin/evm"
 
-	"github.com/luxdefi/node/config"
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/staking"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/utils/perms"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
 const (
@@ -342,7 +342,7 @@ func NewTestGenesis(
 	// The eth address is only needed to link pre-mainnet assets. Until that capability
 	// becomes necessary for testing, use a bogus address.
 	//
-	// Reference: https://github.com/luxdefi/node/issues/1365#issuecomment-1511508767
+	// Reference: https://github.com/luxfi/node/issues/1365#issuecomment-1511508767
 	ethAddress := "0x0000000000000000000000000000000000000000"
 
 	now := time.Now()

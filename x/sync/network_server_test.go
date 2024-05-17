@@ -15,13 +15,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/x/merkledb"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/x/merkledb"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 func Test_Server_GetRangeProof(t *testing.T) {

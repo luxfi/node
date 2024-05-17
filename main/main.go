@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/luxdefi/node/app"
-	"github.com/luxdefi/node/config"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/app"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/version"
 )
 
 func main() {

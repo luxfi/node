@@ -6,7 +6,7 @@ package config
 import (
 	"encoding/json"
 
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/utils/units"
 )
 
 var DefaultExecutionConfig = ExecutionConfig{

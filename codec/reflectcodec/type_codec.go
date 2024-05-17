@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (

@@ -14,13 +14,13 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxdefi/node/nat"
-	"github.com/luxdefi/node/node"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/perms"
-	"github.com/luxdefi/node/utils/ulimit"
+	"github.com/luxfi/node/nat"
+	"github.com/luxfi/node/node"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/utils/ulimit"
 )
 
 const (

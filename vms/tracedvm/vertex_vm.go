@@ -10,12 +10,12 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/consensus/snowstorm"
-	"github.com/luxdefi/node/snow/engine/lux/vertex"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/trace"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/trace"
 )
 
 var _ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)

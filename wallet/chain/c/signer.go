@@ -9,19 +9,19 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxdefi/coreth/plugin/evm"
+	"github.com/luxfi/coreth/plugin/evm"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/keychain"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 const version = 0

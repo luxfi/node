@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/vms/example/xsvm/genesis"
 )
 
 var errUnknownEncoding = errors.New("unknown encoding")

@@ -6,13 +6,13 @@ package txs
 import (
 	"math"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/signer"
-	"github.com/luxdefi/node/vms/platformvm/stakeable"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // Version is the current default codec version

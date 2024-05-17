@@ -15,21 +15,21 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/cache/metercacher"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/timer"
-	"github.com/luxdefi/node/vms/avm/block"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/vms/avm/block"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 const (

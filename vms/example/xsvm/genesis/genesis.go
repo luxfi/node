@@ -4,9 +4,9 @@
 package genesis
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/vms/example/xsvm/block"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/vms/example/xsvm/block"
 )
 
 type Genesis struct {

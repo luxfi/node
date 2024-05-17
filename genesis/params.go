@@ -6,8 +6,8 @@ package genesis
 import (
 	"time"
 
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
 type StakingConfig struct {

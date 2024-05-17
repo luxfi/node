@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/utils/ips"
 )
 
 func init() {

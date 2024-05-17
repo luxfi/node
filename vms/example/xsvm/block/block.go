@@ -6,9 +6,9 @@ package block
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/vms/example/xsvm/tx"
 )
 
 // Stateless blocks are blocks as they are marshalled/unmarshalled and sent over

@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/corruptabledb"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/corruptabledb"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
-	rpcdbpb "github.com/luxdefi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type testDatabase struct {

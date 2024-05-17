@@ -4,8 +4,8 @@
 package avm
 
 import (
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/vms/avm/txs"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/avm/txs"
 )
 
 var _ utils.Sortable[*GenesisAsset] = (*GenesisAsset)(nil)

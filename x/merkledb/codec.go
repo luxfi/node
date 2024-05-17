@@ -14,8 +14,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/maybe"
 )
 
 const (

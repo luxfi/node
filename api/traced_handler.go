@@ -11,7 +11,7 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/trace"
+	"github.com/luxfi/node/trace"
 )
 
 var _ http.Handler = (*tracedHandler)(nil)

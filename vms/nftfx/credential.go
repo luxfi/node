@@ -3,7 +3,7 @@
 
 package nftfx
 
-import "github.com/luxdefi/node/vms/secp256k1fx"
+import "github.com/luxfi/node/vms/secp256k1fx"
 
 type Credential struct {
 	secp256k1fx.Credential `serialize:"true"`

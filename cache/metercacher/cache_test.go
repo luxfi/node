@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/ids"
 )
 
 func TestInterface(t *testing.T) {

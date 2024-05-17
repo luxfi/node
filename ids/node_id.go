@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/staking"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 const (

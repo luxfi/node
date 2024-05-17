@@ -3,7 +3,7 @@
 Now Serving: **Protocol Version 30**
 
 Protobuf files are hosted at
-[https://buf.build/luxdefi/lux](https://buf.build/luxdefi/lux) and
+[https://buf.build/luxfi/lux](https://buf.build/luxfi/lux) and
 can be used as dependencies in other projects.
 
 Protobuf linting and generation for this project is managed by
@@ -33,5 +33,5 @@ subnet vm must use the same protocol version to be compatible.
 - Change to proto/ directory `cd proto`.
 - Publish new tag to buf registry. `buf push -t v26`
 
-Note: Publishing requires auth to the luxdefi org in buf
-https://buf.build/luxdefi/repositories
+Note: Publishing requires auth to the luxfi org in buf
+https://buf.build/luxfi/repositories

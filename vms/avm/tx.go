@@ -10,13 +10,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowstorm"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/avm/txs/executor"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/avm/txs/executor"
 )
 
 var (

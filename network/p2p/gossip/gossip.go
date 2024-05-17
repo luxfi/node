@@ -13,11 +13,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/network/p2p"
-	"github.com/luxdefi/node/proto/pb/sdk"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/proto/pb/sdk"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
 )
 
 var (

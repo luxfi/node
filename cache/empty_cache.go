@@ -3,7 +3,7 @@
 
 package cache
 
-import "github.com/luxdefi/node/utils"
+import "github.com/luxfi/node/utils"
 
 var _ Cacher[struct{}, struct{}] = (*Empty[struct{}, struct{}])(nil)
 

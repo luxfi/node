@@ -11,10 +11,10 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/registry"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/registry"
 )
 
 type loadVMsTest struct {

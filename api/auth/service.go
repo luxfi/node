@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/api"
+	"github.com/luxfi/node/api"
 )
 
 // Service that serves the Auth API functionality.

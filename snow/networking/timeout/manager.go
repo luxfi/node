@@ -10,11 +10,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/networking/benchlist"
-	"github.com/luxdefi/node/utils/timer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/networking/benchlist"
+	"github.com/luxfi/node/utils/timer"
 )
 
 var _ Manager = (*manager)(nil)

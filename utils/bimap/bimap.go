@@ -3,7 +3,7 @@
 
 package bimap
 
-import "github.com/luxdefi/node/utils"
+import "github.com/luxfi/node/utils"
 
 type Entry[K, V any] struct {
 	Key   K

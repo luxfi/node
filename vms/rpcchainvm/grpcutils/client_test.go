@@ -18,10 +18,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/rpcdb"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/rpcdb"
 
-	pb "github.com/luxdefi/node/proto/pb/rpcdb"
+	pb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 func TestDialOptsSmoke(t *testing.T) {

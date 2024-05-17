@@ -15,8 +15,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/maybe"
 )
 
 func Test_TrieView_Iterator(t *testing.T) {

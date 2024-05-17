@@ -11,8 +11,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
 )
 
 var (

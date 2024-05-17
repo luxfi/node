@@ -18,11 +18,11 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/password"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/password"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 const (

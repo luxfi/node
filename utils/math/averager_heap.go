@@ -4,8 +4,8 @@
 package math
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/heap"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/heap"
 )
 
 var _ AveragerHeap = (*averagerHeap)(nil)

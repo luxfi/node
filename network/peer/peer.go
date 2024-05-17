@@ -16,17 +16,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/staking"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/version"
 )
 
 var (

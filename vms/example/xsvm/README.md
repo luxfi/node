@@ -45,7 +45,7 @@ Currently there are no fees enforced in the XSVM.
 #### Install
 
 ```bash
-git clone https://github.com/luxdefi/node.git;
+git clone https://github.com/luxfi/node.git;
 cd node;
 go install -v ./vms/example/xsvm/cmd/xsvm;
 ```
@@ -73,7 +73,7 @@ Flags:
 Use "xsvm [command] --help" for more information about a command.
 ```
 
-### [Golang SDK](https://github.com/luxdefi/node/blob/master/vms/example/xsvm/client/client.go)
+### [Golang SDK](https://github.com/luxfi/node/blob/master/vms/example/xsvm/client/client.go)
 
 ```golang
 // Client defines xsvm client operations.
@@ -282,10 +282,10 @@ P-Chain.
 
 You can do this by following the [subnet tutorial] or by using the [subnet-cli].
 
-[teleporter]: https://github.com/luxdefi/node/tree/master/vms/platformvm/teleporter
+[teleporter]: https://github.com/luxfi/node/tree/master/vms/platformvm/teleporter
 [subnet tutorial]: https://docs.lux.network/build/tutorials/platform/subnets/create-a-subnet
-[subnet-cli]: https://github.com/luxdefi/subnet-cli
-[Coreth]: https://github.com/luxdefi/coreth
+[subnet-cli]: https://github.com/luxfi/subnet-cli
+[Coreth]: https://github.com/luxfi/coreth
 [C-Chain]: https://docs.lux.network/learn/platform-overview/#contract-chain-c-chain
 [Subnet]: https://docs.lux.network/learn/platform-overview/#subnets
 
@@ -301,7 +301,7 @@ The following example shows how to interact with the XSVM to send and receive na
 4. Issue an **import** Tx on Subnet B
 5. Confirm Txs processed correctly
 
-> **Note:**  This demo requires [lux-cli](https://github.com/luxdefi/lux-cli) version > 1.0.5, [xsvm](https://github.com/luxdefi/xsvm) version > 1.0.2 and [lux-network-runner](https://github.com/luxdefi/lux-network-runner) v1.3.5.
+> **Note:**  This demo requires [lux-cli](https://github.com/luxfi/lux-cli) version > 1.0.5, [xsvm](https://github.com/luxfi/xsvm) version > 1.0.2 and [lux-network-runner](https://github.com/luxfi/lux-network-runner) v1.3.5.
 
 ### Create and Deploy Subnet A, Subnet B
 
@@ -309,7 +309,7 @@ Using the lux-cli, this step deploys two subnets running the XSVM. Subnet A will
 
 Steps
 
-Build the [XSVM](https://github.com/luxdefi/xsvm)
+Build the [XSVM](https://github.com/luxfi/xsvm)
 
 ### Create a genesis file
 

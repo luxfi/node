@@ -10,8 +10,8 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/snow/consensus/snowstorm"
-	"github.com/luxdefi/node/trace"
+	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/trace"
 )
 
 var _ snowstorm.Tx = (*tracedTx)(nil)

@@ -13,18 +13,18 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
 )
 
 var (

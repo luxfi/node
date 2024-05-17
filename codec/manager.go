@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (

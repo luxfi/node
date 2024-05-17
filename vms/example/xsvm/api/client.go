@@ -7,13 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/rpc"
-	"github.com/luxdefi/node/vms/example/xsvm/block"
-	"github.com/luxdefi/node/vms/example/xsvm/genesis"
-	"github.com/luxdefi/node/vms/example/xsvm/tx"
-	"github.com/luxdefi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/vms/example/xsvm/block"
+	"github.com/luxfi/node/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 // Client defines the xsvm API client.

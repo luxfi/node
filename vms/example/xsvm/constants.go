@@ -4,8 +4,8 @@
 package xsvm
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/version"
 )
 
 const Name = "xsvm"

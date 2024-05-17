@@ -12,19 +12,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/networking/tracker"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/subnets"
-	"github.com/luxdefi/node/utils/math/meter"
-	"github.com/luxdefi/node/utils/resource"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/utils/math/meter"
+	"github.com/luxfi/node/utils/resource"
+	"github.com/luxfi/node/utils/set"
 
-	commontracker "github.com/luxdefi/node/snow/engine/common/tracker"
+	commontracker "github.com/luxfi/node/snow/engine/common/tracker"
 )
 
 func TestHealthCheckSubnet(t *testing.T) {

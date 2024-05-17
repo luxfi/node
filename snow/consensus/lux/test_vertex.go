@@ -6,8 +6,8 @@ package lux
 import (
 	"context"
 
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowstorm"
 )
 
 var _ Vertex = (*TestVertex)(nil)
