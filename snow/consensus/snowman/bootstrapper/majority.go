@@ -10,10 +10,10 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/set"
 )
 
 var _ Poll = (*Majority)(nil)

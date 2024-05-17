@@ -8,7 +8,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/database"
 )
 
 var _ database.Batch = (*batch)(nil)

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package io.reader;
 
-option go_package = "github.com/luxdefi/node/proto/pb/io/reader";
+option go_package = "github.com/luxfi/node/proto/pb/io/reader";
 
 // Reader is an io.Reader see: https://pkg.go.dev/io#Reader
 service Reader {

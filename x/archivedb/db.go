@@ -8,8 +8,8 @@ import (
 	"errors"
 	"io"
 
-	"github.com/luxdefi/node/api/health"
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/database"
 )
 
 var (

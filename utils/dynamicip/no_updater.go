@@ -3,7 +3,7 @@
 
 package dynamicip
 
-import "github.com/luxdefi/node/utils/logging"
+import "github.com/luxfi/node/utils/logging"
 
 var _ Updater = noUpdater{}
 

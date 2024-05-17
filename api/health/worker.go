@@ -17,9 +17,9 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (

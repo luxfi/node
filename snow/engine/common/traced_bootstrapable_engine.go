@@ -6,7 +6,7 @@ package common
 import (
 	"context"
 
-	"github.com/luxdefi/node/trace"
+	"github.com/luxfi/node/trace"
 )
 
 var _ BootstrapableEngine = (*tracedBootstrapableEngine)(nil)

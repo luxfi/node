@@ -6,14 +6,14 @@ package gkeystore
 import (
 	"context"
 
-	"github.com/luxdefi/node/api/keystore"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/encdb"
-	"github.com/luxdefi/node/database/rpcdb"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/api/keystore"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/encdb"
+	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
-	keystorepb "github.com/luxdefi/node/proto/pb/keystore"
-	rpcdbpb "github.com/luxdefi/node/proto/pb/rpcdb"
+	keystorepb "github.com/luxfi/node/proto/pb/keystore"
+	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 var _ keystore.BlockchainKeystore = (*Client)(nil)

@@ -17,11 +17,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/perms"
-	"github.com/luxdefi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/vms/platformvm/genesis"
 )
 
 var (

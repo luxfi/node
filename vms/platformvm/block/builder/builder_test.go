@@ -13,22 +13,22 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/platformvm/block"
-	"github.com/luxdefi/node/vms/platformvm/state"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/txs/mempool"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/secp256k1fx"
 
-	blockexecutor "github.com/luxdefi/node/vms/platformvm/block/executor"
-	txbuilder "github.com/luxdefi/node/vms/platformvm/txs/builder"
-	txexecutor "github.com/luxdefi/node/vms/platformvm/txs/executor"
+	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
+	txbuilder "github.com/luxfi/node/vms/platformvm/txs/builder"
+	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
 var errTestingDropped = errors.New("testing dropped")

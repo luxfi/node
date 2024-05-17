@@ -7,9 +7,9 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
 var errInvalidETHAddress = errors.New("invalid eth address")

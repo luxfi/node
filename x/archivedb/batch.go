@@ -3,7 +3,7 @@
 
 package archivedb
 
-import "github.com/luxdefi/node/database"
+import "github.com/luxfi/node/database"
 
 var _ database.Batch = (*batch)(nil)
 

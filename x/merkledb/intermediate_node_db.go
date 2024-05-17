@@ -6,7 +6,7 @@ package merkledb
 import (
 	"sync"
 
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/database"
 )
 
 const defaultBufferLength = 256

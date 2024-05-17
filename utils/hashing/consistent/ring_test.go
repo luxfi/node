@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 var (

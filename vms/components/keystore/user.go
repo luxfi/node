@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/luxdefi/node/api/keystore"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/encdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/api/keystore"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/encdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // Max number of addresses allowed for a single keystore user

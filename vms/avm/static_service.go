@@ -10,18 +10,18 @@ import (
 
 	stdjson "encoding/json"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/vms/avm/fxs"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/nftfx"
-	"github.com/luxdefi/node/vms/propertyfx"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/propertyfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (

@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
 )
 
 // Block is a possible decision that dictates the next canonical block.

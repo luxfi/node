@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/luxdefi/node/codec"
+	"github.com/luxfi/node/codec"
 )
 
 const (

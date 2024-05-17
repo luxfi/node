@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 const (

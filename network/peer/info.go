@@ -6,8 +6,8 @@ package peer
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/json"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/json"
 )
 
 type Info struct {

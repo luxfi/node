@@ -13,16 +13,16 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxdefi/node/database/leveldb"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/pebble"
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/trace"
-	"github.com/luxdefi/node/utils/compression"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ulimit"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/database/leveldb"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/pebble"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ulimit"
+	"github.com/luxfi/node/utils/units"
 )
 
 const (

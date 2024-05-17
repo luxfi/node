@@ -9,12 +9,12 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/maybe"
-	"github.com/luxdefi/node/x/merkledb"
-	"github.com/luxdefi/node/x/sync"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/node/x/sync"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 var _ sync.DB = (*DBClient)(nil)

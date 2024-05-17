@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/platformvm/state"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var (

@@ -4,8 +4,8 @@
 package handler
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
 )
 
 func getIDs(idsBytes [][]byte) (set.Set[ids.ID], error) {

@@ -17,10 +17,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/chains"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/subnets"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/subnets"
 )
 
 func TestGetChainConfigsFromFiles(t *testing.T) {

@@ -9,9 +9,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/vms/proposervm/summary"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/vms/proposervm/summary"
 )
 
 func (vm *VM) StateSyncEnabled(ctx context.Context) (bool, error) {

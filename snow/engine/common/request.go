@@ -3,7 +3,7 @@
 
 package common
 
-import "github.com/luxdefi/node/ids"
+import "github.com/luxfi/node/ids"
 
 type Request struct {
 	NodeID    ids.NodeID

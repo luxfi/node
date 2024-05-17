@@ -10,10 +10,10 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
 
-	xsgenesis "github.com/luxdefi/node/vms/example/xsvm/genesis"
+	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )
 
 const (

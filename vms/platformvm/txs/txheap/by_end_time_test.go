@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 func TestByEndTime(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/luxdefi/node/api/health"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/validators"
 )
 
 // VM describes the interface that all consensus VMs must implement

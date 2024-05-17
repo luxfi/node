@@ -7,8 +7,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/ips"
 )
 
 var (

@@ -6,7 +6,7 @@ package p2p
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 // NodeSampler samples nodes in network

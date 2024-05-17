@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/types"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/vms/types"
 )
 
 // MaxMemoSize is the maximum number of bytes in the memo field

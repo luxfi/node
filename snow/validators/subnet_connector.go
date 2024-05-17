@@ -6,7 +6,7 @@ package validators
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 // SubnetConnector represents a handler that is called when a connection is

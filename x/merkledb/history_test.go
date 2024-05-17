@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/maybe"
 )
 
 func Test_History_Simple(t *testing.T) {

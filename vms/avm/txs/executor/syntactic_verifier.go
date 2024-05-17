@@ -9,11 +9,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 const (

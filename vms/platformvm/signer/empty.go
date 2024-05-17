@@ -3,7 +3,7 @@
 
 package signer
 
-import "github.com/luxdefi/node/utils/crypto/bls"
+import "github.com/luxfi/node/utils/crypto/bls"
 
 var _ Signer = (*Empty)(nil)
 

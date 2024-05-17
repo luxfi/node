@@ -10,10 +10,10 @@ import (
 
 	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/cb58"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/cb58"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 func TestRecover(t *testing.T) {

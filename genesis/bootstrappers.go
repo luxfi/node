@@ -9,11 +9,11 @@ import (
 
 	_ "embed"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 var (

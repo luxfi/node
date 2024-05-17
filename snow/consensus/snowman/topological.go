@@ -13,12 +13,12 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/utils/bag"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (

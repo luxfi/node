@@ -4,13 +4,13 @@
 package snowman
 
 import (
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/common/tracker"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/validators"
 )
 
 func DefaultConfig() Config {

@@ -2,7 +2,7 @@
 
 Lux Warp Messaging (AWM) provides a primitive for cross-subnet communication on the Lux Network.
 
-The Lux P-Chain provides an index of every Subnet's validator set on the Lux Network, including the BLS public key of each validator (as of the [Banff Upgrade](https://github.com/luxdefi/node/releases/v1.9.0)). AWM utilizes the weighted validator sets stored on the P-Chain to build a cross-subnet communication protocol between any two Subnets on the Lux Network.
+The Lux P-Chain provides an index of every Subnet's validator set on the Lux Network, including the BLS public key of each validator (as of the [Banff Upgrade](https://github.com/luxfi/node/releases/v1.9.0)). AWM utilizes the weighted validator sets stored on the P-Chain to build a cross-subnet communication protocol between any two Subnets on the Lux Network.
 
 Any Virtual Machine (VM) on Lux can integrate Lux Warp Messaging to send and receive messages across Lux Subnets.
 

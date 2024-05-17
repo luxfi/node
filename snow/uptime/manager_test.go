@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var errTest = errors.New("non-nil error")

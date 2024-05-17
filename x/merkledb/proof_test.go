@@ -12,13 +12,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/maybe"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/utils/set"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 func Test_Proof_Empty(t *testing.T) {

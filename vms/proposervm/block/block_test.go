@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/units"
 )
 
 func equal(require *require.Assertions, chainID ids.ID, want, have SignedBlock) {

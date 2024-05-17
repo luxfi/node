@@ -9,8 +9,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/compression"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/logging"
 )
 
 var _ Creator = (*creator)(nil)

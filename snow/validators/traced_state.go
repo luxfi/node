@@ -11,8 +11,8 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/trace"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/trace"
 )
 
 var _ State = (*tracedState)(nil)

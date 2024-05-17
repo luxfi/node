@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 func getNodeValue(t ReadOnlyTrie, key string) ([]byte, error) {

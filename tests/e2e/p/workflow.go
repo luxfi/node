@@ -10,17 +10,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/api/info"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/tests/fixture/e2e"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/platformvm"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations

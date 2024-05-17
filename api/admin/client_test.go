@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/rpc"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/rpc"
 )
 
 var errTest = errors.New("non-nil error")

@@ -6,7 +6,7 @@ package registry
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 var _ VMRegistry = (*vmRegistry)(nil)

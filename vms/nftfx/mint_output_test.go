@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 func TestMintOutputState(t *testing.T) {

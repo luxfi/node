@@ -4,9 +4,9 @@
 package platformvm
 
 import (
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/platformvm/config"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/platformvm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)

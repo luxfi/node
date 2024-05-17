@@ -6,7 +6,7 @@ package merkledb
 import (
 	"bytes"
 
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/database"
 
 	"golang.org/x/exp/slices"
 )

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/formatting"
 )
 
 var ErrNilCredential = errors.New("nil credential")

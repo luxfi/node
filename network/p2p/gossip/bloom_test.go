@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 func TestBloomFilterRefresh(t *testing.T) {

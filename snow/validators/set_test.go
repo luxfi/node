@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/utils/set"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 func TestSetAddDuplicate(t *testing.T) {

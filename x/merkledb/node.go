@@ -6,9 +6,9 @@ package merkledb
 import (
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/maybe"
 )
 
 const HashLength = 32

@@ -16,15 +16,15 @@ import (
 
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxdefi/node/vms/rpcchainvm/gruntime"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	vmpb "github.com/luxdefi/node/proto/pb/vm"
-	runtimepb "github.com/luxdefi/node/proto/pb/vm/runtime"
+	vmpb "github.com/luxfi/node/proto/pb/vm"
+	runtimepb "github.com/luxfi/node/proto/pb/vm/runtime"
 )
 
 const defaultRuntimeDialTimeout = 5 * time.Second

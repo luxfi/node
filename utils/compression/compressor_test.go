@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/units"
 )
 
 const maxMessageSize = 2 * units.MiB // Max message size. Can't import due to cycle.

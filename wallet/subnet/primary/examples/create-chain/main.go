@@ -9,11 +9,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func main() {

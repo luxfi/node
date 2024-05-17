@@ -6,11 +6,11 @@ package txs
 import (
 	"reflect"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (

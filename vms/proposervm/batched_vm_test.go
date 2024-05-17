@@ -11,19 +11,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/proposervm/proposer"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/proposervm/proposer"
 )
 
 func TestCoreVMNotRemote(t *testing.T) {

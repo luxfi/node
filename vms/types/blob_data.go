@@ -6,7 +6,7 @@ package types
 import (
 	"encoding/json"
 
-	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxfi/node/utils/formatting"
 )
 
 // JSONByteSlice represents [[]byte] that is json marshalled to hex

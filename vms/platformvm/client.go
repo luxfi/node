@@ -7,18 +7,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/rpc"
-	"github.com/luxdefi/node/vms/platformvm/status"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/vms/platformvm/status"
 
-	platformapi "github.com/luxdefi/node/vms/platformvm/api"
+	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
 
 var _ Client = (*client)(nil)

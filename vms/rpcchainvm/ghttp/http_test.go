@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	httppb "github.com/luxdefi/node/proto/pb/http"
+	httppb "github.com/luxfi/node/proto/pb/http"
 )
 
 func TestConvertWriteResponse(t *testing.T) {

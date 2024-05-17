@@ -16,7 +16,7 @@ import (
 
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
-	httppb "github.com/luxdefi/node/proto/pb/http"
+	httppb "github.com/luxfi/node/proto/pb/http"
 )
 
 func Errorf(code int, tmpl string, args ...interface{}) error {

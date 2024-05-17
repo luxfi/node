@@ -8,9 +8,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/utils/set"
 )
 
 // issuer issues [blk] into to consensus after its dependencies are met.

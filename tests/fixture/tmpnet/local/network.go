@@ -15,14 +15,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luxdefi/node/config"
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/tests/fixture/tmpnet"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/perms"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/utils/set"
 )
 
 const (

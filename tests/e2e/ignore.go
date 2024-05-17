@@ -9,5 +9,5 @@ package e2e
 // ```
 // Failed to compile e2e:
 //
-// github.com/luxdefi/node/tests/e2e: no non-test Go files in /path/to/node/tests/e2e
+// github.com/luxfi/node/tests/e2e: no non-test Go files in /path/to/node/tests/e2e
 // ```

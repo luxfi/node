@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/chains/atomic"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/platformvm/block"
-	"github.com/luxdefi/node/vms/platformvm/state"
-	"github.com/luxdefi/node/vms/platformvm/status"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/status"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
 var (

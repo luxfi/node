@@ -10,10 +10,10 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/platformvm/block"
-	"github.com/luxdefi/node/vms/platformvm/state"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/state"
 )
 
 func TestGetBlock(t *testing.T) {

@@ -6,8 +6,8 @@ package common
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 type ChainUTXOs interface {

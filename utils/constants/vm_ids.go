@@ -3,7 +3,7 @@
 
 package constants
 
-import "github.com/luxdefi/node/ids"
+import "github.com/luxfi/node/ids"
 
 var (
 	PlatformVMID = ids.ID{'p', 'l', 'a', 't', 'f', 'o', 'r', 'm', 'v', 'm'}

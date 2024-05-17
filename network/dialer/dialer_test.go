@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/logging"
 )
 
 // Test that canceling a context passed into Dial results

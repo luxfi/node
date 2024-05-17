@@ -10,12 +10,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/password"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/password"
 )
 
 // strongPassword defines a password used for the following tests that

@@ -3,7 +3,7 @@
 
 package benchlist
 
-import "github.com/luxdefi/node/ids"
+import "github.com/luxfi/node/ids"
 
 // Benchable is notified when a validator is benched or unbenched from a given chain
 type Benchable interface {

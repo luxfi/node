@@ -4,7 +4,7 @@ package rpcdb;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/luxdefi/node/proto/pb/rpcdb";
+option go_package = "github.com/luxfi/node/proto/pb/rpcdb";
 
 service Database {
   rpc Has(HasRequest) returns (HasResponse);

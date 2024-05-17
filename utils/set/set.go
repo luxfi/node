@@ -10,9 +10,9 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 // The minimum capacity of a set
