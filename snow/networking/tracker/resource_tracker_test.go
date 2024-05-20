@@ -13,9 +13,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/math/meter"
-	"github.com/luxdefi/node/utils/resource"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/math/meter"
+	"github.com/luxfi/node/utils/resource"
 )
 
 func TestNewCPUTracker(t *testing.T) {

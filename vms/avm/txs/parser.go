@@ -8,13 +8,13 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/codec/reflectcodec"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/avm/fxs"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/codec/reflectcodec"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/avm/fxs"
 )
 
 // CodecVersion is the current default codec version

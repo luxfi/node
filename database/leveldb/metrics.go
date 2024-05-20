@@ -10,7 +10,7 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/utils"
 )
 
 var levelLabels = []string{"level"}

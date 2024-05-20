@@ -14,14 +14,14 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/luxdefi/coreth/core/types"
-	"github.com/luxdefi/coreth/params"
-	"github.com/luxdefi/coreth/plugin/evm"
+	"github.com/luxfi/coreth/core/types"
+	"github.com/luxfi/coreth/params"
+	"github.com/luxfi/coreth/plugin/evm"
 
-	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/tests/fixture/e2e"
-	"github.com/luxdefi/node/tests/fixture/tmpnet"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 )
 
 // This test uses the compiled bin for `hashing.sol` as

@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 var (

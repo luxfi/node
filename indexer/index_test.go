@@ -8,16 +8,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 func TestIndex(t *testing.T) {

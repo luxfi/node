@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 const (

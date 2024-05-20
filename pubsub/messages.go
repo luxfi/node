@@ -4,9 +4,9 @@
 package pubsub
 
 import (
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/utils/json"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/utils/json"
 )
 
 // NewBloom command for a new bloom filter

@@ -4,7 +4,7 @@ package sync;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/luxdefi/node/proto/pb/sync";
+option go_package = "github.com/luxfi/node/proto/pb/sync";
 
 // Request represents a request for information during syncing.
 message Request {

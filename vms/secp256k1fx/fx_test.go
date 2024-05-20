@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/cb58"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/cb58"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/logging"
 )
 
 var (

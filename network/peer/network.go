@@ -4,9 +4,9 @@
 package peer
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/ips"
 )
 
 // Network defines the interface that is used by a peer to help establish a well

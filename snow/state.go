@@ -6,7 +6,7 @@ package snow
 import (
 	"errors"
 
-	"github.com/luxdefi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/pb/p2p"
 )
 
 const (

@@ -12,15 +12,15 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/linkedhashmap"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var errMissingUTXO = errors.New("missing utxo")

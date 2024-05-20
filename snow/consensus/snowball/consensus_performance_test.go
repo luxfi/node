@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 // Test that a network running the lower AlphaPreference converges faster than a

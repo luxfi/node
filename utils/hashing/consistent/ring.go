@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 var (

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/utils/set"
 )
 
 var errAllowedNodesWhenNotValidatorOnly = errors.New("allowedNodes can only be set when ValidatorOnly is true")

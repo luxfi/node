@@ -6,10 +6,10 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/metric"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/avm/block"
-	"github.com/luxdefi/node/vms/avm/txs"
+	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/avm/block"
+	"github.com/luxfi/node/vms/avm/txs"
 )
 
 var _ Metrics = (*metrics)(nil)

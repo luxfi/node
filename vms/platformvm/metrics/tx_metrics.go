@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var _ txs.Visitor = (*txMetrics)(nil)

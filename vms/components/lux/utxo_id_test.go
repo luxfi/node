@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/ids"
 )
 
 func TestUTXOIDVerifyNil(t *testing.T) {

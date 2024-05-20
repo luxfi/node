@@ -18,10 +18,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/units"
 )
 
 const (

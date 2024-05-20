@@ -12,9 +12,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var errCustom = errors.New("custom")

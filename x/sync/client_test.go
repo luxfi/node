@@ -17,17 +17,17 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/trace"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/maybe"
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/x/merkledb"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/x/merkledb"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 func newDefaultDBConfig() merkledb.Config {

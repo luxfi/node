@@ -6,10 +6,10 @@ package txs
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 var _ UnsignedTx = (*AdvanceTimeTx)(nil)

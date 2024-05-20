@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
 )
 
 func TestUnsignedMessage(t *testing.T) {

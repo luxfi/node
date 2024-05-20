@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Op is an opcode

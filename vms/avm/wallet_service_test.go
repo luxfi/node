@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/api"
+	"github.com/luxfi/node/api"
 )
 
 func TestWalletService_SendMultiple(t *testing.T) {

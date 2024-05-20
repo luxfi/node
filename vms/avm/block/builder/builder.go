@@ -7,18 +7,18 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/avm/block"
-	"github.com/luxdefi/node/vms/avm/state"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/avm/txs/mempool"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/avm/block"
+	"github.com/luxfi/node/vms/avm/state"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/avm/txs/mempool"
 
-	blockexecutor "github.com/luxdefi/node/vms/avm/block/executor"
-	txexecutor "github.com/luxdefi/node/vms/avm/txs/executor"
+	blockexecutor "github.com/luxfi/node/vms/avm/block/executor"
+	txexecutor "github.com/luxfi/node/vms/avm/txs/executor"
 )
 
 // targetBlockSize is the max block size we aim to produce

@@ -13,14 +13,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/heap"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/heap"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 const (

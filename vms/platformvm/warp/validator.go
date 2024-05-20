@@ -11,12 +11,12 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (

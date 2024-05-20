@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxfi/node/snow/consensus/lux"
 )
 
 var (

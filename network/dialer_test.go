@@ -8,8 +8,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/luxdefi/node/network/dialer"
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/utils/ips"
 )
 
 var (

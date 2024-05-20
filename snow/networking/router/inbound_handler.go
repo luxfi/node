@@ -6,9 +6,9 @@ package router
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/version"
 )
 
 var _ InboundHandler = InboundHandlerFunc(nil)

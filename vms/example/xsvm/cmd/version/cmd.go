@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/example/xsvm"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/example/xsvm"
 )
 
 const format = `%s:

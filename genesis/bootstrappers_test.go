@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxfi/node/utils/constants"
 )
 
 func TestSampleBootstrappers(t *testing.T) {

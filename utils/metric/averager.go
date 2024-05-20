@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var ErrFailedRegistering = errors.New("failed registering metric")

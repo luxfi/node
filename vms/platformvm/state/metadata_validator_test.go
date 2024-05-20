@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 func TestValidatorUptimes(t *testing.T) {

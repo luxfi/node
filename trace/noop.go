@@ -8,7 +8,7 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxfi/node/utils/constants"
 )
 
 var Noop Tracer = noOpTracer{

@@ -6,8 +6,8 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxdefi/node/snow/consensus/lux"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 // Parser parses bytes into a vertex.

@@ -11,7 +11,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 var errTest = errors.New("hi mom")

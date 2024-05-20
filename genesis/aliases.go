@@ -6,13 +6,13 @@ package genesis
 import (
 	"path"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/vms/nftfx"
-	"github.com/luxdefi/node/vms/platformvm/genesis"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/vms/propertyfx"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/propertyfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // Aliases returns the default aliases based on the network ID

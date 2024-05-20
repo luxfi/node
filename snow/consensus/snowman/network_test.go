@@ -7,13 +7,13 @@ import (
 	"context"
 	"math/rand"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/bag"
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 type Network struct {

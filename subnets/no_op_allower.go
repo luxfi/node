@@ -3,7 +3,7 @@
 
 package subnets
 
-import "github.com/luxdefi/node/ids"
+import "github.com/luxfi/node/ids"
 
 // NoOpAllower is an Allower that always returns true
 var NoOpAllower Allower = noOpAllower{}

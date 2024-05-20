@@ -7,8 +7,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxdefi/node/utils/linkedhashmap"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var errEmptyCacheTooLarge = errors.New("cache is empty yet still too large")

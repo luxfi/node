@@ -10,9 +10,9 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond

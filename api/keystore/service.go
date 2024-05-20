@@ -9,9 +9,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/logging"
 )
 
 type service struct {

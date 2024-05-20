@@ -16,8 +16,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var (

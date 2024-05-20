@@ -7,10 +7,10 @@ import (
 	"crypto"
 	"crypto/rand"
 
-	"github.com/luxdefi/node/staking"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 // UnsignedIP is used for a validator to claim an IP. The [Timestamp] is used to

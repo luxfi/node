@@ -8,13 +8,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/formatting/address"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/wallet/chain/p"
-	"github.com/luxdefi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/wallet/chain/p"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func main() {

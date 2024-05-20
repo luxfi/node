@@ -9,14 +9,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/chains/atomic"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
-	sharedmemorypb "github.com/luxdefi/node/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
 
 func TestInterface(t *testing.T) {

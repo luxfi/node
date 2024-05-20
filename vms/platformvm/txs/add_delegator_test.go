@@ -9,13 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/platformvm/stakeable"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var preFundedKeys = secp256k1.TestKeys()

@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/utils"
 )
 
 type metrics struct {

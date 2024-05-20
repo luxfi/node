@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
 
 var _ runtime.Initializer = (*initializer)(nil)

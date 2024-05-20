@@ -9,8 +9,8 @@ import (
 
 	_ "embed"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
 )
 
 // RPCChainVMProtocol should be bumped anytime changes are made which require

@@ -6,9 +6,9 @@ package common
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Sender defines how a consensus engine sends messages and requests to other

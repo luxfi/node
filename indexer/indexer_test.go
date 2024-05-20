@@ -14,15 +14,15 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/api/server"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/lux/vertex"
-	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
 )
 
 var (

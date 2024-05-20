@@ -10,14 +10,14 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/trace"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/maybe"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 const (

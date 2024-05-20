@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 var (

@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bloom"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/formatting/address"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/formatting/address"
 )
 
 func TestAddAddressesParseAddresses(t *testing.T) {

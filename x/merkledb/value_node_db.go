@@ -6,10 +6,10 @@ package merkledb
 import (
 	"sync"
 
-	"github.com/luxdefi/node/cache"
+	"github.com/luxfi/node/cache"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils"
 )
 
 var _ database.Iterator = (*iterator)(nil)
