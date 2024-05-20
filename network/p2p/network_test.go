@@ -15,14 +15,14 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/network/p2p/mocks"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p/mocks"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 )
 
 func TestAppRequestResponse(t *testing.T) {

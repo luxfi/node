@@ -13,18 +13,18 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/api"
-	"github.com/luxdefi/node/api/server"
-	"github.com/luxdefi/node/chains"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/perms"
-	"github.com/luxdefi/node/utils/profiler"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/registry"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/registry"
 )
 
 const (

@@ -15,8 +15,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/config"
-	"github.com/luxdefi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/tests/fixture/e2e"
 )
 
 func TestUpgrade(t *testing.T) {

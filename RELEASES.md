@@ -1,6 +1,6 @@
 # Release Notes
 
-## [v1.10.20](https://github.com/luxdefi/node/releases/tag/v1.10.20)
+## [v1.10.20](https://github.com/luxfi/node/releases/tag/v1.10.20)
 
 This release marks the inaugural launch of Lux Mainnet.
 

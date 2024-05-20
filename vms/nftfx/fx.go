@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (

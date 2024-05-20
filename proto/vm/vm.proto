@@ -6,10 +6,10 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "io/prometheus/client/metrics.proto";
 
-option go_package = "github.com/luxdefi/node/proto/pb/vm";
+option go_package = "github.com/luxfi/node/proto/pb/vm";
 
-// ref. https://pkg.go.dev/github.com/luxdefi/node/snow/engine/snowman/block
-// ref. https://pkg.go.dev/github.com/luxdefi/node/snow/consensus/snowman#Block
+// ref. https://pkg.go.dev/github.com/luxfi/node/snow/engine/snowman/block
+// ref. https://pkg.go.dev/github.com/luxfi/node/snow/consensus/snowman#Block
 service VM {
   // ChainVM
   //

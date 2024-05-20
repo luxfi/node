@@ -12,12 +12,12 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm/block"
-	"github.com/luxdefi/node/vms/avm/state"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/avm/txs/executor"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/avm/block"
+	"github.com/luxfi/node/vms/avm/state"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/avm/txs/executor"
 )
 
 var (

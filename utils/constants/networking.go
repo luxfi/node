@@ -7,8 +7,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/luxdefi/node/utils/compression"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/units"
 )
 
 // Const variables to be exported

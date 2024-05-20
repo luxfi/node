@@ -21,13 +21,13 @@ LUXD_PATH="$(realpath ${LUXD_PATH:-./build/luxd})"
 
 #################################
 # download node
-# https://github.com/luxdefi/node/releases
+# https://github.com/luxfi/node/releases
 GOARCH=$(go env GOARCH)
 GOOS=$(go env GOOS)
-DOWNLOAD_URL=https://github.com/luxdefi/node/releases/download/v${VERSION}/node-linux-${GOARCH}-v${VERSION}.tar.gz
+DOWNLOAD_URL=https://github.com/luxfi/node/releases/download/v${VERSION}/node-linux-${GOARCH}-v${VERSION}.tar.gz
 DOWNLOAD_PATH=/tmp/node.tar.gz
 if [[ ${GOOS} == "darwin" ]]; then
-  DOWNLOAD_URL=https://github.com/luxdefi/node/releases/download/v${VERSION}/node-macos-v${VERSION}.zip
+  DOWNLOAD_URL=https://github.com/luxfi/node/releases/download/v${VERSION}/node-macos-v${VERSION}.zip
   DOWNLOAD_PATH=/tmp/node.zip
 fi
 

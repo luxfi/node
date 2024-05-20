@@ -16,18 +16,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/coreth/core/types"
-	"github.com/luxdefi/coreth/ethclient"
-	"github.com/luxdefi/coreth/interfaces"
+	"github.com/luxfi/coreth/core/types"
+	"github.com/luxfi/coreth/ethclient"
+	"github.com/luxfi/coreth/interfaces"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/tests/fixture/tmpnet"
-	"github.com/luxdefi/node/tests/fixture/tmpnet/local"
-	"github.com/luxdefi/node/vms/platformvm/txs/executor"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet/local"
+	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (
@@ -185,7 +185,7 @@ func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
 	require.NoError(ginkgo.GinkgoT(), err)
 	// Double the suggested gas price to maximize the chances of
 	// acceptance. Maybe this can be revisited pending resolution of
-	// https://github.com/luxdefi/coreth/issues/314.
+	// https://github.com/luxfi/coreth/issues/314.
 	gasPrice.Add(gasPrice, gasPrice)
 	return gasPrice
 }

@@ -7,8 +7,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/node"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/node"
 )
 
 // Defines network capabilities supportable regardless of how a network is orchestrated.

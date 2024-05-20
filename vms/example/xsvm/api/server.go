@@ -6,16 +6,16 @@ package api
 import (
 	"net/http"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/example/xsvm/block"
-	"github.com/luxdefi/node/vms/example/xsvm/builder"
-	"github.com/luxdefi/node/vms/example/xsvm/chain"
-	"github.com/luxdefi/node/vms/example/xsvm/genesis"
-	"github.com/luxdefi/node/vms/example/xsvm/state"
-	"github.com/luxdefi/node/vms/example/xsvm/tx"
-	"github.com/luxdefi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/vms/example/xsvm/block"
+	"github.com/luxfi/node/vms/example/xsvm/builder"
+	"github.com/luxfi/node/vms/example/xsvm/chain"
+	"github.com/luxfi/node/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 // Server defines the xsvm API server.

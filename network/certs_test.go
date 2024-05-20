@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/network/peer"
-	"github.com/luxdefi/node/staking"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/staking"
 )
 
 var (

@@ -6,14 +6,14 @@ package config
 import (
 	"time"
 
-	"github.com/luxdefi/node/chains"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/uptime"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/platformvm/reward"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 // Struct collecting all foundational parameters of PlatformVM

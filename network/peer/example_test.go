@@ -9,10 +9,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/snow/networking/router"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
 )
 
 func ExampleStartTestPeer() {

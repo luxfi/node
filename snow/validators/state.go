@@ -7,7 +7,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 var _ State = (*lockedState)(nil)

@@ -10,16 +10,16 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/luxdefi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/tests/fixture/e2e"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/luxdefi/node/tests/e2e/banff"
-	_ "github.com/luxdefi/node/tests/e2e/c"
-	_ "github.com/luxdefi/node/tests/e2e/faultinjection"
-	_ "github.com/luxdefi/node/tests/e2e/p"
-	_ "github.com/luxdefi/node/tests/e2e/static-handlers"
-	_ "github.com/luxdefi/node/tests/e2e/x"
-	_ "github.com/luxdefi/node/tests/e2e/x/transfer"
+	_ "github.com/luxfi/node/tests/e2e/banff"
+	_ "github.com/luxfi/node/tests/e2e/c"
+	_ "github.com/luxfi/node/tests/e2e/faultinjection"
+	_ "github.com/luxfi/node/tests/e2e/p"
+	_ "github.com/luxfi/node/tests/e2e/static-handlers"
+	_ "github.com/luxfi/node/tests/e2e/x"
+	_ "github.com/luxfi/node/tests/e2e/x/transfer"
 )
 
 func TestE2E(t *testing.T) {

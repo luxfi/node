@@ -6,10 +6,10 @@ package x
 import (
 	stdcontext "context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/keychain"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
 )
 
 var _ Signer = (*signer)(nil)

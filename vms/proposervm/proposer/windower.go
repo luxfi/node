@@ -7,12 +7,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 // Proposer list constants

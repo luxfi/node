@@ -8,11 +8,11 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 var (

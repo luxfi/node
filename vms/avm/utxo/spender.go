@@ -7,15 +7,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/nftfx"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (

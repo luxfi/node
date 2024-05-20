@@ -12,18 +12,18 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/chains"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/network"
-	"github.com/luxdefi/node/network/peer"
-	"github.com/luxdefi/node/snow/networking/benchlist"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/version"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/snow/networking/benchlist"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
 var errNoChainProvided = errors.New("argument 'chain' not given")

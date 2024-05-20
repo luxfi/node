@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 func TestBanffBlockSerialization(t *testing.T) {

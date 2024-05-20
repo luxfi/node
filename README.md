@@ -29,7 +29,7 @@ If you plan to build luxd from source, you will also need the following software
 Clone the luxd repository:
 
 ```sh
-git clone git@github.com:luxdefi/node.git
+git clone git@github.com:luxfi/node.git
 cd node
 ```
 
@@ -77,7 +77,7 @@ sudo apt install node
 
 ### Binary Install
 
-Download the [latest build](https://github.com/luxdefi/node/releases/latest) for your operating system and architecture.
+Download the [latest build](https://github.com/luxfi/node/releases/latest) for your operating system and architecture.
 
 The Lux binary to be executed is named `node`.
 
@@ -127,7 +127,7 @@ To connect to the Testnet Testnet, run:
 
 ### Creating a Local Testnet
 
-The [lux-cli](https://github.com/luxdefi/lux-cli) is the easiest way to start a local network.
+The [lux-cli](https://github.com/luxfi/lux-cli) is the easiest way to start a local network.
 
 ```sh
 lux network start
@@ -246,4 +246,4 @@ To officially support a new platform, one must satisfy the following requirement
 
 **We and our community welcome responsible disclosures.**
 
-Please refer to our [Security Policy](SECURITY.md) and [Security Advisories](https://github.com/luxdefi/node/security/advisories).
+Please refer to our [Security Policy](SECURITY.md) and [Security Advisories](https://github.com/luxfi/node/security/advisories).

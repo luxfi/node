@@ -12,9 +12,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/networking/benchlist"
-	"github.com/luxdefi/node/utils/timer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/networking/benchlist"
+	"github.com/luxfi/node/utils/timer"
 )
 
 func TestManagerFire(t *testing.T) {

@@ -6,9 +6,9 @@ package avm
 import (
 	"reflect"
 
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/avm/fxs"
-	"github.com/luxdefi/node/vms/avm/txs"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/avm/txs"
 )
 
 var _ txs.Visitor = (*txInit)(nil)

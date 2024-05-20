@@ -6,10 +6,10 @@ package message
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/utils/compression"
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/ips"
 )
 
 var _ OutboundMsgBuilder = (*outMsgBuilder)(nil)

@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/versiondb"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/versiondb"
 )
 
 func TestState(t *testing.T) {

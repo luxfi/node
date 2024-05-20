@@ -6,8 +6,8 @@ package cache
 import (
 	"sync"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/linkedhashmap"
 )
 
 var _ Cacher[struct{}, struct{}] = (*LRU[struct{}, struct{}])(nil)

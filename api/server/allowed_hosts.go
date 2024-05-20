@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/utils/set"
 )
 
 const wildcard = "*"

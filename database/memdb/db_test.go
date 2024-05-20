@@ -6,7 +6,7 @@ package memdb
 import (
 	"testing"
 
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/database"
 )
 
 func TestInterface(t *testing.T) {

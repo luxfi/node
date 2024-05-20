@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
 )
 
 var (

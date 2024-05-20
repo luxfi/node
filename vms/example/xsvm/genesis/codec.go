@@ -3,7 +3,7 @@
 
 package genesis
 
-import "github.com/luxdefi/node/vms/example/xsvm/block"
+import "github.com/luxfi/node/vms/example/xsvm/block"
 
 // Version is the current default codec version
 const Version = block.Version

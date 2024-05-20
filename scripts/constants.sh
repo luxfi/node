@@ -9,8 +9,8 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory ab
 node_path="$LUX_PATH/build/luxd"
 
 # Lux docker hub
-# luxdefi/node - defaults to local as to avoid unintentional pushes
-# You should probably set it - export DOCKER_REPO='luxdefi/node'
+# luxfi/node - defaults to local as to avoid unintentional pushes
+# You should probably set it - export DOCKER_REPO='luxfi/node'
 node_dockerhub_repo=${DOCKER_REPO:-"node"}
 
 # Current branch

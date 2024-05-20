@@ -8,9 +8,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bag"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Voter records chits received from [vdr] once its dependencies are met.

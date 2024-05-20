@@ -10,11 +10,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/linkedhashmap"
-	"github.com/luxdefi/node/utils/math/meter"
-	"github.com/luxdefi/node/utils/resource"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/math/meter"
+	"github.com/luxfi/node/utils/resource"
 )
 
 const epsilon = 1e-9

@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 func TestStakerDiffIterator(t *testing.T) {

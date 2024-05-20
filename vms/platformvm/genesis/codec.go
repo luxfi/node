@@ -3,7 +3,7 @@
 
 package genesis
 
-import "github.com/luxdefi/node/vms/platformvm/block"
+import "github.com/luxfi/node/vms/platformvm/block"
 
 const Version = block.Version
 

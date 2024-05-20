@@ -6,11 +6,11 @@ package executor
 import (
 	"reflect"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/vms/avm/config"
-	"github.com/luxdefi/node/vms/avm/fxs"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/vms/avm/config"
+	"github.com/luxfi/node/vms/avm/fxs"
 )
 
 type Backend struct {

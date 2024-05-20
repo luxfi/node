@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/units"
 )
 
 // Tests is a list of all database tests

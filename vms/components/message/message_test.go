@@ -10,9 +10,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxdefi/node/codec"
+	"github.com/luxfi/node/codec"
 
-	pb "github.com/luxdefi/node/proto/pb/message"
+	pb "github.com/luxfi/node/proto/pb/message"
 )
 
 func TestParseGibberish(t *testing.T) {

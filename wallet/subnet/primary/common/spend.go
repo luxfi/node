@@ -4,9 +4,9 @@
 package common
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // MatchOwners attempts to match a list of addresses up to the provided

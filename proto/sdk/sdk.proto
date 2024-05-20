@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sdk;
 
-option go_package = "github.com/luxdefi/node/proto/pb/sdk";
+option go_package = "github.com/luxfi/node/proto/pb/sdk";
 
 message PullGossipRequest {
   bytes filter = 1;

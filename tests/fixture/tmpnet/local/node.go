@@ -19,12 +19,12 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxdefi/node/api/health"
-	"github.com/luxdefi/node/config"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/node"
-	"github.com/luxdefi/node/tests/fixture/tmpnet"
-	"github.com/luxdefi/node/utils/perms"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/node"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/utils/perms"
 )
 
 var errNodeAlreadyRunning = errors.New("failed to start local node: node is already running")

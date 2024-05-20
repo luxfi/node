@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bag"
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 const initialUnaryDescription = "SB(PreferenceStrength = 0, SF(Confidence = 0, Finalized = false)) Bits = [0, 256)"

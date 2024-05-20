@@ -6,9 +6,9 @@ package lux
 import (
 	"errors"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var ErrInsufficientFunds = errors.New("insufficient funds")

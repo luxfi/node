@@ -13,12 +13,12 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/api/server"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms"
 )
 
 var id = ids.GenerateTestID()

@@ -6,8 +6,8 @@ package metercacher
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var _ cache.Cacher[struct{}, struct{}] = (*Cache[struct{}, struct{}])(nil)

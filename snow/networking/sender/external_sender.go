@@ -4,10 +4,10 @@
 package sender
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/subnets"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/utils/set"
 )
 
 // ExternalSender sends consensus messages to other validators
