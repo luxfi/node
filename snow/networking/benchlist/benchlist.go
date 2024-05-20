@@ -11,15 +11,15 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/heap"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/timer"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/heap"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/utils/timer/mockable"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 // If a peer consistently does not respond to queries, it will

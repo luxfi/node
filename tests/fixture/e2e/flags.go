@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luxdefi/node/tests/fixture/tmpnet/local"
+	"github.com/luxfi/node/tests/fixture/tmpnet/local"
 )
 
 type FlagVars struct {

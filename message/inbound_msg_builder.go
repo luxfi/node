@@ -6,9 +6,9 @@ package message
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var _ InboundMsgBuilder = (*inMsgBuilder)(nil)

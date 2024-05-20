@@ -4,8 +4,8 @@
 package block
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 // CommonBlock contains fields and methods common to all blocks in this VM.

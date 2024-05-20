@@ -6,9 +6,9 @@ package sync
 import (
 	"bytes"
 
-	"github.com/luxdefi/node/utils/heap"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/maybe"
+	"github.com/luxfi/node/utils/heap"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/maybe"
 
 	"github.com/google/btree"
 )

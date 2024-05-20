@@ -10,9 +10,9 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/trace"
-	"github.com/luxdefi/node/utils/bag"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/utils/bag"
 )
 
 var _ Consensus = (*tracedConsensus)(nil)

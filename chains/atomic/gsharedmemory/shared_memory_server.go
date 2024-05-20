@@ -6,11 +6,11 @@ package gsharedmemory
 import (
 	"context"
 
-	"github.com/luxdefi/node/chains/atomic"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
 
-	sharedmemorypb "github.com/luxdefi/node/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
 
 var _ sharedmemorypb.SharedMemoryServer = (*Server)(nil)

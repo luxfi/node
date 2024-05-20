@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (

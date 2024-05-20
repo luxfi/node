@@ -8,8 +8,8 @@ import (
 
 	_ "embed"
 
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
 var (

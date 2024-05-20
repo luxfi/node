@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/timer/mockable"
-	"github.com/luxdefi/node/vms/avm/fxs"
-	"github.com/luxdefi/node/vms/avm/txs"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/avm/txs"
 )
 
 // CodecVersion is the current default codec version

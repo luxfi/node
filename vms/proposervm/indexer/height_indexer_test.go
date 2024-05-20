@@ -11,15 +11,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/proposervm/block"
-	"github.com/luxdefi/node/vms/proposervm/state"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/vms/proposervm/state"
 )
 
 func TestHeightBlockIndexPostFork(t *testing.T) {

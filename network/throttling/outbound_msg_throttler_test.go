@@ -12,11 +12,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {

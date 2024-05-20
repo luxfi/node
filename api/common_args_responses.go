@@ -6,9 +6,9 @@ package api
 import (
 	stdjson "encoding/json"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/json"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/json"
 )
 
 // This file contains structs used in arguments and responses in services

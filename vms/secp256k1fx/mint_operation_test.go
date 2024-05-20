@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 func TestMintOperationVerify(t *testing.T) {

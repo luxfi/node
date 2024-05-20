@@ -18,14 +18,14 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/snow/engine/snowman/block/mocks"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
 
-	vmpb "github.com/luxdefi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 )
 
 const (

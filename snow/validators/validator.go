@@ -4,8 +4,8 @@
 package validators
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/bls"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 )
 
 // Validator is a struct that contains the base values representing a validator

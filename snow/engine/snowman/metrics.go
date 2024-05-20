@@ -6,8 +6,8 @@ package snowman
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/utils/metric"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (

@@ -6,15 +6,15 @@ package primary
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/crypto/keychain"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/platformvm/txs"
-	"github.com/luxdefi/node/wallet/chain/c"
-	"github.com/luxdefi/node/wallet/chain/p"
-	"github.com/luxdefi/node/wallet/chain/x"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/wallet/chain/c"
+	"github.com/luxfi/node/wallet/chain/p"
+	"github.com/luxfi/node/wallet/chain/x"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ Wallet = (*wallet)(nil)

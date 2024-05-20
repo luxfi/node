@@ -6,7 +6,7 @@
 
 package ulimit
 
-import "github.com/luxdefi/node/utils/logging"
+import "github.com/luxfi/node/utils/logging"
 
 const DefaultFDLimit = 16384
 

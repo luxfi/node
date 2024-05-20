@@ -6,7 +6,7 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 var _ block.Visitor = (*rejector)(nil)

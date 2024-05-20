@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 )
 
 const (

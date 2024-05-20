@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxdefi/node/vms/types"
+	"github.com/luxfi/node/vms/types"
 
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 const (

@@ -4,10 +4,10 @@
 package rpcchainvm
 
 import (
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 
-	vmpb "github.com/luxdefi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 )
 
 var (

@@ -8,12 +8,12 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/ipcs/socket"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/ipcs/socket"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var _ snow.Acceptor = (*EventSockets)(nil)

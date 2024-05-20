@@ -4,10 +4,10 @@
 package vertex
 
 import (
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/codec/reflectcodec"
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/codec/reflectcodec"
+	"github.com/luxfi/node/utils/units"
 )
 
 const (

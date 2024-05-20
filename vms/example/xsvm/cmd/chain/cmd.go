@@ -6,8 +6,8 @@ package chain
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/luxdefi/node/vms/example/xsvm/cmd/chain/create"
-	"github.com/luxdefi/node/vms/example/xsvm/cmd/chain/genesis"
+	"github.com/luxfi/node/vms/example/xsvm/cmd/chain/create"
+	"github.com/luxfi/node/vms/example/xsvm/cmd/chain/genesis"
 )
 
 func Command() *cobra.Command {

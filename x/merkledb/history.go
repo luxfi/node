@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/buffer"
-	"github.com/luxdefi/node/utils/maybe"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/buffer"
+	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/utils/set"
 )
 
 var ErrInsufficientHistory = errors.New("insufficient history to generate proof")

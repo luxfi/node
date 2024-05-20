@@ -8,16 +8,16 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/network/dialer"
-	"github.com/luxdefi/node/network/peer"
-	"github.com/luxdefi/node/network/throttling"
-	"github.com/luxdefi/node/snow/networking/tracker"
-	"github.com/luxdefi/node/snow/uptime"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/compression"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.

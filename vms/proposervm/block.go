@@ -11,14 +11,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/vms/proposervm/block"
-	"github.com/luxdefi/node/vms/proposervm/proposer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxdefi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 const (

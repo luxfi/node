@@ -6,8 +6,8 @@ package x
 import (
 	stdcontext "context"
 
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ Backend = (*backend)(nil)

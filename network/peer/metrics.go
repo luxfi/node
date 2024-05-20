@@ -10,10 +10,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/metric"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 type MessageMetrics struct {

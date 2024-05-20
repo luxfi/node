@@ -6,7 +6,7 @@ package payload
 import (
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 var _ Payload = (*Hash)(nil)

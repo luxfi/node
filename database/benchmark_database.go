@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/units"
+	"github.com/luxfi/node/utils/units"
 )
 
 var (

@@ -11,11 +11,11 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/json"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/utils/wrappers"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var _ stdjson.Marshaler = (*Set[int])(nil)

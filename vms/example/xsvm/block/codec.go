@@ -3,7 +3,7 @@
 
 package block
 
-import "github.com/luxdefi/node/vms/example/xsvm/tx"
+import "github.com/luxfi/node/vms/example/xsvm/tx"
 
 // Version is the current default codec version
 const Version = tx.Version

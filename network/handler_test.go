@@ -4,9 +4,9 @@
 package network
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/networking/router"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/version"
 )
 
 var _ router.ExternalHandler = (*testHandler)(nil)

@@ -11,11 +11,11 @@ import (
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/trace"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 )
 
 var _ Engine = (*tracedEngine)(nil)
