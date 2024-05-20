@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package warp;
 
-option go_package = "github.com/luxdefi/node/proto/pb/warp";
+option go_package = "github.com/luxfi/node/proto/pb/warp";
 
 service Signer {
   rpc Sign(SignRequest) returns (SignResponse);

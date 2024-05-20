@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/vms/platformvm/state"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/vms/platformvm/state"
 )
 
 func TestNewExportTx(t *testing.T) {

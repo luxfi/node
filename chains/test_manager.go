@@ -4,8 +4,8 @@
 package chains
 
 import (
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/networking/router"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/networking/router"
 )
 
 // TestManager implements Manager but does nothing. Always returns nil error.

@@ -9,15 +9,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/platformvm/stakeable"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/vms/types"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/types"
 )
 
 func TestBaseTxSerialization(t *testing.T) {

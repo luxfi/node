@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/staking"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/staking"
 )
 
 func TestParse(t *testing.T) {

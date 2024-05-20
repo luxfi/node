@@ -9,9 +9,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/vms/proposervm/block"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)

@@ -11,12 +11,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *testing.T) {

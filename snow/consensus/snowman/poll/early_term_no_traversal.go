@@ -6,8 +6,8 @@ package poll
 import (
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bag"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bag"
 )
 
 type earlyTermNoTraversalFactory struct {

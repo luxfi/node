@@ -4,9 +4,9 @@
 package handler
 
 import (
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/common"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
 )
 
 // Engine is a wrapper around a consensus engine's components.

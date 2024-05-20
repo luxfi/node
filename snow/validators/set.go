@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/formatting"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (

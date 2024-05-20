@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (

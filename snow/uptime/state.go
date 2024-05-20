@@ -6,7 +6,7 @@ package uptime
 import (
 	"time"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 type State interface {

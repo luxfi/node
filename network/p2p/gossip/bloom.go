@@ -10,7 +10,7 @@ import (
 
 	bloomfilter "github.com/holiman/bloomfilter/v2"
 
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/ids"
 )
 
 var _ hash.Hash64 = (*hasher)(nil)

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/platformvm/fx"
-	"github.com/luxdefi/node/vms/platformvm/status"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/status"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var (

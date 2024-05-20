@@ -9,10 +9,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxdefi/node/indexer"
-	"github.com/luxdefi/node/vms/proposervm/block"
-	"github.com/luxdefi/node/wallet/chain/x"
-	"github.com/luxdefi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/indexer"
+	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/wallet/chain/x"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 // This example program continuously polls for the next X-Chain block

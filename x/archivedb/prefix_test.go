@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
 )
 
 type limitIterationDB struct {

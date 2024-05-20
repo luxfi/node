@@ -6,8 +6,8 @@ package queue
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Job defines the interface required to be placed on the job queue.

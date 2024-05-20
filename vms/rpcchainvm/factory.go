@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/resource"
-	"github.com/luxdefi/node/vms"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime"
-	"github.com/luxdefi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/resource"
+	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
 )
 
 var _ vms.Factory = (*factory)(nil)

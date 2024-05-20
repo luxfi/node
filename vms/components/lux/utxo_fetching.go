@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/set"
 
-	safemath "github.com/luxdefi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 // GetBalance returns the current balance of [addrs]

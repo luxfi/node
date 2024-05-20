@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 const (

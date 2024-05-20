@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/utils/rpc"
+	"github.com/luxfi/node/utils/rpc"
 )
 
 var _ Client = (*client)(nil)

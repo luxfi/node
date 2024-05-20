@@ -11,12 +11,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 )
 
 var (

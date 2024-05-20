@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (

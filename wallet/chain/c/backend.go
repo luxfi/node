@@ -11,14 +11,14 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxdefi/coreth/plugin/evm"
+	"github.com/luxfi/coreth/plugin/evm"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var (

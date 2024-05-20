@@ -7,12 +7,12 @@ import (
 	"errors"
 	"unicode"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/vms/components/verify"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 const (

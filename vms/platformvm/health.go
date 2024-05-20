@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/constants"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/constants"
 )
 
 func (vm *VM) HealthCheck(context.Context) (interface{}, error) {

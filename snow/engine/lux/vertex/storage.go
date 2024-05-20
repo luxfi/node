@@ -6,8 +6,8 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/lux"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/lux"
 )
 
 // Storage defines the persistent storage that is required by the consensus

@@ -8,11 +8,11 @@ import (
 
 	_ "embed"
 
-	"github.com/luxdefi/node/utils/cb58"
-	"github.com/luxdefi/node/utils/crypto/secp256k1"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/utils/cb58"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
 // PrivateKey-vmRQiZeXEXYMyJhEiqdC2z5JhuDbxL8ix9UVvjgMu2Er1NepE => P-local1g65uqn6t77p656w64023nh8nd9updzmxyymev2

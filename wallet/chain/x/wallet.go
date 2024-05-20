@@ -6,14 +6,14 @@ package x
 import (
 	"errors"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/vms/avm"
-	"github.com/luxdefi/node/vms/avm/txs"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/components/verify"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var (

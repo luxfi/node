@@ -13,16 +13,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/tests"
-	"github.com/luxdefi/node/tests/fixture/e2e"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/vms/avm"
-	"github.com/luxdefi/node/vms/components/lux"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (

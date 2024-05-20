@@ -13,9 +13,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxdefi/node/tests/fixture/tmpnet"
-	"github.com/luxdefi/node/tests/fixture/tmpnet/local"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet/local"
+	"github.com/luxfi/node/version"
 )
 
 const cliVersion = "0.0.1"

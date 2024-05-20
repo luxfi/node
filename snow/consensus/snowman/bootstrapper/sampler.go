@@ -4,9 +4,9 @@
 package bootstrapper
 
 import (
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/sampler"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Sample keys from [elements] uniformly by weight without replacement. The

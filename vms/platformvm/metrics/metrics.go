@@ -8,10 +8,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/metric"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/platformvm/block"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 var _ Metrics = (*metrics)(nil)

@@ -8,13 +8,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/math"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/math"
 )
 
 var (

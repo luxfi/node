@@ -6,12 +6,12 @@ package executor
 import (
 	"time"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/platformvm/state"
-	"github.com/luxdefi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 type addValidatorRules struct {

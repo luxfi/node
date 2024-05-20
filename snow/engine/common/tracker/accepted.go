@@ -6,10 +6,10 @@ package tracker
 import (
 	"sync"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/set"
 )
 
 var _ Accepted = (*accepted)(nil)

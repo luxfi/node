@@ -10,16 +10,16 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/genesis"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/snow/networking/router"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/ips"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/set"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 )
 
 var _ router.ExternalHandler = (*testExternalHandler)(nil)

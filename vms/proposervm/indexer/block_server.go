@@ -6,9 +6,9 @@ package indexer
 import (
 	"context"
 
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowman"
 )
 
 // BlockServer represents all requests heightIndexer can issue

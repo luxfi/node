@@ -6,7 +6,7 @@ package network
 import (
 	"net"
 
-	"github.com/luxdefi/node/utils/ips"
+	"github.com/luxfi/node/utils/ips"
 )
 
 var _ net.Listener = (*testListener)(nil)

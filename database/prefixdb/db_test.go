@@ -6,8 +6,8 @@ package prefixdb
 import (
 	"testing"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/memdb"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
 )
 
 func TestInterface(t *testing.T) {

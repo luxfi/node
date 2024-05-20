@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/logging"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/logging"
 )
 
 type Scheduler interface {

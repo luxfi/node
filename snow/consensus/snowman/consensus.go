@@ -7,11 +7,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/api/health"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/consensus/snowball"
-	"github.com/luxdefi/node/utils/bag"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/utils/bag"
 )
 
 // Consensus represents a general snowman instance that can be used directly to

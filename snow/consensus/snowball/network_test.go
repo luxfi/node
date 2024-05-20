@@ -6,9 +6,9 @@ package snowball
 import (
 	"math/rand"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bag"
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 type newConsensusFunc func(params Parameters, choice ids.ID) Consensus

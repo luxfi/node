@@ -13,11 +13,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxdefi/node/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/luxdefi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxdefi/node/proto/pb/http"
-	responsewriterpb "github.com/luxdefi/node/proto/pb/http/responsewriter"
+	httppb "github.com/luxfi/node/proto/pb/http"
+	responsewriterpb "github.com/luxfi/node/proto/pb/http/responsewriter"
 )
 
 var (

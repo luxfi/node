@@ -6,8 +6,8 @@ package snowball
 import (
 	"fmt"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/bag"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/bag"
 )
 
 // Consensus represents a general snow instance that can be used directly to

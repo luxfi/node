@@ -6,11 +6,11 @@ package appsender
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/set"
 
-	appsenderpb "github.com/luxdefi/node/proto/pb/appsender"
+	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
 
 var _ common.AppSender = (*Client)(nil)

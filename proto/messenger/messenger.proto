@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package messenger;
 
-option go_package = "github.com/luxdefi/node/proto/pb/messenger";
+option go_package = "github.com/luxfi/node/proto/pb/messenger";
 
 service Messenger {
   rpc Notify(NotifyRequest) returns (NotifyResponse);

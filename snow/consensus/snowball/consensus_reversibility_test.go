@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxdefi/node/utils/sampler"
+	"github.com/luxfi/node/utils/sampler"
 )
 
 func TestSnowballGovernance(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxdefi/node/utils/crypto/bls"
-	"github.com/luxdefi/node/utils/formatting"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/formatting"
 )
 
 var (

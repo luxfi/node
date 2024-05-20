@@ -16,17 +16,17 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/engine/common"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/utils/maybe"
-	"github.com/luxdefi/node/utils/units"
-	"github.com/luxdefi/node/x/merkledb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/x/merkledb"
 
-	pb "github.com/luxdefi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 const (

@@ -6,7 +6,7 @@ package block
 import (
 	"context"
 
-	"github.com/luxdefi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman"
 )
 
 // Context defines the block context that will be optionally provided by the

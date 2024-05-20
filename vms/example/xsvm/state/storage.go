@@ -6,10 +6,10 @@ package state
 import (
 	"errors"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/math"
-	"github.com/luxdefi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 var (

@@ -6,13 +6,13 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxdefi/coreth/plugin/evm"
+	"github.com/luxfi/coreth/plugin/evm"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/vms/secp256k1fx"
-	"github.com/luxdefi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ Builder = (*builderWithOptions)(nil)

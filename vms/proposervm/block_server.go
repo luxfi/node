@@ -6,9 +6,9 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/consensus/snowman"
-	"github.com/luxdefi/node/vms/proposervm/indexer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/vms/proposervm/indexer"
 )
 
 var _ indexer.BlockServer = (*VM)(nil)

@@ -6,9 +6,9 @@ package snowstorm
 import (
 	"context"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/choices"
-	"github.com/luxdefi/node/utils/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/utils/set"
 )
 
 var _ Tx = (*TestTx)(nil)

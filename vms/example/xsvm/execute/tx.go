@@ -7,16 +7,16 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/engine/snowman/block"
-	"github.com/luxdefi/node/utils"
-	"github.com/luxdefi/node/utils/hashing"
-	"github.com/luxdefi/node/utils/wrappers"
-	"github.com/luxdefi/node/vms/example/xsvm/state"
-	"github.com/luxdefi/node/vms/example/xsvm/tx"
-	"github.com/luxdefi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 const (

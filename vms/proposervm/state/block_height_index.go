@@ -4,11 +4,11 @@
 package state
 
 import (
-	"github.com/luxdefi/node/cache"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/database/prefixdb"
-	"github.com/luxdefi/node/database/versiondb"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/node/ids"
 )
 
 const cacheSize = 8192 // max cache entries

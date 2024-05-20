@@ -10,7 +10,7 @@ package database
 import (
 	"io"
 
-	"github.com/luxdefi/node/api/health"
+	"github.com/luxfi/node/api/health"
 )
 
 // KeyValueReader wraps the Has and Get method of a backing data store.

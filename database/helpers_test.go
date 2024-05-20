@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/utils"
 )
 
 func TestSortednessUint64(t *testing.T) {

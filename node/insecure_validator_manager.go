@@ -6,12 +6,12 @@ package node
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/snow/networking/router"
-	"github.com/luxdefi/node/snow/validators"
-	"github.com/luxdefi/node/utils/constants"
-	"github.com/luxdefi/node/utils/logging"
-	"github.com/luxdefi/node/version"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/version"
 )
 
 type insecureValidatorManager struct {

@@ -6,9 +6,9 @@ package tx
 import (
 	"math"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/utils"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/utils"
 )
 
 // Version is the current default codec version

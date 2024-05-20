@@ -10,8 +10,8 @@ import (
 
 	"github.com/thepudds/fzgen/fuzzer"
 
-	"github.com/luxdefi/node/database/memdb"
-	"github.com/luxdefi/node/ids"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
 )
 
 func FuzzMarshalDiffKey(f *testing.F) {

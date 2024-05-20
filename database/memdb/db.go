@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/database"
+	"github.com/luxfi/node/database"
 )
 
 const (

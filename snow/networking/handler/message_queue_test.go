@@ -12,12 +12,12 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/message"
-	"github.com/luxdefi/node/proto/pb/p2p"
-	"github.com/luxdefi/node/snow"
-	"github.com/luxdefi/node/snow/networking/tracker"
-	"github.com/luxdefi/node/snow/validators"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/snow/validators"
 )
 
 const engineType = p2p.EngineType_ENGINE_TYPE_SNOWMAN

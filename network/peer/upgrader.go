@@ -10,8 +10,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/staking"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/staking"
 )
 
 var (

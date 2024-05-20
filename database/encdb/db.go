@@ -13,10 +13,10 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxdefi/node/codec"
-	"github.com/luxdefi/node/codec/linearcodec"
-	"github.com/luxdefi/node/database"
-	"github.com/luxdefi/node/utils/hashing"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 const (

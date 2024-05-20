@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxdefi/node/ids"
-	"github.com/luxdefi/node/utils/rpc"
-	"github.com/luxdefi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
 var _ Client = (*client)(nil)
