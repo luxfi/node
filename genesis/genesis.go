@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -203,7 +203,7 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
-		return nil, ids.ID{}, fmt.Errorf(
+		return nil, ids.Empty, fmt.Errorf(
 			"%w: %s",
 			errOverridesStandardNetworkConfig,
 			constants.NetworkName(networkID),
@@ -212,11 +212,11 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 
 	config, err := GetConfigFile(filepath)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("unable to load provided genesis config at %s: %w", filepath, err)
+		return nil, ids.Empty, fmt.Errorf("unable to load provided genesis config at %s: %w", filepath, err)
 	}
 
 	if err := validateConfig(networkID, config, stakingCfg); err != nil {
-		return nil, ids.ID{}, fmt.Errorf("genesis config validation failed: %w", err)
+		return nil, ids.Empty, fmt.Errorf("genesis config validation failed: %w", err)
 	}
 
 	return FromConfig(config)
@@ -245,7 +245,7 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
 	case constants.MainnetID, constants.TestnetID, constants.LocalID:
-		return nil, ids.ID{}, fmt.Errorf(
+		return nil, ids.Empty, fmt.Errorf(
 			"%w: %s",
 			errOverridesStandardNetworkConfig,
 			constants.NetworkName(networkID),
@@ -254,11 +254,11 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 
 	customConfig, err := GetConfigContent(genesisContent)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("unable to load genesis content from flag: %w", err)
+		return nil, ids.Empty, fmt.Errorf("unable to load genesis content from flag: %w", err)
 	}
 
 	if err := validateConfig(networkID, customConfig, stakingCfg); err != nil {
-		return nil, ids.ID{}, fmt.Errorf("genesis config validation failed: %w", err)
+		return nil, ids.Empty, fmt.Errorf("genesis config validation failed: %w", err)
 	}
 
 	return FromConfig(customConfig)
@@ -298,7 +298,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		for _, allocation := range xAllocations {
 			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 			if err != nil {
-				return nil, ids.ID{}, err
+				return nil, ids.Empty, err
 			}
 
 			lux.InitialState["fixedCap"] = append(lux.InitialState["fixedCap"], avm.Holder{
@@ -323,22 +323,22 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	avmSS := avm.CreateStaticService()
 	err := avmSS.BuildGenesis(nil, &avmArgs, &avmReply)
 	if err != nil {
-		return nil, ids.ID{}, err
+		return nil, ids.Empty, err
 	}
 
 	bytes, err := formatting.Decode(defaultEncoding, avmReply.Bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't parse avm genesis reply: %w", err)
+		return nil, ids.Empty, fmt.Errorf("couldn't parse avm genesis reply: %w", err)
 	}
 	luxAssetID, err := LUXAssetID(bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
+		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
 	initialSupply, err := config.InitialSupply()
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("couldn't calculate the initial supply: %w", err)
+		return nil, ids.Empty, fmt.Errorf("couldn't calculate the initial supply: %w", err)
 	}
 
 	initiallyStaked := set.Of(config.InitialStakedFunds...)
@@ -346,7 +346,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 	// Specify the initial state of the Platform Chain
 	platformvmArgs := api.BuildGenesisArgs{
-		LuxAssetID:    luxAssetID,
+		LuxAssetID:   luxAssetID,
 		NetworkID:     json.Uint32(config.NetworkID),
 		Time:          json.Uint64(config.StartTime),
 		InitialSupply: json.Uint64(initialSupply),
@@ -360,7 +360,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		}
 		addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 		if err != nil {
-			return nil, ids.ID{}, err
+			return nil, ids.Empty, err
 		}
 		for _, unlock := range allocation.UnlockSchedule {
 			if unlock.Amount > 0 {
@@ -391,14 +391,14 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 		destAddrStr, err := address.FormatBech32(hrp, staker.RewardAddress.Bytes())
 		if err != nil {
-			return nil, ids.ID{}, err
+			return nil, ids.Empty, err
 		}
 
 		utxos := []api.UTXO(nil)
 		for _, allocation := range nodeAllocations {
 			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 			if err != nil {
-				return nil, ids.ID{}, err
+				return nil, ids.Empty, err
 			}
 			for _, unlock := range allocation.UnlockSchedule {
 				msgStr, err := formatting.Encode(defaultEncoding, allocation.ETHAddr.Bytes())
@@ -463,12 +463,12 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	platformvmReply := api.BuildGenesisReply{}
 	platformvmSS := api.StaticService{}
 	if err := platformvmSS.BuildGenesis(nil, &platformvmArgs, &platformvmReply); err != nil {
-		return nil, ids.ID{}, fmt.Errorf("problem while building platform chain's genesis state: %w", err)
+		return nil, ids.Empty, fmt.Errorf("problem while building platform chain's genesis state: %w", err)
 	}
 
 	genesisBytes, err := formatting.Decode(platformvmReply.Encoding, platformvmReply.Bytes)
 	if err != nil {
-		return nil, ids.ID{}, fmt.Errorf("problem parsing platformvm genesis bytes: %w", err)
+		return nil, ids.Empty, fmt.Errorf("problem parsing platformvm genesis bytes: %w", err)
 	}
 
 	return genesisBytes, luxAssetID, nil
@@ -552,9 +552,11 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 }
 
 func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
-	parser, err := xchaintxs.NewParser([]fxs.Fx{
-		&secp256k1fx.Fx{},
-	})
+	parser, err := xchaintxs.NewParser(
+		[]fxs.Fx{
+			&secp256k1fx.Fx{},
+		},
+	)
 	if err != nil {
 		return ids.Empty, err
 	}
@@ -571,7 +573,7 @@ func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
 	genesisTx := genesis.Txs[0]
 
 	tx := xchaintxs.Tx{Unsigned: &genesisTx.CreateAssetTx}
-	if err := parser.InitializeGenesisTx(&tx); err != nil {
+	if err := tx.Initialize(genesisCodec); err != nil {
 		return ids.Empty, err
 	}
 	return tx.ID(), nil

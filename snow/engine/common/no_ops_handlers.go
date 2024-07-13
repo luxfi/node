@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -11,7 +11,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -180,21 +179,12 @@ func NewNoOpPutHandler(log logging.Logger) PutHandler {
 }
 
 func (nop *noOpPutHandler) Put(_ context.Context, nodeID ids.NodeID, requestID uint32, _ []byte) error {
-	if requestID == constants.GossipMsgRequestID {
-		nop.log.Verbo("dropping request",
-			zap.String("reason", "unhandled by this gear"),
-			zap.Stringer("messageOp", message.PutOp),
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-		)
-	} else {
-		nop.log.Debug("dropping request",
-			zap.String("reason", "unhandled by this gear"),
-			zap.Stringer("messageOp", message.PutOp),
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-		)
-	}
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.PutOp),
+		zap.Stringer("nodeID", nodeID),
+		zap.Uint32("requestID", requestID),
+	)
 	return nil
 }
 
@@ -288,12 +278,13 @@ func (nop *noOpAppHandler) CrossChainAppRequest(_ context.Context, chainID ids.I
 	return nil
 }
 
-func (nop *noOpAppHandler) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32) error {
+func (nop *noOpAppHandler) CrossChainAppRequestFailed(_ context.Context, chainID ids.ID, requestID uint32, appErr *AppError) error {
 	nop.log.Debug("dropping request",
 		zap.String("reason", "unhandled by this gear"),
-		zap.Stringer("messageOp", message.CrossChainAppRequestFailedOp),
+		zap.Stringer("messageOp", message.CrossChainAppErrorOp),
 		zap.Stringer("chainID", chainID),
 		zap.Uint32("requestID", requestID),
+		zap.Error(appErr),
 	)
 	return nil
 }
@@ -318,12 +309,13 @@ func (nop *noOpAppHandler) AppRequest(_ context.Context, nodeID ids.NodeID, requ
 	return nil
 }
 
-func (nop *noOpAppHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (nop *noOpAppHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *AppError) error {
 	nop.log.Debug("dropping request",
 		zap.String("reason", "unhandled by this gear"),
-		zap.Stringer("messageOp", message.AppRequestFailedOp),
+		zap.Stringer("messageOp", message.AppErrorOp),
 		zap.Stringer("nodeID", nodeID),
 		zap.Uint32("requestID", requestID),
+		zap.Error(appErr),
 	)
 	return nil
 }

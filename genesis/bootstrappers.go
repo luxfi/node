@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -6,13 +6,12 @@ package genesis
 import (
 	"encoding/json"
 	"fmt"
+	"net/netip"
 
 	_ "embed"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/sampler"
 )
 
@@ -32,15 +31,20 @@ func init() {
 // Represents the relationship between the nodeID and the nodeIP.
 // The bootstrapper is sometimes called "anchor" or "beacon" node.
 type Bootstrapper struct {
-	ID ids.NodeID `json:"id"`
-	IP ips.IPDesc `json:"ip"`
+	ID ids.NodeID     `json:"id"`
+	IP netip.AddrPort `json:"ip"`
+}
+
+// GetBootstrappers returns all default bootstrappers for the provided network.
+func GetBootstrappers(networkID uint32) []Bootstrapper {
+	networkName := constants.NetworkIDToNetworkName[networkID]
+	return bootstrappersPerNetwork[networkName]
 }
 
 // SampleBootstrappers returns the some beacons this node should connect to
 func SampleBootstrappers(networkID uint32, count int) []Bootstrapper {
-	networkName := constants.NetworkIDToNetworkName[networkID]
-	bootstrappers := bootstrappersPerNetwork[networkName]
-	count = math.Min(count, len(bootstrappers))
+	bootstrappers := GetBootstrappers(networkID)
+	count = min(count, len(bootstrappers))
 
 	s := sampler.NewUniform()
 	s.Initialize(uint64(len(bootstrappers)))

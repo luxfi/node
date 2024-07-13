@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package block
 
@@ -19,7 +21,6 @@ var (
 	errParseBlock         = errors.New("unexpectedly called ParseBlock")
 	errGetBlock           = errors.New("unexpectedly called GetBlock")
 	errLastAccepted       = errors.New("unexpectedly called LastAccepted")
-	errVerifyHeightIndex  = errors.New("unexpectedly called VerifyHeightIndex")
 	errGetBlockIDAtHeight = errors.New("unexpectedly called GetBlockIDAtHeight")
 
 	_ ChainVM = (*TestVM)(nil)
@@ -34,7 +35,6 @@ type TestVM struct {
 	CantGetBlock,
 	CantSetPreference,
 	CantLastAccepted,
-	CantVerifyHeightIndex,
 	CantGetBlockIDAtHeight bool
 
 	BuildBlockF         func(context.Context) (snowman.Block, error)
@@ -42,7 +42,6 @@ type TestVM struct {
 	GetBlockF           func(context.Context, ids.ID) (snowman.Block, error)
 	SetPreferenceF      func(context.Context, ids.ID) error
 	LastAcceptedF       func(context.Context) (ids.ID, error)
-	VerifyHeightIndexF  func(context.Context) error
 	GetBlockIDAtHeightF func(ctx context.Context, height uint64) (ids.ID, error)
 }
 
@@ -103,17 +102,7 @@ func (vm *TestVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	if vm.CantLastAccepted && vm.T != nil {
 		require.FailNow(vm.T, errLastAccepted.Error())
 	}
-	return ids.ID{}, errLastAccepted
-}
-
-func (vm *TestVM) VerifyHeightIndex(ctx context.Context) error {
-	if vm.VerifyHeightIndexF != nil {
-		return vm.VerifyHeightIndexF(ctx)
-	}
-	if vm.CantVerifyHeightIndex && vm.T != nil {
-		require.FailNow(vm.T, errVerifyHeightIndex.Error())
-	}
-	return errVerifyHeightIndex
+	return ids.Empty, errLastAccepted
 }
 
 func (vm *TestVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {

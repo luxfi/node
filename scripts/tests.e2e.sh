@@ -6,8 +6,7 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
-# LUXD_PATH=./build/luxd ./scripts/tests.e2e.sh                          # Customization of node path
-# E2E_USE_EXISTING_NETWORK=1 TMPNET_NETWORK_DIR=/path/to ./scripts/tests.e2e.sh        # Execute against an existing network
+# LUXD_PATH=./build/node ./scripts/tests.e2e.sh                          # Customization of node path
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -23,20 +22,18 @@ source ./scripts/constants.sh
 #################################
 echo "building e2e.test"
 # to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
-ACK_GINKGO_RC=true ginkgo build ./tests/e2e
+go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
+ACK_GINKGO_RC=true ginkgo build --tags test ./tests/e2e
 ./tests/e2e/e2e.test --help
 
-#################################
-# Since TMPNET_NETWORK_DIR may be set in the environment (e.g. to configure ginkgo
-# or tmpnetctl), configuring the use of an existing network with this script
-# requires the extra step of setting E2E_USE_EXISTING_NETWORK=1.
-if [[ -n "${E2E_USE_EXISTING_NETWORK:-}" && -n "${TMPNET_NETWORK_DIR:-}" ]]; then
-  E2E_ARGS="--use-existing-network"
-else
-  LUXD_PATH="$(realpath ${LUXD_PATH:-./build/luxd})"
-  E2E_ARGS="--node-path=${LUXD_PATH}"
-fi
+# Enable subnet testing by building xsvm
+./scripts/build_xsvm.sh
+echo ""
+
+# Ensure an absolute path to avoid dependency on the working directory
+# of script execution.
+LUXD_PATH="$(realpath "${LUXD_PATH:-./build/node}")"
+E2E_ARGS="--node-path=${LUXD_PATH}"
 
 #################################
 # Determine ginkgo args
@@ -60,8 +57,4 @@ fi
 
 #################################
 # - Execute in random order to identify unwanted dependency
-if [ $# -eq 0 ]; then
-  ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS}
-else
-  ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"
-fi
+ginkgo ${GINKGO_ARGS} -v --tags test --randomize-all ./tests/e2e/e2e.test -- "${E2E_ARGS[@]}" "${@}"

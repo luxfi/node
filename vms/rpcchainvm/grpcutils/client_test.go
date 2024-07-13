@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package grpcutils
@@ -9,19 +9,17 @@ import (
 	"testing"
 	"time"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/rpcdb"
 
 	pb "github.com/luxfi/node/proto/pb/rpcdb"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 func TestDialOptsSmoke(t *testing.T) {

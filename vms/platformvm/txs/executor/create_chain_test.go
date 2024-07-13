@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -14,32 +15,34 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 // Ensure Execute fails when there are not enough control sigs
 func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, banff)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	tx, err := env.txBuilder.NewCreateChainTx(
+	builder, signer := env.factory.NewWallet(preFundedKeys[0], preFundedKeys[1])
+	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
 		constants.AVMID,
 		nil,
 		"chain name",
-		[]*secp256k1.PrivateKey{preFundedKeys[0], preFundedKeys[1]},
-		ids.ShortEmpty,
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	// Remove a signature
@@ -60,21 +63,20 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 // Ensure Execute fails when an incorrect control signature is given
 func TestCreateChainTxWrongControlSig(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, banff)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	tx, err := env.txBuilder.NewCreateChainTx(
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
 		constants.AVMID,
 		nil,
 		"chain name",
-		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
-		ids.ShortEmpty,
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	// Generate new, random key to sign tx with
@@ -102,21 +104,20 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 // its validator set doesn't exist
 func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, banff)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	tx, err := env.txBuilder.NewCreateChainTx(
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
 		constants.AVMID,
 		nil,
 		"chain name",
-		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
-		ids.ShortEmpty,
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	tx.Unsigned.(*txs.CreateChainTx).SubnetID = ids.GenerateTestID()
@@ -136,21 +137,20 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 // Ensure valid tx passes semanticVerify
 func TestCreateChainTxValid(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, banff)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	tx, err := env.txBuilder.NewCreateChainTx(
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
 		constants.AVMID,
 		nil,
 		"chain name",
-		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
-		ids.ShortEmpty,
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
@@ -195,35 +195,31 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
-			env.config.ApricotPhase3Time = ap3Time
+			env := newEnvironment(t, banff)
+			env.config.UpgradeConfig.ApricotPhase3Time = ap3Time
 
-			defer func() {
-				require.NoError(shutdownEnvironment(env))
-			}()
-			ins, outs, _, signers, err := env.utxosHandler.Spend(env.state, preFundedKeys, 0, test.fee, ids.ShortEmpty)
-			require.NoError(err)
-
-			subnetAuth, subnetSigners, err := env.utxosHandler.Authorize(env.state, testSubnet1.ID(), preFundedKeys)
-			require.NoError(err)
-
-			signers = append(signers, subnetSigners)
-
-			// Create the tx
-
-			utx := &txs.CreateChainTx{
-				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    env.ctx.NetworkID,
-					BlockchainID: env.ctx.ChainID,
-					Ins:          ins,
-					Outs:         outs,
-				}},
-				SubnetID:   testSubnet1.ID(),
-				VMID:       constants.AVMID,
-				SubnetAuth: subnetAuth,
+			addrs := set.NewSet[ids.ShortID](len(preFundedKeys))
+			for _, key := range preFundedKeys {
+				addrs.Add(key.Address())
 			}
-			tx := &txs.Tx{Unsigned: utx}
-			require.NoError(tx.Sign(txs.Codec, signers))
+
+			env.state.SetTimestamp(test.time) // to duly set fee
+
+			cfg := *env.config
+
+			cfg.StaticFeeConfig.CreateBlockchainTxFee = test.fee
+			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
+			builder, signer := factory.NewWallet(preFundedKeys...)
+			utx, err := builder.NewCreateChainTx(
+				testSubnet1.ID(),
+				nil,
+				ids.GenerateTestID(),
+				nil,
+				"",
+			)
+			require.NoError(err)
+			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
+			require.NoError(err)
 
 			stateDiff, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)

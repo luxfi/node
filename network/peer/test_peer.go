@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto"
 	"net"
+	"net/netip"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,8 +20,9 @@ import (
 	"github.com/luxfi/node/snow/uptime"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -46,7 +48,7 @@ const maxMessageToSend = 1024
 //     peer.
 func StartTestPeer(
 	ctx context.Context,
-	ip ips.IPPort,
+	ip netip.AddrPort,
 	networkID uint32,
 	router router.InboundHandler,
 ) (Peer, error) {
@@ -75,7 +77,6 @@ func StartTestPeer(
 	mc, err := message.NewCreator(
 		logging.NoLog{},
 		prometheus.NewRegistry(),
-		"",
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -83,11 +84,7 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	metrics, err := NewMetrics(
-		logging.NoLog{},
-		"",
-		prometheus.NewRegistry(),
-	)
+	metrics, err := NewMetrics(prometheus.NewRegistry())
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +99,11 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	signerIP := ips.NewDynamicIPPort(net.IPv6zero, 0)
-	tls := tlsCert.PrivateKey.(crypto.Signer)
+	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
+	blsKey, err := bls.NewSecretKey()
+	if err != nil {
+		return nil, err
+	}
 
 	peer := Start(
 		&Config{
@@ -116,13 +116,21 @@ func StartTestPeer(
 			VersionCompatibility: version.GetCompatibility(networkID),
 			MySubnets:            set.Set[ids.ID]{},
 			Beacons:              validators.NewManager(),
+			Validators:           validators.NewManager(),
 			NetworkID:            networkID,
 			PingFrequency:        constants.DefaultPingFrequency,
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
 			UptimeCalculator:     uptime.NoOpCalculator,
-			IPSigner:             NewIPSigner(signerIP, tls),
+			IPSigner: NewIPSigner(
+				utils.NewAtomic(netip.AddrPortFrom(
+					netip.IPv6Loopback(),
+					1,
+				)),
+				tlsKey,
+				blsKey,
+			),
 		},
 		conn,
 		cert,

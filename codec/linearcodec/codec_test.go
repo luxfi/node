@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package linearcodec
@@ -18,7 +18,7 @@ func TestVectors(t *testing.T) {
 
 func TestMultipleTags(t *testing.T) {
 	for _, test := range codec.MultipleTagsTests {
-		c := New([]string{"tag1", "tag2"}, DefaultMaxSliceLength)
+		c := New([]string{"tag1", "tag2"})
 		test(c, t)
 	}
 }

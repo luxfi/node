@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -9,17 +9,14 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -82,7 +79,7 @@ func TestHelperProcess(t *testing.T) {
 	}
 
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "failed to receive testKey\n")
+		fmt.Fprintln(os.Stderr, "failed to receive testKey")
 		os.Exit(2)
 	}
 
@@ -172,7 +169,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			require := require.New(t)
 
 			ctrl := gomock.NewController(t)
-			vm := mocks.NewMockChainVM(ctrl)
+			vm := block.NewMockChainVM(ctrl)
 
 			listener, err := grpcutils.NewListener()
 			require.NoError(err)

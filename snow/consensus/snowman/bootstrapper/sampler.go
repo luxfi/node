@@ -1,13 +1,17 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
 
 import (
+	"errors"
+
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/set"
 )
+
+var errUnexpectedSamplerFailure = errors.New("unexpected sampler failure")
 
 // Sample keys from [elements] uniformly by weight without replacement. The
 // returned set will have size less than or equal to [maxSize]. This function
@@ -35,10 +39,10 @@ func Sample[T comparable](elements map[T]uint64, maxSize int) (set.Set[T], error
 		return nil, err
 	}
 
-	maxSize = int(math.Min(uint64(maxSize), totalWeight))
-	indices, err := sampler.Sample(maxSize)
-	if err != nil {
-		return nil, err
+	maxSize = int(min(uint64(maxSize), totalWeight))
+	indices, ok := sampler.Sample(maxSize)
+	if !ok {
+		return nil, errUnexpectedSamplerFailure
 	}
 
 	sampledElements := set.NewSet[T](maxSize)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
@@ -17,7 +16,6 @@ import (
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/executor"
 )
 
 var (
@@ -116,16 +114,15 @@ func TestManagerVerifyTx(t *testing.T) {
 		expectedErr error
 	}
 
-	inputID := ids.GenerateTestID()
 	tests := []test{
 		{
 			name: "not bootstrapped",
 			txF: func(*gomock.Controller) *txs.Tx {
 				return &txs.Tx{}
 			},
-			managerF: func(ctrl *gomock.Controller) *manager {
+			managerF: func(*gomock.Controller) *manager {
 				return &manager{
-					backend: &executor.Backend{},
+					backend: defaultTestBackend(false, nil),
 				}
 			},
 			expectedErr: ErrChainNotSynced,
@@ -141,9 +138,7 @@ func TestManagerVerifyTx(t *testing.T) {
 			},
 			managerF: func(*gomock.Controller) *manager {
 				return &manager{
-					backend: &executor.Backend{
-						Bootstrapped: true,
-					},
+					backend: defaultTestBackend(true, nil),
 				}
 			},
 			expectedErr: errTestSyntacticVerifyFail,
@@ -161,20 +156,17 @@ func TestManagerVerifyTx(t *testing.T) {
 				}
 			},
 			managerF: func(ctrl *gomock.Controller) *manager {
-				preferred := ids.GenerateTestID()
+				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
 				state := state.NewMockState(ctrl)
-				state.EXPECT().GetLastAccepted().Return(preferred)
+				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 
 				return &manager{
-					backend: &executor.Backend{
-						Bootstrapped: true,
-					},
+					backend:      defaultTestBackend(true, nil),
 					state:        state,
-					lastAccepted: preferred,
-					preferred:    preferred,
+					lastAccepted: lastAcceptedID,
 				}
 			},
 			expectedErr: errTestSemanticVerifyFail,
@@ -194,69 +186,20 @@ func TestManagerVerifyTx(t *testing.T) {
 				}
 			},
 			managerF: func(ctrl *gomock.Controller) *manager {
-				preferred := ids.GenerateTestID()
+				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
 				state := state.NewMockState(ctrl)
-				state.EXPECT().GetLastAccepted().Return(preferred)
+				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 
 				return &manager{
-					backend: &executor.Backend{
-						Bootstrapped: true,
-					},
+					backend:      defaultTestBackend(true, nil),
 					state:        state,
-					lastAccepted: preferred,
-					preferred:    preferred,
+					lastAccepted: lastAcceptedID,
 				}
 			},
 			expectedErr: errTestExecutionFail,
-		},
-		{
-			name: "non-unique inputs",
-			txF: func(ctrl *gomock.Controller) *txs.Tx {
-				unsigned := txs.NewMockUnsignedTx(ctrl)
-				// Syntactic verification passes
-				unsigned.EXPECT().Visit(gomock.Any()).Return(nil)
-				// Semantic verification passes
-				unsigned.EXPECT().Visit(gomock.Any()).Return(nil)
-				// Execution passes
-				unsigned.EXPECT().Visit(gomock.Any()).DoAndReturn(func(e *executor.Executor) error {
-					e.Inputs.Add(inputID)
-					return nil
-				})
-				return &txs.Tx{
-					Unsigned: unsigned,
-				}
-			},
-			managerF: func(ctrl *gomock.Controller) *manager {
-				lastAcceptedID := ids.GenerateTestID()
-
-				preferredID := ids.GenerateTestID()
-				preferred := block.NewMockBlock(ctrl)
-				preferred.EXPECT().Parent().Return(lastAcceptedID).AnyTimes()
-
-				// These values don't matter for this test
-				diffState := state.NewMockDiff(ctrl)
-				diffState.EXPECT().GetLastAccepted().Return(preferredID)
-				diffState.EXPECT().GetTimestamp().Return(time.Time{})
-
-				return &manager{
-					backend: &executor.Backend{
-						Bootstrapped: true,
-					},
-					blkIDToState: map[ids.ID]*blockState{
-						preferredID: {
-							statelessBlock: preferred,
-							onAcceptState:  diffState,
-							importedInputs: set.Of(inputID),
-						},
-					},
-					lastAccepted: lastAcceptedID,
-					preferred:    preferredID,
-				}
-			},
-			expectedErr: ErrConflictingParentTxs,
 		},
 		{
 			name: "happy path",
@@ -273,20 +216,17 @@ func TestManagerVerifyTx(t *testing.T) {
 				}
 			},
 			managerF: func(ctrl *gomock.Controller) *manager {
-				preferred := ids.GenerateTestID()
+				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
 				state := state.NewMockState(ctrl)
-				state.EXPECT().GetLastAccepted().Return(preferred)
+				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 
 				return &manager{
-					backend: &executor.Backend{
-						Bootstrapped: true,
-					},
+					backend:      defaultTestBackend(true, nil),
 					state:        state,
-					lastAccepted: preferred,
-					preferred:    preferred,
+					lastAccepted: lastAcceptedID,
 				}
 			},
 			expectedErr: nil,

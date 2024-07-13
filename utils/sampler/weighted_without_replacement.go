@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -8,16 +8,13 @@ package sampler
 // indices. So duplicate indices can be returned.
 type WeightedWithoutReplacement interface {
 	Initialize(weights []uint64) error
-	Sample(count int) ([]int, error)
-
-	Seed(int64)
-	ClearSeed()
+	Sample(count int) ([]int, bool)
 }
 
-// NewWeightedWithoutReplacement returns a new sampler
-func NewDeterministicWeightedWithoutReplacement() WeightedWithoutReplacement {
+// NewDeterministicWeightedWithoutReplacement returns a new sampler
+func NewDeterministicWeightedWithoutReplacement(source Source) WeightedWithoutReplacement {
 	return &weightedWithoutReplacementGeneric{
-		u: NewUniform(),
+		u: NewDeterministicUniform(source),
 		w: NewDeterministicWeighted(),
 	}
 }

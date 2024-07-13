@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package grpcutils
@@ -12,11 +12,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	spb "google.golang.org/genproto/googleapis/rpc/status"
-
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
-
 	httppb "github.com/luxfi/node/proto/pb/http"
+	spb "google.golang.org/genproto/googleapis/rpc/status"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func Errorf(code int, tmpl string, args ...interface{}) error {
@@ -26,7 +24,7 @@ func Errorf(code int, tmpl string, args ...interface{}) error {
 	})
 }
 
-// GetGRPCErrorFromHTTPRespone takes an HandleSimpleHTTPResponse as input and returns a gRPC error.
+// GetGRPCErrorFromHTTPResponse takes an HandleSimpleHTTPResponse as input and returns a gRPC error.
 func GetGRPCErrorFromHTTPResponse(resp *httppb.HandleSimpleHTTPResponse) error {
 	a, err := anypb.New(resp)
 	if err != nil {

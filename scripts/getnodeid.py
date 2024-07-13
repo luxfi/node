@@ -66,7 +66,7 @@ def update_staker_json():
 
 if __name__ == "__main__":
     # Setup command line argument parsing
-    parser = argparse.ArgumentParser(description='Run avalanchego with staking key and certificate.')
+    parser = argparse.ArgumentParser(description='Run node with staking key and certificate.')
 
     default_key  = "~/.luxd/staking/staker.key"
     default_cert = "~/.luxd/staking/staker.crt"

@@ -1,13 +1,13 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package p
 
 import (
 	"fmt"
 	"time"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
 
 	"github.com/stretchr/testify/require"
 
@@ -22,6 +22,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
@@ -36,7 +38,9 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 
 			pWallet := baseWallet.P()
 			xWallet := baseWallet.X()
-			xChainID := xWallet.BlockchainID()
+			xBuilder := xWallet.Builder()
+			xContext := xBuilder.Context()
+			xChainID := xContext.BlockchainID
 
 			var validatorID ids.NodeID
 			ginkgo.By("retrieving the node ID of a primary network validator", func() {
@@ -134,14 +138,13 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				require.NoError(err)
 			})
 
-			validatorStartTime := time.Now().Add(time.Minute)
+			endTime := time.Now().Add(time.Minute)
 			ginkgo.By("add permissionless validator", func() {
 				_, err := pWallet.IssueAddPermissionlessValidatorTx(
 					&txs.SubnetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
-							Start:  uint64(validatorStartTime.Unix()),
-							End:    uint64(validatorStartTime.Add(5 * time.Second).Unix()),
+							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
 						Subnet: subnetID,
@@ -156,14 +159,12 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				require.NoError(err)
 			})
 
-			delegatorStartTime := validatorStartTime
 			ginkgo.By("add permissionless delegator", func() {
 				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
 					&txs.SubnetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
-							Start:  uint64(delegatorStartTime.Unix()),
-							End:    uint64(delegatorStartTime.Add(5 * time.Second).Unix()),
+							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
 						Subnet: subnetID,

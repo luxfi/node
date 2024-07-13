@@ -1,12 +1,13 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
 
 import (
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/queue"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/validators"
@@ -24,16 +25,16 @@ type Config struct {
 	BootstrapTracker common.BootstrapTracker
 	Timer            common.Timer
 
+	// PeerTracker manages the set of nodes that we fetch the next block from.
+	PeerTracker *p2p.PeerTracker
+
 	// This node will only consider the first [AncestorsMaxContainersReceived]
 	// containers in an ancestors message it receives.
 	AncestorsMaxContainersReceived int
 
-	// Blocked tracks operations that are blocked on blocks
-	//
-	// It should be guaranteed that `MissingIDs` should contain all IDs
-	// referenced by the `MissingDependencies` that have not already been added
-	// to the queue.
-	Blocked *queue.JobsWithMissing
+	// Database used to track the fetched, but not yet executed, blocks during
+	// bootstrapping.
+	DB database.Database
 
 	VM block.ChainVM
 

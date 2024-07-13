@@ -1,13 +1,35 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
 
 import (
+	"encoding/json"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/node/vms/platformvm/network"
 )
+
+// Requires all values in a struct to be initialized
+func verifyInitializedStruct(tb testing.TB, s interface{}) {
+	tb.Helper()
+
+	require := require.New(tb)
+
+	structType := reflect.TypeOf(s)
+	require.Equal(reflect.Struct, structType.Kind())
+
+	v := reflect.ValueOf(s)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		require.True(field.IsValid(), "invalid field: ", structType.Field(i).Name)
+		require.False(field.IsZero(), "zero field: ", structType.Field(i).Name)
+	}
+}
 
 func TestExecutionConfigUnmarshal(t *testing.T) {
 	t.Run("default values from empty json", func(t *testing.T) {
@@ -38,20 +60,27 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 
 	t.Run("all values extracted from json", func(t *testing.T) {
 		require := require.New(t)
-		b := []byte(`{
-			"block-cache-size": 1,
-			"tx-cache-size": 2,
-			"transformed-subnet-tx-cache-size": 3,
-			"reward-utxos-cache-size": 5,
-			"chain-cache-size": 6,
-			"chain-db-cache-size": 7,
-			"block-id-cache-size": 8,
-			"fx-owner-cache-size": 9,
-			"checksums-enabled": true
-		}`)
-		ec, err := GetExecutionConfig(b)
-		require.NoError(err)
+
 		expected := &ExecutionConfig{
+			Network: network.Config{
+				MaxValidatorSetStaleness:                    1,
+				TargetGossipSize:                            2,
+				PushGossipPercentStake:                      .3,
+				PushGossipNumValidators:                     4,
+				PushGossipNumPeers:                          5,
+				PushRegossipNumValidators:                   6,
+				PushRegossipNumPeers:                        7,
+				PushGossipDiscardedCacheSize:                8,
+				PushGossipMaxRegossipFrequency:              9,
+				PushGossipFrequency:                         10,
+				PullGossipPollSize:                          11,
+				PullGossipFrequency:                         12,
+				PullGossipThrottlingPeriod:                  13,
+				PullGossipThrottlingLimit:                   14,
+				ExpectedBloomFilterElements:                 15,
+				ExpectedBloomFilterFalsePositiveProbability: 16,
+				MaxBloomFilterFalsePositiveProbability:      17,
+			},
 			BlockCacheSize:               1,
 			TxCacheSize:                  2,
 			TransformedSubnetTxCacheSize: 3,
@@ -61,7 +90,16 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 			BlockIDCacheSize:             8,
 			FxOwnerCacheSize:             9,
 			ChecksumsEnabled:             true,
+			MempoolPruneFrequency:        time.Minute,
 		}
-		require.Equal(expected, ec)
+		verifyInitializedStruct(t, *expected)
+		verifyInitializedStruct(t, expected.Network)
+
+		b, err := json.Marshal(expected)
+		require.NoError(err)
+
+		actual, err := GetExecutionConfig(b)
+		require.NoError(err)
+		require.Equal(expected, actual)
 	})
 }

@@ -1,22 +1,15 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
 
-import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/router"
-)
+import "github.com/luxfi/node/ids"
 
 // TestManager implements Manager but does nothing. Always returns nil error.
 // To be used only in tests
 var TestManager Manager = testManager{}
 
 type testManager struct{}
-
-func (testManager) Router() router.Router {
-	return nil
-}
 
 func (testManager) QueueChainCreation(ChainParameters) {}
 
@@ -49,7 +42,7 @@ func (testManager) StartChainCreator(ChainParameters) error {
 }
 
 func (testManager) SubnetID(ids.ID) (ids.ID, error) {
-	return ids.ID{}, nil
+	return ids.Empty, nil
 }
 
 func (testManager) IsBootstrapped(ids.ID) bool {

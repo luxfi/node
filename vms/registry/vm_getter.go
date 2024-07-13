@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
@@ -40,6 +41,7 @@ type VMGetterConfig struct {
 	PluginDirectory string
 	CPUTracker      resource.ProcessTracker
 	RuntimeTracker  runtime.Tracker
+	MetricsGatherer metrics.MultiGatherer
 }
 
 type vmGetter struct {
@@ -103,6 +105,7 @@ func (getter *vmGetter) Get() (map[ids.ID]vms.Factory, map[ids.ID]vms.Factory, e
 			filepath.Join(getter.config.PluginDirectory, file.Name()),
 			getter.config.CPUTracker,
 			getter.config.RuntimeTracker,
+			getter.config.MetricsGatherer,
 		)
 	}
 	return registeredVMs, unregisteredVMs, nil

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -24,7 +23,7 @@ func (r *requests) GetPeers(context.Context) set.Set[ids.NodeID] {
 		return nil
 	}
 
-	numToSend := math.Min(
+	numToSend := min(
 		r.maxOutstanding-numPending,
 		r.pendingSend.Len(),
 	)

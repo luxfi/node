@@ -1,19 +1,18 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
 
 import (
+	"bytes"
 	"math/rand"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
 )
 
@@ -199,7 +198,7 @@ func TestWorkHeapMergeInsertRandom(t *testing.T) {
 		_, _ = rand.Read(bound)
 		bounds = append(bounds, bound)
 	}
-	utils.SortBytes(bounds)
+	slices.SortFunc(bounds, bytes.Compare)
 
 	// Note that start < end for all ranges.
 	// It is possible but extremely unlikely that

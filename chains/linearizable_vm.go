@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -6,7 +6,6 @@ package chains
 import (
 	"context"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
@@ -29,7 +28,6 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize common.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	registerer   metrics.OptionalGatherer
 	ctx          *snow.Context
 	db           database.Database
 	genesisBytes []byte
@@ -42,7 +40,6 @@ type initializeOnLinearizeVM struct {
 
 func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	vm.vmToLinearize.stopVertexID = stopVertexID
-	vm.ctx.Metrics = vm.registerer
 	return vm.vmToInitialize.Initialize(
 		ctx,
 		vm.ctx,

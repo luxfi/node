@@ -1,9 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
 
 import (
+	"cmp"
+
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 )
@@ -19,8 +21,8 @@ type weightedArrayElement struct {
 }
 
 // Note that this sorts in order of decreasing weight.
-func (e weightedArrayElement) Less(other weightedArrayElement) bool {
-	return e.cumulativeWeight > other.cumulativeWeight
+func (e weightedArrayElement) Compare(other weightedArrayElement) int {
+	return cmp.Compare(other.cumulativeWeight, e.cumulativeWeight)
 }
 
 // Sampling is performed by executing a modified binary search over the provided
@@ -79,9 +81,9 @@ func (s *weightedArray) Initialize(weights []uint64) error {
 	return nil
 }
 
-func (s *weightedArray) Sample(value uint64) (int, error) {
+func (s *weightedArray) Sample(value uint64) (int, bool) {
 	if len(s.arr) == 0 || s.arr[len(s.arr)-1].cumulativeWeight <= value {
-		return 0, ErrOutOfRange
+		return 0, false
 	}
 	minIndex := 0
 	maxIndex := len(s.arr) - 1
@@ -96,7 +98,7 @@ func (s *weightedArray) Sample(value uint64) (int, error) {
 		currentElem := s.arr[index]
 		currentWeight := currentElem.cumulativeWeight
 		if previousWeight <= value && value < currentWeight {
-			return currentElem.index, nil
+			return currentElem.index, true
 		}
 
 		if value < previousWeight {

@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/networking/tracker"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -80,7 +80,7 @@ func newSystemThrottlerMetrics(namespace string, reg prometheus.Registerer) (*sy
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
 		}),
 	}
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(m.totalWaits),
 		reg.Register(m.totalNoWaits),
 		reg.Register(m.awaitingAcquire),

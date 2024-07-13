@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -12,13 +12,11 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
@@ -36,6 +34,7 @@ var (
 	_ Client = (*client)(nil)
 
 	errInvalidRangeProof             = errors.New("failed to verify range proof")
+	errInvalidChangeProof            = errors.New("failed to verify change proof")
 	errTooManyKeys                   = errors.New("response contains more than requested keys")
 	errTooManyBytes                  = errors.New("response contains more than requested bytes")
 	errUnexpectedChangeProofResponse = errors.New("unexpected response type")
@@ -67,35 +66,40 @@ type Client interface {
 }
 
 type client struct {
-	networkClient       NetworkClient
-	stateSyncNodes      []ids.NodeID
-	stateSyncNodeIdx    uint32
-	stateSyncMinVersion *version.Application
-	log                 logging.Logger
-	metrics             SyncMetrics
-	tokenSize           int
+	networkClient    NetworkClient
+	stateSyncNodes   []ids.NodeID
+	stateSyncNodeIdx uint32
+	log              logging.Logger
+	metrics          SyncMetrics
+	tokenSize        int
+	hasher           merkledb.Hasher
 }
 
 type ClientConfig struct {
-	NetworkClient       NetworkClient
-	StateSyncNodeIDs    []ids.NodeID
-	StateSyncMinVersion *version.Application
-	Log                 logging.Logger
-	Metrics             SyncMetrics
-	BranchFactor        merkledb.BranchFactor
+	NetworkClient    NetworkClient
+	StateSyncNodeIDs []ids.NodeID
+	Log              logging.Logger
+	Metrics          SyncMetrics
+	BranchFactor     merkledb.BranchFactor
+	// If not specified, [merkledb.DefaultHasher] will be used.
+	Hasher merkledb.Hasher
 }
 
 func NewClient(config *ClientConfig) (Client, error) {
 	if err := config.BranchFactor.Valid(); err != nil {
 		return nil, err
 	}
+	hasher := config.Hasher
+	if hasher == nil {
+		hasher = merkledb.DefaultHasher
+	}
 	return &client{
-		networkClient:       config.NetworkClient,
-		stateSyncNodes:      config.StateSyncNodeIDs,
-		stateSyncMinVersion: config.StateSyncMinVersion,
-		log:                 config.Log,
-		metrics:             config.Metrics,
-		tokenSize:           merkledb.BranchFactorToTokenSize[config.BranchFactor],
+		networkClient:  config.NetworkClient,
+		stateSyncNodes: config.StateSyncNodeIDs,
+		log:            config.Log,
+		metrics:        config.Metrics,
+		tokenSize:      merkledb.BranchFactorToTokenSize[config.BranchFactor],
+		hasher:         hasher,
 	}, nil
 }
 
@@ -149,7 +153,7 @@ func (c *client) GetChangeProof(
 				endKey,
 				endRoot,
 			); err != nil {
-				return nil, fmt.Errorf("%w due to %w", errInvalidRangeProof, err)
+				return nil, fmt.Errorf("%w due to %w", errInvalidChangeProof, err)
 			}
 
 			return &merkledb.ChangeOrRangeProof{
@@ -172,6 +176,7 @@ func (c *client) GetChangeProof(
 				endKey,
 				req.EndRootHash,
 				c.tokenSize,
+				c.hasher,
 			)
 			if err != nil {
 				return nil, err
@@ -210,6 +215,7 @@ func verifyRangeProof(
 	end maybe.Maybe[[]byte],
 	rootBytes []byte,
 	tokenSize int,
+	hasher merkledb.Hasher,
 ) error {
 	root, err := ids.ToID(rootBytes)
 	if err != nil {
@@ -230,6 +236,7 @@ func verifyRangeProof(
 		end,
 		root,
 		tokenSize,
+		hasher,
 	); err != nil {
 		return fmt.Errorf("%w due to %w", errInvalidRangeProof, err)
 	}
@@ -269,6 +276,7 @@ func (c *client) GetRangeProof(
 			maybeBytesToMaybe(req.EndKey),
 			req.RootHash,
 			c.tokenSize,
+			c.hasher,
 		); err != nil {
 			return nil, err
 		}
@@ -365,7 +373,7 @@ func (c *client) get(ctx context.Context, request []byte) (ids.NodeID, []byte, e
 	c.metrics.RequestMade()
 
 	if len(c.stateSyncNodes) == 0 {
-		nodeID, response, err = c.networkClient.RequestAny(ctx, c.stateSyncMinVersion, request)
+		nodeID, response, err = c.networkClient.RequestAny(ctx, request)
 	} else {
 		// Get the next nodeID to query using the [nodeIdx] offset.
 		// If we're out of nodes, loop back to 0.

@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package p
 
 import (
 	"time"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
 
 	"github.com/stretchr/testify/require"
 
@@ -16,11 +16,15 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations
@@ -39,8 +43,12 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			baseWallet := e2e.NewWallet(keychain, nodeURI)
 
 			pWallet := baseWallet.P()
-			luxAssetID := baseWallet.P().LUXAssetID()
+			pBuilder := pWallet.Builder()
+			pContext := pBuilder.Context()
+			luxAssetID := pContext.LUXAssetID
 			xWallet := baseWallet.X()
+			xBuilder := xWallet.Builder()
+			xContext := xBuilder.Context()
 			pChainClient := platformvm.NewClient(nodeURI.URI)
 
 			tests.Outf("{{blue}} fetching minimal stake amounts {{/}}\n")
@@ -68,20 +76,19 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 				require.NoError(err)
 				require.GreaterOrEqual(pBalance, minBalance)
 			})
-			// create validator data
-			validatorStartTimeDiff := 30 * time.Second
-			vdrStartTime := time.Now().Add(validatorStartTimeDiff)
 
 			// Use a random node ID to ensure that repeated test runs
 			// will succeed against a network that persists across runs.
 			validatorID, err := ids.ToNodeID(utils.RandomBytes(ids.NodeIDLen))
 			require.NoError(err)
 
-			vdr := &txs.Validator{
-				NodeID: validatorID,
-				Start:  uint64(vdrStartTime.Unix()),
-				End:    uint64(vdrStartTime.Add(72 * time.Hour).Unix()),
-				Wght:   minValStake,
+			vdr := &txs.SubnetValidator{
+				Validator: txs.Validator{
+					NodeID: validatorID,
+					End:    uint64(time.Now().Add(72 * time.Hour).Unix()),
+					Wght:   minValStake,
+				},
+				Subnet: constants.PrimaryNetworkID,
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
@@ -89,9 +96,16 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			}
 			shares := uint32(20000) // TODO: retrieve programmatically
 
+			sk, err := bls.NewSecretKey()
+			require.NoError(err)
+			pop := signer.NewProofOfPossession(sk)
+
 			ginkgo.By("issue add validator tx", func() {
-				_, err := pWallet.IssueAddValidatorTx(
+				_, err := pWallet.IssueAddPermissionlessValidatorTx(
 					vdr,
+					pop,
+					luxAssetID,
+					rewardOwner,
 					rewardOwner,
 					shares,
 					e2e.WithDefaultContext(),
@@ -100,8 +114,9 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			})
 
 			ginkgo.By("issue add delegator tx", func() {
-				_, err := pWallet.IssueAddDelegatorTx(
+				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
 					vdr,
+					luxAssetID,
 					rewardOwner,
 					e2e.WithDefaultContext(),
 				)
@@ -132,7 +147,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			ginkgo.By("export lux from P to X chain", func() {
 				_, err := pWallet.IssueExportTx(
-					xWallet.BlockchainID(),
+					xContext.BlockchainID,
 					[]*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{

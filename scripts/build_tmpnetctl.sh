@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# luxd root folder
+# Lux Node root folder
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh

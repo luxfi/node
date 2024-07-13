@@ -1,7 +1,9 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
+
+import "time"
 
 // Struct collecting all the foundational parameters of the AVM
 type Config struct {
@@ -10,4 +12,11 @@ type Config struct {
 
 	// Fee that must be burned by every asset creating transaction
 	CreateAssetTxFee uint64
+
+	// Time of the E network upgrade
+	EUpgradeTime time.Time
+}
+
+func (c *Config) IsEActivated(timestamp time.Time) bool {
+	return !timestamp.Before(c.EUpgradeTime)
 }

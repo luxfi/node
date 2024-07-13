@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,21 +12,20 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestAtomicTxImports(t *testing.T) {
 	require := require.New(t)
 
-	env := newEnvironment(t)
+	env := newEnvironment(t, latestFork)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
 	utxoID := lux.UTXOID{
 		TxID:        ids.Empty.Prefix(1),
@@ -41,7 +40,7 @@ func TestAtomicTxImports(t *testing.T) {
 	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: luxAssetID},
+		Asset:  lux.Asset{ID: env.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -50,7 +49,7 @@ func TestAtomicTxImports(t *testing.T) {
 			},
 		},
 	}
-	utxoBytes, err := txs.Codec.Marshal(txs.Version, utxo)
+	utxoBytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
 	require.NoError(err)
 
 	inputID := utxo.InputID()
@@ -64,12 +63,16 @@ func TestAtomicTxImports(t *testing.T) {
 		}}},
 	}))
 
-	tx, err := env.txBuilder.NewImportTx(
+	builder, signer := env.factory.NewWallet(recipientKey)
+	utx, err := builder.NewImportTx(
 		env.ctx.XChainID,
-		recipientKey.PublicKey().Address(),
-		[]*secp256k1.PrivateKey{recipientKey},
-		ids.ShortEmpty, // change addr
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{recipientKey.PublicKey().Address()},
+		},
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	require.NoError(env.Builder.Add(tx))
@@ -81,5 +84,5 @@ func TestAtomicTxImports(t *testing.T) {
 	_, txStatus, err := env.state.GetTx(tx.ID())
 	require.NoError(err)
 	// Ensure transaction is in the committed state
-	require.Equal(txStatus, status.Committed)
+	require.Equal(status.Committed, txStatus)
 }

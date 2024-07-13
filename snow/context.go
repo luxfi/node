@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snow
@@ -46,7 +46,7 @@ type Context struct {
 	Keystore     keystore.BlockchainKeystore
 	SharedMemory atomic.SharedMemory
 	BCLookup     ids.AliaserReader
-	Metrics      metrics.OptionalGatherer
+	Metrics      metrics.MultiGatherer
 
 	WarpSigner warp.Signer
 
@@ -65,15 +65,12 @@ type Registerer interface {
 type ConsensusContext struct {
 	*Context
 
-	// Registers all common and snowman consensus metrics. Unlike the lux
-	// consensus engine metrics, we do not prefix the name with the engine name,
-	// as snowman is used for all chains by default.
+	// PrimaryAlias is the primary alias of the chain this context exists
+	// within.
+	PrimaryAlias string
+
+	// Registers all consensus metrics.
 	Registerer Registerer
-	// Only used to register Lux consensus metrics. Previously, all
-	// metrics were prefixed with "lux_{chainID}_". Now we add lux
-	// to the prefix, "lux_{chainID}_lux_", to differentiate
-	// consensus operations after the DAG linearization.
-	LuxRegisterer Registerer
 
 	// BlockAcceptor is the callback that will be fired whenever a VM is
 	// notified that their block was accepted.
@@ -95,34 +92,4 @@ type ConsensusContext struct {
 
 	// True iff this chain is currently state-syncing
 	StateSyncing utils.Atomic[bool]
-}
-
-func DefaultContextTest() *Context {
-	sk, err := bls.NewSecretKey()
-	if err != nil {
-		panic(err)
-	}
-	pk := bls.PublicFromSecretKey(sk)
-	return &Context{
-		NetworkID:    0,
-		SubnetID:     ids.Empty,
-		ChainID:      ids.Empty,
-		NodeID:       ids.EmptyNodeID,
-		PublicKey:    pk,
-		Log:          logging.NoLog{},
-		BCLookup:     ids.NewAliaser(),
-		Metrics:      metrics.NewOptionalGatherer(),
-		ChainDataDir: "",
-	}
-}
-
-func DefaultConsensusContextTest() *ConsensusContext {
-	return &ConsensusContext{
-		Context:             DefaultContextTest(),
-		Registerer:          prometheus.NewRegistry(),
-		LuxRegisterer: prometheus.NewRegistry(),
-		BlockAcceptor:       noOpAcceptor{},
-		TxAcceptor:          noOpAcceptor{},
-		VertexAcceptor:      noOpAcceptor{},
-	}
 }

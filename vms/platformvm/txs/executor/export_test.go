@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -11,15 +12,17 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/secp256k1fx"
+
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestNewExportTx(t *testing.T) {
-	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, banff)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(t, shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
 	type test struct {
 		description        string
@@ -33,15 +36,15 @@ func TestNewExportTx(t *testing.T) {
 	tests := []test{
 		{
 			description:        "P->X export",
-			destinationChainID: xChainID,
+			destinationChainID: env.ctx.XChainID,
 			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          defaultValidateStartTime,
 		},
 		{
 			description:        "P->C export",
-			destinationChainID: cChainID,
+			destinationChainID: env.ctx.CChainID,
 			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
-			timestamp:          env.config.ApricotPhase5Time,
+			timestamp:          env.config.UpgradeConfig.ApricotPhase5Time,
 		},
 	}
 
@@ -50,28 +53,34 @@ func TestNewExportTx(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
 
-			tx, err := env.txBuilder.NewExportTx(
-				defaultBalance-defaultTxFee, // Amount of tokens to export
+			builder, signer := env.factory.NewWallet(tt.sourceKeys...)
+			utx, err := builder.NewExportTx(
 				tt.destinationChainID,
-				to,
-				tt.sourceKeys,
-				ids.ShortEmpty, // Change address
+				[]*lux.TransferableOutput{{
+					Asset: lux.Asset{ID: env.ctx.LUXAssetID},
+					Out: &secp256k1fx.TransferOutput{
+						Amt: defaultBalance - defaultTxFee,
+						OutputOwners: secp256k1fx.OutputOwners{
+							Locktime:  0,
+							Threshold: 1,
+							Addrs:     []ids.ShortID{to},
+						},
+					},
+				}},
 			)
 			require.NoError(err)
-
-			fakedState, err := state.NewDiff(lastAcceptedID, env)
+			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 			require.NoError(err)
 
-			fakedState.SetTimestamp(tt.timestamp)
+			stateDiff, err := state.NewDiff(lastAcceptedID, env)
+			require.NoError(err)
 
-			fakedParent := ids.GenerateTestID()
-			env.SetState(fakedParent, fakedState)
+			stateDiff.SetTimestamp(tt.timestamp)
 
-			verifier := MempoolTxVerifier{
-				Backend:       &env.backend,
-				ParentID:      fakedParent,
-				StateVersions: env,
-				Tx:            tx,
+			verifier := StandardTxExecutor{
+				Backend: &env.backend,
+				State:   stateDiff,
+				Tx:      tx,
 			}
 			require.NoError(tx.Unsigned.Visit(&verifier))
 		})

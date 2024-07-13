@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -20,11 +20,11 @@ func TestGetHRP(t *testing.T) {
 		},
 		{
 			id:  TestnetID,
-			hrp: TestnetHRP,
+			hrp: FujiHRP,
 		},
 		{
-			id:  TestnetID,
-			hrp: TestnetHRP,
+			id:  FujiID,
+			hrp: FujiHRP,
 		},
 		{
 			id:  LocalID,
@@ -53,7 +53,11 @@ func TestNetworkName(t *testing.T) {
 		},
 		{
 			id:   TestnetID,
-			name: TestnetName,
+			name: FujiName,
+		},
+		{
+			id:   FujiID,
+			name: FujiName,
 		},
 		{
 			id:   LocalID,
@@ -88,6 +92,10 @@ func TestNetworkID(t *testing.T) {
 		{
 			name: TestnetName,
 			id:   TestnetID,
+		},
+		{
+			name: FujiName,
+			id:   FujiID,
 		},
 		{
 			name: LocalName,

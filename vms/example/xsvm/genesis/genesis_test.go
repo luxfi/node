@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -26,7 +26,7 @@ func TestGenesis(t *testing.T) {
 			{Address: id2, Balance: 3000000000},
 		},
 	}
-	bytes, err := Codec.Marshal(Version, genesis)
+	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	require.NoError(err)
 
 	parsed, err := Parse(bytes)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package codec
@@ -15,6 +15,8 @@ var (
 	ErrDoesNotImplementInterface = errors.New("does not implement interface")
 	ErrUnexportedField           = errors.New("unexported field")
 	ErrExtraSpace                = errors.New("trailing buffer space")
+	ErrMarshalZeroLength         = errors.New("can't marshal zero length value")
+	ErrUnmarshalZeroLength       = errors.New("can't unmarshal zero length value")
 )
 
 // Codec marshals and unmarshals

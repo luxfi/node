@@ -1,17 +1,16 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package c
 
 import (
 	"math/big"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/coreth/core/types"
 	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
@@ -21,6 +20,8 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
@@ -37,7 +38,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		ethClient := e2e.NewEthClient(nodeURI)
 
 		ginkgo.By("allocating a pre-funded key to send from and a recipient key to deliver to")
-		senderKey := e2e.Env.AllocateFundedKey()
+		senderKey := e2e.Env.AllocatePreFundedKey()
 		senderEthAddress := evm.GetEthAddress(senderKey)
 		recipientKey, err := secp256k1.NewPrivateKey()
 		require.NoError(err)
@@ -85,7 +86,11 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		pWallet := baseWallet.P()
 
 		ginkgo.By("defining common configuration")
-		luxAssetID := xWallet.LUXAssetID()
+		xBuilder := xWallet.Builder()
+		xContext := xBuilder.Context()
+		cBuilder := cWallet.Builder()
+		cContext := cBuilder.Context()
+		luxAssetID := xContext.LUXAssetID
 		// Use the same owner for import funds to X-Chain and P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -108,7 +113,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 
 		ginkgo.By("exporting LUX from the C-Chain to the X-Chain", func() {
 			_, err := cWallet.IssueExportTx(
-				xWallet.BlockchainID(),
+				xContext.BlockchainID,
 				exportOutputs,
 				e2e.WithDefaultContext(),
 				e2e.WithSuggestedGasPrice(ethClient),
@@ -118,7 +123,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 
 		ginkgo.By("importing LUX from the C-Chain to the X-Chain", func() {
 			_, err := xWallet.IssueImportTx(
-				cWallet.BlockchainID(),
+				cContext.BlockchainID,
 				&recipientOwner,
 				e2e.WithDefaultContext(),
 			)
@@ -145,7 +150,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 
 		ginkgo.By("importing LUX from the C-Chain to the P-Chain", func() {
 			_, err = pWallet.IssueImportTx(
-				cWallet.BlockchainID(),
+				cContext.BlockchainID,
 				&recipientOwner,
 				e2e.WithDefaultContext(),
 			)

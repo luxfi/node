@@ -1,28 +1,27 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
 
 import (
+	"errors"
 	"math"
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils"
 )
 
-const codecVersion = 0
+const CodecVersion = 0
 
-// Codec does serialization and deserialization for Warp messages.
-var c codec.Manager
+var Codec codec.Manager
 
 func init() {
-	c = codec.NewManager(math.MaxInt)
-	lc := linearcodec.NewCustomMaxLength(math.MaxInt32)
+	Codec = codec.NewManager(math.MaxInt)
+	lc := linearcodec.NewDefault()
 
-	err := utils.Err(
+	err := errors.Join(
 		lc.RegisterType(&BitSetSignature{}),
-		c.RegisterCodec(codecVersion, lc),
+		Codec.RegisterCodec(CodecVersion, lc),
 	)
 	if err != nil {
 		panic(err)

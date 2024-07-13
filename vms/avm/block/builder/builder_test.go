@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/codec"
@@ -134,11 +132,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(gomock.Any()).Return(tx)
+				mempool.EXPECT().Peek().Return(tx, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx})
 				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek(gomock.Any()).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				return New(
@@ -179,11 +177,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(gomock.Any()).Return(tx)
+				mempool.EXPECT().Peek().Return(tx, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx})
 				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek(gomock.Any()).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				return New(
@@ -225,11 +223,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(gomock.Any()).Return(tx)
+				mempool.EXPECT().Peek().Return(tx, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx})
 				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek(gomock.Any()).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				return New(
@@ -309,14 +307,14 @@ func TestBuilderBuildBlock(t *testing.T) {
 				)
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(targetBlockSize).Return(tx1)
+				mempool.EXPECT().Peek().Return(tx1, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx1})
 				// Second loop iteration
-				mempool.EXPECT().Peek(targetBlockSize - len(tx1Bytes)).Return(tx2)
+				mempool.EXPECT().Peek().Return(tx2, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx2})
 				mempool.EXPECT().MarkDropped(tx2.ID(), blkexecutor.ErrConflictingBlockTxs)
 				// Third loop iteration
-				mempool.EXPECT().Peek(targetBlockSize - len(tx1Bytes)).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
@@ -385,10 +383,10 @@ func TestBuilderBuildBlock(t *testing.T) {
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(gomock.Any()).Return(tx)
+				mempool.EXPECT().Peek().Return(tx, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx})
 				// Second loop iteration
-				mempool.EXPECT().Peek(gomock.Any()).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
@@ -459,10 +457,10 @@ func TestBuilderBuildBlock(t *testing.T) {
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
 				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek(gomock.Any()).Return(tx)
+				mempool.EXPECT().Peek().Return(tx, true)
 				mempool.EXPECT().Remove([]*txs.Tx{tx})
 				// Second loop iteration
-				mempool.EXPECT().Peek(gomock.Any()).Return(nil)
+				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
@@ -510,11 +508,15 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	tx := transactions[0]
 	txID := tx.ID()
 	require.NoError(mempool.Add(tx))
-	require.True(mempool.Has(txID))
 
-	parser, err := block.NewParser([]fxs.Fx{
-		&secp256k1fx.Fx{},
-	})
+	_, ok := mempool.Get(txID)
+	require.True(ok)
+
+	parser, err := block.NewParser(
+		[]fxs.Fx{
+			&secp256k1fx.Fx{},
+		},
+	)
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
@@ -542,7 +544,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	state.AddBlock(parentBlk)
 	state.SetLastAccepted(parentBlk.ID())
 
-	metrics, err := metrics.New("", registerer)
+	metrics, err := metrics.New(registerer)
 	require.NoError(err)
 
 	manager := blkexecutor.NewManager(mempool, metrics, state, backend, clk, onAccept)

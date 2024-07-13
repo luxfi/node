@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,15 +10,15 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 )
 
-const version = 0
+const CodecVersion = 0
 
-var c codec.Manager
+var Codec codec.Manager
 
 func init() {
-	lc := linearcodec.NewCustomMaxLength(math.MaxUint32)
-	c = codec.NewManager(math.MaxInt32)
+	lc := linearcodec.NewDefault()
+	Codec = codec.NewManager(math.MaxInt32)
 
-	err := c.RegisterCodec(version, lc)
+	err := Codec.RegisterCodec(CodecVersion, lc)
 	if err != nil {
 		panic(err)
 	}

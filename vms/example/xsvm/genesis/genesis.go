@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -26,7 +26,7 @@ func Parse(bytes []byte) (*Genesis, error) {
 }
 
 func Block(genesis *Genesis) (*block.Stateless, error) {
-	bytes, err := Codec.Marshal(Version, genesis)
+	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	if err != nil {
 		return nil, err
 	}

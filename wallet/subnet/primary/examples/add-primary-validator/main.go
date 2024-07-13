@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -54,7 +54,9 @@ func main() {
 
 	// Get the P-chain wallet
 	pWallet := wallet.P()
-	luxAssetID := pWallet.LUXAssetID()
+	pBuilder := pWallet.Builder()
+	pContext := pBuilder.Context()
+	luxAssetID := pContext.LUXAssetID
 
 	addValidatorStartTime := time.Now()
 	addValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(

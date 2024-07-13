@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/netip"
 
 	"github.com/gorilla/rpc/v2"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/chains"
@@ -17,13 +17,18 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/snow/networking/benchlist"
+	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/propertyfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var errNoChainProvided = errors.New("argument 'chain' not given")
@@ -32,7 +37,8 @@ var errNoChainProvided = errors.New("argument 'chain' not given")
 type Info struct {
 	Parameters
 	log          logging.Logger
-	myIP         ips.DynamicIPPort
+	validators   validators.Manager
+	myIP         *utils.Atomic[netip.AddrPort]
 	networking   network.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
@@ -59,9 +65,10 @@ type Parameters struct {
 func NewService(
 	parameters Parameters,
 	log logging.Logger,
+	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,
-	myIP ips.DynamicIPPort,
+	myIP *utils.Atomic[netip.AddrPort],
 	network network.Network,
 	benchlist benchlist.Manager,
 ) (http.Handler, error) {
@@ -73,6 +80,7 @@ func NewService(
 		&Info{
 			Parameters:   parameters,
 			log:          log,
+			validators:   validators,
 			chainManager: chainManager,
 			vmManager:    vmManager,
 			myIP:         myIP,
@@ -137,7 +145,7 @@ type GetNetworkIDReply struct {
 
 // GetNodeIPReply are the results from calling GetNodeIP
 type GetNodeIPReply struct {
-	IP string `json:"ip"`
+	IP netip.AddrPort `json:"ip"`
 }
 
 // GetNodeIP returns the IP of this node
@@ -147,7 +155,7 @@ func (i *Info) GetNodeIP(_ *http.Request, _ *struct{}, reply *GetNodeIPReply) er
 		zap.String("method", "getNodeIP"),
 	)
 
-	reply.IP = i.myIP.IPPort().String()
+	reply.IP = i.myIP.Get()
 	return nil
 }
 
@@ -319,6 +327,64 @@ func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeRespons
 	return nil
 }
 
+type ACP struct {
+	SupportWeight json.Uint64         `json:"supportWeight"`
+	Supporters    set.Set[ids.NodeID] `json:"supporters"`
+	ObjectWeight  json.Uint64         `json:"objectWeight"`
+	Objectors     set.Set[ids.NodeID] `json:"objectors"`
+	AbstainWeight json.Uint64         `json:"abstainWeight"`
+}
+
+type ACPsReply struct {
+	ACPs map[uint32]*ACP `json:"acps"`
+}
+
+func (a *ACPsReply) getACP(acpNum uint32) *ACP {
+	acp, ok := a.ACPs[acpNum]
+	if !ok {
+		acp = &ACP{}
+		a.ACPs[acpNum] = acp
+	}
+	return acp
+}
+
+func (i *Info) Acps(_ *http.Request, _ *struct{}, reply *ACPsReply) error {
+	i.log.Debug("API called",
+		zap.String("service", "info"),
+		zap.String("method", "acps"),
+	)
+
+	reply.ACPs = make(map[uint32]*ACP, constants.CurrentACPs.Len())
+	peers := i.networking.PeerInfo(nil)
+	for _, peer := range peers {
+		weight := json.Uint64(i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID))
+		if weight == 0 {
+			continue
+		}
+
+		for acpNum := range peer.SupportedACPs {
+			acp := reply.getACP(acpNum)
+			acp.Supporters.Add(peer.ID)
+			acp.SupportWeight += weight
+		}
+		for acpNum := range peer.ObjectedACPs {
+			acp := reply.getACP(acpNum)
+			acp.Objectors.Add(peer.ID)
+			acp.ObjectWeight += weight
+		}
+	}
+
+	totalWeight, err := i.validators.TotalWeight(constants.PrimaryNetworkID)
+	if err != nil {
+		return err
+	}
+	for acpNum := range constants.CurrentACPs {
+		acp := reply.getACP(acpNum)
+		acp.AbstainWeight = json.Uint64(totalWeight) - acp.SupportWeight - acp.ObjectWeight
+	}
+	return nil
+}
+
 type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
@@ -353,6 +419,7 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 // GetVMsReply contains the response metadata for GetVMs
 type GetVMsReply struct {
 	VMs map[ids.ID][]string `json:"vms"`
+	Fxs map[ids.ID]string   `json:"fxs"`
 }
 
 // GetVMs lists the virtual machines installed on the node
@@ -369,5 +436,10 @@ func (i *Info) GetVMs(_ *http.Request, _ *struct{}, reply *GetVMsReply) error {
 	}
 
 	reply.VMs, err = ids.GetRelevantAliases(i.VMManager, vmIDs)
+	reply.Fxs = map[ids.ID]string{
+		secp256k1fx.ID: secp256k1fx.Name,
+		nftfx.ID:       nftfx.Name,
+		propertyfx.ID:  propertyfx.Name,
+	}
 	return err
 }

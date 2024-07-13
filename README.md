@@ -1,4 +1,9 @@
-# luxd
+<div align="center">
+  <img src="resources/LuxLogoRed.png?raw=true">
+</div>
+
+---
+
 Node implementation for the [Lux](https://lux.network) network -
 a blockchains platform with high throughput, and blazing fast transactions.
 
@@ -16,9 +21,9 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 - OS: Ubuntu 20.04/22.04 or macOS >= 12
 - Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-If you plan to build luxd from source, you will also need the following software:
+If you plan to build Lux Node from source, you will also need the following software:
 
-- [Go](https://golang.org/doc/install) version >= 1.20.10
+- [Go](https://golang.org/doc/install) version >= 1.21.12
 - [gcc](https://gcc.gnu.org/)
 - g++
 
@@ -26,7 +31,7 @@ If you plan to build luxd from source, you will also need the following software
 
 #### Clone The Repository
 
-Clone the luxd repository:
+Clone the Lux Node repository:
 
 ```sh
 git clone git@github.com:luxfi/node.git
@@ -35,9 +40,9 @@ cd node
 
 This will clone and checkout the `master` branch.
 
-#### Building luxd
+#### Building Lux Node
 
-Build luxd by running the build script:
+Build Lux Node by running the build script:
 
 ```sh
 ./scripts/build.sh
@@ -46,12 +51,12 @@ Build luxd by running the build script:
 The `node` binary is now in the `build` directory. To run:
 
 ```sh
-./build/luxd
+./build/node
 ```
 
 ### Binary Repository
 
-Install luxd using an `apt` repository.
+Install Lux Node using an `apt` repository.
 
 #### Adding the APT Repository
 
@@ -100,7 +105,7 @@ docker image ls
 The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/luxd
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
 ```
 
 ## Running Lux
@@ -110,19 +115,19 @@ docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/l
 To connect to the Lux Mainnet, run:
 
 ```sh
-./build/luxd
+./build/node
 ```
 
 You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to Testnet
+### Connecting to Fuji
 
-To connect to the Testnet Testnet, run:
+To connect to the Fuji Testnet, run:
 
 ```sh
-./build/luxd --network-id=testnet
+./build/node --network-id=fuji
 ```
 
 ### Creating a Local Testnet
@@ -138,7 +143,7 @@ lux network status
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://docs.lux.network/build/luxd-apis/health) until it is done bootstrapping.
+A node will not [report healthy](https://docs.lux.network/build/node-apis/health) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
@@ -146,7 +151,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-luxd uses multiple tools to generate efficient and boilerplate code.
+Lux Node uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
@@ -154,12 +159,12 @@ To regenerate the protobuf go code, run `scripts/protobuf_codegen.sh` from the r
 
 This should only be necessary when upgrading protobuf versions or modifying .proto definition files.
 
-To use this script, you must have [buf](https://docs.buf.build/installation) (v1.26.1), protoc-gen-go (v1.30.0) and protoc-gen-go-grpc (v1.3.0) installed.
+To use this script, you must have [buf](https://docs.buf.build/installation) (v1.31.0), protoc-gen-go (v1.33.0) and protoc-gen-go-grpc (v1.3.0) installed.
 
 To install the buf dependencies:
 
 ```sh
-go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30.0
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 ```
 
@@ -180,13 +185,6 @@ scripts/protobuf_codegen.sh
 
 For more information, refer to the [GRPC Golang Quick Start Guide](https://grpc.io/docs/languages/go/quickstart/).
 
-### Running protobuf codegen from docker
-
-```sh
-docker build -t lux:protobuf_codegen -f api/Dockerfile.buf .
-docker run -t -i -v $(pwd):/opt/lux -w/opt/lux lux:protobuf_codegen bash -c "scripts/protobuf_codegen.sh"
-```
-
 ### Running mock codegen
 
 To regenerate the [gomock](https://github.com/uber-go/mock) code, run `scripts/mock.gen.sh` from the root of the repo.
@@ -197,7 +195,7 @@ This should only be necessary when modifying exported interfaces or after modify
 
 ### Version Semantics
 
-luxd is first and foremost a client for the Lux network. The versioning of luxd follows that of the Lux network.
+Lux Node is first and foremost a client for the Lux network. The versioning of Lux Node follows that of the Lux network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -206,15 +204,15 @@ luxd is first and foremost a client for the Lux network. The versioning of luxd 
 
 ### Library Compatibility Guarantees
 
-Because luxd's version denotes the network version, it is expected that interfaces exported by luxd's packages may change in `Patch` version updates.
+Because Lux Node's version denotes the network version, it is expected that interfaces exported by Lux Node's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running luxd will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running Lux Node will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-luxd can run on different platforms, with different support tiers:
+Lux Node can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
@@ -222,7 +220,7 @@ luxd can run on different platforms, with different support tiers:
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
 The following table lists currently supported platforms and their corresponding
-luxd support tiers:
+Lux Node support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
@@ -236,7 +234,7 @@ luxd support tiers:
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| luxd continuous integration | Tier 1  | Tier 2  | Tier 3  |
+| Lux Node continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -19,7 +19,7 @@ func TestSampleBootstrappers(t *testing.T) {
 		bootstrappers := SampleBootstrappers(networkID, length)
 		t.Logf("%s bootstrappers: %+v", networkName, bootstrappers)
 
-		if networkID == constants.MainnetID || networkID == constants.TestnetID {
+		if networkID == constants.MainnetID || networkID == constants.FujiID {
 			require.Len(bootstrappers, length)
 		}
 	}

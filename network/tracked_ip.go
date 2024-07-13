@@ -1,14 +1,13 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
 	"math/rand"
+	"net/netip"
 	"sync"
 	"time"
-
-	"github.com/luxfi/node/utils/ips"
 )
 
 func init() {
@@ -19,20 +18,20 @@ type trackedIP struct {
 	delayLock sync.RWMutex
 	delay     time.Duration
 
-	ip ips.IPPort
+	ip netip.AddrPort
 
 	stopTrackingOnce sync.Once
 	onStopTracking   chan struct{}
 }
 
-func newTrackedIP(ip ips.IPPort) *trackedIP {
+func newTrackedIP(ip netip.AddrPort) *trackedIP {
 	return &trackedIP{
 		ip:             ip,
 		onStopTracking: make(chan struct{}),
 	}
 }
 
-func (ip *trackedIP) trackNewIP(newIP ips.IPPort) *trackedIP {
+func (ip *trackedIP) trackNewIP(newIP netip.AddrPort) *trackedIP {
 	ip.stopTracking()
 	return &trackedIP{
 		delay:          ip.getDelay(),

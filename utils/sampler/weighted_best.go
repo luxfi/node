@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -60,7 +60,7 @@ samplerLoop:
 
 		start := s.clock.Time()
 		for _, sample := range samples {
-			if _, err := sampler.Sample(sample); err != nil {
+			if _, ok := sampler.Sample(sample); !ok {
 				continue samplerLoop
 			}
 		}

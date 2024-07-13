@@ -1,41 +1,38 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 var (
-	errNotCommitted = errors.New("not committed")
+	ErrNotCommitted = errors.New("not committed")
 
 	_ Wallet = (*wallet)(nil)
 )
 
 type Wallet interface {
-	Context
-
 	// Builder returns the builder that will be used to create the transactions.
-	Builder() Builder
+	Builder() builder.Builder
 
 	// Signer returns the signer that will be used to sign the transactions.
-	Signer() Signer
+	Signer() walletsigner.Signer
 
 	// IssueBaseTx creates, signs, and issues a new simple value transfer.
-	// Because the P-chain doesn't intend for balance transfers to occur, this
-	// method is expensive and abuses the creation of subnets.
 	//
 	// - [outputs] specifies all the recipients and amounts that should be sent
 	//   from this transaction.
@@ -118,6 +115,18 @@ type Wallet interface {
 	// - [owner] specifies who has the ability to create new chains and add new
 	//   validators to the subnet.
 	IssueCreateSubnetTx(
+		owner *secp256k1fx.OutputOwners,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
+	// IssueTransferSubnetOwnershipTx creates, signs, and issues a transaction that
+	// changes the owner of the named subnet.
+	//
+	// - [subnetID] specifies the subnet to be modified
+	// - [owner] specifies who has the ability to create new chains and add new
+	//   validators to the subnet.
+	IssueTransferSubnetOwnershipTx(
+		subnetID ids.ID,
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.Tx, error)
@@ -209,7 +218,7 @@ type Wallet interface {
 	//   the delegation reward will be sent to the validator's [rewardsOwner].
 	IssueAddPermissionlessValidatorTx(
 		vdr *txs.SubnetValidator,
-		signer signer.Signer,
+		signer vmsigner.Signer,
 		assetID ids.ID,
 		validationRewardsOwner *secp256k1fx.OutputOwners,
 		delegationRewardsOwner *secp256k1fx.OutputOwners,
@@ -246,8 +255,8 @@ type Wallet interface {
 }
 
 func NewWallet(
-	builder Builder,
-	signer Signer,
+	builder builder.Builder,
+	signer walletsigner.Signer,
 	client platformvm.Client,
 	backend Backend,
 ) Wallet {
@@ -261,16 +270,16 @@ func NewWallet(
 
 type wallet struct {
 	Backend
-	builder Builder
-	signer  Signer
+	builder builder.Builder
+	signer  walletsigner.Signer
 	client  platformvm.Client
 }
 
-func (w *wallet) Builder() Builder {
+func (w *wallet) Builder() builder.Builder {
 	return w.builder
 }
 
-func (w *wallet) Signer() Signer {
+func (w *wallet) Signer() walletsigner.Signer {
 	return w.signer
 }
 
@@ -359,6 +368,18 @@ func (w *wallet) IssueCreateSubnetTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
+func (w *wallet) IssueTransferSubnetOwnershipTx(
+	subnetID ids.ID,
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewTransferSubnetOwnershipTx(subnetID, owner, options...)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
 func (w *wallet) IssueImportTx(
 	sourceChainID ids.ID,
 	to *secp256k1fx.OutputOwners,
@@ -425,7 +446,7 @@ func (w *wallet) IssueTransformSubnetTx(
 
 func (w *wallet) IssueAddPermissionlessValidatorTx(
 	vdr *txs.SubnetValidator,
-	signer signer.Signer,
+	signer vmsigner.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
 	delegationRewardsOwner *secp256k1fx.OutputOwners,
@@ -471,7 +492,7 @@ func (w *wallet) IssueUnsignedTx(
 ) (*txs.Tx, error) {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
-	tx, err := w.signer.SignUnsigned(ctx, utx)
+	tx, err := walletsigner.SignUnsigned(ctx, w.signer, utx)
 	if err != nil {
 		return nil, err
 	}
@@ -498,17 +519,9 @@ func (w *wallet) IssueTx(
 		return w.Backend.AcceptTx(ctx, tx)
 	}
 
-	txStatus, err := w.client.AwaitTxDecided(ctx, txID, ops.PollFrequency())
-	if err != nil {
+	if err := platformvm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
 	}
 
-	if err := w.Backend.AcceptTx(ctx, tx); err != nil {
-		return err
-	}
-
-	if txStatus.Status != status.Committed {
-		return fmt.Errorf("%w: %s", errNotCommitted, txStatus.Reason)
-	}
-	return nil
+	return w.Backend.AcceptTx(ctx, tx)
 }

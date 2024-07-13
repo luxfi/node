@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -7,53 +7,103 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
-	"github.com/luxfi/node/tests/fixture/tmpnet/local"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
 type FlagVars struct {
-	luxdExecPath       string
-	networkDir         string
-	useExistingNetwork bool
+	luxNodeExecPath  string
+	pluginDir            string
+	networkDir           string
+	reuseNetwork         bool
+	delayNetworkShutdown bool
+	stopNetwork          bool
+	nodeCount            int
+}
+
+func (v *FlagVars) Lux NodeExecPath() string {
+	return v.luxNodeExecPath
+}
+
+func (v *FlagVars) PluginDir() string {
+	return v.pluginDir
 }
 
 func (v *FlagVars) NetworkDir() string {
-	if !v.useExistingNetwork {
+	if !v.reuseNetwork {
 		return ""
 	}
 	if len(v.networkDir) > 0 {
 		return v.networkDir
 	}
-	return os.Getenv(local.NetworkDirEnvName)
+	return os.Getenv(tmpnet.NetworkDirEnvName)
 }
 
-func (v *FlagVars) LuxdExecPath() string {
-	return v.luxdExecPath
+func (v *FlagVars) ReuseNetwork() bool {
+	return v.reuseNetwork
 }
 
-func (v *FlagVars) UseExistingNetwork() bool {
-	return v.useExistingNetwork
+func (v *FlagVars) NetworkShutdownDelay() time.Duration {
+	if v.delayNetworkShutdown {
+		// Only return a non-zero value if the delay is enabled.  Make sure this value takes
+		// into account the scrape_interval defined in scripts/run_prometheus.sh.
+		return 12 * time.Second
+	}
+	return 0
+}
+
+func (v *FlagVars) StopNetwork() bool {
+	return v.stopNetwork
+}
+
+func (v *FlagVars) NodeCount() int {
+	return v.nodeCount
 }
 
 func RegisterFlags() *FlagVars {
 	vars := FlagVars{}
 	flag.StringVar(
-		&vars.luxdExecPath,
+		&vars.luxNodeExecPath,
 		"node-path",
-		os.Getenv(local.LuxdPathEnvName),
-		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", local.LuxdPathEnvName),
+		os.Getenv(tmpnet.Lux NodePathEnvName),
+		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", tmpnet.Lux NodePathEnvName),
+	)
+	flag.StringVar(
+		&vars.pluginDir,
+		"plugin-dir",
+		os.ExpandEnv("$HOME/.node/plugins"),
+		"[optional] the dir containing VM plugins.",
 	)
 	flag.StringVar(
 		&vars.networkDir,
 		"network-dir",
 		"",
-		fmt.Sprintf("[optional] the dir containing the configuration of an existing network to target for testing. Will only be used if --use-existing-network is specified. Also possible to configure via the %s env variable.", local.NetworkDirEnvName),
+		fmt.Sprintf("[optional] the dir containing the configuration of an existing network to target for testing. Will only be used if --reuse-network is specified. Also possible to configure via the %s env variable.", tmpnet.NetworkDirEnvName),
 	)
 	flag.BoolVar(
-		&vars.useExistingNetwork,
-		"use-existing-network",
+		&vars.reuseNetwork,
+		"reuse-network",
 		false,
-		"[optional] whether to target the existing network identified by --network-dir.",
+		"[optional] reuse an existing network. If an existing network is not already running, create a new one and leave it running for subsequent usage.",
+	)
+	flag.BoolVar(
+		&vars.delayNetworkShutdown,
+		"delay-network-shutdown",
+		false,
+		"[optional] whether to delay network shutdown to allow a final metrics scrape.",
+	)
+	flag.BoolVar(
+		&vars.stopNetwork,
+		"stop-network",
+		false,
+		"[optional] stop an existing network and exit without executing any tests.",
+	)
+	flag.IntVar(
+		&vars.nodeCount,
+		"node-count",
+		tmpnet.DefaultNodeCount,
+		"number of nodes the network should initially consist of",
 	)
 
 	return &vars

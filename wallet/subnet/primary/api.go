@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -9,8 +9,6 @@ import (
 
 	"github.com/luxfi/coreth/ethclient"
 	"github.com/luxfi/coreth/plugin/evm"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
@@ -23,13 +21,17 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"
-	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
+
+	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
+	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
-	TestnetAPIURI = "https://test.lux.network"
+	FujiAPIURI    = "https://api.lux-test.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
@@ -56,12 +58,12 @@ type UTXOClient interface {
 
 type LUXState struct {
 	PClient platformvm.Client
-	PCTX    p.Context
+	PCTX    *pbuilder.Context
 	XClient avm.Client
-	XCTX    x.Context
+	XCTX    *xbuilder.Context
 	CClient evm.Client
-	CCTX    c.Context
-	UTXOs   UTXOs
+	CCTX    *c.Context
+	UTXOs   walletcommon.UTXOs
 }
 
 func FetchState(
@@ -77,7 +79,7 @@ func FetchState(
 	xClient := avm.NewClient(uri, "X")
 	cClient := evm.NewCChainClient(uri)
 
-	pCTX, err := p.NewContextFromClients(ctx, infoClient, xClient)
+	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +94,7 @@ func FetchState(
 		return nil, err
 	}
 
-	utxos := NewUTXOs()
+	utxos := walletcommon.NewUTXOs()
 	addrList := addrs.List()
 	chains := []struct {
 		id     ids.ID
@@ -105,12 +107,12 @@ func FetchState(
 			codec:  txs.Codec,
 		},
 		{
-			id:     xCTX.BlockchainID(),
+			id:     xCTX.BlockchainID,
 			client: xClient,
-			codec:  x.Parser.Codec(),
+			codec:  xbuilder.Parser.Codec(),
 		},
 		{
-			id:     cCTX.BlockchainID(),
+			id:     cCTX.BlockchainID,
 			client: cClient,
 			codec:  evm.Codec,
 		},
@@ -144,13 +146,13 @@ func FetchState(
 
 type EthState struct {
 	Client   ethclient.Client
-	Accounts map[common.Address]*c.Account
+	Accounts map[ethcommon.Address]*c.Account
 }
 
 func FetchEthState(
 	ctx context.Context,
 	uri string,
-	addrs set.Set[common.Address],
+	addrs set.Set[ethcommon.Address],
 ) (*EthState, error) {
 	path := fmt.Sprintf(
 		"%s/ext/%s/C/rpc",
@@ -162,7 +164,7 @@ func FetchEthState(
 		return nil, err
 	}
 
-	accounts := make(map[common.Address]*c.Account, addrs.Len())
+	accounts := make(map[ethcommon.Address]*c.Account, addrs.Len())
 	for addr := range addrs {
 		balance, err := client.BalanceAt(ctx, addr, nil)
 		if err != nil {
@@ -189,7 +191,7 @@ func FetchEthState(
 // expires, then the returned error will be immediately reported.
 func AddAllUTXOs(
 	ctx context.Context,
-	utxos UTXOs,
+	utxos walletcommon.UTXOs,
 	client UTXOClient,
 	codec codec.Manager,
 	sourceChainID ids.ID,

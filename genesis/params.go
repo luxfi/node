@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
 
 type StakingConfig struct {
@@ -33,42 +34,21 @@ type StakingConfig struct {
 	RewardConfig reward.Config `json:"rewardConfig"`
 }
 
-type TxFeeConfig struct {
-	// Transaction fee
-	TxFee uint64 `json:"txFee"`
-	// Transaction fee for create asset transactions
-	CreateAssetTxFee uint64 `json:"createAssetTxFee"`
-	// Transaction fee for create subnet transactions
-	CreateSubnetTxFee uint64 `json:"createSubnetTxFee"`
-	// Transaction fee for transform subnet transactions
-	TransformSubnetTxFee uint64 `json:"transformSubnetTxFee"`
-	// Transaction fee for create blockchain transactions
-	CreateBlockchainTxFee uint64 `json:"createBlockchainTxFee"`
-	// Transaction fee for adding a primary network validator
-	AddPrimaryNetworkValidatorFee uint64 `json:"addPrimaryNetworkValidatorFee"`
-	// Transaction fee for adding a primary network delegator
-	AddPrimaryNetworkDelegatorFee uint64 `json:"addPrimaryNetworkDelegatorFee"`
-	// Transaction fee for adding a subnet validator
-	AddSubnetValidatorFee uint64 `json:"addSubnetValidatorFee"`
-	// Transaction fee for adding a subnet delegator
-	AddSubnetDelegatorFee uint64 `json:"addSubnetDelegatorFee"`
-}
-
 type Params struct {
 	StakingConfig
-	TxFeeConfig
+	fee.StaticConfig
 }
 
-func GetTxFeeConfig(networkID uint32) TxFeeConfig {
+func GetTxFeeConfig(networkID uint32) fee.StaticConfig {
 	switch networkID {
 	case constants.MainnetID:
-		return MainnetParams.TxFeeConfig
-	case constants.TestnetID:
-		return TestnetParams.TxFeeConfig
+		return MainnetParams.StaticConfig
+	case constants.FujiID:
+		return FujiParams.StaticConfig
 	case constants.LocalID:
-		return LocalParams.TxFeeConfig
+		return LocalParams.StaticConfig
 	default:
-		return LocalParams.TxFeeConfig
+		return LocalParams.StaticConfig
 	}
 }
 
@@ -76,8 +56,8 @@ func GetStakingConfig(networkID uint32) StakingConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.StakingConfig
-	case constants.TestnetID:
-		return TestnetParams.StakingConfig
+	case constants.FujiID:
+		return FujiParams.StakingConfig
 	case constants.LocalID:
 		return LocalParams.StakingConfig
 	default:

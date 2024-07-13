@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -8,15 +8,17 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/set"
 )
 
 var (
-	ErrAppRequestFailed = errors.New("app request failed")
-	ErrRequestPending   = errors.New("request pending")
-	ErrNoPeers          = errors.New("no peers")
+	ErrRequestPending = errors.New("request pending")
+	ErrNoPeers        = errors.New("no peers")
 )
 
 // AppResponseCallback is called upon receiving an AppResponse for an AppRequest
@@ -41,6 +43,7 @@ type CrossChainAppResponseCallback func(
 
 type Client struct {
 	handlerID     uint64
+	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
 	sender        common.AppSender
@@ -72,10 +75,18 @@ func (c *Client) AppRequest(
 	appRequestBytes []byte,
 	onResponse AppResponseCallback,
 ) error {
+	// Cancellation is removed from this context to avoid erroring unexpectedly.
+	// SendAppRequest should be non-blocking and any error other than context
+	// cancellation is unexpected.
+	//
+	// This guarantees that the router should never receive an unexpected
+	// AppResponse.
+	ctxWithoutCancel := context.WithoutCancel(ctx)
+
 	c.router.lock.Lock()
 	defer c.router.lock.Unlock()
 
-	appRequestBytes = c.prefixMessage(appRequestBytes)
+	appRequestBytes = PrefixMessage(c.handlerPrefix, appRequestBytes)
 	for nodeID := range nodeIDs {
 		requestID := c.router.requestID
 		if _, ok := c.router.pendingAppRequests[requestID]; ok {
@@ -87,17 +98,23 @@ func (c *Client) AppRequest(
 		}
 
 		if err := c.sender.SendAppRequest(
-			ctx,
+			ctxWithoutCancel,
 			set.Of(nodeID),
 			requestID,
 			appRequestBytes,
 		); err != nil {
+			c.router.log.Error("unexpected error when sending message",
+				zap.Stringer("op", message.AppRequestOp),
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint32("requestID", requestID),
+				zap.Error(err),
+			)
 			return err
 		}
 
 		c.router.pendingAppRequests[requestID] = pendingAppRequest{
-			AppResponseCallback: onResponse,
-			metrics:             c.router.handlers[c.handlerID].metrics,
+			handlerID: c.handlerIDStr,
+			callback:  onResponse,
 		}
 		c.router.requestID += 2
 	}
@@ -108,24 +125,18 @@ func (c *Client) AppRequest(
 // AppGossip sends a gossip message to a random set of peers.
 func (c *Client) AppGossip(
 	ctx context.Context,
+	config common.SendConfig,
 	appGossipBytes []byte,
 ) error {
-	return c.sender.SendAppGossip(
-		ctx,
-		c.prefixMessage(appGossipBytes),
-	)
-}
+	// Cancellation is removed from this context to avoid erroring unexpectedly.
+	// SendAppGossip should be non-blocking and any error other than context
+	// cancellation is unexpected.
+	ctxWithoutCancel := context.WithoutCancel(ctx)
 
-// AppGossipSpecific sends a gossip message to a predetermined set of peers.
-func (c *Client) AppGossipSpecific(
-	ctx context.Context,
-	nodeIDs set.Set[ids.NodeID],
-	appGossipBytes []byte,
-) error {
-	return c.sender.SendAppGossipSpecific(
-		ctx,
-		nodeIDs,
-		c.prefixMessage(appGossipBytes),
+	return c.sender.SendAppGossip(
+		ctxWithoutCancel,
+		config,
+		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }
 
@@ -137,6 +148,14 @@ func (c *Client) CrossChainAppRequest(
 	appRequestBytes []byte,
 	onResponse CrossChainAppResponseCallback,
 ) error {
+	// Cancellation is removed from this context to avoid erroring unexpectedly.
+	// SendCrossChainAppRequest should be non-blocking and any error other than
+	// context cancellation is unexpected.
+	//
+	// This guarantees that the router should never receive an unexpected
+	// CrossChainAppResponse.
+	ctxWithoutCancel := context.WithoutCancel(ctx)
+
 	c.router.lock.Lock()
 	defer c.router.lock.Unlock()
 
@@ -150,32 +169,37 @@ func (c *Client) CrossChainAppRequest(
 	}
 
 	if err := c.sender.SendCrossChainAppRequest(
-		ctx,
+		ctxWithoutCancel,
 		chainID,
 		requestID,
-		c.prefixMessage(appRequestBytes),
+		PrefixMessage(c.handlerPrefix, appRequestBytes),
 	); err != nil {
+		c.router.log.Error("unexpected error when sending message",
+			zap.Stringer("op", message.CrossChainAppRequestOp),
+			zap.Stringer("chainID", chainID),
+			zap.Uint32("requestID", requestID),
+			zap.Error(err),
+		)
 		return err
 	}
 
 	c.router.pendingCrossChainAppRequests[requestID] = pendingCrossChainAppRequest{
-		CrossChainAppResponseCallback: onResponse,
-		metrics:                       c.router.handlers[c.handlerID].metrics,
+		handlerID: c.handlerIDStr,
+		callback:  onResponse,
 	}
 	c.router.requestID += 2
 
 	return nil
 }
 
-// prefixMessage prefixes the original message with the handler identifier
-// corresponding to this client.
+// PrefixMessage prefixes the original message with the protocol identifier.
 //
 // Only gossip and request messages need to be prefixed.
 // Response messages don't need to be prefixed because request ids are tracked
 // which map to the expected response handler.
-func (c *Client) prefixMessage(src []byte) []byte {
-	messageBytes := make([]byte, len(c.handlerPrefix)+len(src))
-	copy(messageBytes, c.handlerPrefix)
-	copy(messageBytes[len(c.handlerPrefix):], src)
+func PrefixMessage(prefix, msg []byte) []byte {
+	messageBytes := make([]byte, len(prefix)+len(msg))
+	copy(messageBytes, prefix)
+	copy(messageBytes[len(prefix):], msg)
 	return messageBytes
 }

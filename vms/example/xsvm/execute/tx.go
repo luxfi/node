@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package execute
@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -56,7 +55,7 @@ func (t *Tx) Transfer(tf *tx.Transfer) error {
 		return errWrongChainID
 	}
 
-	return utils.Err(
+	return errors.Join(
 		state.IncrementNonce(t.Database, t.Sender, tf.Nonce),
 		state.DecreaseBalance(t.Database, t.Sender, tf.ChainID, t.TransferFee),
 		state.DecreaseBalance(t.Database, t.Sender, tf.AssetID, tf.Amount),

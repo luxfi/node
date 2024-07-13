@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database/leveldb"
@@ -50,7 +49,6 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		b.TempDir(),
 		nil,
 		logging.NoLog{},
-		"",
 		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
@@ -105,14 +103,16 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics, err := metrics.New("", prometheus.NewRegistry())
+	metrics, err := metrics.New(prometheus.NewRegistry())
 	require.NoError(err)
 
 	s, err := state.New(
 		db,
 		genesisBytes,
 		prometheus.NewRegistry(),
-		vdrs,
+		&config.Config{
+			Validators: vdrs,
+		},
 		execConfig,
 		&snow.Context{
 			NetworkID: constants.UnitTestID,

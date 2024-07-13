@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
-	stdcontext "context"
+	"context"
+	"errors"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -12,21 +13,25 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var _ txs.Visitor = (*backendVisitor)(nil)
+var (
+	_ txs.Visitor = (*backendVisitor)(nil)
+
+	ErrUnsupportedTxType = errors.New("unsupported tx type")
+)
 
 // backendVisitor handles accepting of transactions for the backend
 type backendVisitor struct {
 	b    *backend
-	ctx  stdcontext.Context
+	ctx  context.Context
 	txID ids.ID
 }
 
 func (*backendVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errUnsupportedTxType
+	return ErrUnsupportedTxType
 }
 
 func (*backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	return errUnsupportedTxType
+	return ErrUnsupportedTxType
 }
 
 func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
@@ -46,6 +51,10 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+	b.b.setSubnetOwner(
+		b.txID,
+		tx.Owner,
+	)
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -54,7 +63,10 @@ func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx
 }
 
 func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	// TODO: Correctly track subnet owners in [getSubnetSigners]
+	b.b.setSubnetOwner(
+		tx.Subnet,
+		tx.Owner,
+	)
 	return b.baseTx(&tx.BaseTx)
 }
 

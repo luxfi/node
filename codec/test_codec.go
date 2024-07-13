@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package codec
 
@@ -23,7 +25,6 @@ var (
 		TestBigArray,
 		TestPointerToStruct,
 		TestSliceOfStruct,
-		TestStructWithNullable,
 		TestInterface,
 		TestSliceOfInterface,
 		TestArrayOfInterface,
@@ -35,15 +36,17 @@ var (
 		TestNilSliceSerialization,
 		TestEmptySliceSerialization,
 		TestSliceWithEmptySerialization,
-		TestSliceWithEmptySerializationOutOfMemory,
+		TestSliceWithEmptySerializationError,
+		TestMapWithEmptySerialization,
+		TestMapWithEmptySerializationError,
 		TestSliceTooLarge,
 		TestNegativeNumbers,
 		TestTooLargeUnmarshal,
 		TestUnmarshalInvalidInterface,
-		TestRestrictedSlice,
 		TestExtraSpace,
 		TestSliceLengthOverflow,
 		TestMap,
+		TestCanMarshalLargeSlices,
 	}
 
 	MultipleTagsTests = []func(c GeneralCodec, t testing.TB){
@@ -64,8 +67,7 @@ type Foo interface {
 }
 
 type MyInnerStruct struct {
-	Str               string `serialize:"true"`
-	NumberNotProvided *int32 `serialize:"true,nullable"`
+	Str string `serialize:"true"`
 }
 
 func (*MyInnerStruct) Foo() int {
@@ -86,15 +88,6 @@ type MyInnerStruct3 struct {
 	Str string        `serialize:"true"`
 	M1  MyInnerStruct `serialize:"true"`
 	F   Foo           `serialize:"true"`
-}
-
-type MyStructWithNullable struct {
-	Interface  any              `serialize:"true,nullable"`
-	Int32      *int32           `serialize:"true,nullable"`
-	Int64      *int64           `serialize:"true,nullable"`
-	Int32Slice []*int32         `serialize:"true,nullable"`
-	Int32Array [2]*int32        `serialize:"true,nullable"`
-	Int32Map   map[int32]*int32 `serialize:"true,nullable"`
 }
 
 type myStruct struct {
@@ -156,23 +149,21 @@ func TestStruct(codec GeneralCodec, t testing.TB) {
 	myMap7["key"] = "value"
 	myMap7[int32(1)] = int32(2)
 
-	number := int32(8)
-
 	myStructInstance := myStruct{
-		InnerStruct:  MyInnerStruct{"hello", nil},
-		InnerStruct2: &MyInnerStruct{"yello", nil},
+		InnerStruct:  MyInnerStruct{"hello"},
+		InnerStruct2: &MyInnerStruct{"yello"},
 		Member1:      1,
 		Member2:      2,
 		MySlice:      []byte{1, 2, 3, 4},
 		MySlice2:     []string{"one", "two", "three"},
-		MySlice3:     []MyInnerStruct{{"abc", nil}, {"ab", &number}, {"c", nil}},
+		MySlice3:     []MyInnerStruct{{"abc"}, {"ab"}, {"c"}},
 		MySlice4:     []*MyInnerStruct2{{true}, {}},
 		MySlice5:     []Foo{&MyInnerStruct2{true}, &MyInnerStruct2{}},
 		MyArray:      [4]byte{5, 6, 7, 8},
 		MyArray2:     [5]string{"four", "five", "six", "seven"},
-		MyArray3:     [3]MyInnerStruct{{"d", nil}, {"e", nil}, {"f", nil}},
+		MyArray3:     [3]MyInnerStruct{{"d"}, {"e"}, {"f"}},
 		MyArray4:     [2]*MyInnerStruct2{{}, {true}},
-		MyInterface:  &MyInnerStruct{"yeet", &number},
+		MyInterface:  &MyInnerStruct{"yeet"},
 		InnerStruct3: MyInnerStruct3{
 			Str: "str",
 			M1: MyInnerStruct{
@@ -427,79 +418,19 @@ func TestPointerToStruct(codec GeneralCodec, t testing.TB) {
 	require.Equal(myPtr, myPtrUnmarshaled)
 }
 
-func TestStructWithNullable(codec GeneralCodec, t testing.TB) {
-	require := require.New(t)
-	n1 := int32(5)
-	n2 := int64(10)
-	struct1 := MyStructWithNullable{
-		Interface: nil,
-		Int32:     &n1,
-		Int64:     &n2,
-		Int32Slice: []*int32{
-			nil,
-			nil,
-			&n1,
-		},
-		Int32Array: [2]*int32{
-			nil,
-			&n1,
-		},
-		Int32Map: map[int32]*int32{
-			1: nil,
-			2: &n1,
-		},
-	}
-
-	require.NoError(codec.RegisterType(&MyStructWithNullable{}))
-	manager := NewDefaultManager()
-	require.NoError(manager.RegisterCodec(0, codec))
-
-	bytes, err := manager.Marshal(0, struct1)
-	require.NoError(err)
-
-	bytesLen, err := manager.Size(0, struct1)
-	require.NoError(err)
-	require.Len(bytes, bytesLen)
-
-	var struct1Unmarshaled MyStructWithNullable
-	version, err := manager.Unmarshal(bytes, &struct1Unmarshaled)
-	require.NoError(err)
-	require.Zero(version)
-	require.Equal(struct1, struct1Unmarshaled)
-
-	struct1 = MyStructWithNullable{
-		Int32Slice: []*int32{},
-		Int32Map:   map[int32]*int32{},
-	}
-	bytes, err = manager.Marshal(0, struct1)
-	require.NoError(err)
-
-	bytesLen, err = manager.Size(0, struct1)
-	require.NoError(err)
-	require.Len(bytes, bytesLen)
-
-	var struct1Unmarshaled2 MyStructWithNullable
-	version, err = manager.Unmarshal(bytes, &struct1Unmarshaled2)
-	require.NoError(err)
-	require.Zero(version)
-	require.Equal(struct1, struct1Unmarshaled2)
-}
-
 // Test marshalling a slice of structs
 func TestSliceOfStruct(codec GeneralCodec, t testing.TB) {
 	require := require.New(t)
-	n1 := int32(-1)
-	n2 := int32(0xff)
 	mySlice := []MyInnerStruct3{
 		{
 			Str: "One",
-			M1:  MyInnerStruct{"Two", &n1},
-			F:   &MyInnerStruct{"Three", &n2},
+			M1:  MyInnerStruct{"Two"},
+			F:   &MyInnerStruct{"Three"},
 		},
 		{
 			Str: "Four",
-			M1:  MyInnerStruct{"Five", nil},
-			F:   &MyInnerStruct{"Six", nil},
+			M1:  MyInnerStruct{"Five"},
+			F:   &MyInnerStruct{"Six"},
 		},
 	}
 	require.NoError(codec.RegisterType(&MyInnerStruct{}))
@@ -794,7 +725,7 @@ func TestEmptySliceSerialization(codec GeneralCodec, t testing.TB) {
 	require.Equal(val, valUnmarshaled)
 }
 
-// Test marshaling slice that is not nil and not empty
+// Test marshaling empty slice of zero length structs
 func TestSliceWithEmptySerialization(codec GeneralCodec, t testing.TB) {
 	require := require.New(t)
 
@@ -808,9 +739,9 @@ func TestSliceWithEmptySerialization(codec GeneralCodec, t testing.TB) {
 	require.NoError(manager.RegisterCodec(0, codec))
 
 	val := &nestedSliceStruct{
-		Arr: make([]emptyStruct, 1000),
+		Arr: make([]emptyStruct, 0),
 	}
-	expected := []byte{0x00, 0x00, 0x00, 0x00, 0x03, 0xE8} // codec version (0x00, 0x00) then 1000 for numElts
+	expected := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00} // codec version (0x00, 0x00) then (0x00, 0x00, 0x00, 0x00) for numElts
 	result, err := manager.Marshal(0, val)
 	require.NoError(err)
 	require.Equal(expected, result)
@@ -823,10 +754,10 @@ func TestSliceWithEmptySerialization(codec GeneralCodec, t testing.TB) {
 	version, err := manager.Unmarshal(expected, &unmarshaled)
 	require.NoError(err)
 	require.Zero(version)
-	require.Len(unmarshaled.Arr, 1000)
+	require.Empty(unmarshaled.Arr)
 }
 
-func TestSliceWithEmptySerializationOutOfMemory(codec GeneralCodec, t testing.TB) {
+func TestSliceWithEmptySerializationError(codec GeneralCodec, t testing.TB) {
 	require := require.New(t)
 
 	type emptyStruct struct{}
@@ -839,14 +770,69 @@ func TestSliceWithEmptySerializationOutOfMemory(codec GeneralCodec, t testing.TB
 	require.NoError(manager.RegisterCodec(0, codec))
 
 	val := &nestedSliceStruct{
-		Arr: make([]emptyStruct, math.MaxInt32),
+		Arr: make([]emptyStruct, 1),
 	}
 	_, err := manager.Marshal(0, val)
-	require.ErrorIs(err, ErrMaxSliceLenExceeded)
+	require.ErrorIs(err, ErrMarshalZeroLength)
+
+	_, err = manager.Size(0, val)
+	require.ErrorIs(err, ErrMarshalZeroLength)
+
+	b := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x01} // codec version (0x00, 0x00) then (0x00, 0x00, 0x00, 0x01) for numElts
+
+	unmarshaled := nestedSliceStruct{}
+	_, err = manager.Unmarshal(b, &unmarshaled)
+	require.ErrorIs(err, ErrUnmarshalZeroLength)
+}
+
+// Test marshaling empty map of zero length structs
+func TestMapWithEmptySerialization(codec GeneralCodec, t testing.TB) {
+	require := require.New(t)
+
+	type emptyStruct struct{}
+
+	manager := NewDefaultManager()
+	require.NoError(manager.RegisterCodec(0, codec))
+
+	val := make(map[emptyStruct]emptyStruct)
+	expected := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00} // codec version (0x00, 0x00) then (0x00, 0x00, 0x00, 0x00) for numElts
+	result, err := manager.Marshal(0, val)
+	require.NoError(err)
+	require.Equal(expected, result)
 
 	bytesLen, err := manager.Size(0, val)
 	require.NoError(err)
-	require.Equal(6, bytesLen) // 2 byte codec version + 4 byte length prefix
+	require.Len(result, bytesLen)
+
+	var unmarshaled map[emptyStruct]emptyStruct
+	version, err := manager.Unmarshal(expected, &unmarshaled)
+	require.NoError(err)
+	require.Zero(version)
+	require.Empty(unmarshaled)
+}
+
+func TestMapWithEmptySerializationError(codec GeneralCodec, t testing.TB) {
+	require := require.New(t)
+
+	type emptyStruct struct{}
+
+	manager := NewDefaultManager()
+	require.NoError(manager.RegisterCodec(0, codec))
+
+	val := map[emptyStruct]emptyStruct{
+		{}: {},
+	}
+	_, err := manager.Marshal(0, val)
+	require.ErrorIs(err, ErrMarshalZeroLength)
+
+	_, err = manager.Size(0, val)
+	require.ErrorIs(err, ErrMarshalZeroLength)
+
+	b := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x01} // codec version (0x00, 0x00) then (0x00, 0x00, 0x00, 0x01) for numElts
+
+	var unmarshaled map[emptyStruct]emptyStruct
+	_, err = manager.Unmarshal(b, &unmarshaled)
+	require.ErrorIs(err, ErrUnmarshalZeroLength)
 }
 
 func TestSliceTooLarge(codec GeneralCodec, t testing.TB) {
@@ -947,27 +933,6 @@ func TestUnmarshalInvalidInterface(codec GeneralCodec, t testing.TB) {
 	}
 }
 
-// Ensure deserializing slices that have been length restricted errors correctly
-func TestRestrictedSlice(codec GeneralCodec, t testing.TB) {
-	require := require.New(t)
-
-	type inner struct {
-		Bytes []byte `serialize:"true" len:"2"`
-	}
-	bytes := []byte{0, 0, 0, 0, 0, 3, 0, 1, 2}
-
-	manager := NewDefaultManager()
-	require.NoError(manager.RegisterCodec(0, codec))
-
-	s := inner{}
-	_, err := manager.Unmarshal(bytes, &s)
-	require.ErrorIs(err, ErrMaxSliceLenExceeded)
-
-	s.Bytes = []byte{0, 1, 2}
-	_, err = manager.Marshal(0, s)
-	require.ErrorIs(err, ErrMaxSliceLenExceeded)
-}
-
 // Test unmarshaling something with extra data
 func TestExtraSpace(codec GeneralCodec, t testing.TB) {
 	require := require.New(t)
@@ -982,12 +947,12 @@ func TestExtraSpace(codec GeneralCodec, t testing.TB) {
 	require.ErrorIs(err, ErrExtraSpace)
 }
 
-// Ensure deserializing slices that have been length restricted errors correctly
+// Ensure deserializing slices whose lengths exceed MaxInt32 error correctly
 func TestSliceLengthOverflow(codec GeneralCodec, t testing.TB) {
 	require := require.New(t)
 
 	type inner struct {
-		Vals []uint32 `serialize:"true" len:"2"`
+		Vals []uint32 `serialize:"true"`
 	}
 	bytes := []byte{
 		// Codec Version:
@@ -1113,6 +1078,23 @@ func TestMap(codec GeneralCodec, t testing.TB) {
 	outerArraySize, err := manager.Size(0, outerArray)
 	require.NoError(err)
 	require.Len(outerArrayBytes, outerArraySize)
+}
+
+func TestCanMarshalLargeSlices(codec GeneralCodec, t testing.TB) {
+	require := require.New(t)
+
+	data := make([]uint16, 1_000_000)
+
+	manager := NewManager(math.MaxInt)
+	require.NoError(manager.RegisterCodec(0, codec))
+
+	bytes, err := manager.Marshal(0, data)
+	require.NoError(err)
+
+	var unmarshalledData []uint16
+	_, err = manager.Unmarshal(bytes, &unmarshalledData)
+	require.NoError(err)
+	require.Equal(data, unmarshalledData)
 }
 
 func FuzzStructUnmarshal(codec GeneralCodec, f *testing.F) {
