@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -9,15 +9,13 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-
-	stdjson "encoding/json"
+	"sync"
 
 	"github.com/gorilla/rpc/v2"
-
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
@@ -28,29 +26,29 @@ import (
 	"github.com/luxfi/node/snow/consensus/snowstorm"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
 	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/config"
-	"github.com/luxfi/node/vms/avm/metrics"
 	"github.com/luxfi/node/vms/avm/network"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
 	"github.com/luxfi/node/vms/avm/utxo"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/components/keystore"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockbuilder "github.com/luxfi/node/vms/avm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/avm/block/executor"
 	extensions "github.com/luxfi/node/vms/avm/fxs"
+	avmmetrics "github.com/luxfi/node/vms/avm/metrics"
 	txexecutor "github.com/luxfi/node/vms/avm/txs/executor"
+	xmempool "github.com/luxfi/node/vms/avm/txs/mempool"
 )
 
 const assetToFxCacheSize = 1024
@@ -59,7 +57,6 @@ var (
 	errIncompatibleFx            = errors.New("incompatible feature extension")
 	errUnknownFx                 = errors.New("unknown feature extension")
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
-	errBootstrapping             = errors.New("chain is currently bootstrapping")
 
 	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
 )
@@ -69,10 +66,9 @@ type VM struct {
 
 	config.Config
 
-	metrics metrics.Metrics
+	metrics avmmetrics.Metrics
 
 	lux.AddressManager
-	lux.AtomicUTXOManager
 	ids.Aliaser
 	utxo.Spender
 
@@ -83,6 +79,8 @@ type VM struct {
 	clock mockable.Clock
 
 	registerer prometheus.Registerer
+
+	connectedPeers map[ids.NodeID]*version.Application
 
 	parser block.Parser
 
@@ -114,18 +112,37 @@ type VM struct {
 
 	txBackend *txexecutor.Backend
 
+	// Cancelled on shutdown
+	onShutdownCtx context.Context
+	// Call [onShutdownCtxCancel] to cancel [onShutdownCtx] during Shutdown()
+	onShutdownCtxCancel context.CancelFunc
+	awaitShutdown       sync.WaitGroup
+
+	networkConfig network.Config
 	// These values are only initialized after the chain has been linearized.
 	blockbuilder.Builder
 	chainManager blockexecutor.Manager
-	network      network.Network
+	network      *network.Network
 }
 
-func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
-	return nil
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+	// If the chain isn't linearized yet, we must track the peers externally
+	// until the network is initialized.
+	if vm.network == nil {
+		vm.connectedPeers[nodeID] = version
+		return nil
+	}
+	return vm.network.Connected(ctx, nodeID, version)
 }
 
-func (*VM) Disconnected(context.Context, ids.NodeID) error {
-	return nil
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// If the chain isn't linearized yet, we must track the peers externally
+	// until the network is initialized.
+	if vm.network == nil {
+		delete(vm.connectedPeers, nodeID)
+		return nil
+	}
+	return vm.network.Disconnected(ctx, nodeID)
 }
 
 /*
@@ -133,12 +150,6 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
  ********************************* Common VM **********************************
  ******************************************************************************
  */
-
-type Config struct {
-	IndexTransactions    bool `json:"index-transactions"`
-	IndexAllowIncomplete bool `json:"index-allow-incomplete"`
-	ChecksumsEnabled     bool `json:"checksums-enabled"`
-}
 
 func (vm *VM) Initialize(
 	_ context.Context,
@@ -154,25 +165,23 @@ func (vm *VM) Initialize(
 	noopMessageHandler := common.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
-	avmConfig := Config{}
-	if len(configBytes) > 0 {
-		if err := stdjson.Unmarshal(configBytes, &avmConfig); err != nil {
-			return err
-		}
-		ctx.Log.Info("VM config initialized",
-			zap.Reflect("config", avmConfig),
-		)
-	}
-
-	registerer := prometheus.NewRegistry()
-	if err := ctx.Metrics.Register(registerer); err != nil {
+	avmConfig, err := ParseConfig(configBytes)
+	if err != nil {
 		return err
 	}
-	vm.registerer = registerer
+	ctx.Log.Info("VM config initialized",
+		zap.Reflect("config", avmConfig),
+	)
+
+	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
+	if err != nil {
+		return err
+	}
+
+	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	var err error
-	vm.metrics, err = metrics.New("", registerer)
+	vm.metrics, err = avmmetrics.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
@@ -217,7 +226,6 @@ func (vm *VM) Initialize(
 	}
 
 	codec := vm.parser.Codec()
-	vm.AtomicUTXOManager = lux.NewAtomicUTXOManager(ctx.SharedMemory, codec)
 	vm.Spender = utxo.NewSpender(&vm.clock, codec)
 
 	state, err := state.New(
@@ -237,7 +245,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.walletService.vm = vm
-	vm.walletService.pendingTxs = linkedhashmap.New[ids.ID, *txs.Tx]()
+	vm.walletService.pendingTxs = linked.NewHashmap[ids.ID, *txs.Tx]()
 
 	// use no op impl when disabled in config
 	if avmConfig.IndexTransactions {
@@ -264,6 +272,8 @@ func (vm *VM) Initialize(
 		Bootstrapped:  false,
 	}
 
+	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
+	vm.networkConfig = avmConfig.Network
 	return vm.state.Commit()
 }
 
@@ -306,7 +316,10 @@ func (vm *VM) Shutdown(context.Context) error {
 		return nil
 	}
 
-	return utils.Err(
+	vm.onShutdownCtxCancel()
+	vm.awaitShutdown.Wait()
+
+	return errors.Join(
 		vm.state.Close(),
 		vm.baseDB.Close(),
 	)
@@ -344,17 +357,6 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, err
 }
 
-func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
-	server := rpc.NewServer()
-	codec := json.NewCodec()
-	server.RegisterCodec(codec, "application/json")
-	server.RegisterCodec(codec, "application/json;charset=UTF-8")
-	staticService := CreateStaticService()
-	return map[string]http.Handler{
-		"": server,
-	}, server.RegisterService(staticService, "avm")
-}
-
 /*
  ******************************************************************************
  ********************************** Chain VM **********************************
@@ -386,24 +388,20 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
 	return vm.state.GetBlockIDAtHeight(height)
 }
 
-func (*VM) VerifyHeightIndex(context.Context) error {
-	return nil
-}
-
 /*
  ******************************************************************************
  *********************************** DAG VM ***********************************
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- common.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- common.Message) error {
 	time := version.GetCortinaTime(vm.ctx.NetworkID)
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {
 		return err
 	}
 
-	mempool, err := mempool.New("mempool", vm.registerer, toEngine)
+	mempool, err := xmempool.New("mempool", vm.registerer, toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -424,28 +422,51 @@ func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- 
 		mempool,
 	)
 
-	vm.network = network.New(
-		vm.ctx,
+	// Invariant: The context lock is not held when calling network.IssueTx.
+	vm.network, err = network.New(
+		vm.ctx.Log,
+		vm.ctx.NodeID,
+		vm.ctx.SubnetID,
+		vm.ctx.ValidatorState,
 		vm.parser,
-		vm.chainManager,
+		network.NewLockedTxVerifier(
+			&vm.ctx.Lock,
+			vm.chainManager,
+		),
 		mempool,
 		vm.appSender,
+		vm.registerer,
+		vm.networkConfig,
 	)
+	if err != nil {
+		return fmt.Errorf("failed to initialize network: %w", err)
+	}
+
+	// Notify the network of our current peers
+	for nodeID, version := range vm.connectedPeers {
+		if err := vm.network.Connected(ctx, nodeID, version); err != nil {
+			return err
+		}
+	}
+	vm.connectedPeers = nil
 
 	// Note: It's important only to switch the networking stack after the full
 	// chainVM has been initialized. Traffic will immediately start being
 	// handled asynchronously.
 	vm.Atomic.Set(vm.network)
 
+	vm.awaitShutdown.Add(2)
 	go func() {
-		err := vm.state.Prune(&vm.ctx.Lock, vm.ctx.Log)
-		if err != nil {
-			vm.ctx.Log.Warn("state pruning failed",
-				zap.Error(err),
-			)
-			return
-		}
-		vm.ctx.Log.Info("state pruning finished")
+		defer vm.awaitShutdown.Done()
+
+		// Invariant: PushGossip must never grab the context lock.
+		vm.network.PushGossip(vm.onShutdownCtx)
+	}()
+	go func() {
+		defer vm.awaitShutdown.Done()
+
+		// Invariant: PullGossip must never grab the context lock.
+		vm.network.PullGossip(vm.onShutdownCtx)
 	}()
 
 	return nil
@@ -477,32 +498,21 @@ func (vm *VM) ParseTx(_ context.Context, bytes []byte) (snowstorm.Tx, error) {
  ******************************************************************************
  */
 
-// IssueTx attempts to send a transaction to consensus.
-// If onDecide is specified, the function will be called when the transaction is
-// either accepted or rejected with the appropriate status. This function will
-// go out of scope when the transaction is removed from memory.
-func (vm *VM) IssueTx(b []byte) (ids.ID, error) {
-	if !vm.bootstrapped || vm.Builder == nil {
-		return ids.ID{}, errBootstrapping
-	}
-
-	tx, err := vm.parser.ParseTx(b)
-	if err != nil {
-		vm.ctx.Log.Debug("failed to parse tx",
-			zap.Error(err),
-		)
-		return ids.ID{}, err
-	}
-
-	err = vm.network.IssueTx(context.TODO(), tx)
-	if err != nil {
+// issueTxFromRPC attempts to send a transaction to consensus.
+//
+// Invariant: The context lock is not held
+// Invariant: This function is only called after Linearize has been called.
+func (vm *VM) issueTxFromRPC(tx *txs.Tx) (ids.ID, error) {
+	txID := tx.ID()
+	err := vm.network.IssueTxFromRPC(tx)
+	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
 		vm.ctx.Log.Debug("failed to add tx to mempool",
+			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
-		return ids.ID{}, err
+		return txID, err
 	}
-
-	return tx.ID(), nil
+	return txID, nil
 }
 
 /*
@@ -534,7 +544,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		tx := &txs.Tx{
 			Unsigned: &genesisTx.CreateAssetTx,
 		}
-		if err := vm.parser.InitializeGenesisTx(tx); err != nil {
+		if err := tx.Initialize(genesisCodec); err != nil {
 			return err
 		}
 
@@ -630,7 +640,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	if assetID, err := ids.FromString(asset); err == nil {
 		return assetID, nil
 	}
-	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
+	return ids.Empty, fmt.Errorf("asset '%s' not found", asset)
 }
 
 // Invariant: onAccept is called when [tx] is being marked as accepted, but

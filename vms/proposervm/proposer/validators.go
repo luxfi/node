@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposer
@@ -15,6 +15,6 @@ type validatorData struct {
 	weight uint64
 }
 
-func (d validatorData) Less(other validatorData) bool {
-	return d.id.Less(other.id)
+func (d validatorData) Compare(other validatorData) int {
+	return d.id.Compare(other.id)
 }

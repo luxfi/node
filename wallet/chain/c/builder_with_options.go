@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,11 +8,11 @@ import (
 
 	"github.com/luxfi/coreth/plugin/evm"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 var _ Builder = (*builderWithOptions)(nil)

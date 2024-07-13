@@ -1,24 +1,24 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
 
 import (
+	"encoding/json"
 	"net/http"
-
-	stdjson "encoding/json"
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"
+
+	avajson "github.com/luxfi/node/utils/json"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc
 // POST requests.
 func NewGetAndPostHandler(log logging.Logger, reporter Reporter) (http.Handler, error) {
 	newServer := rpc.NewServer()
-	codec := json.NewCodec()
+	codec := avajson.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
 	newServer.RegisterCodec(codec, "application/json;charset=UTF-8")
 
@@ -60,7 +60,7 @@ func NewGetHandler(reporter func(tags ...string) (map[string]Result, bool)) http
 		}
 		// The encoder will call write on the writer, which will write the
 		// header with a 200.
-		_ = stdjson.NewEncoder(w).Encode(APIReply{
+		_ = json.NewEncoder(w).Encode(APIReply{
 			Checks:  checks,
 			Healthy: healthy,
 		})

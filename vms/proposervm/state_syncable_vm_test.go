@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database"
@@ -17,8 +18,10 @@ import (
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -38,54 +41,43 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		},
 	}
 
-	// signal height index is complete
-	innerVM.VerifyHeightIndexF = func(context.Context) error {
-		return nil
-	}
-
 	// load innerVM expectations
-	innerGenesisBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV: ids.ID{'i', 'n', 'n', 'e', 'r', 'G', 'e', 'n', 'e', 's', 'i', 's', 'I', 'D'},
-		},
-		HeightV: 0,
-		BytesV:  []byte("genesis state"),
-	}
 	innerVM.InitializeF = func(context.Context, *snow.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
 		return nil
 	}
-	innerVM.VerifyHeightIndexF = func(context.Context) error {
-		return nil
-	}
 	innerVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return innerGenesisBlk.ID(), nil
+		return snowmantest.GenesisID, nil
 	}
 	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
-		return innerGenesisBlk, nil
+		return snowmantest.Genesis, nil
 	}
 
 	// create the VM
 	vm := New(
 		innerVM,
-		time.Time{},
-		0,
-		DefaultMinBlockDelay,
-		DefaultNumHistoricalBlocks,
-		pTestSigner,
-		pTestCert,
+		Config{
+			ActivationTime:      time.Unix(0, 0),
+			DurangoTime:         time.Unix(0, 0),
+			MinimumPChainHeight: 0,
+			MinBlkDelay:         DefaultMinBlockDelay,
+			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
+			StakingLeafSigner:   pTestSigner,
+			StakingCertLeaf:     pTestCert,
+			Registerer:          prometheus.NewRegistry(),
+		},
 	)
 
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
-		innerGenesisBlk.Bytes(),
+		snowmantest.GenesisBytes,
 		nil,
 		nil,
 		nil,
@@ -105,7 +97,6 @@ func TestStateSyncEnabled(t *testing.T) {
 	}()
 
 	// ProposerVM State Sync disabled if innerVM State sync is disabled
-	vm.hIndexer.MarkRepaired(true)
 	innerVM.StateSyncEnabledF = func(context.Context) (bool, error) {
 		return false, nil
 	}
@@ -168,14 +159,13 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 	require.Equal(innerSummary.Bytes(), summary.Bytes())
 
 	// Post fork summary case
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
@@ -186,10 +176,10 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 	proBlk := &postForkBlock{
@@ -253,14 +243,13 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 	require.Equal(innerSummary.Bytes(), summary.Bytes())
 
 	// Post fork summary case
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
@@ -271,10 +260,10 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 	proBlk := &postForkBlock{
@@ -341,14 +330,13 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	require.Equal(innerSummary.Bytes(), summary.Bytes())
 
 	// Post fork summary case
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
@@ -359,10 +347,10 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 	proBlk := &postForkBlock{
@@ -414,14 +402,13 @@ func TestParseStateSummary(t *testing.T) {
 	require.Equal(summary.Bytes(), parsedSummary.Bytes())
 
 	// Get a post fork block than parse it
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 	innerVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
@@ -432,10 +419,10 @@ func TestParseStateSummary(t *testing.T) {
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 	proBlk := &postForkBlock{
@@ -473,31 +460,30 @@ func TestStateSummaryAccept(t *testing.T) {
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
 	}
 
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 
 	slb, err := statelessblock.Build(
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 
 	statelessSummary, err := summary.Build(innerSummary.Height()-1, slb.Bytes(), innerSummary.Bytes())
 	require.NoError(err)
 
-	innerVM.ParseStateSummaryF = func(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+	innerVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
 		require.Equal(innerSummary.BytesV, summaryBytes)
 		return innerSummary, nil
 	}
@@ -541,7 +527,6 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
 	}
 
-	vm.hIndexer.MarkRepaired(true)
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// Set the last accepted block height to be higher that the state summary
@@ -549,10 +534,10 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	vm.lastAcceptedHeight = innerSummary.Height() + 1
 
 	// store post fork block associated with summary
-	innerBlk := &snowman.TestBlock{
-		BytesV:     []byte{1},
-		TimestampV: vm.Time(),
-		HeightV:    innerSummary.Height(),
+	innerBlk := &snowmantest.Block{
+		BytesV:  []byte{1},
+		ParentV: ids.GenerateTestID(),
+		HeightV: innerSummary.Height(),
 	}
 	innerVM.GetStateSummaryF = func(_ context.Context, h uint64) (block.StateSummary, error) {
 		require.Equal(reqHeight, h)
@@ -567,10 +552,10 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		vm.preferred,
 		innerBlk.Timestamp(),
 		100, // pChainHeight,
-		vm.stakingCertLeaf,
+		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
 		vm.ctx.ChainID,
-		vm.stakingLeafSigner,
+		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
 	proBlk := &postForkBlock{
@@ -593,51 +578,4 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	status, err := summary.Accept(context.Background())
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
-}
-
-func TestNoStateSummariesServedWhileRepairingHeightIndex(t *testing.T) {
-	require := require.New(t)
-
-	// Note: by default proVM is built such that heightIndex will be considered complete
-	coreVM, _, proVM, _, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
-	defer func() {
-		require.NoError(proVM.Shutdown(context.Background()))
-	}()
-
-	require.NoError(proVM.VerifyHeightIndex(context.Background()))
-
-	// let coreVM be always ready to serve summaries
-	summaryHeight := uint64(2022)
-	coreStateSummary := &block.TestStateSummary{
-		T:       t,
-		IDV:     ids.ID{'a', 'a', 'a', 'a'},
-		HeightV: summaryHeight,
-		BytesV:  []byte{'c', 'o', 'r', 'e', 'S', 'u', 'm', 'm', 'a', 'r', 'y'},
-	}
-	coreVM.GetLastStateSummaryF = func(context.Context) (block.StateSummary, error) {
-		return coreStateSummary, nil
-	}
-	coreVM.GetStateSummaryF = func(_ context.Context, height uint64) (block.StateSummary, error) {
-		require.Equal(summaryHeight, height)
-		return coreStateSummary, nil
-	}
-
-	// set height index to reindexing
-	proVM.hIndexer.MarkRepaired(false)
-	err := proVM.VerifyHeightIndex(context.Background())
-	require.ErrorIs(err, block.ErrIndexIncomplete)
-
-	_, err = proVM.GetLastStateSummary(context.Background())
-	require.ErrorIs(err, block.ErrIndexIncomplete)
-
-	_, err = proVM.GetStateSummary(context.Background(), summaryHeight)
-	require.ErrorIs(err, block.ErrIndexIncomplete)
-
-	// declare height index complete
-	proVM.hIndexer.MarkRepaired(true)
-	require.NoError(proVM.VerifyHeightIndex(context.Background()))
-
-	summary, err := proVM.GetLastStateSummary(context.Background())
-	require.NoError(err)
-	require.Equal(summaryHeight, summary.Height())
 }

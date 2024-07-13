@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database"
@@ -20,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
-func testBlockState(a *require.Assertions, bs BlockState) {
+func testBlockState(require *require.Assertions, bs BlockState) {
 	parentID := ids.ID{1}
 	timestamp := time.Unix(123, 0)
 	pChainHeight := uint64(2)
@@ -28,9 +27,10 @@ func testBlockState(a *require.Assertions, bs BlockState) {
 	chainID := ids.ID{4}
 
 	tlsCert, err := staking.NewTLSCert()
-	a.NoError(err)
+	require.NoError(err)
 
-	cert := staking.CertificateFromX509(tlsCert.Leaf)
+	cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
+	require.NoError(err)
 	key := tlsCert.PrivateKey.(crypto.Signer)
 
 	b, err := block.Build(
@@ -42,26 +42,25 @@ func testBlockState(a *require.Assertions, bs BlockState) {
 		chainID,
 		key,
 	)
-	a.NoError(err)
+	require.NoError(err)
 
 	_, _, err = bs.GetBlock(b.ID())
-	a.Equal(database.ErrNotFound, err)
+	require.Equal(database.ErrNotFound, err)
 
 	_, _, err = bs.GetBlock(b.ID())
-	a.Equal(database.ErrNotFound, err)
+	require.Equal(database.ErrNotFound, err)
 
-	err = bs.PutBlock(b, choices.Accepted)
-	a.NoError(err)
+	require.NoError(bs.PutBlock(b, choices.Accepted))
 
 	fetchedBlock, fetchedStatus, err := bs.GetBlock(b.ID())
-	a.NoError(err)
-	a.Equal(choices.Accepted, fetchedStatus)
-	a.Equal(b.Bytes(), fetchedBlock.Bytes())
+	require.NoError(err)
+	require.Equal(choices.Accepted, fetchedStatus)
+	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 
 	fetchedBlock, fetchedStatus, err = bs.GetBlock(b.ID())
-	a.NoError(err)
-	a.Equal(choices.Accepted, fetchedStatus)
-	a.Equal(b.Bytes(), fetchedBlock.Bytes())
+	require.NoError(err)
+	require.Equal(choices.Accepted, fetchedStatus)
+	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 }
 
 func TestBlockState(t *testing.T) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -11,11 +11,8 @@ import (
 	"os"
 	"time"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/node/api/keystore/gkeystore"
@@ -52,6 +49,7 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 var (
@@ -74,9 +72,9 @@ type VMServer struct {
 
 	allowShutdown *utils.Atomic[bool]
 
-	processMetrics prometheus.Gatherer
-	db             database.Database
-	log            logging.Logger
+	metrics prometheus.Gatherer
+	db      database.Database
+	log     logging.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
@@ -110,7 +108,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
-	publicKey, err := bls.PublicKeyFromBytes(req.PublicKey)
+	publicKey, err := bls.PublicKeyFromCompressedBytes(req.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -127,28 +125,47 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	registerer := prometheus.NewRegistry()
+	pluginMetrics := metrics.NewPrefixGatherer()
+	vm.metrics = pluginMetrics
+
+	processMetrics, err := metrics.MakeAndRegister(
+		pluginMetrics,
+		"process",
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	// Current state of process metrics
 	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
-	if err := registerer.Register(processCollector); err != nil {
+	if err := processMetrics.Register(processCollector); err != nil {
 		return nil, err
 	}
 
 	// Go process metrics using debug.GCStats
 	goCollector := collectors.NewGoCollector()
-	if err := registerer.Register(goCollector); err != nil {
+	if err := processMetrics.Register(goCollector); err != nil {
+		return nil, err
+	}
+
+	grpcMetrics, err := metrics.MakeAndRegister(
+		pluginMetrics,
+		"grpc",
+	)
+	if err != nil {
 		return nil, err
 	}
 
 	// gRPC client metrics
 	grpcClientMetrics := grpc_prometheus.NewClientMetrics()
-	if err := registerer.Register(grpcClientMetrics); err != nil {
+	if err := grpcMetrics.Register(grpcClientMetrics); err != nil {
 		return nil, err
 	}
 
-	// Register metrics for each Go plugin processes
-	vm.processMetrics = registerer
+	vmMetrics := metrics.NewPrefixGatherer()
+	if err := pluginMetrics.Register("vm", vmMetrics); err != nil {
+		return nil, err
+	}
 
 	// Dial the database
 	dbClientConn, err := grpcutils.Dial(
@@ -227,7 +244,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		Keystore:     keystoreClient,
 		SharedMemory: sharedMemoryClient,
 		BCLookup:     bcLookupClient,
-		Metrics:      metrics.NewOptionalGatherer(),
+		Metrics:      vmMetrics,
 
 		// Signs warp messages
 		WarpSigner: warpSignerClient,
@@ -337,43 +354,18 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	return resp, nil
 }
 
-func (vm *VMServer) CreateStaticHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb.CreateStaticHandlersResponse, error) {
-	handlers, err := vm.vm.CreateStaticHandlers(ctx)
-	if err != nil {
-		return nil, err
-	}
-	resp := &vmpb.CreateStaticHandlersResponse{}
-	for prefix, handler := range handlers {
-		serverListener, err := grpcutils.NewListener()
-		if err != nil {
-			return nil, err
-		}
-		server := grpcutils.NewServer()
-		vm.serverCloser.Add(server)
-		httppb.RegisterHTTPServer(server, ghttp.NewServer(handler))
-
-		// Start HTTP service
-		go grpcutils.Serve(serverListener, server)
-
-		resp.Handlers = append(resp.Handlers, &vmpb.Handler{
-			Prefix:     prefix,
-			ServerAddr: serverListener.Addr().String(),
-		})
-	}
-	return resp, nil
-}
-
 func (vm *VMServer) Connected(ctx context.Context, req *vmpb.ConnectedRequest) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
 	}
 
-	peerVersion, err := version.ParseApplication(req.Version)
-	if err != nil {
-		return nil, err
+	peerVersion := &version.Application{
+		Name:  req.Name,
+		Major: int(req.Major),
+		Minor: int(req.Minor),
+		Patch: int(req.Patch),
 	}
-
 	return &emptypb.Empty{}, vm.vm.Connected(ctx, nodeID, peerVersion)
 }
 
@@ -536,7 +528,12 @@ func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.Cr
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.CrossChainAppRequestFailed(ctx, chainID, msg.RequestId)
+
+	appErr := &common.AppError{
+		Code:    msg.ErrorCode,
+		Message: msg.ErrorMessage,
+	}
+	return &emptypb.Empty{}, vm.vm.CrossChainAppRequestFailed(ctx, chainID, msg.RequestId, appErr)
 }
 
 func (vm *VMServer) CrossChainAppResponse(ctx context.Context, msg *vmpb.CrossChainAppResponseMsg) (*emptypb.Empty, error) {
@@ -564,7 +561,12 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.AppRequestFailed(ctx, nodeID, req.RequestId)
+
+	appErr := &common.AppError{
+		Code:    req.ErrorCode,
+		Message: req.ErrorMessage,
+	}
+	return &emptypb.Empty{}, vm.vm.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
 }
 
 func (vm *VMServer) AppResponse(ctx context.Context, req *vmpb.AppResponseMsg) (*emptypb.Empty, error) {
@@ -584,22 +586,8 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
-	// Gather metrics registered to snow context Gatherer. These
-	// metrics are defined by the underlying vm implementation.
-	mfs, err := vm.ctx.Metrics.Gather()
-	if err != nil {
-		return nil, err
-	}
-
-	// Gather metrics registered by rpcchainvm server Gatherer. These
-	// metrics are collected for each Go plugin process.
-	pluginMetrics, err := vm.processMetrics.Gather()
-	if err != nil {
-		return nil, err
-	}
-	mfs = append(mfs, pluginMetrics...)
-
-	return &vmpb.GatherResponse{MetricFamilies: mfs}, err
+	metrics, err := vm.metrics.Gather()
+	return &vmpb.GatherResponse{MetricFamilies: metrics}, err
 }
 
 func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequest) (*vmpb.GetAncestorsResponse, error) {
@@ -642,13 +630,6 @@ func (vm *VMServer) BatchedParseBlock(
 	return &vmpb.BatchedParseBlockResponse{
 		Response: blocks,
 	}, nil
-}
-
-func (vm *VMServer) VerifyHeightIndex(ctx context.Context, _ *emptypb.Empty) (*vmpb.VerifyHeightIndexResponse, error) {
-	err := vm.vm.VerifyHeightIndex(ctx)
-	return &vmpb.VerifyHeightIndexResponse{
-		Err: errorToErrEnum[err],
-	}, errorToRPCError(err)
 }
 
 func (vm *VMServer) GetBlockIDAtHeight(

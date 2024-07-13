@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -36,8 +36,7 @@ type Router interface {
 		trackedSubnets set.Set[ids.ID],
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
-		metricsNamespace string,
-		metricsRegisterer prometheus.Registerer,
+		reg prometheus.Registerer,
 	) error
 	Shutdown(context.Context)
 	AddChain(ctx context.Context, chain handler.Handler)

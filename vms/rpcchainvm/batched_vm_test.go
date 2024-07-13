@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -9,16 +9,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/vms/components/chain"
 )
 
@@ -42,11 +40,11 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 
 	// create mock
 	ctrl := gomock.NewController(t)
-	vm := mocks.NewMockChainVM(ctrl)
+	vm := block.NewMockChainVM(ctrl)
 
 	if loadExpectations {
-		blk1 := snowman.NewMockBlock(ctrl)
-		blk2 := snowman.NewMockBlock(ctrl)
+		blk1 := snowmantest.NewMockBlock(ctrl)
+		blk2 := snowmantest.NewMockBlock(ctrl)
 		gomock.InOrder(
 			// Initialize
 			vm.EXPECT().Initialize(
@@ -83,10 +81,10 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	testKey := batchedParseBlockCachingTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 

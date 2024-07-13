@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database"
@@ -16,20 +17,23 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/proposervm/proposer"
 )
 
 func TestCoreVMNotRemote(t *testing.T) {
 	// if coreVM is not remote VM, a specific error is returned
 	require := require.New(t)
-	_, _, proVM, _, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = activationTime
+	)
+	_, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
@@ -54,22 +58,17 @@ func TestCoreVMNotRemote(t *testing.T) {
 
 func TestGetAncestorsPreForkOnly(t *testing.T) {
 	require := require.New(t)
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, mockable.MaxTime) // disable ProBlks
+	var (
+		activationTime = mockable.MaxTime
+		durangoTime    = activationTime
+	)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, activationTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some prefork blocks....
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp(),
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -79,24 +78,15 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreBlk1.ID():
+		switch blkID {
+		case coreBlk1.ID():
 			return coreBlk1, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp(),
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -106,24 +96,15 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreBlk2.ID():
+		switch blkID {
+		case coreBlk2.ID():
 			return coreBlk2, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: coreBlk2.Timestamp(),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -200,22 +181,17 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 
 func TestGetAncestorsPostForkOnly(t *testing.T) {
 	require := require.New(t)
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, time.Time{}) // enable ProBlks
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = activationTime
+	)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, activationTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some post-Fork blocks....
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp(),
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -225,18 +201,9 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxVerifyDelay),
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -246,18 +213,9 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, 0))
 
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: coreBlk2.Timestamp(),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -292,8 +250,8 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		switch {
-		case bytes.Equal(b, coreGenBlk.Bytes()):
-			return coreGenBlk, nil
+		case bytes.Equal(b, snowmantest.GenesisBytes):
+			return snowmantest.Genesis, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
 		case bytes.Equal(b, coreBlk2.Bytes()):
@@ -352,29 +310,26 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 
 func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	require := require.New(t)
-	currentTime := time.Now().Truncate(time.Second)
-	preForkTime := currentTime.Add(5 * time.Minute)
-	forkTime := currentTime.Add(10 * time.Minute)
-	postForkTime := currentTime.Add(15 * time.Minute)
+
+	var (
+		currentTime  = time.Now().Truncate(time.Second)
+		preForkTime  = currentTime.Add(5 * time.Minute)
+		forkTime     = currentTime.Add(10 * time.Minute)
+		postForkTime = currentTime.Add(15 * time.Minute)
+
+		durangoTime = forkTime
+	)
 
 	// enable ProBlks in next future
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, forkTime)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, forkTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some prefork blocks....
 	proRemoteVM.Set(preForkTime)
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: preForkTime,
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
+	coreBlk1.TimestampV = preForkTime
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -393,16 +348,8 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: postForkTime,
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
+	coreBlk2.TimestampV = postForkTime
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -423,16 +370,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: postForkTime.Add(proposer.MaxVerifyDelay),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -443,18 +381,9 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
-	coreBlk4 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{4},
-		ParentV:    coreBlk3.ID(),
-		HeightV:    coreBlk3.Height() + 1,
-		TimestampV: postForkTime,
-	}
+	coreBlk4 := snowmantest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk4, nil
 	}
@@ -487,7 +416,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, nil // unknown blockID
 		}
 
-		endIndex := math.Min(startIndex+maxBlocksNum, len(sortedBlocks))
+		endIndex := min(startIndex+maxBlocksNum, len(sortedBlocks))
 		return sortedBlocks[startIndex:endIndex], nil
 	}
 
@@ -558,22 +487,17 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	require := require.New(t)
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, mockable.MaxTime) // disable ProBlks
+	var (
+		activationTime = mockable.MaxTime
+		durangoTime    = activationTime
+	)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, activationTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some prefork blocks....
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp(),
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -583,24 +507,15 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreBlk1.ID():
+		switch blkID {
+		case coreBlk1.ID():
 			return coreBlk1, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp(),
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -618,16 +533,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: coreBlk2.Timestamp(),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -679,22 +585,17 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 
 func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	require := require.New(t)
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, time.Time{}) // enable ProBlks
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = activationTime
+	)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, activationTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some post-Fork blocks....
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp(),
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -704,18 +605,9 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: coreBlk1.Timestamp().Add(proposer.MaxVerifyDelay),
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -725,18 +617,9 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, builtBlk2.(*postForkBlock).PChainHeight()))
 
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: coreBlk2.Timestamp(),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -788,29 +671,26 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 
 func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require := require.New(t)
-	currentTime := time.Now().Truncate(time.Second)
-	preForkTime := currentTime.Add(5 * time.Minute)
-	forkTime := currentTime.Add(10 * time.Minute)
-	postForkTime := currentTime.Add(15 * time.Minute)
+
+	var (
+		currentTime  = time.Now().Truncate(time.Second)
+		preForkTime  = currentTime.Add(5 * time.Minute)
+		forkTime     = currentTime.Add(10 * time.Minute)
+		postForkTime = currentTime.Add(15 * time.Minute)
+
+		durangoTime = forkTime
+	)
 
 	// enable ProBlks in next future
-	coreVM, proRemoteVM, coreGenBlk := initTestRemoteProposerVM(t, forkTime)
+	coreVM, proRemoteVM := initTestRemoteProposerVM(t, forkTime, durangoTime)
 	defer func() {
 		require.NoError(proRemoteVM.Shutdown(context.Background()))
 	}()
 
 	// Build some prefork blocks....
 	proRemoteVM.Set(preForkTime)
-	coreBlk1 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{1},
-		ParentV:    coreGenBlk.ID(),
-		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: preForkTime,
-	}
+	coreBlk1 := snowmantest.BuildChild(snowmantest.Genesis)
+	coreBlk1.TimestampV = preForkTime
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk1, nil
 	}
@@ -829,16 +709,8 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{2},
-		ParentV:    coreBlk1.ID(),
-		HeightV:    coreBlk1.Height() + 1,
-		TimestampV: postForkTime,
-	}
+	coreBlk2 := snowmantest.BuildChild(coreBlk1)
+	coreBlk2.TimestampV = postForkTime
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk2, nil
 	}
@@ -859,16 +731,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
-	coreBlk3 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{3},
-		ParentV:    coreBlk2.ID(),
-		HeightV:    coreBlk2.Height() + 1,
-		TimestampV: postForkTime.Add(proposer.MaxVerifyDelay),
-	}
+	coreBlk3 := snowmantest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk3, nil
 	}
@@ -879,18 +742,9 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	proRemoteVM.Set(proRemoteVM.Time().Add(proposer.MaxBuildDelay))
+	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
-	coreBlk4 := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:     []byte{4},
-		ParentV:    coreBlk3.ID(),
-		HeightV:    coreBlk3.Height() + 1,
-		TimestampV: postForkTime,
-	}
+	coreBlk4 := snowmantest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk4, nil
 	}
@@ -956,23 +810,13 @@ type TestRemoteProposerVM struct {
 
 func initTestRemoteProposerVM(
 	t *testing.T,
-	proBlkStartTime time.Time,
+	activationTime,
+	durangoTime time.Time,
 ) (
 	TestRemoteProposerVM,
 	*VM,
-	*snowman.TestBlock,
 ) {
 	require := require.New(t)
-
-	coreGenBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Accepted,
-		},
-		HeightV:    0,
-		TimestampV: genesisTimestamp,
-		BytesV:     []byte{0},
-	}
 
 	initialState := []byte("genesis state")
 	coreVM := TestRemoteProposerVM{
@@ -996,43 +840,44 @@ func initTestRemoteProposerVM(
 		return nil
 	}
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return coreGenBlk.ID(), nil
+		return snowmantest.GenesisID, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreGenBlk.ID():
-			return coreGenBlk, nil
+		switch blkID {
+		case snowmantest.GenesisID:
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
 		switch {
-		case bytes.Equal(b, coreGenBlk.Bytes()):
-			return coreGenBlk, nil
+		case bytes.Equal(b, snowmantest.GenesisBytes):
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.VerifyHeightIndexF = func(context.Context) error {
-		return nil
-	}
 
 	proVM := New(
 		coreVM,
-		proBlkStartTime,
-		0,
-		DefaultMinBlockDelay,
-		DefaultNumHistoricalBlocks,
-		pTestSigner,
-		pTestCert,
+		Config{
+			ActivationTime:      activationTime,
+			DurangoTime:         durangoTime,
+			MinimumPChainHeight: 0,
+			MinBlkDelay:         DefaultMinBlockDelay,
+			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
+			StakingLeafSigner:   pTestSigner,
+			StakingCertLeaf:     pTestCert,
+			Registerer:          prometheus.NewRegistry(),
+		},
 	)
 
 	valState := &validators.TestState{
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return coreGenBlk.Height(), nil
+		return snowmantest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -1064,7 +909,7 @@ func initTestRemoteProposerVM(
 		}, nil
 	}
 
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -1084,6 +929,6 @@ func initTestRemoteProposerVM(
 	coreVM.InitializeF = nil
 
 	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
-	require.NoError(proVM.SetPreference(context.Background(), coreGenBlk.IDV))
-	return coreVM, proVM, coreGenBlk
+	require.NoError(proVM.SetPreference(context.Background(), snowmantest.GenesisID))
+	return coreVM, proVM
 }

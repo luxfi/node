@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -10,17 +10,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -42,7 +42,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &snowman.TestBlock{
+	preSummaryBlk = &snowmantest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,
@@ -51,7 +51,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &snowman.TestBlock{
+	summaryBlk = &snowmantest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,
@@ -66,8 +66,8 @@ var (
 )
 
 type StateSyncEnabledMock struct {
-	*mocks.MockChainVM
-	*mocks.MockStateSyncableVM
+	*block.MockChainVM
+	*block.MockStateSyncableVM
 }
 
 func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
@@ -76,8 +76,8 @@ func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.Chain
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -98,8 +98,8 @@ func getOngoingSyncStateSummaryTestPlugin(t *testing.T, loadExpectations bool) b
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -119,8 +119,8 @@ func getLastStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Ch
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -140,8 +140,8 @@ func parseStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Chai
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -162,8 +162,8 @@ func getStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.ChainV
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -183,8 +183,8 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Cha
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -229,8 +229,8 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -262,7 +262,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 	return ssVM
 }
 
-func buildClientHelper(require *require.Assertions, testKey string) (*VMClient, runtime.Stopper) {
+func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	process := helperProcess(testKey)
 
 	log := logging.NewLogger(
@@ -293,7 +293,7 @@ func buildClientHelper(require *require.Assertions, testKey string) (*VMClient, 
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(clientConn), stopper
+	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer())
 }
 
 func TestStateSyncEnabled(t *testing.T) {
@@ -301,8 +301,8 @@ func TestStateSyncEnabled(t *testing.T) {
 	testKey := stateSyncEnabledTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// test state sync not implemented
 	// Note that enabled == false is returned rather than
@@ -332,8 +332,8 @@ func TestGetOngoingSyncStateSummary(t *testing.T) {
 	testKey := getOngoingSyncStateSummaryTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetOngoingSyncStateSummary(context.Background())
@@ -357,8 +357,8 @@ func TestGetLastStateSummary(t *testing.T) {
 	testKey := getLastStateSummaryTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetLastStateSummary(context.Background())
@@ -382,8 +382,8 @@ func TestParseStateSummary(t *testing.T) {
 	testKey := parseStateSummaryTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.ParseStateSummary(context.Background(), mockedSummary.Bytes())
@@ -411,8 +411,8 @@ func TestGetStateSummary(t *testing.T) {
 	testKey := getStateSummaryTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetStateSummary(context.Background(), mockedSummary.Height())
@@ -436,8 +436,8 @@ func TestAcceptStateSummary(t *testing.T) {
 	testKey := acceptStateSummaryTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// retrieve the summary first
 	summary, err := vm.GetStateSummary(context.Background(), mockedSummary.Height())
@@ -466,11 +466,11 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	testKey := lastAcceptedBlockPostStateSummaryAcceptTestKey
 
 	// Create and start the plugin
-	vm, stopper := buildClientHelper(require, testKey)
-	defer stopper.Stop(context.Background())
+	vm := buildClientHelper(require, testKey)
+	defer vm.runtime.Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil, nil))
 

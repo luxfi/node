@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,9 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/avm/config"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
@@ -29,33 +30,19 @@ var (
 	feeConfig = config.Config{
 		TxFee:            2,
 		CreateAssetTxFee: 3,
+		EUpgradeTime:     mockable.MaxTime,
 	}
 )
 
-func newContext(t testing.TB) *snow.Context {
-	require := require.New(t)
-
-	ctx := snow.DefaultContextTest()
-	ctx.NetworkID = constants.UnitTestID
-	ctx.ChainID = ids.GenerateTestID()
-	ctx.XChainID = ctx.ChainID
-	ctx.CChainID = ids.GenerateTestID()
-
-	aliaser := ctx.BCLookup.(ids.Aliaser)
-	require.NoError(aliaser.Alias(ctx.XChainID, "X"))
-	require.NoError(aliaser.Alias(ctx.XChainID, ctx.XChainID.String()))
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
-	require.NoError(aliaser.Alias(constants.PlatformChainID, constants.PlatformChainID.String()))
-	return ctx
-}
-
 func TestSyntacticVerifierBaseTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser([]fxs.Fx{
-		fx,
-	})
+	parser, err := txs.NewParser(
+		[]fxs.Fx{
+			fx,
+		},
+	)
 	require.NoError(t, err)
 
 	feeAssetID := ids.GenerateTestID()
@@ -420,12 +407,14 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser([]fxs.Fx{
-		fx,
-	})
+	parser, err := txs.NewParser(
+		[]fxs.Fx{
+			fx,
+		},
+	)
 	require.NoError(t, err)
 
 	feeAssetID := ids.GenerateTestID()
@@ -1027,12 +1016,14 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierOperationTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser([]fxs.Fx{
-		fx,
-	})
+	parser, err := txs.NewParser(
+		[]fxs.Fx{
+			fx,
+		},
+	)
 	require.NoError(t, err)
 
 	feeAssetID := ids.GenerateTestID()
@@ -1514,12 +1505,14 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierImportTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser([]fxs.Fx{
-		fx,
-	})
+	parser, err := txs.NewParser(
+		[]fxs.Fx{
+			fx,
+		},
+	)
 	require.NoError(t, err)
 
 	feeAssetID := ids.GenerateTestID()
@@ -1912,12 +1905,14 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierExportTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser([]fxs.Fx{
-		fx,
-	})
+	parser, err := txs.NewParser(
+		[]fxs.Fx{
+			fx,
+		},
+	)
 	require.NoError(t, err)
 
 	feeAssetID := ids.GenerateTestID()

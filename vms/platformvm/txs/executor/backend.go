@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -20,7 +20,7 @@ type Backend struct {
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier
-	Uptimes      uptime.Manager
+	Uptimes      uptime.Calculator
 	Rewards      reward.Calculator
 	Bootstrapped *utils.Atomic[bool]
 }

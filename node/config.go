@@ -1,17 +1,17 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
 
 import (
 	"crypto/tls"
+	"net/netip"
 	"time"
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/nat"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/snow/networking/benchlist"
 	"github.com/luxfi/node/snow/networking/router"
@@ -19,24 +19,12 @@ import (
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
-
-type IPCConfig struct {
-	IPCAPIEnabled      bool     `json:"ipcAPIEnabled"`
-	IPCPath            string   `json:"ipcPath"`
-	IPCDefaultChainIDs []string `json:"ipcDefaultChainIDs"`
-}
-
-type APIAuthConfig struct {
-	APIRequireAuthToken bool   `json:"apiRequireAuthToken"`
-	APIAuthPassword     string `json:"-"`
-}
 
 type APIIndexerConfig struct {
 	IndexAPIEnabled      bool `json:"indexAPIEnabled"`
@@ -61,9 +49,7 @@ type HTTPConfig struct {
 }
 
 type APIConfig struct {
-	APIAuthConfig    `json:"authConfig"`
 	APIIndexerConfig `json:"indexerConfig"`
-	IPCConfig        `json:"ipcConfig"`
 
 	// Enable/Disable APIs
 	AdminAPIEnabled    bool `json:"adminAPIEnabled"`
@@ -74,19 +60,16 @@ type APIConfig struct {
 }
 
 type IPConfig struct {
-	IPPort           ips.DynamicIPPort `json:"ip"`
-	IPUpdater        dynamicip.Updater `json:"-"`
-	IPResolutionFreq time.Duration     `json:"ipResolutionFrequency"`
-	// True if we attempted NAT traversal
-	AttemptedNATTraversal bool `json:"attemptedNATTraversal"`
-	// Tries to perform network address translation
-	Nat nat.Router `json:"-"`
+	PublicIP                  string        `json:"publicIP"`
+	PublicIPResolutionService string        `json:"publicIPResolutionService"`
+	PublicIPResolutionFreq    time.Duration `json:"publicIPResolutionFreq"`
 	// The host portion of the address to listen on. The port to
 	// listen on will be sourced from IPPort.
 	//
 	// - If empty, listen on all interfaces (both ipv4 and ipv6).
 	// - If populated, listen only on the specified address.
 	ListenHost string `json:"listenHost"`
+	ListenPort uint16 `json:"listenPort"`
 }
 
 type StakingConfig struct {
@@ -102,8 +85,8 @@ type StakingConfig struct {
 }
 
 type StateSyncConfig struct {
-	StateSyncIDs []ids.NodeID `json:"stateSyncIDs"`
-	StateSyncIPs []ips.IPPort `json:"stateSyncIPs"`
+	StateSyncIDs []ids.NodeID     `json:"stateSyncIDs"`
+	StateSyncIPs []netip.AddrPort `json:"stateSyncIPs"`
 }
 
 type BootstrapConfig struct {
@@ -140,13 +123,13 @@ type DatabaseConfig struct {
 
 // Config contains all of the configurations of an Lux node.
 type Config struct {
-	HTTPConfig          `json:"httpConfig"`
-	IPConfig            `json:"ipConfig"`
-	StakingConfig       `json:"stakingConfig"`
-	genesis.TxFeeConfig `json:"txFeeConfig"`
-	StateSyncConfig     `json:"stateSyncConfig"`
-	BootstrapConfig     `json:"bootstrapConfig"`
-	DatabaseConfig      `json:"databaseConfig"`
+	HTTPConfig       `json:"httpConfig"`
+	IPConfig         `json:"ipConfig"`
+	StakingConfig    `json:"stakingConfig"`
+	fee.StaticConfig `json:"txFeeConfig"`
+	StateSyncConfig  `json:"stateSyncConfig"`
+	BootstrapConfig  `json:"bootstrapConfig"`
+	DatabaseConfig   `json:"databaseConfig"`
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
@@ -177,8 +160,6 @@ type Config struct {
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
-	// Router that is used to handle incoming consensus messages
-	ConsensusRouter          router.Router       `json:"-"`
 	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
 	// Poll for new frontiers every [FrontierPollFrequency]
@@ -194,7 +175,7 @@ type Config struct {
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`
 
-	VMAliaser ids.Aliaser `json:"-"`
+	VMAliases map[ids.ID][]string `json:"vmAliases"`
 
 	// Halflife to use for the processing requests tracker.
 	// Larger halflife --> usage metrics change more slowly.

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package create
@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/example/xsvm"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
@@ -55,7 +55,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	// Get the P-chain wallet
 	pWallet := wallet.P()
 
-	genesisBytes, err := genesis.Codec.Marshal(genesis.Version, &genesis.Genesis{
+	genesisBytes, err := genesis.Codec.Marshal(genesis.CodecVersion, &genesis.Genesis{
 		Timestamp: 0,
 		Allocations: []genesis.Allocation{
 			{
@@ -72,7 +72,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	createChainTxID, err := pWallet.IssueCreateChainTx(
 		config.SubnetID,
 		genesisBytes,
-		xsvm.ID,
+		constants.XSVMID,
 		nil,
 		config.Name,
 		common.WithContext(ctx),

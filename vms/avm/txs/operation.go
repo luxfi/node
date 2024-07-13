@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -48,16 +48,16 @@ type operationAndCodec struct {
 	codec codec.Manager
 }
 
-func (o *operationAndCodec) Less(other *operationAndCodec) bool {
+func (o *operationAndCodec) Compare(other *operationAndCodec) int {
 	oBytes, err := o.codec.Marshal(CodecVersion, o.op)
 	if err != nil {
-		return false
+		return 0
 	}
 	otherBytes, err := o.codec.Marshal(CodecVersion, other.op)
 	if err != nil {
-		return false
+		return 0
 	}
-	return bytes.Compare(oBytes, otherBytes) == -1
+	return bytes.Compare(oBytes, otherBytes)
 }
 
 func SortOperations(ops []*Operation, c codec.Manager) {

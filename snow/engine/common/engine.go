@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -396,6 +396,7 @@ type AppResponseHandler interface {
 		ctx context.Context,
 		nodeID ids.NodeID,
 		requestID uint32,
+		appErr *AppError,
 	) error
 }
 
@@ -465,6 +466,7 @@ type CrossChainAppResponseHandler interface {
 		ctx context.Context,
 		chainID ids.ID,
 		requestID uint32,
+		appErr *AppError,
 	) error
 }
 

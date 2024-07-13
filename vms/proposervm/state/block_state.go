@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -68,7 +68,7 @@ func NewBlockState(db database.Database) BlockState {
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		fmt.Sprintf("%s_block_cache", namespace),
+		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,
@@ -100,16 +100,16 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error)
 	}
 
 	blkWrapper := blockWrapper{}
-	parsedVersion, err := c.Unmarshal(blkWrapperBytes, &blkWrapper)
+	parsedVersion, err := Codec.Unmarshal(blkWrapperBytes, &blkWrapper)
 	if err != nil {
 		return nil, choices.Unknown, err
 	}
-	if parsedVersion != version {
+	if parsedVersion != CodecVersion {
 		return nil, choices.Unknown, errBlockWrongVersion
 	}
 
 	// The key was in the database
-	blk, err := block.Parse(blkWrapper.Block)
+	blk, err := block.ParseWithoutVerification(blkWrapper.Block)
 	if err != nil {
 		return nil, choices.Unknown, err
 	}
@@ -126,7 +126,7 @@ func (s *blockState) PutBlock(blk block.Block, status choices.Status) error {
 		block:  blk,
 	}
 
-	bytes, err := c.Marshal(version, &blkWrapper)
+	bytes, err := Codec.Marshal(CodecVersion, &blkWrapper)
 	if err != nil {
 		return err
 	}

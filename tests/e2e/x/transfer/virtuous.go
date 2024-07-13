@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 // Implements X-chain transfer tests.
 package transfer
@@ -9,12 +11,11 @@ import (
 	"math/rand"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/set"
@@ -23,14 +24,20 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 const (
 	totalRounds = 50
 
-	metricBlksProcessing = "lux_X_blks_processing"
-	metricBlksAccepted   = "lux_X_blks_accepted_count"
+	blksProcessingMetric = "lux_snowman_blks_processing"
+	blksAcceptedMetric   = "lux_snowman_blks_accepted_count"
 )
+
+var xChainMetricLabels = prometheus.Labels{
+	chains.ChainLabel: "X",
+}
 
 // This test requires that the network not have ongoing blocks and
 // cannot reliably be run in parallel.
@@ -48,10 +55,15 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 			// test avoids the case of a previous test having initiated block
 			// processing but not having completed it.
 			e2e.Eventually(func() bool {
-				allNodeMetrics, err := tests.GetNodesMetrics(rpcEps, metricBlksProcessing)
+				allNodeMetrics, err := tests.GetNodesMetrics(
+					e2e.DefaultContext(),
+					rpcEps,
+				)
 				require.NoError(err)
+
 				for _, metrics := range allNodeMetrics {
-					if metrics[metricBlksProcessing] > 0 {
+					xBlksProcessing, ok := tests.GetMetricValue(metrics, blksProcessingMetric, xChainMetricLabels)
+					if !ok || xBlksProcessing > 0 {
 						return false
 					}
 				}
@@ -62,14 +74,9 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 				"The cluster is generating ongoing blocks. Is this test being run in parallel?",
 			)
 
-			allMetrics := []string{
-				metricBlksProcessing,
-				metricBlksAccepted,
-			}
-
 			// Ensure the same set of 10 keys is used for all tests
 			// by retrieving them outside of runFunc.
-			testKeys := e2e.Env.AllocateFundedKeys(10)
+			testKeys := e2e.Env.AllocatePreFundedKeys(10)
 
 			runFunc := func(round int) {
 				tests.Outf("{{green}}\n\n\n\n\n\n---\n[ROUND #%02d]:{{/}}\n", round)
@@ -84,7 +91,10 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 
 				keychain := secp256k1fx.NewKeychain(testKeys...)
 				baseWallet := e2e.NewWallet(keychain, e2e.Env.GetRandomNodeURI())
-				luxAssetID := baseWallet.X().LUXAssetID()
+				xWallet := baseWallet.X()
+				xBuilder := xWallet.Builder()
+				xContext := xBuilder.Context()
+				luxAssetID := xContext.LUXAssetID
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))
@@ -99,10 +109,15 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 					)
 				}
 
-				metricsBeforeTx, err := tests.GetNodesMetrics(rpcEps, allMetrics...)
+				metricsBeforeTx, err := tests.GetNodesMetrics(
+					e2e.DefaultContext(),
+					rpcEps,
+				)
 				require.NoError(err)
 				for _, uri := range rpcEps {
-					tests.Outf("{{green}}metrics at %q:{{/}} %v\n", uri, metricsBeforeTx[uri])
+					for _, metric := range []string{blksProcessingMetric, blksAcceptedMetric} {
+						tests.Outf("{{green}}%s at %q:{{/}} %v\n", metric, uri, metricsBeforeTx[uri][metric])
+					}
 				}
 
 				testBalances := make([]uint64, 0)
@@ -146,7 +161,7 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 
 				amountToTransfer := senderOrigBal / 10
 
-				senderNewBal := senderOrigBal - amountToTransfer - baseWallet.X().BaseTxFee()
+				senderNewBal := senderOrigBal - amountToTransfer - xContext.BaseTxFee
 				receiverNewBal := receiverOrigBal + amountToTransfer
 
 				ginkgo.By("X-Chain transfer with wrong amount must fail", func() {
@@ -224,28 +239,28 @@ RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 				txID := tx.ID()
 				for _, u := range rpcEps {
 					xc := avm.NewClient(u, "X")
-					status, err := xc.ConfirmTx(e2e.DefaultContext(), txID, 2*time.Second)
-					require.NoError(err)
-					require.Equal(status, choices.Accepted)
+					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 				}
 
 				for _, u := range rpcEps {
 					xc := avm.NewClient(u, "X")
-					status, err := xc.ConfirmTx(e2e.DefaultContext(), txID, 2*time.Second)
-					require.NoError(err)
-					require.Equal(status, choices.Accepted)
+					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 
-					mm, err := tests.GetNodeMetrics(u, allMetrics...)
+					mm, err := tests.GetNodeMetrics(e2e.DefaultContext(), u)
 					require.NoError(err)
 
 					prev := metricsBeforeTx[u]
 
 					// +0 since X-chain tx must have been processed and accepted
 					// by now
-					require.Equal(mm[metricBlksProcessing], prev[metricBlksProcessing])
+					currentXBlksProcessing, _ := tests.GetMetricValue(mm, blksProcessingMetric, xChainMetricLabels)
+					previousXBlksProcessing, _ := tests.GetMetricValue(prev, blksProcessingMetric, xChainMetricLabels)
+					require.Equal(currentXBlksProcessing, previousXBlksProcessing)
 
 					// +1 since X-chain tx must have been accepted by now
-					require.Equal(mm[metricBlksAccepted], prev[metricBlksAccepted]+1)
+					currentXBlksAccepted, _ := tests.GetMetricValue(mm, blksAcceptedMetric, xChainMetricLabels)
+					previousXBlksAccepted, _ := tests.GetMetricValue(prev, blksAcceptedMetric, xChainMetricLabels)
+					require.Equal(currentXBlksAccepted, previousXBlksAccepted+1)
 
 					metricsBeforeTx[u] = mm
 				}

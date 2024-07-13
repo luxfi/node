@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -6,11 +6,10 @@ package nftfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/vms/types"
-
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/types"
 )
 
 var errNilMintOperation = errors.New("nil mint operation")

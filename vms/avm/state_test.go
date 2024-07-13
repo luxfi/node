@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
-	"context"
 	"math"
 	"testing"
 
@@ -24,6 +23,7 @@ func TestSetsAndGets(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
+		fork: latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
@@ -34,10 +34,7 @@ func TestSetsAndGets(t *testing.T) {
 			},
 		}},
 	})
-	defer func() {
-		require.NoError(env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
+	defer env.vm.ctx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -51,7 +48,7 @@ func TestSetsAndGets(t *testing.T) {
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: chainID,
+		BlockchainID: env.vm.ctx.XChainID,
 		Ins: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,
@@ -86,6 +83,7 @@ func TestSetsAndGets(t *testing.T) {
 
 func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
+		fork: latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
@@ -96,10 +94,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer func() {
-		require.NoError(t, env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
+	defer env.vm.ctx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -118,6 +113,7 @@ func TestFundingAddresses(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
+		fork: latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
@@ -128,10 +124,7 @@ func TestFundingAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer func() {
-		require.NoError(env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
+	defer env.vm.ctx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{

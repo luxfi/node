@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -9,21 +9,24 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowball"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/version"
 
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/snow/engine/common/tracker"
 )
 
@@ -47,7 +50,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			require := require.New(t)
 
-			ctx := snow.DefaultConsensusContextTest()
+			snowCtx := snowtest.Context(t, snowtest.CChainID)
+			ctx := snowtest.ConsensusContext(snowCtx)
 
 			vdrs := validators.NewManager()
 
@@ -60,7 +64,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker := commontracker.NewPeers()
-			vdrs.RegisterCallbackListener(ctx.SubnetID, peerTracker)
+			vdrs.RegisterSetCallbackListener(ctx.SubnetID, peerTracker)
 
 			sb := subnets.New(
 				ctx.NodeID,
@@ -68,6 +72,16 @@ func TestHealthCheckSubnet(t *testing.T) {
 					ConsensusParameters: test.consensusParams,
 				},
 			)
+
+			p2pTracker, err := p2p.NewPeerTracker(
+				logging.NoLog{},
+				"",
+				prometheus.NewRegistry(),
+				nil,
+				version.CurrentApp,
+			)
+			require.NoError(err)
+
 			handlerIntf, err := New(
 				ctx,
 				vdrs,
@@ -78,6 +92,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 				validators.UnhandledSubnetConnector,
 				sb,
 				peerTracker,
+				p2pTracker,
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -102,7 +118,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			})
 
 			ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 				State: snow.NormalOp, // assumed bootstrap is done
 			})
 

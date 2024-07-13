@@ -1,21 +1,19 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"net/http"
 	"time"
 
-	stdjson "encoding/json"
-
 	"go.uber.org/zap"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache"
@@ -27,7 +25,6 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -39,10 +36,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/builder"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
+	avajson "github.com/luxfi/node/utils/json"
 	safemath "github.com/luxfi/node/utils/math"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
@@ -54,9 +50,8 @@ const (
 	// Max number of addresses that can be passed in as argument to GetStake
 	maxGetStakeAddrs = 256
 
-	// Minimum amount of delay to allow a transaction to be issued through the
-	// API
-	minAddStakerDelay = 2 * executor.SyncBound
+	// Max number of items allowed in a page
+	maxPageSize = 1024
 
 	// Note: Staker attributes cache should be large enough so that no evictions
 	// happen when the API loops through all stakers.
@@ -64,22 +59,10 @@ const (
 )
 
 var (
-	errMissingDecisionBlock     = errors.New("should have a decision block within the past two blocks")
-	errNoSubnetID               = errors.New("argument 'subnetID' not provided")
-	errNoRewardAddress          = errors.New("argument 'rewardAddress' not provided")
-	errInvalidDelegationRate    = errors.New("argument 'delegationFeeRate' must be between 0 and 100, inclusive")
-	errNoAddresses              = errors.New("no addresses provided")
-	errNoKeys                   = errors.New("user has no keys or funds")
-	errStartTimeTooSoon         = fmt.Errorf("start time must be at least %s in the future", minAddStakerDelay)
-	errStartTimeTooLate         = errors.New("start time is too far in the future")
-	errNamedSubnetCantBePrimary = errors.New("subnet validator attempts to validate primary network")
-	errNoAmount                 = errors.New("argument 'amount' must be > 0")
-	errMissingName              = errors.New("argument 'name' not given")
-	errMissingVMID              = errors.New("argument 'vmID' not given")
-	errMissingBlockchainID      = errors.New("argument 'blockchainID' not given")
-	errMissingPrivateKey        = errors.New("argument 'privateKey' not given")
-	errStartAfterEndTime        = errors.New("start time must be before end time")
-	errStartTimeInThePast       = errors.New("start time in the past")
+	errMissingDecisionBlock       = errors.New("should have a decision block within the past two blocks")
+	errPrimaryNetworkIsNotASubnet = errors.New("the primary network isn't a subnet")
+	errNoAddresses                = errors.New("no addresses provided")
+	errMissingBlockchainID        = errors.New("argument 'blockchainID' not given")
 )
 
 // Service defines the API calls that can be made to the platform chain
@@ -110,7 +93,7 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeigh
 
 	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
-	response.Height = json.Uint64(height)
+	response.Height = avajson.Uint64(height)
 	return err
 }
 
@@ -157,51 +140,6 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 	return user.Close()
 }
 
-// ImportKeyArgs are arguments for ImportKey
-type ImportKeyArgs struct {
-	api.UserPass
-	PrivateKey *secp256k1.PrivateKey `json:"privateKey"`
-}
-
-// ImportKey adds a private key to the provided user
-func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "importKey"),
-		logging.UserString("username", args.Username),
-	)
-
-	if args.PrivateKey == nil {
-		return errMissingPrivateKey
-	}
-
-	var err error
-	reply.Address, err = s.addrManager.FormatLocalAddress(args.PrivateKey.PublicKey().Address())
-	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	if err := user.PutKeys(args.PrivateKey); err != nil {
-		return fmt.Errorf("problem saving key %w", err)
-	}
-	return user.Close()
-}
-
-/*
- ******************************************************
- *************  Balances / Addresses ******************
- ******************************************************
- */
-
 type GetBalanceRequest struct {
 	Addresses []string `json:"addresses"`
 }
@@ -210,15 +148,15 @@ type GetBalanceRequest struct {
 // compatibility.
 type GetBalanceResponse struct {
 	// Balance, in nLUX, of the address
-	Balance             json.Uint64            `json:"balance"`
-	Unlocked            json.Uint64            `json:"unlocked"`
-	LockedStakeable     json.Uint64            `json:"lockedStakeable"`
-	LockedNotStakeable  json.Uint64            `json:"lockedNotStakeable"`
-	Balances            map[ids.ID]json.Uint64 `json:"balances"`
-	Unlockeds           map[ids.ID]json.Uint64 `json:"unlockeds"`
-	LockedStakeables    map[ids.ID]json.Uint64 `json:"lockedStakeables"`
-	LockedNotStakeables map[ids.ID]json.Uint64 `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID         `json:"utxoIDs"`
+	Balance             avajson.Uint64            `json:"balance"`
+	Unlocked            avajson.Uint64            `json:"unlocked"`
+	LockedStakeable     avajson.Uint64            `json:"lockedStakeable"`
+	LockedNotStakeable  avajson.Uint64            `json:"lockedNotStakeable"`
+	Balances            map[ids.ID]avajson.Uint64 `json:"balances"`
+	Unlockeds           map[ids.ID]avajson.Uint64 `json:"unlockeds"`
+	LockedStakeables    map[ids.ID]avajson.Uint64 `json:"lockedStakeables"`
+	LockedNotStakeables map[ids.ID]avajson.Uint64 `json:"lockedNotStakeables"`
+	UTXOIDs             []*lux.UTXOID            `json:"utxoIDs"`
 }
 
 // GetBalance gets the balance of an address
@@ -334,42 +272,12 @@ utxoFor:
 	return nil
 }
 
-func newJSONBalanceMap(balanceMap map[ids.ID]uint64) map[ids.ID]json.Uint64 {
-	jsonBalanceMap := make(map[ids.ID]json.Uint64, len(balanceMap))
+func newJSONBalanceMap(balanceMap map[ids.ID]uint64) map[ids.ID]avajson.Uint64 {
+	jsonBalanceMap := make(map[ids.ID]avajson.Uint64, len(balanceMap))
 	for assetID, amount := range balanceMap {
-		jsonBalanceMap[assetID] = json.Uint64(amount)
+		jsonBalanceMap[assetID] = avajson.Uint64(amount)
 	}
 	return jsonBalanceMap
-}
-
-// CreateAddress creates an address controlled by [args.Username]
-// Returns the newly created address
-func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, response *api.JSONAddress) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "createAddress"),
-		logging.UserString("username", args.Username),
-	)
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	key, err := keystore.NewKey(user)
-	if err != nil {
-		return err
-	}
-
-	response.Address, err = s.addrManager.FormatLocalAddress(key.PublicKey().Address())
-	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
-	}
-	return user.Close()
 }
 
 // ListAddresses returns the addresses controlled by [args.Username]
@@ -459,8 +367,8 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 		endUTXOID ids.ID
 	)
 	limit := int(args.Limit)
-	if limit <= 0 || builder.MaxPageSize < limit {
-		limit = builder.MaxPageSize
+	if limit <= 0 || maxPageSize < limit {
+		limit = maxPageSize
 	}
 
 	s.vm.ctx.Lock.Lock()
@@ -475,7 +383,9 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 			limit,
 		)
 	} else {
-		utxos, endAddr, endUTXOID, err = s.vm.atomicUtxosManager.GetAtomicUTXOs(
+		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
+			s.vm.ctx.SharedMemory,
+			txs.Codec,
 			sourceChain,
 			addrSet,
 			startAddr,
@@ -489,7 +399,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 
 	response.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
-		bytes, err := txs.Codec.Marshal(txs.Version, utxo)
+		bytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
 		if err != nil {
 			return fmt.Errorf("couldn't serialize UTXO %q: %w", utxo.InputID(), err)
 		}
@@ -506,16 +416,77 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 
 	response.EndIndex.Address = endAddress
 	response.EndIndex.UTXO = endUTXOID.String()
-	response.NumFetched = json.Uint64(len(utxos))
+	response.NumFetched = avajson.Uint64(len(utxos))
 	response.Encoding = args.Encoding
 	return nil
 }
 
-/*
- ******************************************************
- ******************* Get Subnets **********************
- ******************************************************
- */
+// GetSubnetArgs are the arguments to GetSubnet
+type GetSubnetArgs struct {
+	// ID of the subnet to retrieve information about
+	SubnetID ids.ID `json:"subnetID"`
+}
+
+// GetSubnetResponse is the response from calling GetSubnet
+type GetSubnetResponse struct {
+	// whether it is permissioned or not
+	IsPermissioned bool `json:"isPermissioned"`
+	// subnet auth information for a permissioned subnet
+	ControlKeys []string       `json:"controlKeys"`
+	Threshold   avajson.Uint32 `json:"threshold"`
+	Locktime    avajson.Uint64 `json:"locktime"`
+	// subnet transformation tx ID for a permissionless subnet
+	SubnetTransformationTxID ids.ID `json:"subnetTransformationTxID"`
+}
+
+func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetSubnetResponse) error {
+	s.vm.ctx.Log.Debug("API called",
+		zap.String("service", "platform"),
+		zap.String("method", "getSubnet"),
+		zap.Stringer("subnetID", args.SubnetID),
+	)
+
+	if args.SubnetID == constants.PrimaryNetworkID {
+		return errPrimaryNetworkIsNotASubnet
+	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
+
+	subnetOwner, err := s.vm.state.GetSubnetOwner(args.SubnetID)
+	if err != nil {
+		return err
+	}
+	owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+	if !ok {
+		return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+	}
+	controlAddrs := make([]string, len(owner.Addrs))
+	for i, controlKeyID := range owner.Addrs {
+		addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
+		if err != nil {
+			return fmt.Errorf("problem formatting address: %w", err)
+		}
+		controlAddrs[i] = addr
+	}
+
+	response.ControlKeys = controlAddrs
+	response.Threshold = avajson.Uint32(owner.Threshold)
+	response.Locktime = avajson.Uint64(owner.Locktime)
+
+	switch subnetTransformationTx, err := s.vm.state.GetSubnetTransformation(args.SubnetID); err {
+	case nil:
+		response.IsPermissioned = false
+		response.SubnetTransformationTxID = subnetTransformationTx.ID()
+	case database.ErrNotFound:
+		response.IsPermissioned = true
+		response.SubnetTransformationTxID = ids.Empty
+	default:
+		return err
+	}
+
+	return nil
+}
 
 // APISubnet is a representation of a subnet used in API calls
 type APISubnet struct {
@@ -525,11 +496,11 @@ type APISubnet struct {
 	// Each element of [ControlKeys] the address of a public key.
 	// A transaction to add a validator to this subnet requires
 	// signatures from [Threshold] of these keys to be valid.
-	ControlKeys []string    `json:"controlKeys"`
-	Threshold   json.Uint32 `json:"threshold"`
+	ControlKeys []string       `json:"controlKeys"`
+	Threshold   avajson.Uint32 `json:"threshold"`
 }
 
-// GetSubnetsArgs are the arguments to GetSubnet
+// GetSubnetsArgs are the arguments to GetSubnets
 type GetSubnetsArgs struct {
 	// IDs of the subnets to retrieve information about
 	// If omitted, gets all subnets
@@ -556,44 +527,51 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 	getAll := len(args.IDs) == 0
 	if getAll {
-		subnets, err := s.vm.state.GetSubnets() // all subnets
+		subnetIDs, err := s.vm.state.GetSubnetIDs() // all subnets
 		if err != nil {
 			return fmt.Errorf("error getting subnets from database: %w", err)
 		}
 
-		response.Subnets = make([]APISubnet, len(subnets)+1)
-		for i, subnet := range subnets {
-			subnetID := subnet.ID()
+		response.Subnets = make([]APISubnet, len(subnetIDs)+1)
+		for i, subnetID := range subnetIDs {
 			if _, err := s.vm.state.GetSubnetTransformation(subnetID); err == nil {
 				response.Subnets[i] = APISubnet{
 					ID:          subnetID,
 					ControlKeys: []string{},
-					Threshold:   json.Uint32(0),
+					Threshold:   avajson.Uint32(0),
 				}
 				continue
 			}
 
-			unsignedTx := subnet.Unsigned.(*txs.CreateSubnetTx)
-			owner := unsignedTx.Owner.(*secp256k1fx.OutputOwners)
-			controlAddrs := []string{}
-			for _, controlKeyID := range owner.Addrs {
+			subnetOwner, err := s.vm.state.GetSubnetOwner(subnetID)
+			if err != nil {
+				return err
+			}
+
+			owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+			if !ok {
+				return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+			}
+
+			controlAddrs := make([]string, len(owner.Addrs))
+			for i, controlKeyID := range owner.Addrs {
 				addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
 				if err != nil {
 					return fmt.Errorf("problem formatting address: %w", err)
 				}
-				controlAddrs = append(controlAddrs, addr)
+				controlAddrs[i] = addr
 			}
 			response.Subnets[i] = APISubnet{
 				ID:          subnetID,
 				ControlKeys: controlAddrs,
-				Threshold:   json.Uint32(owner.Threshold),
+				Threshold:   avajson.Uint32(owner.Threshold),
 			}
 		}
 		// Include primary network
-		response.Subnets[len(subnets)] = APISubnet{
+		response.Subnets[len(subnetIDs)] = APISubnet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
-			Threshold:   json.Uint32(0),
+			Threshold:   avajson.Uint32(0),
 		}
 		return nil
 	}
@@ -610,7 +588,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				APISubnet{
 					ID:          constants.PrimaryNetworkID,
 					ControlKeys: []string{},
-					Threshold:   json.Uint32(0),
+					Threshold:   avajson.Uint32(0),
 				},
 			)
 			continue
@@ -620,7 +598,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			response.Subnets = append(response.Subnets, APISubnet{
 				ID:          subnetID,
 				ControlKeys: []string{},
-				Threshold:   json.Uint32(0),
+				Threshold:   avajson.Uint32(0),
 			})
 			continue
 		}
@@ -650,7 +628,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 		response.Subnets = append(response.Subnets, APISubnet{
 			ID:          subnetID,
 			ControlKeys: controlAddrs,
-			Threshold:   json.Uint32(owner.Threshold),
+			Threshold:   avajson.Uint32(owner.Threshold),
 		})
 	}
 	return nil
@@ -701,12 +679,6 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	response.AssetID = transformSubnet.AssetID
 	return nil
 }
-
-/*
- ******************************************************
- **************** Get/Sample Validators ***************
- ******************************************************
- */
 
 // GetCurrentValidatorsArgs are the arguments for calling GetCurrentValidators
 type GetCurrentValidatorsArgs struct {
@@ -832,22 +804,22 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 
 	for _, currentStaker := range targetStakers {
 		nodeID := currentStaker.NodeID
-		weight := json.Uint64(currentStaker.Weight)
+		weight := avajson.Uint64(currentStaker.Weight)
 		apiStaker := platformapi.Staker{
 			TxID:        currentStaker.TxID,
-			StartTime:   json.Uint64(currentStaker.StartTime.Unix()),
-			EndTime:     json.Uint64(currentStaker.EndTime.Unix()),
+			StartTime:   avajson.Uint64(currentStaker.StartTime.Unix()),
+			EndTime:     avajson.Uint64(currentStaker.EndTime.Unix()),
 			Weight:      weight,
 			StakeAmount: &weight,
 			NodeID:      nodeID,
 		}
-		potentialReward := json.Uint64(currentStaker.PotentialReward)
+		potentialReward := avajson.Uint64(currentStaker.PotentialReward)
 
 		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.SubnetID, currentStaker.NodeID)
 		if err != nil {
 			return err
 		}
-		jsonDelegateeReward := json.Uint64(delegateeReward)
+		jsonDelegateeReward := avajson.Uint64(delegateeReward)
 
 		switch currentStaker.Priority {
 		case txs.PrimaryNetworkValidatorCurrentPriority, txs.SubnetPermissionlessValidatorCurrentPriority:
@@ -857,7 +829,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 
 			shares := attr.shares
-			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
+			delegationFee := avajson.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 
 			uptime, err := s.getAPIUptime(currentStaker)
 			if err != nil {
@@ -952,8 +924,8 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			// always return a non-nil value.
 			delegators = []platformapi.PrimaryDelegator{}
 		}
-		delegatorCount := json.Uint64(len(delegators))
-		delegatorWeight := json.Uint64(0)
+		delegatorCount := avajson.Uint64(len(delegators))
+		delegatorWeight := avajson.Uint64(0)
 		for _, d := range delegators {
 			delegatorWeight += d.Weight
 		}
@@ -971,128 +943,6 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 	return nil
 }
 
-// GetPendingValidatorsArgs are the arguments for calling GetPendingValidators
-type GetPendingValidatorsArgs struct {
-	// Subnet we're getting the pending validators of
-	// If omitted, defaults to primary network
-	SubnetID ids.ID `json:"subnetID"`
-	// NodeIDs of validators to request. If [NodeIDs]
-	// is empty, it fetches all pending validators. If
-	// some requested nodeIDs are not pending validators,
-	// they are omitted from the response.
-	NodeIDs []ids.NodeID `json:"nodeIDs"`
-}
-
-// GetPendingValidatorsReply are the results from calling GetPendingValidators.
-type GetPendingValidatorsReply struct {
-	Validators []interface{} `json:"validators"`
-	Delegators []interface{} `json:"delegators"`
-}
-
-// GetPendingValidators returns the lists of pending validators and delegators.
-func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidatorsArgs, reply *GetPendingValidatorsReply) error {
-	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getPendingValidators"),
-	)
-
-	reply.Validators = []interface{}{}
-	reply.Delegators = []interface{}{}
-
-	// Create set of nodeIDs
-	nodeIDs := set.Of(args.NodeIDs...)
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	numNodeIDs := nodeIDs.Len()
-	targetStakers := make([]*state.Staker, 0, numNodeIDs)
-	if numNodeIDs == 0 { // Include all nodes
-		pendingStakerIterator, err := s.vm.state.GetPendingStakerIterator()
-		if err != nil {
-			return err
-		}
-		for pendingStakerIterator.Next() { // Iterates in order of increasing stop time
-			staker := pendingStakerIterator.Value()
-			if args.SubnetID != staker.SubnetID {
-				continue
-			}
-			targetStakers = append(targetStakers, staker)
-		}
-		pendingStakerIterator.Release()
-	} else {
-		for nodeID := range nodeIDs {
-			staker, err := s.vm.state.GetPendingValidator(args.SubnetID, nodeID)
-			switch err {
-			case nil:
-			case database.ErrNotFound:
-				// nothing to do, continue
-				continue
-			default:
-				return err
-			}
-			targetStakers = append(targetStakers, staker)
-
-			delegatorsIt, err := s.vm.state.GetPendingDelegatorIterator(args.SubnetID, nodeID)
-			if err != nil {
-				return err
-			}
-			for delegatorsIt.Next() {
-				staker := delegatorsIt.Value()
-				targetStakers = append(targetStakers, staker)
-			}
-			delegatorsIt.Release()
-		}
-	}
-
-	for _, pendingStaker := range targetStakers {
-		nodeID := pendingStaker.NodeID
-		weight := json.Uint64(pendingStaker.Weight)
-		apiStaker := platformapi.Staker{
-			TxID:        pendingStaker.TxID,
-			NodeID:      nodeID,
-			StartTime:   json.Uint64(pendingStaker.StartTime.Unix()),
-			EndTime:     json.Uint64(pendingStaker.EndTime.Unix()),
-			Weight:      weight,
-			StakeAmount: &weight,
-		}
-
-		switch pendingStaker.Priority {
-		case txs.PrimaryNetworkValidatorPendingPriority, txs.SubnetPermissionlessValidatorPendingPriority:
-			attr, err := s.loadStakerTxAttributes(pendingStaker.TxID)
-			if err != nil {
-				return err
-			}
-
-			shares := attr.shares
-			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
-
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-			vdr := platformapi.PermissionlessValidator{
-				Staker:        apiStaker,
-				DelegationFee: delegationFee,
-				Connected:     connected,
-				Signer:        attr.proofOfPossession,
-			}
-			reply.Validators = append(reply.Validators, vdr)
-
-		case txs.PrimaryNetworkDelegatorApricotPendingPriority, txs.PrimaryNetworkDelegatorBanffPendingPriority, txs.SubnetPermissionlessDelegatorPendingPriority:
-			reply.Delegators = append(reply.Delegators, apiStaker)
-
-		case txs.SubnetPermissionedValidatorPendingPriority:
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
-			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
-				Staker:    apiStaker,
-				Connected: connected,
-			})
-
-		default:
-			return fmt.Errorf("unexpected staker priority %d", pendingStaker.Priority)
-		}
-	}
-	return nil
-}
-
 // GetCurrentSupplyArgs are the arguments for calling GetCurrentSupply
 type GetCurrentSupplyArgs struct {
 	SubnetID ids.ID `json:"subnetID"`
@@ -1100,8 +950,8 @@ type GetCurrentSupplyArgs struct {
 
 // GetCurrentSupplyReply are the results from calling GetCurrentSupply
 type GetCurrentSupplyReply struct {
-	Supply json.Uint64 `json:"supply"`
-	Height json.Uint64 `json:"height"`
+	Supply avajson.Uint64 `json:"supply"`
+	Height avajson.Uint64 `json:"height"`
 }
 
 // GetCurrentSupply returns an upper bound on the supply of LUX in the system
@@ -1118,14 +968,14 @@ func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, 
 	if err != nil {
 		return fmt.Errorf("fetching current supply failed: %w", err)
 	}
-	reply.Supply = json.Uint64(supply)
+	reply.Supply = avajson.Uint64(supply)
 
 	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
 	if err != nil {
 		return fmt.Errorf("fetching current height failed: %w", err)
 	}
-	reply.Height = json.Uint64(height)
+	reply.Height = avajson.Uint64(height)
 
 	return nil
 }
@@ -1133,7 +983,7 @@ func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, 
 // SampleValidatorsArgs are the arguments for calling SampleValidators
 type SampleValidatorsArgs struct {
 	// Number of validators in the sample
-	Size json.Uint16 `json:"size"`
+	Size avajson.Uint16 `json:"size"`
 
 	// ID of subnet to sample validators from
 	// If omitted, defaults to the primary network
@@ -1165,725 +1015,6 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		reply.Validators = sample
 	}
 	return nil
-}
-
-/*
- ******************************************************
- ************ Add Validators to Subnets ***************
- ******************************************************
- */
-
-// AddValidatorArgs are the arguments to AddValidator
-type AddValidatorArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-	platformapi.Staker
-	// The address the staking reward, if applicable, will go to
-	RewardAddress     string       `json:"rewardAddress"`
-	DelegationFeeRate json.Float32 `json:"delegationFeeRate"`
-}
-
-// AddValidator creates and signs and issues a transaction to add a validator to
-// the primary network
-func (s *Service) AddValidator(req *http.Request, args *AddValidatorArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "addValidator"),
-	)
-
-	now := s.vm.clock.Time()
-	minAddStakerTime := now.Add(minAddStakerDelay)
-	minAddStakerUnix := json.Uint64(minAddStakerTime.Unix())
-	maxAddStakerTime := now.Add(executor.MaxFutureStartTime)
-	maxAddStakerUnix := json.Uint64(maxAddStakerTime.Unix())
-
-	if args.StartTime == 0 {
-		args.StartTime = minAddStakerUnix
-	}
-
-	switch {
-	case args.RewardAddress == "":
-		return errNoRewardAddress
-	case args.StartTime < minAddStakerUnix:
-		return errStartTimeTooSoon
-	case args.StartTime > maxAddStakerUnix:
-		return errStartTimeTooLate
-	case args.DelegationFeeRate < 0 || args.DelegationFeeRate > 100:
-		return errInvalidDelegationRate
-	}
-
-	// Parse the node ID
-	var nodeID ids.NodeID
-	if args.NodeID == ids.EmptyNodeID { // If ID unspecified, use this node's ID
-		nodeID = s.vm.ctx.NodeID
-	} else {
-		nodeID = args.NodeID
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	// Parse the reward address
-	rewardAddress, err := lux.ParseServiceAddress(s.addrManager, args.RewardAddress)
-	if err != nil {
-		return fmt.Errorf("problem while parsing reward address: %w", err)
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	// Get the user's keys
-	privKeys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address.
-	if len(privKeys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// TODO: Remove after StakeAmount is removed from [args].
-	if args.StakeAmount != nil {
-		args.Weight = *args.StakeAmount
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewAddValidatorTx(
-		uint64(args.Weight),                  // Stake amount
-		uint64(args.StartTime),               // Start time
-		uint64(args.EndTime),                 // End time
-		nodeID,                               // Node ID
-		rewardAddress,                        // Reward Address
-		uint32(10000*args.DelegationFeeRate), // Shares
-		privKeys.Keys,                        // Keys providing the staked tokens
-		changeAddr,
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	reply.TxID = tx.ID()
-	reply.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-// AddDelegatorArgs are the arguments to AddDelegator
-type AddDelegatorArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-	platformapi.Staker
-	RewardAddress string `json:"rewardAddress"`
-}
-
-// AddDelegator creates and signs and issues a transaction to add a delegator to
-// the primary network
-func (s *Service) AddDelegator(req *http.Request, args *AddDelegatorArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "addDelegator"),
-	)
-
-	now := s.vm.clock.Time()
-	minAddStakerTime := now.Add(minAddStakerDelay)
-	minAddStakerUnix := json.Uint64(minAddStakerTime.Unix())
-	maxAddStakerTime := now.Add(executor.MaxFutureStartTime)
-	maxAddStakerUnix := json.Uint64(maxAddStakerTime.Unix())
-
-	if args.StartTime == 0 {
-		args.StartTime = minAddStakerUnix
-	}
-
-	switch {
-	case args.RewardAddress == "":
-		return errNoRewardAddress
-	case args.StartTime < minAddStakerUnix:
-		return errStartTimeTooSoon
-	case args.StartTime > maxAddStakerUnix:
-		return errStartTimeTooLate
-	}
-
-	var nodeID ids.NodeID
-	if args.NodeID == ids.EmptyNodeID { // If ID unspecified, use this node's ID
-		nodeID = s.vm.ctx.NodeID
-	} else {
-		nodeID = args.NodeID
-	}
-
-	// Parse the reward address
-	rewardAddress, err := lux.ParseServiceAddress(s.addrManager, args.RewardAddress)
-	if err != nil {
-		return fmt.Errorf("problem parsing 'rewardAddress': %w", err)
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	privKeys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address. Assumes that if the user has no keys,
-	// this operation will fail so the change address can be anything.
-	if len(privKeys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// TODO: Remove after StakeAmount is removed from [args].
-	if args.StakeAmount != nil {
-		args.Weight = *args.StakeAmount
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewAddDelegatorTx(
-		uint64(args.Weight),    // Stake amount
-		uint64(args.StartTime), // Start time
-		uint64(args.EndTime),   // End time
-		nodeID,                 // Node ID
-		rewardAddress,          // Reward Address
-		privKeys.Keys,          // Private keys
-		changeAddr,             // Change address
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	reply.TxID = tx.ID()
-	reply.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-// AddSubnetValidatorArgs are the arguments to AddSubnetValidator
-type AddSubnetValidatorArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-	platformapi.Staker
-	// ID of subnet to validate
-	SubnetID string `json:"subnetID"`
-}
-
-// AddSubnetValidator creates and signs and issues a transaction to add a
-// validator to a subnet other than the primary network
-func (s *Service) AddSubnetValidator(req *http.Request, args *AddSubnetValidatorArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "addSubnetValidator"),
-	)
-
-	now := s.vm.clock.Time()
-	minAddStakerTime := now.Add(minAddStakerDelay)
-	minAddStakerUnix := json.Uint64(minAddStakerTime.Unix())
-	maxAddStakerTime := now.Add(executor.MaxFutureStartTime)
-	maxAddStakerUnix := json.Uint64(maxAddStakerTime.Unix())
-
-	if args.StartTime == 0 {
-		args.StartTime = minAddStakerUnix
-	}
-
-	switch {
-	case args.SubnetID == "":
-		return errNoSubnetID
-	case args.StartTime < minAddStakerUnix:
-		return errStartTimeTooSoon
-	case args.StartTime > maxAddStakerUnix:
-		return errStartTimeTooLate
-	}
-
-	// Parse the subnet ID
-	subnetID, err := ids.FromString(args.SubnetID)
-	if err != nil {
-		return fmt.Errorf("problem parsing subnetID %q: %w", args.SubnetID, err)
-	}
-	if subnetID == constants.PrimaryNetworkID {
-		return errNamedSubnetCantBePrimary
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	keys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address.
-	if len(keys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := keys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// TODO: Remove after StakeAmount is removed from [args].
-	if args.StakeAmount != nil {
-		args.Weight = *args.StakeAmount
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewAddSubnetValidatorTx(
-		uint64(args.Weight),    // Stake amount
-		uint64(args.StartTime), // Start time
-		uint64(args.EndTime),   // End time
-		args.NodeID,            // Node ID
-		subnetID,               // Subnet ID
-		keys.Keys,
-		changeAddr,
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	response.TxID = tx.ID()
-	response.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-// CreateSubnetArgs are the arguments to CreateSubnet
-type CreateSubnetArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-	// The ID member of APISubnet is ignored
-	APISubnet
-}
-
-// CreateSubnet creates and signs and issues a transaction to create a new
-// subnet
-func (s *Service) CreateSubnet(req *http.Request, args *CreateSubnetArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "createSubnet"),
-	)
-
-	// Parse the control keys
-	controlKeys, err := lux.ParseServiceAddresses(s.addrManager, args.ControlKeys)
-	if err != nil {
-		return err
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	privKeys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address. Assumes that if the user has no keys,
-	// this operation will fail so the change address can be anything.
-	if len(privKeys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewCreateSubnetTx(
-		uint32(args.Threshold), // Threshold
-		controlKeys.List(),     // Control Addresses
-		privKeys.Keys,          // Private keys
-		changeAddr,
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	response.TxID = tx.ID()
-	response.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-// ExportLUXArgs are the arguments to ExportLUX
-type ExportLUXArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-
-	// Amount of LUX to send
-	Amount json.Uint64 `json:"amount"`
-
-	// Chain the funds are going to. Optional. Used if To address does not include the chainID.
-	TargetChain string `json:"targetChain"`
-
-	// ID of the address that will receive the LUX. This address may include the
-	// chainID, which is used to determine what the destination chain is.
-	To string `json:"to"`
-}
-
-// ExportLUX exports LUX from the P-Chain to the X-Chain
-// It must be imported on the X-Chain to complete the transfer
-func (s *Service) ExportLUX(req *http.Request, args *ExportLUXArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "exportLUX"),
-	)
-
-	if args.Amount == 0 {
-		return errNoAmount
-	}
-
-	// Get the chainID and parse the to address
-	chainID, to, err := s.addrManager.ParseAddress(args.To)
-	if err != nil {
-		chainID, err = s.vm.ctx.BCLookup.Lookup(args.TargetChain)
-		if err != nil {
-			return err
-		}
-		to, err = ids.ShortFromString(args.To)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	privKeys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address. Assumes that if the user has no keys,
-	// this operation will fail so the change address can be anything.
-	if len(privKeys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewExportTx(
-		uint64(args.Amount), // Amount
-		chainID,             // ID of the chain to send the funds to
-		to,                  // Address
-		privKeys.Keys,       // Private keys
-		changeAddr,          // Change address
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	response.TxID = tx.ID()
-	response.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-// ImportLUXArgs are the arguments to ImportLUX
-type ImportLUXArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-
-	// Chain the funds are coming from
-	SourceChain string `json:"sourceChain"`
-
-	// The address that will receive the imported funds
-	To string `json:"to"`
-}
-
-// ImportLUX issues a transaction to import LUX from the X-chain. The LUX
-// must have already been exported from the X-Chain.
-func (s *Service) ImportLUX(req *http.Request, args *ImportLUXArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "importLUX"),
-	)
-
-	// Parse the sourceCHain
-	chainID, err := s.vm.ctx.BCLookup.Lookup(args.SourceChain)
-	if err != nil {
-		return fmt.Errorf("problem parsing chainID %q: %w", args.SourceChain, err)
-	}
-
-	// Parse the to address
-	to, err := lux.ParseServiceAddress(s.addrManager, args.To)
-	if err != nil { // Parse address
-		return fmt.Errorf("couldn't parse argument 'to' to an address: %w", err)
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	privKeys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil { // Get keys
-		return fmt.Errorf("couldn't get keys controlled by the user: %w", err)
-	}
-
-	// Parse the change address. Assumes that if the user has no keys,
-	// this operation will fail so the change address can be anything.
-	if len(privKeys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := privKeys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	tx, err := s.vm.txBuilder.NewImportTx(
-		chainID,
-		to,
-		privKeys.Keys,
-		changeAddr,
-	)
-	if err != nil {
-		return err
-	}
-
-	response.TxID = tx.ID()
-	response.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
-}
-
-/*
- ******************************************************
- ******** Create/get status of a blockchain ***********
- ******************************************************
- */
-
-// CreateBlockchainArgs is the arguments for calling CreateBlockchain
-type CreateBlockchainArgs struct {
-	// User, password, from addrs, change addr
-	api.JSONSpendHeader
-	// ID of Subnet that validates the new blockchain
-	SubnetID ids.ID `json:"subnetID"`
-	// ID of the VM the new blockchain is running
-	VMID string `json:"vmID"`
-	// IDs of the FXs the VM is running
-	FxIDs []string `json:"fxIDs"`
-	// Human-readable name for the new blockchain, not necessarily unique
-	Name string `json:"name"`
-	// Genesis state of the blockchain being created
-	GenesisData string `json:"genesisData"`
-	// Encoding format to use for genesis data
-	Encoding formatting.Encoding `json:"encoding"`
-}
-
-// CreateBlockchain issues a transaction to create a new blockchain
-func (s *Service) CreateBlockchain(req *http.Request, args *CreateBlockchainArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "createBlockchain"),
-	)
-
-	switch {
-	case args.Name == "":
-		return errMissingName
-	case args.VMID == "":
-		return errMissingVMID
-	}
-
-	genesisBytes, err := formatting.Decode(args.Encoding, args.GenesisData)
-	if err != nil {
-		return fmt.Errorf("problem parsing genesis data: %w", err)
-	}
-
-	vmID, err := s.vm.Chains.LookupVM(args.VMID)
-	if err != nil {
-		return fmt.Errorf("no VM with ID '%s' found", args.VMID)
-	}
-
-	fxIDs := []ids.ID(nil)
-	for _, fxIDStr := range args.FxIDs {
-		fxID, err := s.vm.Chains.LookupVM(fxIDStr)
-		if err != nil {
-			return fmt.Errorf("no FX with ID '%s' found", fxIDStr)
-		}
-		fxIDs = append(fxIDs, fxID)
-	}
-	// If creating AVM instance, use secp256k1fx
-	// TODO: Document FXs and have user specify them in API call
-	fxIDsSet := set.Of(fxIDs...)
-	if vmID == constants.AVMID && !fxIDsSet.Contains(secp256k1fx.ID) {
-		fxIDs = append(fxIDs, secp256k1fx.ID)
-	}
-
-	if args.SubnetID == constants.PrimaryNetworkID {
-		return txs.ErrCantValidatePrimaryNetwork
-	}
-
-	// Parse the from addresses
-	fromAddrs, err := lux.ParseServiceAddresses(s.addrManager, args.From)
-	if err != nil {
-		return err
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	keys, err := keystore.GetKeychain(user, fromAddrs)
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses controlled by the user: %w", err)
-	}
-
-	// Parse the change address. Assumes that if the user has no keys,
-	// this operation will fail so the change address can be anything.
-	if len(keys.Keys) == 0 {
-		return errNoKeys
-	}
-	changeAddr := keys.Keys[0].PublicKey().Address() // By default, use a key controlled by the user
-	if args.ChangeAddr != "" {
-		changeAddr, err = lux.ParseServiceAddress(s.addrManager, args.ChangeAddr)
-		if err != nil {
-			return fmt.Errorf("couldn't parse changeAddr: %w", err)
-		}
-	}
-
-	// Create the transaction
-	tx, err := s.vm.txBuilder.NewCreateChainTx(
-		args.SubnetID,
-		genesisBytes,
-		vmID,
-		fxIDs,
-		args.Name,
-		keys.Keys,
-		changeAddr, // Change address
-	)
-	if err != nil {
-		return fmt.Errorf("couldn't create tx: %w", err)
-	}
-
-	response.TxID = tx.ID()
-	response.ChangeAddr, err = s.addrManager.FormatLocalAddress(changeAddr)
-
-	return utils.Err(
-		err,
-		s.vm.Network.IssueTx(req.Context(), tx),
-		user.Close(),
-	)
 }
 
 // GetBlockchainStatusArgs is the arguments for calling GetBlockchainStatus
@@ -2102,14 +1233,13 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	s.vm.ctx.Lock.Lock()
 	defer s.vm.ctx.Lock.Unlock()
 
-	subnets, err := s.vm.state.GetSubnets()
+	subnetIDs, err := s.vm.state.GetSubnetIDs()
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve subnets: %w", err)
 	}
 
 	response.Blockchains = []APIBlockchain{}
-	for _, subnet := range subnets {
-		subnetID := subnet.ID()
+	for _, subnetID := range subnetIDs {
 		chains, err := s.vm.state.GetChains(subnetID)
 		if err != nil {
 			return fmt.Errorf(
@@ -2155,7 +1285,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	return nil
 }
 
-func (s *Service) IssueTx(req *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
+func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "issueTx"),
@@ -2170,10 +1300,7 @@ func (s *Service) IssueTx(req *http.Request, args *api.FormattedTx, response *ap
 		return fmt.Errorf("couldn't parse tx: %w", err)
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	if err := s.vm.Network.IssueTx(req.Context(), tx); err != nil {
+	if err := s.vm.issueTxFromRPC(tx); err != nil {
 		return fmt.Errorf("couldn't issue tx: %w", err)
 	}
 
@@ -2207,7 +1334,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetT
 		}
 	}
 
-	response.Tx, err = stdjson.Marshal(result)
+	response.Tx, err = json.Marshal(result)
 	return err
 }
 
@@ -2259,7 +1386,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 		return err
 	}
 
-	if s.vm.Builder.Has(args.TxID) {
+	if _, ok := s.vm.Builder.Get(args.TxID); ok {
 		// Found the tx in the mempool. Report tx is processing.
 		response.Status = status.Processing
 		return nil
@@ -2288,8 +1415,8 @@ type GetStakeArgs struct {
 
 // GetStakeReply is the response from calling GetStake.
 type GetStakeReply struct {
-	Staked  json.Uint64            `json:"staked"`
-	Stakeds map[ids.ID]json.Uint64 `json:"stakeds"`
+	Staked  avajson.Uint64            `json:"staked"`
+	Stakeds map[ids.ID]avajson.Uint64 `json:"stakeds"`
 	// String representation of staked outputs
 	// Each is of type lux.TransferableOutput
 	Outputs []string `json:"stakedOutputs"`
@@ -2373,7 +1500,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	response.Staked = response.Stakeds[s.vm.ctx.LUXAssetID]
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
-		bytes, err := txs.Codec.Marshal(txs.Version, output)
+		bytes, err := txs.Codec.Marshal(txs.CodecVersion, output)
 		if err != nil {
 			return fmt.Errorf("couldn't serialize output %s: %w", output.ID, err)
 		}
@@ -2395,9 +1522,9 @@ type GetMinStakeArgs struct {
 // GetMinStakeReply is the response from calling GetMinStake.
 type GetMinStakeReply struct {
 	//  The minimum amount of tokens one must bond to be a validator
-	MinValidatorStake json.Uint64 `json:"minValidatorStake"`
+	MinValidatorStake avajson.Uint64 `json:"minValidatorStake"`
 	// Minimum stake, in nLUX, that can be delegated on the primary network
-	MinDelegatorStake json.Uint64 `json:"minDelegatorStake"`
+	MinDelegatorStake avajson.Uint64 `json:"minDelegatorStake"`
 }
 
 // GetMinStake returns the minimum staking amount in nLUX.
@@ -2408,8 +1535,8 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	)
 
 	if args.SubnetID == constants.PrimaryNetworkID {
-		reply.MinValidatorStake = json.Uint64(s.vm.MinValidatorStake)
-		reply.MinDelegatorStake = json.Uint64(s.vm.MinDelegatorStake)
+		reply.MinValidatorStake = avajson.Uint64(s.vm.MinValidatorStake)
+		reply.MinDelegatorStake = avajson.Uint64(s.vm.MinDelegatorStake)
 		return nil
 	}
 
@@ -2432,8 +1559,8 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 		)
 	}
 
-	reply.MinValidatorStake = json.Uint64(transformSubnet.MinValidatorStake)
-	reply.MinDelegatorStake = json.Uint64(transformSubnet.MinDelegatorStake)
+	reply.MinValidatorStake = avajson.Uint64(transformSubnet.MinValidatorStake)
+	reply.MinDelegatorStake = avajson.Uint64(transformSubnet.MinDelegatorStake)
 
 	return nil
 }
@@ -2448,9 +1575,9 @@ type GetTotalStakeArgs struct {
 // GetTotalStakeReply is the response from calling GetTotalStake.
 type GetTotalStakeReply struct {
 	// Deprecated: Use Weight instead.
-	Stake json.Uint64 `json:"stake"`
+	Stake avajson.Uint64 `json:"stake"`
 
-	Weight json.Uint64 `json:"weight"`
+	Weight avajson.Uint64 `json:"weight"`
 }
 
 // GetTotalStake returns the total amount staked on the Primary Network
@@ -2464,72 +1591,16 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 	if err != nil {
 		return fmt.Errorf("couldn't get total weight: %w", err)
 	}
-	weight := json.Uint64(totalWeight)
+	weight := avajson.Uint64(totalWeight)
 	reply.Weight = weight
 	reply.Stake = weight
 	return nil
 }
 
-// GetMaxStakeAmountArgs is the request for calling GetMaxStakeAmount.
-type GetMaxStakeAmountArgs struct {
-	SubnetID  ids.ID      `json:"subnetID"`
-	NodeID    ids.NodeID  `json:"nodeID"`
-	StartTime json.Uint64 `json:"startTime"`
-	EndTime   json.Uint64 `json:"endTime"`
-}
-
-// GetMaxStakeAmountReply is the response from calling GetMaxStakeAmount.
-type GetMaxStakeAmountReply struct {
-	Amount json.Uint64 `json:"amount"`
-}
-
-// GetMaxStakeAmount returns the maximum amount of nLUX staking to the named
-// node during the time period.
-func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
-	s.vm.ctx.Log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getMaxStakeAmount"),
-	)
-
-	startTime := time.Unix(int64(args.StartTime), 0)
-	endTime := time.Unix(int64(args.EndTime), 0)
-
-	if startTime.After(endTime) {
-		return errStartAfterEndTime
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	now := s.vm.state.GetTimestamp()
-	if startTime.Before(now) {
-		return errStartTimeInThePast
-	}
-
-	staker, err := executor.GetValidator(s.vm.state, args.SubnetID, args.NodeID)
-	if err == database.ErrNotFound {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if startTime.After(staker.EndTime) {
-		return nil
-	}
-	if endTime.Before(staker.StartTime) {
-		return nil
-	}
-
-	maxStakeAmount, err := executor.GetMaxWeight(s.vm.state, staker, startTime, endTime)
-	reply.Amount = json.Uint64(maxStakeAmount)
-	return err
-}
-
 // GetRewardUTXOsReply defines the GetRewardUTXOs replies returned from the API
 type GetRewardUTXOsReply struct {
 	// Number of UTXOs returned
-	NumFetched json.Uint64 `json:"numFetched"`
+	NumFetched avajson.Uint64 `json:"numFetched"`
 	// The UTXOs
 	UTXOs []string `json:"utxos"`
 	// Encoding specifies the encoding format the UTXOs are returned in
@@ -2552,12 +1623,12 @@ func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *Ge
 		return fmt.Errorf("couldn't get reward UTXOs: %w", err)
 	}
 
-	reply.NumFetched = json.Uint64(len(utxos))
+	reply.NumFetched = avajson.Uint64(len(utxos))
 	reply.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
-		utxoBytes, err := txs.GenesisCodec.Marshal(txs.Version, utxo)
+		utxoBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, utxo)
 		if err != nil {
-			return fmt.Errorf("failed to encode UTXO to bytes: %w", err)
+			return fmt.Errorf("couldn't encode UTXO to bytes: %w", err)
 		}
 
 		utxoStr, err := formatting.Encode(args.Encoding, utxoBytes)
@@ -2592,24 +1663,24 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
-	Height   json.Uint64 `json:"height"`
-	SubnetID ids.ID      `json:"subnetID"`
+	Height   avajson.Uint64 `json:"height"`
+	SubnetID ids.ID         `json:"subnetID"`
 }
 
 type jsonGetValidatorOutput struct {
-	PublicKey *string     `json:"publicKey"`
-	Weight    json.Uint64 `json:"weight"`
+	PublicKey *string        `json:"publicKey"`
+	Weight    avajson.Uint64 `json:"weight"`
 }
 
 func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 	m := make(map[ids.NodeID]*jsonGetValidatorOutput, len(v.Validators))
 	for _, vdr := range v.Validators {
 		vdrJSON := &jsonGetValidatorOutput{
-			Weight: json.Uint64(vdr.Weight),
+			Weight: avajson.Uint64(vdr.Weight),
 		}
 
 		if vdr.PublicKey != nil {
-			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToBytes(vdr.PublicKey))
+			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToCompressedBytes(vdr.PublicKey))
 			if err != nil {
 				return nil, err
 			}
@@ -2618,12 +1689,12 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 
 		m[vdr.NodeID] = vdrJSON
 	}
-	return stdjson.Marshal(m)
+	return json.Marshal(m)
 }
 
 func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 	var m map[ids.NodeID]*jsonGetValidatorOutput
-	if err := stdjson.Unmarshal(b, &m); err != nil {
+	if err := json.Unmarshal(b, &m); err != nil {
 		return err
 	}
 
@@ -2644,7 +1715,7 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 			if err != nil {
 				return err
 			}
-			vdr.PublicKey, err = bls.PublicKeyFromBytes(pkBytes)
+			vdr.PublicKey, err = bls.PublicKeyFromCompressedBytes(pkBytes)
 			if err != nil {
 				return err
 			}
@@ -2711,7 +1782,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 		}
 	}
 
-	response.Block, err = stdjson.Marshal(result)
+	response.Block, err = json.Marshal(result)
 	return err
 }
 
@@ -2753,11 +1824,11 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 		}
 	}
 
-	response.Block, err = stdjson.Marshal(result)
+	response.Block, err = json.Marshal(result)
 	return err
 }
 
-func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
+func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
 	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
 		return nil, nil
@@ -2769,14 +1840,14 @@ func (s *Service) getAPIUptime(staker *state.Staker) (*json.Float32, error) {
 	}
 	// Transform this to a percentage (0-100) to make it consistent
 	// with observedUptime in info.peers API
-	uptime := json.Float32(rawUptime * 100)
+	uptime := avajson.Float32(rawUptime * 100)
 	return &uptime, nil
 }
 
 func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Owner, error) {
 	apiOwner := &platformapi.Owner{
-		Locktime:  json.Uint64(owner.Locktime),
-		Threshold: json.Uint32(owner.Threshold),
+		Locktime:  avajson.Uint64(owner.Locktime),
+		Threshold: avajson.Uint32(owner.Threshold),
 		Addresses: make([]string, 0, len(owner.Addrs)),
 	}
 	for _, addr := range owner.Addrs {

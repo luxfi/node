@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package galiasreader
@@ -29,7 +29,7 @@ func (c *Client) Lookup(alias string) (ids.ID, error) {
 		Alias: alias,
 	})
 	if err != nil {
-		return ids.ID{}, err
+		return ids.Empty, err
 	}
 	return ids.ToID(resp.Id)
 }

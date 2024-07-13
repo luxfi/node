@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -6,11 +6,10 @@ package sampler
 import (
 	"fmt"
 	"math"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -19,12 +18,16 @@ var (
 		sampler Uniform
 	}{
 		{
-			name:    "replacer",
-			sampler: &uniformReplacer{},
+			name: "replacer",
+			sampler: &uniformReplacer{
+				rng: globalRNG,
+			},
 		},
 		{
-			name:    "resampler",
-			sampler: &uniformResample{},
+			name: "resampler",
+			sampler: &uniformResample{
+				rng: globalRNG,
+			},
 		},
 		{
 			name:    "best",
@@ -80,8 +83,8 @@ func UniformInitializeMaxUint64Test(t *testing.T, s Uniform) {
 	s.Initialize(math.MaxUint64)
 
 	for {
-		val, err := s.Next()
-		require.NoError(t, err)
+		val, hasNext := s.Next()
+		require.True(t, hasNext)
 
 		if val > math.MaxInt64 {
 			break
@@ -92,8 +95,8 @@ func UniformInitializeMaxUint64Test(t *testing.T, s Uniform) {
 func UniformOutOfRangeTest(t *testing.T, s Uniform) {
 	s.Initialize(0)
 
-	_, err := s.Sample(1)
-	require.ErrorIs(t, err, ErrOutOfRange)
+	_, ok := s.Sample(1)
+	require.False(t, ok)
 }
 
 func UniformEmptyTest(t *testing.T, s Uniform) {
@@ -101,8 +104,8 @@ func UniformEmptyTest(t *testing.T, s Uniform) {
 
 	s.Initialize(1)
 
-	val, err := s.Sample(0)
-	require.NoError(err)
+	val, ok := s.Sample(0)
+	require.True(ok)
 	require.Empty(val)
 }
 
@@ -111,8 +114,8 @@ func UniformSingletonTest(t *testing.T, s Uniform) {
 
 	s.Initialize(1)
 
-	val, err := s.Sample(1)
-	require.NoError(err)
+	val, ok := s.Sample(1)
+	require.True(ok)
 	require.Equal([]uint64{0}, val)
 }
 
@@ -121,8 +124,8 @@ func UniformDistributionTest(t *testing.T, s Uniform) {
 
 	s.Initialize(3)
 
-	val, err := s.Sample(3)
-	require.NoError(err)
+	val, ok := s.Sample(3)
+	require.True(ok)
 
 	slices.Sort(val)
 	require.Equal([]uint64{0, 1, 2}, val)
@@ -131,8 +134,8 @@ func UniformDistributionTest(t *testing.T, s Uniform) {
 func UniformOverSampleTest(t *testing.T, s Uniform) {
 	s.Initialize(3)
 
-	_, err := s.Sample(4)
-	require.ErrorIs(t, err, ErrOutOfRange)
+	_, ok := s.Sample(4)
+	require.False(t, ok)
 }
 
 func UniformLazilySample(t *testing.T, s Uniform) {
@@ -143,66 +146,16 @@ func UniformLazilySample(t *testing.T, s Uniform) {
 	for j := 0; j < 2; j++ {
 		sampled := map[uint64]bool{}
 		for i := 0; i < 3; i++ {
-			val, err := s.Next()
-			require.NoError(err)
+			val, hasNext := s.Next()
+			require.True(hasNext)
 			require.False(sampled[val])
 
 			sampled[val] = true
 		}
 
-		_, err := s.Next()
-		require.ErrorIs(err, ErrOutOfRange)
+		_, hasNext := s.Next()
+		require.False(hasNext)
 
 		s.Reset()
 	}
-}
-
-func TestSeeding(t *testing.T) {
-	require := require.New(t)
-
-	s1 := NewBestUniform(30)
-	s2 := NewBestUniform(30)
-
-	s1.Initialize(50)
-	s2.Initialize(50)
-
-	s1.Seed(0)
-
-	s1.Reset()
-	s1Val, err := s1.Next()
-	require.NoError(err)
-
-	s2.Seed(1)
-	s2.Reset()
-
-	s1.Seed(0)
-	v, err := s2.Next()
-	require.NoError(err)
-	require.NotEqual(s1Val, v)
-
-	s1.ClearSeed()
-
-	_, err = s1.Next()
-	require.NoError(err)
-}
-
-func TestSeedingProducesTheSame(t *testing.T) {
-	require := require.New(t)
-
-	s := NewBestUniform(30)
-
-	s.Initialize(50)
-
-	s.Seed(0)
-	s.Reset()
-
-	val0, err := s.Next()
-	require.NoError(err)
-
-	s.Seed(0)
-	s.Reset()
-
-	val1, err := s.Next()
-	require.NoError(err)
-	require.Equal(val0, val1)
 }

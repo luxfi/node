@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 // Implements tests for the banff network upgrade.
 package banff
 
 import (
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
@@ -17,6 +17,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = ginkgo.Describe("[Banff]", func() {
@@ -30,9 +32,11 @@ var _ = ginkgo.Describe("[Banff]", func() {
 			// Get the P-chain and the X-chain wallets
 			pWallet := wallet.P()
 			xWallet := wallet.X()
+			xBuilder := xWallet.Builder()
+			xContext := xBuilder.Context()
 
 			// Pull out useful constants to use when issuing transactions.
-			xChainID := xWallet.BlockchainID()
+			xChainID := xContext.BlockchainID
 			owner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs: []ids.ShortID{

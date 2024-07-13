@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package p
 
@@ -7,13 +9,9 @@ import (
 	"math/big"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/spf13/cast"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/spf13/cast"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
@@ -29,6 +27,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainLabel), func() {
@@ -43,7 +43,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		network := e2e.Env.GetNetwork()
 
 		ginkgo.By("checking that the network has a compatible minimum stake duration", func() {
-			minStakeDuration := cast.ToDuration(network.GetConfig().DefaultFlags[config.MinStakeDurationKey])
+			minStakeDuration := cast.ToDuration(network.DefaultFlags[config.MinStakeDurationKey])
 			require.Equal(tmpnet.DefaultMinStakeDuration, minStakeDuration)
 		})
 
@@ -58,9 +58,16 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		cWallet := baseWallet.C()
 		pWallet := baseWallet.P()
 
+		xBuilder := xWallet.Builder()
+		xContext := xBuilder.Context()
+		pBuilder := pWallet.Builder()
+		pContext := pBuilder.Context()
+		cBuilder := cWallet.Builder()
+		cContext := cBuilder.Context()
+
 		ginkgo.By("defining common configuration")
 		recipientEthAddress := evm.GetEthAddress(recipientKey)
-		luxAssetID := xWallet.LUXAssetID()
+		luxAssetID := xContext.LUXAssetID
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -91,17 +98,13 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		e2e.WaitForHealthy(node)
 
 		ginkgo.By("retrieving new node's id and pop")
-		infoClient := info.NewClient(node.GetProcessContext().URI)
+		infoClient := info.NewClient(node.URI)
 		nodeID, nodePOP, err := infoClient.GetNodeID(e2e.DefaultContext())
 		require.NoError(err)
 
+		// Adding a validator should not break interchain transfer.
+		endTime := time.Now().Add(30 * time.Second)
 		ginkgo.By("adding the new node as a validator", func() {
-			startTime := time.Now().Add(e2e.DefaultValidatorStartTimeDiff)
-			// Validation duration doesn't actually matter to this
-			// test - it is only ensuring that adding a validator
-			// doesn't break interchain transfer.
-			endTime := startTime.Add(30 * time.Second)
-
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -114,14 +117,13 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						Start:  uint64(startTime.Unix()),
 						End:    uint64(endTime.Unix()),
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
 				},
 				nodePOP,
-				pWallet.LUXAssetID(),
+				pContext.LUXAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{rewardKey.Address()},
@@ -136,13 +138,8 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			require.NoError(err)
 		})
 
+		// Adding a delegator should not break interchain transfer.
 		ginkgo.By("adding a delegator to the new node", func() {
-			startTime := time.Now().Add(e2e.DefaultValidatorStartTimeDiff)
-			// Delegation duration doesn't actually matter to this
-			// test - it is only ensuring that adding a delegator
-			// doesn't break interchain transfer.
-			endTime := startTime.Add(15 * time.Second)
-
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -150,13 +147,12 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						Start:  uint64(startTime.Unix()),
 						End:    uint64(endTime.Unix()),
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
 				},
-				pWallet.LUXAssetID(),
+				pContext.LUXAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{rewardKey.Address()},
@@ -168,7 +164,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("exporting LUX from the P-Chain to the X-Chain", func() {
 			_, err := pWallet.IssueExportTx(
-				xWallet.BlockchainID(),
+				xContext.BlockchainID,
 				exportOutputs,
 				e2e.WithDefaultContext(),
 			)
@@ -194,7 +190,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("exporting LUX from the P-Chain to the C-Chain", func() {
 			_, err := pWallet.IssueExportTx(
-				cWallet.BlockchainID(),
+				cContext.BlockchainID,
 				exportOutputs,
 				e2e.WithDefaultContext(),
 			)
@@ -220,7 +216,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		require.Positive(balance.Cmp(big.NewInt(0)))
 
 		ginkgo.By("stopping validator node to free up resources for a bootstrap check")
-		require.NoError(node.Stop())
+		require.NoError(node.Stop(e2e.DefaultContext()))
 
 		e2e.CheckBootstrapIsPossible(network)
 	})

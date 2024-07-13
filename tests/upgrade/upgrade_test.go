@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgrade
@@ -6,38 +6,33 @@ package upgrade
 import (
 	"flag"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/onsi/ginkgo/v2"
-
-	"github.com/onsi/gomega"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
 func TestUpgrade(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "upgrade test suites")
 }
 
 var (
-	luxdExecPath            string
-	luxdExecPathToUpgradeTo string
+	luxNodeExecPath            string
+	luxNodeExecPathToUpgradeTo string
 )
 
 func init() {
 	flag.StringVar(
-		&luxdExecPath,
+		&luxNodeExecPath,
 		"node-path",
 		"",
 		"node executable path",
 	)
 	flag.StringVar(
-		&luxdExecPathToUpgradeTo,
+		&luxNodeExecPathToUpgradeTo,
 		"node-path-to-upgrade-to",
 		"",
 		"node executable path to upgrade to",
@@ -48,30 +43,19 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 	require := require.New(ginkgo.GinkgoT())
 
 	ginkgo.It("can upgrade versions", func() {
-		// TODO(marun) How many nodes should the target network have to best validate upgrade?
-		network := e2e.StartLocalNetwork(luxdExecPath, e2e.DefaultNetworkDir)
+		network := tmpnet.NewDefaultNetwork("node-upgrade")
+		e2e.StartNetwork(network, luxNodeExecPath, "" /* pluginDir */, 0 /* shutdownDelay */, false /* reuseNetwork */)
 
-		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", luxdExecPathToUpgradeTo))
+		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", luxNodeExecPathToUpgradeTo))
 		for _, node := range network.Nodes {
-			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.GetID(), luxdExecPathToUpgradeTo))
-			require.NoError(node.Stop())
+			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.NodeID, luxNodeExecPathToUpgradeTo))
+			require.NoError(node.Stop(e2e.DefaultContext()))
 
-			// A node must start with sufficient bootstrap nodes to represent a quorum. Since the node's current
-			// bootstrap configuration may not satisfy this requirement (i.e. if on network start the node was one of
-			// the first validators), updating the node to bootstrap from all running validators maximizes the
-			// chances of a successful start.
-			//
-			// TODO(marun) Refactor node start to do this automatically
-			bootstrapIPs, bootstrapIDs, err := network.GetBootstrapIPsAndIDs()
-			require.NoError(err)
-			require.NotEmpty(bootstrapIDs)
-			node.Flags[config.BootstrapIDsKey] = strings.Join(bootstrapIDs, ",")
-			node.Flags[config.BootstrapIPsKey] = strings.Join(bootstrapIPs, ",")
-			require.NoError(node.WriteConfig())
+			node.RuntimeConfig.Lux NodePath = luxNodeExecPathToUpgradeTo
 
-			require.NoError(node.Start(ginkgo.GinkgoWriter, luxdExecPath))
+			require.NoError(network.StartNode(e2e.DefaultContext(), ginkgo.GinkgoWriter, node))
 
-			ginkgo.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.GetID()))
+			ginkgo.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.NodeID))
 			e2e.WaitForHealthy(node)
 		}
 

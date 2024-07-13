@@ -1,22 +1,21 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
+	"errors"
 	"math"
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-// Version is the current default codec version
-const Version = 0
+const CodecVersion = 0
 
 var (
 	Codec codec.Manager
@@ -30,9 +29,7 @@ var (
 
 func init() {
 	c := linearcodec.NewDefault()
-	Codec = codec.NewDefaultManager()
-	gc := linearcodec.NewCustomMaxLength(math.MaxInt32)
-	GenesisCodec = codec.NewManager(math.MaxInt32)
+	gc := linearcodec.NewDefault()
 
 	errs := wrappers.Errs{}
 	for _, c := range []linearcodec.Codec{c, gc} {
@@ -47,9 +44,12 @@ func init() {
 
 		errs.Add(RegisterDUnsignedTxsTypes(c))
 	}
+
+	Codec = codec.NewDefaultManager()
+	GenesisCodec = codec.NewManager(math.MaxInt32)
 	errs.Add(
-		Codec.RegisterCodec(Version, c),
-		GenesisCodec.RegisterCodec(Version, gc),
+		Codec.RegisterCodec(CodecVersion, c),
+		GenesisCodec.RegisterCodec(CodecVersion, gc),
 	)
 	if errs.Errored() {
 		panic(errs.Err)
@@ -104,7 +104,7 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 }
 
 func RegisterDUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
-	return utils.Err(
+	return errors.Join(
 		targetCodec.RegisterType(&TransferSubnetOwnershipTx{}),
 		targetCodec.RegisterType(&BaseTx{}),
 	)

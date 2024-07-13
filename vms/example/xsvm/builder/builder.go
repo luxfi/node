@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
@@ -35,7 +35,7 @@ type builder struct {
 	engineChan   chan<- common.Message
 	chain        chain.Chain
 
-	pendingTxs linkedhashmap.LinkedHashmap[ids.ID, *tx.Tx]
+	pendingTxs *linked.Hashmap[ids.ID, *tx.Tx]
 	preference ids.ID
 }
 
@@ -45,7 +45,7 @@ func New(chainContext *snow.Context, engineChan chan<- common.Message, chain cha
 		engineChan:   engineChan,
 		chain:        chain,
 
-		pendingTxs: linkedhashmap.New[ids.ID, *tx.Tx](),
+		pendingTxs: linked.NewHashmap[ids.ID, *tx.Tx](),
 		preference: chain.LastAccepted(),
 	}
 }

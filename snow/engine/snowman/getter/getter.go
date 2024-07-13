@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package getter
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
@@ -44,8 +43,7 @@ func New(
 
 	var err error
 	gh.getAncestorsBlks, err = metric.NewAverager(
-		"bs",
-		"get_ancestors_blks",
+		"bs_get_ancestors_blks",
 		"blocks fetched in a call to GetAncestors",
 		reg,
 	)

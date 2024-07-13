@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -15,6 +15,11 @@ import (
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
+	psigner "github.com/luxfi/node/wallet/chain/p/signer"
+	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
+	xsigner "github.com/luxfi/node/wallet/chain/x/signer"
 )
 
 var _ Wallet = (*wallet)(nil)
@@ -116,21 +121,21 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 		pChainTxs[txID] = tx
 	}
 
-	pUTXOs := NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
+	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
 	pBackend := p.NewBackend(luxState.PCTX, pUTXOs, pChainTxs)
-	pBuilder := p.NewBuilder(luxAddrs, pBackend)
-	pSigner := p.NewSigner(config.LUXKeychain, pBackend)
+	pBuilder := pbuilder.New(luxAddrs, luxState.PCTX, pBackend)
+	pSigner := psigner.New(config.LUXKeychain, pBackend)
 
-	xChainID := luxState.XCTX.BlockchainID()
-	xUTXOs := NewChainUTXOs(xChainID, luxState.UTXOs)
+	xChainID := luxState.XCTX.BlockchainID
+	xUTXOs := common.NewChainUTXOs(xChainID, luxState.UTXOs)
 	xBackend := x.NewBackend(luxState.XCTX, xUTXOs)
-	xBuilder := x.NewBuilder(luxAddrs, xBackend)
-	xSigner := x.NewSigner(config.LUXKeychain, xBackend)
+	xBuilder := xbuilder.New(luxAddrs, luxState.XCTX, xBackend)
+	xSigner := xsigner.New(config.LUXKeychain, xBackend)
 
-	cChainID := luxState.CCTX.BlockchainID()
-	cUTXOs := NewChainUTXOs(cChainID, luxState.UTXOs)
-	cBackend := c.NewBackend(luxState.CCTX, cUTXOs, ethState.Accounts)
-	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, cBackend)
+	cChainID := luxState.CCTX.BlockchainID
+	cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
+	cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
+	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
 	cSigner := c.NewSigner(config.LUXKeychain, config.EthKeychain, cBackend)
 
 	return NewWallet(

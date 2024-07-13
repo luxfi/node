@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -39,8 +39,8 @@ type Validator struct {
 	NodeIDs        []ids.NodeID
 }
 
-func (v *Validator) Less(o *Validator) bool {
-	return bytes.Compare(v.PublicKeyBytes, o.PublicKeyBytes) < 0
+func (v *Validator) Compare(o *Validator) int {
+	return bytes.Compare(v.PublicKeyBytes, o.PublicKeyBytes)
 }
 
 // GetCanonicalValidatorSet returns the validator set of [subnetID] at
@@ -55,12 +55,20 @@ func GetCanonicalValidatorSet(
 	// Get the validator set at the given height.
 	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, subnetID)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to fetch validator set (P-Chain Height: %d, SubnetID: %s): %w", pChainHeight, subnetID, err)
+		return nil, 0, err
 	}
 
+	// Convert the validator set into the canonical ordering.
+	return FlattenValidatorSet(vdrSet)
+}
+
+// FlattenValidatorSet converts the provided [vdrSet] into a canonical ordering.
+// Also returns the total weight of the validator set.
+func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) ([]*Validator, uint64, error) {
 	var (
 		vdrs        = make(map[string]*Validator, len(vdrSet))
 		totalWeight uint64
+		err         error
 	)
 	for _, vdr := range vdrSet {
 		totalWeight, err = math.Add64(totalWeight, vdr.Weight)
@@ -72,7 +80,7 @@ func GetCanonicalValidatorSet(
 			continue
 		}
 
-		pkBytes := bls.SerializePublicKey(vdr.PublicKey)
+		pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
 		uniqueVdr, ok := vdrs[string(pkBytes)]
 		if !ok {
 			uniqueVdr = &Validator{

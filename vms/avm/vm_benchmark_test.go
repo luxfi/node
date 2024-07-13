@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -23,15 +22,13 @@ func BenchmarkLoadUser(b *testing.B) {
 		require := require.New(b)
 
 		env := setup(b, &envConfig{
+			fork: latest,
 			keystoreUsers: []*user{{
 				username: username,
 				password: password,
 			}},
 		})
-		defer func() {
-			require.NoError(env.vm.Shutdown(context.Background()))
-			env.vm.ctx.Lock.Unlock()
-		}()
+		defer env.vm.ctx.Lock.Unlock()
 
 		user, err := keystore.NewUserFromKeystore(env.vm.ctx.Keystore, username, password)
 		require.NoError(err)
@@ -63,26 +60,22 @@ func BenchmarkLoadUser(b *testing.B) {
 	}
 }
 
-// GetAllUTXOsBenchmark is a helper func to benchmark the GetAllUTXOs depending on the size
-func GetAllUTXOsBenchmark(b *testing.B, utxoCount int) {
+// getAllUTXOsBenchmark is a helper func to benchmark the GetAllUTXOs depending on the size
+func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
-	env := setup(b, &envConfig{})
-	defer func() {
-		require.NoError(env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
+	env := setup(b, &envConfig{fork: latest})
+	defer env.vm.ctx.Lock.Unlock()
 
 	addr := ids.GenerateTestShortID()
 
-	// #nosec G404
 	for i := 0; i < utxoCount; i++ {
 		utxo := &lux.UTXO{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.GenerateTestID(),
-				OutputIndex: rand.Uint32(),
+				OutputIndex: uint32(randSrc.Int63()),
 			},
-			Asset: lux.Asset{ID: ids.ID{'y', 'e', 'e', 't'}},
+			Asset: lux.Asset{ID: env.vm.ctx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 100000,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -128,9 +121,10 @@ func BenchmarkGetUTXOs(b *testing.B) {
 		},
 	}
 
-	for _, count := range tests {
+	for testIdx, count := range tests {
+		randSrc := rand.NewSource(int64(testIdx))
 		b.Run(count.name, func(b *testing.B) {
-			GetAllUTXOsBenchmark(b, count.utxoCount)
+			getAllUTXOsBenchmark(b, count.utxoCount, randSrc)
 		})
 	}
 }

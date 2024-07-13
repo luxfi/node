@@ -43,13 +43,13 @@ def genkey(addr_num=10, chain='lux'):
     # Convert mnemonic to string for JSON serialization
     mnemonic_str = str(mnemonic)
 
-    # Create Avalanche X-chain wallet
-    avax_wallet = Bip44.FromSeed(seed, Bip44Coins.AVAX_X_CHAIN).DeriveDefaultPath()
-    avax_private_key = avax_wallet.PrivateKey().Raw().ToHex()
-    avax_address = avax_wallet.PublicKey().ToAddress()
+    # Create Lux X-chain wallet
+    lux_wallet = Bip44.FromSeed(seed, Bip44Coins.LUX_X_CHAIN).DeriveDefaultPath()
+    lux_private_key = lux_wallet.PrivateKey().Raw().ToHex()
+    lux_address = lux_wallet.PublicKey().ToAddress()
 
     # Create Lux address
-    addr_bytes = parse_address(avax_address)[2]
+    addr_bytes = parse_address(lux_address)[2]
     lux_address = format_address('X', chain, addr_bytes)
 
     # Ethereum key generation
@@ -69,8 +69,8 @@ def genkey(addr_num=10, chain='lux'):
 
     return {
         'mnemonic': mnemonic_str,
-        'avax_private_key': avax_private_key,
-        'avax_address': avax_address,
+        'lux_private_key': lux_private_key,
+        'lux_address': lux_address,
         'lux_address': lux_address,
         'ethereum_wallets': eth_wallets
     }
@@ -83,14 +83,14 @@ def genkey_stdout(addr_num=10, chain='lux'):
     # Step 2: Convert the mnemonic to a seed
     seed = Bip39SeedGenerator(mnemonic).Generate()
 
-    # Step 3: Create Avalanche X-chain wallet
-    # Assuming a common derivation path for Avalanche X-Chain (this needs to be verified)
-    avax_wallet = Bip44.FromSeed(seed, Bip44Coins.AVAX_X_CHAIN).DeriveDefaultPath()
-    print(f'\nX-Chain Private Key:\n{avax_wallet.PrivateKey().Raw().ToHex()}')
-    print(f'\nAvax X-Chain Address:\n{avax_wallet.PublicKey().ToAddress()}')
+    # Step 3: Create Lux X-chain wallet
+    # Assuming a common derivation path for Lux X-Chain (this needs to be verified)
+    lux_wallet = Bip44.FromSeed(seed, Bip44Coins.LUX_X_CHAIN).DeriveDefaultPath()
+    print(f'\nX-Chain Private Key:\n{lux_wallet.PrivateKey().Raw().ToHex()}')
+    print(f'\nLux X-Chain Address:\n{lux_wallet.PublicKey().ToAddress()}')
 
     # Step 4: Create Lux address
-    address = avax_wallet.PublicKey().ToAddress()
+    address = lux_wallet.PublicKey().ToAddress()
     addr_bytes = parse_address(address)[2]
     new_address = format_address('X', chain, addr_bytes)
     print(f'\nLux X-Chain Address:\n{new_address}')

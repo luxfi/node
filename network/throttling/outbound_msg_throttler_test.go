@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -6,11 +6,9 @@ package throttling
 import (
 	"testing"
 
-	"go.uber.org/mock/gomock"
-
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
@@ -34,7 +32,6 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
-		"",
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -176,7 +173,6 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
-		"",
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -223,7 +219,6 @@ func TestBypassThrottling(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
-		"",
 		prometheus.NewRegistry(),
 		vdrs,
 		config,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -6,13 +6,12 @@ package peer
 import (
 	"context"
 	"fmt"
-	"net"
+	"net/netip"
 	"time"
 
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/snow/networking/router"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
 )
 
 func ExampleStartTestPeer() {
@@ -20,10 +19,10 @@ func ExampleStartTestPeer() {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
-	peerIP := ips.IPPort{
-		IP:   net.IPv6loopback,
-		Port: 9651,
-	}
+	peerIP := netip.AddrPortFrom(
+		netip.IPv6Loopback(),
+		9651,
+	)
 	peer, err := StartTestPeer(
 		ctx,
 		peerIP,

@@ -1,17 +1,14 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
 
 import (
+	"context"
 	"errors"
 	"math/big"
 
-	stdcontext "context"
-
 	"github.com/luxfi/coreth/plugin/evm"
-
-	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
@@ -20,6 +17,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const luxConversionRateInt = 1_000_000_000
@@ -42,6 +41,10 @@ var (
 // Builder provides a convenient interface for building unsigned C-chain
 // transactions.
 type Builder interface {
+	// Context returns the configuration of the chain that this builder uses to
+	// create transactions.
+	Context() *Context
+
 	// GetBalance calculates the amount of LUX that this builder has control
 	// over.
 	GetBalance(
@@ -87,16 +90,15 @@ type Builder interface {
 // BuilderBackend specifies the required information needed to build unsigned
 // C-chain transactions.
 type BuilderBackend interface {
-	Context
-
-	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	Balance(ctx stdcontext.Context, addr ethcommon.Address) (*big.Int, error)
-	Nonce(ctx stdcontext.Context, addr ethcommon.Address) (uint64, error)
+	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
+	Balance(ctx context.Context, addr ethcommon.Address) (*big.Int, error)
+	Nonce(ctx context.Context, addr ethcommon.Address) (uint64, error)
 }
 
 type builder struct {
 	luxAddrs set.Set[ids.ShortID]
 	ethAddrs  set.Set[ethcommon.Address]
+	context   *Context
 	backend   BuilderBackend
 }
 
@@ -111,13 +113,19 @@ type builder struct {
 func NewBuilder(
 	luxAddrs set.Set[ids.ShortID],
 	ethAddrs set.Set[ethcommon.Address],
+	context *Context,
 	backend BuilderBackend,
 ) Builder {
 	return &builder{
 		luxAddrs: luxAddrs,
 		ethAddrs:  ethAddrs,
+		context:   context,
 		backend:   backend,
 	}
+}
+
+func (b *builder) Context() *Context {
+	return b.context
 }
 
 func (b *builder) GetBalance(
@@ -153,7 +161,7 @@ func (b *builder) GetImportableBalance(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.backend.LUXAssetID()
+		luxAssetID     = b.context.LUXAssetID
 		balance         uint64
 	)
 	for _, utxo := range utxos {
@@ -187,7 +195,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.backend.LUXAssetID()
+		luxAssetID     = b.context.LUXAssetID
 
 		importedInputs = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmount uint64
@@ -201,6 +209,7 @@ func (b *builder) NewImportTx(
 		importedInputs = append(importedInputs, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
 			Asset:  utxo.Asset,
+			FxID:   secp256k1fx.ID,
 			In: &secp256k1fx.TransferInput{
 				Amt: amount,
 				Input: secp256k1fx.Input{
@@ -218,8 +227,8 @@ func (b *builder) NewImportTx(
 
 	utils.Sort(importedInputs)
 	tx := &evm.UnsignedImportTx{
-		NetworkID:      b.backend.NetworkID(),
-		BlockchainID:   b.backend.BlockchainID(),
+		NetworkID:      b.context.NetworkID,
+		BlockchainID:   b.context.BlockchainID,
 		SourceChain:    chainID,
 		ImportedInputs: importedInputs,
 	}
@@ -260,13 +269,14 @@ func (b *builder) NewExportTx(
 	options ...common.Option,
 ) (*evm.UnsignedExportTx, error) {
 	var (
-		luxAssetID     = b.backend.LUXAssetID()
+		luxAssetID     = b.context.LUXAssetID
 		exportedOutputs = make([]*lux.TransferableOutput, len(outputs))
 		exportedAmount  uint64
 	)
 	for i, output := range outputs {
 		exportedOutputs[i] = &lux.TransferableOutput{
 			Asset: lux.Asset{ID: luxAssetID},
+			FxID:  secp256k1fx.ID,
 			Out:   output,
 		}
 
@@ -279,8 +289,8 @@ func (b *builder) NewExportTx(
 
 	lux.SortTransferableOutputs(exportedOutputs, evm.Codec)
 	tx := &evm.UnsignedExportTx{
-		NetworkID:        b.backend.NetworkID(),
-		BlockchainID:     b.backend.BlockchainID(),
+		NetworkID:        b.context.NetworkID,
+		BlockchainID:     b.context.BlockchainID,
 		DestinationChain: chainID,
 		ExportedOutputs:  exportedOutputs,
 	}
@@ -360,7 +370,7 @@ func (b *builder) NewExportTx(
 			return nil, err
 		}
 
-		inputAmount := math.Min(amountToConsume, luxBalance)
+		inputAmount := min(amountToConsume, luxBalance)
 		inputs = append(inputs, evm.EVMInput{
 			Address: addr,
 			Amount:  inputAmount,
@@ -376,6 +386,14 @@ func (b *builder) NewExportTx(
 
 	utils.Sort(inputs)
 	tx.Ins = inputs
+
+	snowCtx, err := newSnowContext(b.context)
+	if err != nil {
+		return nil, err
+	}
+	for _, out := range tx.ExportedOutputs {
+		out.InitCtx(snowCtx)
+	}
 	return tx, nil
 }
 

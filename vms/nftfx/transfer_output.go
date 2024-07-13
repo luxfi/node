@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -7,11 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxfi/node/vms/types"
-
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/types"
 )
 
 const (

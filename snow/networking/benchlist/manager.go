@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/validators"
@@ -39,12 +40,13 @@ type Manager interface {
 
 // Config defines the configuration for a benchlist
 type Config struct {
-	Benchable              Benchable          `json:"-"`
-	Validators             validators.Manager `json:"-"`
-	Threshold              int                `json:"threshold"`
-	MinimumFailingDuration time.Duration      `json:"minimumFailingDuration"`
-	Duration               time.Duration      `json:"duration"`
-	MaxPortion             float64            `json:"maxPortion"`
+	Benchable              Benchable             `json:"-"`
+	Validators             validators.Manager    `json:"-"`
+	BenchlistRegisterer    metrics.MultiGatherer `json:"-"`
+	Threshold              int                   `json:"threshold"`
+	MinimumFailingDuration time.Duration         `json:"minimumFailingDuration"`
+	Duration               time.Duration         `json:"duration"`
+	MaxPortion             float64               `json:"maxPortion"`
 }
 
 type manager struct {
@@ -108,6 +110,14 @@ func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
 		return nil
 	}
 
+	reg, err := metrics.MakeAndRegister(
+		m.config.BenchlistRegisterer,
+		ctx.PrimaryAlias,
+	)
+	if err != nil {
+		return err
+	}
+
 	benchlist, err := NewBenchlist(
 		ctx,
 		m.config.Benchable,
@@ -116,6 +126,7 @@ func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
 		m.config.MinimumFailingDuration,
 		m.config.Duration,
 		m.config.MaxPortion,
+		reg,
 	)
 	if err != nil {
 		return err

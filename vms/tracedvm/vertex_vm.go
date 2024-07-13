@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracedvm
@@ -8,14 +8,14 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/trace"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/snow/networking/router"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -93,7 +92,7 @@ func ExampleNewTestNetwork() {
 
 	network, err := NewTestNetwork(
 		log,
-		constants.TestnetID,
+		constants.FujiID,
 		validators,
 		trackedSubnets,
 		handler,
@@ -108,9 +107,9 @@ func ExampleNewTestNetwork() {
 
 	// We need to initially connect to some nodes in the network before peer
 	// gossip will enable connecting to all the remaining nodes in the network.
-	bootstrappers := genesis.SampleBootstrappers(constants.TestnetID, 5)
+	bootstrappers := genesis.SampleBootstrappers(constants.FujiID, 5)
 	for _, bootstrapper := range bootstrappers {
-		network.ManuallyTrack(bootstrapper.ID, ips.IPPort(bootstrapper.IP))
+		network.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
 	}
 
 	// Typically network.StartClose() should be called based on receiving a

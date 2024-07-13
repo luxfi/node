@@ -1,16 +1,15 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package x
 
 import (
 	"math/big"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
@@ -21,6 +20,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainLabel), func() {
@@ -43,7 +44,11 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("defining common configuration")
 		recipientEthAddress := evm.GetEthAddress(recipientKey)
-		luxAssetID := xWallet.LUXAssetID()
+		xBuilder := xWallet.Builder()
+		xContext := xBuilder.Context()
+		cBuilder := cWallet.Builder()
+		cContext := cBuilder.Context()
+		luxAssetID := xContext.LUXAssetID
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -95,7 +100,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("exporting LUX from the X-Chain to the C-Chain", func() {
 			_, err := xWallet.IssueExportTx(
-				cWallet.BlockchainID(),
+				cContext.BlockchainID,
 				exportOutputs,
 				e2e.WithDefaultContext(),
 			)
@@ -107,7 +112,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("importing LUX from the X-Chain to the C-Chain", func() {
 			_, err := cWallet.IssueImportTx(
-				xWallet.BlockchainID(),
+				xContext.BlockchainID,
 				recipientEthAddress,
 				e2e.WithDefaultContext(),
 				e2e.WithSuggestedGasPrice(ethClient),
@@ -133,7 +138,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("importing LUX from the X-Chain to the P-Chain", func() {
 			_, err := pWallet.IssueImportTx(
-				xWallet.BlockchainID(),
+				xContext.BlockchainID,
 				&recipientOwner,
 				e2e.WithDefaultContext(),
 			)

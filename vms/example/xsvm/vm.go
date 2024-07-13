@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xsvm
@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/rpc/v2"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
@@ -18,6 +17,7 @@ import (
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -112,10 +112,6 @@ func (*VM) Version(context.Context) (string, error) {
 	return Version.String(), nil
 }
 
-func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
-	return nil, nil
-}
-
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
@@ -129,7 +125,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	)
 	return map[string]http.Handler{
 		"": server,
-	}, server.RegisterService(api, Name)
+	}, server.RegisterService(api, constants.XSVMName)
 }
 
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
@@ -171,10 +167,6 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 
 func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (snowman.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
-}
-
-func (*VM) VerifyHeightIndex(context.Context) error {
-	return nil
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {

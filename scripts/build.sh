@@ -22,7 +22,7 @@ while getopts 'r' flag; do
   esac
 done
 
-# luxd root folder
+# Lux Node root folder
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh
@@ -36,7 +36,7 @@ build_args="$race"
 # Build node
 "$LUX_PATH"/scripts/build_lux.sh $build_args
 
-# Exit build successfully if the luxd binary is created successfully
+# Exit build successfully if the Lux Node binary is created successfully
 if [[ -f "$node_path" ]]; then
         echo "Build Successful"
         exit 0

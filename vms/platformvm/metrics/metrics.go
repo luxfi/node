@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -19,10 +19,6 @@ var _ Metrics = (*metrics)(nil)
 type Metrics interface {
 	metric.APIInterceptor
 
-	// Mark that an option vote that we initially preferred was accepted.
-	MarkOptionVoteWon()
-	// Mark that an option vote that we initially preferred was rejected.
-	MarkOptionVoteLost()
 	// Mark that the given block was accepted.
 	MarkAccepted(block.Block) error
 	// Mark that a validator set was created.
@@ -44,72 +40,50 @@ type Metrics interface {
 	SetTimeUntilSubnetUnstake(subnetID ids.ID, timeUntilUnstake time.Duration)
 }
 
-func New(
-	namespace string,
-	registerer prometheus.Registerer,
-) (Metrics, error) {
-	blockMetrics, err := newBlockMetrics(namespace, registerer)
+func New(registerer prometheus.Registerer) (Metrics, error) {
+	blockMetrics, err := newBlockMetrics(registerer)
 	m := &metrics{
 		blockMetrics: blockMetrics,
 		timeUntilUnstake: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "time_until_unstake",
-			Help:      "Time (in ns) until this node leaves the Primary Network's validator set",
+			Name: "time_until_unstake",
+			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
 		timeUntilSubnetUnstake: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Namespace: namespace,
-				Name:      "time_until_unstake_subnet",
-				Help:      "Time (in ns) until this node leaves the subnet's validator set",
+				Name: "time_until_unstake_subnet",
+				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
 			[]string{"subnetID"},
 		),
 		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "local_staked",
-			Help:      "Amount (in nLUX) of LUX staked on this node",
+			Name: "local_staked",
+			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
 		totalStake: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "total_staked",
-			Help:      "Amount (in nLUX) of LUX staked on the Primary Network",
-		}),
-
-		numVotesWon: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "votes_won",
-			Help:      "Total number of votes this node has won",
-		}),
-		numVotesLost: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "votes_lost",
-			Help:      "Total number of votes this node has lost",
+			Name: "total_staked",
+			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
 		validatorSetsCached: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "validator_sets_cached",
-			Help:      "Total number of validator sets cached",
+			Name: "validator_sets_cached",
+			Help: "Total number of validator sets cached",
 		}),
 		validatorSetsCreated: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "validator_sets_created",
-			Help:      "Total number of validator sets created from applying difflayers",
+			Name: "validator_sets_created",
+			Help: "Total number of validator sets created from applying difflayers",
 		}),
 		validatorSetsHeightDiff: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "validator_sets_height_diff_sum",
-			Help:      "Total number of validator sets diffs applied for generating validator sets",
+			Name: "validator_sets_height_diff_sum",
+			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
 		validatorSetsDuration: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "validator_sets_duration_sum",
-			Help:      "Total amount of time generating validator sets in nanoseconds",
+			Name: "validator_sets_duration_sum",
+			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
 	}
 
 	errs := wrappers.Errs{Err: err}
-	apiRequestMetrics, err := metric.NewAPIInterceptor(namespace, registerer)
+	apiRequestMetrics, err := metric.NewAPIInterceptor(registerer)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 	errs.Add(
@@ -117,9 +91,6 @@ func New(
 		registerer.Register(m.timeUntilSubnetUnstake),
 		registerer.Register(m.localStake),
 		registerer.Register(m.totalStake),
-
-		registerer.Register(m.numVotesWon),
-		registerer.Register(m.numVotesLost),
 
 		registerer.Register(m.validatorSetsCreated),
 		registerer.Register(m.validatorSetsCached),
@@ -140,20 +111,10 @@ type metrics struct {
 	localStake             prometheus.Gauge
 	totalStake             prometheus.Gauge
 
-	numVotesWon, numVotesLost prometheus.Counter
-
 	validatorSetsCached     prometheus.Counter
 	validatorSetsCreated    prometheus.Counter
 	validatorSetsHeightDiff prometheus.Gauge
 	validatorSetsDuration   prometheus.Gauge
-}
-
-func (m *metrics) MarkOptionVoteWon() {
-	m.numVotesWon.Inc()
-}
-
-func (m *metrics) MarkOptionVoteLost() {
-	m.numVotesLost.Inc()
 }
 
 func (m *metrics) MarkAccepted(b block.Block) error {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -16,12 +16,6 @@ import (
 
 func (vm *VM) StateSyncEnabled(ctx context.Context) (bool, error) {
 	if vm.ssVM == nil {
-		return false, nil
-	}
-
-	// if vm implements Snowman++, a block height index must be available
-	// to support state sync
-	if vm.VerifyHeightIndex(ctx) != nil {
 		return false, nil
 	}
 
@@ -100,12 +94,6 @@ func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (block.StateSu
 
 // Note: building state summary requires a well formed height index.
 func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSummary) (block.StateSummary, error) {
-	// if vm implements Snowman++, a block height index must be available
-	// to support state sync
-	if err := vm.VerifyHeightIndex(ctx); err != nil {
-		return nil, fmt.Errorf("could not build state summary: %w", err)
-	}
-
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:

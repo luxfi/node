@@ -1,17 +1,16 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains"
@@ -25,6 +24,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/uptime"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils"
@@ -36,7 +36,6 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -46,12 +45,16 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/platformvm/txs/txstest"
+	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	p_tx_builder "github.com/luxfi/node/vms/platformvm/txs/builder"
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (
@@ -60,6 +63,13 @@ const (
 
 	defaultWeight = 10000
 	trackChecksum = false
+
+	apricotPhase3 fork = iota
+	apricotPhase5
+	banff
+	cortina
+	durango
+	eUpgrade
 )
 
 var (
@@ -73,16 +83,12 @@ var (
 	preFundedKeys             = secp256k1.TestKeys()
 	luxAssetID               = ids.ID{'y', 'e', 'e', 't'}
 	defaultTxFee              = uint64(100)
-	xChainID                  = ids.Empty.Prefix(0)
-	cChainID                  = ids.Empty.Prefix(1)
 
 	genesisBlkID ids.ID
 	testSubnet1  *txs.Tx
 
 	// Node IDs of genesis validators. Initialized in init function
 	genesisNodeIDs []ids.NodeID
-
-	errMissing = errors.New("missing")
 )
 
 func init() {
@@ -93,6 +99,8 @@ func init() {
 }
 
 type stakerStatus uint
+
+type fork uint8
 
 type staker struct {
 	nodeID             ids.NodeID
@@ -122,54 +130,50 @@ type environment struct {
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
-	atomicUTXOs    lux.AtomicUTXOManager
 	uptimes        uptime.Manager
-	utxosHandler   utxo.Handler
-	txBuilder      p_tx_builder.Builder
+	utxosVerifier  utxo.Verifier
+	factory        *txstest.WalletFactory
 	backend        *executor.Backend
 }
 
-func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
+func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment {
 	res := &environment{
 		isBootstrapped: &utils.Atomic[bool]{},
-		config:         defaultConfig(),
+		config:         defaultConfig(t, f),
 		clk:            defaultClock(),
 	}
 	res.isBootstrapped.Set(true)
 
 	res.baseDB = versiondb.New(memdb.New())
-	res.ctx = defaultCtx(res.baseDB)
+	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
+	m := atomic.NewMemory(atomicDB)
+
+	res.ctx = snowtest.Context(t, snowtest.PChainID)
+	res.ctx.LUXAssetID = luxAssetID
+	res.ctx.SharedMemory = m.NewSharedMemory(res.ctx.ChainID)
+
 	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
-	res.atomicUTXOs = lux.NewAtomicUTXOManager(res.ctx.SharedMemory, txs.Codec)
 
 	if ctrl == nil {
-		res.state = defaultState(res.config.Validators, res.ctx, res.baseDB, rewardsCalc)
+		res.state = defaultState(res.config, res.ctx, res.baseDB, rewardsCalc)
 		res.uptimes = uptime.NewManager(res.state, res.clk)
-		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.fx)
-		res.txBuilder = p_tx_builder.New(
+		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.factory = txstest.NewWalletFactory(
 			res.ctx,
 			res.config,
-			res.clk,
-			res.fx,
 			res.state,
-			res.atomicUTXOs,
-			res.utxosHandler,
 		)
 	} else {
 		genesisBlkID = ids.GenerateTestID()
 		res.mockedState = state.NewMockState(ctrl)
 		res.uptimes = uptime.NewManager(res.mockedState, res.clk)
-		res.utxosHandler = utxo.NewHandler(res.ctx, res.clk, res.fx)
-		res.txBuilder = p_tx_builder.New(
+		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.factory = txstest.NewWalletFactory(
 			res.ctx,
 			res.config,
-			res.clk,
-			res.fx,
 			res.mockedState,
-			res.atomicUTXOs,
-			res.utxosHandler,
 		)
 
 		// setup expectations strictly needed for environment creation
@@ -182,7 +186,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
-		FlowChecker:  res.utxosHandler,
+		FlowChecker:  res.utxosVerifier,
 		Uptimes:      res.uptimes,
 		Rewards:      rewardsCalc,
 	}
@@ -219,27 +223,58 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 		// whatever we need
 	}
 
+	t.Cleanup(func() {
+		res.ctx.Lock.Lock()
+		defer res.ctx.Lock.Unlock()
+
+		if res.mockedState != nil {
+			// state is mocked, nothing to do here
+			return
+		}
+
+		require := require.New(t)
+
+		if res.isBootstrapped.Get() {
+			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+
+			require.NoError(res.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID))
+			require.NoError(res.state.Commit())
+		}
+
+		if res.state != nil {
+			require.NoError(res.state.Close())
+		}
+
+		require.NoError(res.baseDB.Close())
+	})
+
 	return res
 }
 
 func addSubnet(env *environment) {
-	// Create a subnet
-	var err error
-	testSubnet1, err = env.txBuilder.NewCreateSubnetTx(
-		2, // threshold; 2 sigs from keys[0], keys[1], keys[2] needed to add validator to this subnet
-		[]ids.ShortID{ // control keys
-			preFundedKeys[0].PublicKey().Address(),
-			preFundedKeys[1].PublicKey().Address(),
-			preFundedKeys[2].PublicKey().Address(),
+	builder, signer := env.factory.NewWallet(preFundedKeys[0])
+	utx, err := builder.NewCreateSubnetTx(
+		&secp256k1fx.OutputOwners{
+			Threshold: 2,
+			Addrs: []ids.ShortID{
+				preFundedKeys[0].PublicKey().Address(),
+				preFundedKeys[1].PublicKey().Address(),
+				preFundedKeys[2].PublicKey().Address(),
+			},
 		},
-		[]*secp256k1.PrivateKey{preFundedKeys[0]},
-		preFundedKeys[0].PublicKey().Address(),
+		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		}),
 	)
 	if err != nil {
 		panic(err)
 	}
+	testSubnet1, err = walletsigner.SignUnsigned(context.Background(), signer, utx)
+	if err != nil {
+		panic(err)
+	}
 
-	// store it
 	genesisID := env.state.GetLastAccepted()
 	stateDiff, err := state.NewDiff(genesisID, env.blkManager)
 	if err != nil {
@@ -263,7 +298,7 @@ func addSubnet(env *environment) {
 }
 
 func defaultState(
-	validators validators.Manager,
+	cfg *config.Config,
 	ctx *snow.Context,
 	db database.Database,
 	rewards reward.Calculator,
@@ -274,7 +309,7 @@ func defaultState(
 		db,
 		genesisBytes,
 		prometheus.NewRegistry(),
-		validators,
+		cfg,
 		execCfg,
 		ctx,
 		metrics.Noop,
@@ -293,58 +328,60 @@ func defaultState(
 	return state
 }
 
-func defaultCtx(db database.Database) *snow.Context {
-	ctx := snow.DefaultContextTest()
-	ctx.NetworkID = 10
-	ctx.XChainID = xChainID
-	ctx.CChainID = cChainID
-	ctx.LUXAssetID = luxAssetID
-
-	atomicDB := prefixdb.New([]byte{1}, db)
-	m := atomic.NewMemory(atomicDB)
-
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
-
-	ctx.ValidatorState = &validators.TestState{
-		GetSubnetIDF: func(_ context.Context, chainID ids.ID) (ids.ID, error) {
-			subnetID, ok := map[ids.ID]ids.ID{
-				constants.PlatformChainID: constants.PrimaryNetworkID,
-				xChainID:                  constants.PrimaryNetworkID,
-				cChainID:                  constants.PrimaryNetworkID,
-			}[chainID]
-			if !ok {
-				return ids.Empty, errMissing
-			}
-			return subnetID, nil
-		},
-	}
-
-	return ctx
-}
-
-func defaultConfig() *config.Config {
-	return &config.Config{
+func defaultConfig(t *testing.T, f fork) *config.Config {
+	c := &config.Config{
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
-		TxFee:                  defaultTxFee,
-		CreateSubnetTxFee:      100 * defaultTxFee,
-		CreateBlockchainTxFee:  100 * defaultTxFee,
-		MinValidatorStake:      5 * units.MilliLux,
-		MaxValidatorStake:      500 * units.MilliLux,
-		MinDelegatorStake:      1 * units.MilliLux,
-		MinStakeDuration:       defaultMinStakingDuration,
-		MaxStakeDuration:       defaultMaxStakingDuration,
+		StaticFeeConfig: fee.StaticConfig{
+			TxFee:                 defaultTxFee,
+			CreateSubnetTxFee:     100 * defaultTxFee,
+			CreateBlockchainTxFee: 100 * defaultTxFee,
+		},
+		MinValidatorStake: 5 * units.MilliLux,
+		MaxValidatorStake: 500 * units.MilliLux,
+		MinDelegatorStake: 1 * units.MilliLux,
+		MinStakeDuration:  defaultMinStakingDuration,
+		MaxStakeDuration:  defaultMaxStakingDuration,
 		RewardConfig: reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
 			SupplyCap:          720 * units.MegaLux,
 		},
-		ApricotPhase3Time: defaultValidateEndTime,
-		ApricotPhase5Time: defaultValidateEndTime,
-		BanffTime:         mockable.MaxTime,
+		UpgradeConfig: upgrade.Config{
+			ApricotPhase3Time: mockable.MaxTime,
+			ApricotPhase5Time: mockable.MaxTime,
+			BanffTime:         mockable.MaxTime,
+			CortinaTime:       mockable.MaxTime,
+			DurangoTime:       mockable.MaxTime,
+			EUpgradeTime:      mockable.MaxTime,
+		},
 	}
+
+	switch f {
+	case eUpgrade:
+		c.UpgradeConfig.EUpgradeTime = time.Time{} // neglecting fork ordering this for package tests
+		fallthrough
+	case durango:
+		c.UpgradeConfig.DurangoTime = time.Time{} // neglecting fork ordering for this package's tests
+		fallthrough
+	case cortina:
+		c.UpgradeConfig.CortinaTime = time.Time{} // neglecting fork ordering for this package's tests
+		fallthrough
+	case banff:
+		c.UpgradeConfig.BanffTime = time.Time{} // neglecting fork ordering for this package's tests
+		fallthrough
+	case apricotPhase5:
+		c.UpgradeConfig.ApricotPhase5Time = defaultValidateEndTime
+		fallthrough
+	case apricotPhase3:
+		c.UpgradeConfig.ApricotPhase3Time = defaultValidateEndTime
+	default:
+		require.FailNow(t, "unhandled fork", f)
+	}
+
+	return c
 }
 
 func defaultClock() *mockable.Clock {
@@ -452,33 +489,6 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 	return genesisBytes
 }
 
-func shutdownEnvironment(t *environment) error {
-	if t.mockedState != nil {
-		// state is mocked, nothing to do here
-		return nil
-	}
-
-	if t.isBootstrapped.Get() {
-		validatorIDs := t.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-
-		if err := t.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID); err != nil {
-			return err
-		}
-		if err := t.state.Commit(); err != nil {
-			return err
-		}
-	}
-
-	var err error
-	if t.state != nil {
-		err = t.state.Close()
-	}
-	return utils.Err(
-		err,
-		t.baseDB.Close(),
-	)
-}
-
 func addPendingValidator(
 	env *environment,
 	startTime time.Time,
@@ -487,16 +497,24 @@ func addPendingValidator(
 	rewardAddress ids.ShortID,
 	keys []*secp256k1.PrivateKey,
 ) (*txs.Tx, error) {
-	addPendingValidatorTx, err := env.txBuilder.NewAddValidatorTx(
-		env.config.MinValidatorStake,
-		uint64(startTime.Unix()),
-		uint64(endTime.Unix()),
-		nodeID,
-		rewardAddress,
+	builder, signer := env.factory.NewWallet(keys...)
+	utx, err := builder.NewAddValidatorTx(
+		&txs.Validator{
+			NodeID: nodeID,
+			Start:  uint64(startTime.Unix()),
+			End:    uint64(endTime.Unix()),
+			Wght:   env.config.MinValidatorStake,
+		},
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{rewardAddress},
+		},
 		reward.PercentDenominator,
-		keys,
-		ids.ShortEmpty,
 	)
+	if err != nil {
+		return nil, err
+	}
+	addPendingValidatorTx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	if err != nil {
 		return nil, err
 	}

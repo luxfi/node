@@ -3,21 +3,30 @@
 set -euo pipefail
 
 # e.g.,
-# ./scripts/tests.upgrade.sh 1.7.16
-# LUXD_PATH=./path/to/node ./scripts/tests.upgrade.sh 1.7.16 # Customization of node path
+# ./scripts/tests.upgrade.sh                                               # Use default version
+# ./scripts/tests.upgrade.sh 1.11.0                                        # Specify a version
+# LUXD_PATH=./path/to/node ./scripts/tests.upgrade.sh 1.11.0 # Customization of node path
 if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
 
-VERSION="${1:-}"
+# The Lux Node local network does not support long-lived
+# backwards-compatible networks. When a breaking change is made to the
+# local network, this flag must be updated to the last compatible
+# version with the latest code.
+#
+# v1.11.0 activates Durango.
+DEFAULT_VERSION="1.11.0"
+
+VERSION="${1:-${DEFAULT_VERSION}}"
 if [[ -z "${VERSION}" ]]; then
   echo "Missing version argument!"
   echo "Usage: ${0} [VERSION]" >>/dev/stderr
   exit 255
 fi
 
-LUXD_PATH="$(realpath ${LUXD_PATH:-./build/luxd})"
+LUXD_PATH="$(realpath "${LUXD_PATH:-./build/node}")"
 
 #################################
 # download node
@@ -32,20 +41,20 @@ if [[ ${GOOS} == "darwin" ]]; then
 fi
 
 rm -f ${DOWNLOAD_PATH}
-rm -rf /tmp/node-v${VERSION}
+rm -rf "/tmp/node-v${VERSION}"
 rm -rf /tmp/node-build
 
 echo "downloading node ${VERSION} at ${DOWNLOAD_URL}"
-curl -L ${DOWNLOAD_URL} -o ${DOWNLOAD_PATH}
+curl -L "${DOWNLOAD_URL}" -o "${DOWNLOAD_PATH}"
 
 echo "extracting downloaded node"
 if [[ ${GOOS} == "linux" ]]; then
   tar xzvf ${DOWNLOAD_PATH} -C /tmp
 elif [[ ${GOOS} == "darwin" ]]; then
   unzip ${DOWNLOAD_PATH} -d /tmp/node-build
-  mv /tmp/node-build/build /tmp/node-v${VERSION}
+  mv /tmp/node-build/build "/tmp/node-v${VERSION}"
 fi
-find /tmp/node-v${VERSION}
+find "/tmp/node-v${VERSION}"
 
 # Sourcing constants.sh ensures that the necessary CGO flags are set to
 # build the portable version of BLST. Without this, ginkgo may fail to
@@ -56,8 +65,8 @@ source ./scripts/constants.sh
 #################################
 echo "building upgrade.test"
 # to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
-ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
+go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
+ACK_GINKGO_RC=true ginkgo build --tags test ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################
@@ -65,5 +74,5 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 echo "running upgrade tests against the local cluster with ${LUXD_PATH}"
 ./tests/upgrade/upgrade.test \
   --ginkgo.v \
-  --node-path=/tmp/node-v${VERSION}/node \
-  --node-path-to-upgrade-to=${LUXD_PATH}
+  --node-path="/tmp/node-v${VERSION}/node" \
+  --node-path-to-upgrade-to="${LUXD_PATH}"

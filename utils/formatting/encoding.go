@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package formatting
@@ -69,7 +69,7 @@ func (enc Encoding) MarshalJSON() ([]byte, error) {
 	if !enc.valid() {
 		return nil, errInvalidEncoding
 	}
-	return []byte("\"" + enc.String() + "\""), nil
+	return []byte(`"` + enc.String() + `"`), nil
 }
 
 func (enc *Encoding) UnmarshalJSON(b []byte) error {

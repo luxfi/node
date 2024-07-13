@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database"
@@ -38,9 +37,11 @@ var (
 
 func init() {
 	var err error
-	parser, err = block.NewParser([]fxs.Fx{
-		&secp256k1fx.Fx{},
-	})
+	parser, err = block.NewParser(
+		[]fxs.Fx{
+			&secp256k1fx.Fx{},
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +62,7 @@ func init() {
 	populatedTx = &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		BlockchainID: ids.GenerateTestID(),
 	}}}
-	err = parser.InitializeTx(populatedTx)
+	err = populatedTx.Initialize(parser.Codec())
 	if err != nil {
 		panic(err)
 	}
@@ -197,7 +198,7 @@ func ChainTxTest(t *testing.T, c Chain) {
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		BlockchainID: ids.GenerateTestID(),
 	}}}
-	require.NoError(parser.InitializeTx(tx))
+	require.NoError(tx.Initialize(parser.Codec()))
 	txID := tx.ID()
 
 	_, err = c.GetTx(txID)

@@ -1,32 +1,27 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
 
 import (
-	"errors"
+	"context"
 	"math/big"
 	"time"
 
 	"github.com/luxfi/coreth/ethclient"
 	"github.com/luxfi/coreth/plugin/evm"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-var (
-	_ Wallet = (*wallet)(nil)
-
-	errNotCommitted = errors.New("not committed")
-)
+var _ Wallet = (*wallet)(nil)
 
 type Wallet interface {
-	Context
-
 	// Builder returns the builder that will be used to create the transactions.
 	Builder() Builder
 
@@ -140,7 +135,7 @@ func (w *wallet) IssueUnsignedAtomicTx(
 ) (*evm.Tx, error) {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
-	tx, err := w.signer.SignUnsignedAtomic(ctx, utx)
+	tx, err := SignUnsignedAtomic(ctx, w.signer, utx)
 	if err != nil {
 		return nil, err
 	}
@@ -167,31 +162,11 @@ func (w *wallet) IssueAtomicTx(
 		return w.Backend.AcceptAtomicTx(ctx, tx)
 	}
 
-	pollFrequency := ops.PollFrequency()
-	ticker := time.NewTicker(pollFrequency)
-	defer ticker.Stop()
-
-	for {
-		status, err := w.luxClient.GetAtomicTxStatus(ctx, txID)
-		if err != nil {
-			return err
-		}
-
-		switch status {
-		case evm.Accepted:
-			return w.Backend.AcceptAtomicTx(ctx, tx)
-		case evm.Dropped, evm.Unknown:
-			return errNotCommitted
-		}
-
-		// The tx is Processing.
-
-		select {
-		case <-ticker.C:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+	if err := awaitTxAccepted(w.luxClient, ctx, txID, ops.PollFrequency()); err != nil {
+		return err
 	}
+
+	return w.Backend.AcceptAtomicTx(ctx, tx)
 }
 
 func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
@@ -203,4 +178,33 @@ func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
 
 	ctx := ops.Context()
 	return w.ethClient.EstimateBaseFee(ctx)
+}
+
+// TODO: Upstream this function into coreth.
+func awaitTxAccepted(
+	c evm.Client,
+	ctx context.Context,
+	txID ids.ID,
+	freq time.Duration,
+	options ...rpc.Option,
+) error {
+	ticker := time.NewTicker(freq)
+	defer ticker.Stop()
+
+	for {
+		status, err := c.GetAtomicTxStatus(ctx, txID, options...)
+		if err != nil {
+			return err
+		}
+
+		if status == evm.Accepted {
+			return nil
+		}
+
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }

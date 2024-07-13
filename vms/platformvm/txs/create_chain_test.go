@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.PChainID)
 	testSubnet1ID := ids.GenerateTestID()
 	testSubnet1ControlKeys := []*secp256k1.PrivateKey{
 		preFundedKeys[0],
@@ -59,7 +59,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			chainName:   "yeet",
 			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.VMID = ids.ID{}
+				tx.VMID = ids.Empty
 				return tx
 			},
 			expectedErr: errInvalidVMID,

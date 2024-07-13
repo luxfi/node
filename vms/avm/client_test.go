@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -27,7 +27,7 @@ func (mc *mockClient) SendRequest(
 	_ interface{},
 	_ ...rpc.Option,
 ) error {
-	mc.require.Equal(inData, mc.expectedInData)
+	mc.require.Equal(mc.expectedInData, inData)
 	return nil
 }
 

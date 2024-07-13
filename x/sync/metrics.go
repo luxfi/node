@@ -1,14 +1,13 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/luxfi/node/utils"
 )
 
 var (
@@ -74,7 +73,7 @@ func NewMetrics(namespace string, reg prometheus.Registerer) (SyncMetrics, error
 			Help:      "cumulative amount of proof requests that were successful",
 		}),
 	}
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(m.requestsFailed),
 		reg.Register(m.requestsMade),
 		reg.Register(m.requestsSucceeded),

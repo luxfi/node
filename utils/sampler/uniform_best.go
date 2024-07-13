@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -29,8 +29,12 @@ type uniformBest struct {
 func NewBestUniform(expectedSampleSize int) Uniform {
 	return &uniformBest{
 		samplers: []Uniform{
-			&uniformReplacer{},
-			&uniformResample{},
+			&uniformReplacer{
+				rng: globalRNG,
+			},
+			&uniformResample{
+				rng: globalRNG,
+			},
 		},
 		maxSampleSize:       expectedSampleSize,
 		benchmarkIterations: 100,
@@ -52,7 +56,7 @@ samplerLoop:
 
 		start := s.clock.Time()
 		for i := 0; i < s.benchmarkIterations; i++ {
-			if _, err := sampler.Sample(sampleSize); err != nil {
+			if _, ok := sampler.Sample(sampleSize); !ok {
 				continue samplerLoop
 			}
 		}

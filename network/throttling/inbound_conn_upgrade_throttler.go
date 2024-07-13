@@ -1,13 +1,13 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
 
 import (
+	"net/netip"
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -36,7 +36,7 @@ type InboundConnUpgradeThrottler interface {
 	// Must only be called after [Dispatch] has been called.
 	// If [ip] is a local IP, this method always returns true.
 	// Must not be called after [Stop] has been called.
-	ShouldUpgrade(ip ips.IPPort) bool
+	ShouldUpgrade(ip netip.AddrPort) bool
 }
 
 type InboundConnUpgradeThrottlerConfig struct {
@@ -73,12 +73,12 @@ func (*noInboundConnUpgradeThrottler) Dispatch() {}
 
 func (*noInboundConnUpgradeThrottler) Stop() {}
 
-func (*noInboundConnUpgradeThrottler) ShouldUpgrade(ips.IPPort) bool {
+func (*noInboundConnUpgradeThrottler) ShouldUpgrade(netip.AddrPort) bool {
 	return true
 }
 
 type ipAndTime struct {
-	ip                string
+	ip                netip.Addr
 	cooldownElapsedAt time.Time
 }
 
@@ -92,7 +92,7 @@ type inboundConnUpgradeThrottler struct {
 	done chan struct{}
 	// IP --> Present if ShouldUpgrade(ipStr) returned true
 	// within the last [UpgradeCooldown].
-	recentIPs set.Set[string]
+	recentIPs set.Set[netip.Addr]
 	// Sorted in order of increasing time
 	// of last call to ShouldUpgrade that returned true.
 	// For each IP in this channel, ShouldUpgrade(ipStr)
@@ -101,28 +101,29 @@ type inboundConnUpgradeThrottler struct {
 }
 
 // Returns whether we should upgrade an inbound connection from [ipStr].
-func (n *inboundConnUpgradeThrottler) ShouldUpgrade(ip ips.IPPort) bool {
-	if ip.IP.IsLoopback() {
+func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) bool {
+	// Only use addr (not port). This mitigates DoS attacks from many nodes on one
+	// host.
+	addr := addrPort.Addr()
+	if addr.IsLoopback() {
 		// Don't rate-limit loopback IPs
 		return true
 	}
-	// Only use IP (not port). This mitigates DoS
-	// attacks from many nodes on one host.
-	ipStr := ip.IP.String()
+
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
-	if n.recentIPs.Contains(ipStr) {
+	if n.recentIPs.Contains(addr) {
 		// We recently upgraded an inbound connection from this IP
 		return false
 	}
 
 	select {
 	case n.recentIPsAndTimes <- ipAndTime{
-		ip:                ipStr,
+		ip:                addr,
 		cooldownElapsedAt: n.clock.Time().Add(n.UpgradeCooldown),
 	}:
-		n.recentIPs.Add(ipStr)
+		n.recentIPs.Add(addr)
 		return true
 	default:
 		return false

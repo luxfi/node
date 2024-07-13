@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package database
 
@@ -8,15 +10,12 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
-
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/utils"
@@ -24,44 +23,44 @@ import (
 )
 
 // Tests is a list of all database tests
-var Tests = []func(t *testing.T, db Database){
-	TestSimpleKeyValue,
-	TestOverwriteKeyValue,
-	TestEmptyKey,
-	TestKeyEmptyValue,
-	TestSimpleKeyValueClosed,
-	TestNewBatchClosed,
-	TestBatchPut,
-	TestBatchDelete,
-	TestBatchReset,
-	TestBatchReuse,
-	TestBatchRewrite,
-	TestBatchReplay,
-	TestBatchReplayPropagateError,
-	TestBatchInner,
-	TestBatchLargeSize,
-	TestIteratorSnapshot,
-	TestIterator,
-	TestIteratorStart,
-	TestIteratorPrefix,
-	TestIteratorStartPrefix,
-	TestIteratorMemorySafety,
-	TestIteratorClosed,
-	TestIteratorError,
-	TestIteratorErrorAfterRelease,
-	TestCompactNoPanic,
-	TestMemorySafetyDatabase,
-	TestMemorySafetyBatch,
-	TestAtomicClear,
-	TestClear,
-	TestAtomicClearPrefix,
-	TestClearPrefix,
-	TestModifyValueAfterPut,
-	TestModifyValueAfterBatchPut,
-	TestModifyValueAfterBatchPutReplay,
-	TestConcurrentBatches,
-	TestManySmallConcurrentKVPairBatches,
-	TestPutGetEmpty,
+var Tests = map[string]func(t *testing.T, db Database){
+	"SimpleKeyValue":                   TestSimpleKeyValue,
+	"OverwriteKeyValue":                TestOverwriteKeyValue,
+	"EmptyKey":                         TestEmptyKey,
+	"KeyEmptyValue":                    TestKeyEmptyValue,
+	"SimpleKeyValueClosed":             TestSimpleKeyValueClosed,
+	"NewBatchClosed":                   TestNewBatchClosed,
+	"BatchPut":                         TestBatchPut,
+	"BatchDelete":                      TestBatchDelete,
+	"BatchReset":                       TestBatchReset,
+	"BatchReuse":                       TestBatchReuse,
+	"BatchRewrite":                     TestBatchRewrite,
+	"BatchReplay":                      TestBatchReplay,
+	"BatchReplayPropagateError":        TestBatchReplayPropagateError,
+	"BatchInner":                       TestBatchInner,
+	"BatchLargeSize":                   TestBatchLargeSize,
+	"IteratorSnapshot":                 TestIteratorSnapshot,
+	"Iterator":                         TestIterator,
+	"IteratorStart":                    TestIteratorStart,
+	"IteratorPrefix":                   TestIteratorPrefix,
+	"IteratorStartPrefix":              TestIteratorStartPrefix,
+	"IteratorMemorySafety":             TestIteratorMemorySafety,
+	"IteratorClosed":                   TestIteratorClosed,
+	"IteratorError":                    TestIteratorError,
+	"IteratorErrorAfterRelease":        TestIteratorErrorAfterRelease,
+	"CompactNoPanic":                   TestCompactNoPanic,
+	"MemorySafetyDatabase":             TestMemorySafetyDatabase,
+	"MemorySafetyBatch":                TestMemorySafetyBatch,
+	"AtomicClear":                      TestAtomicClear,
+	"Clear":                            TestClear,
+	"AtomicClearPrefix":                TestAtomicClearPrefix,
+	"ClearPrefix":                      TestClearPrefix,
+	"ModifyValueAfterPut":              TestModifyValueAfterPut,
+	"ModifyValueAfterBatchPut":         TestModifyValueAfterBatchPut,
+	"ModifyValueAfterBatchPutReplay":   TestModifyValueAfterBatchPutReplay,
+	"ConcurrentBatches":                TestConcurrentBatches,
+	"ManySmallConcurrentKVPairBatches": TestManySmallConcurrentKVPairBatches,
+	"PutGetEmpty":                      TestPutGetEmpty,
 }
 
 // TestSimpleKeyValue tests to make sure that simple Put + Get + Delete + Has
@@ -310,7 +309,7 @@ func TestBatchDelete(t *testing.T, db Database) {
 	require.NoError(db.Delete(key))
 }
 
-// TestMemorySafetyDatabase ensures it is safe to modify a key after passing it
+// TestMemorySafetyBatch ensures it is safe to modify a key after passing it
 // to Batch.Put.
 func TestMemorySafetyBatch(t *testing.T, db Database) {
 	require := require.New(t)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -6,14 +6,13 @@ package ledger
 import (
 	"fmt"
 
-	ledger "github.com/luxfi/ledger-lux-go"
-
-	bip32 "github.com/tyler-smith/go-bip32"
-
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
+
+	ledger "github.com/luxfi/ledger-lux/go"
+	bip32 "github.com/tyler-smith/go-bip32"
 )
 
 const (

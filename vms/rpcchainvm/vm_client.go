@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -11,19 +11,11 @@ import (
 	"net/http"
 	"time"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-
 	"github.com/prometheus/client_golang/prometheus"
-
-	dto "github.com/prometheus/client_model/go"
-
 	"go.uber.org/zap"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/luxfi/node/api/keystore/gkeystore"
 	"github.com/luxfi/node/api/metrics"
@@ -61,6 +53,9 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	dto "github.com/prometheus/client_model/go"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // TODO: Enable these to be configured by the user
@@ -90,10 +85,11 @@ var (
 // VMClient is an implementation of a VM that talks over RPC.
 type VMClient struct {
 	*chain.State
-	client         vmpb.VMClient
-	runtime        runtime.Stopper
-	pid            int
-	processTracker resource.ProcessTracker
+	client          vmpb.VMClient
+	runtime         runtime.Stopper
+	pid             int
+	processTracker  resource.ProcessTracker
+	metricsGatherer metrics.MultiGatherer
 
 	messenger            *messenger.Server
 	keystore             *gkeystore.Server
@@ -110,19 +106,21 @@ type VMClient struct {
 }
 
 // NewClient returns a VM connected to a remote VM
-func NewClient(clientConn *grpc.ClientConn) *VMClient {
+func NewClient(
+	clientConn *grpc.ClientConn,
+	runtime runtime.Stopper,
+	pid int,
+	processTracker resource.ProcessTracker,
+	metricsGatherer metrics.MultiGatherer,
+) *VMClient {
 	return &VMClient{
-		client: vmpb.NewVMClient(clientConn),
-		conns:  []*grpc.ClientConn{clientConn},
+		client:          vmpb.NewVMClient(clientConn),
+		runtime:         runtime,
+		pid:             pid,
+		processTracker:  processTracker,
+		metricsGatherer: metricsGatherer,
+		conns:           []*grpc.ClientConn{clientConn},
 	}
-}
-
-// SetProcess gives ownership of the server process to the client.
-func (vm *VMClient) SetProcess(runtime runtime.Stopper, pid int, processTracker resource.ProcessTracker) {
-	vm.runtime = runtime
-	vm.processTracker = processTracker
-	vm.pid = pid
-	processTracker.TrackProcess(vm.pid)
 }
 
 func (vm *VMClient) Initialize(
@@ -140,17 +138,26 @@ func (vm *VMClient) Initialize(
 		return errUnsupportedFXs
 	}
 
+	primaryAlias, err := chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
+	if err != nil {
+		// If fetching the alias fails, we default to the chain's ID
+		primaryAlias = chainCtx.ChainID.String()
+	}
+
 	// Register metrics
-	registerer := prometheus.NewRegistry()
-	multiGatherer := metrics.NewMultiGatherer()
+	serverReg, err := metrics.MakeAndRegister(
+		vm.metricsGatherer,
+		primaryAlias,
+	)
+	if err != nil {
+		return err
+	}
 	vm.grpcServerMetrics = grpc_prometheus.NewServerMetrics()
-	if err := registerer.Register(vm.grpcServerMetrics); err != nil {
+	if err := serverReg.Register(vm.grpcServerMetrics); err != nil {
 		return err
 	}
-	if err := multiGatherer.Register("rpcchainvm", registerer); err != nil {
-		return err
-	}
-	if err := multiGatherer.Register("", vm); err != nil {
+
+	if err := chainCtx.Metrics.Register("", vm); err != nil {
 		return err
 	}
 
@@ -190,7 +197,7 @@ func (vm *VMClient) Initialize(
 		SubnetId:     chainCtx.SubnetID[:],
 		ChainId:      chainCtx.ChainID[:],
 		NodeId:       chainCtx.NodeID.Bytes(),
-		PublicKey:    bls.PublicKeyToBytes(chainCtx.PublicKey),
+		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
 		XChainId:     chainCtx.XChainID[:],
 		CChainId:     chainCtx.CChainID[:],
 		LuxAssetId:  chainCtx.LUXAssetID[:],
@@ -231,8 +238,8 @@ func (vm *VMClient) Initialize(
 		time:     time,
 	}
 
-	chainState, err := chain.NewMeteredState(
-		registerer,
+	vm.State, err = chain.NewMeteredState(
+		serverReg,
 		&chain.Config{
 			DecidedCacheSize:      decidedCacheSize,
 			MissingCacheSize:      missingCacheSize,
@@ -246,12 +253,7 @@ func (vm *VMClient) Initialize(
 			BuildBlockWithContext: vm.buildBlockWithContext,
 		},
 	)
-	if err != nil {
-		return err
-	}
-	vm.State = chainState
-
-	return chainCtx.Metrics.Register(multiGatherer)
+	return err
 }
 
 func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
@@ -375,29 +377,13 @@ func (vm *VMClient) CreateHandlers(ctx context.Context) (map[string]http.Handler
 	return handlers, nil
 }
 
-func (vm *VMClient) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	resp, err := vm.client.CreateStaticHandlers(ctx, &emptypb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-
-	handlers := make(map[string]http.Handler, len(resp.Handlers))
-	for _, handler := range resp.Handlers {
-		clientConn, err := grpcutils.Dial(handler.ServerAddr)
-		if err != nil {
-			return nil, err
-		}
-
-		vm.conns = append(vm.conns, clientConn)
-		handlers[handler.Prefix] = ghttp.NewClient(httppb.NewHTTPClient(clientConn))
-	}
-	return handlers, nil
-}
-
 func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	_, err := vm.client.Connected(ctx, &vmpb.ConnectedRequest{
-		NodeId:  nodeID.Bytes(),
-		Version: nodeVersion.String(),
+		NodeId: nodeID.Bytes(),
+		Name:   nodeVersion.Name,
+		Major:  uint32(nodeVersion.Major),
+		Minor:  uint32(nodeVersion.Minor),
+		Patch:  uint32(nodeVersion.Patch),
 	})
 	return err
 }
@@ -541,14 +527,15 @@ func (vm *VMClient) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 	return err
 }
 
-func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
-	_, err := vm.client.CrossChainAppRequestFailed(
-		ctx,
-		&vmpb.CrossChainAppRequestFailedMsg{
-			ChainId:   chainID[:],
-			RequestId: requestID,
-		},
-	)
+func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+	msg := &vmpb.CrossChainAppRequestFailedMsg{
+		ChainId:      chainID[:],
+		RequestId:    requestID,
+		ErrorCode:    appErr.Code,
+		ErrorMessage: appErr.Message,
+	}
+
+	_, err := vm.client.CrossChainAppRequestFailed(ctx, msg)
 	return err
 }
 
@@ -589,14 +576,15 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	_, err := vm.client.AppRequestFailed(
-		ctx,
-		&vmpb.AppRequestFailedMsg{
-			NodeId:    nodeID.Bytes(),
-			RequestId: requestID,
-		},
-	)
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+	msg := &vmpb.AppRequestFailedMsg{
+		NodeId:       nodeID.Bytes(),
+		RequestId:    requestID,
+		ErrorCode:    appErr.Code,
+		ErrorMessage: appErr.Message,
+	}
+
+	_, err := vm.client.AppRequestFailed(ctx, msg)
 	return err
 }
 
@@ -684,14 +672,6 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 	}
 
 	return res, nil
-}
-
-func (vm *VMClient) VerifyHeightIndex(ctx context.Context) error {
-	resp, err := vm.client.VerifyHeightIndex(ctx, &emptypb.Empty{})
-	if err != nil {
-		return err
-	}
-	return errEnumToError[resp.Err]
 }
 
 func (vm *VMClient) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {

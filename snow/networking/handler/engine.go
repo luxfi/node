@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -45,7 +45,7 @@ type EngineManager struct {
 // If an engine type is not specified, the initial engine type is returned.
 func (e *EngineManager) Get(engineType p2p.EngineType) *Engine {
 	switch engineType {
-	case p2p.EngineType_ENGINE_TYPE_LUX:
+	case p2p.EngineType_ENGINE_TYPE_AVALANCHE:
 		return e.Lux
 	case p2p.EngineType_ENGINE_TYPE_SNOWMAN:
 		return e.Snowman

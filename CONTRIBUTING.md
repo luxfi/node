@@ -2,9 +2,9 @@
 
 ## Setup
 
-To start developing on luxd, you'll need a few things installed.
+To start developing on Lux Node, you'll need a few things installed.
 
-- Golang version >= 1.20.8
+- Golang version >= 1.21.12
 - gcc
 - g++
 
@@ -12,7 +12,7 @@ To start developing on luxd, you'll need a few things installed.
 
 ### Security
 
-- Do not open up a GitHub issue if it relates to a security vulnerability in luxd, and instead refer to our [security policy](./SECURITY.md).
+- Do not open up a GitHub issue if it relates to a security vulnerability in Lux Node, and instead refer to our [security policy](./SECURITY.md).
 
 ### Did you fix whitespace, format code, or make a purely cosmetic patch?
 
@@ -25,15 +25,15 @@ To start developing on luxd, you'll need a few things installed.
 
 ## Features
 
-- If you want to start a discussion about the development of a new feature or the modfiication of an existing one, start a thread under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/ideas).
-- Post a thread about your idea and why it should be added to luxd.
+- If you want to start a discussion about the development of a new feature or the modification of an existing one, start a thread under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/ideas).
+- Post a thread about your idea and why it should be added to Lux Node.
 - Don't start working on a pull request until you've received positive feedback from the maintainers.
 
 ## Pull Request Guidelines
 
 - Open a new GitHub pull request containing your changes.
 - Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
-- The PR should be opened against the `dev` branch.
+- The PR should be opened against the `master` branch.
 - If your PR isn't ready to be reviewed just yet, you can open it as a draft to collect early feedback on your changes.
 - Once the PR is ready for review, mark it as ready-for-review and request review from one of the maintainers.
 
@@ -81,7 +81,7 @@ To start developing on luxd, you'll need a few things installed.
 
 ### Do you have questions about the source code?
 
-- Ask any question about luxd under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
+- Ask any question about Lux Node under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
 
 ### Do you want to contribute to the Lux documentation?
 

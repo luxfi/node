@@ -43,11 +43,11 @@ All messaging functions in `OutboundMsgBuilder` can be categorized as follows:
 - **App**
   - VMs communicate application-specific messages to other nodes through app messages. A common example is mempool gossiping.
 
-Currently, luxd implements its own message serialization to communicate. In the future, luxd will use protocol buffers to communicate.
+Currently, Lux Node implements its own message serialization to communicate. In the future, Lux Node will use protocol buffers to communicate.
 
 ### [Network](https://github.com/luxfi/node/blob/master/network/network.go)
 
-The networking interface is shared across all chains. It implements functions from the `ExternalSender` interface. The two functions it implements are `Send` and `Gossip`. `Send` sends a message of type `OutboundMessage` to a specific set of nodes (specified by an array of `NodeIDs`). `Gossip` sends a message of type `OutboundMessage` to a random group of nodes in a subnet (can be a validator or a non-validator). Gossipping is used to push transactions across the network. The networking protocol uses TLS to pass messages between peers.
+The networking interface is shared across all chains. It implements functions from the `ExternalSender` interface. The two functions it implements are `Send` and `Gossip`. `Send` sends a message of type `OutboundMessage` to a specific set of nodes (specified by an array of `NodeIDs`). `Gossip` sends a message of type `OutboundMessage` to a random group of nodes in a subnet (can be a validator or a non-validator). Gossiping is used to push transactions across the network. The networking protocol uses TLS to pass messages between peers.
 
 Along with sending and gossiping, the networking library is also responsible for making connections and maintaining connections. Any node whether they are a validator or non-validator will attempt to connect to the primary network.
 

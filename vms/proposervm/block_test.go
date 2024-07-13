@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -12,20 +12,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/mocks"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/node/vms/proposervm/scheduler"
 )
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
@@ -36,39 +37,54 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	pChainHeight := uint64(1337)
-	parentID := ids.GenerateTestID()
-	parentTimestamp := time.Now()
-	blkID := ids.GenerateTestID()
-	innerBlk := snowman.NewMockBlock(ctrl)
+	var (
+		nodeID                 = ids.GenerateTestNodeID()
+		pChainHeight    uint64 = 1337
+		parentID               = ids.GenerateTestID()
+		parentTimestamp        = time.Now().Truncate(time.Second)
+		parentHeight    uint64 = 1234
+		blkID                  = ids.GenerateTestID()
+	)
+
+	innerBlk := snowmantest.NewMockBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
-	innerBlk.EXPECT().Height().Return(pChainHeight - 1).AnyTimes()
-	builtBlk := snowman.NewMockBlock(ctrl)
+	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
+
+	builtBlk := snowmantest.NewMockBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
-	innerVM := mocks.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := mocks.NewMockBuildBlockWithContextChainVM(ctrl)
+
+	innerVM := block.NewMockChainVM(ctrl)
+	innerBlockBuilderVM := block.NewMockBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
 		PChainHeight: pChainHeight - 1,
 	}).Return(builtBlk, nil).AnyTimes()
+
 	vdrState := validators.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+
 	windower := proposer.NewMockWindower(ctrl)
-	windower.EXPECT().Delay(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(time.Duration(0), nil).AnyTimes()
+	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 	vm := &VM{
+		Config: Config{
+			ActivationTime:    time.Unix(0, 0),
+			DurangoTime:       time.Unix(0, 0),
+			StakingCertLeaf:   &staking.Certificate{},
+			StakingLeafSigner: pk,
+			Registerer:        prometheus.NewRegistry(),
+		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &snow.Context{
+			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
 		},
-		Windower:          windower,
-		stakingCertLeaf:   &staking.Certificate{},
-		stakingLeafSigner: pk,
+		Windower: windower,
 	}
 
 	blk := &postForkCommonComponents{
@@ -87,11 +103,15 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
 }
 
-func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
+func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = mockable.MaxTime
+	)
+	coreVM, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(ctx))
 	}()
@@ -100,24 +120,16 @@ func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:  []byte{1},
-		ParentV: coreGenBlk.ID(),
-		HeightV: coreGenBlk.Height() + 1,
-	}
+	coreParentBlk := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreParentBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreParentBlk.ID():
+		switch blkID {
+		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case blkID == coreGenBlk.ID():
-			return coreGenBlk, nil
+		case snowmantest.GenesisID:
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -126,8 +138,8 @@ func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, coreGenBlk.Bytes()):
-			return coreGenBlk, nil
+		case bytes.Equal(b, snowmantest.GenesisBytes):
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -158,15 +170,7 @@ func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:  []byte{2},
-		ParentV: coreParentBlk.ID(),
-		HeightV: coreParentBlk.Height() + 1,
-	}
+	coreChildBlk := snowmantest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -177,10 +181,12 @@ func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		localTime := parentBlk.Timestamp().Add(proposer.MaxVerifyDelay - time.Second)
 		proVM.Set(localTime)
 
-		childBlk, err := proVM.BuildBlock(ctx)
+		childBlkIntf, err := proVM.BuildBlock(ctx)
 		require.NoError(err)
-		require.IsType(&postForkBlock{}, childBlk)
-		require.Equal(proVM.ctx.NodeID, childBlk.(*postForkBlock).Proposer()) // signed block
+		require.IsType(&postForkBlock{}, childBlkIntf)
+
+		childBlk := childBlkIntf.(*postForkBlock)
+		require.Equal(proVM.ctx.NodeID, childBlk.Proposer()) // signed block
 	}
 
 	{
@@ -189,42 +195,53 @@ func TestValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		localTime := parentBlk.Timestamp().Add(proposer.MaxVerifyDelay)
 		proVM.Set(localTime)
 
-		childBlk, err := proVM.BuildBlock(ctx)
+		childBlkIntf, err := proVM.BuildBlock(ctx)
 		require.NoError(err)
-		require.IsType(&postForkBlock{}, childBlk)
-		require.Equal(ids.EmptyNodeID, childBlk.(*postForkBlock).Proposer()) // signed block
+		require.IsType(&postForkBlock{}, childBlkIntf)
+
+		childBlk := childBlkIntf.(*postForkBlock)
+		require.Equal(ids.EmptyNodeID, childBlk.Proposer()) // unsigned block
 	}
 
 	{
-		// Set local clock among MaxVerifyDelay and MaxBuildDelay from parent timestamp
-		// Check that child block is unsigned
+		// Set local clock between MaxVerifyDelay and MaxBuildDelay from parent
+		// timestamp.
+		// Check that child block is unsigned.
 		localTime := parentBlk.Timestamp().Add((proposer.MaxVerifyDelay + proposer.MaxBuildDelay) / 2)
 		proVM.Set(localTime)
 
-		childBlk, err := proVM.BuildBlock(ctx)
+		childBlkIntf, err := proVM.BuildBlock(ctx)
 		require.NoError(err)
-		require.IsType(&postForkBlock{}, childBlk)
-		require.Equal(ids.EmptyNodeID, childBlk.(*postForkBlock).Proposer()) // unsigned so no proposer
+		require.IsType(&postForkBlock{}, childBlkIntf)
+
+		childBlk := childBlkIntf.(*postForkBlock)
+		require.Equal(ids.EmptyNodeID, childBlk.Proposer()) // unsigned block
 	}
 
 	{
-		// Set local clock after MaxBuildDelay from parent timestamp
-		// Check that child block is unsigned
+		// Set local clock after MaxBuildDelay from parent timestamp.
+		// Check that child block is unsigned.
 		localTime := parentBlk.Timestamp().Add(proposer.MaxBuildDelay)
 		proVM.Set(localTime)
 
-		childBlk, err := proVM.BuildBlock(ctx)
+		childBlkIntf, err := proVM.BuildBlock(ctx)
 		require.NoError(err)
-		require.IsType(&postForkBlock{}, childBlk)
-		require.Equal(ids.EmptyNodeID, childBlk.(*postForkBlock).Proposer()) // unsigned so no proposer
+		require.IsType(&postForkBlock{}, childBlkIntf)
+
+		childBlk := childBlkIntf.(*postForkBlock)
+		require.Equal(ids.EmptyNodeID, childBlk.Proposer()) // unsigned block
 	}
 }
 
-func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
+func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	coreVM, valState, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0) // enable ProBlks
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = mockable.MaxTime
+	)
+	coreVM, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(ctx))
 	}()
@@ -233,24 +250,16 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:  []byte{1},
-		ParentV: coreGenBlk.ID(),
-		HeightV: coreGenBlk.Height() + 1,
-	}
+	coreParentBlk := snowmantest.BuildChild(snowmantest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreParentBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		switch {
-		case blkID == coreParentBlk.ID():
+		switch blkID {
+		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case blkID == coreGenBlk.ID():
-			return coreGenBlk, nil
+		case snowmantest.GenesisID:
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -259,8 +268,8 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, coreGenBlk.Bytes()):
-			return coreGenBlk, nil
+		case bytes.Equal(b, snowmantest.GenesisBytes):
+			return snowmantest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -293,15 +302,7 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := &snowman.TestBlock{
-		TestDecidable: choices.TestDecidable{
-			IDV:     ids.GenerateTestID(),
-			StatusV: choices.Processing,
-		},
-		BytesV:  []byte{2},
-		ParentV: coreParentBlk.ID(),
-		HeightV: coreParentBlk.Height() + 1,
-	}
+	coreChildBlk := snowmantest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -313,7 +314,7 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		proVM.Set(localTime)
 
 		_, err := proVM.BuildBlock(ctx)
-		require.ErrorIs(errProposerWindowNotStarted, err)
+		require.ErrorIs(err, errProposerWindowNotStarted)
 	}
 
 	{
@@ -323,7 +324,7 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		proVM.Set(localTime)
 
 		_, err := proVM.BuildBlock(ctx)
-		require.ErrorIs(errProposerWindowNotStarted, err)
+		require.ErrorIs(err, errProposerWindowNotStarted)
 	}
 
 	{
@@ -333,7 +334,7 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		proVM.Set(localTime)
 
 		_, err := proVM.BuildBlock(ctx)
-		require.ErrorIs(errProposerWindowNotStarted, err)
+		require.ErrorIs(err, errProposerWindowNotStarted)
 	}
 
 	{
@@ -342,9 +343,91 @@ func TestNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		localTime := parentBlk.Timestamp().Add(proposer.MaxBuildDelay)
 		proVM.Set(localTime)
 
-		childBlk, err := proVM.BuildBlock(ctx)
+		childBlkIntf, err := proVM.BuildBlock(ctx)
 		require.NoError(err)
-		require.IsType(&postForkBlock{}, childBlk)
-		require.Equal(ids.EmptyNodeID, childBlk.(*postForkBlock).Proposer()) // unsigned so no proposer
+		require.IsType(&postForkBlock{}, childBlkIntf)
+
+		childBlk := childBlkIntf.(*postForkBlock)
+		require.Equal(ids.EmptyNodeID, childBlk.Proposer()) // unsigned block
+	}
+}
+
+// We consider cases where this node is not current proposer (may be scheduled in the next future or not).
+// We check that scheduler is called nonetheless, to be able to process innerVM block requests
+func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
+	require := require.New(t)
+	ctrl := gomock.NewController(t)
+
+	var (
+		thisNodeID              = ids.GenerateTestNodeID()
+		selectedProposer        = ids.GenerateTestNodeID()
+		pChainHeight     uint64 = 1337
+		parentID                = ids.GenerateTestID()
+		parentTimestamp         = time.Now().Truncate(time.Second)
+		now                     = parentTimestamp.Add(12 * time.Second)
+		parentHeight     uint64 = 1234
+	)
+
+	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
+
+	vdrState := validators.NewMockState(ctrl)
+	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+
+	windower := proposer.NewMockWindower(ctrl)
+	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(selectedProposer, nil).AnyTimes() // return a proposer different from thisNode, to check whether scheduler is reset
+
+	scheduler := scheduler.NewMockScheduler(ctrl)
+
+	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(err)
+	vm := &VM{
+		Config: Config{
+			ActivationTime:    time.Unix(0, 0),
+			DurangoTime:       time.Unix(0, 0),
+			StakingCertLeaf:   &staking.Certificate{},
+			StakingLeafSigner: pk,
+			Registerer:        prometheus.NewRegistry(),
+		},
+		ChainVM: block.NewMockChainVM(ctrl),
+		ctx: &snow.Context{
+			NodeID:         thisNodeID,
+			ValidatorState: vdrState,
+			Log:            logging.NoLog{},
+		},
+		Windower:               windower,
+		Scheduler:              scheduler,
+		proposerBuildSlotGauge: prometheus.NewGauge(prometheus.GaugeOpts{}),
+	}
+	vm.Clock.Set(now)
+
+	blk := &postForkCommonComponents{
+		innerBlk: innerBlk,
+		vm:       vm,
+	}
+
+	delays := []time.Duration{
+		proposer.MaxLookAheadWindow - time.Minute,
+		proposer.MaxLookAheadWindow,
+		proposer.MaxLookAheadWindow + time.Minute,
+	}
+
+	for _, delay := range delays {
+		windower.EXPECT().MinDelayForProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(delay, nil).Times(1)
+
+		// we mock the scheduler setting the exact time we expect it to be reset
+		// to
+		expectedSchedulerTime := parentTimestamp.Add(delay)
+		scheduler.EXPECT().SetBuildBlockTime(expectedSchedulerTime).Times(1)
+
+		_, err = blk.buildChild(
+			context.Background(),
+			parentID,
+			parentTimestamp,
+			pChainHeight-1,
+		)
+		require.ErrorIs(err, errUnexpectedProposer)
 	}
 }

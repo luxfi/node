@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
 
 import (
+	"cmp"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -53,9 +54,11 @@ func (a Allocation) Unparse(networkID uint32) (UnparsedAllocation, error) {
 	return ua, err
 }
 
-func (a Allocation) Less(other Allocation) bool {
-	return a.InitialAmount < other.InitialAmount ||
-		(a.InitialAmount == other.InitialAmount && a.LUXAddr.Less(other.LUXAddr))
+func (a Allocation) Compare(other Allocation) int {
+	if amountCmp := cmp.Compare(a.InitialAmount, other.InitialAmount); amountCmp != 0 {
+		return amountCmp
+	}
+	return a.LUXAddr.Compare(other.LUXAddr)
 }
 
 type Staker struct {
@@ -160,9 +163,9 @@ var (
 	// genesis.
 	MainnetConfig Config
 
-	// TestnetConfig is the config that should be used to generate the testnet
+	// FujiConfig is the config that should be used to generate the fuji
 	// genesis.
-	TestnetConfig Config
+	FujiConfig Config
 
 	// LocalConfig is the config that should be used to generate a local
 	// genesis.
@@ -171,12 +174,12 @@ var (
 
 func init() {
 	unparsedMainnetConfig := UnparsedConfig{}
-	unparsedTestnetConfig := UnparsedConfig{}
+	unparsedFujiConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
-	err := utils.Err(
+	err := errors.Join(
 		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
-		json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestnetConfig),
+		json.Unmarshal(fujiGenesisConfigJSON, &unparsedFujiConfig),
 		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),
 	)
 	if err != nil {
@@ -188,7 +191,7 @@ func init() {
 		panic(err)
 	}
 
-	TestnetConfig, err = unparsedTestnetConfig.Parse()
+	FujiConfig, err = unparsedFujiConfig.Parse()
 	if err != nil {
 		panic(err)
 	}
@@ -203,8 +206,8 @@ func GetConfig(networkID uint32) *Config {
 	switch networkID {
 	case constants.MainnetID:
 		return &MainnetConfig
-	case constants.TestnetID:
-		return &TestnetConfig
+	case constants.FujiID:
+		return &FujiConfig
 	case constants.LocalID:
 		return &LocalConfig
 	default:

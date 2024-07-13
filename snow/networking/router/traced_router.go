@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -8,10 +8,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.opentelemetry.io/otel/attribute"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
@@ -22,6 +19,8 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ Router = (*tracedRouter)(nil)
@@ -48,8 +47,7 @@ func (r *tracedRouter) Initialize(
 	trackedSubnets set.Set[ids.ID],
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
-	metricsNamespace string,
-	metricsRegisterer prometheus.Registerer,
+	reg prometheus.Registerer,
 ) error {
 	return r.router.Initialize(
 		nodeID,
@@ -61,8 +59,7 @@ func (r *tracedRouter) Initialize(
 		trackedSubnets,
 		onFatal,
 		healthConfig,
-		metricsNamespace,
-		metricsRegisterer,
+		reg,
 	)
 }
 

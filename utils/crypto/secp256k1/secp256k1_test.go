@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1
@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
-
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
+
+	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 func TestRecover(t *testing.T) {

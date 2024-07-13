@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
@@ -16,6 +15,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -30,7 +30,7 @@ import (
 )
 
 func TestSemanticVerifierBaseTx(t *testing.T) {
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -387,12 +387,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 }
 
 func TestSemanticVerifierExportTx(t *testing.T) {
-	ctx := newContext(t)
-	ctrl := gomock.NewController(t)
-
-	validatorState := validators.NewMockState(ctrl)
-	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ctx.SubnetID, nil)
-	ctx.ValidatorState = validatorState
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -756,7 +751,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	ctx := newContext(t)
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	validatorState := validators.NewMockState(ctrl)
 	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
@@ -873,13 +868,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ctx := newContext(t)
-
-	validatorState := validators.NewMockState(ctrl)
-	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ctx.SubnetID, nil)
-	ctx.ValidatorState = validatorState
+	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
@@ -267,7 +266,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0x00, 0x0f, 0x42, 0x40,
 	}
 	var unsignedSimpleAddPrimaryTx UnsignedTx = simpleAddPrimaryTx
-	unsignedSimpleAddPrimaryTxBytes, err := Codec.Marshal(Version, &unsignedSimpleAddPrimaryTx)
+	unsignedSimpleAddPrimaryTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddPrimaryTx)
 	require.NoError(err)
 	require.Equal(expectedUnsignedSimpleAddPrimaryTxBytes, unsignedSimpleAddPrimaryTxBytes)
 
@@ -586,7 +585,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x05,
 		// amount
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// number of signature indicies
+		// number of signature indices
 		0x00, 0x00, 0x00, 0x00,
 		// memo length
 		0x00, 0x00, 0x00, 0x14,
@@ -695,7 +694,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0x00, 0x0f, 0x42, 0x40,
 	}
 	var unsignedComplexAddPrimaryTx UnsignedTx = complexAddPrimaryTx
-	unsignedComplexAddPrimaryTxBytes, err := Codec.Marshal(Version, &unsignedComplexAddPrimaryTx)
+	unsignedComplexAddPrimaryTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddPrimaryTx)
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddPrimaryTxBytes, unsignedComplexAddPrimaryTxBytes)
 }
@@ -954,7 +953,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x00, 0x0f, 0x42, 0x40,
 	}
 	var unsignedSimpleAddSubnetTx UnsignedTx = simpleAddSubnetTx
-	unsignedSimpleAddSubnetTxBytes, err := Codec.Marshal(Version, &unsignedSimpleAddSubnetTx)
+	unsignedSimpleAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddSubnetTx)
 	require.NoError(err)
 	require.Equal(expectedUnsignedSimpleAddSubnetTxBytes, unsignedSimpleAddSubnetTxBytes)
 
@@ -1273,7 +1272,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x05,
 		// amount
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// number of signature indicies
+		// number of signature indices
 		0x00, 0x00, 0x00, 0x00,
 		// memo length
 		0x00, 0x00, 0x00, 0x14,
@@ -1362,7 +1361,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x00, 0x0f, 0x42, 0x40,
 	}
 	var unsignedComplexAddSubnetTx UnsignedTx = complexAddSubnetTx
-	unsignedComplexAddSubnetTxBytes, err := Codec.Marshal(Version, &unsignedComplexAddSubnetTx)
+	unsignedComplexAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddSubnetTx)
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddSubnetTxBytes, unsignedComplexAddSubnetTxBytes)
 }

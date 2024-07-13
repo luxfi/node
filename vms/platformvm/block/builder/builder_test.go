@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -10,51 +10,56 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
-	txbuilder "github.com/luxfi/node/vms/platformvm/txs/builder"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
-var errTestingDropped = errors.New("testing dropped")
-
-// shows that a locally generated CreateChainTx can be added to mempool and then
-// removed by inclusion in a block
-func TestBlockBuilderAddLocalTx(t *testing.T) {
+func TestBuildBlockBasic(t *testing.T) {
 	require := require.New(t)
 
-	env := newEnvironment(t)
+	env := newEnvironment(t, latestFork)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	// add a tx to it
-	tx := getValidTx(env.txBuilder, t)
+	// Create a valid transaction
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
+		testSubnet1.ID(),
+		nil,
+		constants.AVMID,
+		nil,
+		"chain name",
+	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
+	require.NoError(err)
 	txID := tx.ID()
 
-	env.sender.SendAppGossipF = func(context.Context, []byte) error {
-		return nil
-	}
-	require.NoError(env.network.IssueTx(context.Background(), tx))
-	require.True(env.mempool.Has(txID))
+	// Issue the transaction
+	env.ctx.Lock.Unlock()
+	require.NoError(env.network.IssueTxFromRPC(tx))
+	env.ctx.Lock.Lock()
+	_, ok := env.mempool.Get(txID)
+	require.True(ok)
 
-	// show that build block include that tx and removes it from mempool
+	// [BuildBlock] should build a block with the transaction
 	blkIntf, err := env.Builder.BuildBlock(context.Background())
 	require.NoError(err)
 
@@ -63,57 +68,418 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.Len(blk.Txs(), 1)
 	require.Equal(txID, blk.Txs()[0].ID())
 
-	require.False(env.mempool.Has(txID))
+	// Mempool should not contain the transaction or have marked it as dropped
+	_, ok = env.mempool.Get(txID)
+	require.False(ok)
+	require.NoError(env.mempool.GetDropReason(txID))
 }
 
-func TestPreviouslyDroppedTxsCanBeReAddedToMempool(t *testing.T) {
+func TestBuildBlockDoesNotBuildWithEmptyMempool(t *testing.T) {
 	require := require.New(t)
 
-	env := newEnvironment(t)
+	env := newEnvironment(t, latestFork)
 	env.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(shutdownEnvironment(env))
-	}()
+	defer env.ctx.Lock.Unlock()
 
-	// create candidate tx
-	tx := getValidTx(env.txBuilder, t)
+	tx, exists := env.mempool.Peek()
+	require.False(exists)
+	require.Nil(tx)
+
+	// [BuildBlock] should not build an empty block
+	blk, err := env.Builder.BuildBlock(context.Background())
+	require.ErrorIs(err, ErrNoPendingBlocks)
+	require.Nil(blk)
+}
+
+func TestBuildBlockShouldReward(t *testing.T) {
+	require := require.New(t)
+
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	var (
+		now    = env.backend.Clk.Time()
+		nodeID = ids.GenerateTestNodeID()
+
+		defaultValidatorStake = 100 * units.MilliLux
+		validatorStartTime    = now.Add(2 * txexecutor.SyncBound)
+		validatorEndTime      = validatorStartTime.Add(360 * 24 * time.Hour)
+	)
+
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
+
+	// Create a valid [AddPermissionlessValidatorTx]
+	builder, txSigner := env.factory.NewWallet(preFundedKeys[0])
+	utx, err := builder.NewAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: nodeID,
+				Start:  uint64(validatorStartTime.Unix()),
+				End:    uint64(validatorEndTime.Unix()),
+				Wght:   defaultValidatorStake,
+			},
+			Subnet: constants.PrimaryNetworkID,
+		},
+		signer.NewProofOfPossession(sk),
+		env.ctx.LUXAssetID,
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		},
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		},
+		reward.PercentDenominator,
+		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		}),
+	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
+	require.NoError(err)
 	txID := tx.ID()
 
-	// A tx simply added to mempool is obviously not marked as dropped
-	require.NoError(env.mempool.Add(tx))
-	require.True(env.mempool.Has(txID))
-	reason := env.mempool.GetDropReason(txID)
-	require.NoError(reason)
+	// Issue the transaction
+	env.ctx.Lock.Unlock()
+	require.NoError(env.network.IssueTxFromRPC(tx))
+	env.ctx.Lock.Lock()
+	_, ok := env.mempool.Get(txID)
+	require.True(ok)
 
-	// When a tx is marked as dropped, it is still available to allow re-issuance
+	// Build and accept a block with the tx
+	blk, err := env.Builder.BuildBlock(context.Background())
+	require.NoError(err)
+	require.IsType(&block.BanffStandardBlock{}, blk.(*blockexecutor.Block).Block)
+	require.Equal([]*txs.Tx{tx}, blk.(*blockexecutor.Block).Block.Txs())
+	require.NoError(blk.Verify(context.Background()))
+	require.NoError(blk.Accept(context.Background()))
+	require.True(env.blkManager.SetPreference(blk.ID()))
+
+	// Validator should now be current
+	staker, err := env.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
+	require.NoError(err)
+	require.Equal(txID, staker.TxID)
+
+	// Should be rewarded at the end of staking period
+	env.backend.Clk.Set(validatorEndTime)
+
+	for {
+		iter, err := env.state.GetCurrentStakerIterator()
+		require.NoError(err)
+		require.True(iter.Next())
+		staker := iter.Value()
+		iter.Release()
+
+		// Check that the right block was built
+		blk, err := env.Builder.BuildBlock(context.Background())
+		require.NoError(err)
+		require.NoError(blk.Verify(context.Background()))
+		require.IsType(&block.BanffProposalBlock{}, blk.(*blockexecutor.Block).Block)
+
+		expectedTx, err := NewRewardValidatorTx(env.ctx, staker.TxID)
+		require.NoError(err)
+		require.Equal([]*txs.Tx{expectedTx}, blk.(*blockexecutor.Block).Block.Txs())
+
+		// Commit the [ProposalBlock] with a [CommitBlock]
+		proposalBlk, ok := blk.(snowman.OracleBlock)
+		require.True(ok)
+		options, err := proposalBlk.Options(context.Background())
+		require.NoError(err)
+
+		commit := options[0].(*blockexecutor.Block)
+		require.IsType(&block.BanffCommitBlock{}, commit.Block)
+
+		require.NoError(blk.Accept(context.Background()))
+		require.NoError(commit.Verify(context.Background()))
+		require.NoError(commit.Accept(context.Background()))
+		require.True(env.blkManager.SetPreference(commit.ID()))
+
+		// Stop rewarding once our staker is rewarded
+		if staker.TxID == txID {
+			break
+		}
+	}
+
+	// Staking rewards should have been issued
+	rewardUTXOs, err := env.state.GetRewardUTXOs(txID)
+	require.NoError(err)
+	require.NotEmpty(rewardUTXOs)
+}
+
+func TestBuildBlockAdvanceTime(t *testing.T) {
+	require := require.New(t)
+
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	var (
+		now      = env.backend.Clk.Time()
+		nextTime = now.Add(2 * txexecutor.SyncBound)
+	)
+
+	// Add a staker to [env.state]
+	env.state.PutCurrentValidator(&state.Staker{
+		NextTime: nextTime,
+		Priority: txs.PrimaryNetworkValidatorCurrentPriority,
+	})
+
+	// Advance wall clock to [nextTime]
+	env.backend.Clk.Set(nextTime)
+
+	// [BuildBlock] should build a block advancing the time to [NextTime]
+	blkIntf, err := env.Builder.BuildBlock(context.Background())
+	require.NoError(err)
+
+	require.IsType(&blockexecutor.Block{}, blkIntf)
+	blk := blkIntf.(*blockexecutor.Block)
+	require.Empty(blk.Txs())
+	require.IsType(&block.BanffStandardBlock{}, blk.Block)
+	standardBlk := blk.Block.(*block.BanffStandardBlock)
+	require.Equal(nextTime.Unix(), standardBlk.Timestamp().Unix())
+}
+
+func TestBuildBlockForceAdvanceTime(t *testing.T) {
+	require := require.New(t)
+
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	// Create a valid transaction
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
+		testSubnet1.ID(),
+		nil,
+		constants.AVMID,
+		nil,
+		"chain name",
+	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
+	require.NoError(err)
+	txID := tx.ID()
+
+	// Issue the transaction
+	env.ctx.Lock.Unlock()
+	require.NoError(env.network.IssueTxFromRPC(tx))
+	env.ctx.Lock.Lock()
+	_, ok := env.mempool.Get(txID)
+	require.True(ok)
+
+	var (
+		now      = env.backend.Clk.Time()
+		nextTime = now.Add(2 * txexecutor.SyncBound)
+	)
+
+	// Add a staker to [env.state]
+	env.state.PutCurrentValidator(&state.Staker{
+		NextTime: nextTime,
+		Priority: txs.PrimaryNetworkValidatorCurrentPriority,
+	})
+
+	// Advance wall clock to [nextTime] + [txexecutor.SyncBound]
+	env.backend.Clk.Set(nextTime.Add(txexecutor.SyncBound))
+
+	// [BuildBlock] should build a block advancing the time to [nextTime],
+	// not the current wall clock.
+	blkIntf, err := env.Builder.BuildBlock(context.Background())
+	require.NoError(err)
+
+	require.IsType(&blockexecutor.Block{}, blkIntf)
+	blk := blkIntf.(*blockexecutor.Block)
+	require.Equal([]*txs.Tx{tx}, blk.Txs())
+	require.IsType(&block.BanffStandardBlock{}, blk.Block)
+	standardBlk := blk.Block.(*block.BanffStandardBlock)
+	require.Equal(nextTime.Unix(), standardBlk.Timestamp().Unix())
+}
+
+func TestBuildBlockInvalidStakingDurations(t *testing.T) {
+	require := require.New(t)
+
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	// Post-Durango, [StartTime] is no longer validated. Staking durations are
+	// based on the current chain timestamp and must be validated.
+	env.config.UpgradeConfig.DurangoTime = time.Time{}
+
+	var (
+		now                   = env.backend.Clk.Time()
+		defaultValidatorStake = 100 * units.MilliLux
+
+		// Add a validator ending in [MaxStakeDuration]
+		validatorEndTime = now.Add(env.config.MaxStakeDuration)
+	)
+
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
+
+	builder1, signer1 := env.factory.NewWallet(preFundedKeys[0])
+	utx1, err := builder1.NewAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: ids.GenerateTestNodeID(),
+				Start:  uint64(now.Unix()),
+				End:    uint64(validatorEndTime.Unix()),
+				Wght:   defaultValidatorStake,
+			},
+			Subnet: constants.PrimaryNetworkID,
+		},
+		signer.NewProofOfPossession(sk),
+		env.ctx.LUXAssetID,
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		},
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		},
+		reward.PercentDenominator,
+		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+		}),
+	)
+	require.NoError(err)
+	tx1, err := walletsigner.SignUnsigned(context.Background(), signer1, utx1)
+	require.NoError(err)
+	require.NoError(env.mempool.Add(tx1))
+	tx1ID := tx1.ID()
+	_, ok := env.mempool.Get(tx1ID)
+	require.True(ok)
+
+	// Add a validator ending past [MaxStakeDuration]
+	validator2EndTime := now.Add(env.config.MaxStakeDuration + time.Second)
+
+	sk, err = bls.NewSecretKey()
+	require.NoError(err)
+
+	builder2, signer2 := env.factory.NewWallet(preFundedKeys[2])
+	utx2, err := builder2.NewAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: ids.GenerateTestNodeID(),
+				Start:  uint64(now.Unix()),
+				End:    uint64(validator2EndTime.Unix()),
+				Wght:   defaultValidatorStake,
+			},
+			Subnet: constants.PrimaryNetworkID,
+		},
+		signer.NewProofOfPossession(sk),
+		env.ctx.LUXAssetID,
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[2].PublicKey().Address()},
+		},
+		&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[2].PublicKey().Address()},
+		},
+		reward.PercentDenominator,
+		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{preFundedKeys[2].PublicKey().Address()},
+		}),
+	)
+	require.NoError(err)
+	tx2, err := walletsigner.SignUnsigned(context.Background(), signer2, utx2)
+	require.NoError(err)
+	require.NoError(env.mempool.Add(tx2))
+	tx2ID := tx2.ID()
+	_, ok = env.mempool.Get(tx2ID)
+	require.True(ok)
+
+	// Only tx1 should be in a built block since [MaxStakeDuration] is satisfied.
+	blkIntf, err := env.Builder.BuildBlock(context.Background())
+	require.NoError(err)
+
+	require.IsType(&blockexecutor.Block{}, blkIntf)
+	blk := blkIntf.(*blockexecutor.Block)
+	require.Len(blk.Txs(), 1)
+	require.Equal(tx1ID, blk.Txs()[0].ID())
+
+	// Mempool should have none of the txs
+	_, ok = env.mempool.Get(tx1ID)
+	require.False(ok)
+	_, ok = env.mempool.Get(tx2ID)
+	require.False(ok)
+
+	// Only tx2 should be dropped
+	require.NoError(env.mempool.GetDropReason(tx1ID))
+
+	tx2DropReason := env.mempool.GetDropReason(tx2ID)
+	require.ErrorIs(tx2DropReason, txexecutor.ErrStakeTooLong)
+}
+
+func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
+	require := require.New(t)
+
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	// Create a valid transaction
+	builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
+	utx, err := builder.NewCreateChainTx(
+		testSubnet1.ID(),
+		nil,
+		constants.AVMID,
+		nil,
+		"chain name",
+	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
+	require.NoError(err)
+	txID := tx.ID()
+
+	// Transaction should not be marked as dropped before being added to the
+	// mempool
+	require.NoError(env.mempool.GetDropReason(txID))
+
+	// Mark the transaction as dropped
+	errTestingDropped := errors.New("testing dropped")
 	env.mempool.MarkDropped(txID, errTestingDropped)
-	require.True(env.mempool.Has(txID)) // still available
-	reason = env.mempool.GetDropReason(txID)
-	require.ErrorIs(reason, errTestingDropped)
+	err = env.mempool.GetDropReason(txID)
+	require.ErrorIs(err, errTestingDropped)
 
-	// A previously dropped tx, popped then re-added to mempool,
-	// is not dropped anymore
-	env.mempool.Remove([]*txs.Tx{tx})
-	require.NoError(env.mempool.Add(tx))
+	// Issue the transaction
+	env.ctx.Lock.Unlock()
+	err = env.network.IssueTxFromRPC(tx)
+	require.ErrorIs(err, errTestingDropped)
+	env.ctx.Lock.Lock()
+	_, ok := env.mempool.Get(txID)
+	require.False(ok)
 
-	require.True(env.mempool.Has(txID))
-	reason = env.mempool.GetDropReason(txID)
-	require.NoError(reason)
+	// When issued again, the mempool should still be marked as dropped
+	err = env.mempool.GetDropReason(txID)
+	require.ErrorIs(err, errTestingDropped)
 }
 
 func TestNoErrorOnUnexpectedSetPreferenceDuringBootstrapping(t *testing.T) {
-	env := newEnvironment(t)
-	env.ctx.Lock.Lock()
-	env.isBootstrapped.Set(false)
-	env.ctx.Log = logging.NoWarn{}
-	defer func() {
-		require.NoError(t, shutdownEnvironment(env))
-	}()
+	require := require.New(t)
 
-	require.False(t, env.blkManager.SetPreference(ids.GenerateTestID())) // should not panic
+	env := newEnvironment(t, latestFork)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	env.isBootstrapped.Set(false)
+
+	require.True(env.blkManager.SetPreference(ids.GenerateTestID())) // should not panic
 }
 
 func TestGetNextStakerToReward(t *testing.T) {
+	var (
+		now  = time.Now()
+		txID = ids.GenerateTestID()
+	)
+
 	type test struct {
 		name                 string
 		timestamp            time.Time
@@ -123,10 +489,6 @@ func TestGetNextStakerToReward(t *testing.T) {
 		expectedErr          error
 	}
 
-	var (
-		now  = time.Now()
-		txID = ids.GenerateTestID()
-	)
 	tests := []test{
 		{
 			name:      "end of time",
@@ -290,389 +652,6 @@ func TestGetNextStakerToReward(t *testing.T) {
 			}
 			require.Equal(tt.expectedTxID, txID)
 			require.Equal(tt.expectedShouldReward, shouldReward)
-		})
-	}
-}
-
-func TestBuildBlock(t *testing.T) {
-	var (
-		parentID = ids.GenerateTestID()
-		height   = uint64(1337)
-		output   = &lux.TransferableOutput{
-			Asset: lux.Asset{ID: ids.GenerateTestID()},
-			Out: &secp256k1fx.TransferOutput{
-				OutputOwners: secp256k1fx.OutputOwners{
-					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
-				},
-			},
-		}
-		now             = time.Now()
-		parentTimestamp = now.Add(-2 * time.Second)
-		transactions    = []*txs.Tx{{
-			Unsigned: &txs.AddValidatorTx{
-				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-					Ins: []*lux.TransferableInput{{
-						Asset: lux.Asset{ID: ids.GenerateTestID()},
-						In: &secp256k1fx.TransferInput{
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{0},
-							},
-						},
-					}},
-					Outs: []*lux.TransferableOutput{output},
-				}},
-				Validator: txs.Validator{
-					// Shouldn't be dropped
-					Start: uint64(now.Add(2 * txexecutor.SyncBound).Unix()),
-				},
-				StakeOuts: []*lux.TransferableOutput{output},
-				RewardsOwner: &secp256k1fx.OutputOwners{
-					Addrs: []ids.ShortID{ids.GenerateTestShortID()},
-				},
-			},
-			Creds: []verify.Verifiable{
-				&secp256k1fx.Credential{
-					Sigs: [][secp256k1.SignatureLen]byte{{1, 3, 3, 7}},
-				},
-			},
-		}}
-		stakerTxID = ids.GenerateTestID()
-	)
-
-	type test struct {
-		name             string
-		builderF         func(*gomock.Controller) *builder
-		timestamp        time.Time
-		forceAdvanceTime bool
-		parentStateF     func(*gomock.Controller) state.Chain
-		expectedBlkF     func(*require.Assertions) block.Block
-		expectedErr      error
-	}
-
-	tests := []test{
-		{
-			name: "should reward",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// The tx builder should be asked to build a reward tx
-				txBuilder := txbuilder.NewMockBuilder(ctrl)
-				txBuilder.EXPECT().NewRewardValidatorTx(stakerTxID).Return(transactions[0], nil)
-
-				return &builder{
-					Mempool:   mempool,
-					txBuilder: txBuilder,
-				}
-			},
-			timestamp:        parentTimestamp,
-			forceAdvanceTime: false,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// add current validator that ends at [parentTimestamp]
-				// i.e. it should be rewarded
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				currentStakerIter.EXPECT().Next().Return(true)
-				currentStakerIter.EXPECT().Value().Return(&state.Staker{
-					TxID:     stakerTxID,
-					Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					EndTime:  parentTimestamp,
-				})
-				currentStakerIter.EXPECT().Release()
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil)
-				return s
-			},
-			expectedBlkF: func(require *require.Assertions) block.Block {
-				expectedBlk, err := block.NewBanffProposalBlock(
-					parentTimestamp,
-					parentID,
-					height,
-					transactions[0],
-				)
-				require.NoError(err)
-				return expectedBlk
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "has decision txs",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// There are txs.
-				mempool.EXPECT().DropExpiredStakerTxs(gomock.Any()).Return([]ids.ID{})
-				mempool.EXPECT().HasTxs().Return(true)
-				mempool.EXPECT().PeekTxs(targetBlockSize).Return(transactions)
-				return &builder{
-					Mempool: mempool,
-				}
-			},
-			timestamp:        parentTimestamp,
-			forceAdvanceTime: false,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// Handle calls in [getNextStakerToReward]
-				// and [GetNextStakerChangeTime].
-				// Next validator change time is in the future.
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				gomock.InOrder(
-					// expect calls from [getNextStakerToReward]
-					currentStakerIter.EXPECT().Next().Return(true),
-					currentStakerIter.EXPECT().Value().Return(&state.Staker{
-						NextTime: now.Add(time.Second),
-						Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					}),
-					currentStakerIter.EXPECT().Release(),
-				)
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
-				return s
-			},
-			expectedBlkF: func(require *require.Assertions) block.Block {
-				expectedBlk, err := block.NewBanffStandardBlock(
-					parentTimestamp,
-					parentID,
-					height,
-					transactions,
-				)
-				require.NoError(err)
-				return expectedBlk
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "no stakers tx",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// There are no txs.
-				mempool.EXPECT().DropExpiredStakerTxs(gomock.Any()).Return([]ids.ID{})
-				mempool.EXPECT().HasTxs().Return(false)
-
-				clk := &mockable.Clock{}
-				clk.Set(now)
-				return &builder{
-					Mempool: mempool,
-					txExecutorBackend: &txexecutor.Backend{
-						Ctx: &snow.Context{
-							Log: logging.NoLog{},
-						},
-						Clk: clk,
-					},
-				}
-			},
-			timestamp:        parentTimestamp,
-			forceAdvanceTime: false,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// Handle calls in [getNextStakerToReward]
-				// and [GetNextStakerChangeTime].
-				// Next validator change time is in the future.
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				gomock.InOrder(
-					// expect calls from [getNextStakerToReward]
-					currentStakerIter.EXPECT().Next().Return(true),
-					currentStakerIter.EXPECT().Value().Return(&state.Staker{
-						NextTime: now.Add(time.Second),
-						Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					}),
-					currentStakerIter.EXPECT().Release(),
-				)
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
-				return s
-			},
-			expectedBlkF: func(*require.Assertions) block.Block {
-				return nil
-			},
-			expectedErr: ErrNoPendingBlocks,
-		},
-		{
-			name: "should advance time",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// There are no txs.
-				mempool.EXPECT().DropExpiredStakerTxs(gomock.Any()).Return([]ids.ID{})
-				mempool.EXPECT().HasTxs().Return(false)
-				mempool.EXPECT().PeekTxs(targetBlockSize).Return(nil)
-
-				clk := &mockable.Clock{}
-				clk.Set(now)
-				return &builder{
-					Mempool: mempool,
-					txExecutorBackend: &txexecutor.Backend{
-						Clk: clk,
-					},
-				}
-			},
-			timestamp:        now.Add(-1 * time.Second),
-			forceAdvanceTime: true,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// add current validator that ends at [now] - 1 second.
-				// That is, it ends in the past but after the current chain time.
-				// Handle calls in [getNextStakerToReward]
-				// and [GetNextStakerChangeTime]
-				// when determining whether to issue a reward tx.
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				gomock.InOrder(
-					// expect calls from [getNextStakerToReward]
-					currentStakerIter.EXPECT().Next().Return(true),
-					currentStakerIter.EXPECT().Value().Return(&state.Staker{
-						NextTime: now.Add(-1 * time.Second),
-						Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					}),
-					currentStakerIter.EXPECT().Release(),
-				)
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
-				return s
-			},
-			expectedBlkF: func(require *require.Assertions) block.Block {
-				expectedBlk, err := block.NewBanffStandardBlock(
-					now.Add(-1*time.Second), // note the advanced time
-					parentID,
-					height,
-					nil, // empty block to advance time
-				)
-				require.NoError(err)
-				return expectedBlk
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "has a staker tx no force",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// There is a tx.
-				mempool.EXPECT().DropExpiredStakerTxs(gomock.Any()).Return([]ids.ID{})
-				mempool.EXPECT().HasTxs().Return(true)
-				mempool.EXPECT().PeekTxs(targetBlockSize).Return([]*txs.Tx{transactions[0]})
-
-				clk := &mockable.Clock{}
-				clk.Set(now)
-				return &builder{
-					Mempool: mempool,
-					txExecutorBackend: &txexecutor.Backend{
-						Clk: clk,
-					},
-				}
-			},
-			timestamp:        parentTimestamp,
-			forceAdvanceTime: false,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// Handle calls in [getNextStakerToReward]
-				// and [GetNextStakerChangeTime].
-				// Next validator change time is in the future.
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				gomock.InOrder(
-					// expect calls from [getNextStakerToReward]
-					currentStakerIter.EXPECT().Next().Return(true),
-					currentStakerIter.EXPECT().Value().Return(&state.Staker{
-						NextTime: now.Add(time.Second),
-						Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					}),
-					currentStakerIter.EXPECT().Release(),
-				)
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
-				return s
-			},
-			expectedBlkF: func(require *require.Assertions) block.Block {
-				expectedBlk, err := block.NewBanffStandardBlock(
-					parentTimestamp,
-					parentID,
-					height,
-					[]*txs.Tx{transactions[0]},
-				)
-				require.NoError(err)
-				return expectedBlk
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "has a staker tx with force",
-			builderF: func(ctrl *gomock.Controller) *builder {
-				mempool := mempool.NewMockMempool(ctrl)
-
-				// There are no decision txs
-				// There is a staker tx.
-				mempool.EXPECT().DropExpiredStakerTxs(gomock.Any()).Return([]ids.ID{})
-				mempool.EXPECT().HasTxs().Return(true)
-				mempool.EXPECT().PeekTxs(targetBlockSize).Return([]*txs.Tx{transactions[0]})
-
-				clk := &mockable.Clock{}
-				clk.Set(now)
-				return &builder{
-					Mempool: mempool,
-					txExecutorBackend: &txexecutor.Backend{
-						Clk: clk,
-					},
-				}
-			},
-			timestamp:        parentTimestamp,
-			forceAdvanceTime: true,
-			parentStateF: func(ctrl *gomock.Controller) state.Chain {
-				s := state.NewMockChain(ctrl)
-
-				// Handle calls in [getNextStakerToReward]
-				// and [GetNextStakerChangeTime].
-				// Next validator change time is in the future.
-				currentStakerIter := state.NewMockStakerIterator(ctrl)
-				gomock.InOrder(
-					// expect calls from [getNextStakerToReward]
-					currentStakerIter.EXPECT().Next().Return(true),
-					currentStakerIter.EXPECT().Value().Return(&state.Staker{
-						NextTime: now.Add(time.Second),
-						Priority: txs.PrimaryNetworkDelegatorCurrentPriority,
-					}),
-					currentStakerIter.EXPECT().Release(),
-				)
-
-				s.EXPECT().GetCurrentStakerIterator().Return(currentStakerIter, nil).Times(1)
-				return s
-			},
-			expectedBlkF: func(require *require.Assertions) block.Block {
-				expectedBlk, err := block.NewBanffStandardBlock(
-					parentTimestamp,
-					parentID,
-					height,
-					[]*txs.Tx{transactions[0]},
-				)
-				require.NoError(err)
-				return expectedBlk
-			},
-			expectedErr: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-			ctrl := gomock.NewController(t)
-
-			gotBlk, err := buildBlock(
-				tt.builderF(ctrl),
-				parentID,
-				height,
-				tt.timestamp,
-				tt.forceAdvanceTime,
-				tt.parentStateF(ctrl),
-			)
-			if tt.expectedErr != nil {
-				require.ErrorIs(err, tt.expectedErr)
-				return
-			}
-			require.NoError(err)
-			require.Equal(tt.expectedBlkF(require), gotBlk)
 		})
 	}
 }

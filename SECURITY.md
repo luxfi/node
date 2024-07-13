@@ -4,13 +4,13 @@ Lux takes the security of the platform and of its users very seriously. We and o
 
 ## Reporting a Vulnerability
 
-**Please do not file a public ticket** mentioning the vulnerability. To disclose a vulnerability submit it through our [Bug Bounty Program](https://hackenproof.com/lux).
+**Please do not file a public ticket** mentioning the vulnerability. To disclose a vulnerability submit it through our [Bug Bounty Program](https://immunefi.com/bounty/lux/).
 
-Vulnerabilities must be disclosed to us privately with reasonable time to respond, and avoid compromise of other users and accounts, or loss of funds that are not your own. We do not reward spam or social engineering vulnerabilities.
+Vulnerabilities must be disclosed to us privately with reasonable time to respond, and avoid compromise of other users and accounts, or loss of funds that are not your own. We do not reward spam or social engineering vulnerabilities. 
 
-Do not test for or validate any security issues in the live Lux networks (Mainnet and Testnet), confirm all exploits in a local private testnet.
+Do not test for or validate any security issues in the live Lux networks (Mainnet and Fuji testnet), confirm all exploits in a local private testnet.
 
-Please refer to the [Bug Bounty Page](https://hackenproof.com/lux) for the most up-to-date program rules and scope.
+Please refer to the [Bug Bounty Page](https://immunefi.com/bounty/lux/) for the most up-to-date program rules and scope.
 
 ## Supported Versions
 

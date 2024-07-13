@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
@@ -22,7 +21,7 @@ import (
 	"github.com/luxfi/node/snow/networking/handler"
 	"github.com/luxfi/node/snow/networking/timeout"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/linkedhashmap"
+	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -32,6 +31,7 @@ import (
 var (
 	errUnknownChain  = errors.New("received message for unknown chain")
 	errUnallowedNode = errors.New("received message from non-allowed node")
+	errClosing       = errors.New("router is closing")
 
 	_ Router              = (*ChainRouter)(nil)
 	_ benchlist.Benchable = (*ChainRouter)(nil)
@@ -64,6 +64,7 @@ type ChainRouter struct {
 	clock         mockable.Clock
 	log           logging.Logger
 	lock          sync.Mutex
+	closing       bool
 	chainHandlers map[ids.ID]handler.Handler
 
 	// It is only safe to call [RegisterResponse] with the router lock held. Any
@@ -84,7 +85,7 @@ type ChainRouter struct {
 	// Parameters for doing health checks
 	healthConfig HealthConfig
 	// aggregator of requests based on their time
-	timedRequests linkedhashmap.LinkedHashmap[ids.RequestID, requestEntry]
+	timedRequests *linked.Hashmap[ids.RequestID, requestEntry]
 }
 
 // Initialize the router.
@@ -102,8 +103,7 @@ func (cr *ChainRouter) Initialize(
 	trackedSubnets set.Set[ids.ID],
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
-	metricsNamespace string,
-	metricsRegisterer prometheus.Registerer,
+	reg prometheus.Registerer,
 ) error {
 	cr.log = log
 	cr.chainHandlers = make(map[ids.ID]handler.Handler)
@@ -113,7 +113,7 @@ func (cr *ChainRouter) Initialize(
 	cr.criticalChains = criticalChains
 	cr.sybilProtectionEnabled = sybilProtectionEnabled
 	cr.onFatal = onFatal
-	cr.timedRequests = linkedhashmap.New[ids.RequestID, requestEntry]()
+	cr.timedRequests = linked.NewHashmap[ids.RequestID, requestEntry]()
 	cr.peers = make(map[ids.NodeID]*peer)
 	cr.healthConfig = healthConfig
 
@@ -127,7 +127,7 @@ func (cr *ChainRouter) Initialize(
 	cr.peers[nodeID] = myself
 
 	// Register metrics
-	rMetrics, err := newRouterMetrics(metricsNamespace, metricsRegisterer)
+	rMetrics, err := newRouterMetrics(reg)
 	if err != nil {
 		return err
 	}
@@ -156,6 +156,18 @@ func (cr *ChainRouter) RegisterRequest(
 	engineType p2p.EngineType,
 ) {
 	cr.lock.Lock()
+	if cr.closing {
+		cr.log.Debug("dropping request",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("requestingChainID", requestingChainID),
+			zap.Stringer("respondingChainID", respondingChainID),
+			zap.Uint32("requestID", requestID),
+			zap.Stringer("messageOp", op),
+			zap.Error(errClosing),
+		)
+		cr.lock.Unlock()
+		return
+	}
 	// When we receive a response message type (Chits, Put, Accepted, etc.)
 	// we validate that we actually sent the corresponding request.
 	// Give this request a unique ID so we can do that validation.
@@ -246,6 +258,17 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	cr.lock.Lock()
 	defer cr.lock.Unlock()
 
+	if cr.closing {
+		cr.log.Debug("dropping message",
+			zap.Stringer("messageOp", op),
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("chainID", destinationChainID),
+			zap.Error(errClosing),
+		)
+		msg.OnFinishedHandling()
+		return
+	}
+
 	// Get the chain, if it exists
 	chain, exists := cr.chainHandlers[destinationChainID]
 	if !exists {
@@ -271,11 +294,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	}
 
 	chainCtx := chain.Context()
-
-	// TODO: [requestID] can overflow, which means a timeout on the request
-	//       before the overflow may not be handled properly.
-	if notRequested := message.UnrequestedOps.Contains(op); notRequested ||
-		(op == message.PutOp && requestID == constants.GossipMsgRequestID) {
+	if message.UnrequestedOps.Contains(op) {
 		if chainCtx.Executing.Get() {
 			cr.log.Debug("dropping message and skipping queue",
 				zap.String("reason", "the chain is currently executing"),
@@ -362,6 +381,7 @@ func (cr *ChainRouter) Shutdown(ctx context.Context) {
 	cr.lock.Lock()
 	prevChains := cr.chainHandlers
 	cr.chainHandlers = map[ids.ID]handler.Handler{}
+	cr.closing = true
 	cr.lock.Unlock()
 
 	for _, chain := range prevChains {
@@ -394,6 +414,13 @@ func (cr *ChainRouter) AddChain(ctx context.Context, chain handler.Handler) {
 	defer cr.lock.Unlock()
 
 	chainID := chain.Context().ChainID
+	if cr.closing {
+		cr.log.Debug("dropping add chain request",
+			zap.Stringer("chainID", chainID),
+			zap.Error(errClosing),
+		)
+		return
+	}
 	cr.log.Debug("registering chain with chain router",
 		zap.Stringer("chainID", chainID),
 	)
@@ -452,6 +479,14 @@ func (cr *ChainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Applica
 	cr.lock.Lock()
 	defer cr.lock.Unlock()
 
+	if cr.closing {
+		cr.log.Debug("dropping connected message",
+			zap.Stringer("nodeID", nodeID),
+			zap.Error(errClosing),
+		)
+		return
+	}
+
 	connectedPeer, exists := cr.peers[nodeID]
 	if !exists {
 		connectedPeer = &peer{
@@ -499,6 +534,14 @@ func (cr *ChainRouter) Disconnected(nodeID ids.NodeID) {
 	cr.lock.Lock()
 	defer cr.lock.Unlock()
 
+	if cr.closing {
+		cr.log.Debug("dropping disconnected message",
+			zap.Stringer("nodeID", nodeID),
+			zap.Error(errClosing),
+		)
+		return
+	}
+
 	peer := cr.peers[nodeID]
 	delete(cr.peers, nodeID)
 	if _, benched := cr.benched[nodeID]; benched {
@@ -527,6 +570,15 @@ func (cr *ChainRouter) Disconnected(nodeID ids.NodeID) {
 func (cr *ChainRouter) Benched(chainID ids.ID, nodeID ids.NodeID) {
 	cr.lock.Lock()
 	defer cr.lock.Unlock()
+
+	if cr.closing {
+		cr.log.Debug("dropping benched message",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("chainID", chainID),
+			zap.Error(errClosing),
+		)
+		return
+	}
 
 	benchedChains, exists := cr.benched[nodeID]
 	benchedChains.Add(chainID)
@@ -559,6 +611,15 @@ func (cr *ChainRouter) Benched(chainID ids.ID, nodeID ids.NodeID) {
 func (cr *ChainRouter) Unbenched(chainID ids.ID, nodeID ids.NodeID) {
 	cr.lock.Lock()
 	defer cr.lock.Unlock()
+
+	if cr.closing {
+		cr.log.Debug("dropping unbenched message",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("chainID", chainID),
+			zap.Error(errClosing),
+		)
+		return
+	}
 
 	benchedChains := cr.benched[nodeID]
 	benchedChains.Remove(chainID)

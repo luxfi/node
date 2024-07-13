@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -11,7 +11,9 @@ import (
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/wallet/chain/x"
+	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 func main() {
@@ -34,18 +36,18 @@ func main() {
 	}
 	log.Printf("fetched state of %s in %s\n", addrStr, time.Since(fetchStartTime))
 
-	xChainID := state.XCTX.BlockchainID()
+	xChainID := state.XCTX.BlockchainID
 
-	xUTXOs := primary.NewChainUTXOs(xChainID, state.UTXOs)
+	xUTXOs := common.NewChainUTXOs(xChainID, state.UTXOs)
 	xBackend := x.NewBackend(state.XCTX, xUTXOs)
-	xBuilder := x.NewBuilder(addresses, xBackend)
+	xBuilder := builder.New(addresses, state.XCTX, xBackend)
 
 	currentBalances, err := xBuilder.GetFTBalance()
 	if err != nil {
 		log.Fatalf("failed to get the balance: %s\n", err)
 	}
 
-	luxID := state.XCTX.LUXAssetID()
+	luxID := state.XCTX.LUXAssetID
 	luxBalance := currentBalances[luxID]
 	log.Printf("current LUX balance of %s is %d nLUX\n", addrStr, luxBalance)
 }

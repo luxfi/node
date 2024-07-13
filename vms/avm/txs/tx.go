@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
@@ -18,6 +19,8 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
+
+var _ gossip.Gossipable = (*Tx)(nil)
 
 type UnsignedTx interface {
 	snow.ContextInitializable
@@ -75,9 +78,18 @@ func (t *Tx) ID() ids.ID {
 	return t.TxID
 }
 
+// GossipID returns the unique ID that this tx should use for mempool gossip
+func (t *Tx) GossipID() ids.ID {
+	return t.TxID
+}
+
 // Bytes returns the binary representation of this tx
 func (t *Tx) Bytes() []byte {
 	return t.bytes
+}
+
+func (t *Tx) Size() int {
+	return len(t.bytes)
 }
 
 // UTXOs returns the UTXOs transaction is producing.
@@ -87,6 +99,10 @@ func (t *Tx) UTXOs() []*lux.UTXO {
 	// returned from the utxoGetter.
 	_ = t.Unsigned.Visit(&u)
 	return u.utxos
+}
+
+func (t *Tx) InputIDs() set.Set[ids.ID] {
+	return t.Unsigned.InputIDs()
 }
 
 func (t *Tx) SignSECP256K1Fx(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {

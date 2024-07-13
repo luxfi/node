@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
 
 import (
-	stdcontext "context"
+	"context"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/avm/txs"
@@ -16,7 +16,7 @@ var _ txs.Visitor = (*backendVisitor)(nil)
 // backendVisitor handles accepting of transactions for the backend
 type backendVisitor struct {
 	b    *backend
-	ctx  stdcontext.Context
+	ctx  context.Context
 	txID ids.ID
 }
 

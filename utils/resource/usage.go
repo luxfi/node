@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package resource
@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils/logging"
@@ -96,7 +94,7 @@ func NewManager(
 	diskHalflife time.Duration,
 	metricsRegisterer prometheus.Registerer,
 ) (Manager, error) {
-	processMetrics, err := newMetrics("system_resources", metricsRegisterer)
+	processMetrics, err := newMetrics(metricsRegisterer)
 	if err != nil {
 		return nil, err
 	}

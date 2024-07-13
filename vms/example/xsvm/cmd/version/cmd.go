@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/example/xsvm"
 )
@@ -29,8 +30,8 @@ func Command() *cobra.Command {
 func versionFunc(*cobra.Command, []string) error {
 	fmt.Printf(
 		format,
-		xsvm.Name,
-		xsvm.ID,
+		constants.XSVMName,
+		constants.XSVMID,
 		xsvm.Version,
 		version.RPCChainVMProtocol,
 	)

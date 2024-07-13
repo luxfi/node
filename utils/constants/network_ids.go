@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -15,11 +15,13 @@ import (
 
 // Const variables to be exported
 const (
-	MainnetID  uint32 = 1
-	CascadeID  uint32 = 2
-	DenaliID   uint32 = 3
-	EverestID  uint32 = 4
-	TestnetID  uint32 = 5
+	MainnetID uint32 = 1
+	CascadeID uint32 = 2
+	DenaliID  uint32 = 3
+	EverestID uint32 = 4
+	FujiID    uint32 = 5
+
+	TestnetID  uint32 = FujiID
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 
@@ -27,6 +29,7 @@ const (
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
 	EverestName  = "everest"
+	FujiName     = "fuji"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
@@ -35,7 +38,7 @@ const (
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	TestnetHRP  = "testnet"
+	FujiHRP     = "fuji"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	FallbackHRP = "custom"
@@ -51,7 +54,7 @@ var (
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
 		EverestID:  EverestName,
-		TestnetID:  TestnetName,
+		FujiID:     FujiName,
 		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
 	}
@@ -60,6 +63,7 @@ var (
 		CascadeName:  CascadeID,
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
+		FujiName:     FujiID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
@@ -70,7 +74,7 @@ var (
 		CascadeID:  CascadeHRP,
 		DenaliID:   DenaliHRP,
 		EverestID:  EverestHRP,
-		TestnetID:  TestnetHRP,
+		FujiID:     FujiHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
 	}
@@ -79,11 +83,11 @@ var (
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		TestnetHRP:  TestnetID,
+		FujiHRP:     FujiID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, TestnetID)
+	ProductionNetworkIDs = set.Of(MainnetID, FujiID)
 
 	ValidNetworkPrefix = "network-"
 

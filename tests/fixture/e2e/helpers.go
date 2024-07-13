@@ -1,5 +1,7 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
+
+//go:build test
 
 package e2e
 
@@ -12,22 +14,19 @@ import (
 	"strings"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/coreth/core/types"
 	"github.com/luxfi/coreth/ethclient"
 	"github.com/luxfi/coreth/interfaces"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/local"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 const (
@@ -36,19 +35,14 @@ const (
 	// contention.
 	DefaultTimeout = 2 * time.Minute
 
-	// Interval appropriate for network operations that should be
-	// retried periodically but not too often.
-	DefaultPollingInterval = 500 * time.Millisecond
+	DefaultPollingInterval = tmpnet.DefaultPollingInterval
 
 	// Setting this env will disable post-test bootstrap
 	// checks. Useful for speeding up iteration during test
 	// development.
 	SkipBootstrapChecksEnvName = "E2E_SKIP_BOOTSTRAP_CHECKS"
 
-	// Validator start time must be a minimum of SyncBound from the
-	// current time for validator addition to succeed, and adding 20
-	// seconds provides a buffer in case of any delay in processing.
-	DefaultValidatorStartTimeDiff = executor.SyncBound + 20*time.Second
+	DefaultValidatorStartTimeDiff = tmpnet.DefaultValidatorStartTimeDiff
 
 	DefaultGasLimit = uint64(21000) // Standard gas limit
 
@@ -125,27 +119,24 @@ func Eventually(condition func() bool, waitFor time.Duration, tick time.Duration
 	}
 }
 
-// Add an ephemeral node that is only intended to be used by a single test. Its ID and
-// URI are not intended to be returned from the Network instance to minimize
-// accessibility from other tests.
-func AddEphemeralNode(network tmpnet.Network, flags tmpnet.FlagsMap) tmpnet.Node {
+// Adds an ephemeral node intended to be used by a single test.
+func AddEphemeralNode(network *tmpnet.Network, flags tmpnet.FlagsMap) *tmpnet.Node {
 	require := require.New(ginkgo.GinkgoT())
 
-	node, err := network.AddEphemeralNode(ginkgo.GinkgoWriter, flags)
-	require.NoError(err)
+	node := tmpnet.NewEphemeralNode(flags)
+	require.NoError(network.StartNode(DefaultContext(), ginkgo.GinkgoWriter, node))
 
-	// Ensure node is stopped on teardown. It's configuration is not removed to enable
-	// collection in CI to aid in troubleshooting failures.
 	ginkgo.DeferCleanup(func() {
-		tests.Outf("Shutting down ephemeral node %s\n", node.GetID())
-		require.NoError(node.Stop())
+		tests.Outf("shutting down ephemeral node %q\n", node.NodeID)
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
+		require.NoError(node.Stop(ctx))
 	})
-
 	return node
 }
 
 // Wait for the given node to report healthy.
-func WaitForHealthy(node tmpnet.Node) {
+func WaitForHealthy(node *tmpnet.Node) {
 	// Need to use explicit context (vs DefaultContext()) to support use with DeferCleanup
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
@@ -174,7 +165,7 @@ func SendEthTransaction(ethClient ethclient.Client, signedTx *types.Transaction)
 		return true
 	}, DefaultTimeout, DefaultPollingInterval, "failed to see transaction acceptance before timeout")
 
-	require.Equal(receipt.Status, types.ReceiptStatusSuccessful)
+	require.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 	return receipt
 }
 
@@ -196,8 +187,9 @@ func WithSuggestedGasPrice(ethClient ethclient.Client) common.Option {
 	return common.WithBaseFee(baseFee)
 }
 
-// Verify that a new node can bootstrap into the network.
-func CheckBootstrapIsPossible(network tmpnet.Network) {
+// Verify that a new node can bootstrap into the network. This function is safe to call
+// from `Teardown` by virtue of not depending on ginkgo.DeferCleanup.
+func CheckBootstrapIsPossible(network *tmpnet.Network) {
 	require := require.New(ginkgo.GinkgoT())
 
 	if len(os.Getenv(SkipBootstrapChecksEnvName)) > 0 {
@@ -206,44 +198,72 @@ func CheckBootstrapIsPossible(network tmpnet.Network) {
 	}
 	ginkgo.By("checking if bootstrap is possible with the current network state")
 
-	// Call network.AddEphemeralNode instead of AddEphemeralNode to support
-	// checking for bootstrap implicitly on teardown via a function registered
-	// with ginkgo.DeferCleanup. It's not possible to call DeferCleanup from
-	// within a function called by DeferCleanup.
-	node, err := network.AddEphemeralNode(ginkgo.GinkgoWriter, tmpnet.FlagsMap{})
-	require.NoError(err)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
 
+	node := tmpnet.NewEphemeralNode(tmpnet.FlagsMap{})
+	require.NoError(network.StartNode(ctx, ginkgo.GinkgoWriter, node))
+	// StartNode will initiate node stop if an error is encountered during start,
+	// so no further cleanup effort is required if an error is seen here.
+
+	// Ensure the node is always stopped at the end of the check
 	defer func() {
-		tests.Outf("Shutting down ephemeral node %s\n", node.GetID())
-		require.NoError(node.Stop())
+		ctx, cancel = context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
+		require.NoError(node.Stop(ctx))
 	}()
 
-	WaitForHealthy(node)
+	// Check that the node becomes healthy within timeout
+	require.NoError(tmpnet.WaitForHealthy(ctx, node))
 }
 
-// Start a local test-managed network with the provided node binary.
-func StartLocalNetwork(luxdExecPath string, networkDir string) *local.LocalNetwork {
+// Start a temporary network with the provided node binary.
+func StartNetwork(
+	network *tmpnet.Network,
+	luxNodeExecPath string,
+	pluginDir string,
+	shutdownDelay time.Duration,
+	reuseNetwork bool,
+) {
 	require := require.New(ginkgo.GinkgoT())
 
-	network, err := local.StartNetwork(
-		DefaultContext(),
-		ginkgo.GinkgoWriter,
-		networkDir,
-		&local.LocalNetwork{
-			LocalConfig: local.LocalConfig{
-				ExecPath: luxdExecPath,
-			},
-		},
-		tmpnet.DefaultNodeCount,
-		tmpnet.DefaultFundedKeyCount,
+	require.NoError(
+		tmpnet.BootstrapNewNetwork(
+			DefaultContext(),
+			ginkgo.GinkgoWriter,
+			network,
+			DefaultNetworkDir,
+			luxNodeExecPath,
+			pluginDir,
+		),
 	)
-	require.NoError(err)
-	ginkgo.DeferCleanup(func() {
-		tests.Outf("Shutting down network\n")
-		require.NoError(network.Stop())
-	})
 
 	tests.Outf("{{green}}Successfully started network{{/}}\n")
 
-	return network
+	symlinkPath, err := tmpnet.GetReusableNetworkPathForOwner(network.Owner)
+	require.NoError(err)
+
+	if reuseNetwork {
+		// Symlink the path of the created network to the default owner path (e.g. latest_node-e2e)
+		// to enable easy discovery for reuse.
+		require.NoError(os.Symlink(network.Dir, symlinkPath))
+		tests.Outf("{{green}}Symlinked %s to %s to enable reuse{{/}}\n", network.Dir, symlinkPath)
+	}
+
+	ginkgo.DeferCleanup(func() {
+		if reuseNetwork {
+			tests.Outf("{{yellow}}Skipping shutdown for network %s (symlinked to %s) to enable reuse{{/}}\n", network.Dir, symlinkPath)
+			return
+		}
+
+		if shutdownDelay > 0 {
+			tests.Outf("Waiting %s before network shutdown to ensure final metrics scrape\n", shutdownDelay)
+			time.Sleep(shutdownDelay)
+		}
+
+		tests.Outf("Shutting down network\n")
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
+		require.NoError(network.Stop(ctx))
+	})
 }

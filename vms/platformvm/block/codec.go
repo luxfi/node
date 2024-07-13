@@ -1,35 +1,33 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
+	"errors"
 	"math"
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-// Version is the current default codec version
-const Version = txs.Version
+const CodecVersion = txs.CodecVersion
 
-// GenesisCode allows blocks of larger than usual size to be parsed.
-// While this gives flexibility in accommodating large genesis blocks
-// it must not be used to parse new, unverified blocks which instead
-// must be processed by Codec
 var (
-	Codec        codec.Manager
+	// GenesisCodec allows blocks of larger than usual size to be parsed.
+	// While this gives flexibility in accommodating large genesis blocks
+	// it must not be used to parse new, unverified blocks which instead
+	// must be processed by Codec
 	GenesisCodec codec.Manager
+
+	Codec codec.Manager
 )
 
 func init() {
 	c := linearcodec.NewDefault()
-	Codec = codec.NewDefaultManager()
-	gc := linearcodec.NewCustomMaxLength(math.MaxInt32)
-	GenesisCodec = codec.NewManager(math.MaxInt32)
+	gc := linearcodec.NewDefault()
 
 	errs := wrappers.Errs{}
 	for _, c := range []linearcodec.Codec{c, gc} {
@@ -40,9 +38,12 @@ func init() {
 			txs.RegisterDUnsignedTxsTypes(c),
 		)
 	}
+
+	Codec = codec.NewDefaultManager()
+	GenesisCodec = codec.NewManager(math.MaxInt32)
 	errs.Add(
-		Codec.RegisterCodec(Version, c),
-		GenesisCodec.RegisterCodec(Version, gc),
+		Codec.RegisterCodec(CodecVersion, c),
+		GenesisCodec.RegisterCodec(CodecVersion, gc),
 	)
 	if errs.Errored() {
 		panic(errs.Err)
@@ -54,7 +55,7 @@ func init() {
 // subpackage-level codecs were introduced, each handling serialization of
 // specific types.
 func RegisterApricotBlockTypes(targetCodec codec.Registry) error {
-	return utils.Err(
+	return errors.Join(
 		targetCodec.RegisterType(&ApricotProposalBlock{}),
 		targetCodec.RegisterType(&ApricotAbortBlock{}),
 		targetCodec.RegisterType(&ApricotCommitBlock{}),
@@ -64,7 +65,7 @@ func RegisterApricotBlockTypes(targetCodec codec.Registry) error {
 }
 
 func RegisterBanffBlockTypes(targetCodec codec.Registry) error {
-	return utils.Err(
+	return errors.Join(
 		targetCodec.RegisterType(&BanffProposalBlock{}),
 		targetCodec.RegisterType(&BanffAbortBlock{}),
 		targetCodec.RegisterType(&BanffCommitBlock{}),

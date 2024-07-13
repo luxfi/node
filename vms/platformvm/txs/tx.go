@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,15 +9,19 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (
+	_ gossip.Gossipable = (*Tx)(nil)
+
 	ErrNilSignedTx = errors.New("nil signed tx is not valid")
 
 	errSignedTxNotInitialized = errors.New("signed tx was never initialized and is not valid")
@@ -45,12 +49,12 @@ func NewSigned(
 }
 
 func (tx *Tx) Initialize(c codec.Manager) error {
-	signedBytes, err := c.Marshal(Version, tx)
+	signedBytes, err := c.Marshal(CodecVersion, tx)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal ProposalTx: %w", err)
 	}
 
-	unsignedBytesLen, err := c.Size(Version, &tx.Unsigned)
+	unsignedBytesLen, err := c.Size(CodecVersion, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
 	}
@@ -75,7 +79,7 @@ func Parse(c codec.Manager, signedBytes []byte) (*Tx, error) {
 		return nil, fmt.Errorf("couldn't parse tx: %w", err)
 	}
 
-	unsignedBytesLen, err := c.Size(Version, &tx.Unsigned)
+	unsignedBytesLen, err := c.Size(CodecVersion, &tx.Unsigned)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
 	}
@@ -89,7 +93,15 @@ func (tx *Tx) Bytes() []byte {
 	return tx.bytes
 }
 
+func (tx *Tx) Size() int {
+	return len(tx.bytes)
+}
+
 func (tx *Tx) ID() ids.ID {
+	return tx.TxID
+}
+
+func (tx *Tx) GossipID() ids.ID {
 	return tx.TxID
 }
 
@@ -110,6 +122,11 @@ func (tx *Tx) UTXOs() []*lux.UTXO {
 	return utxos
 }
 
+// InputIDs returns the set of inputs this transaction consumes
+func (tx *Tx) InputIDs() set.Set[ids.ID] {
+	return tx.Unsigned.InputIDs()
+}
+
 func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
 	switch {
 	case tx == nil:
@@ -125,7 +142,7 @@ func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
 // Note: We explicitly pass the codec in Sign since we may need to sign P-Chain
 // genesis txs whose length exceed the max length of txs.Codec.
 func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
-	unsignedBytes, err := c.Marshal(Version, &tx.Unsigned)
+	unsignedBytes, err := c.Marshal(CodecVersion, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal UnsignedTx: %w", err)
 	}
@@ -146,7 +163,7 @@ func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
 		tx.Creds = append(tx.Creds, cred) // Attach credential
 	}
 
-	signedBytes, err := c.Marshal(Version, tx)
+	signedBytes, err := c.Marshal(CodecVersion, tx)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal ProposalTx: %w", err)
 	}

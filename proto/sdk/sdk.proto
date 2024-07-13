@@ -5,10 +5,14 @@ package sdk;
 option go_package = "github.com/luxfi/node/proto/pb/sdk";
 
 message PullGossipRequest {
-  bytes filter = 1;
   bytes salt = 2;
+  bytes filter = 3;
 }
 
 message PullGossipResponse {
+  repeated bytes gossip = 1;
+}
+
+message PushGossip {
   repeated bytes gossip = 1;
 }

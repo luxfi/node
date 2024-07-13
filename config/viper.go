@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -15,6 +15,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const EnvPrefix = "avago"
+
+var DashesToUnderscores = strings.NewReplacer("-", "_")
+
 // BuildViper returns the viper environment from parsing config file from
 // default search paths and any parsed command line flags
 func BuildViper(fs *pflag.FlagSet, args []string) (*viper.Viper, error) {
@@ -27,8 +31,8 @@ func BuildViper(fs *pflag.FlagSet, args []string) (*viper.Viper, error) {
 
 	v := viper.New()
 	v.AutomaticEnv()
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	v.SetEnvPrefix("avago")
+	v.SetEnvKeyReplacer(DashesToUnderscores)
+	v.SetEnvPrefix(EnvPrefix)
 	if err := v.BindPFlags(fs); err != nil {
 		return nil, err
 	}

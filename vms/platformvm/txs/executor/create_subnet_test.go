@@ -1,21 +1,24 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
@@ -49,28 +52,28 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
-			env.config.ApricotPhase3Time = ap3Time
+			env := newEnvironment(t, apricotPhase3)
+			env.config.UpgradeConfig.ApricotPhase3Time = ap3Time
 			env.ctx.Lock.Lock()
-			defer func() {
-				require.NoError(shutdownEnvironment(env))
-			}()
+			defer env.ctx.Lock.Unlock()
 
-			ins, outs, _, signers, err := env.utxosHandler.Spend(env.state, preFundedKeys, 0, test.fee, ids.ShortEmpty)
-			require.NoError(err)
+			env.state.SetTimestamp(test.time) // to duly set fee
 
-			// Create the tx
-			utx := &txs.CreateSubnetTx{
-				BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    env.ctx.NetworkID,
-					BlockchainID: env.ctx.ChainID,
-					Ins:          ins,
-					Outs:         outs,
-				}},
-				Owner: &secp256k1fx.OutputOwners{},
+			addrs := set.NewSet[ids.ShortID](len(preFundedKeys))
+			for _, key := range preFundedKeys {
+				addrs.Add(key.Address())
 			}
-			tx := &txs.Tx{Unsigned: utx}
-			require.NoError(tx.Sign(txs.Codec, signers))
+
+			cfg := *env.config
+			cfg.StaticFeeConfig.CreateSubnetTxFee = test.fee
+			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
+			builder, signer := factory.NewWallet(preFundedKeys...)
+			utx, err := builder.NewCreateSubnetTx(
+				&secp256k1fx.OutputOwners{},
+			)
+			require.NoError(err)
+			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
+			require.NoError(err)
 
 			stateDiff, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)

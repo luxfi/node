@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -22,7 +22,7 @@ import (
 func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.PChainID)
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -140,7 +140,7 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.PChainID)
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -201,7 +201,7 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require.NoError(err)
 	require.NoError(stx.SyntacticVerify(ctx))
 
-	txBytes, err := Codec.Marshal(Version, stx)
+	txBytes, err := Codec.Marshal(CodecVersion, stx)
 	require.NoError(err)
 
 	parsedTx, err := Parse(Codec, txBytes)

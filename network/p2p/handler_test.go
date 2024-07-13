@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -55,15 +56,15 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 			require := require.New(t)
 
 			called := false
-			handler := ValidatorHandler{
-				Handler: testHandler{
-					appGossipF: func(context.Context, ids.NodeID, []byte) {
+			handler := NewValidatorHandler(
+				&TestHandler{
+					AppGossipF: func(context.Context, ids.NodeID, []byte) {
 						called = true
 					},
 				},
-				ValidatorSet: tt.validatorSet,
-				Log:          logging.NoLog{},
-			}
+				tt.validatorSet,
+				logging.NoLog{},
+			)
 
 			handler.AppGossip(context.Background(), tt.nodeID, []byte("foobar"))
 			require.Equal(tt.expected, called)
@@ -79,7 +80,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     error
+		expected     *common.AppError
 	}{
 		{
 			name:         "message dropped",
@@ -100,11 +101,11 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			handler := ValidatorHandler{
-				Handler:      NoOpHandler{},
-				ValidatorSet: tt.validatorSet,
-				Log:          logging.NoLog{},
-			}
+			handler := NewValidatorHandler(
+				NoOpHandler{},
+				tt.validatorSet,
+				logging.NoLog{},
+			)
 
 			_, err := handler.AppRequest(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expected)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -8,18 +8,17 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
 )
 
 var (
@@ -29,40 +28,50 @@ var (
 	_ common.AppHandler = (*router)(nil)
 )
 
-type metrics struct {
-	appRequestTime                 metric.Averager
-	appRequestFailedTime           metric.Averager
-	appResponseTime                metric.Averager
-	appGossipTime                  metric.Averager
-	crossChainAppRequestTime       metric.Averager
-	crossChainAppRequestFailedTime metric.Averager
-	crossChainAppResponseTime      metric.Averager
-}
-
 type pendingAppRequest struct {
-	*metrics
-	AppResponseCallback
+	handlerID string
+	callback  AppResponseCallback
 }
 
 type pendingCrossChainAppRequest struct {
-	*metrics
-	CrossChainAppResponseCallback
+	handlerID string
+	callback  CrossChainAppResponseCallback
 }
 
 // meteredHandler emits metrics for a Handler
 type meteredHandler struct {
 	*responder
-	*metrics
+	metrics
+}
+
+type metrics struct {
+	msgTime  *prometheus.GaugeVec
+	msgCount *prometheus.CounterVec
+}
+
+func (m *metrics) observe(labels prometheus.Labels, start time.Time) error {
+	metricTime, err := m.msgTime.GetMetricWith(labels)
+	if err != nil {
+		return err
+	}
+
+	metricCount, err := m.msgCount.GetMetricWith(labels)
+	if err != nil {
+		return err
+	}
+
+	metricTime.Add(float64(time.Since(start)))
+	metricCount.Inc()
+	return nil
 }
 
 // router routes incoming application messages to the corresponding registered
 // app handler. App messages must be made using the registered handler's
 // corresponding Client.
 type router struct {
-	log       logging.Logger
-	sender    common.AppSender
-	metrics   prometheus.Registerer
-	namespace string
+	log     logging.Logger
+	sender  common.AppSender
+	metrics metrics
 
 	lock                         sync.RWMutex
 	handlers                     map[uint64]*meteredHandler
@@ -75,14 +84,12 @@ type router struct {
 func newRouter(
 	log logging.Logger,
 	sender common.AppSender,
-	metrics prometheus.Registerer,
-	namespace string,
+	metrics metrics,
 ) *router {
 	return &router{
 		log:                          log,
 		sender:                       sender,
 		metrics:                      metrics,
-		namespace:                    namespace,
 		handlers:                     make(map[uint64]*meteredHandler),
 		pendingAppRequests:           make(map[uint32]pendingAppRequest),
 		pendingCrossChainAppRequests: make(map[uint32]pendingCrossChainAppRequest),
@@ -99,76 +106,6 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 		return fmt.Errorf("failed to register handler id %d: %w", handlerID, ErrExistingAppProtocol)
 	}
 
-	appRequestTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_app_request", handlerID),
-		"app request time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register app request metric for handler_%d: %w", handlerID, err)
-	}
-
-	appRequestFailedTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_app_request_failed", handlerID),
-		"app request failed time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register app request failed metric for handler_%d: %w", handlerID, err)
-	}
-
-	appResponseTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_app_response", handlerID),
-		"app response time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register app response metric for handler_%d: %w", handlerID, err)
-	}
-
-	appGossipTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_app_gossip", handlerID),
-		"app gossip time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register app gossip metric for handler_%d: %w", handlerID, err)
-	}
-
-	crossChainAppRequestTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_cross_chain_app_request", handlerID),
-		"cross chain app request time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register cross-chain app request metric for handler_%d: %w", handlerID, err)
-	}
-
-	crossChainAppRequestFailedTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_cross_chain_app_request_failed", handlerID),
-		"app request failed time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register cross-chain app request failed metric for handler_%d: %w", handlerID, err)
-	}
-
-	crossChainAppResponseTime, err := metric.NewAverager(
-		r.namespace,
-		fmt.Sprintf("handler_%d_cross_chain_app_response", handlerID),
-		"cross chain app response time (ns)",
-		r.metrics,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register cross-chain app response metric for handler_%d: %w", handlerID, err)
-	}
-
 	r.handlers[handlerID] = &meteredHandler{
 		responder: &responder{
 			Handler:   handler,
@@ -176,15 +113,7 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 			log:       r.log,
 			sender:    r.sender,
 		},
-		metrics: &metrics{
-			appRequestTime:                 appRequestTime,
-			appRequestFailedTime:           appRequestFailedTime,
-			appResponseTime:                appResponseTime,
-			appGossipTime:                  appGossipTime,
-			crossChainAppRequestTime:       crossChainAppRequestTime,
-			crossChainAppRequestFailedTime: crossChainAppRequestFailedTime,
-			crossChainAppResponseTime:      crossChainAppResponseTime,
-		},
+		metrics: r.metrics,
 	}
 
 	return nil
@@ -197,16 +126,20 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 // considered fatal
 func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	start := time.Now()
-	parsedMsg, handler, ok := r.parse(request)
+	parsedMsg, handler, handlerID, ok := r.parse(request)
 	if !ok {
-		r.log.Debug("failed to process message",
+		r.log.Debug("received message for unregistered handler",
 			zap.Stringer("messageOp", message.AppRequestOp),
 			zap.Stringer("nodeID", nodeID),
 			zap.Uint32("requestID", requestID),
 			zap.Time("deadline", deadline),
 			zap.Binary("message", request),
 		)
-		return nil
+
+		// Send an error back to the requesting peer. Invalid requests that we
+		// cannot parse a handler id for are handled the same way as requests
+		// for which we do not have a registered handler.
+		return r.sender.SendAppError(ctx, nodeID, requestID, ErrUnregisteredHandler.Code, ErrUnregisteredHandler.Message)
 	}
 
 	// call the corresponding handler and send back a response to nodeID
@@ -214,8 +147,13 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 		return err
 	}
 
-	handler.metrics.appRequestTime.Observe(float64(time.Since(start)))
-	return nil
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.AppRequestOp.String(),
+			handlerLabel: handlerID,
+		},
+		start,
+	)
 }
 
 // AppRequestFailed routes an AppRequestFailed message to the callback
@@ -223,7 +161,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 //
 // Any error condition propagated outside Handler application logic is
 // considered fatal
-func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
 	start := time.Now()
 	pending, ok := r.clearAppRequest(requestID)
 	if !ok {
@@ -231,9 +169,15 @@ func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, reques
 		return ErrUnrequestedResponse
 	}
 
-	pending.AppResponseCallback(ctx, nodeID, nil, ErrAppRequestFailed)
-	pending.appRequestFailedTime.Observe(float64(time.Since(start)))
-	return nil
+	pending.callback(ctx, nodeID, nil, appErr)
+
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.AppErrorOp.String(),
+			handlerLabel: pending.handlerID,
+		},
+		start,
+	)
 }
 
 // AppResponse routes an AppResponse message to the callback corresponding to
@@ -249,9 +193,15 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 		return ErrUnrequestedResponse
 	}
 
-	pending.AppResponseCallback(ctx, nodeID, response, nil)
-	pending.appResponseTime.Observe(float64(time.Since(start)))
-	return nil
+	pending.callback(ctx, nodeID, response, nil)
+
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.AppResponseOp.String(),
+			handlerLabel: pending.handlerID,
+		},
+		start,
+	)
 }
 
 // AppGossip routes an AppGossip message to a Handler based on the handler
@@ -261,9 +211,9 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 // considered fatal
 func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte) error {
 	start := time.Now()
-	parsedMsg, handler, ok := r.parse(gossip)
+	parsedMsg, handler, handlerID, ok := r.parse(gossip)
 	if !ok {
-		r.log.Debug("failed to process message",
+		r.log.Debug("received message for unregistered handler",
 			zap.Stringer("messageOp", message.AppGossipOp),
 			zap.Stringer("nodeID", nodeID),
 			zap.Binary("message", gossip),
@@ -273,8 +223,13 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 
 	handler.AppGossip(ctx, nodeID, parsedMsg)
 
-	handler.metrics.appGossipTime.Observe(float64(time.Since(start)))
-	return nil
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.AppGossipOp.String(),
+			handlerLabel: handlerID,
+		},
+		start,
+	)
 }
 
 // CrossChainAppRequest routes a CrossChainAppRequest message to a Handler
@@ -291,9 +246,9 @@ func (r *router) CrossChainAppRequest(
 	msg []byte,
 ) error {
 	start := time.Now()
-	parsedMsg, handler, ok := r.parse(msg)
+	parsedMsg, handler, handlerID, ok := r.parse(msg)
 	if !ok {
-		r.log.Debug("failed to process message",
+		r.log.Debug("received message for unregistered handler",
 			zap.Stringer("messageOp", message.CrossChainAppRequestOp),
 			zap.Stringer("chainID", chainID),
 			zap.Uint32("requestID", requestID),
@@ -307,8 +262,13 @@ func (r *router) CrossChainAppRequest(
 		return err
 	}
 
-	handler.metrics.crossChainAppRequestTime.Observe(float64(time.Since(start)))
-	return nil
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.CrossChainAppRequestOp.String(),
+			handlerLabel: handlerID,
+		},
+		start,
+	)
 }
 
 // CrossChainAppRequestFailed routes a CrossChainAppRequestFailed message to
@@ -316,7 +276,7 @@ func (r *router) CrossChainAppRequest(
 //
 // Any error condition propagated outside Handler application logic is
 // considered fatal
-func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
 	start := time.Now()
 	pending, ok := r.clearCrossChainAppRequest(requestID)
 	if !ok {
@@ -324,9 +284,15 @@ func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID,
 		return ErrUnrequestedResponse
 	}
 
-	pending.CrossChainAppResponseCallback(ctx, chainID, nil, ErrAppRequestFailed)
-	pending.crossChainAppRequestFailedTime.Observe(float64(time.Since(start)))
-	return nil
+	pending.callback(ctx, chainID, nil, appErr)
+
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.CrossChainAppErrorOp.String(),
+			handlerLabel: pending.handlerID,
+		},
+		start,
+	)
 }
 
 // CrossChainAppResponse routes a CrossChainAppResponse message to the callback
@@ -342,9 +308,15 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 		return ErrUnrequestedResponse
 	}
 
-	pending.CrossChainAppResponseCallback(ctx, chainID, response, nil)
-	pending.crossChainAppResponseTime.Observe(float64(time.Since(start)))
-	return nil
+	pending.callback(ctx, chainID, response, nil)
+
+	return r.metrics.observe(
+		prometheus.Labels{
+			opLabel:      message.CrossChainAppResponseOp.String(),
+			handlerLabel: pending.handlerID,
+		},
+		start,
+	)
 }
 
 // Parse parses a gossip or request message and maps it to a corresponding
@@ -353,20 +325,23 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 // Returns:
 // - The unprefixed protocol message.
 // - The protocol responder.
+// - The protocol metric name.
 // - A boolean indicating that parsing succeeded.
 //
 // Invariant: Assumes [r.lock] isn't held.
-func (r *router) parse(msg []byte) ([]byte, *meteredHandler, bool) {
-	handlerID, bytesRead := binary.Uvarint(msg)
-	if bytesRead <= 0 {
-		return nil, nil, false
+func (r *router) parse(prefixedMsg []byte) ([]byte, *meteredHandler, string, bool) {
+	handlerID, msg, ok := ParseMessage(prefixedMsg)
+	if !ok {
+		return nil, nil, "", false
 	}
+
+	handlerStr := strconv.FormatUint(handlerID, 10)
 
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
 	handler, ok := r.handlers[handlerID]
-	return msg[bytesRead:], handler, ok
+	return msg, handler, handlerStr, ok
 }
 
 // Invariant: Assumes [r.lock] isn't held.
@@ -387,4 +362,18 @@ func (r *router) clearCrossChainAppRequest(requestID uint32) (pendingCrossChainA
 	callback, ok := r.pendingCrossChainAppRequests[requestID]
 	delete(r.pendingCrossChainAppRequests, requestID)
 	return callback, ok
+}
+
+// Parse a gossip or request message.
+//
+// Returns:
+// - The protocol ID.
+// - The unprefixed protocol message.
+// - A boolean indicating that parsing succeeded.
+func ParseMessage(msg []byte) (uint64, []byte, bool) {
+	handlerID, bytesRead := binary.Uvarint(msg)
+	if bytesRead <= 0 {
+		return 0, nil, false
+	}
+	return handlerID, msg[bytesRead:], true
 }
