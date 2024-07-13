@@ -6,5 +6,5 @@ db_dir: /data/node
 log_dir: /var/log/node
 config_dir: /etc/node
 plugin_dir: /usr/local/lib/node/plugins
-repo_url: https://github.com/luxdefi/node
+repo_url: https://github.com/luxfi/node
 repo_folder: /tmp/node

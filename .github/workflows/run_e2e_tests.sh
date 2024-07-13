@@ -5,12 +5,12 @@ set -o nounset
 set -o pipefail
 
 # Testing specific variables
-lux_testing_repo="luxdefi/lux-testing"
-node_byzantine_repo="luxdefi/lux-byzantine"
+lux_testing_repo="luxfi/lux-testing"
+node_byzantine_repo="luxfi/lux-byzantine"
 
 # Define lux-testing and lux-byzantine versions to use
-lux_testing_image="luxdefi/lux-testing:master"
-node_byzantine_image="luxdefi/lux-byzantine:master"
+lux_testing_image="luxfi/lux-testing:master"
+node_byzantine_image="luxfi/lux-byzantine:master"
 
 # Fetch the images
 # If Docker Credentials are not available fail

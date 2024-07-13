@@ -20,7 +20,7 @@ jobs:
         run: .github/workflows/cleanup-net-outage-sim.sh
 
       - name: Download node:latest
-        run: docker pull luxdefi/node:latest
+        run: docker pull luxfi/node:latest
 
       - name: Run the internet outage simulation
         shell: bash
