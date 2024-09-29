@@ -27,7 +27,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 - Error driven snowflake multi counter by @aaronbuchwald in https://github.com/luxfi/node/pull/3092
 - [antithesis] Add ci jobs to trigger test runs by @marun in https://github.com/luxfi/node/pull/3076
-- bump ledger-lux dependency to current main branch by @felipemadero in https://github.com/luxfi/node/pull/3115
+- bump ledger dependency to current main branch by @felipemadero in https://github.com/luxfi/node/pull/3115
 - [antithesis] Fix image publication job by quoting default tag value by @marun in https://github.com/luxfi/node/pull/3112
 - [e2e] Fix excessively verbose output from virtuous test by @marun in https://github.com/luxfi/node/pull/3116
 - Remove .Status() from .IsPreferred() by @StephenButtolph in https://github.com/luxfi/node/pull/3111
@@ -2581,7 +2581,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Miscellaneous
 
-- Updated ledger-lux to v0.6.5
+- Updated ledger to v0.6.5
 - Added linter to ban the usage of `fmt.Errorf` without format directives
 - Added `List` to the `buffer#Deque` interface
 - Added `Index` to the `buffer#Deque` interface

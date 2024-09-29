@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
 
-	ledger "github.com/luxfi/ledger-lux/go"
+	ledger "github.com/luxfi/ledger/go"
 	bip32 "github.com/tyler-smith/go-bip32"
 )
 

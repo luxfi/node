@@ -217,7 +217,7 @@ message AcceptedStateSummary {
 enum EngineType {
   ENGINE_TYPE_UNSPECIFIED = 0;
   // Only the X-Chain uses lux consensus
-  ENGINE_TYPE_AVALANCHE = 1;
+  ENGINE_TYPE_LUX = 1;
   ENGINE_TYPE_SNOWMAN = 2;
 }
 

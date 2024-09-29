@@ -40,7 +40,7 @@ func TestEngineManager_Get(t *testing.T) {
 		{
 			name: "request lux engine",
 			args: args{
-				engineType: p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+				engineType: p2p.EngineType_ENGINE_TYPE_LUX,
 			},
 			expected: expected{
 				engine: lux,

@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	engineType         = p2ppb.EngineType_ENGINE_TYPE_AVALANCHE
+	engineType         = p2ppb.EngineType_ENGINE_TYPE_LUX
 	testThreadPoolSize = 2
 )
 
