@@ -529,7 +529,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -544,8 +544,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - lux, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Lux: &Engine{
@@ -575,7 +575,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		{
 			name:                "current - snowman, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Lux: &Engine{
