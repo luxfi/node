@@ -11,8 +11,8 @@ import (
 	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/tests"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

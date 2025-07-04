@@ -89,21 +89,6 @@ func (hi *heightIndexer) RepairHeightIndex(ctx context.Context) error {
 	// For now, assume no checkpoint and start fresh
 	hi.MarkRepaired(true)
 	return nil // nothing to do
-
-	// retrieve checkpoint height. We explicitly track block height
-	// in doRepair to avoid heavier DB reads.
-	startBlk, err := hi.server.GetFullPostForkBlock(ctx, startBlkID)
-	if err != nil {
-		return err
-	}
-
-	startHeight := startBlk.Height()
-	if err := hi.doRepair(ctx, startBlkID, startHeight); err != nil {
-		return fmt.Errorf("could not repair height index: %w", err)
-	}
-	if err := hi.flush(); err != nil {
-		return fmt.Errorf("could not write final height index update: %w", err)
-	}
 	return nil
 }
 
