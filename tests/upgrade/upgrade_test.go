@@ -51,7 +51,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.NodeID, luxNodeExecPathToUpgradeTo))
 			require.NoError(node.Stop(e2e.DefaultContext()))
 
-			node.RuntimeConfig.Lux NodePath = luxNodeExecPathToUpgradeTo
+			node.RuntimeConfig.LuxNodePath = luxNodeExecPathToUpgradeTo
 
 			require.NoError(network.StartNode(e2e.DefaultContext(), ginkgo.GinkgoWriter, node))
 

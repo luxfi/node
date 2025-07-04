@@ -11,6 +11,12 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
+var (
+	hello      = "hello"
+	world      = "world"
+	helloWorld = "helloWorld"
+)
+
 func TestMultiGathererEmptyGather(t *testing.T) {
 	require := require.New(t)
 

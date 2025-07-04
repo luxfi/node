@@ -6,6 +6,8 @@ package atomic_test
 import (
 	"testing"
 
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/chains/atomic/atomictest"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
@@ -21,7 +23,7 @@ func TestSharedMemory(t *testing.T) {
 		memoryDB := prefixdb.New([]byte{0}, baseDB)
 		testDB := prefixdb.New([]byte{1}, baseDB)
 
-		m := NewMemory(memoryDB)
+		m := atomic.NewMemory(memoryDB)
 
 		sm0 := m.NewSharedMemory(chainID0)
 		sm1 := m.NewSharedMemory(chainID1)
