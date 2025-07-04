@@ -30,22 +30,23 @@ func New(maxN int, p float64, maxBytes int) (Filter, error) {
 	if neededBytes := 1 + numHashes*bytesPerHash + numEntries; neededBytes > maxBytes {
 		return nil, errMaxBytes
 	}
-	f, err := bloom.New(numHashes, numEntries)
+	f, err := bloom.New(uint64(maxN), p, uint64(maxBytes))
+	if err != nil {
+		return nil, err
+	}
 	return &filter{
 		filter: f,
-	}, err
+	}, nil
 }
 
 type filter struct {
-	filter *bloom.Filter
+	filter bloom.Filter
 }
 
 func (f *filter) Add(bl ...[]byte) {
-	for _, b := range bl {
-		bloom.Add(f.filter, b, nil)
-	}
+	f.filter.Add(bl...)
 }
 
 func (f *filter) Check(b []byte) bool {
-	return bloom.Contains(f.filter, b, nil)
+	return f.filter.Check(b)
 }

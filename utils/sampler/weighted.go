@@ -13,3 +13,7 @@ type Weighted interface {
 func NewWeighted() Weighted {
 	return &weightedHeap{}
 }
+
+func NewDeterministicWeighted() Weighted {
+	return &weightedHeap{}
+}

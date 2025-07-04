@@ -9,11 +9,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metrics struct {
+type benchlistMetrics struct {
 	numBenched, weightBenched prometheus.Gauge
 }
 
-func (m *metrics) Initialize(registerer prometheus.Registerer) error {
+func (m *benchlistMetrics) Initialize(registerer prometheus.Registerer) error {
 	m.numBenched = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "benchlist",
 		Name:      "benched_num",

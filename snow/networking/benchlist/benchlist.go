@@ -294,15 +294,6 @@ func (b *benchlist) bench(nodeID ids.NodeID) {
 		return
 	}
 
-	benchedStake, err := b.vdrs.SubsetWeight(b.ctx.SubnetID, b.benchlistSet)
-	if err != nil {
-		b.ctx.Log.Error("error calculating benched stake",
-			zap.Stringer("subnetID", b.ctx.SubnetID),
-			zap.Error(err),
-		)
-		return
-	}
-
 	newBenchedStake, err := safemath.Add(benchedStake, validatorStake)
 	if err != nil {
 		// This should never happen

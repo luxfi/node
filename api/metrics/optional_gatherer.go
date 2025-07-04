@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -11,6 +12,8 @@ import (
 
 	dto "github.com/prometheus/client_model/go"
 )
+
+var errReregisterGatherer = errors.New("attempted to register a gatherer when one is already registered")
 
 var _ OptionalGatherer = (*optionalGatherer)(nil)
 

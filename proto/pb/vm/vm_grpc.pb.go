@@ -37,9 +37,6 @@ const (
 	VM_AppResponse_FullMethodName                = "/vm.VM/AppResponse"
 	VM_AppGossip_FullMethodName                  = "/vm.VM/AppGossip"
 	VM_Gather_FullMethodName                     = "/vm.VM/Gather"
-	VM_CrossChainAppRequest_FullMethodName       = "/vm.VM/CrossChainAppRequest"
-	VM_CrossChainAppRequestFailed_FullMethodName = "/vm.VM/CrossChainAppRequestFailed"
-	VM_CrossChainAppResponse_FullMethodName      = "/vm.VM/CrossChainAppResponse"
 	VM_GetAncestors_FullMethodName               = "/vm.VM/GetAncestors"
 	VM_BatchedParseBlock_FullMethodName          = "/vm.VM/BatchedParseBlock"
 	VM_GetBlockIDAtHeight_FullMethodName         = "/vm.VM/GetBlockIDAtHeight"
@@ -275,33 +272,6 @@ func (c *vMClient) AppGossip(ctx context.Context, in *AppGossipMsg, opts ...grpc
 func (c *vMClient) Gather(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatherResponse, error) {
 	out := new(GatherResponse)
 	err := c.cc.Invoke(ctx, VM_Gather_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *vMClient) CrossChainAppRequest(ctx context.Context, in *CrossChainAppRequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, VM_CrossChainAppRequest_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *vMClient) CrossChainAppRequestFailed(ctx context.Context, in *CrossChainAppRequestFailedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, VM_CrossChainAppRequestFailed_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *vMClient) CrossChainAppResponse(ctx context.Context, in *CrossChainAppResponseMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, VM_CrossChainAppResponse_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -889,60 +859,6 @@ func _VM_Gather_Handler(srv interface{}, ctx context.Context, dec func(interface
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VMServer).Gather(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VM_CrossChainAppRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CrossChainAppRequestMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VMServer).CrossChainAppRequest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VM_CrossChainAppRequest_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VMServer).CrossChainAppRequest(ctx, req.(*CrossChainAppRequestMsg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VM_CrossChainAppRequestFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CrossChainAppRequestFailedMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VMServer).CrossChainAppRequestFailed(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VM_CrossChainAppRequestFailed_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VMServer).CrossChainAppRequestFailed(ctx, req.(*CrossChainAppRequestFailedMsg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VM_CrossChainAppResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CrossChainAppResponseMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VMServer).CrossChainAppResponse(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VM_CrossChainAppResponse_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VMServer).CrossChainAppResponse(ctx, req.(*CrossChainAppResponseMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -163,10 +163,6 @@ func AtomicClear(readerDB Iteratee, deleterDB KeyValueDeleter) error {
 	return AtomicClearPrefix(readerDB, deleterDB, nil)
 }
 
-func AtomicClear(readerDB Iteratee, deleterDB KeyValueDeleter) error {
-	return AtomicClearPrefix(readerDB, deleterDB, nil)
-}
-
 // AtomicClearPrefix deletes from [deleterDB] all keys in [readerDB] that have the given [prefix].
 func AtomicClearPrefix(readerDB Iteratee, deleterDB KeyValueDeleter, prefix []byte) error {
 	iterator := readerDB.NewIteratorWithPrefix(prefix)
