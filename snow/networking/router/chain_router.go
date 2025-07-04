@@ -158,8 +158,7 @@ func (cr *ChainRouter) RegisterRequest(
 	if cr.closing {
 		cr.log.Debug("dropping request",
 			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("requestingChainID", requestingChainID),
-			zap.Stringer("respondingChainID", respondingChainID),
+			zap.Stringer("chainID", chainID),
 			zap.Uint32("requestID", requestID),
 			zap.Stringer("messageOp", op),
 			zap.Error(errClosing),
@@ -236,6 +235,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		msg.OnFinishedHandling()
 		return
 	}
+	_ = sourceChainID // TODO: Use sourceChainID for cross-chain message handling
 
 	requestID, ok := message.GetRequestID(m)
 	if !ok {
@@ -269,20 +269,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		cr.log.Debug("dropping message",
 			zap.Stringer("messageOp", op),
 			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("chainID", chainID),
-			zap.Error(errClosing),
-		)
-		msg.OnFinishedHandling()
-		return
-	}
-
-	// Get the chain, if it exists
-	chain, exists := cr.chainHandlers[chainID]
-	if !exists {
-		cr.log.Debug("dropping message",
-			zap.Stringer("messageOp", op),
-			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("chainID", chainID),
+			zap.Stringer("chainID", destinationChainID),
 			zap.Error(errUnknownChain),
 		)
 		msg.OnFinishedHandling()
@@ -328,7 +315,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	if expectedResponse, isFailed := message.FailedToResponseOps[op]; isFailed {
 		// Create the request ID of the request we sent that this message is in
 		// response to.
-		uniqueRequestID, req := cr.clearRequest(expectedResponse, nodeID, chainID, requestID)
+		uniqueRequestID, req := cr.clearRequest(expectedResponse, nodeID, destinationChainID, requestID)
 		if req == nil {
 			// This was a duplicated response.
 			msg.OnFinishedHandling()
@@ -370,7 +357,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	latency := cr.clock.Time().Sub(req.time)
 
 	// Tell the timeout manager we got a response
-	cr.timeoutManager.RegisterResponse(nodeID, chainID, uniqueRequestID, req.op, latency)
+	cr.timeoutManager.RegisterResponse(nodeID, destinationChainID, uniqueRequestID, req.op, latency)
 
 	// Pass the response to the chain
 	chain.Push(
