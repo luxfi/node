@@ -13,14 +13,6 @@ const (
 	XSVMName       = "xsvm"
 )
 
-const (
-	PlatformVMName = "platformvm"
-	AVMName        = "avm"
-	EVMName        = "evm"
-	SubnetEVMName  = "subnetevm"
-	XSVMName       = "xsvm"
-)
-
 var (
 	PlatformVMID = ids.ID{'p', 'l', 'a', 't', 'f', 'o', 'r', 'm', 'v', 'm'}
 	AVMID        = ids.ID{'a', 'v', 'm'}

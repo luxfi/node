@@ -48,6 +48,12 @@ func (b *TestBlock) Bytes() []byte {
 	return b.BytesV
 }
 
-func (b *TestBlock) Less(other *TestBlock) bool {
-	return b.HeightV < other.HeightV
+func (b *TestBlock) Compare(other *TestBlock) int {
+	if b.HeightV < other.HeightV {
+		return -1
+	}
+	if b.HeightV > other.HeightV {
+		return 1
+	}
+	return 0
 }

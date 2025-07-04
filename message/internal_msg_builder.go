@@ -357,8 +357,11 @@ func (m *CrossChainAppRequest) GetRequestId() uint32 {
 
 func InternalCrossChainAppRequest(
 	nodeID ids.NodeID,
-	chainID ids.ID,
+	sourceChainID ids.ID,
+	destinationChainID ids.ID,
 	requestID uint32,
+	msg []byte,
+	deadline time.Duration,
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,
@@ -450,8 +453,10 @@ func (m *CrossChainAppResponse) GetRequestId() uint32 {
 
 func InternalCrossChainAppResponse(
 	nodeID ids.NodeID,
-	chainID ids.ID,
+	sourceChainID ids.ID,
+	destinationChainID ids.ID,
 	requestID uint32,
+	msg []byte,
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,

@@ -93,16 +93,16 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error)
 	blkWrapperBytes, err := s.db.Get(blkID[:])
 	if err == database.ErrNotFound {
 		s.blkCache.Put(blkID, nil)
-		return nil, database.ErrNotFound
+		return nil, choices.Unknown, database.ErrNotFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, choices.Unknown, err
 	}
 
 	blkWrapper := blockWrapper{}
 	parsedVersion, err := Codec.Unmarshal(blkWrapperBytes, &blkWrapper)
 	if err != nil {
-		return nil, err
+		return nil, choices.Unknown, err
 	}
 	if parsedVersion != CodecVersion {
 		return nil, choices.Unknown, errBlockWrongVersion
@@ -111,18 +111,18 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error)
 	// The key was in the database
 	blk, err := block.ParseWithoutVerification(blkWrapper.Block)
 	if err != nil {
-		return nil, err
+		return nil, choices.Unknown, err
 	}
 	blkWrapper.block = blk
 
 	s.blkCache.Put(blkID, &blkWrapper)
-	return blk, nil
+	return blk, blkWrapper.Status, nil
 }
 
-func (s *blockState) PutBlock(blk block.Block) error {
+func (s *blockState) PutBlock(blk block.Block, status choices.Status) error {
 	blkWrapper := blockWrapper{
 		Block:  blk.Bytes(),
-		Status: choices.Accepted,
+		Status: status,
 		block:  blk,
 	}
 

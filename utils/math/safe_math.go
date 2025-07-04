@@ -5,6 +5,7 @@ package math
 
 import (
 	"errors"
+	"math"
 
 	"golang.org/x/exp/constraints"
 
@@ -28,6 +29,11 @@ func Add64(a, b uint64) (uint64, error) {
 		return 0, ErrOverflow
 	}
 	return a + b, nil
+}
+
+// Add is a generic version of Add64 for uint64 types
+func Add(a, b uint64) (uint64, error) {
+	return Add64(a, b)
 }
 
 // Sub returns:
