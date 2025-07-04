@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/iterator"
+	"github.com/luxfi/node/vms/platformvm/state"
 )
 
 func TestFilter(t *testing.T) {

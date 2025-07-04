@@ -4,6 +4,7 @@
 package sampler
 
 import (
+	"fmt"
 	"math"
 	"slices"
 	"testing"

@@ -63,30 +63,30 @@ func TestSub(t *testing.T) {
 	require.ErrorIs(err, ErrUnderflow)
 }
 
-func TestMul(t *testing.T) {
+func TestMul64(t *testing.T) {
 	require := require.New(t)
 
-	got, err := Mul(0, maxUint64)
+	got, err := Mul64(0, maxUint64)
 	require.NoError(err)
 	require.Zero(got)
 
-	got, err = Mul(maxUint64, 0)
+	got, err = Mul64(maxUint64, 0)
 	require.NoError(err)
 	require.Zero(got)
 
-	got, err = Mul(uint64(1), uint64(3))
+	got, err = Mul64(uint64(1), uint64(3))
 	require.NoError(err)
 	require.Equal(uint64(3), got)
 
-	got, err = Mul(uint64(3), uint64(1))
+	got, err = Mul64(uint64(3), uint64(1))
 	require.NoError(err)
 	require.Equal(uint64(3), got)
 
-	got, err = Mul(uint64(2), uint64(3))
+	got, err = Mul64(uint64(2), uint64(3))
 	require.NoError(err)
 	require.Equal(uint64(6), got)
 
-	got, err = Mul(maxUint64, 0)
+	got, err = Mul64(maxUint64, 0)
 	require.NoError(err)
 	require.Zero(got)
 
