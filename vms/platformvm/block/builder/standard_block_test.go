@@ -31,8 +31,6 @@ func TestAtomicTxImports(t *testing.T) {
 		TxID:        ids.Empty.Prefix(1),
 		OutputIndex: 1,
 	}
-	amount := uint64(70000)
-	recipientKey := preFundedKeys[1]
 
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, env.baseDB))
 
@@ -42,11 +40,8 @@ func TestAtomicTxImports(t *testing.T) {
 		UTXOID: utxoID,
 		Asset:  lux.Asset{ID: env.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt: amount,
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{recipientKey.PublicKey().Address()},
-			},
+			Amt:          70 * units.MicroAvax,
+			OutputOwners: *owner,
 		},
 	}
 	utxoBytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
@@ -58,7 +53,7 @@ func TestAtomicTxImports(t *testing.T) {
 			Key:   inputID[:],
 			Value: utxoBytes,
 			Traits: [][]byte{
-				recipientKey.PublicKey().Address().Bytes(),
+				addr.Bytes(),
 			},
 		}}},
 	}))

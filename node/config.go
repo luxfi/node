@@ -131,6 +131,8 @@ type Config struct {
 	BootstrapConfig  `json:"bootstrapConfig"`
 	DatabaseConfig   `json:"databaseConfig"`
 
+	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
+
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
 	LuxAssetID  ids.ID `json:"luxAssetID"`

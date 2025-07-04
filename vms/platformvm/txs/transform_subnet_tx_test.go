@@ -960,7 +960,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransformSubnetTx {
 				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
+				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransformSubnetTx{
 					BaseTx:                   validBaseTx,
@@ -1010,7 +1010,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *TransformSubnetTx {
 				// This SubnetAuth passes verification.
-				validSubnetAuth := verify.NewMockVerifiable(ctrl)
+				validSubnetAuth := verifymock.NewVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				return &TransformSubnetTx{
 					BaseTx:                   validBaseTx,

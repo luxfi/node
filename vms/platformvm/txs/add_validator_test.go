@@ -58,7 +58,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
 				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 			},
 		},
 	}}
@@ -70,7 +70,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 				Amt: validatorWeight,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 				},
 			},
 		},
@@ -174,7 +174,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
 				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 			},
 		},
 	}}
@@ -186,7 +186,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 				Amt: validatorWeight,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 				},
 			},
 		},

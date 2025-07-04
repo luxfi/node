@@ -49,7 +49,7 @@ func TestSystemThrottler(t *testing.T) {
 	require := require.New(t)
 
 	// Setup
-	mockTracker := tracker.NewMockTracker(ctrl)
+	mockTracker := trackermock.NewTracker(ctrl)
 	maxRecheckDelay := 100 * time.Millisecond
 	config := SystemThrottlerConfig{
 		MaxRecheckDelay: maxRecheckDelay,
@@ -131,7 +131,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	// Setup
-	mockTracker := tracker.NewMockTracker(ctrl)
+	mockTracker := trackermock.NewTracker(ctrl)
 	maxRecheckDelay := 10 * time.Second
 	config := SystemThrottlerConfig{
 		MaxRecheckDelay: maxRecheckDelay,

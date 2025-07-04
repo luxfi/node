@@ -82,7 +82,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -161,7 +161,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	clk := &mockable.Clock{}
@@ -251,7 +251,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -361,7 +361,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{

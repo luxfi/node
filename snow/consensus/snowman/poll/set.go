@@ -24,6 +24,11 @@ var (
 	errFailedPollDurationMetrics = errors.New("failed to register poll_duration metrics")
 )
 
+var (
+	errFailedPollsMetric         = errors.New("failed to register polls metric")
+	errFailedPollDurationMetrics = errors.New("failed to register poll_duration metrics")
+)
+
 type pollHolder interface {
 	GetPoll() Poll
 	StartTime() time.Time

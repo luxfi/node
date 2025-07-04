@@ -51,10 +51,12 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
 	executor := StandardTxExecutor{
-		Backend: &env.backend,
-		State:   stateDiff,
-		Tx:      tx,
+		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
+		State:         stateDiff,
+		Tx:            tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
 	require.ErrorIs(err, errUnauthorizedSubnetModification)
@@ -91,10 +93,12 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
 	executor := StandardTxExecutor{
-		Backend: &env.backend,
-		State:   stateDiff,
-		Tx:      tx,
+		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
+		State:         stateDiff,
+		Tx:            tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
 	require.ErrorIs(err, errUnauthorizedSubnetModification)
@@ -125,10 +129,15 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	builderDiff, err := state.NewDiffOn(stateDiff)
+	require.NoError(err)
+
+	feeCalculator := state.PickFeeCalculator(env.config, builderDiff)
 	executor := StandardTxExecutor{
-		Backend: &env.backend,
-		State:   stateDiff,
-		Tx:      tx,
+		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
+		State:         stateDiff,
+		Tx:            tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
 	require.ErrorIs(err, database.ErrNotFound)
@@ -156,6 +165,10 @@ func TestCreateChainTxValid(t *testing.T) {
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	builderDiff, err := state.NewDiffOn(stateDiff)
+	require.NoError(err)
+
+	feeCalculator := state.PickFeeCalculator(env.config, builderDiff)
 	executor := StandardTxExecutor{
 		Backend: &env.backend,
 		State:   stateDiff,
@@ -165,7 +178,7 @@ func TestCreateChainTxValid(t *testing.T) {
 }
 
 func TestCreateChainTxAP3FeeChange(t *testing.T) {
-	ap3Time := defaultGenesisTime.Add(time.Hour)
+	ap3Time := genesistest.DefaultValidatorStartTime.Add(time.Hour)
 	tests := []struct {
 		name          string
 		time          time.Time
@@ -226,13 +239,54 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 
 			stateDiff.SetTimestamp(test.time)
 
+			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
 			executor := StandardTxExecutor{
-				Backend: &env.backend,
-				State:   stateDiff,
-				Tx:      tx,
+				Backend:       &env.backend,
+				FeeCalculator: feeCalculator,
+				State:         stateDiff,
+				Tx:            tx,
 			}
 			err = tx.Unsigned.Visit(&executor)
 			require.ErrorIs(err, test.expectedError)
 		})
 	}
+}
+
+func TestEtnaCreateChainTxInvalidWithManagedSubnet(t *testing.T) {
+	require := require.New(t)
+	env := newEnvironment(t, upgradetest.Etna)
+	env.ctx.Lock.Lock()
+	defer env.ctx.Lock.Unlock()
+
+	subnetID := testSubnet1.ID()
+	wallet := newWallet(t, env, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
+
+	tx, err := wallet.IssueCreateChainTx(
+		subnetID,
+		nil,
+		constants.AVMID,
+		nil,
+		"chain name",
+	)
+	require.NoError(err)
+
+	stateDiff, err := state.NewDiff(lastAcceptedID, env)
+	require.NoError(err)
+
+	builderDiff, err := state.NewDiffOn(stateDiff)
+	require.NoError(err)
+
+	stateDiff.SetSubnetManager(subnetID, ids.GenerateTestID(), []byte{'a', 'd', 'd', 'r', 'e', 's', 's'})
+
+	feeCalculator := state.PickFeeCalculator(env.config, builderDiff)
+	executor := StandardTxExecutor{
+		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
+		State:         stateDiff,
+		Tx:            tx,
+	}
+	err = tx.Unsigned.Visit(&executor)
+	require.ErrorIs(err, errIsImmutable)
 }

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package cache
+package cache_test
 
 import (
 	"testing"
@@ -14,13 +14,13 @@ import (
 func TestLRU(t *testing.T) {
 	cache := &LRU[ids.ID, int64]{Size: 1}
 
-	TestBasic(t, cache)
+	cachetest.TestBasic(t, cache)
 }
 
 func TestLRUEviction(t *testing.T) {
 	cache := &LRU[ids.ID, int64]{Size: 2}
 
-	TestEviction(t, cache)
+	cachetest.TestEviction(t, cache)
 }
 
 func TestLRUResize(t *testing.T) {

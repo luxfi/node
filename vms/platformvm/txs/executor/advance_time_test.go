@@ -66,10 +66,12 @@ func TestAdvanceTimeTxUpdatePrimaryNetworkStakers(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -112,10 +114,12 @@ func TestAdvanceTimeTxTimestampTooEarly(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
@@ -147,10 +151,12 @@ func TestAdvanceTimeTxTimestampTooLate(t *testing.T) {
 		onAbortState, err := state.NewDiff(lastAcceptedID, env)
 		require.NoError(err)
 
+		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 		executor := ProposalTxExecutor{
 			OnCommitState: onCommitState,
 			OnAbortState:  onAbortState,
 			Backend:       &env.backend,
+			FeeCalculator: feeCalculator,
 			Tx:            tx,
 		}
 		err = tx.Unsigned.Visit(&executor)
@@ -163,7 +169,7 @@ func TestAdvanceTimeTxTimestampTooLate(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	// fast forward clock to 10 seconds before genesis validators stop validating
-	env.clk.Set(defaultValidateEndTime.Add(-10 * time.Second))
+	env.clk.Set(genesistest.DefaultValidatorEndTime.Add(-10 * time.Second))
 
 	{
 		// Proposes advancing timestamp to 1 second after genesis validators stop validating
@@ -176,10 +182,12 @@ func TestAdvanceTimeTxTimestampTooLate(t *testing.T) {
 		onAbortState, err := state.NewDiff(lastAcceptedID, env)
 		require.NoError(err)
 
+		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 		executor := ProposalTxExecutor{
 			OnCommitState: onCommitState,
 			OnAbortState:  onAbortState,
 			Backend:       &env.backend,
+			FeeCalculator: feeCalculator,
 			Tx:            tx,
 		}
 		err = tx.Unsigned.Visit(&executor)
@@ -368,14 +376,14 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 			env.config.TrackedSubnets.Add(subnetID)
 
 			for _, staker := range test.stakers {
-				_, err := addPendingValidator(
+				addPendingValidator(
+					t,
 					env,
 					staker.startTime,
 					staker.endTime,
 					staker.nodeID,
 					[]*secp256k1.PrivateKey{preFundedKeys[0]},
 				)
-				require.NoError(err)
 			}
 
 			for _, staker := range test.subnetStakers {
@@ -401,7 +409,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				)
 				require.NoError(err)
 
-				env.state.PutPendingValidator(staker)
+				require.NoError(env.state.PutPendingValidator(staker))
 				env.state.AddTx(tx, status.Committed)
 			}
 			env.state.SetHeight(dummyHeight)
@@ -418,10 +426,12 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				onAbortState, err := state.NewDiff(lastAcceptedID, env)
 				require.NoError(err)
 
+				feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 				executor := ProposalTxExecutor{
 					OnCommitState: onCommitState,
 					OnAbortState:  onAbortState,
 					Backend:       &env.backend,
+					FeeCalculator: feeCalculator,
 					Tx:            tx,
 				}
 				require.NoError(tx.Unsigned.Visit(&executor))
@@ -504,7 +514,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(staker)
+	require.NoError(env.state.PutCurrentValidator(staker))
 	env.state.AddTx(tx, status.Committed)
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
@@ -534,7 +544,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutPendingValidator(staker)
+	require.NoError(env.state.PutPendingValidator(staker))
 	env.state.AddTx(tx, status.Committed)
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
@@ -552,10 +562,12 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -615,7 +627,7 @@ func TestTrackedSubnet(t *testing.T) {
 			)
 			require.NoError(err)
 
-			env.state.PutPendingValidator(staker)
+			require.NoError(env.state.PutPendingValidator(staker))
 			env.state.AddTx(tx, status.Committed)
 			env.state.SetHeight(dummyHeight)
 			require.NoError(env.state.Commit())
@@ -631,10 +643,12 @@ func TestTrackedSubnet(t *testing.T) {
 			onAbortState, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)
 
+			feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 			executor := ProposalTxExecutor{
 				OnCommitState: onCommitState,
 				OnAbortState:  onAbortState,
 				Backend:       &env.backend,
+				FeeCalculator: feeCalculator,
 				Tx:            tx,
 			}
 			require.NoError(tx.Unsigned.Visit(&executor))
@@ -661,7 +675,8 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	pendingValidatorStartTime := defaultValidateStartTime.Add(1 * time.Second)
 	pendingValidatorEndTime := pendingValidatorStartTime.Add(defaultMaxStakingDuration)
 	nodeID := ids.GenerateTestNodeID()
-	_, err := addPendingValidator(
+	addPendingValidator(
+		t,
 		env,
 		pendingValidatorStartTime,
 		pendingValidatorEndTime,
@@ -679,10 +694,12 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -742,6 +759,7 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -780,10 +798,12 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -842,6 +862,7 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
@@ -877,10 +898,12 @@ func TestAdvanceTimeTxAfterBanff(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	executor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
 		Backend:       &env.backend,
+		FeeCalculator: feeCalculator,
 		Tx:            tx,
 	}
 	err = tx.Unsigned.Visit(&executor)
@@ -912,6 +935,7 @@ func TestAdvanceTimeTxUnmarshal(t *testing.T) {
 }
 
 func addPendingValidator(
+	t testing.TB,
 	env *environment,
 	startTime time.Time,
 	endTime time.Time,
@@ -948,12 +972,10 @@ func addPendingValidator(
 		return nil, err
 	}
 
-	env.state.PutPendingValidator(staker)
+	require.NoError(env.state.PutPendingValidator(staker))
 	env.state.AddTx(addPendingValidatorTx, status.Committed)
 	dummyHeight := uint64(1)
 	env.state.SetHeight(dummyHeight)
-	if err := env.state.Commit(); err != nil {
-		return nil, err
-	}
-	return addPendingValidatorTx, nil
+	require.NoError(env.state.Commit())
+	return addPendingValidatorTx
 }

@@ -63,7 +63,7 @@ var _ = ginkgo.Describe("[Banff]", func() {
 				require.NoError(err)
 				assetID = assetTx.ID()
 
-				tests.Outf("{{green}}created new X-chain asset{{/}}: %s\n", assetID)
+				tc.Outf("{{green}}created new X-chain asset{{/}}: %s\n", assetID)
 			})
 
 			ginkgo.By("export new X-chain asset to P-chain", func() {

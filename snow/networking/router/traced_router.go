@@ -66,8 +66,7 @@ func (r *tracedRouter) Initialize(
 func (r *tracedRouter) RegisterRequest(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	requestingChainID ids.ID,
-	respondingChainID ids.ID,
+	chainID ids.ID,
 	requestID uint32,
 	op message.Op,
 	failedMsg message.InboundMessage,
@@ -76,8 +75,7 @@ func (r *tracedRouter) RegisterRequest(
 	r.router.RegisterRequest(
 		ctx,
 		nodeID,
-		requestingChainID,
-		respondingChainID,
+		chainID,
 		requestID,
 		op,
 		failedMsg,

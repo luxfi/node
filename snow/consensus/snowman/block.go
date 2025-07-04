@@ -22,7 +22,7 @@ import (
 // If the status of the block is Accepted or Rejected; Parent, Verify, Accept,
 // and Reject will never be called.
 type Block interface {
-	choices.Decidable
+	snow.Decidable
 
 	// Parent returns the ID of this block's parent.
 	Parent() ids.ID

@@ -19,11 +19,11 @@ func TestAdd64(t *testing.T) {
 	require.NoError(err)
 	require.Equal(maxUint64, sum)
 
-	sum, err = Add64(maxUint64, 0)
+	sum, err = Add(maxUint64, 0)
 	require.NoError(err)
 	require.Equal(maxUint64, sum)
 
-	sum, err = Add64(uint64(1<<62), uint64(1<<62))
+	sum, err = Add(uint64(1<<62), uint64(1<<62))
 	require.NoError(err)
 	require.Equal(uint64(1<<63), sum)
 
@@ -63,30 +63,30 @@ func TestSub(t *testing.T) {
 	require.ErrorIs(err, ErrUnderflow)
 }
 
-func TestMul64(t *testing.T) {
+func TestMul(t *testing.T) {
 	require := require.New(t)
 
-	got, err := Mul64(0, maxUint64)
+	got, err := Mul(0, maxUint64)
 	require.NoError(err)
 	require.Zero(got)
 
-	got, err = Mul64(maxUint64, 0)
+	got, err = Mul(maxUint64, 0)
 	require.NoError(err)
 	require.Zero(got)
 
-	got, err = Mul64(uint64(1), uint64(3))
+	got, err = Mul(uint64(1), uint64(3))
 	require.NoError(err)
 	require.Equal(uint64(3), got)
 
-	got, err = Mul64(uint64(3), uint64(1))
+	got, err = Mul(uint64(3), uint64(1))
 	require.NoError(err)
 	require.Equal(uint64(3), got)
 
-	got, err = Mul64(uint64(2), uint64(3))
+	got, err = Mul(uint64(2), uint64(3))
 	require.NoError(err)
 	require.Equal(uint64(6), got)
 
-	got, err = Mul64(maxUint64, 0)
+	got, err = Mul(maxUint64, 0)
 	require.NoError(err)
 	require.Zero(got)
 

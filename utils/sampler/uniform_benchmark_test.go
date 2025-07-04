@@ -8,8 +8,7 @@ import (
 	"testing"
 )
 
-// BenchmarkAllUniform
-func BenchmarkAllUniform(b *testing.B) {
+func BenchmarkUniform(b *testing.B) {
 	sizes := []uint64{
 		30,
 		35,

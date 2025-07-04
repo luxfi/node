@@ -136,7 +136,7 @@ func TestShutdown(t *testing.T) {
 	}
 	bootstrapper.HaltF = func(context.Context) {}
 
-	engine := &common.EngineTest{T: t}
+	engine := &enginetest.Engine{T: t}
 	engine.Default(true)
 	engine.CantGossip = false
 	engine.ContextF = func() *snow.ConsensusContext {
@@ -398,7 +398,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		return nil
 	}
 
-	engine := &common.EngineTest{T: t}
+	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
@@ -604,7 +604,7 @@ func TestRouterTimeout(t *testing.T) {
 	}
 	bootstrapper.CrossChainAppRequestFailedF = func(context.Context, ids.ID, uint32, *common.AppError) error {
 		defer wg.Done()
-		calledCrossChainAppRequestFailed = true
+		calledGetAncestorsFailed = true
 		return nil
 	}
 	ctx.State.Set(snow.EngineState{

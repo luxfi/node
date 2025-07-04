@@ -4,7 +4,6 @@
 package sampler
 
 import (
-	"fmt"
 	"math"
 	"slices"
 	"testing"
@@ -69,12 +68,12 @@ var (
 	}
 )
 
-func TestAllUniform(t *testing.T) {
-	for _, s := range uniformSamplers {
-		for _, test := range uniformTests {
-			t.Run(fmt.Sprintf("sampler %s test %s", s.name, test.name), func(t *testing.T) {
-				test.test(t, s.sampler)
-			})
+	for {
+		val, hasNext := s.Next()
+		require.True(t, hasNext)
+
+		if val > math.MaxInt64 {
+			break
 		}
 	}
 }

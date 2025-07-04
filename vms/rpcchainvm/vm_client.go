@@ -232,7 +232,6 @@ func (vm *VMClient) Initialize(
 		vm:       vm,
 		id:       id,
 		parentID: parentID,
-		status:   choices.Accepted,
 		bytes:    resp.Bytes,
 		height:   resp.Height,
 		time:     time,
@@ -335,7 +334,6 @@ func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
 		vm:       vm,
 		id:       id,
 		parentID: parentID,
-		status:   choices.Accepted,
 		bytes:    resp.Bytes,
 		height:   resp.Height,
 		time:     time,
@@ -433,8 +431,8 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block
 		return nil, err
 	}
 
-	status := choices.Status(resp.Status)
-	if err := status.Valid(); err != nil {
+	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
+	if err != nil {
 		return nil, err
 	}
 
@@ -467,11 +465,6 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 
 	parentID, err := ids.ToID(resp.ParentId)
 	if err != nil {
-		return nil, err
-	}
-
-	status := choices.Status(resp.Status)
-	if err := status.Valid(); err != nil {
 		return nil, err
 	}
 
@@ -646,11 +639,6 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 
 		parentID, err := ids.ToID(blkResp.ParentId)
 		if err != nil {
-			return nil, err
-		}
-
-		status := choices.Status(blkResp.Status)
-		if err := status.Valid(); err != nil {
 			return nil, err
 		}
 

@@ -186,6 +186,10 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		timer.Reset(waitDuration)
 		select {
 		case <-ctx.Done():
+			// Satisfy [t.timerPool] invariant.
+			if !timer.Stop() {
+				<-timer.C
+			}
 			return
 		case <-timer.C:
 		}

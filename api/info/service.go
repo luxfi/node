@@ -46,20 +46,13 @@ type Info struct {
 }
 
 type Parameters struct {
-	Version                       *version.Application
-	NodeID                        ids.NodeID
-	NodePOP                       *signer.ProofOfPossession
-	NetworkID                     uint32
-	TxFee                         uint64
-	CreateAssetTxFee              uint64
-	CreateSubnetTxFee             uint64
-	TransformSubnetTxFee          uint64
-	CreateBlockchainTxFee         uint64
-	AddPrimaryNetworkValidatorFee uint64
-	AddPrimaryNetworkDelegatorFee uint64
-	AddSubnetValidatorFee         uint64
-	AddSubnetDelegatorFee         uint64
-	VMManager                     vms.Manager
+	Version     *version.Application
+	NodeID      ids.NodeID
+	NodePOP     *signer.ProofOfPossession
+	NetworkID   uint32
+	TxFeeConfig genesis.TxFeeConfig
+	VMManager   vms.Manager
+	Upgrades    upgrade.Config
 }
 
 func NewService(

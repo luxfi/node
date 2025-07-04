@@ -294,7 +294,6 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: coreBlk,
-			status:   choices.Processing,
 		},
 	}
 

@@ -294,7 +294,16 @@ func (b *benchlist) bench(nodeID ids.NodeID) {
 		return
 	}
 
-	newBenchedStake, err := safemath.Add64(benchedStake, validatorStake)
+	benchedStake, err := b.vdrs.SubsetWeight(b.ctx.SubnetID, b.benchlistSet)
+	if err != nil {
+		b.ctx.Log.Error("error calculating benched stake",
+			zap.Stringer("subnetID", b.ctx.SubnetID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	newBenchedStake, err := safemath.Add(benchedStake, validatorStake)
 	if err != nil {
 		// This should never happen
 		b.ctx.Log.Error("overflow calculating new benched stake",

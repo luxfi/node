@@ -464,7 +464,7 @@ func (s *State) deduplicate(ctx context.Context, blk snowman.Block) (snowman.Blo
 	// Defensive: buildBlock should not return a block that has already been verified.
 	// If it does, make sure to return the existing reference to the block.
 	if existingBlk, ok := s.getCachedBlock(blkID); ok {
-		return existingBlk, nil
+		return existingBlk
 	}
 	// Evict the produced block from missing blocks in case it was previously
 	// marked as missing.
@@ -493,13 +493,11 @@ func (s *State) addBlockOutsideConsensus(ctx context.Context, blk snowman.Block)
 	switch status {
 	case choices.Accepted, choices.Rejected:
 		s.decidedBlocks.Put(blkID, wrappedBlk)
-	case choices.Processing:
+	} else {
 		s.unverifiedBlocks.Put(blkID, wrappedBlk)
-	default:
-		return nil, fmt.Errorf("found unexpected status for blk %s: %s", blkID, status)
 	}
 
-	return wrappedBlk, nil
+	return wrappedBlk
 }
 
 func (s *State) LastAccepted(context.Context) (ids.ID, error) {
