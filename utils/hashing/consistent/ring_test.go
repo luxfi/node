@@ -10,6 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/hashing/hashingmock"
 )
 
 var (
@@ -435,9 +436,9 @@ func TestIteration(t *testing.T) {
 	require.Equal(node2, node)
 }
 
-func setupTest(t *testing.T, virtualNodes int) (Ring, *hashing.MockHasher) {
+func setupTest(t *testing.T, virtualNodes int) (Ring, *hashingmock.MockHasher) {
 	ctrl := gomock.NewController(t)
-	hasher := hashingmock.NewHasher(ctrl)
+	hasher := hashingmock.NewMockHasher(ctrl)
 
 	return NewHashRing(RingConfig{
 		VirtualNodes: virtualNodes,
