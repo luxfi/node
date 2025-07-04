@@ -12,7 +12,10 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-var errTest = errors.New("non-nil error")
+var (
+	errTest = errors.New("non-nil error")
+	hello   = "hello"
+)
 
 func TestOptionalGathererEmptyGather(t *testing.T) {
 	require := require.New(t)

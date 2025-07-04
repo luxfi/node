@@ -607,6 +607,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	require.NoError(service.GetCurrentValidators(nil, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators))
 
+	for _, vdr := range genesis.Validators {
 		found := false
 		for i := 0; i < len(response.Validators) && !found; i++ {
 			gotVdr := response.Validators[i].(pchainapi.PermissionlessValidator)

@@ -8,24 +8,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/cachetest"
 	"github.com/luxfi/node/ids"
 )
 
 func TestLRU(t *testing.T) {
-	cache := &LRU[ids.ID, int64]{Size: 1}
+	cache := &cache.LRU[ids.ID, int64]{Size: 1}
 
 	cachetest.TestBasic(t, cache)
 }
 
 func TestLRUEviction(t *testing.T) {
-	cache := &LRU[ids.ID, int64]{Size: 2}
+	cache := &cache.LRU[ids.ID, int64]{Size: 2}
 
 	cachetest.TestEviction(t, cache)
 }
 
 func TestLRUResize(t *testing.T) {
 	require := require.New(t)
-	cache := LRU[ids.ID, int64]{Size: 2}
+	cache := cache.LRU[ids.ID, int64]{Size: 2}
 
 	id1 := ids.ID{1}
 	id2 := ids.ID{2}

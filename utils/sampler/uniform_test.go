@@ -68,16 +68,6 @@ var (
 	}
 )
 
-	for {
-		val, hasNext := s.Next()
-		require.True(t, hasNext)
-
-		if val > math.MaxInt64 {
-			break
-		}
-	}
-}
-
 func UniformInitializeMaxUint64Test(t *testing.T, s Uniform) {
 	s.Initialize(math.MaxUint64)
 

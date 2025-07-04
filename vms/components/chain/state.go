@@ -493,11 +493,11 @@ func (s *State) addBlockOutsideConsensus(ctx context.Context, blk snowman.Block)
 	switch status {
 	case choices.Accepted, choices.Rejected:
 		s.decidedBlocks.Put(blkID, wrappedBlk)
-	} else {
+	default:
 		s.unverifiedBlocks.Put(blkID, wrappedBlk)
 	}
 
-	return wrappedBlk
+	return wrappedBlk, nil
 }
 
 func (s *State) LastAccepted(context.Context) (ids.ID, error) {

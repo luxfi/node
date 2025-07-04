@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 )
 
 type TestVM struct {
-	block.TestVM
+	blocktest.VM
 
 	CantLinearize, CantParse bool
 
@@ -39,8 +39,8 @@ func (vm *TestVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	if vm.LinearizeF != nil {
 		return vm.LinearizeF(ctx, stopVertexID)
 	}
-	if vm.CantLinearize && vm.T != nil {
-		require.FailNow(vm.T, errLinearize.Error())
+	if vm.CantLinearize && vm.VM.T != nil {
+		require.FailNow(vm.VM.T, errLinearize.Error())
 	}
 	return errLinearize
 }
@@ -49,8 +49,8 @@ func (vm *TestVM) ParseTx(ctx context.Context, b []byte) (snowstorm.Tx, error) {
 	if vm.ParseTxF != nil {
 		return vm.ParseTxF(ctx, b)
 	}
-	if vm.CantParse && vm.T != nil {
-		require.FailNow(vm.T, errParse.Error())
+	if vm.CantParse && vm.VM.T != nil {
+		require.FailNow(vm.VM.T, errParse.Error())
 	}
 	return nil, errParse
 }
