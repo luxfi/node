@@ -7,49 +7,66 @@ run:
     - ".*mock.*"
 
 issues:
-  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+  # Maximum issues count per one linter.
+  # Set to 0 to disable.
+  # Default: 50
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text.
+  # Set to 0 to disable.
+  # Default: 3
   max-same-issues: 0
 
+  # Enables skipping of directories:
+  # - vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  # Default: true
+  exclude-dirs-use-default: false
+
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
     - asciicheck
+    - bodyclose
     - depguard
+    - dupword
     - errcheck
     - errorlint
     - exportloopref
+    - forbidigo
+    - gci
     - goconst
     - gocritic
+    # - goerr113
     - gofmt
     - gofumpt
-    - goimports
-    - revive
+    # - gomnd
+    - goprintffuncname
     - gosec
     - gosimple
     - govet
+    - importas
     - ineffassign
+    # - lll
     - misspell
     - nakedret
+    - nilerr
+    - noctx
     - nolintlint
+    - perfsprint
     - prealloc
+    - predeclared
+    - revive
+    - spancheck
+    - staticcheck
     - stylecheck
+    - tagalign
+    - testifylint
+    - typecheck
     - unconvert
     - unparam
     - unused
-    - unconvert
+    - usestdlibvars
     - whitespace
-    - staticcheck
-    # - bodyclose
-    # - structcheck
-    # - lll
-    # - gomnd
-    # - goprintffuncname
-    # - interfacer
-    # - typecheck
-    # - goerr113
-    # - noctx
 
 linters-settings:
   errorlint:
@@ -100,19 +117,25 @@ linters-settings:
       - name: useless-break
         disabled: false
   staticcheck:
-    go: "1.18"
     # https://staticcheck.io/docs/options#checks
     checks:
       - "all"
-      - "-SA6002" # argument should be pointer-like to avoid allocation, for sync.Pool
-      - "-SA1019" # deprecated packages e.g., golang.org/x/crypto/ripemd160
-  # https://golangci-lint.run/usage/linters#gosec
-  gosec:
-    excludes:
-      - G107 # https://securego.io/docs/rules/g107.html
-  depguard:
-    list-type: blacklist
-    packages-with-error-message:
-      - io/ioutil: 'io/ioutil is deprecated. Use package io or os instead.'
-      - github.com/stretchr/testify/assert: 'github.com/stretchr/testify/require should be used instead.'
-    include-go-root: true
+      - "-SA6002" # Storing non-pointer values in sync.Pool allocates memory
+      - "-SA1019" # Using a deprecated function, variable, constant or field
+  tagalign:
+    align: true
+    sort: true
+    strict: true
+    order:
+      - serialize
+  testifylint:
+    # Enable all checkers (https://github.com/Antonboom/testifylint#checkers).
+    # Default: false
+    enable-all: true
+    # Disable checkers by name
+    # (in addition to default
+    #   suite-thelper
+    # ).
+    disable:
+      - go-require
+      - float-compare

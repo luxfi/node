@@ -207,7 +207,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		return errFatal
 	}
 
-	engine := &common.EngineTest{T: t}
+	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
@@ -389,7 +389,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	}
 	bootstrapper.Default(false)
 
-	engine := &common.EngineTest{T: t}
+	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
 	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx

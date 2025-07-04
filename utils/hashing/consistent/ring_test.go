@@ -437,7 +437,7 @@ func TestIteration(t *testing.T) {
 
 func setupTest(t *testing.T, virtualNodes int) (Ring, *hashing.MockHasher) {
 	ctrl := gomock.NewController(t)
-	hasher := hashing.NewMockHasher(ctrl)
+	hasher := hashingmock.NewHasher(ctrl)
 
 	return NewHashRing(RingConfig{
 		VirtualNodes: virtualNodes,

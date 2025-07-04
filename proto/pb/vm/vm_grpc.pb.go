@@ -94,9 +94,6 @@ type VMClient interface {
 	AppGossip(ctx context.Context, in *AppGossipMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Attempts to gather metrics from a VM.
 	Gather(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatherResponse, error)
-	CrossChainAppRequest(ctx context.Context, in *CrossChainAppRequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CrossChainAppRequestFailed(ctx context.Context, in *CrossChainAppRequestFailedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CrossChainAppResponse(ctx context.Context, in *CrossChainAppResponseMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// BatchedChainVM
 	GetAncestors(ctx context.Context, in *GetAncestorsRequest, opts ...grpc.CallOption) (*GetAncestorsResponse, error)
 	BatchedParseBlock(ctx context.Context, in *BatchedParseBlockRequest, opts ...grpc.CallOption) (*BatchedParseBlockResponse, error)
@@ -459,9 +456,6 @@ type VMServer interface {
 	AppGossip(context.Context, *AppGossipMsg) (*emptypb.Empty, error)
 	// Attempts to gather metrics from a VM.
 	Gather(context.Context, *emptypb.Empty) (*GatherResponse, error)
-	CrossChainAppRequest(context.Context, *CrossChainAppRequestMsg) (*emptypb.Empty, error)
-	CrossChainAppRequestFailed(context.Context, *CrossChainAppRequestFailedMsg) (*emptypb.Empty, error)
-	CrossChainAppResponse(context.Context, *CrossChainAppResponseMsg) (*emptypb.Empty, error)
 	// BatchedChainVM
 	GetAncestors(context.Context, *GetAncestorsRequest) (*GetAncestorsResponse, error)
 	BatchedParseBlock(context.Context, *BatchedParseBlockRequest) (*BatchedParseBlockResponse, error)
@@ -543,15 +537,6 @@ func (UnimplementedVMServer) AppGossip(context.Context, *AppGossipMsg) (*emptypb
 }
 func (UnimplementedVMServer) Gather(context.Context, *emptypb.Empty) (*GatherResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Gather not implemented")
-}
-func (UnimplementedVMServer) CrossChainAppRequest(context.Context, *CrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CrossChainAppRequest not implemented")
-}
-func (UnimplementedVMServer) CrossChainAppRequestFailed(context.Context, *CrossChainAppRequestFailedMsg) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CrossChainAppRequestFailed not implemented")
-}
-func (UnimplementedVMServer) CrossChainAppResponse(context.Context, *CrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CrossChainAppResponse not implemented")
 }
 func (UnimplementedVMServer) GetAncestors(context.Context, *GetAncestorsRequest) (*GetAncestorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAncestors not implemented")
@@ -1252,18 +1237,6 @@ var VM_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Gather",
 			Handler:    _VM_Gather_Handler,
-		},
-		{
-			MethodName: "CrossChainAppRequest",
-			Handler:    _VM_CrossChainAppRequest_Handler,
-		},
-		{
-			MethodName: "CrossChainAppRequestFailed",
-			Handler:    _VM_CrossChainAppRequestFailed_Handler,
-		},
-		{
-			MethodName: "CrossChainAppResponse",
-			Handler:    _VM_CrossChainAppResponse_Handler,
 		},
 		{
 			MethodName: "GetAncestors",

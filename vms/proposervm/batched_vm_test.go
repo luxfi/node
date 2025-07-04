@@ -804,8 +804,8 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 }
 
 type TestRemoteProposerVM struct {
-	*block.TestBatchedVM
-	*block.TestVM
+	*blocktest.BatchedVM
+	*blocktest.VM
 }
 
 func initTestRemoteProposerVM(
@@ -820,11 +820,11 @@ func initTestRemoteProposerVM(
 
 	initialState := []byte("genesis state")
 	coreVM := TestRemoteProposerVM{
-		TestVM:        &block.TestVM{},
-		TestBatchedVM: &block.TestBatchedVM{},
+		VM:        &blocktest.VM{},
+		BatchedVM: &blocktest.BatchedVM{},
 	}
-	coreVM.TestVM.T = t
-	coreVM.TestBatchedVM.T = t
+	coreVM.VM.T = t
+	coreVM.BatchedVM.T = t
 
 	coreVM.InitializeF = func(
 		context.Context,
@@ -873,7 +873,7 @@ func initTestRemoteProposerVM(
 		},
 	)
 
-	valState := &validators.TestState{
+	valState := &validatorstest.State{
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {

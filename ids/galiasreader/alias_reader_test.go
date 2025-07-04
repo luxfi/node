@@ -15,7 +15,9 @@ import (
 )
 
 func TestInterface(t *testing.T) {
-	require := require.New(t)
+	for _, test := range idstest.AliasTests {
+		t.Run(test.Name, func(t *testing.T) {
+			require := require.New(t)
 
 	for _, test := range ids.AliasTests {
 		listener, err := grpcutils.NewListener()

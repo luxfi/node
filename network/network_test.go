@@ -237,6 +237,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		var connected set.Set[ids.NodeID]
 		net, err := NewNetwork(
 			config,
+			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
 			logging.NoLog{},

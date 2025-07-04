@@ -64,6 +64,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			txFees := uint64(fees.TxFee)
 			tests.Outf("{{green}} txFee: %d {{/}}\n", txFees)
 
+	ginkgo.It("P-chain main operations", func() {
+		const (
 			// amount to transfer from P to X chain
 			toTransfer := 1 * units.Lux
 
@@ -92,9 +94,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
-				Addrs:     []ids.ShortID{pShortAddr},
+				Addrs:     []ids.ShortID{rewardAddr},
 			}
-			shares := uint32(20000) // TODO: retrieve programmatically
 
 			sk, err := bls.NewSecretKey()
 			require.NoError(err)
@@ -137,13 +138,9 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			outputOwner := secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs: []ids.ShortID{
-					xTargetAddr,
+					keychain.Keys[0].Address(),
 				},
-			}
-			output := &secp256k1fx.TransferOutput{
-				Amt:          toTransfer,
-				OutputOwners: outputOwner,
-			}
+			})
 
 			ginkgo.By("export lux from P to X chain", func() {
 				_, err := pWallet.IssueExportTx(
@@ -198,4 +195,29 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			require.Equal(xFinalBalance, xPreImportBalance+toTransfer-txFees) // import not performed yet
 			require.Equal(pFinalBalance, pPreImportBalance)
 		})
+
+		tc.By("issuing an ImportTx on the X-Chain", func() {
+			balances, err := xBuilder.GetFTBalance()
+			require.NoError(err)
+
+			initialAVAXBalance := balances[avaxAssetID]
+			tc.Outf("{{blue}} X-chain balance before P->X import: %d {{/}}\n", initialAVAXBalance)
+
+			_, err = xWallet.IssueImportTx(
+				constants.PlatformChainID,
+				&transferOwner,
+				tc.WithDefaultContext(),
+				changeOwner,
+			)
+			require.NoError(err)
+
+			balances, err = xBuilder.GetFTBalance()
+			require.NoError(err)
+
+			finalAVAXBalance := balances[avaxAssetID]
+			tc.Outf("{{blue}} X-chain balance after P->X import: %d {{/}}\n", finalAVAXBalance)
+
+			require.Equal(initialAVAXBalance+toTransfer-xContext.BaseTxFee, finalAVAXBalance)
+		})
+	})
 })

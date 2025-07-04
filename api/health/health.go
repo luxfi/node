@@ -27,6 +27,20 @@ const (
 	ApplicationTag = "application"
 )
 
+const (
+	// CheckLabel is the label used to differentiate between health checks.
+	CheckLabel = "check"
+	// TagLabel is the label used to differentiate between health check tags.
+	TagLabel = "tag"
+	// AllTag is automatically added to every registered check.
+	AllTag = "all"
+	// ApplicationTag checks will act as if they specified every tag that has
+	// been registered.
+	// Registering a health check with this tag will ensure that it is always
+	// included in all health query results.
+	ApplicationTag = "application"
+)
+
 var _ Health = (*health)(nil)
 
 // Health defines the full health service interface for registering, reporting

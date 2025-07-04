@@ -40,13 +40,13 @@ type stakerDiffIterator struct {
 	currentIterator          *mutableStakerIterator
 
 	pendingIteratorExhausted bool
-	pendingIterator          StakerIterator
+	pendingIterator          iterator.Iterator[*Staker]
 
 	modifiedStaker *Staker
 	isAdded        bool
 }
 
-func NewStakerDiffIterator(currentIterator, pendingIterator StakerIterator) StakerDiffIterator {
+func NewStakerDiffIterator(currentIterator, pendingIterator iterator.Iterator[*Staker]) StakerDiffIterator {
 	mutableCurrentIterator := newMutableStakerIterator(currentIterator)
 	return &stakerDiffIterator{
 		currentIteratorExhausted: !mutableCurrentIterator.Next(),
@@ -115,7 +115,7 @@ type mutableStakerIterator struct {
 	heap              heap.Queue[*Staker]
 }
 
-func newMutableStakerIterator(iterator StakerIterator) *mutableStakerIterator {
+func newMutableStakerIterator(iterator iterator.Iterator[*Staker]) *mutableStakerIterator {
 	return &mutableStakerIterator{
 		iteratorExhausted: !iterator.Next(),
 		iterator:          iterator,

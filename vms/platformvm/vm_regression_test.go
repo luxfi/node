@@ -63,7 +63,10 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	nodeID := ids.GenerateTestNodeID()
-	changeAddr := keys[0].PublicKey().Address()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
 	// create valid tx
 	builder, txSigner := factory.NewWallet(keys[0])
@@ -99,7 +102,9 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(addValidatorBlock.Accept(context.Background()))
 	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
 
+	// Advance the time
 	vm.clock.Set(validatorStartTime)
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	firstAdvanceTimeBlock, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -143,6 +148,7 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(addFirstDelegatorBlock.Accept(context.Background()))
 	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
 
+	// Advance the time
 	vm.clock.Set(firstDelegatorStartTime)
 
 	secondAdvanceTimeBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -495,10 +501,13 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	vm.clock.Set(latestForkTime.Add(time.Second))
 	vm.state.SetTimestamp(latestForkTime.Add(time.Second))
 
-	key0 := keys[0]
-	key1 := keys[1]
-	addr0 := key0.PublicKey().Address()
-	addr1 := key1.PublicKey().Address()
+	var (
+		key0    = genesistest.DefaultFundedKeys[0]
+		addr0   = key0.Address()
+		owners0 = &secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{addr0},
+		}
 
 	factory := txstest.NewWalletFactory(
 		vm.ctx,

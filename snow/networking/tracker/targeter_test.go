@@ -53,7 +53,7 @@ func TestTarget(t *testing.T) {
 	require.NoError(t, vdrs.AddStaker(constants.PrimaryNetworkID, vdr, nil, ids.Empty, 1))
 	require.NoError(t, vdrs.AddStaker(constants.PrimaryNetworkID, ids.GenerateTestNodeID(), nil, ids.Empty, totalVdrWeight-vdrWeight))
 
-	tracker := NewMockTracker(ctrl)
+	tracker := trackermock.NewTracker(ctrl)
 	config := &TargeterConfig{
 		VdrAlloc:           20,
 		MaxNonVdrUsage:     10,

@@ -29,6 +29,20 @@ var (
 	}
 )
 
+var (
+	PChainAliases = []string{"P", "platform"}
+	XChainAliases = []string{"X", "avm"}
+	CChainAliases = []string{"C", "evm"}
+	VMAliases     = map[ids.ID][]string{
+		constants.PlatformVMID: {"platform"},
+		constants.AVMID:        {"avm"},
+		constants.EVMID:        {"evm"},
+		secp256k1fx.ID:         {"secp256k1fx"},
+		nftfx.ID:               {"nftfx"},
+		propertyfx.ID:          {"propertyfx"},
+	}
+)
+
 // Aliases returns the default aliases based on the network ID
 func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, error) {
 	apiAliases := map[string][]string{

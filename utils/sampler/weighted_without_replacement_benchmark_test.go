@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// BenchmarkAllWeightedWithoutReplacement
-func BenchmarkAllWeightedWithoutReplacement(b *testing.B) {
+func BenchmarkWeightedWithoutReplacement(b *testing.B) {
 	sizes := []int{
 		1,
 		5,

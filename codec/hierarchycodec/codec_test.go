@@ -10,10 +10,9 @@ import (
 )
 
 func TestVectors(t *testing.T) {
-	for _, test := range codec.Tests {
-		c := NewDefault()
-		test(c, t)
-	}
+	codectest.RunAll(t, func() codec.GeneralCodec {
+		return NewDefault()
+	})
 }
 
 func TestMultipleTags(t *testing.T) {

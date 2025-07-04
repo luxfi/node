@@ -17,6 +17,13 @@ const (
 	unknownSource    = "unknown"
 )
 
+const (
+	pullGossipSource = "pull_gossip"
+	pushGossipSource = "push_gossip"
+	builtSource      = "built"
+	unknownSource    = "unknown"
+)
+
 type metrics struct {
 	bootstrapFinished                     prometheus.Gauge
 	numRequests                           prometheus.Gauge

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package atomic
+package atomic_test
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestSharedMemory(t *testing.T) {
 	chainID0 := ids.GenerateTestID()
 	chainID1 := ids.GenerateTestID()
 
-	for _, test := range SharedMemoryTests {
+	for _, test := range atomictest.SharedMemoryTests {
 		baseDB := memdb.New()
 
 		memoryDB := prefixdb.New([]byte{0}, baseDB)

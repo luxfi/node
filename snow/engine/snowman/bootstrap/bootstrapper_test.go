@@ -44,8 +44,10 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 
 	vdrs := validators.NewManager()
 
-	sender := &common.SenderTest{}
-	vm := &block.TestVM{}
+	vdrs := validators.NewManager()
+
+	sender := &enginetest.Sender{}
+	vm := &blocktest.VM{}
 
 	sender.T = t
 	vm.T = t
@@ -109,9 +111,9 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *block.Tes
 func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	require := require.New(t)
 
-	sender := &common.SenderTest{T: t}
-	vm := &block.TestVM{
-		TestVM: common.TestVM{T: t},
+	sender := &enginetest.Sender{T: t}
+	vm := &blocktest.VM{
+		VM: enginetest.VM{T: t},
 	}
 
 	sender.Default(true)

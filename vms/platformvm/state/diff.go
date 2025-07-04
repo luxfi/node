@@ -34,6 +34,7 @@ type diff struct {
 	stateVersions Versions
 
 	timestamp time.Time
+	feeState  gas.State
 
 	// Subnet ID --> supply of native asset of the subnet
 	currentSupply map[ids.ID]uint64
@@ -95,6 +96,14 @@ func (d *diff) GetTimestamp() time.Time {
 
 func (d *diff) SetTimestamp(timestamp time.Time) {
 	d.timestamp = timestamp
+}
+
+func (d *diff) GetFeeState() gas.State {
+	return d.feeState
+}
+
+func (d *diff) SetFeeState(feeState gas.State) {
+	d.feeState = feeState
 }
 
 func (d *diff) GetCurrentSupply(subnetID ids.ID) (uint64, error) {
@@ -165,15 +174,40 @@ func (d *diff) GetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID) (uint64, e
 	return parentState.GetDelegateeReward(subnetID, nodeID)
 }
 
-func (d *diff) PutCurrentValidator(staker *Staker) {
-	d.currentStakerDiffs.PutValidator(staker)
+func (d *diff) SetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID, amount uint64) error {
+	if d.modifiedDelegateeRewards == nil {
+		d.modifiedDelegateeRewards = make(map[ids.ID]map[ids.NodeID]uint64)
+	}
+	nodes, ok := d.modifiedDelegateeRewards[subnetID]
+	if !ok {
+		nodes = make(map[ids.NodeID]uint64)
+		d.modifiedDelegateeRewards[subnetID] = nodes
+	}
+	nodes[nodeID] = amount
+	return nil
+}
+
+func (d *diff) GetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID) (uint64, error) {
+	amount, modified := d.modifiedDelegateeRewards[subnetID][nodeID]
+	if modified {
+		return amount, nil
+	}
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return 0, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.GetDelegateeReward(subnetID, nodeID)
+}
+
+func (d *diff) PutCurrentValidator(staker *Staker) error {
+	return d.currentStakerDiffs.PutValidator(staker)
 }
 
 func (d *diff) DeleteCurrentValidator(staker *Staker) {
 	d.currentStakerDiffs.DeleteValidator(staker)
 }
 
-func (d *diff) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (d *diff) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	parentState, ok := d.stateVersions.GetState(d.parentID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
@@ -195,7 +229,7 @@ func (d *diff) DeleteCurrentDelegator(staker *Staker) {
 	d.currentStakerDiffs.DeleteDelegator(staker)
 }
 
-func (d *diff) GetCurrentStakerIterator() (StakerIterator, error) {
+func (d *diff) GetCurrentStakerIterator() (iterator.Iterator[*Staker], error) {
 	parentState, ok := d.stateVersions.GetState(d.parentID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
@@ -228,15 +262,15 @@ func (d *diff) GetPendingValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker,
 	}
 }
 
-func (d *diff) PutPendingValidator(staker *Staker) {
-	d.pendingStakerDiffs.PutValidator(staker)
+func (d *diff) PutPendingValidator(staker *Staker) error {
+	return d.pendingStakerDiffs.PutValidator(staker)
 }
 
 func (d *diff) DeletePendingValidator(staker *Staker) {
 	d.pendingStakerDiffs.DeleteValidator(staker)
 }
 
-func (d *diff) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (d *diff) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	parentState, ok := d.stateVersions.GetState(d.parentID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
@@ -258,7 +292,7 @@ func (d *diff) DeletePendingDelegator(staker *Staker) {
 	d.pendingStakerDiffs.DeleteDelegator(staker)
 }
 
-func (d *diff) GetPendingStakerIterator() (StakerIterator, error) {
+func (d *diff) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	parentState, ok := d.stateVersions.GetState(d.parentID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
@@ -401,6 +435,7 @@ func (d *diff) DeleteUTXO(utxoID ids.ID) {
 
 func (d *diff) Apply(baseState Chain) error {
 	baseState.SetTimestamp(d.timestamp)
+	baseState.SetFeeState(d.feeState)
 	for subnetID, supply := range d.currentSupply {
 		baseState.SetCurrentSupply(subnetID, supply)
 	}
@@ -413,7 +448,7 @@ func (d *diff) Apply(baseState Chain) error {
 				baseState.DeleteCurrentValidator(validatorDiff.validator)
 			}
 
-			addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+			addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 			for addedDelegatorIterator.Next() {
 				baseState.PutCurrentDelegator(addedDelegatorIterator.Value())
 			}
@@ -440,7 +475,7 @@ func (d *diff) Apply(baseState Chain) error {
 				baseState.DeletePendingValidator(validatorDiff.validator)
 			}
 
-			addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+			addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 			for addedDelegatorIterator.Next() {
 				baseState.PutPendingDelegator(addedDelegatorIterator.Value())
 			}

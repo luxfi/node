@@ -388,6 +388,164 @@ func (x *InitializeRequest) GetServerAddr() string {
 	return ""
 }
 
+func (x *InitializeRequest) GetNetworkUpgrades() *NetworkUpgrades {
+	if x != nil {
+		return x.NetworkUpgrades
+	}
+	return nil
+}
+
+type NetworkUpgrades struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ApricotPhase_1Time            *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=apricot_phase_1_time,json=apricotPhase1Time,proto3" json:"apricot_phase_1_time,omitempty"`
+	ApricotPhase_2Time            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=apricot_phase_2_time,json=apricotPhase2Time,proto3" json:"apricot_phase_2_time,omitempty"`
+	ApricotPhase_3Time            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=apricot_phase_3_time,json=apricotPhase3Time,proto3" json:"apricot_phase_3_time,omitempty"`
+	ApricotPhase_4Time            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=apricot_phase_4_time,json=apricotPhase4Time,proto3" json:"apricot_phase_4_time,omitempty"`
+	ApricotPhase_4MinPChainHeight uint64                 `protobuf:"varint,5,opt,name=apricot_phase_4_min_p_chain_height,json=apricotPhase4MinPChainHeight,proto3" json:"apricot_phase_4_min_p_chain_height,omitempty"`
+	ApricotPhase_5Time            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=apricot_phase_5_time,json=apricotPhase5Time,proto3" json:"apricot_phase_5_time,omitempty"`
+	ApricotPhasePre_6Time         *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=apricot_phase_pre_6_time,json=apricotPhasePre6Time,proto3" json:"apricot_phase_pre_6_time,omitempty"`
+	ApricotPhase_6Time            *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=apricot_phase_6_time,json=apricotPhase6Time,proto3" json:"apricot_phase_6_time,omitempty"`
+	ApricotPhasePost_6Time        *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=apricot_phase_post_6_time,json=apricotPhasePost6Time,proto3" json:"apricot_phase_post_6_time,omitempty"`
+	BanffTime                     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=banff_time,json=banffTime,proto3" json:"banff_time,omitempty"`
+	CortinaTime                   *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=cortina_time,json=cortinaTime,proto3" json:"cortina_time,omitempty"`
+	CortinaXChainStopVertexId     []byte                 `protobuf:"bytes,12,opt,name=cortina_x_chain_stop_vertex_id,json=cortinaXChainStopVertexId,proto3" json:"cortina_x_chain_stop_vertex_id,omitempty"`
+	DurangoTime                   *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=durango_time,json=durangoTime,proto3" json:"durango_time,omitempty"`
+	EtnaTime                      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=etna_time,json=etnaTime,proto3" json:"etna_time,omitempty"`
+}
+
+func (x *NetworkUpgrades) Reset() {
+	*x = NetworkUpgrades{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vm_vm_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkUpgrades) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkUpgrades) ProtoMessage() {}
+
+func (x *NetworkUpgrades) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_vm_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkUpgrades.ProtoReflect.Descriptor instead.
+func (*NetworkUpgrades) Descriptor() ([]byte, []int) {
+	return file_vm_vm_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_1Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_1Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_2Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_2Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_3Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_3Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_4Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_4Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_4MinPChainHeight() uint64 {
+	if x != nil {
+		return x.ApricotPhase_4MinPChainHeight
+	}
+	return 0
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_5Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_5Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhasePre_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhasePre_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhasePost_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhasePost_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetBanffTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.BanffTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetCortinaTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CortinaTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetCortinaXChainStopVertexId() []byte {
+	if x != nil {
+		return x.CortinaXChainStopVertexId
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetDurangoTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DurangoTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetEtnaTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EtnaTime
+	}
+	return nil
+}
+
 type InitializeResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -403,7 +561,7 @@ type InitializeResponse struct {
 func (x *InitializeResponse) Reset() {
 	*x = InitializeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vm_vm_proto_msgTypes[1]
+		mi := &file_vm_vm_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -416,7 +574,7 @@ func (x *InitializeResponse) String() string {
 func (*InitializeResponse) ProtoMessage() {}
 
 func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[1]
+	mi := &file_vm_vm_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -429,7 +587,7 @@ func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitializeResponse.ProtoReflect.Descriptor instead.
 func (*InitializeResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{1}
+	return file_vm_vm_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *InitializeResponse) GetLastAcceptedId() []byte {
@@ -3608,7 +3766,7 @@ func file_vm_vm_proto_init() {
 			}
 		}
 		file_vm_vm_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InitializeResponse); i {
+			switch v := v.(*NetworkUpgrades); i {
 			case 0:
 				return &v.state
 			case 1:

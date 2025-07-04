@@ -365,7 +365,6 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: yBlock,
-			status:   choices.Processing,
 		},
 	}
 
@@ -383,7 +382,6 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: xInnerOption,
-			status:   xInnerOption.Status(),
 		},
 	}
 
@@ -410,7 +408,6 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: xInnerOption,
-			status:   xInnerOption.Status(),
 		},
 	}
 
@@ -447,7 +444,6 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: xInnerOption,
-			status:   xInnerOption.Status(),
 		},
 	}
 

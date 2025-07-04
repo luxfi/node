@@ -84,15 +84,15 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockBlock) InitCtx(arg0 *snow.Context) {
+func (m *MockBlock) InitCtx(ctx *snow.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitCtx", ctx)
 }
 
 // InitCtx indicates an expected call of InitCtx.
 func (mr *MockBlockMockRecorder) InitCtx(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), ctx)
 }
 
 // Parent mocks base method.
@@ -124,9 +124,9 @@ func (mr *MockBlockMockRecorder) Txs() *gomock.Call {
 }
 
 // Visit mocks base method.
-func (m *MockBlock) Visit(arg0 Visitor) error {
+func (m *MockBlock) Visit(visitor Visitor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Visit", arg0)
+	ret := m.ctrl.Call(m, "Visit", visitor)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -134,13 +134,13 @@ func (m *MockBlock) Visit(arg0 Visitor) error {
 // Visit indicates an expected call of Visit.
 func (mr *MockBlockMockRecorder) Visit(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockBlock)(nil).Visit), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockBlock)(nil).Visit), visitor)
 }
 
 // initialize mocks base method.
-func (m *MockBlock) initialize(arg0 []byte) error {
+func (m *MockBlock) initialize(bytes []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "initialize", arg0)
+	ret := m.ctrl.Call(m, "initialize", bytes)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -148,5 +148,5 @@ func (m *MockBlock) initialize(arg0 []byte) error {
 // initialize indicates an expected call of initialize.
 func (mr *MockBlockMockRecorder) initialize(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), bytes)
 }

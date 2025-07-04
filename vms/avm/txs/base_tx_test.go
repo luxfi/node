@@ -23,6 +23,12 @@ var (
 	keys    = secp256k1.TestKeys()
 )
 
+var (
+	chainID = ids.ID{5, 4, 3, 2, 1}
+	assetID = ids.ID{1, 2, 3}
+	keys    = secp256k1.TestKeys()
+)
+
 func TestBaseTxSerialization(t *testing.T) {
 	require := require.New(t)
 
