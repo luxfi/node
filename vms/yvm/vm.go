@@ -1,8 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package yvm implements the Y-Chain (Yield-Curve/Years-Proof) Quantum Checkpoint Ledger
-// A minimal-footprint chain for long-term cryptographic safety using hash-based signatures
+// Package yvm implements the Y-Chain (Yield-Curve/Years-Proof) Quantum State Ledger
+// A minimal-footprint chain for quantum-safe checkpointing and cross-version asset migration
+// Supports multiple network versions simultaneously via quantum state superposition
 package yvm
 
 import (
@@ -76,6 +77,11 @@ type YConfig struct {
 	// Slashing configuration
 	EnableSlashing  bool          `json:"enableSlashing"`
 	SlashingAmount  uint64        `json:"slashingAmount"`
+	
+	// Fork management
+	EnableForkManagement bool     `json:"enableForkManagement"`
+	SupportedVersions    []uint32 `json:"supportedVersions"`
+	CurrentVersion       uint32   `json:"currentVersion"`
 }
 
 // VM implements the Y-Chain Quantum Checkpoint Ledger
@@ -101,6 +107,9 @@ type VM struct {
 	
 	// Checkpoint history
 	epochCheckpoints map[uint64]*EpochCheckpoint
+	
+	// Fork management
+	forkManager *ForkManager
 	
 	mu sync.RWMutex
 }
@@ -165,6 +174,44 @@ func (vm *VM) Initialize(
 	vm.sphincsAggregator = &SPHINCSAggregator{
 		publicKeys:   make(map[ids.NodeID][]byte),
 		pendingSigs:  make(map[uint64]map[ids.NodeID][]byte),
+	}
+	
+	// Initialize fork manager if enabled
+	if vm.config.EnableForkManagement {
+		vm.forkManager = NewForkManager(vm.log)
+		
+		// Register initial version
+		genesisVersion := &NetworkVersion{
+			VersionID:       1,
+			Name:            "Genesis",
+			ActivationEpoch: 0,
+			ParentVersion:   0,
+			Features:        []string{"base", "checkpoint"},
+		}
+		if err := vm.forkManager.RegisterVersion(genesisVersion); err != nil {
+			return fmt.Errorf("failed to register genesis version: %w", err)
+		}
+		
+		// Register configured versions
+		for _, versionID := range vm.config.SupportedVersions {
+			if versionID > 1 {
+				version := &NetworkVersion{
+					VersionID:       versionID,
+					Name:            fmt.Sprintf("v%d", versionID),
+					ActivationEpoch: uint64(versionID * 1000), // Placeholder
+					ParentVersion:   versionID - 1,
+					Features:        []string{},
+				}
+				if err := vm.forkManager.RegisterVersion(version); err != nil {
+					vm.log.Warn("failed to register version",
+						zap.Uint32("versionID", versionID),
+						zap.Error(err),
+					)
+				}
+			}
+		}
+		
+		vm.forkManager.currentVersion = vm.config.CurrentVersion
 	}
 	
 	// Parse genesis
@@ -393,6 +440,14 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 		"/checkpoint": http.HandlerFunc(vm.handleCheckpointQuery),
 		"/verify":     http.HandlerFunc(vm.handleVerifyRoot),
 	}
+	
+	// Add fork management handlers if enabled
+	if vm.config.EnableForkManagement {
+		handlers["/versions"] = http.HandlerFunc(vm.handleVersions)
+		handlers["/migrate"] = http.HandlerFunc(vm.handleMigration)
+		handlers["/quantum"] = http.HandlerFunc(vm.handleQuantumState)
+	}
+	
 	return handlers, nil
 }
 

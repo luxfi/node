@@ -4,7 +4,6 @@
 package yvm
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -26,6 +25,12 @@ type Block struct {
 	BlockTimestamp  int64           `json:"timestamp"`
 	Epoch           uint64          `json:"epoch"`
 	EpochRoots      []*EpochRootTx  `json:"epochRoots"`
+	
+	// Fork management
+	NetworkVersion  uint32          `json:"networkVersion,omitempty"`
+	ForkTransitions []*ForkTransition `json:"forkTransitions,omitempty"`
+	AssetMigrations []*AssetMigration `json:"assetMigrations,omitempty"`
+	QuantumState    *QuantumState   `json:"quantumState,omitempty"`
 	
 	// Cached values
 	ID_      ids.ID
@@ -133,6 +138,46 @@ func (b *Block) Accept(ctx context.Context) error {
 		// Check for divergence (slashing condition)
 		if b.vm.config.EnableSlashing {
 			go b.checkForDivergence(checkpoint)
+		}
+	}
+	
+	// Process fork transitions if enabled
+	if b.vm.config.EnableForkManagement && b.vm.forkManager != nil {
+		// Update quantum state with current epoch data
+		if err := b.vm.forkManager.UpdateQuantumState(b.Epoch, epochRoot.ChainRoots); err != nil {
+			b.vm.log.Warn("failed to update quantum state",
+				zap.Uint64("epoch", b.Epoch),
+				zap.Error(err),
+			)
+		}
+		
+		// Process any fork transitions
+		for _, transition := range b.ForkTransitions {
+			b.vm.log.Info("processing fork transition",
+				zap.Uint32("fromVersion", transition.FromVersion),
+				zap.Uint32("toVersion", transition.ToVersion),
+				zap.Uint64("epoch", b.Epoch),
+			)
+			
+			// Update transition status
+			key := fmt.Sprintf("%d->%d", transition.FromVersion, transition.ToVersion)
+			if existing, ok := b.vm.forkManager.transitions[key]; ok {
+				existing.Status = "completed"
+			}
+		}
+		
+		// Process asset migrations
+		for _, migration := range b.AssetMigrations {
+			b.vm.log.Info("processing asset migration",
+				zap.Stringer("migrationID", migration.MigrationID),
+				zap.Stringer("assetID", migration.AssetID),
+				zap.String("status", migration.Status),
+			)
+			
+			// Update migration status
+			if existing, ok := b.vm.forkManager.migrations[migration.MigrationID]; ok {
+				existing.Status = "migrated"
+			}
 		}
 	}
 	
