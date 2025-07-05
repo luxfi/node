@@ -254,10 +254,10 @@ type NFTCrossChainSupport struct {
 	CChainEnabled bool   `json:"cChainEnabled"`
 	CChainContract string `json:"cChainContract"`
 	
-	// P-Chain: NFT staking and delegation
-	PChainEnabled  bool `json:"pChainEnabled"`
-	PChainStaking  bool `json:"pChainStaking"`
-	PChainDelegate bool `json:"pChainDelegate"`
+	// D-Chain: NFT staking and delegation (DAO governance)
+	DChainEnabled  bool `json:"dChainEnabled"`
+	DChainStaking  bool `json:"dChainStaking"`
+	DChainDelegate bool `json:"dChainDelegate"`
 }
 
 // DefaultCrossChainSupport returns default cross-chain configuration
@@ -267,9 +267,9 @@ func DefaultCrossChainSupport() *NFTCrossChainSupport {
 		XChainMarket:   true,
 		CChainEnabled:  true,
 		CChainContract: "0x0100000000000000000000000000000000000001",
-		PChainEnabled:  true,
-		PChainStaking:  true,
-		PChainDelegate: true,
+		DChainEnabled:  true,
+		DChainStaking:  true,
+		DChainDelegate: true,
 	}
 }
 

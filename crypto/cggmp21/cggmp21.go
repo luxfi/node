@@ -22,6 +22,12 @@ import (
 	"github.com/luxfi/node/utils/logging"
 )
 
+// Signature represents an ECDSA signature
+type Signature struct {
+	R *big.Int
+	S *big.Int
+}
+
 // Config contains CGGMP21 protocol configuration
 type Config struct {
 	Threshold      int      // t: Threshold (t+1 parties needed to sign)
@@ -321,7 +327,7 @@ func (p *Party) Round4_Open(sessionID string, round3msgs map[int]*Round3Message)
 }
 
 // Finalize computes the final signature
-func (p *Party) Finalize(sessionID string, round4msgs map[int]*Round4Message) (*ecdsa.Signature, error) {
+func (p *Party) Finalize(sessionID string, round4msgs map[int]*Round4Message) (*Signature, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	
@@ -351,7 +357,7 @@ func (p *Party) Finalize(sessionID string, round4msgs map[int]*Round4Message) (*
 	session.R = r
 	session.S = s
 	
-	return &ecdsa.Signature{
+	return &Signature{
 		R: r,
 		S: s,
 	}, nil
@@ -412,7 +418,7 @@ type IdentifiableAbort struct {
 }
 
 // VerifySignature verifies a threshold signature
-func VerifySignature(pubKey *ecdsa.PublicKey, message []byte, sig *ecdsa.Signature) bool {
+func VerifySignature(pubKey *ecdsa.PublicKey, message []byte, sig *Signature) bool {
 	h := sha256.Sum256(message)
 	return ecdsa.Verify(pubKey, h[:], sig.R, sig.S)
 }
