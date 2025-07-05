@@ -4,9 +4,12 @@
 package bootstrap
 
 import (
+	"context"
+
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/block"
@@ -39,7 +42,7 @@ type Config struct {
 	VM block.ChainVM
 
 	// NonVerifyingParse parses blocks without verifying them.
-	NonVerifyingParse block.ParseFunc
+	NonVerifyingParse func(context.Context, []byte) (snowman.Block, error)
 
 	Bootstrapped func()
 }

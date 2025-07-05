@@ -355,7 +355,7 @@ func TestGenesis(t *testing.T) {
 			expectedID: "MSj6o9TpezwsQx4Tv7SHqpVvCbJ8of1ikjsqPZ1bKRjc9zBy3",
 		},
 		{
-			networkID:  constants.LocalID,
+			config:     &LocalConfig,
 			expectedID: "S4BvHv1XyihF9gXkJKXWWwQuuDWZqesRXz6wnqavQ9FrjGfAa",
 		},
 	}
