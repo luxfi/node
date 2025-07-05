@@ -78,12 +78,12 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "evm"),
 			}
 			chainAliases[chainID] = CChainAliases
-		case constants.AIVMID:
+		case constants.AttestVMID:
 			apiAliases[endpoint] = []string{
 				"A",
-				"aivm",
+				"avm",
 				path.Join(constants.ChainAliasPrefix, "A"),
-				path.Join(constants.ChainAliasPrefix, "aivm"),
+				path.Join(constants.ChainAliasPrefix, "avm"),
 			}
 			chainAliases[chainID] = AChainAliases
 		case constants.BridgeVMID:
@@ -94,12 +94,12 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "bridgevm"),
 			}
 			chainAliases[chainID] = BChainAliases
-		case constants.ZKVMID:
+		case constants.ZeroVMID:
 			apiAliases[endpoint] = []string{
 				"Z",
-				"zkvm",
+				"zvm",
 				path.Join(constants.ChainAliasPrefix, "Z"),
-				path.Join(constants.ChainAliasPrefix, "zkvm"),
+				path.Join(constants.ChainAliasPrefix, "zvm"),
 			}
 			chainAliases[chainID] = ZChainAliases
 		case constants.YieldVMID:

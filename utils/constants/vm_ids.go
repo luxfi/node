@@ -11,9 +11,10 @@ const (
 	EVMName        = "evm"
 	SubnetEVMName  = "subnetevm"
 	XSVMName       = "xsvm"
-	AIVMName       = "aivm"
+	AttestVMName   = "attestvm"
 	BridgeVMName   = "bridgevm"
-	ZKVMName       = "zkvm"
+	ZeroVMName     = "zerovm"
+	YieldVMName    = "yieldvm"
 )
 
 var (
@@ -22,9 +23,10 @@ var (
 	EVMID        = ids.ID{'e', 'v', 'm'}
 	SubnetEVMID  = ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'e', 'v', 'm'}
 	XSVMID       = ids.ID{'x', 's', 'v', 'm'}
-	AIVMID       = ids.ID{'a', 'i', 'v', 'm'}
+	AttestVMID   = ids.ID{'a', 't', 't', 'e', 's', 't', 'v', 'm'}
 	BridgeVMID   = ids.ID{'b', 'r', 'i', 'd', 'g', 'e', 'v', 'm'}
-	ZKVMID       = ids.ID{'z', 'k', 'v', 'm'}
+	ZeroVMID     = ids.ID{'z', 'e', 'r', 'o', 'v', 'm'}
+	YieldVMID    = ids.ID{'y', 'i', 'e', 'l', 'd', 'v', 'm'}
 )
 
 // VMName returns the name of the VM with the provided ID. If a human readable
@@ -41,12 +43,14 @@ func VMName(vmID ids.ID) string {
 		return SubnetEVMName
 	case XSVMID:
 		return XSVMName
-	case AIVMID:
-		return AIVMName
+	case AttestVMID:
+		return AttestVMName
 	case BridgeVMID:
 		return BridgeVMName
-	case ZKVMID:
-		return ZKVMName
+	case ZeroVMID:
+		return ZeroVMName
+	case YieldVMID:
+		return YieldVMName
 	default:
 		return vmID.String()
 	}
