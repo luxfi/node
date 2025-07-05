@@ -57,9 +57,9 @@ func Parse(bytes []byte) (*ReadFilter, error) {
 }
 
 func (f *ReadFilter) Contains(hash uint64) bool {
-	return contains(f.hashSeeds, f.entries, hash)
+	return containsCommon(f.hashSeeds, f.entries, hash)
 }
 
 func (f *ReadFilter) Marshal() []byte {
-	return marshal(f.hashSeeds, f.entries)
+	return marshalCommon(f.hashSeeds, f.entries)
 }

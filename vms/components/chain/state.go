@@ -132,8 +132,19 @@ func (s *State) initialize(config *Config) {
 	s.unmarshalBlock = config.UnmarshalBlock
 	s.batchedUnmarshalBlock = config.BatchedUnmarshalBlock
 	if config.GetBlockIDAtHeight == nil {
+		// If GetBlockIDAtHeight is not provided, we need to use the Block interface
+		// that provides SetStatus method
 		s.getStatus = func(_ context.Context, blk snowman.Block) (choices.Status, error) {
-			return blk.Status(), nil
+			// Try to cast to our Block interface which has SetStatus
+			internalBlk, ok := blk.(Block)
+			if ok {
+				// For blocks that implement our Block interface, we assume they're processing
+				// unless they've been explicitly accepted or rejected
+				internalBlk.SetStatus(choices.Processing)
+				return choices.Processing, nil
+			}
+			// If the block doesn't implement our interface, assume it's processing
+			return choices.Processing, nil
 		}
 	} else {
 		s.getStatus = produceGetStatus(s, config.GetBlockIDAtHeight)

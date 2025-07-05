@@ -3,7 +3,7 @@
 
 //go:build test
 
-package common
+package enginetest
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
