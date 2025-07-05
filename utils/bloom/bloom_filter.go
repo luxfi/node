@@ -14,7 +14,7 @@ import (
 
 var errMaxBytes = errors.New("too large")
 
-type Filter interface {
+type FilterInterface interface {
 	// Add adds to filter, assumed thread safe
 	Add(...[]byte)
 
@@ -22,7 +22,7 @@ type Filter interface {
 	Check([]byte) bool
 }
 
-func New(maxN uint64, p float64, maxBytes uint64) (Filter, error) {
+func NewStreakKnife(maxN uint64, p float64, maxBytes uint64) (FilterInterface, error) {
 	neededBytes := bytesSteakKnifeFilter(maxN, p)
 	if neededBytes > maxBytes {
 		return nil, errMaxBytes
@@ -48,7 +48,7 @@ func bytesSteakKnifeFilter(maxN uint64, p float64) uint64 {
 	return totalSize * 8 // 8 == sizeof(uint64))
 }
 
-func newSteakKnifeFilter(maxN uint64, p float64) (Filter, error) {
+func newSteakKnifeFilter(maxN uint64, p float64) (FilterInterface, error) {
 	m := streakKnife.OptimalM(maxN, p)
 	k := streakKnife.OptimalK(m, maxN)
 

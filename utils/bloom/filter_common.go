@@ -9,8 +9,8 @@ import (
 	"github.com/spaolacci/murmur3"
 )
 
-// marshal serializes [hashSeeds] and [entries] into a byte slice.
-func marshal(hashSeeds []uint64, entries []byte) []byte {
+// marshalCommon serializes [hashSeeds] and [entries] into a byte slice.
+func marshalCommon(hashSeeds []uint64, entries []byte) []byte {
 	bytes := make([]byte, 1+len(hashSeeds)*bytesPerUint64+len(entries))
 	bytes[0] = byte(len(hashSeeds))
 	offset := 1
@@ -22,8 +22,8 @@ func marshal(hashSeeds []uint64, entries []byte) []byte {
 	return bytes
 }
 
-// contains returns true if [hash] is in the filter defined by [hashSeeds] and [entries].
-func contains(hashSeeds []uint64, entries []byte, hash uint64) bool {
+// containsCommon returns true if [hash] is in the filter defined by [hashSeeds] and [entries].
+func containsCommon(hashSeeds []uint64, entries []byte, hash uint64) bool {
 	for _, seed := range hashSeeds {
 		if !containsWithSeed(entries, hash, seed) {
 			return false

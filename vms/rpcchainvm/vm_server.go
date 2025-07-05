@@ -417,6 +417,31 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 	}, nil
 }
 
+// getBlockStatus determines the status of a block by checking if it's accepted
+func (vm *VMServer) getBlockStatus(ctx context.Context, blk snowman.Block) vmpb.Status {
+	blkID := blk.ID()
+	blkHeight := blk.Height()
+	
+	// Check if this block is accepted by comparing with the accepted block at its height
+	acceptedID, err := vm.vm.GetBlockIDAtHeight(ctx, blkHeight)
+	if err == nil && acceptedID == blkID {
+		return vmpb.Status_STATUS_ACCEPTED
+	}
+	
+	// Check if the last accepted block height is greater than this block's height
+	lastAcceptedID, err := vm.vm.LastAccepted(ctx)
+	if err == nil {
+		lastAcceptedBlk, err := vm.vm.GetBlock(ctx, lastAcceptedID)
+		if err == nil && lastAcceptedBlk.Height() > blkHeight {
+			// A different block has been accepted at this height
+			return vmpb.Status_STATUS_REJECTED
+		}
+	}
+	
+	// Otherwise, the block is still processing
+	return vmpb.Status_STATUS_PROCESSING
+}
+
 func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest) (*vmpb.ParseBlockResponse, error) {
 	blk, err := vm.vm.ParseBlock(ctx, req.Bytes)
 	if err != nil {
@@ -438,7 +463,7 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	return &vmpb.ParseBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
-		Status:            vmpb.Status(blk.Status()),
+		Status:            vm.getBlockStatus(ctx, blk),
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -469,7 +494,7 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	return &vmpb.GetBlockResponse{
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
-		Status:            vmpb.Status(blk.Status()),
+		Status:            vm.getBlockStatus(ctx, blk),
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,

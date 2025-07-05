@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/utils/constants"
@@ -151,7 +150,13 @@ func (gh *getter) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID 
 	acceptedIDs := make([]ids.ID, 0, containerIDs.Len())
 	for blkID := range containerIDs {
 		blk, err := gh.vm.GetBlock(ctx, blkID)
-		if err == nil && blk.Status() == choices.Accepted {
+		if err != nil {
+			continue
+		}
+		
+		// Check if the block is accepted by comparing with the accepted block at its height
+		acceptedBlkID, err := gh.vm.GetBlockIDAtHeight(ctx, blk.Height())
+		if err == nil && acceptedBlkID == blkID {
 			acceptedIDs = append(acceptedIDs, blkID)
 		}
 	}

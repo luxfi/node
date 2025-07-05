@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common"
 )
 
 var (
