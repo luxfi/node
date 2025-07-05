@@ -56,6 +56,16 @@ type Staker struct {
 	// [priorities.go] and depends on if the stakers are in the pending or
 	// current validator set.
 	Priority txs.Priority
+	
+	// ValidatorNFT contains NFT staking information if applicable
+	ValidatorNFT *ValidatorNFT
+}
+
+// ValidatorNFT represents NFT staking information
+type ValidatorNFT struct {
+	ContractAddress string `json:"contractAddress"`
+	TokenID         uint64 `json:"tokenId"`
+	CollectionName  string `json:"collectionName"`
 }
 
 // A *Staker is considered to be less than another *Staker when:
@@ -94,6 +104,19 @@ func NewCurrentStaker(
 		return nil, err
 	}
 	endTime := staker.EndTime()
+	
+	// Check if staker has NFT information
+	var validatorNFT *ValidatorNFT
+	if nftStaker, ok := staker.(txs.NFTStaker); ok {
+		if nftInfo := nftStaker.GetValidatorNFT(); nftInfo != nil {
+			validatorNFT = &ValidatorNFT{
+				ContractAddress: nftInfo.ContractAddress,
+				TokenID:         nftInfo.TokenID,
+				CollectionName:  nftInfo.CollectionName,
+			}
+		}
+	}
+	
 	return &Staker{
 		TxID:            txID,
 		NodeID:          staker.NodeID(),
@@ -105,6 +128,7 @@ func NewCurrentStaker(
 		PotentialReward: potentialReward,
 		NextTime:        endTime,
 		Priority:        staker.CurrentPriority(),
+		ValidatorNFT:    validatorNFT,
 	}, nil
 }
 
@@ -114,15 +138,29 @@ func NewPendingStaker(txID ids.ID, staker txs.ScheduledStaker) (*Staker, error) 
 		return nil, err
 	}
 	startTime := staker.StartTime()
+	
+	// Check if staker has NFT information
+	var validatorNFT *ValidatorNFT
+	if nftStaker, ok := staker.(txs.NFTStaker); ok {
+		if nftInfo := nftStaker.GetValidatorNFT(); nftInfo != nil {
+			validatorNFT = &ValidatorNFT{
+				ContractAddress: nftInfo.ContractAddress,
+				TokenID:         nftInfo.TokenID,
+				CollectionName:  nftInfo.CollectionName,
+			}
+		}
+	}
+	
 	return &Staker{
-		TxID:      txID,
-		NodeID:    staker.NodeID(),
-		PublicKey: publicKey,
-		SubnetID:  staker.SubnetID(),
-		Weight:    staker.Weight(),
-		StartTime: startTime,
-		EndTime:   staker.EndTime(),
-		NextTime:  startTime,
-		Priority:  staker.PendingPriority(),
+		TxID:         txID,
+		NodeID:       staker.NodeID(),
+		PublicKey:    publicKey,
+		SubnetID:     staker.SubnetID(),
+		Weight:       staker.Weight(),
+		StartTime:    startTime,
+		EndTime:      staker.EndTime(),
+		NextTime:     startTime,
+		Priority:     staker.PendingPriority(),
+		ValidatorNFT: validatorNFT,
 	}, nil
 }

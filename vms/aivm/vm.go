@@ -81,15 +81,6 @@ type AIAgent struct {
 	PublicKey    []byte      `json:"publicKey"`
 }
 
-// GPUProvider represents a GPU compute provider
-type GPUProvider struct {
-	NodeID       ids.NodeID `json:"nodeId"`
-	GPUCount     int        `json:"gpuCount"`
-	GPUType      string     `json:"gpuType"`
-	MemoryGB     int        `json:"memoryGB"`
-	Available    bool       `json:"available"`
-	PricePerHour uint64     `json:"pricePerHour"`
-}
 
 // TaskStatus represents the status of an AI task
 type TaskStatus uint8
