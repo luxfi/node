@@ -67,6 +67,13 @@ type Staker struct {
 	RewardAddress ids.ShortID               `json:"rewardAddress"`
 	DelegationFee uint32                    `json:"delegationFee"`
 	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
+	ValidatorNFT  *ValidatorNFT             `json:"validatorNFT,omitempty"`
+}
+
+type ValidatorNFT struct {
+	ContractAddress string `json:"contractAddress"`
+	TokenID         uint64 `json:"tokenId"`
+	CollectionName  string `json:"collectionName"`
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
@@ -100,7 +107,41 @@ type Config struct {
 	BChainGenesis string `json:"bChainGenesis,omitempty"`
 	ZChainGenesis string `json:"zChainGenesis,omitempty"`
 
+	NFTStakingConfig *NFTStakingConfig `json:"nftStakingConfig,omitempty"`
+	RingtailConfig   *RingtailConfig   `json:"ringtailConfig,omitempty"`
+	MPCConfig        *MPCConfig        `json:"mpcConfig,omitempty"`
+
 	Message string `json:"message"`
+}
+
+type NFTStakingConfig struct {
+	Enabled         bool             `json:"enabled"`
+	NFTContract     string           `json:"nftContract"`
+	RequiredBalance uint64           `json:"requiredBalance"`
+	ValidatorTiers  []ValidatorTier  `json:"validatorTiers"`
+}
+
+type ValidatorTier struct {
+	Name              string `json:"name"`
+	MinTokenID        uint64 `json:"minTokenId"`
+	MaxTokenID        uint64 `json:"maxTokenId"`
+	StakingMultiplier uint32 `json:"stakingMultiplier"`
+}
+
+type RingtailConfig struct {
+	Enabled           bool   `json:"enabled"`
+	SignatureVersion  string `json:"signatureVersion"`
+	RingSize          uint32 `json:"ringSize"`
+	PublicParameters  string `json:"publicParameters"`
+}
+
+type MPCConfig struct {
+	Enabled              bool     `json:"enabled"`
+	Threshold            uint32   `json:"threshold"`
+	Parties              uint32   `json:"parties"`
+	PerAccountMPC        bool     `json:"perAccountMPC"`
+	DefaultKeyGenProtocol string   `json:"defaultKeyGenProtocol"`
+	SupportedProtocols   []string `json:"supportedProtocols"`
 }
 
 func (c Config) Unparse() (UnparsedConfig, error) {

@@ -59,6 +59,7 @@ type UnparsedStaker struct {
 	RewardAddress string                    `json:"rewardAddress"`
 	DelegationFee uint32                    `json:"delegationFee"`
 	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
+	ValidatorNFT  *ValidatorNFT             `json:"validatorNFT,omitempty"`
 }
 
 func (us UnparsedStaker) Parse() (Staker, error) {
@@ -66,6 +67,7 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 		NodeID:        us.NodeID,
 		DelegationFee: us.DelegationFee,
 		Signer:        us.Signer,
+		ValidatorNFT:  us.ValidatorNFT,
 	}
 
 	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
@@ -93,6 +95,13 @@ type UnparsedConfig struct {
 	InitialStakers             []UnparsedStaker `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
+	AChainGenesis string `json:"aChainGenesis,omitempty"`
+	BChainGenesis string `json:"bChainGenesis,omitempty"`
+	ZChainGenesis string `json:"zChainGenesis,omitempty"`
+
+	NFTStakingConfig *NFTStakingConfig `json:"nftStakingConfig,omitempty"`
+	RingtailConfig   *RingtailConfig   `json:"ringtailConfig,omitempty"`
+	MPCConfig        *MPCConfig        `json:"mpcConfig,omitempty"`
 
 	Message string `json:"message"`
 }
