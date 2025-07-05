@@ -105,7 +105,7 @@ func (r *vmRegisterer) createStaticHandlers(
 		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}
 
-	handlers, err := commonVM.CreateStaticHandlers(ctx)
+	handlers, err := commonVM.CreateHandlers(ctx)
 	if err != nil {
 		r.config.Log.Error("failed to create static API endpoints",
 			zap.Stringer("vmID", vmID),

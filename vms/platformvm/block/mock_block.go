@@ -92,7 +92,7 @@ func (m *MockBlock) InitCtx(ctx *snow.Context) {
 // InitCtx indicates an expected call of InitCtx.
 func (mr *MockBlockMockRecorder) InitCtx(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), arg0)
 }
 
 // Parent mocks base method.
@@ -134,7 +134,7 @@ func (m *MockBlock) Visit(visitor Visitor) error {
 // Visit indicates an expected call of Visit.
 func (mr *MockBlockMockRecorder) Visit(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockBlock)(nil).Visit), visitor)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockBlock)(nil).Visit), arg0)
 }
 
 // initialize mocks base method.
@@ -148,5 +148,5 @@ func (m *MockBlock) initialize(bytes []byte) error {
 // initialize indicates an expected call of initialize.
 func (mr *MockBlockMockRecorder) initialize(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), bytes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), arg0)
 }

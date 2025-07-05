@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/vms/components/gas"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var (

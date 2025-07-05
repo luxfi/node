@@ -23,11 +23,6 @@ var (
 	errInvalidTLSSignature     = errors.New("invalid TLS signature")
 )
 
-var (
-	errTimestampTooFarInFuture = errors.New("timestamp too far in the future")
-	errInvalidTLSSignature     = errors.New("invalid TLS signature")
-)
-
 // UnsignedIP is used for a validator to claim an IP. The [Timestamp] is used to
 // ensure that the most updated IP claim is tracked by peers for a given
 // validator.

@@ -30,7 +30,8 @@ func New(maxN int, p float64, maxBytes int) (Filter, error) {
 	if neededBytes := 1 + numHashes*bytesPerHash + numEntries; neededBytes > maxBytes {
 		return nil, errMaxBytes
 	}
-	f, err := bloom.New(uint64(maxN), p, uint64(maxBytes))
+	// Use the bloom filter struct directly
+	f, err := bloom.New(numHashes, numEntries)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +41,25 @@ func New(maxN int, p float64, maxBytes int) (Filter, error) {
 }
 
 type filter struct {
-	filter bloom.Filter
+	filter *bloom.Filter
 }
 
 func (f *filter) Add(bl ...[]byte) {
-	f.filter.Add(bl...)
+	// The bloom.Filter.Add method takes a uint64 hash, not raw bytes
+	// We need to hash the bytes first
+	for _, b := range bl {
+		if len(b) > 0 {
+			hash := bloom.Hash(b, nil)
+			f.filter.Add(hash)
+		}
+	}
 }
 
 func (f *filter) Check(b []byte) bool {
-	return f.filter.Check(b)
+	// Similarly, Contains takes a uint64 hash
+	if len(b) == 0 {
+		return false
+	}
+	hash := bloom.Hash(b, nil)
+	return f.filter.Contains(hash)
 }

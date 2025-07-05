@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package vertex
 
 import (
@@ -30,7 +32,7 @@ type TestVM struct {
 }
 
 func (vm *TestVM) Default(cant bool) {
-	vm.TestVM.Default(cant)
+	vm.VM.Default(cant)
 
 	vm.CantParse = cant
 }

@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package enginetest
 
 import (
@@ -9,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common"
 )
 
 var _ common.Timer = (*Timer)(nil)

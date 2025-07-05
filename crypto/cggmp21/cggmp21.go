@@ -16,6 +16,8 @@ import (
 	"math/big"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -136,9 +138,9 @@ func (p *Party) KeyGen(parties []int) error {
 	// Y = sum([x_i]G) for all i
 	
 	p.log.Info("Key generation completed",
-		"partyID", p.ID,
-		"index", p.Index,
-		"threshold", p.Config.Threshold,
+		zap.Stringer("partyID", p.ID),
+		zap.Int("index", p.Index),
+		zap.Int("threshold", p.Config.Threshold),
 	)
 	
 	return nil

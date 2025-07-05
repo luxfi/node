@@ -47,21 +47,6 @@ const (
 	malformedMessageLog      = "malformed message"
 )
 
-const (
-	// maxBloomSaltLen restricts the allowed size of the bloom salt to prevent
-	// excessively expensive bloom filter contains checks.
-	maxBloomSaltLen = 32
-	// maxNumTrackedSubnets limits how many subnets a peer can track to prevent
-	// excessive memory usage.
-	maxNumTrackedSubnets = 16
-
-	disconnectingLog         = "disconnecting from peer"
-	failedToCreateMessageLog = "failed to create message"
-	failedToSetDeadlineLog   = "failed to set connection deadline"
-	failedToGetUptimeLog     = "failed to get peer uptime percentage"
-	malformedMessageLog      = "malformed message"
-)
-
 var (
 	errClosed = errors.New("closed")
 

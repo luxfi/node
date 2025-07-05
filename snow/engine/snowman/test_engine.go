@@ -7,38 +7,30 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
 )
 
-var (
-	_ Engine = (*EngineTest)(nil)
-
-	errGetBlock = errors.New("unexpectedly called GetBlock")
-)
+var errGetBlock = errors.New("unexpectedly called GetBlock")
 
 // EngineTest is a test engine
 type EngineTest struct {
-	common.EngineTest
+	*Engine
 
 	CantGetBlock bool
 	GetBlockF    func(context.Context, ids.ID) (snowman.Block, error)
 }
 
 func (e *EngineTest) Default(cant bool) {
-	e.EngineTest.Default(cant)
-	e.CantGetBlock = false
+	e.CantGetBlock = cant
 }
 
 func (e *EngineTest) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
 	if e.GetBlockF != nil {
 		return e.GetBlockF(ctx, blkID)
 	}
-	if e.CantGetBlock && e.T != nil {
-		require.FailNow(e.T, errGetBlock.Error())
+	if e.CantGetBlock {
+		return nil, errGetBlock
 	}
 	return nil, errGetBlock
 }

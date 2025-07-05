@@ -39,9 +39,7 @@ func (b *postForkOption) Accept(ctx context.Context) error {
 }
 
 func (b *postForkOption) acceptOuterBlk() error {
-	// Update in-memory references
-	b.status = choices.Accepted
-
+	// No need to update status as blocks no longer maintain their own status
 	return b.vm.acceptPostForkBlock(b)
 }
 
@@ -127,7 +125,8 @@ func (b *postForkOption) pChainHeight(ctx context.Context) (uint64, error) {
 }
 
 func (b *postForkOption) setStatus(status choices.Status) {
-	b.status = status
+	// Status is no longer stored on blocks
+	// This method is now a no-op but kept for interface compatibility
 }
 
 func (b *postForkOption) getStatelessBlk() block.Block {

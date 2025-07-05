@@ -7,9 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/utils/wrappers"
@@ -100,8 +98,6 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 		innerBlockBytes     = make([][]byte, 0, len(blks))
 	)
 
-	parsingResults := statelessblock.ParseBlocks(blks, vm.ctx.ChainID)
-
 	for ; blocksIndex < len(blks); blocksIndex++ {
 		blkBytes := blks[blocksIndex]
 		statelessBlock, err := statelessblock.Parse(blkBytes, vm.ctx.ChainID)
@@ -164,5 +160,6 @@ func (vm *VM) getStatelessBlk(blkID ids.ID) (statelessblock.Block, error) {
 	if currentBlk, exists := vm.verifiedBlocks[blkID]; exists {
 		return currentBlk.getStatelessBlk(), nil
 	}
-	return vm.State.GetBlock(blkID)
+	blk, _, err := vm.State.GetBlock(blkID)
+	return blk, err
 }

@@ -6,21 +6,23 @@ package fee
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/gas"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
-	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
-	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
+
+var ErrUnsupportedTx = errors.New("unsupported transaction type")
 
 const (
 	intrinsicValidatorBandwidth = ids.NodeIDLen + // nodeID
@@ -204,7 +206,7 @@ func TxComplexity(txs ...txs.UnsignedTx) (gas.Dimensions, error) {
 }
 
 // OutputComplexity returns the complexity outputs add to a transaction.
-func OutputComplexity(outs ...*avax.TransferableOutput) (gas.Dimensions, error) {
+func OutputComplexity(outs ...*lux.TransferableOutput) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, out := range outs {
 		outputComplexity, err := outputComplexity(out)
@@ -220,7 +222,7 @@ func OutputComplexity(outs ...*avax.TransferableOutput) (gas.Dimensions, error) 
 	return complexity, nil
 }
 
-func outputComplexity(out *avax.TransferableOutput) (gas.Dimensions, error) {
+func outputComplexity(out *lux.TransferableOutput) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
 		gas.Bandwidth: intrinsicOutputBandwidth + intrinsicSECP256k1FxOutputBandwidth,
 		gas.DBRead:    0,
@@ -240,7 +242,7 @@ func outputComplexity(out *avax.TransferableOutput) (gas.Dimensions, error) {
 	}
 
 	numAddresses := uint64(len(secp256k1Out.Addrs))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
+	addressBandwidth, err := math.Mul64(numAddresses, ids.ShortIDLen)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -250,7 +252,7 @@ func outputComplexity(out *avax.TransferableOutput) (gas.Dimensions, error) {
 
 // InputComplexity returns the complexity inputs add to a transaction.
 // It includes the complexity that the corresponding credentials will add.
-func InputComplexity(ins ...*avax.TransferableInput) (gas.Dimensions, error) {
+func InputComplexity(ins ...*lux.TransferableInput) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, in := range ins {
 		inputComplexity, err := inputComplexity(in)
@@ -266,7 +268,7 @@ func InputComplexity(ins ...*avax.TransferableInput) (gas.Dimensions, error) {
 	return complexity, nil
 }
 
-func inputComplexity(in *avax.TransferableInput) (gas.Dimensions, error) {
+func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
 		gas.Bandwidth: intrinsicInputBandwidth + intrinsicSECP256k1FxTransferableInputBandwidth,
 		gas.DBRead:    intrinsicInputDBRead,
@@ -286,7 +288,7 @@ func inputComplexity(in *avax.TransferableInput) (gas.Dimensions, error) {
 	}
 
 	numSignatures := uint64(len(secp256k1In.SigIndices))
-	signatureBandwidth, err := math.Mul(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
+	signatureBandwidth, err := math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -303,7 +305,7 @@ func OwnerComplexity(ownerIntf fx.Owner) (gas.Dimensions, error) {
 	}
 
 	numAddresses := uint64(len(owner.Addrs))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
+	addressBandwidth, err := math.Mul64(numAddresses, ids.ShortIDLen)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -332,7 +334,7 @@ func AuthComplexity(authIntf verify.Verifiable) (gas.Dimensions, error) {
 	}
 
 	numSignatures := uint64(len(auth.SigIndices))
-	signatureBandwidth, err := math.Mul(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
+	signatureBandwidth, err := math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -472,7 +474,7 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 }
 
 func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	bandwidth, err := math.Mul(uint64(len(tx.FxIDs)), ids.IDLen)
+	bandwidth, err := math.Mul64(uint64(len(tx.FxIDs)), ids.IDLen)
 	if err != nil {
 		return err
 	}
