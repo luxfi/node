@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package zkutxovm
+package zvm
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	_ vms.VM = (*VM)(nil)
+	_ block.ChainVM = (*VM)(nil)
 
 	Version = &version.Semantic{
 		Major: 1,
@@ -37,8 +37,8 @@ var (
 	errNotImplemented = errors.New("not implemented")
 )
 
-// ZKConfig contains VM configuration
-type ZKConfig struct {
+// ZConfig contains VM configuration
+type ZConfig struct {
 	// Privacy configuration
 	EnableConfidentialTransfers bool `json:"enableConfidentialTransfers"`
 	EnablePrivateAddresses      bool `json:"enablePrivateAddresses"`
@@ -103,7 +103,7 @@ func (vm *VM) Initialize(
 	upgradeBytes []byte,
 	configBytes []byte,
 	toEngine chan<- common.Message,
-	fxs []*vms.Fx,
+	fxs []*common.Fx,
 	appSender common.AppSender,
 ) error {
 	vm.ctx = chainCtx

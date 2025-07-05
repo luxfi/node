@@ -11,6 +11,7 @@ import (
 	"net/netip"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -216,6 +217,7 @@ func NewTestNetwork(
 				resourceTracker.DiskTracker(),
 			),
 		},
+		time.Time{}, // minCompatibleTime
 		msgCreator,
 		metrics,
 		log,

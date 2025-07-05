@@ -16,19 +16,21 @@ import (
 )
 
 var (
-	PChainAliases = []string{"P", "platform"}
-	XChainAliases = []string{"X", "avm"}
-	CChainAliases = []string{"C", "evm"}
-	AChainAliases = []string{"A", "aivm"}
-	BChainAliases = []string{"B", "bridgevm"}
-	ZChainAliases = []string{"Z", "zkvm"}
+	DChainAliases = []string{"D", "dao", "platform"}  // D-Chain for DAO governance (legacy platform alias)
+	XChainAliases = []string{"X", "xvm", "exchange"}
+	CChainAliases = []string{"C", "cvm", "evm"}
+	AChainAliases = []string{"A", "avm", "attestation"}
+	BChainAliases = []string{"B", "bvm", "bridge"}
+	ZChainAliases = []string{"Z", "zvm", "zero"}
+	YChainAliases = []string{"Y", "yvm", "yield"}
 	VMAliases     = map[ids.ID][]string{
-		constants.PlatformVMID: {"platform"},
-		constants.AVMID:        {"avm"},
-		constants.EVMID:        {"evm"},
-		constants.AIVMID:       {"aivm"},
-		constants.BridgeVMID:   {"bridgevm"},
-		constants.ZKVMID:       {"zkvm"},
+		constants.PlatformVMID: {"dvm", "dao", "platform"},  // D-Chain DAO VM
+		constants.AVMID:        {"xvm", "exchange"},         // X-Chain Exchange VM
+		constants.EVMID:        {"cvm", "evm"},              // C-Chain Contract VM
+		constants.AttestVMID:   {"avm", "attestation"},      // A-Chain Attestation VM
+		constants.BridgeVMID:   {"bvm", "bridge"},           // B-Chain Bridge VM
+		constants.ZeroVMID:     {"zvm", "zero"},             // Z-Chain Zero-knowledge VM
+		constants.YieldVMID:    {"yvm", "yield"},            // Y-Chain Yield/quantum VM
 		secp256k1fx.ID:         {"secp256k1fx"},
 		nftfx.ID:               {"nftfx"},
 		propertyfx.ID:          {"propertyfx"},
@@ -39,14 +41,16 @@ var (
 func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, error) {
 	apiAliases := map[string][]string{
 		path.Join(constants.ChainAliasPrefix, constants.PlatformChainID.String()): {
-			"P",
-			"platform",
-			path.Join(constants.ChainAliasPrefix, "P"),
+			"D",
+			"dao",
+			"platform",  // Keep for backwards compatibility
+			path.Join(constants.ChainAliasPrefix, "D"),
+			path.Join(constants.ChainAliasPrefix, "dao"),
 			path.Join(constants.ChainAliasPrefix, "platform"),
 		},
 	}
 	chainAliases := map[ids.ID][]string{
-		constants.PlatformChainID: PChainAliases,
+		constants.PlatformChainID: DChainAliases,
 	}
 
 	genesis, err := genesis.Parse(genesisBytes) // TODO let's not re-create genesis to do aliasing
@@ -98,6 +102,14 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "zkvm"),
 			}
 			chainAliases[chainID] = ZChainAliases
+		case constants.YieldVMID:
+			apiAliases[endpoint] = []string{
+				"Y",
+				"yvm",
+				path.Join(constants.ChainAliasPrefix, "Y"),
+				path.Join(constants.ChainAliasPrefix, "yvm"),
+			}
+			chainAliases[chainID] = YChainAliases
 		}
 	}
 	return apiAliases, chainAliases, nil

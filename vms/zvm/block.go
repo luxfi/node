@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package zkutxovm
+package zvm
 
 import (
 	"bytes"
@@ -18,8 +18,8 @@ import (
 // Block represents a block in the ZK UTXO chain
 type Block struct {
 	ParentID   ids.ID         `json:"parentId"`
-	Height     uint64         `json:"height"`
-	Timestamp  int64          `json:"timestamp"`
+	BlockHeight uint64         `json:"height"`
+	BlockTimestamp  int64          `json:"timestamp"`
 	Txs        []*Transaction `json:"transactions"`
 	StateRoot  []byte         `json:"stateRoot"`   // Merkle tree root of UTXO set
 	
