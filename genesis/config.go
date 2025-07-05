@@ -22,6 +22,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
+const localNetworkUpdateStartTimePeriod = 5 * time.Minute
+
 var (
 	_ utils.Sortable[Allocation] = Allocation{}
 
@@ -67,10 +69,10 @@ type Staker struct {
 	RewardAddress ids.ShortID               `json:"rewardAddress"`
 	DelegationFee uint32                    `json:"delegationFee"`
 	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
-	ValidatorNFT  *ValidatorNFT             `json:"validatorNFT,omitempty"`
+	ValidatorNFT  *StakerValidatorNFT             `json:"validatorNFT,omitempty"`
 }
 
-type ValidatorNFT struct {
+type StakerValidatorNFT struct {
 	ContractAddress string `json:"contractAddress"`
 	TokenID         uint64 `json:"tokenId"`
 	CollectionName  string `json:"collectionName"`

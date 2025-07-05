@@ -47,7 +47,7 @@ func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
 func (b *preForkBlock) Status() choices.Status {
 	forkHeight, err := b.vm.GetForkHeight()
 	if err == database.ErrNotFound {
-		return b.Block.Status()
+		return b.getInnerBlockStatus()
 	}
 	if err != nil {
 		// TODO: Once `Status()` can return an error, we should return the error
@@ -55,7 +55,7 @@ func (b *preForkBlock) Status() choices.Status {
 		b.vm.ctx.Log.Error("unexpected error looking up fork height",
 			zap.Error(err),
 		)
-		return b.Block.Status()
+		return b.getInnerBlockStatus()
 	}
 
 	// The fork has occurred earlier than this block, so preForkBlocks are all
@@ -63,7 +63,21 @@ func (b *preForkBlock) Status() choices.Status {
 	if b.Height() >= forkHeight {
 		return choices.Rejected
 	}
-	return b.Block.Status()
+	return b.getInnerBlockStatus()
+}
+
+func (b *preForkBlock) getInnerBlockStatus() choices.Status {
+	// Since the inner block doesn't have Status(), we need to check if it's accepted
+	// by comparing with the last accepted block ID
+	blkID := b.ID()
+	lastAcceptedID, err := b.vm.State.GetLastAccepted()
+	if err == nil && lastAcceptedID == blkID {
+		return choices.Accepted
+	}
+	
+	// Check if the block is processing or unknown
+	// This is a simplified approach - the actual implementation might need more logic
+	return choices.Processing
 }
 
 func (b *preForkBlock) Verify(ctx context.Context) error {

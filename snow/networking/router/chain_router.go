@@ -196,7 +196,7 @@ func (cr *ChainRouter) RegisterRequest(
 	// Register a timeout to fire if we don't get a reply in time.
 	cr.timeoutManager.RegisterRequest(
 		nodeID,
-		respondingChainID,
+		chainID,
 		shouldMeasureLatency,
 		uniqueRequestID,
 		func() {
@@ -346,7 +346,7 @@ func (cr *ChainRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		return
 	}
 
-	uniqueRequestID, req := cr.clearRequest(op, nodeID, chainID, requestID)
+	uniqueRequestID, req := cr.clearRequest(op, nodeID, destinationChainID, requestID)
 	if req == nil {
 		// We didn't request this message.
 		msg.OnFinishedHandling()

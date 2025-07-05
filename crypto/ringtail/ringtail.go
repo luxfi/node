@@ -10,7 +10,6 @@ import (
 	"math/big"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto"
 )
 
 const (
@@ -51,11 +50,11 @@ type RingSignature struct {
 	RingPubKeys []*PublicKey
 }
 
-// Factory implements the crypto.FactorySECP256K1 interface
+// Factory implements a factory for Ringtail keys
 type Factory struct{}
 
 // NewPrivateKey generates a new private key
-func (*Factory) NewPrivateKey() (crypto.PrivateKey, error) {
+func (*Factory) NewPrivateKey() (*PrivateKey, error) {
 	scalar, err := rand.Int(rand.Reader, curveOrder())
 	if err != nil {
 		return nil, err
@@ -65,13 +64,12 @@ func (*Factory) NewPrivateKey() (crypto.PrivateKey, error) {
 }
 
 // ToPublicKey converts a private key to its corresponding public key
-func (*Factory) ToPublicKey(privKey crypto.PrivateKey) (crypto.PublicKey, error) {
-	priv, ok := privKey.(*PrivateKey)
-	if !ok {
-		return nil, errors.New("invalid private key type")
+func (*Factory) ToPublicKey(privKey *PrivateKey) (*PublicKey, error) {
+	if privKey == nil {
+		return nil, errors.New("nil private key")
 	}
 	
-	point := scalarBaseMult(priv.Scalar)
+	point := scalarBaseMult(privKey.Scalar)
 	return &PublicKey{Point: point}, nil
 }
 
@@ -110,9 +108,6 @@ func (priv *PrivateKey) Sign(message []byte, ring []*PublicKey) (*RingSignature,
 	}
 	
 	// Start the ring computation
-	messageHash := sha256.Sum256(message)
-	h := new(big.Int).SetBytes(messageHash[:])
-	
 	// Generate random nonce
 	k, _ := rand.Int(rand.Reader, curveOrder())
 	
@@ -206,7 +201,9 @@ func (pub *PublicKey) Bytes() []byte {
 
 // Address returns the address of the public key
 func (pub *PublicKey) Address() ids.ShortID {
-	return ids.ShortID(sha256.Sum256(pub.Bytes()))
+	hash := sha256.Sum256(pub.Bytes())
+	addr, _ := ids.ToShortID(hash[:])
+	return addr
 }
 
 // Helper functions for elliptic curve operations

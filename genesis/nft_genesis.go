@@ -6,7 +6,6 @@ package genesis
 import (
 	"encoding/json"
 	"errors"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/luxfi/node/ids"

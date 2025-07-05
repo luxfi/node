@@ -11,22 +11,26 @@ import (
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 )
 
+type Calculator interface {
+	CalculateFee(tx txs.UnsignedTx) (uint64, error)
+}
+
 var _ txs.Visitor = (*calculator)(nil)
 
-func NewStaticCalculator(config StaticConfig, upgradeTimes upgrade.Config) *Calculator {
-	return &Calculator{
+func NewStaticCalculator(config StaticConfig, upgradeTimes upgrade.Config) *StaticFeeCalculator {
+	return &StaticFeeCalculator{
 		config:       config,
 		upgradeTimes: upgradeTimes,
 	}
 }
 
-type Calculator struct {
+type StaticFeeCalculator struct {
 	config       StaticConfig
 	upgradeTimes upgrade.Config
 }
 
 // [CalculateFee] returns the minimal fee needed to accept [tx], at chain time [time]
-func (c *Calculator) CalculateFee(tx txs.UnsignedTx, time time.Time) uint64 {
+func (c *StaticFeeCalculator) CalculateFee(tx txs.UnsignedTx, time time.Time) uint64 {
 	tmp := &calculator{
 		upgrades:  c.upgradeTimes,
 		staticCfg: c.config,

@@ -67,7 +67,15 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 		NodeID:        us.NodeID,
 		DelegationFee: us.DelegationFee,
 		Signer:        us.Signer,
-		ValidatorNFT:  us.ValidatorNFT,
+	}
+	
+	// Convert ValidatorNFT to StakerValidatorNFT if present
+	if us.ValidatorNFT != nil {
+		s.ValidatorNFT = &StakerValidatorNFT{
+			ContractAddress: "", // Not used in full ValidatorNFT
+			TokenID:         us.ValidatorNFT.TokenID,
+			CollectionName:  us.ValidatorNFT.Tier + " Validator",
+		}
 	}
 
 	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)

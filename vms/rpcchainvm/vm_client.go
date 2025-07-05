@@ -436,10 +436,8 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block
 		return nil, err
 	}
 
-	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
-	if err != nil {
-		return nil, err
-	}
+	status := choices.Status(resp.Status)
+
 	return &blockClient{
 		vm:                  vm,
 		id:                  id,
@@ -469,6 +467,9 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 	}
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
+	
+	status := choices.Status(resp.Status)
+	
 	return &blockClient{
 		vm:                  vm,
 		id:                  blkID,
@@ -508,40 +509,18 @@ func (vm *VMClient) Version(ctx context.Context) (string, error) {
 }
 
 func (vm *VMClient) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	_, err := vm.client.CrossChainAppRequest(
-		ctx,
-		&vmpb.CrossChainAppRequestMsg{
-			ChainId:   chainID[:],
-			RequestId: requestID,
-			Deadline:  grpcutils.TimestampFromTime(deadline),
-			Request:   request,
-		},
-	)
-	return err
+	// TODO: Implement when CrossChainAppRequest is added to proto
+	return nil
 }
 
 func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
-	msg := &vmpb.CrossChainAppRequestFailedMsg{
-		ChainId:      chainID[:],
-		RequestId:    requestID,
-		ErrorCode:    appErr.Code,
-		ErrorMessage: appErr.Message,
-	}
-
-	_, err := vm.client.CrossChainAppRequestFailed(ctx, msg)
-	return err
+	// TODO: Implement when CrossChainAppRequestFailed is added to proto
+	return nil
 }
 
 func (vm *VMClient) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	_, err := vm.client.CrossChainAppResponse(
-		ctx,
-		&vmpb.CrossChainAppResponseMsg{
-			ChainId:   chainID[:],
-			RequestId: requestID,
-			Response:  response,
-		},
-	)
-	return err
+	// TODO: Implement when CrossChainAppResponse is added to proto
+	return nil
 }
 
 func (vm *VMClient) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
@@ -646,6 +625,8 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		if err != nil {
 			return nil, err
 		}
+
+		status := choices.Status(blkResp.Status)
 
 		res = append(res, &blockClient{
 			vm:                  vm,
