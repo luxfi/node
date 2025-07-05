@@ -96,6 +96,9 @@ type Config struct {
 	InitialStakers             []Staker      `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
+	AChainGenesis string `json:"aChainGenesis,omitempty"`
+	BChainGenesis string `json:"bChainGenesis,omitempty"`
+	ZChainGenesis string `json:"zChainGenesis,omitempty"`
 
 	Message string `json:"message"`
 }

@@ -74,9 +74,12 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/aivm"
 	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/bridgevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -1256,6 +1259,9 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bridgevm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
 	)
 	if err != nil {
 		return err
