@@ -14,7 +14,7 @@ type mapFilter struct {
 	values set.Set[string]
 }
 
-func NewMap() Filter {
+func NewMap() BloomFilter {
 	return &mapFilter{}
 }
 
