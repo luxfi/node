@@ -165,6 +165,10 @@ func (in *TransferableInput) Less(other *TransferableInput) bool {
 	return in.UTXOID.Less(&other.UTXOID)
 }
 
+func (in *TransferableInput) Compare(other *TransferableInput) int {
+	return in.UTXOID.Compare(&other.UTXOID)
+}
+
 type innerSortTransferableInputsWithSigners struct {
 	ins     []*TransferableInput
 	signers [][]*secp256k1.PrivateKey
