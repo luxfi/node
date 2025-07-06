@@ -5,7 +5,6 @@ package compression
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -15,10 +14,6 @@ import (
 
 var (
 	_ Compressor = (*zstdCompressor)(nil)
-
-	ErrInvalidMaxSizeCompressor = errors.New("invalid compressor max size")
-	ErrDecompressedMsgTooLarge  = errors.New("decompressed msg too large")
-	ErrMsgTooLarge              = errors.New("msg too large to be compressed")
 )
 
 func NewZstdCompressor(maxSize int64) (Compressor, error) {
