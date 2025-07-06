@@ -201,4 +201,10 @@ const (
 	TracingExporterTypeKey                             = "tracing-exporter-type"
 	TracingHeadersKey                                  = "tracing-headers"
 	ProcessContextFileKey                              = "process-context-file"
+
+	// POA Mode Keys
+	POAModeEnabledKey     = "poa-mode-enabled"
+	POASingleNodeModeKey  = "poa-single-node-mode"
+	POAMinBlockTimeKey    = "poa-min-block-time"
+	POAAuthorizedNodesKey = "poa-authorized-nodes"
 )

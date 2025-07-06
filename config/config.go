@@ -88,6 +88,13 @@ var (
 )
 
 func getConsensusConfig(v *viper.Viper) snowball.Parameters {
+	// Check if POA mode is enabled
+	if v.GetBool(POAModeEnabledKey) {
+		// Return POA optimized parameters
+		return subnets.GetPOAConsensusParameters()
+	}
+
+	// Standard consensus parameters
 	p := snowball.Parameters{
 		K:                     v.GetInt(SnowSampleSizeKey),
 		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
@@ -1081,12 +1088,26 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 }
 
 func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
-	return subnets.Config{
+	config := subnets.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
 		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
 		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
+		POAEnabled:                  v.GetBool(POAModeEnabledKey),
+		POASingleNodeMode:           v.GetBool(POASingleNodeModeKey),
+		POAMinBlockTime:             v.GetDuration(POAMinBlockTimeKey),
 	}
+
+	// If POA mode is enabled, adjust consensus parameters
+	if config.POAEnabled {
+		config.ConsensusParameters = subnets.GetPOAConsensusParameters()
+		if config.POAMinBlockTime == 0 {
+			config.POAMinBlockTime = 1 * time.Second
+		}
+		config.ProposerMinBlockDelay = config.POAMinBlockTime
+	}
+
+	return config
 }
 
 func getCPUTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {

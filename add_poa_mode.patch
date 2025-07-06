@@ -1,0 +1,127 @@
+diff --git a/config/keys.go b/config/keys.go
+index 1234567..2345678 100644
+--- a/config/keys.go
++++ b/config/keys.go
+@@ -198,0 +199,10 @@ const (
+ 	TracingEndpointKey                                 = "tracing-endpoint"
+ 	TracingInsecureKey                                 = "tracing-insecure"
+ 	TracingSampleRateKey                               = "tracing-sample-rate"
++	
++	// POA Mode Keys
++	POAModeEnabledKey                                  = "poa-mode-enabled"
++	POASingleNodeModeKey                               = "poa-single-node-mode"
++	POAMinBlockTimeKey                                 = "poa-min-block-time"
++	POAAuthorizedNodesKey                              = "poa-authorized-nodes"
++	POAForceSingleValidatorKey                         = "poa-force-single-validator"
+ )
+
+diff --git a/config/flags.go b/config/flags.go
+index 3456789..4567890 100644
+--- a/config/flags.go
++++ b/config/flags.go
+@@ -210,0 +211,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
+ 	
+ 	// Tracing
+ 	fs.Bool(TracingEnabledKey, false, "If true, enable opentelemetry tracing")
++	
++	// POA Mode
++	fs.Bool(POAModeEnabledKey, false, "Enable Proof of Authority mode for subnets")
++	fs.Bool(POASingleNodeModeKey, false, "Enable single node POA mode (no consensus required)")
++	fs.Duration(POAMinBlockTimeKey, 1*time.Second, "Minimum time between blocks in POA mode")
++	fs.StringSlice(POAAuthorizedNodesKey, nil, "List of authorized nodes for POA mode")
+ }
+
+diff --git a/config/config.go b/config/config.go
+index 5678901..6789012 100644
+--- a/config/config.go
++++ b/config/config.go
+@@ -88,0 +89,11 @@ var (
+ )
+ 
+ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
++	// Check if POA mode is enabled
++	if v.GetBool(POAModeEnabledKey) {
++		// Return POA optimized parameters
++		return getPOAConsensusConfig(v)
++	}
++	
++	// Standard consensus parameters
+ 	p := snowball.Parameters{
+ 		K:                     v.GetInt(SnowSampleSizeKey),
+ 		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
+@@ -100,0 +112,20 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
+ 	}
+ 	return p
+ }
++
++func getPOAConsensusConfig(v *viper.Viper) snowball.Parameters {
++	return snowball.Parameters{
++		K:                     1, // Only query 1 node in POA
++		AlphaPreference:       1, // Change preference with 1 vote
++		AlphaConfidence:       1, // Increase confidence with 1 vote
++		Beta:                  1, // Only 1 successful query for finalization
++		ConcurrentRepolls:     1, // Only 1 concurrent repoll
++		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
++		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
++		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
++	}
++}
+
+diff --git a/node/node.go b/node/node.go
+index 7890123..8901234 100644
+--- a/node/node.go
++++ b/node/node.go
+@@ -1300,0 +1301,15 @@ func (n *Node) initChains(genesisBytes []byte) error {
++	// Apply POA mode if enabled
++	if n.Config.POAModeEnabled {
++		n.Log.Info("POA mode enabled - applying single validator configuration")
++		
++		// Override subnet configs for POA
++		for subnetID, subnetConfig := range n.Config.SubnetConfigs {
++			poaConfig := subnets.POAConfig{
++				Enabled:        true,
++				SingleNodeMode: n.Config.POASingleNodeMode,
++				MinBlockTime:   n.Config.POAMinBlockTime,
++			}
++			subnetConfig.ApplyPOAConfig(poaConfig)
++			n.Config.SubnetConfigs[subnetID] = subnetConfig
++		}
++	}
++	
+ 	// Start the Platform chain
+ 	n.Log.Info("creating platform chain")
+
+diff --git a/node/config.go b/node/config.go
+index 2345678..3456789 100644
+--- a/node/config.go
++++ b/node/config.go
+@@ -200,0 +201,10 @@ type Config struct {
+ 	// SybilProtectionDisabledWeight
+ 	SybilProtectionDisabledWeight uint64 `json:"sybilProtectionDisabledWeight"`
+ 	
++	// POA Mode Configuration
++	POAModeEnabled     bool          `json:"poaModeEnabled"`
++	POASingleNodeMode  bool          `json:"poaSingleNodeMode"`
++	POAMinBlockTime    time.Duration `json:"poaMinBlockTime"`
++	POAAuthorizedNodes []string      `json:"poaAuthorizedNodes"`
++	
+ 	TLSKeyLogFile string `json:"tlsKeyLogFile"`
+ 
+diff --git a/chains/manager.go b/chains/manager.go
+index 4567890..5678901 100644
+--- a/chains/manager.go
++++ b/chains/manager.go
+@@ -1100,0 +1101,12 @@ func (m *manager) createSnowmanChain(
+ 		}
+ 	}
+ 	
++	// Apply POA consensus if enabled for this subnet
++	if m.POAModeEnabled && subnetCfg != nil {
++		// Override consensus engine for POA mode
++		ctx.Log.Info("applying POA consensus to chain", 
++			zap.String("chainID", chainParams.ID.String()))
++		consensusParams = m.getPOAConsensusParams()
++	}
++	
+ 	// Initialize the consensus engine
+ 	ctx.Log.Info("initializing consensus engine")

@@ -216,4 +216,10 @@ type Config struct {
 	// Path to write process context to (including PID, API URI, and
 	// staking address).
 	ProcessContextFilePath string `json:"processContextFilePath"`
+
+	// POA Mode Configuration
+	POAModeEnabled     bool          `json:"poaModeEnabled"`
+	POASingleNodeMode  bool          `json:"poaSingleNodeMode"`
+	POAMinBlockTime    time.Duration `json:"poaMinBlockTime"`
+	POAAuthorizedNodes []string      `json:"poaAuthorizedNodes"`
 }

@@ -362,6 +362,12 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.StringToString(TracingHeadersKey, map[string]string{}, "The headers to provide the trace indexer")
 
 	fs.String(ProcessContextFileKey, defaultProcessContextPath, "The path to write process context to (including PID, API URI, and staking address).")
+
+	// POA Mode
+	fs.Bool(POAModeEnabledKey, false, "Enable Proof of Authority mode for subnets")
+	fs.Bool(POASingleNodeModeKey, false, "Enable single node POA mode (no consensus required)")
+	fs.Duration(POAMinBlockTimeKey, 1*time.Second, "Minimum time between blocks in POA mode")
+	fs.StringSlice(POAAuthorizedNodesKey, nil, "List of authorized nodes for POA mode")
 }
 
 // BuildFlagSet returns a complete set of flags for node
