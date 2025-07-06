@@ -49,6 +49,11 @@ type Config struct {
 	// TODO: Move this flag once the proposervm is configurable on a per-chain
 	// basis.
 	ProposerNumHistoricalBlocks uint64 `json:"proposerNumHistoricalBlocks" yaml:"proposerNumHistoricalBlocks"`
+
+	// POA Mode Configuration
+	POAEnabled        bool          `json:"poaEnabled" yaml:"poaEnabled"`
+	POASingleNodeMode bool          `json:"poaSingleNodeMode" yaml:"poaSingleNodeMode"`
+	POAMinBlockTime   time.Duration `json:"poaMinBlockTime" yaml:"poaMinBlockTime"`
 }
 
 func (c *Config) Valid() error {
@@ -59,4 +64,18 @@ func (c *Config) Valid() error {
 		return errAllowedNodesWhenNotValidatorOnly
 	}
 	return nil
+}
+
+// GetPOAConsensusParameters returns snowball parameters optimized for POA mode
+func GetPOAConsensusParameters() snowball.Parameters {
+	return snowball.Parameters{
+		K:                     1, // Only query 1 node (ourselves)
+		AlphaPreference:       1, // Change preference with 1 vote
+		AlphaConfidence:       1, // Increase confidence with 1 vote
+		Beta:                  1, // Only need 1 successful query for finalization
+		ConcurrentRepolls:     1, // Only 1 concurrent repoll needed
+		OptimalProcessing:     10,
+		MaxOutstandingItems:   256,
+		MaxItemProcessingTime: 30 * time.Second,
+	}
 }
