@@ -14,7 +14,7 @@ import (
 	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"

@@ -66,8 +66,8 @@ type ChainStakeRequirement struct {
 // DefaultTokenomicsConfig returns the default tokenomics configuration
 func DefaultTokenomicsConfig() *TokenomicsConfig {
 	return &TokenomicsConfig{
-		// 2 Trillion total supply
-		TotalSupply: 2_000_000_000_000 * 1e9, // 2T tokens with 9 decimals
+		// 10 Billion total supply (with 9 decimals = 10^19 units)
+		TotalSupply: 10_000_000_000_000_000_000, // 10B tokens with 9 decimals
 
 		AirdropConfig: AirdropConfig{
 			Enabled:          true,
@@ -79,25 +79,25 @@ func DefaultTokenomicsConfig() *TokenomicsConfig {
 
 		StakingConfig: StakingConfig{
 			// 1M LUX minimum for validators (can be combined)
-			MinimumValidatorStake: 1_000_000 * 1e9, // 1M tokens with 9 decimals
+			MinimumValidatorStake: 1_000_000_000_000_000, // 1M tokens with 9 decimals
 			
 			NFTStakingEnabled: true,
 			NFTTiers: []NFTTier{
 				{
 					Name:              "Genesis",
-					RequiredLUX:       500_000 * 1e9,  // 500K LUX with Genesis NFT
+					RequiredLUX:       500_000_000_000_000,  // 500K LUX with Genesis NFT
 					StakingMultiplier: 200,             // 2x rewards
 					MaxValidators:     100,
 				},
 				{
 					Name:              "Pioneer",
-					RequiredLUX:       750_000 * 1e9,  // 750K LUX with Pioneer NFT
+					RequiredLUX:       750_000_000_000_000,  // 750K LUX with Pioneer NFT
 					StakingMultiplier: 150,             // 1.5x rewards
 					MaxValidators:     500,
 				},
 				{
 					Name:              "Standard",
-					RequiredLUX:       1_000_000 * 1e9, // 1M LUX standard
+					RequiredLUX:       1_000_000_000_000_000, // 1M LUX standard
 					StakingMultiplier: 100,              // 1x rewards
 					MaxValidators:     0,                // Unlimited
 				},
@@ -143,12 +143,12 @@ func DefaultTokenomicsConfig() *TokenomicsConfig {
 
 		// Chain allocations (percentage of total supply)
 		ChainAllocations: map[string]uint64{
-			"P-Chain": 300_000_000_000 * 1e9,  // 300B for staking/governance
-			"X-Chain": 400_000_000_000 * 1e9,  // 400B for exchanges/liquidity
-			"C-Chain": 600_000_000_000 * 1e9,  // 600B for smart contracts/DeFi
-			"A-Chain": 300_000_000_000 * 1e9,  // 300B for AI operations
-			"B-Chain": 200_000_000_000 * 1e9,  // 200B for bridge liquidity
-			"Z-Chain": 200_000_000_000 * 1e9,  // 200B for privacy/ZK operations
+			"P-Chain": 1_500_000_000_000_000_000,  // 1.5B for staking/governance (15%)
+			"X-Chain": 2_000_000_000_000_000_000,  // 2B for exchanges/liquidity (20%)
+			"C-Chain": 3_000_000_000_000_000_000,  // 3B for smart contracts/DeFi (30%)
+			"A-Chain": 1_500_000_000_000_000_000,  // 1.5B for attestation operations (15%)
+			"B-Chain": 1_000_000_000_000_000_000,  // 1B for bridge liquidity (10%)
+			"Z-Chain": 1_000_000_000_000_000_000,  // 1B for privacy/ZK operations (10%)
 		},
 	}
 }

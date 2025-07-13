@@ -1,0 +1,23 @@
+FROM golang:1.23-alpine AS builder
+
+RUN apk add --no-cache git make gcc musl-dev linux-headers bash
+
+WORKDIR /build
+
+COPY . .
+
+RUN ./scripts/build.sh
+
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /build/build/luxd /usr/local/bin/luxd
+
+RUN adduser -D -h /app luxd
+USER luxd
+WORKDIR /app
+
+EXPOSE 9650 9651
+
+ENTRYPOINT ["/usr/local/bin/luxd"]

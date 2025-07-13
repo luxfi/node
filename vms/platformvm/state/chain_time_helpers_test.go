@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/upgrade/upgradetest"
-	"github.com/ava-labs/avalanchego/vms/platformvm/config"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
 
 func TestPickFeeCalculator(t *testing.T) {

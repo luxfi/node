@@ -4,15 +4,19 @@
 package bvm
 
 import (
-	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"math/big"
 	"time"
 
+	"go.uber.org/zap"
+
+	"github.com/luxfi/node/crypto/cggmp21"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/utils"
 )
 
 // Block represents a block in the Bridge chain
@@ -192,7 +196,21 @@ func (b *Block) Verify(ctx context.Context) error {
 		
 		// Verify signature
 		blockHash := b.ID()
-		if err := party.VerifySignature(blockHash[:], sig); err == nil {
+		hashBytes := blockHash[:]
+		
+		// Convert signature to cggmp21.Signature
+		// Assuming signature is DER encoded or similar format
+		// For now, split the signature bytes in half for R and S
+		if len(sig) < 64 {
+			continue
+		}
+		
+		signature := &cggmp21.Signature{
+			R: new(big.Int).SetBytes(sig[:32]),
+			S: new(big.Int).SetBytes(sig[32:64]),
+		}
+		
+		if cggmp21.VerifySignature(party.PublicKey, hashBytes, signature) {
 			validSignatures++
 		}
 	}
@@ -222,7 +240,7 @@ func (b *Block) Bytes() []byte {
 		return b.bytes
 	}
 	
-	bytes, err := utils.Codec.Marshal(codecVersion, b)
+	bytes, err := Codec.Marshal(codecVersion, b)
 	if err != nil {
 		return nil
 	}

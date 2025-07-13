@@ -7,14 +7,13 @@ import "github.com/luxfi/node/ids"
 
 const (
 	PlatformVMName = "platformvm"
-	AVMName        = "avm"
-	EVMName        = "evm"
-	SubnetEVMName  = "subnetevm"
-	XSVMName       = "xsvm"
-	AttestVMName   = "attestvm"
-	BridgeVMName   = "bridgevm"
-	ZeroVMName     = "zerovm"
-	YieldVMName    = "yieldvm"
+	AVMName        = "avm"         // Asset VM (X-Chain)
+	EVMName        = "evm"         // Ethereum VM (C-Chain)
+	SubnetEVMName  = "subnetevm"   // Subnet EVM
+	XSVMName       = "xsvm"        // Example/Simple VM
+	AttestVMName   = "attestvm"    // Attestation VM (A-Chain)
+	BridgeVMName   = "bridgevm"    // Bridge VM (B-Chain)
+	ZVMName        = "zvm"         // Zero-Knowledge VM (Z-Chain)
 )
 
 var (
@@ -25,8 +24,7 @@ var (
 	XSVMID       = ids.ID{'x', 's', 'v', 'm'}
 	AttestVMID   = ids.ID{'a', 't', 't', 'e', 's', 't', 'v', 'm'}
 	BridgeVMID   = ids.ID{'b', 'r', 'i', 'd', 'g', 'e', 'v', 'm'}
-	ZeroVMID     = ids.ID{'z', 'e', 'r', 'o', 'v', 'm'}
-	YieldVMID    = ids.ID{'y', 'i', 'e', 'l', 'd', 'v', 'm'}
+	ZVMID        = ids.ID{'z', 'v', 'm'}
 )
 
 // VMName returns the name of the VM with the provided ID. If a human readable
@@ -47,10 +45,8 @@ func VMName(vmID ids.ID) string {
 		return AttestVMName
 	case BridgeVMID:
 		return BridgeVMName
-	case ZeroVMID:
-		return ZeroVMName
-	case YieldVMID:
-		return YieldVMName
+	case ZVMID:
+		return ZVMName
 	default:
 		return vmID.String()
 	}

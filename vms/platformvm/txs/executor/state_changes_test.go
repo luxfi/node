@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/upgrade/upgradetest"
-	"github.com/ava-labs/avalanchego/vms/components/gas"
-	"github.com/ava-labs/avalanchego/vms/platformvm/config"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state/statetest"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/state/statetest"
 )
 
 func TestAdvanceTimeTo_UpdatesFeeState(t *testing.T) {

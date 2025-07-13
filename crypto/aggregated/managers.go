@@ -40,7 +40,8 @@ func (m *BLSManager) CreateKeyPair() (*bls.SecretKey, *bls.PublicKey, error) {
 
 // Sign creates a BLS signature
 func (m *BLSManager) Sign(sk *bls.SecretKey, message []byte) (*bls.Signature, error) {
-	return bls.Sign(sk, message)
+	sig := bls.Sign(sk, message)
+	return sig, nil
 }
 
 // CoronaManager manages Corona signature operations
@@ -58,7 +59,18 @@ func NewCoronaManager(log logging.Logger) *CoronaManager {
 
 // CreateKeyPair generates a new Corona key pair
 func (m *CoronaManager) CreateKeyPair() (*corona.PrivateKey, *corona.PublicKey, error) {
-	return corona.GenerateKey()
+	factory := &corona.Factory{}
+	privKey, err := factory.NewPrivateKey()
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	pubKey, err := factory.ToPublicKey(privKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	return privKey, pubKey, nil
 }
 
 // Sign creates a Corona ring signature

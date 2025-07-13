@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/utils"
 )
 
 // Block represents a block in the Y-Chain quantum checkpoint ledger
@@ -142,8 +141,9 @@ func (b *Block) Accept(ctx context.Context) error {
 	}
 	
 	// Process fork transitions if enabled
-	if b.vm.config.EnableForkManagement && b.vm.forkManager != nil {
+	if b.vm.config.EnableForkManagement && b.vm.forkManager != nil && len(b.EpochRoots) > 0 {
 		// Update quantum state with current epoch data
+		epochRoot := b.EpochRoots[0]
 		if err := b.vm.forkManager.UpdateQuantumState(b.Epoch, epochRoot.ChainRoots); err != nil {
 			b.vm.log.Warn("failed to update quantum state",
 				zap.Uint64("epoch", b.Epoch),
@@ -250,9 +250,9 @@ func (b *Block) Verify(ctx context.Context) error {
 	}
 	
 	// Verify block size
-	blockBytes, err := b.Bytes()
-	if err != nil {
-		return err
+	blockBytes := b.Bytes()
+	if blockBytes == nil {
+		return errors.New("failed to marshal block")
 	}
 	
 	if len(blockBytes) > maxBlockSize {
@@ -328,7 +328,7 @@ func (b *Block) Bytes() []byte {
 		return b.bytes
 	}
 	
-	bytes, err := utils.Codec.Marshal(codecVersion, b)
+	bytes, err := Codec.Marshal(codecVersion, b)
 	if err != nil {
 		return nil
 	}

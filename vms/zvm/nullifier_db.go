@@ -8,6 +8,8 @@ import (
 	"errors"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -97,8 +99,8 @@ func (ndb *NullifierDB) MarkNullifierSpent(nullifier []byte, height uint64) erro
 	}
 	
 	ndb.log.Debug("Marked nullifier as spent",
-		"height", height,
-		"nullifierCount", ndb.nullifierCount,
+		zap.Uint64("height", height),
+		zap.Uint64("nullifierCount", ndb.nullifierCount),
 	)
 	
 	return nil
@@ -247,7 +249,7 @@ func (ndb *NullifierDB) PruneOldNullifiers(minHeight uint64) error {
 			// Remove from database
 			key := makeNullifierKey(nullifier)
 			if err := ndb.db.Delete(key); err != nil {
-				ndb.log.Warn("Failed to prune nullifier", "error", err)
+				ndb.log.Warn("Failed to prune nullifier", zap.Error(err))
 				continue
 			}
 			
@@ -269,9 +271,9 @@ func (ndb *NullifierDB) PruneOldNullifiers(minHeight uint64) error {
 	}
 	
 	ndb.log.Info("Pruned old nullifiers",
-		"pruneCount", pruneCount,
-		"minHeight", minHeight,
-		"remainingNullifiers", ndb.nullifierCount,
+		zap.Int("pruneCount", pruneCount),
+		zap.Uint64("minHeight", minHeight),
+		zap.Uint64("remainingNullifiers", ndb.nullifierCount),
 	)
 	
 	return nil

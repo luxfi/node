@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/profiler"

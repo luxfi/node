@@ -165,8 +165,10 @@ func verifyAddValidatorTx(
 	}
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -175,7 +177,7 @@ func verifyAddValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -257,8 +259,10 @@ func verifyAddSubnetValidatorTx(
 	}
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -267,7 +271,7 @@ func verifyAddSubnetValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -336,8 +340,10 @@ func verifyRemoveSubnetValidatorTx(
 	}
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return nil, false, err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -346,7 +352,7 @@ func verifyRemoveSubnetValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return nil, false, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -455,8 +461,10 @@ func verifyAddDelegatorTx(
 	}
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -465,7 +473,7 @@ func verifyAddDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -576,8 +584,10 @@ func verifyAddPermissionlessValidatorTx(
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -586,7 +596,7 @@ func verifyAddPermissionlessValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -722,8 +732,10 @@ func verifyAddPermissionlessDelegatorTx(
 	}
 
 	// Verify the flowcheck
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -732,7 +744,7 @@ func verifyAddPermissionlessDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -777,9 +789,10 @@ func verifyTransferSubnetOwnershipTx(
 	}
 
 	// Verify the flowcheck
-	currentTimestamp := chainState.GetTimestamp()
-	feeCalculator := fee.NewStaticCalculator(backend.Config.StaticFeeConfig, backend.Config.UpgradeConfig)
-	fee := feeCalculator.CalculateFee(tx, currentTimestamp)
+	txFee, err := feeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
@@ -788,7 +801,7 @@ func verifyTransferSubnetOwnershipTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.LUXAssetID: txFee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)

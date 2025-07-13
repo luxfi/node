@@ -8,9 +8,10 @@ import (
 	"errors"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -87,7 +88,7 @@ func (udb *UTXODB) AddUTXO(utxo *UTXO) error {
 	}
 	
 	// Serialize UTXO
-	utxoBytes, err := utils.Codec.Marshal(codecVersion, utxo)
+	utxoBytes, err := Codec.Marshal(codecVersion, utxo)
 	if err != nil {
 		return err
 	}
@@ -113,9 +114,9 @@ func (udb *UTXODB) AddUTXO(utxo *UTXO) error {
 	}
 	
 	udb.log.Debug("Added UTXO",
-		"txID", utxo.TxID.String(),
-		"outputIndex", utxo.OutputIndex,
-		"height", utxo.Height,
+		zap.String("txID", utxo.TxID.String()),
+		zap.Uint32("outputIndex", utxo.OutputIndex),
+		zap.Uint64("height", utxo.Height),
 	)
 	
 	return nil
@@ -141,7 +142,7 @@ func (udb *UTXODB) GetUTXO(commitment []byte) (*UTXO, error) {
 	}
 	
 	var utxo UTXO
-	if err := utils.Codec.Unmarshal(utxoBytes, &utxo); err != nil {
+	if _, err := Codec.Unmarshal(utxoBytes, &utxo); err != nil {
 		return nil, err
 	}
 	
@@ -263,7 +264,7 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 			// Remove from database
 			key := makeUTXOKey(commitment)
 			if err := udb.db.Delete(key); err != nil {
-				udb.log.Warn("Failed to prune UTXO", "error", err)
+				udb.log.Warn("Failed to prune UTXO", zap.Error(err))
 				continue
 			}
 			
@@ -285,9 +286,9 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 	}
 	
 	udb.log.Info("Pruned old UTXOs",
-		"pruneCount", pruneCount,
-		"minHeight", minHeight,
-		"remainingUTXOs", udb.utxoCount,
+		zap.Int("pruneCount", pruneCount),
+		zap.Uint64("minHeight", minHeight),
+		zap.Uint64("remainingUTXOs", udb.utxoCount),
 	)
 	
 	return nil
@@ -309,7 +310,7 @@ func (udb *UTXODB) getUTXONoLock(commitment []byte) (*UTXO, error) {
 	}
 	
 	var utxo UTXO
-	if err := utils.Codec.Unmarshal(utxoBytes, &utxo); err != nil {
+	if _, err := Codec.Unmarshal(utxoBytes, &utxo); err != nil {
 		return nil, err
 	}
 	

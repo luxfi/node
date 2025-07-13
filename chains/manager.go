@@ -43,6 +43,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -766,8 +767,8 @@ func (m *manager) createLuxChain(
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
 	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
+		zap.Time("activationTime", m.Upgrades.ApricotPhase4Time),
+		zap.Uint64("minPChainHeight", m.Upgrades.ApricotPhase4MinPChainHeight),
 		zap.Duration("minBlockDelay", minBlockDelay),
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
@@ -793,9 +794,9 @@ func (m *manager) createLuxChain(
 	var vmWrappingProposerVM block.ChainVM = proposervm.New(
 		vmWrappedInsideProposerVM,
 		proposervm.Config{
-			ActivationTime:      m.ApricotPhase4Time,
-			DurangoTime:         version.GetDurangoTime(m.NetworkID),
-			MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
+			ActivationTime:      m.Upgrades.ApricotPhase4Time,
+			DurangoTime:         m.Upgrades.DurangoTime,
+			MinimumPChainHeight: m.Upgrades.ApricotPhase4MinPChainHeight,
 			MinBlkDelay:         minBlockDelay,
 			NumHistoricalBlocks: numHistoricalBlocks,
 			StakingLeafSigner:   m.StakingTLSSigner,
@@ -1001,7 +1002,6 @@ func (m *manager) createLuxChain(
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
-		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
 		TxBlocked:                      txBlocker,
@@ -1015,7 +1015,6 @@ func (m *manager) createLuxChain(
 	luxBootstrapper, err := avbootstrap.New(
 		luxBootstrapperConfig,
 		snowmanBootstrapper.Start,
-		luxMetrics,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
@@ -1169,8 +1168,8 @@ func (m *manager) createSnowmanChain(
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
 	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
+		zap.Time("activationTime", m.Upgrades.ApricotPhase4Time),
+		zap.Uint64("minPChainHeight", m.Upgrades.ApricotPhase4MinPChainHeight),
 		zap.Duration("minBlockDelay", minBlockDelay),
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
@@ -1190,9 +1189,9 @@ func (m *manager) createSnowmanChain(
 	vm = proposervm.New(
 		vm,
 		proposervm.Config{
-			ActivationTime:      m.ApricotPhase4Time,
-			DurangoTime:         version.GetDurangoTime(m.NetworkID),
-			MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
+			ActivationTime:      m.Upgrades.ApricotPhase4Time,
+			DurangoTime:         m.Upgrades.DurangoTime,
+			MinimumPChainHeight: m.Upgrades.ApricotPhase4MinPChainHeight,
 			MinBlkDelay:         minBlockDelay,
 			NumHistoricalBlocks: numHistoricalBlocks,
 			StakingLeafSigner:   m.StakingTLSSigner,

@@ -8,11 +8,13 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -145,8 +147,8 @@ func (am *AddressManager) GenerateAddress() (*PrivateAddress, error) {
 	}
 	
 	am.log.Info("Generated new private address",
-		"address", address[:8],
-		"diversifier", diversifier[:4],
+		zap.String("address", fmt.Sprintf("%x", address[:8])),
+		zap.String("diversifier", fmt.Sprintf("%x", diversifier[:4])),
 	)
 	
 	return privAddr, nil
@@ -238,7 +240,7 @@ func (am *AddressManager) SignTransaction(tx *Transaction, signingAddresses [][]
 // storeAddress stores an address in the database
 func (am *AddressManager) storeAddress(privAddr *PrivateAddress) error {
 	// Serialize address
-	addrBytes, err := utils.Codec.Marshal(codecVersion, privAddr)
+	addrBytes, err := Codec.Marshal(codecVersion, privAddr)
 	if err != nil {
 		return err
 	}

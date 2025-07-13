@@ -5,6 +5,7 @@ package state
 
 import (
 	"github.com/luxfi/node/utils/heap"
+	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

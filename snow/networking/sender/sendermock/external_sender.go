@@ -12,11 +12,11 @@ package sendermock
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	message "github.com/ava-labs/avalanchego/message"
-	common "github.com/ava-labs/avalanchego/snow/engine/common"
-	subnets "github.com/ava-labs/avalanchego/subnets"
-	set "github.com/ava-labs/avalanchego/utils/set"
+	ids "github.com/luxfi/node/ids"
+	message "github.com/luxfi/node/message"
+	common "github.com/luxfi/node/snow/engine/common"
+	subnets "github.com/luxfi/node/subnets"
+	set "github.com/luxfi/node/utils/set"
 	gomock "go.uber.org/mock/gomock"
 )
 

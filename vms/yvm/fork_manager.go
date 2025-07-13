@@ -268,7 +268,7 @@ func (fm *ForkManager) GetMigrationPath(fromVersion, toVersion uint32) ([]uint32
 		visited[current] = true
 		
 		// Check all possible transitions
-		for key, transition := range fm.transitions {
+		for _, transition := range fm.transitions {
 			if transition.FromVersion == current && transition.Status == "active" {
 				newPath := append([]uint32{}, path...)
 				newPath = append(newPath, transition.ToVersion)

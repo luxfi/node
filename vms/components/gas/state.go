@@ -7,7 +7,7 @@ import (
 	"errors"
 	"math"
 
-	safemath "github.com/ava-labs/avalanchego/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 var ErrInsufficientCapacity = errors.New("insufficient capacity")

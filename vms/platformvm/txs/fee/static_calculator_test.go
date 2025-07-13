@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 func TestStaticCalculator(t *testing.T) {

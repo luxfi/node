@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 	
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
@@ -110,7 +111,7 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 	
 	// Verify ownership on-chain
 	if m.nftContract != nil {
-		owner, err := m.nftContract.OwnerOf(&bind.CallOpts{Context: ctx}, big.NewInt(int64(tokenID)))
+		owner, err := (*m.nftContract).OwnerOf(&bind.CallOpts{Context: ctx}, big.NewInt(int64(tokenID)))
 		if err != nil {
 			return fmt.Errorf("failed to check NFT ownership: %w", err)
 		}
@@ -137,9 +138,9 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 	m.stakedNFTs[tokenID] = nodeID
 	
 	m.log.Info("NFT staked for validation",
-		"nodeID", nodeID,
-		"tokenID", tokenID,
-		"ethAddress", ethAddress.Hex(),
+		zap.String("nodeID", nodeID.String()),
+		zap.Uint64("tokenID", tokenID),
+		zap.String("ethAddress", ethAddress.Hex()),
 	)
 	
 	return nil
@@ -176,8 +177,8 @@ func (m *NFTStakingManager) ReleaseNFT(nodeID ids.NodeID, tokenID uint64) error 
 		delete(m.stakedNFTs, tokenID)
 		
 		m.log.Info("NFT released from staking",
-			"nodeID", nodeID,
-			"tokenID", tokenID,
+			zap.String("nodeID", nodeID.String()),
+			zap.Uint64("tokenID", tokenID),
 		)
 	}
 	

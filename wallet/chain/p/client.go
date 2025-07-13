@@ -4,10 +4,10 @@
 package p
 
 import (
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/wallet/chain/p/wallet"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ wallet.Client = (*Client)(nil)

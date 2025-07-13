@@ -5,14 +5,16 @@ package zvm
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/utils"
 )
 
 // Block represents a block in the ZK UTXO chain
@@ -45,8 +47,8 @@ func (b *Block) ID() ids.ID {
 func (b *Block) computeID() ids.ID {
 	h := sha256.New()
 	h.Write(b.ParentID[:])
-	binary.Write(h, binary.BigEndian, b.Height)
-	binary.Write(h, binary.BigEndian, b.Timestamp)
+	binary.Write(h, binary.BigEndian, b.BlockHeight)
+	binary.Write(h, binary.BigEndian, b.BlockTimestamp)
 	
 	// Include transaction IDs
 	for _, tx := range b.Txs {
@@ -75,14 +77,14 @@ func (b *Block) Parent() ids.ID {
 }
 
 // Verify verifies the block
-func (b *Block) Verify() error {
+func (b *Block) Verify(ctx context.Context) error {
 	// Basic validation
-	if b.Height == 0 && b.ParentID != ids.Empty {
+	if b.BlockHeight == 0 && b.ParentID != ids.Empty {
 		return errInvalidBlock
 	}
 	
 	// Verify timestamp
-	if b.Timestamp > time.Now().Unix()+maxClockSkew {
+	if b.BlockTimestamp > time.Now().Unix()+maxClockSkew {
 		return errFutureBlock
 	}
 	
@@ -106,18 +108,22 @@ func (b *Block) Verify() error {
 	}
 	
 	// Verify against parent
-	if b.Height > 0 {
+	if b.BlockHeight > 0 {
 		parent, err := b.vm.GetBlock(nil, b.ParentID)
 		if err != nil {
 			return err
 		}
 		
-		parentBlock := parent.(*Block)
-		if b.Height != parentBlock.Height+1 {
+		parentBlock, ok := parent.(*Block)
+		if !ok {
+			return errors.New("invalid parent block type")
+		}
+		
+		if b.BlockHeight != parentBlock.BlockHeight+1 {
 			return errInvalidHeight
 		}
 		
-		if b.Timestamp < parentBlock.Timestamp {
+		if b.BlockTimestamp < parentBlock.BlockTimestamp {
 			return errInvalidTimestamp
 		}
 	}
@@ -136,7 +142,7 @@ func (b *Block) Verify() error {
 }
 
 // Accept accepts the block
-func (b *Block) Accept() error {
+func (b *Block) Accept(ctx context.Context) error {
 	b.status = choices.Accepted
 	
 	// Update VM state
@@ -147,17 +153,18 @@ func (b *Block) Accept() error {
 	b.vm.lastAcceptedID = b.ID()
 	
 	// Save to database
-	if err := b.vm.db.Put(lastAcceptedKey, b.ID()[:]); err != nil {
+	id := b.ID()
+	if err := b.vm.db.Put(lastAcceptedKey, id[:]); err != nil {
 		return err
 	}
 	
 	// Save block
-	blockBytes, err := b.Bytes()
-	if err != nil {
-		return err
+	blockBytes := b.Bytes()
+	if blockBytes == nil {
+		return errors.New("failed to serialize block")
 	}
 	
-	if err := b.vm.db.Put(b.ID()[:], blockBytes); err != nil {
+	if err := b.vm.db.Put(id[:], blockBytes); err != nil {
 		return err
 	}
 	
@@ -165,7 +172,7 @@ func (b *Block) Accept() error {
 	for _, tx := range b.Txs {
 		// Add nullifiers to spent set
 		for _, nullifier := range tx.Nullifiers {
-			if err := b.vm.nullifierDB.MarkNullifierSpent(nullifier, b.Height); err != nil {
+			if err := b.vm.nullifierDB.MarkNullifierSpent(nullifier, b.BlockHeight); err != nil {
 				return err
 			}
 		}
@@ -178,7 +185,7 @@ func (b *Block) Accept() error {
 				Commitment:  output.Commitment,
 				Ciphertext:  output.EncryptedNote,
 				EphemeralPK: output.EphemeralPubKey,
-				Height:      b.Height,
+				Height:      b.BlockHeight,
 			}
 			
 			if err := b.vm.utxoDB.AddUTXO(utxo); err != nil {
@@ -199,16 +206,16 @@ func (b *Block) Accept() error {
 	delete(b.vm.pendingBlocks, b.ID())
 	
 	b.vm.log.Info("Block accepted",
-		"height", b.Height,
-		"id", b.ID().String(),
-		"txCount", len(b.Txs),
+		zap.Uint64("height", b.BlockHeight),
+		zap.String("id", b.ID().String()),
+		zap.Int("txCount", len(b.Txs)),
 	)
 	
 	return nil
 }
 
 // Reject rejects the block
-func (b *Block) Reject() error {
+func (b *Block) Reject(ctx context.Context) error {
 	b.status = choices.Rejected
 	
 	// Remove from pending
@@ -229,29 +236,30 @@ func (b *Block) Status() choices.Status {
 	return b.status
 }
 
-// Height returns the block height
+// Height returns the block height  
 func (b *Block) Height() uint64 {
-	return b.Height
+	return b.BlockHeight
 }
 
 // Timestamp returns the block timestamp
 func (b *Block) Timestamp() time.Time {
-	return time.Unix(b.Timestamp, 0)
+	return time.Unix(b.BlockTimestamp, 0)
 }
 
 // Bytes returns the block bytes
-func (b *Block) Bytes() ([]byte, error) {
+func (b *Block) Bytes() []byte {
 	if b.bytes != nil {
-		return b.bytes, nil
+		return b.bytes
 	}
 	
-	bytes, err := utils.Codec.Marshal(codecVersion, b)
+	bytes, err := Codec.Marshal(codecVersion, b)
 	if err != nil {
-		return nil, err
+		// Log error and return nil
+		return nil
 	}
 	
 	b.bytes = bytes
-	return bytes, nil
+	return bytes
 }
 
 // Genesis represents genesis data
@@ -279,7 +287,7 @@ type SetupParams struct {
 // ParseGenesis parses genesis bytes
 func ParseGenesis(genesisBytes []byte) (*Genesis, error) {
 	var genesis Genesis
-	if err := utils.Codec.Unmarshal(genesisBytes, &genesis); err != nil {
+	if _, err := Codec.Unmarshal(genesisBytes, &genesis); err != nil {
 		return nil, err
 	}
 	
@@ -303,8 +311,8 @@ type BlockSummary struct {
 func (b *Block) ToSummary() *BlockSummary {
 	return &BlockSummary{
 		ID:        b.ID(),
-		Height:    b.Height,
-		Timestamp: b.Timestamp,
+		Height:    b.BlockHeight,
+		Timestamp: b.BlockTimestamp,
 		TxCount:   len(b.Txs),
 		StateRoot: b.StateRoot,
 	}

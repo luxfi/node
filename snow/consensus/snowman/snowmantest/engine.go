@@ -6,9 +6,9 @@ package snowmantest
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/snowtest"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/snowtest"
 )
 
 func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, error) {
