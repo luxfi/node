@@ -40,7 +40,8 @@ func (m *BLSManager) CreateKeyPair() (*bls.SecretKey, *bls.PublicKey, error) {
 
 // Sign creates a BLS signature
 func (m *BLSManager) Sign(sk *bls.SecretKey, message []byte) (*bls.Signature, error) {
-	return bls.Sign(sk, message)
+	sig := bls.Sign(sk, message)
+	return sig, nil
 }
 
 // RingtailManager manages Ringtail signature operations
@@ -58,7 +59,18 @@ func NewRingtailManager(log logging.Logger) *RingtailManager {
 
 // CreateKeyPair generates a new Ringtail key pair
 func (m *RingtailManager) CreateKeyPair() (*ringtail.PrivateKey, *ringtail.PublicKey, error) {
-	return ringtail.GenerateKey()
+	factory := &ringtail.Factory{}
+	privKey, err := factory.NewPrivateKey()
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	pubKey, err := factory.ToPublicKey(privKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	return privKey, pubKey, nil
 }
 
 // Sign creates a Ringtail ring signature

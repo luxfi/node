@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -61,8 +63,8 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	for _, nullifier := range tx.Nullifiers {
 		if existingTxID, exists := mp.nullifiers[string(nullifier)]; exists {
 			mp.log.Debug("Nullifier conflict in mempool",
-				"newTx", tx.ID.String(),
-				"existingTx", existingTxID.String(),
+				zap.String("newTx", tx.ID.String()),
+				zap.String("existingTx", existingTxID.String()),
 			)
 			return errors.New("nullifier already in mempool")
 		}
@@ -78,11 +80,9 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	}
 	
 	// Calculate fee per byte
-	txBytes, _ := tx.ComputeID() // Approximate size
-	feePerByte := uint64(0)
-	if len(txBytes) > 0 {
-		feePerByte = tx.Fee / uint64(len(txBytes))
-	}
+	// For now, use a fixed size estimate
+	txSize := uint64(256) // Approximate transaction size
+	feePerByte := tx.Fee / txSize
 	
 	// Create mempool entry
 	mempoolTx := &MempoolTx{
@@ -101,9 +101,9 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	}
 	
 	mp.log.Debug("Added transaction to mempool",
-		"txID", tx.ID.String(),
-		"fee", tx.Fee,
-		"mempoolSize", len(mp.txs),
+		zap.String("txID", tx.ID.String()),
+		zap.Uint64("fee", tx.Fee),
+		zap.Int("mempoolSize", len(mp.txs)),
 	)
 	
 	return nil
@@ -218,8 +218,8 @@ func (mp *Mempool) PruneExpired(currentHeight uint64) {
 	
 	if len(toRemove) > 0 {
 		mp.log.Info("Pruned expired transactions",
-			"count", len(toRemove),
-			"currentHeight", currentHeight,
+			zap.Int("count", len(toRemove)),
+			zap.Uint64("currentHeight", currentHeight),
 		)
 	}
 }

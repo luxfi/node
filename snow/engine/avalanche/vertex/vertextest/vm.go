@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block/blocktest"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 )
 
 var (

@@ -6,8 +6,11 @@ package zvm
 import (
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils/logging"
 	lru "github.com/hashicorp/golang-lru"
@@ -15,7 +18,7 @@ import (
 
 // ProofVerifier verifies zero-knowledge proofs
 type ProofVerifier struct {
-	config       ZKConfig
+	config       ZConfig
 	log          logging.Logger
 	
 	// Proof verification cache
@@ -33,7 +36,7 @@ type ProofVerifier struct {
 }
 
 // NewProofVerifier creates a new proof verifier
-func NewProofVerifier(config ZKConfig, log logging.Logger) (*ProofVerifier, error) {
+func NewProofVerifier(config ZConfig, log logging.Logger) (*ProofVerifier, error) {
 	// Create LRU cache for proof verification results
 	cache, err := lru.New(config.ProofCacheSize)
 	if err != nil {
@@ -143,8 +146,8 @@ func (pv *ProofVerifier) verifyGroth16Proof(tx *Transaction) error {
 	}
 	
 	pv.log.Debug("Groth16 proof verified",
-		"txID", tx.ID.String(),
-		"vkLen", len(vk),
+		zap.String("txID", tx.ID.String()),
+		zap.Int("vkLen", len(vk)),
 	)
 	
 	return nil
@@ -187,8 +190,8 @@ func (pv *ProofVerifier) verifyBulletproof(tx *Transaction) error {
 		time.Sleep(5 * time.Millisecond)
 		
 		pv.log.Debug("Range proof verified",
-			"outputIndex", i,
-			"commitment", output.Commitment[:8],
+			zap.Int("outputIndex", i),
+			zap.String("commitment", fmt.Sprintf("%x", output.Commitment[:8])),
 		)
 	}
 	
@@ -247,8 +250,8 @@ func (pv *ProofVerifier) loadVerifyingKeys() error {
 	pv.verifyingKeys[string(TransactionTypeUnshield)] = make([]byte, 1024)
 	
 	pv.log.Info("Loaded verifying keys",
-		"count", len(pv.verifyingKeys),
-		"proofSystem", pv.config.ProofSystem,
+		zap.Int("count", len(pv.verifyingKeys)),
+		zap.String("proofSystem", pv.config.ProofSystem),
 	)
 	
 	return nil

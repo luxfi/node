@@ -13,7 +13,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var _ txs.Visitor = (*MempoolTxVerifier)(nil)
+var (
+	_ txs.Visitor = (*MempoolTxVerifier)(nil)
+	
+	ErrFutureStakeTime = errors.New("staker starts in the future")
+)
 
 type MempoolTxVerifier struct {
 	*Backend
@@ -113,25 +117,24 @@ func (v *MempoolTxVerifier) standardBaseState() (state.Diff, error) {
 		return nil, err
 	}
 
-	changes, err := AdvanceTimeTo(v.Backend, state, nextBlkTime)
+	_, err = AdvanceTimeTo(v.Backend, state, nextBlkTime)
 	if err != nil {
 		return nil, err
 	}
-	changes.Apply(state)
 	state.SetTimestamp(nextBlkTime)
 
 	return state, nil
 }
 
-func (v *MempoolTxVerifier) nextBlockTime(state state.Diff) (time.Time, error) {
+func (v *MempoolTxVerifier) nextBlockTime(chainState state.Diff) (time.Time, error) {
 	var (
-		parentTime  = state.GetTimestamp()
+		parentTime  = chainState.GetTimestamp()
 		nextBlkTime = v.Clk.Time()
 	)
 	if parentTime.After(nextBlkTime) {
 		nextBlkTime = parentTime
 	}
-	nextStakerChangeTime, err := GetNextStakerChangeTime(state)
+	nextStakerChangeTime, err := state.GetNextStakerChangeTime(chainState)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("could not calculate next staker change time: %w", err)
 	}

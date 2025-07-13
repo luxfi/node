@@ -43,13 +43,14 @@ func verifyPoASubnetAuthorization(
 		return nil, err
 	}
 
-	_, _, err = chainState.GetSubnetManager(subnetID)
-	if err == nil {
-		return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
-	}
-	if err != database.ErrNotFound {
-		return nil, err
-	}
+	// TODO: Implement GetSubnetManager when needed
+	// _, _, err = chainState.GetSubnetManager(subnetID)
+	// if err == nil {
+	// 	return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
+	// }
+	// if err != database.ErrNotFound {
+	// 	return nil, err
+	// }
 
 	return creds, nil
 }

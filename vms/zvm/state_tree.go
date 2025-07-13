@@ -5,8 +5,10 @@ package zvm
 
 import (
 	"crypto/sha256"
-	"errors"
+	"fmt"
 	"sync"
+
+	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/logging"
@@ -104,9 +106,9 @@ func (st *StateTree) Finalize(newRoot []byte) error {
 	}
 	
 	st.log.Debug("State tree finalized",
-		"root", newRoot[:8],
-		"adds", len(st.pendingAdds),
-		"removes", len(st.pendingRemoves),
+		zap.String("root", fmt.Sprintf("%x", newRoot[:8])),
+		zap.Int("adds", len(st.pendingAdds)),
+		zap.Int("removes", len(st.pendingRemoves)),
 	)
 	
 	return nil

@@ -6,11 +6,11 @@ package p
 import (
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/tests/fixture/e2e"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/secp256k1fx"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

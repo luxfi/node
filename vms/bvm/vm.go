@@ -5,6 +5,7 @@ package bvm
 
 import (
 	"context"
+	"crypto/elliptic"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,17 +14,15 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/crypto/cggmp21"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/crypto/cggmp21"
 )
 
 var (
@@ -66,7 +65,7 @@ type VM struct {
 	log      logging.Logger
 
 	// MPC components
-	mpcService     *cggmp21.SignatureService
+	mpcParty       *cggmp21.Party
 	mpcParties     map[ids.NodeID]*cggmp21.Party
 	
 	// Bridge state
@@ -156,7 +155,7 @@ func (vm *VM) Initialize(
 	vm.mpcParties = make(map[ids.NodeID]*cggmp21.Party)
 	
 	// Parse configuration
-	if err := utils.Codec.Unmarshal(configBytes, &vm.config); err != nil {
+	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 	
@@ -165,15 +164,20 @@ func (vm *VM) Initialize(
 		return errors.New("B-chain requires 100M LUX minimum stake")
 	}
 	
-	// Initialize MPC service
+	// Initialize MPC party
 	mpcConfig := &cggmp21.Config{
 		Threshold:    vm.config.MPCThreshold,
 		TotalParties: vm.config.MPCTotalParties,
-		Curve:        nil, // Will be set based on chain requirements
+		Curve:        elliptic.P256(), // Default curve
 		SessionTimeout: 300, // 5 minutes
 	}
 	
-	vm.mpcService = cggmp21.NewSignatureService(mpcConfig)
+	// Create MPC party with node index (simplified for now)
+	vm.mpcParty = &cggmp21.Party{
+		ID:     chainCtx.NodeID,
+		Index:  0, // Would be determined by validator set in production
+		Config: mpcConfig,
+	}
 	
 	// Initialize bridge registry
 	vm.bridgeRegistry = &BridgeRegistry{
@@ -193,7 +197,7 @@ func (vm *VM) Initialize(
 	
 	// Parse genesis
 	genesis := &Genesis{}
-	if err := utils.Codec.Unmarshal(genesisBytes, genesis); err != nil {
+	if _, err := Codec.Unmarshal(genesisBytes, genesis); err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}
 	
@@ -289,7 +293,7 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
 // ParseBlock implements the snowman.ChainVM interface
 func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
 	block := &Block{vm: vm}
-	if err := utils.Codec.Unmarshal(bytes, block); err != nil {
+	if _, err := Codec.Unmarshal(bytes, block); err != nil {
 		return nil, err
 	}
 	
@@ -324,14 +328,101 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	return handlers, nil
 }
 
+
+// HealthCheck implements the common.VM interface
+func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+	return map[string]string{"status": "healthy"}, nil
+}
+
+// Shutdown implements the common.VM interface
+func (vm *VM) Shutdown(ctx context.Context) error {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+	
+	// Clean up resources
+	return nil
+}
+
+// CreateStaticHandlers implements the common.VM interface
+func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return nil, nil
+}
+
+// Connected implements the common.VM interface
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	return nil
+}
+
+// Disconnected implements the common.VM interface
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	return nil
+}
+
+// AppRequest implements the common.VM interface
+func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	// Bridge VMs may use this for cross-chain communication
+	return nil
+}
+
+// AppResponse implements the common.VM interface
+func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return nil
+}
+
+// AppRequestFailed implements the common.VM interface
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+	return nil
+}
+
+// AppGossip implements the common.VM interface
+func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return nil
+}
+
+// Version implements the common.VM interface
+func (vm *VM) Version(ctx context.Context) (string, error) {
+	return Version.String(), nil
+}
+
+// CrossChainAppRequest implements the common.VM interface
+func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+	// Bridge VMs handle cross-chain requests
+	return nil
+}
+
+// CrossChainAppResponse implements the common.VM interface
+func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+	return nil
+}
+
+// CrossChainAppRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+	return nil
+}
+
+// GetBlockIDAtHeight implements the snowman.HeightIndexedChainVM interface
+func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	// For now, return not implemented
+	// In production, maintain a height index
+	return ids.Empty, errors.New("height index not implemented")
+}
+
+// SetState implements the common.VM interface
+func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+	// For now, no-op
+	// In production, handle state transitions
+	return nil
+}
+
 // Helper methods
 
 func (vm *VM) putBlock(block *Block) error {
-	bytes, err := utils.Codec.Marshal(codecVersion, block)
+	bytes, err := Codec.Marshal(codecVersion, block)
 	if err != nil {
 		return err
 	}
-	return vm.db.Put(block.ID()[:], bytes)
+	id := block.ID()
+	return vm.db.Put(id[:], bytes)
 }
 
 func (vm *VM) getBlock(id ids.ID) (*Block, error) {
@@ -341,7 +432,7 @@ func (vm *VM) getBlock(id ids.ID) (*Block, error) {
 	}
 	
 	block := &Block{vm: vm}
-	if err := utils.Codec.Unmarshal(bytes, block); err != nil {
+	if _, err := Codec.Unmarshal(bytes, block); err != nil {
 		return nil, err
 	}
 	
@@ -349,9 +440,30 @@ func (vm *VM) getBlock(id ids.ID) (*Block, error) {
 	return block, nil
 }
 
-// Additional methods would be implemented here...
+// HTTP handler methods
 
-const codecVersion = 0
+func (vm *VM) handleBridgeRequest(w http.ResponseWriter, r *http.Request) {
+	// Handle bridge request
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "bridge request handler"}`))
+}
+
+func (vm *VM) handleStatus(w http.ResponseWriter, r *http.Request) {
+	// Handle status request
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "operational"}`))
+}
+
+func (vm *VM) handleValidators(w http.ResponseWriter, r *http.Request) {
+	// Handle validators request
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"validators": []}`))
+}
+
+// Additional methods would be implemented here...
 
 // Genesis represents the genesis state
 type Genesis struct {

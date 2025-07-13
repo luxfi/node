@@ -505,7 +505,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		{
 			GenesisData: aChainGenesisData,
 			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.AIVMID,
+			VMID:        constants.AttestVMID,
 			Name:        "A-Chain",
 		},
 		{
@@ -517,7 +517,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		{
 			GenesisData: zChainGenesisData,
 			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.ZKVMID,
+			VMID:        constants.ZVMID,
 			Name:        "Z-Chain",
 		},
 	}

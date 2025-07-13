@@ -8,12 +8,14 @@ import (
 	"errors"
 	"sync"
 
+	"go.uber.org/zap"
+	
 	"github.com/luxfi/node/utils/logging"
 )
 
 // FHEProcessor handles fully homomorphic encryption operations
 type FHEProcessor struct {
-	config  ZKConfig
+	config  ZConfig
 	log     logging.Logger
 	
 	// FHE parameters
@@ -27,7 +29,7 @@ type FHEProcessor struct {
 }
 
 // NewFHEProcessor creates a new FHE processor
-func NewFHEProcessor(config ZKConfig, log logging.Logger) (*FHEProcessor, error) {
+func NewFHEProcessor(config ZConfig, log logging.Logger) (*FHEProcessor, error) {
 	if !config.EnableFHE {
 		return nil, errors.New("FHE not enabled in config")
 	}
@@ -76,9 +78,9 @@ func (fp *FHEProcessor) VerifyFHEOperations(tx *Transaction) error {
 	// 3. Verify the result matches the claimed output
 	
 	fp.log.Debug("FHE operations verified",
-		"txID", tx.ID.String(),
-		"circuitID", tx.FHEData.CircuitID,
-		"inputCount", len(tx.FHEData.EncryptedInputs),
+		zap.String("txID", tx.ID.String()),
+		zap.String("circuitID", tx.FHEData.CircuitID),
+		zap.Int("inputCount", len(tx.FHEData.EncryptedInputs)),
 	)
 	
 	return nil
@@ -96,8 +98,8 @@ func (fp *FHEProcessor) ProcessFHEComputation(
 	computationProof := make([]byte, 256)
 	
 	fp.log.Debug("FHE computation processed",
-		"circuitID", circuitID,
-		"inputCount", len(encryptedInputs),
+		zap.String("circuitID", circuitID),
+		zap.Int("inputCount", len(encryptedInputs)),
 	)
 	
 	return encryptedResult, computationProof, nil
@@ -178,8 +180,8 @@ func (fp *FHEProcessor) initializeFHEParams() error {
 	}
 	
 	fp.log.Info("FHE parameters initialized",
-		"scheme", fp.config.FHEScheme,
-		"securityLevel", fp.config.SecurityLevel,
+		zap.String("scheme", fp.config.FHEScheme),
+		zap.Int("securityLevel", fp.config.SecurityLevel),
 	)
 	
 	return nil

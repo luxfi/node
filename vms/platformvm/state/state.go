@@ -29,10 +29,12 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -85,6 +87,7 @@ var (
 	HeightsIndexedKey  = []byte("heights indexed")
 	InitializedKey     = []byte("initialized")
 	BlocksReindexedKey = []byte("blocks reindexed")
+	FeeStateKey        = []byte("fee state")
 )
 
 // Chain collects all methods to manage the state of the chain for block
@@ -450,7 +453,7 @@ func New(
 		execCfg,
 		ctx,
 		metricsReg,
-		&cache.LRU[uint64, ids.ID]{Size: execCfg.BlockIDCacheSize},
+		rewards,
 	)
 	if err != nil {
 		return nil, err
@@ -1012,6 +1015,14 @@ func (s *state) SetTimestamp(tm time.Time) {
 	s.timestamp = tm
 }
 
+func (s *state) GetFeeState() gas.State {
+	return s.feeState
+}
+
+func (s *state) SetFeeState(f gas.State) {
+	s.feeState = f
+}
+
 func (s *state) GetLastAccepted() ids.ID {
 	return s.lastAccepted
 }
@@ -1293,6 +1304,19 @@ func (s *state) loadMetadata() error {
 	}
 	s.persistedTimestamp = timestamp
 	s.SetTimestamp(timestamp)
+
+	// Load fee state
+	feeStateBytes, err := s.singletonDB.Get(FeeStateKey)
+	if err == nil {
+		feeState := gas.State{}
+		if _, err := genesis.Codec.Unmarshal(feeStateBytes, &feeState); err != nil {
+			return err
+		}
+		s.persistedFeeState = feeState
+		s.SetFeeState(feeState)
+	} else if err != database.ErrNotFound {
+		return err
+	}
 
 	currentSupply, err := database.GetUInt64(s.singletonDB, CurrentSupplyKey)
 	if err != nil {
@@ -2452,4 +2476,26 @@ func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
 	)
 
 	return s.Commit()
+}
+
+// isInitialized checks if the database has been initialized
+func isInitialized(db database.Database) (bool, error) {
+	has, err := db.Has(isInitializedKey)
+	return has, err
+}
+
+// markInitialized marks the database as initialized
+func markInitialized(db database.Database) error {
+	return db.Put(isInitializedKey, nil)
+}
+
+var isInitializedKey = []byte("initialized")
+
+// putFeeState serializes and stores the fee state
+func putFeeState(db database.Database, feeState gas.State) error {
+	bytes, err := genesis.Codec.Marshal(genesis.CodecVersion, &feeState)
+	if err != nil {
+		return err
+	}
+	return db.Put(FeeStateKey, bytes)
 }

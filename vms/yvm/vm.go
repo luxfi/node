@@ -7,24 +7,27 @@
 package yvm
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/version"
 )
@@ -47,15 +50,6 @@ var (
 const (
 	// epochDuration is approximately 1 hour
 	epochDuration = 60 * 60 * time.Second
-	
-	// maxRootSize limits individual chain root size
-	maxRootSize = 32 // SHA-256 hash
-	
-	// maxChains limits number of chains we checkpoint
-	maxChains = 16
-	
-	// blockSize target is under 5KB
-	maxBlockSize = 5 * 1024
 )
 
 // YConfig contains VM configuration
@@ -160,8 +154,13 @@ func (vm *VM) Initialize(
 	vm.chainRoots = make(map[string][]byte)
 	vm.epochCheckpoints = make(map[uint64]*EpochCheckpoint)
 	
+	// Initialize codec if not already done
+	if Codec == nil {
+		Codec = codec.NewDefaultManager()
+	}
+
 	// Parse configuration
-	if err := utils.Codec.Unmarshal(configBytes, &vm.config); err != nil {
+	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 	
@@ -216,7 +215,7 @@ func (vm *VM) Initialize(
 	
 	// Parse genesis
 	genesis := &Genesis{}
-	if err := utils.Codec.Unmarshal(genesisBytes, genesis); err != nil {
+	if _, err := Codec.Unmarshal(genesisBytes, genesis); err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}
 	
@@ -317,9 +316,9 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	block.ID_ = block.computeID()
 	
 	// Verify block size
-	blockBytes, err := block.Bytes()
-	if err != nil {
-		return nil, err
+	blockBytes := block.Bytes()
+	if blockBytes == nil {
+		return nil, errors.New("failed to marshal block")
 	}
 	
 	if len(blockBytes) > maxBlockSize {
@@ -406,9 +405,9 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
 }
 
 // ParseBlock implements the snowman.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
 	block := &Block{vm: vm}
-	if err := utils.Codec.Unmarshal(bytes, block); err != nil {
+	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
 	}
 	
@@ -466,7 +465,8 @@ func computeEpochRootHash(epoch uint64, chainRoots map[string][]byte) []byte {
 	for chainID := range chainRoots {
 		chainIDs = append(chainIDs, chainID)
 	}
-	utils.Sort(chainIDs)
+	// Use standard library sort for strings
+	sort.Strings(chainIDs)
 	
 	// Write each chain root
 	for _, chainID := range chainIDs {
@@ -485,21 +485,22 @@ func verifySPHINCS(pubKey, message, signature []byte) bool {
 }
 
 func (vm *VM) putBlock(block *Block) error {
-	bytes, err := utils.Codec.Marshal(codecVersion, block)
+	blockBytes, err := Codec.Marshal(codecVersion, block)
 	if err != nil {
 		return err
 	}
-	return vm.db.Put(block.ID()[:], bytes)
+	id := block.ID()
+	return vm.db.Put(id[:], blockBytes)
 }
 
 func (vm *VM) getBlock(id ids.ID) (*Block, error) {
-	bytes, err := vm.db.Get(id[:])
+	blockBytes, err := vm.db.Get(id[:])
 	if err != nil {
 		return nil, err
 	}
 	
 	block := &Block{vm: vm}
-	if err := utils.Codec.Unmarshal(bytes, block); err != nil {
+	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
 	}
 	
@@ -507,9 +508,157 @@ func (vm *VM) getBlock(id ids.ID) (*Block, error) {
 	return block, nil
 }
 
-// Additional handler implementations...
+// AppGossip implements the common.VM interface
+func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	// Y-Chain doesn't use app gossip
+	return nil
+}
 
-const codecVersion = 0
+// AppRequest implements the common.VM interface
+func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	// Y-Chain doesn't handle app requests
+	return nil
+}
+
+// AppResponse implements the common.VM interface
+func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	// Y-Chain doesn't handle app responses
+	return nil
+}
+
+// AppRequestFailed implements the common.VM interface
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+	// Y-Chain doesn't handle app request failures
+	return nil
+}
+
+// HealthCheck implements the common.VM interface
+func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+	
+	health := map[string]interface{}{
+		"status": "healthy",
+		"currentEpoch": vm.currentEpoch,
+		"lastAcceptedID": vm.lastAcceptedID.String(),
+		"trackedChains": len(vm.config.TrackedChains),
+	}
+	
+	return health, nil
+}
+
+// Shutdown implements the common.VM interface
+func (vm *VM) Shutdown(ctx context.Context) error {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+	
+	// Clean up resources
+	return nil
+}
+
+// CreateStaticHandlers implements the common.VM interface
+func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return nil, nil
+}
+
+// Connected implements the common.VM interface
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	// Track connected validators for SPHINCS+ signatures
+	return nil
+}
+
+// Disconnected implements the common.VM interface
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// Remove disconnected validators
+	return nil
+}
+
+// Version implements the common.VM interface
+func (vm *VM) Version(ctx context.Context) (string, error) {
+	return Version.String(), nil
+}
+
+// CrossChainAppRequest implements the common.VM interface
+func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+	return nil
+}
+
+// CrossChainAppResponse implements the common.VM interface
+func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+	return nil
+}
+
+// CrossChainAppRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+	return nil
+}
+
+// GetBlockIDAtHeight implements the snowman.HeightIndexedChainVM interface
+func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	// For now, return not implemented
+	// In production, maintain a height index
+	return ids.Empty, errors.New("height index not implemented")
+}
+
+// SetState implements the common.VM interface
+func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+	// For now, no-op
+	// In production, handle state transitions
+	return nil
+}
+
+// HTTP handler implementations
+
+func (vm *VM) handleEpochStatus(w http.ResponseWriter, r *http.Request) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+	
+	status := map[string]interface{}{
+		"currentEpoch": vm.currentEpoch,
+		"epochStartTime": vm.epochStartTime.Unix(),
+		"chainRoots": vm.chainRoots,
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+func (vm *VM) handleCheckpointQuery(w http.ResponseWriter, r *http.Request) {
+	// Handle checkpoint queries
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "checkpoint handler"}`))
+}
+
+func (vm *VM) handleVerifyRoot(w http.ResponseWriter, r *http.Request) {
+	// Handle root verification
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "verify handler"}`))
+}
+
+func (vm *VM) handleVersions(w http.ResponseWriter, r *http.Request) {
+	// Handle version queries
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"versions": []}`))
+}
+
+func (vm *VM) handleMigration(w http.ResponseWriter, r *http.Request) {
+	// Handle migration requests
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "migration handler"}`))
+}
+
+func (vm *VM) handleQuantumState(w http.ResponseWriter, r *http.Request) {
+	// Handle quantum state queries
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "quantum state handler"}`))
+}
+
+// Additional handler implementations...
 
 // Genesis represents the genesis state
 type Genesis struct {

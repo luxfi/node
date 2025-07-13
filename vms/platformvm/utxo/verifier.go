@@ -4,7 +4,6 @@
 package utxo
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/luxfi/node/ids"
@@ -21,57 +20,7 @@ import (
 
 var (
 	_ Verifier = (*verifier)(nil)
-
-	ErrInsufficientFunds            = errors.New("insufficient funds")
-	ErrInsufficientUnlockedFunds    = errors.New("insufficient unlocked funds")
-	ErrInsufficientLockedFunds      = errors.New("insufficient locked funds")
-	errWrongNumberCredentials       = errors.New("wrong number of credentials")
-	errWrongNumberUTXOs             = errors.New("wrong number of UTXOs")
-	errAssetIDMismatch              = errors.New("input asset ID does not match UTXO asset ID")
-	errLocktimeMismatch             = errors.New("input locktime does not match UTXO locktime")
-	errLockedFundsNotMarkedAsLocked = errors.New("locked funds not marked as locked")
 )
-
-type Verifier interface {
-	// Verify that [tx] is semantically valid.
-	// [ins] and [outs] are the inputs and outputs of [tx].
-	// [creds] are the credentials of [tx], which allow [ins] to be spent.
-	// [unlockedProduced] is the map of assets that were produced and their
-	// amounts.
-	// The [ins] must have at least [unlockedProduced] than the [outs].
-	//
-	// Precondition: [tx] has already been syntactically verified.
-	//
-	// Note: [unlockedProduced] is modified by this method.
-	VerifySpend(
-		tx txs.UnsignedTx,
-		utxoDB lux.UTXOGetter,
-		ins []*lux.TransferableInput,
-		outs []*lux.TransferableOutput,
-		creds []verify.Verifiable,
-		unlockedProduced map[ids.ID]uint64,
-	) error
-
-	// Verify that [tx] is semantically valid.
-	// [utxos[i]] is the UTXO being consumed by [ins[i]].
-	// [ins] and [outs] are the inputs and outputs of [tx].
-	// [creds] are the credentials of [tx], which allow [ins] to be spent.
-	// [unlockedProduced] is the map of assets that were produced and their
-	// amounts.
-	// The [ins] must have at least [unlockedProduced] more than the [outs].
-	//
-	// Precondition: [tx] has already been syntactically verified.
-	//
-	// Note: [unlockedProduced] is modified by this method.
-	VerifySpendUTXOs(
-		tx txs.UnsignedTx,
-		utxos []*lux.UTXO,
-		ins []*lux.TransferableInput,
-		outs []*lux.TransferableOutput,
-		creds []verify.Verifiable,
-		unlockedProduced map[ids.ID]uint64,
-	) error
-}
 
 func NewVerifier(
 	ctx *snow.Context,

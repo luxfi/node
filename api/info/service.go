@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/snow/networking/benchlist"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -27,6 +28,7 @@ import (
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -50,7 +52,7 @@ type Parameters struct {
 	NodeID      ids.NodeID
 	NodePOP     *signer.ProofOfPossession
 	NetworkID   uint32
-	TxFeeConfig genesis.TxFeeConfig
+	TxFeeConfig fee.StaticConfig
 	VMManager   vms.Manager
 	Upgrades    upgrade.Config
 }
@@ -397,15 +399,15 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 		zap.String("method", "getTxFee"),
 	)
 
-	reply.TxFee = json.Uint64(i.TxFee)
-	reply.CreateAssetTxFee = json.Uint64(i.CreateAssetTxFee)
-	reply.CreateSubnetTxFee = json.Uint64(i.CreateSubnetTxFee)
-	reply.TransformSubnetTxFee = json.Uint64(i.TransformSubnetTxFee)
-	reply.CreateBlockchainTxFee = json.Uint64(i.CreateBlockchainTxFee)
-	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.AddPrimaryNetworkValidatorFee)
-	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.AddPrimaryNetworkDelegatorFee)
-	reply.AddSubnetValidatorFee = json.Uint64(i.AddSubnetValidatorFee)
-	reply.AddSubnetDelegatorFee = json.Uint64(i.AddSubnetDelegatorFee)
+	reply.TxFee = json.Uint64(i.TxFeeConfig.TxFee)
+	reply.CreateAssetTxFee = json.Uint64(i.TxFeeConfig.CreateAssetTxFee)
+	reply.CreateSubnetTxFee = json.Uint64(i.TxFeeConfig.CreateSubnetTxFee)
+	reply.TransformSubnetTxFee = json.Uint64(i.TxFeeConfig.TransformSubnetTxFee)
+	reply.CreateBlockchainTxFee = json.Uint64(i.TxFeeConfig.CreateBlockchainTxFee)
+	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.TxFeeConfig.AddPrimaryNetworkValidatorFee)
+	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.TxFeeConfig.AddPrimaryNetworkDelegatorFee)
+	reply.AddSubnetValidatorFee = json.Uint64(i.TxFeeConfig.AddSubnetValidatorFee)
+	reply.AddSubnetDelegatorFee = json.Uint64(i.TxFeeConfig.AddSubnetDelegatorFee)
 	return nil
 }
 

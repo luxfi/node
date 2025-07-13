@@ -30,8 +30,8 @@ const (
 	DefaultHTTPPort    = 9650
 	DefaultStakingPort = 9651
 
-	Lux NodeDataDirVar    = "LUXD_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + Lux NodeDataDirVar
+	LuxNodeDataDirVar    = "LUXD_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + LuxNodeDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
 )
@@ -387,7 +387,7 @@ func GetExpandedString(v *viper.Viper, s string) string {
 	return os.Expand(
 		s,
 		func(strVar string) string {
-			if strVar == Lux NodeDataDirVar {
+			if strVar == LuxNodeDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)

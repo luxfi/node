@@ -19,10 +19,8 @@ import (
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms"
 )
 
 var (
@@ -63,7 +61,7 @@ type ZConfig struct {
 // VM implements the Zero-Knowledge UTXO Chain VM
 type VM struct {
 	ctx    *snow.Context
-	config ZKConfig
+	config ZConfig
 	
 	// State management
 	db              database.Database
@@ -113,7 +111,7 @@ func (vm *VM) Initialize(
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	
 	// Parse configuration
-	if err := utils.Codec.Unmarshal(configBytes, &vm.config); err != nil {
+	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 	
@@ -171,10 +169,10 @@ func (vm *VM) Initialize(
 	}
 	
 	vm.genesisBlock = &Block{
-		Height:    0,
-		Timestamp: genesis.Timestamp,
-		Txs:       genesis.InitialTxs,
-		vm:        vm,
+		BlockHeight:    0,
+		BlockTimestamp: genesis.Timestamp,
+		Txs:            genesis.InitialTxs,
+		vm:             vm,
 	}
 	vm.genesisBlock.ID_ = vm.genesisBlock.computeID()
 	
@@ -241,11 +239,11 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	
 	// Create new block
 	block := &Block{
-		ParentID:  vm.lastAcceptedID,
-		Height:    vm.lastAccepted.Height + 1,
-		Timestamp: time.Now().Unix(),
-		Txs:       validTxs,
-		vm:        vm,
+		ParentID:       vm.lastAcceptedID,
+		BlockHeight:    vm.lastAccepted.Height() + 1,
+		BlockTimestamp: time.Now().Unix(),
+		Txs:            validTxs,
+		vm:             vm,
 	}
 	
 	// Compute state root after applying transactions
@@ -263,7 +261,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	
 	vm.log.Debug("Built new block",
 		zap.String("blockID", block.ID().String()),
-		zap.Uint64("height", block.Height),
+		zap.Uint64("height", block.BlockHeight),
 		zap.Int("txCount", len(validTxs)),
 	)
 	
@@ -273,7 +271,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 // ParseBlock parses a block from bytes
 func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
 	block := &Block{vm: vm}
-	if err := utils.Codec.Unmarshal(blockBytes, block); err != nil {
+	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
 	}
 	
@@ -344,7 +342,7 @@ func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
 		DatabaseHealthy:    true,
 		UTXOCount:         vm.utxoDB.GetUTXOCount(),
 		NullifierCount:    vm.nullifierDB.GetNullifierCount(),
-		LastBlockHeight:   vm.lastAccepted.Height,
+		LastBlockHeight:   vm.lastAccepted.Height(),
 		PendingBlockCount: len(vm.pendingBlocks),
 		MempoolSize:       vm.mempool.Size(),
 		ProofCacheSize:    vm.proofVerifier.GetCacheSize(),
@@ -414,8 +412,16 @@ func (vm *VM) computeStateRoot(txs []*Transaction) ([]byte, error) {
 func (vm *VM) processGenesisTransactions(genesis *Genesis) error {
 	for _, tx := range genesis.InitialTxs {
 		// Add outputs to UTXO set
-		for _, output := range tx.Outputs {
-			if err := vm.utxoDB.AddUTXO(output); err != nil {
+		for i, output := range tx.Outputs {
+			utxo := &UTXO{
+				TxID:        tx.ID,
+				OutputIndex: uint32(i),
+				Commitment:  output.Commitment,
+				Ciphertext:  output.EncryptedNote,
+				EphemeralPK: output.EphemeralPubKey,
+				Height:      0, // Genesis height
+			}
+			if err := vm.utxoDB.AddUTXO(utxo); err != nil {
 				return err
 			}
 		}
@@ -448,32 +454,46 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
+// AppRequest implements the common.VM interface
 func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
+// AppResponse implements the common.VM interface
 func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+// AppRequestFailed implements the common.VM interface
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
 	return nil
 }
 
+// AppGossip implements the common.VM interface
 func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
+// CrossChainAppRequest implements the common.VM interface
 func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+// CrossChainAppResponse implements the common.VM interface
+func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+// CrossChainAppRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
 	return nil
+}
+
+// GetBlockIDAtHeight implements the snowman.HeightIndexedChainVM interface
+func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	// For now, return not implemented
+	// In production, maintain a height index
+	return ids.Empty, errors.New("height index not implemented")
 }
 
 var lastAcceptedKey = []byte("last_accepted")

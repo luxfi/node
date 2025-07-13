@@ -60,6 +60,11 @@ func Mul64(a, b uint64) (uint64, error) {
 	return a * b, nil
 }
 
+// Mul is a generic version of Mul64 for uint64 types
+func Mul(a, b uint64) (uint64, error) {
+	return Mul64(a, b)
+}
+
 func AbsDiff[T constraints.Unsigned](a, b T) T {
 	return max(a, b) - min(a, b)
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -38,6 +38,14 @@ var (
 	errCantSign                     = errors.New("can't sign")
 	errLockedFundsNotMarkedAsLocked = errors.New("locked funds not marked as locked")
 )
+
+// min returns the minimum of two uint64 values
+func min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 // TODO: Stake and Authorize should be replaced by similar methods in the
 // P-chain wallet
@@ -229,7 +237,7 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Stake any value that should be staked
-		amountToStake := math.Min(
+		amountToStake := min(
 			amount-amountStaked, // Amount we still need to stake
 			remainingValue,      // Amount available to stake
 		)
@@ -320,7 +328,7 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Burn any value that should be burned
-		amountToBurn := math.Min(
+		amountToBurn := min(
 			fee-amountBurned, // Amount we still need to burn
 			remainingValue,   // Amount available to burn
 		)
@@ -328,7 +336,7 @@ func (h *handler) Spend(
 		remainingValue -= amountToBurn
 
 		// Stake any value that should be staked
-		amountToStake := math.Min(
+		amountToStake := min(
 			amount-amountStaked, // Amount we still need to stake
 			remainingValue,      // Amount available to stake
 		)
@@ -544,7 +552,7 @@ func (h *handler) VerifySpendUTXOs(
 		amount := in.Amount()
 
 		if now >= locktime {
-			newUnlockedConsumed, err := math.Add64(unlockedConsumed[realAssetID], amount)
+			newUnlockedConsumed, err := safemath.Add64(unlockedConsumed[realAssetID], amount)
 			if err != nil {
 				return err
 			}
@@ -557,7 +565,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.Version, owner)
+		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}
@@ -572,7 +580,7 @@ func (h *handler) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedConsumedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := safemath.Add64(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}
@@ -593,7 +601,7 @@ func (h *handler) VerifySpendUTXOs(
 		amount := output.Amount()
 
 		if locktime == 0 {
-			newUnlockedProduced, err := math.Add64(unlockedProduced[assetID], amount)
+			newUnlockedProduced, err := safemath.Add64(unlockedProduced[assetID], amount)
 			if err != nil {
 				return err
 			}
@@ -606,7 +614,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.Version, owner)
+		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}
@@ -621,7 +629,7 @@ func (h *handler) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedProducedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := safemath.Add64(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}

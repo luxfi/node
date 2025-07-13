@@ -74,12 +74,11 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/aivm"
 	"github.com/luxfi/node/vms/avm"
 	"github.com/luxfi/node/vms/bridgevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/zkvm"
+	"github.com/luxfi/node/vms/zvm"
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -1188,8 +1187,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			BootstrapMaxTimeGetAncestors:            n.Config.BootstrapMaxTimeGetAncestors,
 			BootstrapAncestorsMaxContainersSent:     n.Config.BootstrapAncestorsMaxContainersSent,
 			BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
-			ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
-			ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
+			Upgrades:                                n.Config.UpgradeConfig,
 			ResourceTracker:                         n.resourceTracker,
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
 			TracingEnabled:                          n.Config.TraceConfig.Enabled,
@@ -1259,9 +1257,8 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bridgevm.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.ZVMID, &zvm.Factory{}),
 	)
 	if err != nil {
 		return err
@@ -1432,15 +1429,8 @@ func (n *Node) initInfoAPI() error {
 			NodeID:                        n.ID,
 			NodePOP:                       signer.NewProofOfPossession(n.Config.StakingSigningKey),
 			NetworkID:                     n.Config.NetworkID,
-			TxFee:                         n.Config.TxFee,
-			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
-			CreateSubnetTxFee:             n.Config.CreateSubnetTxFee,
-			TransformSubnetTxFee:          n.Config.TransformSubnetTxFee,
-			CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
-			AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
-			AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
-			AddSubnetValidatorFee:         n.Config.AddSubnetValidatorFee,
-			AddSubnetDelegatorFee:         n.Config.AddSubnetDelegatorFee,
+			TxFeeConfig:                   n.Config.StaticConfig,
+			Upgrades:                      n.Config.UpgradeConfig,
 			VMManager:                     n.VMManager,
 		},
 		n.Log,
