@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package vertex
 
 import (
@@ -11,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/common"
 )
 
 var (
@@ -21,7 +23,7 @@ var (
 )
 
 type TestVM struct {
-	block.TestVM
+	common.TestVM
 
 	CantLinearize, CantParse bool
 

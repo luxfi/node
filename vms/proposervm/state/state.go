@@ -20,6 +20,9 @@ type State interface {
 	ChainState
 	BlockState
 	HeightIndex
+	
+	// Commit writes all pending changes to the underlying database.
+	Commit() error
 }
 
 type state struct {
@@ -56,3 +59,6 @@ func NewMetered(db *versiondb.Database, namespace string, metrics prometheus.Reg
 		HeightIndex: NewHeightIndex(heightDB, db),
 	}, nil
 }
+
+// Since HeightIndex embeds versiondb.Commitable, the Commit method
+// is already available through the embedded HeightIndex interface.

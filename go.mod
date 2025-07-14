@@ -163,4 +163,7 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+replace (
+	github.com/luxfi/coreth => github.com/luxfi/geth v0.13.7
+	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+)

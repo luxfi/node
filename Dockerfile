@@ -1,10 +1,9 @@
-# The version is supplied as a build argument rather than hard-coded
-# to minimize the cost of version changes.
-ARG GO_VERSION
+# Build stage for LuxFi node with POA support
+ARG GO_VERSION=1.21.12
 
 # ============= Compilation Stage ================
 # Always use the native platform to ensure fast builds
-FROM --platform=$BUILDPLATFORM golang:$GO_VERSION-bullseye AS builder
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bullseye AS builder
 
 WORKDIR /build
 
@@ -36,28 +35,53 @@ COPY . .
 # Ensure pre-existing builds are not available for inclusion in the final image
 RUN [ -d ./build ] && rm -rf ./build/* || true
 
-# Build node. The build environment is configured with build_env.sh from the step
+# Build node with POA support. The build environment is configured with build_env.sh from the step
 # enabling cross-compilation.
 ARG RACE_FLAG=""
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
-    ./scripts/build.sh ${RACE_FLAG}
+    ./scripts/build_poa.sh ${RACE_FLAG}
 
 # Create this directory in the builder to avoid requiring anything to be executed in the
 # potentially emulated execution container.
 RUN mkdir -p /node/build
 
-# ============= Cleanup Stage ================
+# ============= Runtime Stage ================
 # Commands executed in this stage may be emulated (i.e. very slow) if TARGETPLATFORM and
 # BUILDPLATFORM have different arches.
 FROM debian:11-slim AS execution
 
-# Maintain compatibility with previous images
-COPY --from=builder /node/build /node/build
-WORKDIR /node/build
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create user and directories
+RUN useradd -m -s /bin/bash luxd && \
+    mkdir -p /data /config && \
+    chown -R luxd:luxd /data /config
 
 # Copy the executables into the container
-COPY --from=builder /build/build/ .
+COPY --from=builder /build/build/luxd /usr/local/bin/
+COPY --from=builder /build/build/plugins/ /usr/local/lib/luxd/plugins/
 
-CMD [ "./node" ]
+# Copy entrypoint script
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose ports
+EXPOSE 9650 9651
+
+# Set user
+USER luxd
+
+# Data directory volume
+VOLUME ["/data"]
+
+# Set entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command
+CMD ["luxd"]
