@@ -22,14 +22,16 @@ var (
 
 // EngineTest is a test engine
 type EngineTest struct {
-	common.EngineTest
+	*common.EngineTest
 
 	CantGetBlock bool
 	GetBlockF    func(context.Context, ids.ID) (snowman.Block, error)
 }
 
 func (e *EngineTest) Default(cant bool) {
-	e.EngineTest.Default(cant)
+	if e.EngineTest != nil {
+		e.EngineTest.Default(cant)
+	}
 	e.CantGetBlock = false
 }
 
@@ -37,8 +39,8 @@ func (e *EngineTest) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 	if e.GetBlockF != nil {
 		return e.GetBlockF(ctx, blkID)
 	}
-	if e.CantGetBlock && e.T != nil {
-		require.FailNow(e.T, errGetBlock.Error())
+	if e.CantGetBlock && e.EngineTest != nil && e.EngineTest.T != nil {
+		require.FailNow(e.EngineTest.T, errGetBlock.Error())
 	}
 	return nil, errGetBlock
 }

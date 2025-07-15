@@ -105,6 +105,12 @@ type BootstrapConfig struct {
 	BootstrapMaxTimeGetAncestors time.Duration `json:"bootstrapMaxTimeGetAncestors"`
 
 	Bootstrappers []genesis.Bootstrapper `json:"bootstrappers"`
+
+	// Skip bootstrapping and start processing immediately
+	SkipBootstrap bool `json:"skipBootstrap"`
+	
+	// Enable automining in POA mode
+	EnableAutomining bool `json:"enableAutomining"`
 }
 
 type DatabaseConfig struct {

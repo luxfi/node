@@ -24,8 +24,6 @@ LUXD_ARGS=(
     "--public-ip=${PUBLIC_IP:-127.0.0.1}"
     "--health-check-frequency=2s"
     "--api-admin-enabled=true"
-    "--api-auth-required=false"
-    "--api-ipcs-enabled=true"
     "--index-enabled=true"
     "--log-level=${LOG_LEVEL:-info}"
 )

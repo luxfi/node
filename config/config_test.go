@@ -575,3 +575,90 @@ func setupViper(configFilePath string) *viper.Viper {
 	}
 	return v
 }
+
+
+func TestSkipBootstrapConfig(t *testing.T) {
+	v := viper.New()
+
+	// Test default values
+	v.SetDefault(SkipBootstrapKey, false)
+	v.SetDefault(EnableAutominingKey, false)
+
+	config, err := getBootstrapConfig(v, 1)
+	require.NoError(t, err)
+	require.False(t, config.SkipBootstrap)
+	require.False(t, config.EnableAutomining)
+
+	// Test with skip bootstrap enabled
+	v.Set(SkipBootstrapKey, true)
+	config, err = getBootstrapConfig(v, nil)
+	require.NoError(t, err)
+	require.True(t, config.SkipBootstrap)
+	require.False(t, config.EnableAutomining)
+
+	// Test with automining enabled
+	v.Set(EnableAutominingKey, true)
+	config, err = getBootstrapConfig(v, nil)
+	require.NoError(t, err)
+	require.True(t, config.SkipBootstrap)
+	require.True(t, config.EnableAutomining)
+
+	// Test with both disabled
+	v.Set(SkipBootstrapKey, false)
+	v.Set(EnableAutominingKey, false)
+	config, err = getBootstrapConfig(v, nil)
+	require.NoError(t, err)
+	require.False(t, config.SkipBootstrap)
+	require.False(t, config.EnableAutomining)
+}
+
+func TestDevModeFlags(t *testing.T) {
+	tests := []struct {
+		name             string
+		skipBootstrap    bool
+		enableAutomining bool
+		expected         bool
+	}{
+		{
+			name:             "both enabled",
+			skipBootstrap:    true,
+			enableAutomining: true,
+			expected:         true,
+		},
+		{
+			name:             "only skip bootstrap",
+			skipBootstrap:    true,
+			enableAutomining: false,
+			expected:         true,
+		},
+		{
+			name:             "only automining",
+			skipBootstrap:    false,
+			enableAutomining: true,
+			expected:         true,
+		},
+		{
+			name:             "both disabled",
+			skipBootstrap:    false,
+			enableAutomining: false,
+			expected:         false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := viper.New()
+			v.Set(SkipBootstrapKey, tt.skipBootstrap)
+			v.Set(EnableAutominingKey, tt.enableAutomining)
+
+			config, err := getBootstrapConfig(v, 1)
+			require.NoError(t, err)
+			require.Equal(t, tt.skipBootstrap, config.SkipBootstrap)
+			require.Equal(t, tt.enableAutomining, config.EnableAutomining)
+
+			// Check that at least one dev mode flag is set
+			devModeEnabled := config.SkipBootstrap || config.EnableAutomining
+			require.Equal(t, tt.expected, devModeEnabled)
+		})
+	}
+}

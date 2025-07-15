@@ -1,6 +1,9 @@
 // Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build !noblst
+// +build !noblst
+
 package bls
 
 import (

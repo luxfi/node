@@ -1192,6 +1192,8 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            n.Config.ChainDataDir,
 			Subnets:                                 subnets,
+			SkipBootstrap:                           n.Config.SkipBootstrap,
+			EnableAutomining:                        n.Config.EnableAutomining,
 		},
 	)
 	if err != nil {

@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
+	"github.com/luxfi/node/snow/engine/common/queue"
 	"github.com/luxfi/node/snow/engine/lux/state"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
 	"github.com/luxfi/node/snow/engine/common"
@@ -207,6 +207,8 @@ type ManagerConfig struct {
 	Keystore                  keystore.Keystore
 	AtomicMemory              *atomic.Memory
 	LUXAssetID               ids.ID
+	SkipBootstrap             bool // Skip bootstrapping and start processing immediately
+	EnableAutomining          bool // Enable automining in POA mode
 	XChainID                  ids.ID          // ID of the X-Chain,
 	CChainID                  ids.ID          // ID of the C-Chain,
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
@@ -908,7 +910,14 @@ func (m *manager) createLuxChain(
 	}
 
 	connectedBeacons := tracker.NewPeers()
-	startupTracker := tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
+	var startupTracker tracker.Startup
+	if m.SkipBootstrap {
+		// Use skip bootstrap tracker that immediately returns true
+		startupTracker = tracker.NewSkipBootstrap(connectedBeacons)
+		ctx.Log.Info("bootstrapping disabled - starting processing immediately")
+	} else {
+		startupTracker = tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
+	}
 	vdrs.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
 	snowGetHandler, err := snowgetter.New(
@@ -1002,7 +1011,7 @@ func (m *manager) createLuxChain(
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
-		PeerTracker:                    peerTracker,
+		Beacons:                        vdrs,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
 		TxBlocked:                      txBlocker,
@@ -1016,7 +1025,6 @@ func (m *manager) createLuxChain(
 	luxBootstrapper, err := avbootstrap.New(
 		luxBootstrapperConfig,
 		snowmanBootstrapper.Start,
-		luxMetrics,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)

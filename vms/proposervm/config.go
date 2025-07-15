@@ -37,6 +37,11 @@ type Config struct {
 
 	// Registerer for prometheus metrics
 	Registerer prometheus.Registerer
+
+	// Automining configuration
+	AutominingEnabled bool
+	// AutominingInterval is the interval between automatic block production
+	AutominingInterval time.Duration
 }
 
 func (c *Config) IsDurangoActivated(timestamp time.Time) bool {
