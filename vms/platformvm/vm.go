@@ -152,7 +152,7 @@ func (vm *VM) Initialize(
 
 	validatorManager := pvalidators.NewManager(chainCtx.Log, vm.Config, vm.state, vm.metrics, &vm.clock)
 	vm.State = validatorManager
-	utxoVerifier := utxo.NewVerifier(vm.ctx, &vm.clock, vm.fx)
+	utxoHandler := utxo.NewHandler(vm.ctx, &vm.clock, vm.fx)
 	vm.uptimeManager = uptime.NewManager(vm.state, &vm.clock)
 	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrapped, &chainCtx.Lock, vm.uptimeManager)
 
@@ -161,7 +161,7 @@ func (vm *VM) Initialize(
 		Ctx:          vm.ctx,
 		Clk:          &vm.clock,
 		Fx:           vm.fx,
-		FlowChecker:  utxoVerifier,
+		FlowChecker:  utxoHandler,
 		Uptimes:      vm.uptimeManager,
 		Rewards:      rewards,
 		Bootstrapped: &vm.bootstrapped,

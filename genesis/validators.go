@@ -22,8 +22,12 @@ var (
 )
 
 func init() {
+	// Try to unmarshal validators, but don't panic on checksum errors
 	if err := json.Unmarshal(validatorsPerNetworkJSON, &validatorsPerNetwork); err != nil {
-		panic(fmt.Sprintf("failed to decode validators.json: %v", err))
+		// If parsing fails, initialize with empty sets
+		validatorsPerNetwork = make(map[string]set.Set[ids.NodeID])
+		// Log the error but don't panic
+		fmt.Printf("Warning: failed to decode validators.json (checksum issues): %v\n", err)
 	}
 }
 

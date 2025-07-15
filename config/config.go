@@ -490,6 +490,8 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		BootstrapMaxTimeGetAncestors:            v.GetDuration(BootstrapMaxTimeGetAncestorsKey),
 		BootstrapAncestorsMaxContainersSent:     int(v.GetUint(BootstrapAncestorsMaxContainersSentKey)),
 		BootstrapAncestorsMaxContainersReceived: int(v.GetUint(BootstrapAncestorsMaxContainersReceivedKey)),
+		SkipBootstrap:                           v.GetBool(SkipBootstrapKey),
+		EnableAutomining:                        v.GetBool(EnableAutominingKey),
 	}
 
 	// TODO: Add a "BootstrappersKey" flag to more clearly enforce ID and IP

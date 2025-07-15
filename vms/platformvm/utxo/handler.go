@@ -229,10 +229,10 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Stake any value that should be staked
-		amountToStake := math.Min(
-			amount-amountStaked, // Amount we still need to stake
-			remainingValue,      // Amount available to stake
-		)
+		amountToStake := amount - amountStaked // Amount we still need to stake
+		if remainingValue < amountToStake {
+			amountToStake = remainingValue // Amount available to stake
+		}
 		amountStaked += amountToStake
 		remainingValue -= amountToStake
 
@@ -320,18 +320,18 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Burn any value that should be burned
-		amountToBurn := math.Min(
-			fee-amountBurned, // Amount we still need to burn
-			remainingValue,   // Amount available to burn
-		)
+		amountToBurn := fee - amountBurned // Amount we still need to burn
+		if remainingValue < amountToBurn {
+			amountToBurn = remainingValue // Amount available to burn
+		}
 		amountBurned += amountToBurn
 		remainingValue -= amountToBurn
 
 		// Stake any value that should be staked
-		amountToStake := math.Min(
-			amount-amountStaked, // Amount we still need to stake
-			remainingValue,      // Amount available to stake
-		)
+		amountToStake := amount - amountStaked // Amount we still need to stake
+		if remainingValue < amountToStake {
+			amountToStake = remainingValue // Amount available to stake
+		}
 		amountStaked += amountToStake
 		remainingValue -= amountToStake
 
@@ -557,7 +557,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.Version, owner)
+		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}
@@ -606,7 +606,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.Version, owner)
+		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}

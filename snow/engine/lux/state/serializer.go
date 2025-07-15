@@ -90,7 +90,9 @@ func (s *Serializer) BuildStopVtx(
 		if err != nil {
 			return nil, err
 		}
-		height = math.Max(height, childHeight)
+		if childHeight > height {
+			height = childHeight
+		}
 	}
 
 	vtx, err := vertex.BuildStopVertex(

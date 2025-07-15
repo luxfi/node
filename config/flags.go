@@ -30,8 +30,8 @@ const (
 	DefaultHTTPPort    = 9650
 	DefaultStakingPort = 9651
 
-	Lux NodeDataDirVar    = "LUXD_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + Lux NodeDataDirVar
+	LuxNodeDataDirVar        = "LUXD_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + LuxNodeDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
 )
@@ -281,6 +281,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// TODO: combine "BootstrapIPsKey" and "BootstrapIDsKey" into one flag
 	fs.String(BootstrapIPsKey, "", "Comma separated list of bootstrap peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
 	fs.String(BootstrapIDsKey, "", "Comma separated list of bootstrap peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z")
+	fs.Bool(SkipBootstrapKey, false, "If true, skip the bootstrapping phase and start processing immediately")
+	fs.Bool(EnableAutominingKey, false, "If true, enable automining in POA mode")
 	fs.Duration(BootstrapBeaconConnectionTimeoutKey, time.Minute, "Timeout before emitting a warn log when connecting to bootstrapping beacons")
 	fs.Duration(BootstrapMaxTimeGetAncestorsKey, 50*time.Millisecond, "Max Time to spend fetching a container and its ancestors when responding to a GetAncestors")
 	fs.Uint(BootstrapAncestorsMaxContainersSentKey, 2000, "Max number of containers in an Ancestors message sent by this node")
@@ -387,13 +389,13 @@ func GetExpandedArg(v *viper.Viper, key string) string {
 }
 
 // GetExpandedString expands [s] with any variables using the OS env. If the
-// [Lux NodeDataDirVar] var is used, we expand the value of the variable with
+// [LuxNodeDataDirVar] var is used, we expand the value of the variable with
 // the string in viper corresponding to [DataDirKey].
 func GetExpandedString(v *viper.Viper, s string) string {
 	return os.Expand(
 		s,
 		func(strVar string) string {
-			if strVar == Lux NodeDataDirVar {
+			if strVar == LuxNodeDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)

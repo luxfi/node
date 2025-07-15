@@ -10,6 +10,11 @@ WORKDIR /build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 # Configure a cross-compiler if the target platform differs from the build platform.
 #
 # build_env.sh is used to capture the environmental changes required by the build step since RUN
@@ -41,6 +46,7 @@ ARG RACE_FLAG=""
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    export BUILD_TAGS="noblst" && \
     ./scripts/build_poa.sh ${RACE_FLAG}
 
 # Create this directory in the builder to avoid requiring anything to be executed in the

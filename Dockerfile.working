@@ -1,0 +1,26 @@
+FROM ubuntu:22.04
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the working x86_64 binary
+COPY build/luxd-x86 /usr/local/bin/luxd
+RUN chmod +x /usr/local/bin/luxd
+
+# Copy entrypoint script
+COPY docker-entrypoint-simple.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create data directory
+RUN mkdir -p /data
+
+# Expose ports
+EXPOSE 9650 9651
+
+# Volume for data
+VOLUME ["/data"]
+
+ENTRYPOINT ["/entrypoint.sh"]

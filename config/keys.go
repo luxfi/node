@@ -67,6 +67,8 @@ const (
 	StateSyncIDsKey                                    = "state-sync-ids"
 	BootstrapIPsKey                                    = "bootstrap-ips"
 	BootstrapIDsKey                                    = "bootstrap-ids"
+	SkipBootstrapKey                                   = "skip-bootstrap"
+	EnableAutominingKey                                = "enable-automining"
 	StakingHostKey                                     = "staking-host"
 	StakingPortKey                                     = "staking-port"
 	StakingEphemeralCertEnabledKey                     = "staking-ephemeral-cert-enabled"

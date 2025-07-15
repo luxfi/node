@@ -257,7 +257,7 @@ func (db *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database
 	iter_, err := db.pebbleDB.NewIter(keyRange(start, prefix))
 	if err != nil {
 		// Return a closed iterator on error
-		return &iter{pebbleDB: db.pebbleDB, iter: nil, initialized: true, closed: true}
+		return &iter{db: db, iter: nil, initialized: true, closed: true}
 	}
 
 	iter := &iter{

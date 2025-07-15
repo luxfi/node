@@ -7,8 +7,10 @@ echo "Building LUX node with POA support..."
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
-# Navigate to node directory
-cd /home/z/node
+# Get the script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Navigate to node directory (parent of scripts)
+cd "$SCRIPT_DIR/.."
 
 # Build the node
 echo "Running build script..."

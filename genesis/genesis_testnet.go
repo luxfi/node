@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 
 	// TestnetParams are the params used for the testnet testnet
 	TestnetParams = Params{
-		TxFeeConfig: TxFeeConfig{
+		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              10 * units.MilliLux,
 			CreateSubnetTxFee:             100 * units.MilliLux,
