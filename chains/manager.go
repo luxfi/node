@@ -581,6 +581,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		if chainParams.ID == constants.PlatformChainID {
 			beacons = chainParams.CustomBeacons
 		}
+		
+		// In skip-bootstrap mode, use empty beacons for all chains
+		// This enables single-node development mode
+		if m.SkipBootstrap {
+			beacons = validators.NewManager()
+			ctx.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
+		}
 
 		chain, err = m.createSnowmanChain(
 			ctx,
@@ -960,10 +967,16 @@ func (m *manager) createLuxChain(
 	}
 
 	// create bootstrap gear
+	bootstrapBeacons := vdrs
+	// In skip-bootstrap mode, use empty beacons for single-node development
+	if m.SkipBootstrap {
+		bootstrapBeacons = validators.NewManager()
+	}
+	
 	bootstrapCfg := smbootstrap.Config{
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
-		Beacons:                        vdrs,
+		Beacons:                        bootstrapBeacons,
 		SampleK:                        sampleK,
 		StartupTracker:                 startupTracker,
 		Sender:                         snowmanMessageSender,
@@ -1006,12 +1019,19 @@ func (m *manager) createLuxChain(
 	}
 
 	// create bootstrap gear
+	beacons := vdrs
+	// In skip-bootstrap mode, use empty beacons for single-node development
+	if m.SkipBootstrap {
+		beacons = validators.NewManager()
+		ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
+	}
+	
 	luxBootstrapperConfig := avbootstrap.Config{
 		AllGetsServer:                  avaGetHandler,
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
-		Beacons:                        vdrs,
+		Beacons:                        beacons,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
 		TxBlocked:                      txBlocker,

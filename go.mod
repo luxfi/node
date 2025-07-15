@@ -28,7 +28,6 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.9
-	github.com/luxfi/coreth v0.13.7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
@@ -168,7 +167,6 @@ require (
 )
 
 replace (
-	github.com/luxfi/coreth => ./geth
 	github.com/luxfi/geth => ./geth
 	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 )

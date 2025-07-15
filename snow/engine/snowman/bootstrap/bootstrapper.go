@@ -183,6 +183,30 @@ func (b *Bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 		return fmt.Errorf("failed to initialize missing block IDs: %w", err)
 	}
 
+	// Check if skip-bootstrap is enabled and we should complete immediately
+	b.Ctx.Log.Info("checking skip-bootstrap conditions",
+		zap.Bool("startupTrackerNil", b.Config.StartupTracker == nil),
+		zap.Bool("shouldStart", b.Config.StartupTracker != nil && b.Config.StartupTracker.ShouldStart()),
+		zap.Int("beaconCount", b.Beacons.Count(b.Ctx.SubnetID)),
+	)
+	
+	if b.Config.StartupTracker != nil && b.Config.StartupTracker.ShouldStart() {
+		currentBeacons := b.Beacons.GetMap(b.Ctx.SubnetID)
+		b.Ctx.Log.Info("skip-bootstrap enabled, checking beacons",
+			zap.Int("beaconMapSize", len(currentBeacons)),
+		)
+		if len(currentBeacons) == 0 {
+			b.Ctx.Log.Info("skip-bootstrap enabled with no beacons - completing bootstrap immediately")
+			b.started = true
+			// Mark as bootstrapped
+			if b.Bootstrapped != nil {
+				b.bootstrappedOnce.Do(b.Bootstrapped)
+			}
+			b.Config.BootstrapTracker.Bootstrapped(b.Ctx.ChainID)
+			return b.onFinished(ctx, b.requestID)
+		}
+	}
+
 	return b.tryStartBootstrapping(ctx)
 }
 
@@ -208,6 +232,11 @@ func (b *Bootstrapper) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 // tryStartBootstrapping will start bootstrapping the first time it is called
 // while the startupTracker is reporting that the protocol should start.
 func (b *Bootstrapper) tryStartBootstrapping(ctx context.Context) error {
+	b.Ctx.Log.Info("tryStartBootstrapping called",
+		zap.Bool("started", b.started),
+		zap.Bool("shouldStart", b.StartupTracker.ShouldStart()),
+	)
+	
 	if b.started || !b.StartupTracker.ShouldStart() {
 		return nil
 	}
@@ -221,6 +250,22 @@ func (b *Bootstrapper) startBootstrapping(ctx context.Context) error {
 	nodeWeights := make(map[ids.NodeID]uint64, len(currentBeacons))
 	for nodeID, beacon := range currentBeacons {
 		nodeWeights[nodeID] = beacon.Weight
+	}
+
+	b.Ctx.Log.Info("startBootstrapping called",
+		zap.Int("beaconCount", len(currentBeacons)),
+		zap.Int("nodeWeights", len(nodeWeights)),
+	)
+
+	// Special handling for skip-bootstrap with no nodes
+	if len(nodeWeights) == 0 && b.Config.StartupTracker != nil && b.Config.StartupTracker.ShouldStart() {
+		b.Ctx.Log.Info("skip-bootstrap: no nodes to bootstrap from, completing immediately")
+		// Mark as bootstrapped
+		if b.Bootstrapped != nil {
+			b.bootstrappedOnce.Do(b.Bootstrapped)
+		}
+		b.Config.BootstrapTracker.Bootstrapped(b.Ctx.ChainID)
+		return b.onFinished(ctx, b.requestID)
 	}
 
 	frontierNodes, err := bootstrapper.Sample(nodeWeights, b.SampleK)
@@ -282,6 +327,20 @@ func (b *Bootstrapper) sendBootstrappingMessagesOrFinish(ctx context.Context) er
 
 	numAccepted := len(accepted)
 	if numAccepted == 0 {
+		// Check if we're in skip-bootstrap mode with no nodes
+		if b.Config.StartupTracker != nil && b.Config.StartupTracker.ShouldStart() {
+			currentBeacons := b.Beacons.GetMap(b.Ctx.SubnetID)
+			if len(currentBeacons) == 0 {
+				b.Ctx.Log.Info("no bootstrap nodes and no accepted blocks - completing bootstrap")
+				// Mark as bootstrapped
+				if b.Bootstrapped != nil {
+					b.bootstrappedOnce.Do(b.Bootstrapped)
+				}
+				b.Config.BootstrapTracker.Bootstrapped(b.Ctx.ChainID)
+				return b.onFinished(ctx, b.requestID)
+			}
+		}
+		
 		b.Ctx.Log.Debug("restarting bootstrap",
 			zap.String("reason", "no blocks accepted"),
 			zap.Int("numBeacons", b.Beacons.Count(b.Ctx.SubnetID)),
