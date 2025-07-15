@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/coreth/core/types"
-	"github.com/luxfi/coreth/ethclient"
-	"github.com/luxfi/coreth/interfaces"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/interfaces"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
@@ -176,7 +176,7 @@ func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
 	require.NoError(ginkgo.GinkgoT(), err)
 	// Double the suggested gas price to maximize the chances of
 	// acceptance. Maybe this can be revisited pending resolution of
-	// https://github.com/luxfi/coreth/issues/314.
+	// https://github.com/luxfi/geth/issues/314.
 	gasPrice.Add(gasPrice, gasPrice)
 	return gasPrice
 }

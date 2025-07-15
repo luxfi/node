@@ -71,7 +71,10 @@ require (
 
 // require github.com/supranational/blst v0.3.11
 
-require github.com/supranational/blst v0.3.11
+require (
+	github.com/luxfi/geth v0.0.0-00010101000000-000000000000
+	github.com/supranational/blst v0.3.11
+)
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
