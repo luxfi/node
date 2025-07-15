@@ -320,6 +320,18 @@ func (*bootstrapper) Notify(context.Context, common.Message) error {
 func (b *bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")
 
+	// Check if skip-bootstrap is enabled and we should complete immediately
+	if b.Config.StartupTracker != nil && b.Config.StartupTracker.ShouldStart() {
+		b.Ctx.Log.Info("skip-bootstrap enabled - completing bootstrap immediately for X-Chain")
+		b.started = true
+		// Mark as bootstrapped
+		if b.Bootstrapped != nil {
+			b.bootstrappedOnce.Do(b.Bootstrapped)
+		}
+		b.Config.BootstrapTracker.Bootstrapped(b.Ctx.ChainID)
+		return b.onFinished(ctx, startReqID)
+	}
+
 	b.Ctx.State.Set(snow.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_LUX,
 		State: snow.Bootstrapping,
