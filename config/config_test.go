@@ -591,14 +591,14 @@ func TestSkipBootstrapConfig(t *testing.T) {
 
 	// Test with skip bootstrap enabled
 	v.Set(SkipBootstrapKey, true)
-	config, err = getBootstrapConfig(v, nil)
+	config, err = getBootstrapConfig(v, 1)
 	require.NoError(t, err)
 	require.True(t, config.SkipBootstrap)
 	require.False(t, config.EnableAutomining)
 
 	// Test with automining enabled
 	v.Set(EnableAutominingKey, true)
-	config, err = getBootstrapConfig(v, nil)
+	config, err = getBootstrapConfig(v, 1)
 	require.NoError(t, err)
 	require.True(t, config.SkipBootstrap)
 	require.True(t, config.EnableAutomining)
@@ -606,7 +606,7 @@ func TestSkipBootstrapConfig(t *testing.T) {
 	// Test with both disabled
 	v.Set(SkipBootstrapKey, false)
 	v.Set(EnableAutominingKey, false)
-	config, err = getBootstrapConfig(v, nil)
+	config, err = getBootstrapConfig(v, 1)
 	require.NoError(t, err)
 	require.False(t, config.SkipBootstrap)
 	require.False(t, config.EnableAutomining)
