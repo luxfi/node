@@ -10,9 +10,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/coreth/core"
-	"github.com/luxfi/coreth/params"
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/params"
+	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"

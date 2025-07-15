@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -187,8 +188,12 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
-	if parentTimestamp.Before(b.vm.ActivationTime) {
-		// The chain hasn't forked yet
+	
+	// Check if automining is enabled via environment variable
+	autominingEnabled := os.Getenv("LUX_ENABLE_AUTOMINING") == "true"
+	
+	if parentTimestamp.Before(b.vm.ActivationTime) && !autominingEnabled {
+		// The chain hasn't forked yet (unless automining is enabled)
 		innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)
 		if err != nil {
 			return nil, err

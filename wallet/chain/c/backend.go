@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/math"

@@ -83,7 +83,7 @@ import (
 
 	avmconfig "github.com/luxfi/node/vms/avm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	coreth "github.com/luxfi/coreth/plugin/evm"
+	coreth "github.com/luxfi/geth/plugin/evm"
 )
 
 const (
