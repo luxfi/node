@@ -4,6 +4,7 @@
 package tracker
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,21 +27,22 @@ func TestSkipBootstrap(t *testing.T) {
 	nodeID1 := ids.GenerateTestNodeID()
 	nodeID2 := ids.GenerateTestNodeID()
 	
-	sb.Connected(nodeID1, version.CurrentApp)
+	ctx := context.Background()
+	sb.Connected(ctx, nodeID1, version.CurrentApp)
 	require.True(sb.ShouldStart())
 	
-	sb.Connected(nodeID2, version.CurrentApp)
+	sb.Connected(ctx, nodeID2, version.CurrentApp)
 	require.True(sb.ShouldStart())
 
 	// Disconnect peers
-	sb.Disconnected(nodeID1)
+	sb.Disconnected(ctx, nodeID1)
 	require.True(sb.ShouldStart())
 	
-	sb.Disconnected(nodeID2)
+	sb.Disconnected(ctx, nodeID2)
 	require.True(sb.ShouldStart())
 
 	// Even with no peers, should still return true
-	require.Equal(0, sb.ConnectedWeight())
+	require.Equal(uint64(0), sb.ConnectedWeight())
 	require.True(sb.ShouldStart())
 }
 
@@ -55,18 +57,23 @@ func TestSkipBootstrapInterface(t *testing.T) {
 	sb := NewSkipBootstrap(peers)
 
 	// Test Peers methods work
+	ctx := context.Background()
 	nodeID := ids.GenerateTestNodeID()
-	sb.Connected(nodeID, version.CurrentApp)
+	
+	// Add validator first so weight is tracked
+	sb.OnValidatorAdded(nodeID, nil, ids.Empty, 100)
+	
+	sb.Connected(ctx, nodeID, version.CurrentApp)
 	
 	weight := sb.ConnectedWeight()
-	require.Equal(1, weight)
+	require.Equal(uint64(100), weight)  // Should have weight from validator
 
 	percent := sb.ConnectedPercent()
-	require.Equal(1.0, percent)
+	require.Equal(1.0, percent)  // 100% connected (100/100)
 
-	sb.Disconnected(nodeID)
+	sb.Disconnected(ctx, nodeID)
 	weight = sb.ConnectedWeight()
-	require.Equal(0, weight)
+	require.Equal(uint64(0), weight)
 }
 
 func TestSkipBootstrapConcurrent(t *testing.T) {
