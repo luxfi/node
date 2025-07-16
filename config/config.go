@@ -810,11 +810,23 @@ func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackSubnetsStr := v.GetString(TrackSubnetsKey)
 	trackSubnetsStrs := strings.Split(trackSubnetsStr, ",")
 	trackedSubnetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
+	forceIgnoreChecksum := v.GetBool(ForceIgnoreChecksumKey)
+	
 	for _, subnet := range trackSubnetsStrs {
 		if subnet == "" {
 			continue
 		}
-		subnetID, err := ids.FromString(subnet)
+		
+		var subnetID ids.ID
+		var err error
+		
+		if forceIgnoreChecksum {
+			// Try to parse with force flag
+			subnetID, err = ids.FromStringWithForce(subnet, true)
+		} else {
+			subnetID, err = ids.FromString(subnet)
+		}
+		
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse subnetID %q: %w", subnet, err)
 		}
@@ -1225,6 +1237,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		err        error
 	)
 
+	// Handle --dev flag first
+	if v.GetBool(DevModeKey) {
+		// Development mode sets various flags for single-node operation
+		v.Set(SybilProtectionEnabledKey, false)
+		v.Set(SybilProtectionDisabledWeightKey, 100)
+		v.Set(SnowSampleSizeKey, 1)
+		v.Set(SnowQuorumSizeKey, 1)
+		v.Set(SnowVirtuousCommitThresholdKey, 1)
+		v.Set(SnowRogueCommitThresholdKey, 1)
+		v.Set(POASingleNodeModeKey, true)
+		v.Set(SkipBootstrapKey, true)
+		v.Set(NetworkHealthMinPeersKey, 0)
+	}
+
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {
 		return node.Config{}, err
@@ -1422,6 +1448,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	nodeConfig.ChainDataDir = GetExpandedArg(v, ChainDataDirKey)
+	nodeConfig.ImportChainData = GetExpandedArg(v, ImportChainDataKey)
 
 	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
 

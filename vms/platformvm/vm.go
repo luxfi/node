@@ -4,11 +4,14 @@
 package platformvm
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gorilla/rpc/v2"
@@ -213,6 +216,7 @@ func (vm *VM) Initialize(
 	)
 
 	// Create all of the chains that the database says exist
+	chainCtx.Log.Info("about to call initBlockchains")
 	if err := vm.initBlockchains(); err != nil {
 		return fmt.Errorf(
 			"failed to initialize blockchains: %w",
@@ -287,8 +291,159 @@ func (vm *VM) pruneMempool() error {
 	return nil
 }
 
+// checkExistingChains looks for existing blockchain data and registers them
+func (vm *VM) checkExistingChains() error {
+	// Scan chainData directory for existing chains
+	// We need the parent chainData directory, not the P-Chain specific one
+	chainDataDir := filepath.Dir(vm.ctx.ChainDataDir)
+	vm.ctx.Log.Info("checking for existing chains in chainData directory",
+		zap.String("chainDataDir", chainDataDir),
+	)
+	
+	entries, err := os.ReadDir(chainDataDir)
+	if err != nil {
+		vm.ctx.Log.Info("chainData directory read error",
+			zap.Error(err),
+		)
+		// Directory might not exist yet, that's ok
+		return nil
+	}
+	
+	vm.ctx.Log.Info("found chainData entries",
+		zap.Int("count", len(entries)),
+	)
+	
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		
+		vm.ctx.Log.Info("checking chainData entry",
+			zap.String("name", entry.Name()),
+		)
+		
+		// Try to parse as chain ID
+		chainID, err := ids.FromString(entry.Name())
+		if err != nil {
+			vm.ctx.Log.Debug("failed to parse chain ID",
+				zap.String("name", entry.Name()),
+				zap.Error(err),
+			)
+			continue
+		}
+		
+		// Check if this chain has a config.json indicating it's an EVM chain
+		configPath := filepath.Join(chainDataDir, entry.Name(), "config.json")
+		configData, err := os.ReadFile(configPath)
+		if err != nil {
+			continue
+		}
+		
+		// Determine VM type based on directory contents
+		var vmID ids.ID
+		var subnetID ids.ID = constants.PrimaryNetworkID // Default to primary network
+		
+		// Check for EVM chain (C-Chain)
+		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
+			vmID = constants.EVMID
+			vm.ctx.Log.Info("detected EVM chain from config",
+				zap.String("chainID", chainID.String()),
+			)
+		} else {
+			// Check for other VM types by looking at other files
+			// For now, we'll skip non-EVM chains
+			vm.ctx.Log.Debug("skipping non-EVM chain",
+				zap.String("chainID", chainID.String()),
+			)
+			continue
+		}
+		
+		// Check if we need to determine subnet ID from somewhere
+		// For now, assume primary network for orphaned chains
+		
+		// Check if this chain is already known
+		chains, err := vm.state.GetChains(subnetID)
+		if err != nil {
+			vm.ctx.Log.Warn("failed to get chains for subnet",
+				zap.String("subnetID", subnetID.String()),
+				zap.Error(err),
+			)
+			continue
+		}
+		
+		chainExists := false
+		for _, chain := range chains {
+			if chain.ID() == chainID {
+				chainExists = true
+				break
+			}
+		}
+		
+		if !chainExists {
+			// This is an orphaned chain, queue it for creation
+			vm.ctx.Log.Info("found orphaned chain, queuing for creation",
+				zap.String("chainID", chainID.String()),
+				zap.String("vmID", vmID.String()),
+				zap.String("subnetID", subnetID.String()),
+				zap.String("path", filepath.Join(chainDataDir, entry.Name())),
+			)
+			
+			// For existing chains, we need to provide a minimal but valid genesis
+			// The EVM will match this against the existing chain data
+			// Extract chainId from config if possible
+			var chainIDNum uint64 = 96369 // default
+			if bytes.Contains(configData, []byte(`"chainId": 96369`)) || bytes.Contains(configData, []byte(`"chainId":96369`)) {
+				chainIDNum = 96369
+			}
+			
+			minimalGenesis := fmt.Sprintf(`{
+				"config": {
+					"chainId": %d,
+					"homesteadBlock": 0,
+					"eip150Block": 0,
+					"eip155Block": 0,
+					"eip158Block": 0,
+					"byzantiumBlock": 0,
+					"constantinopleBlock": 0,
+					"petersburgBlock": 0,
+					"istanbulBlock": 0,
+					"muirGlacierBlock": 0,
+					"subnetEVMTimestamp": 0,
+					"feeConfig": {
+						"gasLimit": 8000000,
+						"targetBlockRate": 2,
+						"minBaseFee": 25000000000,
+						"targetGas": 15000000,
+						"baseFeeChangeDenominator": 36,
+						"minBlockGasCost": 0,
+						"maxBlockGasCost": 1000000,
+						"blockGasCostStep": 200000
+					}
+				},
+				"gasLimit": "0x7a1200",
+				"difficulty": "0x0",
+				"alloc": {}
+			}`, chainIDNum)
+			
+			vm.Config.QueueExistingChainWithGenesis(chainID, subnetID, vmID, []byte(minimalGenesis))
+		} else {
+			vm.ctx.Log.Debug("chain already registered",
+				zap.String("chainID", chainID.String()),
+			)
+		}
+	}
+	return nil
+}
+
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
+	vm.ctx.Log.Info("initBlockchains called")
+	
+	// Check for existing chains in chainData directory
+	if err := vm.checkExistingChains(); err != nil {
+		vm.ctx.Log.Warn("failed to check existing chains", zap.Error(err))
+	}
+
 	if vm.Config.PartialSyncPrimaryNetwork {
 		vm.ctx.Log.Info("skipping primary network chain creation")
 	} else if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
@@ -326,7 +481,36 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 		if !ok {
 			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chain.Unsigned)
 		}
-		vm.Config.CreateChain(chain.ID(), tx)
+		
+		chainID := chain.ID()
+		
+		// Check for chain ID mapping override
+		// Support mapping for C-Chain to use existing blockchain ID
+		vm.ctx.Log.Info("Checking chain ID mapping",
+			zap.String("vmID", tx.VMID.String()),
+			zap.String("EVMID", constants.EVMID.String()),
+			zap.String("originalChainID", chainID.String()),
+			zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
+		)
+		
+		if tx.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
+			mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
+			parsedID, err := ids.FromString(mappedID)
+			if err == nil {
+				vm.ctx.Log.Info("Using mapped blockchain ID for C-Chain",
+					zap.String("original", chainID.String()),
+					zap.String("mapped", parsedID.String()),
+				)
+				chainID = parsedID
+			} else {
+				vm.ctx.Log.Warn("Invalid chain ID mapping",
+					zap.String("mapping", mappedID),
+					zap.Error(err),
+				)
+			}
+		}
+		
+		vm.Config.CreateChain(chainID, tx)
 	}
 	return nil
 }

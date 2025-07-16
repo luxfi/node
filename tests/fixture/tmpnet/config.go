@@ -397,7 +397,7 @@ func NewTestGenesis(
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
 		Config: &params.ChainConfig{
-			ChainID: big.NewInt(43112), // Arbitrary chain ID is arbitrary
+			ChainID: big.NewInt(96369), // Arbitrary chain ID is arbitrary
 		},
 		Difficulty: big.NewInt(0), // Difficulty is a mandatory field
 		GasLimit:   DefaultGasLimit,

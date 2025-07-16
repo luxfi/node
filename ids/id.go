@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mr-tron/base58/base58"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
@@ -41,6 +42,25 @@ func ToID(bytes []byte) (ID, error) {
 func FromString(idStr string) (ID, error) {
 	bytes, err := cb58.Decode(idStr)
 	if err != nil {
+		return ID{}, err
+	}
+	return ToID(bytes)
+}
+
+// FromStringWithForce is like FromString but can force ignore checksum errors
+func FromStringWithForce(idStr string, forceIgnoreChecksum bool) (ID, error) {
+	bytes, err := cb58.Decode(idStr)
+	if err != nil {
+		// If force flag is set and it's a checksum error, try raw base58 decode
+		if forceIgnoreChecksum && err == cb58.ErrBadChecksum {
+			// Decode raw base58 and take first 32 bytes
+			rawBytes, decodeErr := base58.Decode(idStr)
+			if decodeErr == nil && len(rawBytes) >= IDLen {
+				var id ID
+				copy(id[:], rawBytes[:IDLen])
+				return id, nil
+			}
+		}
 		return ID{}, err
 	}
 	return ToID(bytes)

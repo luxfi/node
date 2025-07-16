@@ -8,6 +8,7 @@ package config
 const HTTPWriteTimeoutKey = "http-write-timeout" // #nosec G101
 
 const (
+	DevModeKey                       = "dev"
 	DataDirKey                       = "data-dir"
 	ConfigFileKey                    = "config-file"
 	ConfigContentKey                 = "config-file-content"
@@ -128,6 +129,8 @@ const (
 	LogDisableDisplayPluginLogsKey                     = "log-disable-display-plugin-logs"
 	SnowSampleSizeKey                                  = "snow-sample-size"
 	SnowQuorumSizeKey                                  = "snow-quorum-size"
+	SnowVirtuousCommitThresholdKey                     = "snow-virtuous-commit-threshold"
+	SnowRogueCommitThresholdKey                        = "snow-rogue-commit-threshold"
 	SnowPreferenceQuorumSizeKey                        = "snow-preference-quorum-size"
 	SnowConfidenceQuorumSizeKey                        = "snow-confidence-quorum-size"
 	SnowCommitThresholdKey                             = "snow-commit-threshold"
@@ -162,6 +165,7 @@ const (
 	ChainDataDirKey                                    = "chain-data-dir"
 	ChainConfigDirKey                                  = "chain-config-dir"
 	ChainConfigContentKey                              = "chain-config-content"
+	ImportChainDataKey                                 = "import-chain-data"
 	SubnetConfigDirKey                                 = "subnet-config-dir"
 	SubnetConfigContentKey                             = "subnet-config-content"
 	ProfileDirKey                                      = "profile-dir"
@@ -209,4 +213,7 @@ const (
 	POASingleNodeModeKey  = "poa-single-node-mode"
 	POAMinBlockTimeKey    = "poa-min-block-time"
 	POAAuthorizedNodesKey = "poa-authorized-nodes"
+	
+	// Force flags
+	ForceIgnoreChecksumKey = "force-ignore-checksum"
 )
