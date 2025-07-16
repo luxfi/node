@@ -73,6 +73,9 @@ func addProcessFlags(fs *pflag.FlagSet) {
 }
 
 func addNodeFlags(fs *pflag.FlagSet) {
+	// Development mode
+	fs.Bool(DevModeKey, false, "Enables development mode with single-node consensus, no sybil protection, and other dev-friendly settings")
+	
 	// Home directory
 	fs.String(DataDirKey, defaultDataDir, "Sets the base data directory where default sub-directories will be placed unless otherwise specified.")
 	// System
@@ -320,6 +323,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// Chain Data Directory
 	fs.String(ChainDataDirKey, defaultChainDataDir, "Chain specific data directory")
+	fs.String(ImportChainDataKey, "", "Path to import blockchain data from another chain into C-Chain")
 
 	// Profiles
 	fs.String(ProfileDirKey, defaultProfileDir, "Path to the profile directory")
@@ -370,6 +374,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Bool(POASingleNodeModeKey, false, "Enable single node POA mode (no consensus required)")
 	fs.Duration(POAMinBlockTimeKey, 1*time.Second, "Minimum time between blocks in POA mode")
 	fs.StringSlice(POAAuthorizedNodesKey, nil, "List of authorized nodes for POA mode")
+	
+	// Force flags
+	fs.Bool(ForceIgnoreChecksumKey, false, "Force ignore checksum validation errors (use with caution)")
 }
 
 // BuildFlagSet returns a complete set of flags for node

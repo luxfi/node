@@ -350,6 +350,31 @@ func New(config *ManagerConfig) (Manager, error) {
 // QueueChainCreation queues a chain creation request
 // Invariant: Tracked Subnet must be checked before calling this function
 func (m *manager) QueueChainCreation(chainParams ChainParameters) {
+	// Check for chain ID mapping override for C-Chain
+	m.Log.Info("QueueChainCreation called",
+		zap.String("vmID", chainParams.VMID.String()),
+		zap.String("EVMID", constants.EVMID.String()),
+		zap.Bool("vmIDEqualsEVMID", chainParams.VMID == constants.EVMID),
+		zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
+	)
+	
+	if chainParams.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
+		mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
+		parsedID, err := ids.FromString(mappedID)
+		if err == nil {
+			m.Log.Info("Using mapped blockchain ID for C-Chain",
+				zap.String("original", chainParams.ID.String()),
+				zap.String("mapped", parsedID.String()),
+			)
+			chainParams.ID = parsedID
+		} else {
+			m.Log.Warn("Invalid chain ID mapping",
+				zap.String("mapping", mappedID),
+				zap.Error(err),
+			)
+		}
+	}
+	
 	if sb, _ := m.Subnets.GetOrCreate(chainParams.SubnetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			zap.String("reason", "chain already staged"),

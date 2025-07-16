@@ -219,6 +219,9 @@ type Config struct {
 	// write arbitrary data.
 	ChainDataDir string `json:"chainDataDir"`
 
+	// ImportChainData is the path to import blockchain data from another chain
+	ImportChainData string `json:"importChainData"`
+
 	// Path to write process context to (including PID, API URI, and
 	// staking address).
 	ProcessContextFilePath string `json:"processContextFilePath"`

@@ -102,3 +102,45 @@ func (c *Config) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 
 	c.Chains.QueueChainCreation(chainParams)
 }
+
+// QueueExistingChain queues an existing chain for creation with minimal parameters
+// This is used when discovering orphaned chains that have data but no CreateChainTx
+func (c *Config) QueueExistingChain(chainID ids.ID, subnetID ids.ID, vmID ids.ID) {
+	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
+		constants.PrimaryNetworkID != subnetID && // All nodes must validate the primary network
+		!c.TrackedSubnets.Contains(subnetID) { // This node doesn't validate this blockchain
+		return
+	}
+	
+	// For existing chains, we need to provide minimal genesis data
+	// The EVM will load existing data from disk
+	genesisData := []byte(`{}`)
+	
+	chainParams := chains.ChainParameters{
+		ID:          chainID,
+		SubnetID:    subnetID,
+		GenesisData: genesisData,
+		VMID:        vmID,
+		FxIDs:       nil, // No FxIDs for existing chains
+	}
+	c.Chains.QueueChainCreation(chainParams)
+}
+
+// QueueExistingChainWithGenesis queues an existing chain with genesis data
+// This is used when discovering orphaned chains that have config data
+func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, subnetID ids.ID, vmID ids.ID, genesisData []byte) {
+	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
+		constants.PrimaryNetworkID != subnetID && // All nodes must validate the primary network
+		!c.TrackedSubnets.Contains(subnetID) { // This node doesn't validate this blockchain
+		return
+	}
+	
+	chainParams := chains.ChainParameters{
+		ID:          chainID,
+		SubnetID:    subnetID,
+		GenesisData: genesisData,
+		VMID:        vmID,
+		FxIDs:       nil, // No FxIDs for existing chains
+	}
+	c.Chains.QueueChainCreation(chainParams)
+}
