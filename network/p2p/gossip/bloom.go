@@ -62,13 +62,13 @@ type BloomFilter struct {
 
 func (b *BloomFilter) Add(gossipable Gossipable) {
 	h := gossipable.GossipID()
-	bloom.Add(b.bloom, h[:], b.salt[:])
+	bloom.Add(&b.bloom, h[:], b.salt[:])
 	b.metrics.Count.Inc()
 }
 
 func (b *BloomFilter) Has(gossipable Gossipable) bool {
 	h := gossipable.GossipID()
-	return bloom.Contains(b.bloom, h[:], b.salt[:])
+	return bloom.Contains(&b.bloom, h[:], b.salt[:])
 }
 
 func (b *BloomFilter) Marshal() ([]byte, []byte) {
@@ -113,19 +113,14 @@ func resetBloomFilter(
 		targetElements,
 		targetFalsePositiveProbability,
 	)
-	// Use a reasonable max size for the bloom filter
-	const maxBloomFilterSize = 1 << 20 // 1 MB
-	newBloom, err := bloom.New(uint64(targetElements), targetFalsePositiveProbability, maxBloomFilterSize)
-	if err != nil {
-		return err
-	}
+	newBloom := bloom.New(numHashes, numEntries)
 	var newSalt ids.ID
 	if _, err := rand.Read(newSalt[:]); err != nil {
 		return err
 	}
 
 	bloomFilter.maxCount = bloom.EstimateCount(numHashes, numEntries, resetFalsePositiveProbability)
-	bloomFilter.bloom = newBloom
+	bloomFilter.bloom = *newBloom
 	bloomFilter.salt = newSalt
 
 	bloomFilter.metrics.Reset(newBloom, bloomFilter.maxCount)

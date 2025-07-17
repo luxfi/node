@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
@@ -61,11 +61,10 @@ func NewMetrics(
 }
 
 // Reset the metrics to align with the provided bloom filter and max count.
-func (m *Metrics) Reset(filter interface{}, maxCount int) {
-	// For now, just set default values since we're using an interface
-	m.Count.Set(0)
-	m.NumHashes.Set(float64(minHashes))
-	m.NumEntries.Set(float64(minEntries))
+func (m *Metrics) Reset(newFilter *Filter, maxCount int) {
+	m.Count.Set(float64(newFilter.Count()))
+	m.NumHashes.Set(float64(len(newFilter.hashSeeds)))
+	m.NumEntries.Set(float64(len(newFilter.entries)))
 	m.MaxCount.Set(float64(maxCount))
 	m.ResetCount.Inc()
 }

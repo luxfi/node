@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
@@ -40,6 +41,7 @@ type Context struct {
 	XChainID    ids.ID
 	CChainID    ids.ID
 	LUXAssetID ids.ID
+	AVAXAssetID ids.ID
 
 	Log          logging.Logger
 	Lock         sync.RWMutex
@@ -54,6 +56,9 @@ type Context struct {
 	ValidatorState validators.State // interface for P-Chain validators
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
+
+	// Upgrades config
+	NetworkUpgrades upgrade.Config
 }
 
 // Expose gatherer interface for unit testing.
