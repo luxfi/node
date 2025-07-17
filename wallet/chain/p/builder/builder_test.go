@@ -10,12 +10,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*avax.UTXO {

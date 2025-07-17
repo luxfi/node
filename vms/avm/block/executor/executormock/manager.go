@@ -12,12 +12,12 @@ package executormock
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	snowman "github.com/ava-labs/avalanchego/snow/consensus/snowman"
-	set "github.com/ava-labs/avalanchego/utils/set"
-	block "github.com/ava-labs/avalanchego/vms/avm/block"
-	state "github.com/ava-labs/avalanchego/vms/avm/state"
-	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	ids "github.com/luxfi/node/ids"
+	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	set "github.com/luxfi/node/utils/set"
+	block "github.com/luxfi/node/vms/avm/block"
+	state "github.com/luxfi/node/vms/avm/state"
+	txs "github.com/luxfi/node/vms/avm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

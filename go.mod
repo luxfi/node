@@ -13,7 +13,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.1
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
-	github.com/ava-labs/avalanchego v1.13.2
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cockroachdb/pebble v0.0.0-20230928194634-aa077af62593
 	github.com/compose-spec/compose-go v1.20.2
@@ -33,7 +32,7 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.9
-	github.com/luxfi/coreth v0.13.7
+	github.com/luxfi/geth v0.13.7
 	github.com/luxfi/ledger/go v0.7.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
@@ -83,8 +82,6 @@ require (
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/StephenButtolph/canoto v0.17.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
-	github.com/ava-labs/coreth v0.15.2-rc.0.0.20250620163936-0058a7ec6d9d // indirect
-	github.com/ava-labs/libevm v1.13.14-0.3.0.rc.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
