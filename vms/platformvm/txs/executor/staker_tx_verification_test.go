@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -113,7 +113,16 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 					Config: defaultTestConfig(t, durango, activeForkTime),
 				}
 			},
-			stateF: func(*gomock.Controller) state.Chain {
+
+			stateF: func(ctrl *gomock.Controller) state.Chain {
+				mockState := state.NewMockChain(ctrl)
+				mockState.EXPECT().GetTimestamp().Return(now)
+				return mockState
+			},
+			sTxF: func() *txs.Tx {
+				return nil
+			},
+			txF: func() *txs.AddPermissionlessValidatorTx {
 				return nil
 			},
 			sTxF: func() *txs.Tx {
@@ -159,7 +168,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(verifiedTx.StartTime())
+				state.EXPECT().GetTimestamp().Return(verifiedTx.StartTime()).Times(2)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -412,7 +421,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 
-				flowChecker := utxo.NewMockVerifier(ctrl)
+				flowChecker := utxomock.NewVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
 					gomock.Any(),
 					gomock.Any(),
@@ -458,7 +467,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 
-				flowChecker := utxo.NewMockVerifier(ctrl)
+				flowChecker := utxomock.NewVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
 					gomock.Any(),
 					gomock.Any(),
@@ -506,7 +515,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 
 			var (
 				backend = tt.backendF(ctrl)
-				state   = tt.stateF(ctrl)
+				chain   = tt.stateF(ctrl)
 				sTx     = tt.sTxF()
 				tx      = tt.txF()
 			)

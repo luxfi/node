@@ -16,17 +16,17 @@ if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi
 
-OK=`cp $TEMPLATE/control $DEBIAN_CONF/control`
+OK=$(cp $TEMPLATE/control "$DEBIAN_CONF"/control)
 if [[ $OK -ne 0 ]]; then
-  exit $OK;
+  exit "$OK";
 fi
 
 echo "Build debian package..."
-cd $PKG_ROOT
+cd "$PKG_ROOT"
 echo "Tag: $TAG"
 VER=$TAG
 if [[ $TAG =~ ^v ]]; then
-  VER=$(echo $TAG | tr -d 'v')
+  VER=$(echo "$TAG" | tr -d 'v')
 fi
 NEW_VERSION_STRING="Version: $VER"
 NEW_ARCH_STRING="Architecture: $ARCH"

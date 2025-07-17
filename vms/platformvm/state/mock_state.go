@@ -973,27 +973,27 @@ func (mr *MockStateMockRecorder) Abort() *gomock.Call {
 }
 
 // AddChain mocks base method.
-func (m *MockState) AddChain(arg0 *txs.Tx) {
+func (m *MockState) AddChain(createChainTx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddChain", arg0)
+	m.ctrl.Call(m, "AddChain", createChainTx)
 }
 
 // AddChain indicates an expected call of AddChain.
 func (mr *MockStateMockRecorder) AddChain(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChain", reflect.TypeOf((*MockState)(nil).AddChain), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChain", reflect.TypeOf((*MockState)(nil).AddChain), createChainTx)
 }
 
 // AddRewardUTXO mocks base method.
 func (m *MockState) AddRewardUTXO(arg0 ids.ID, arg1 *lux.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddRewardUTXO", arg0, arg1)
+	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
 }
 
 // AddRewardUTXO indicates an expected call of AddRewardUTXO.
 func (mr *MockStateMockRecorder) AddRewardUTXO(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockState)(nil).AddRewardUTXO), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockState)(nil).AddRewardUTXO), txID, utxo)
 }
 
 // AddStatelessBlock mocks base method.
@@ -1011,49 +1011,91 @@ func (mr *MockStateMockRecorder) AddStatelessBlock(arg0 any) *gomock.Call {
 // AddSubnet mocks base method.
 func (m *MockState) AddSubnet(arg0 ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddSubnet", arg0)
+	m.ctrl.Call(m, "AddSubnet", subnetID)
 }
 
 // AddSubnet indicates an expected call of AddSubnet.
 func (mr *MockStateMockRecorder) AddSubnet(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnet", reflect.TypeOf((*MockState)(nil).AddSubnet), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnet", reflect.TypeOf((*MockState)(nil).AddSubnet), subnetID)
 }
 
 // AddSubnetTransformation mocks base method.
-func (m *MockState) AddSubnetTransformation(arg0 *txs.Tx) {
+func (m *MockState) AddSubnetTransformation(transformSubnetTx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddSubnetTransformation", arg0)
+	m.ctrl.Call(m, "AddSubnetTransformation", transformSubnetTx)
 }
 
 // AddSubnetTransformation indicates an expected call of AddSubnetTransformation.
 func (mr *MockStateMockRecorder) AddSubnetTransformation(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnetTransformation", reflect.TypeOf((*MockState)(nil).AddSubnetTransformation), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnetTransformation", reflect.TypeOf((*MockState)(nil).AddSubnetTransformation), transformSubnetTx)
 }
 
 // AddTx mocks base method.
-func (m *MockState) AddTx(arg0 *txs.Tx, arg1 status.Status) {
+func (m *MockState) AddTx(tx *txs.Tx, status status.Status) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", arg0, arg1)
+	m.ctrl.Call(m, "AddTx", tx, status)
 }
 
 // AddTx indicates an expected call of AddTx.
 func (mr *MockStateMockRecorder) AddTx(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), tx, status)
 }
 
 // AddUTXO mocks base method.
 func (m *MockState) AddUTXO(arg0 *lux.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUTXO", arg0)
+	m.ctrl.Call(m, "AddUTXO", utxo)
 }
 
 // AddUTXO indicates an expected call of AddUTXO.
 func (mr *MockStateMockRecorder) AddUTXO(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockState)(nil).AddUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockState)(nil).AddUTXO), utxo)
+}
+
+// ApplyValidatorPublicKeyDiffs mocks base method.
+func (m *MockState) ApplyValidatorPublicKeyDiffs(ctx context.Context, validators map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyValidatorPublicKeyDiffs", ctx, validators, startHeight, endHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyValidatorPublicKeyDiffs indicates an expected call of ApplyValidatorPublicKeyDiffs.
+func (mr *MockStateMockRecorder) ApplyValidatorPublicKeyDiffs(ctx, validators, startHeight, endHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorPublicKeyDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorPublicKeyDiffs), ctx, validators, startHeight, endHeight)
+}
+
+// ApplyValidatorWeightDiffs mocks base method.
+func (m *MockState) ApplyValidatorWeightDiffs(ctx context.Context, validators map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64, subnetID ids.ID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyValidatorWeightDiffs", ctx, validators, startHeight, endHeight, subnetID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyValidatorWeightDiffs indicates an expected call of ApplyValidatorWeightDiffs.
+func (mr *MockStateMockRecorder) ApplyValidatorWeightDiffs(ctx, validators, startHeight, endHeight, subnetID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorWeightDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorWeightDiffs), ctx, validators, startHeight, endHeight, subnetID)
+}
+
+// Checksum mocks base method.
+func (m *MockState) Checksum() ids.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Checksum")
+	ret0, _ := ret[0].(ids.ID)
+	return ret0
+}
+
+// Checksum indicates an expected call of Checksum.
+func (mr *MockStateMockRecorder) Checksum() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksum", reflect.TypeOf((*MockState)(nil).Checksum))
 }
 
 // ApplyValidatorPublicKeyDiffs mocks base method.
@@ -1142,63 +1184,78 @@ func (mr *MockStateMockRecorder) CommitBatch() *gomock.Call {
 }
 
 // DeleteCurrentDelegator mocks base method.
-func (m *MockState) DeleteCurrentDelegator(arg0 *Staker) {
+func (m *MockState) DeleteCurrentDelegator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteCurrentDelegator", arg0)
+	m.ctrl.Call(m, "DeleteCurrentDelegator", staker)
 }
 
 // DeleteCurrentDelegator indicates an expected call of DeleteCurrentDelegator.
 func (mr *MockStateMockRecorder) DeleteCurrentDelegator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCurrentDelegator", reflect.TypeOf((*MockState)(nil).DeleteCurrentDelegator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCurrentDelegator", reflect.TypeOf((*MockState)(nil).DeleteCurrentDelegator), staker)
 }
 
 // DeleteCurrentValidator mocks base method.
-func (m *MockState) DeleteCurrentValidator(arg0 *Staker) {
+func (m *MockState) DeleteCurrentValidator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteCurrentValidator", arg0)
+	m.ctrl.Call(m, "DeleteCurrentValidator", staker)
 }
 
 // DeleteCurrentValidator indicates an expected call of DeleteCurrentValidator.
 func (mr *MockStateMockRecorder) DeleteCurrentValidator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCurrentValidator", reflect.TypeOf((*MockState)(nil).DeleteCurrentValidator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCurrentValidator", reflect.TypeOf((*MockState)(nil).DeleteCurrentValidator), staker)
 }
 
 // DeletePendingDelegator mocks base method.
-func (m *MockState) DeletePendingDelegator(arg0 *Staker) {
+func (m *MockState) DeletePendingDelegator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeletePendingDelegator", arg0)
+	m.ctrl.Call(m, "DeletePendingDelegator", staker)
 }
 
 // DeletePendingDelegator indicates an expected call of DeletePendingDelegator.
 func (mr *MockStateMockRecorder) DeletePendingDelegator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingDelegator", reflect.TypeOf((*MockState)(nil).DeletePendingDelegator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingDelegator", reflect.TypeOf((*MockState)(nil).DeletePendingDelegator), staker)
 }
 
 // DeletePendingValidator mocks base method.
-func (m *MockState) DeletePendingValidator(arg0 *Staker) {
+func (m *MockState) DeletePendingValidator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeletePendingValidator", arg0)
+	m.ctrl.Call(m, "DeletePendingValidator", staker)
 }
 
 // DeletePendingValidator indicates an expected call of DeletePendingValidator.
 func (mr *MockStateMockRecorder) DeletePendingValidator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingValidator", reflect.TypeOf((*MockState)(nil).DeletePendingValidator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingValidator", reflect.TypeOf((*MockState)(nil).DeletePendingValidator), staker)
 }
 
 // DeleteUTXO mocks base method.
-func (m *MockState) DeleteUTXO(arg0 ids.ID) {
+func (m *MockState) DeleteUTXO(utxoID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteUTXO", arg0)
+	m.ctrl.Call(m, "DeleteUTXO", utxoID)
 }
 
 // DeleteUTXO indicates an expected call of DeleteUTXO.
 func (mr *MockStateMockRecorder) DeleteUTXO(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), utxoID)
+}
+
+// GetBlockIDAtHeight mocks base method.
+func (m *MockState) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", height)
+	ret0, _ := ret[0].(ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockIDAtHeight indicates an expected call of GetBlockIDAtHeight.
+func (mr *MockStateMockRecorder) GetBlockIDAtHeight(height any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockState)(nil).GetBlockIDAtHeight), height)
 }
 
 // GetBlockIDAtHeight mocks base method.
@@ -1217,9 +1274,9 @@ func (mr *MockStateMockRecorder) GetBlockIDAtHeight(arg0 any) *gomock.Call {
 }
 
 // GetChains mocks base method.
-func (m *MockState) GetChains(arg0 ids.ID) ([]*txs.Tx, error) {
+func (m *MockState) GetChains(subnetID ids.ID) ([]*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChains", arg0)
+	ret := m.ctrl.Call(m, "GetChains", subnetID)
 	ret0, _ := ret[0].([]*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -1228,14 +1285,14 @@ func (m *MockState) GetChains(arg0 ids.ID) ([]*txs.Tx, error) {
 // GetChains indicates an expected call of GetChains.
 func (mr *MockStateMockRecorder) GetChains(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChains", reflect.TypeOf((*MockState)(nil).GetChains), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChains", reflect.TypeOf((*MockState)(nil).GetChains), subnetID)
 }
 
 // GetCurrentDelegatorIterator mocks base method.
-func (m *MockState) GetCurrentDelegatorIterator(arg0 ids.ID, arg1 ids.NodeID) (StakerIterator, error) {
+func (m *MockState) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentDelegatorIterator", arg0, arg1)
-	ret0, _ := ret[0].(StakerIterator)
+	ret := m.ctrl.Call(m, "GetCurrentDelegatorIterator", subnetID, nodeID)
+	ret0, _ := ret[0].(iterator.Iterator[*Staker])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1243,14 +1300,14 @@ func (m *MockState) GetCurrentDelegatorIterator(arg0 ids.ID, arg1 ids.NodeID) (S
 // GetCurrentDelegatorIterator indicates an expected call of GetCurrentDelegatorIterator.
 func (mr *MockStateMockRecorder) GetCurrentDelegatorIterator(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentDelegatorIterator", reflect.TypeOf((*MockState)(nil).GetCurrentDelegatorIterator), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentDelegatorIterator", reflect.TypeOf((*MockState)(nil).GetCurrentDelegatorIterator), subnetID, nodeID)
 }
 
 // GetCurrentStakerIterator mocks base method.
-func (m *MockState) GetCurrentStakerIterator() (StakerIterator, error) {
+func (m *MockState) GetCurrentStakerIterator() (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentStakerIterator")
-	ret0, _ := ret[0].(StakerIterator)
+	ret0, _ := ret[0].(iterator.Iterator[*Staker])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1262,9 +1319,9 @@ func (mr *MockStateMockRecorder) GetCurrentStakerIterator() *gomock.Call {
 }
 
 // GetCurrentSupply mocks base method.
-func (m *MockState) GetCurrentSupply(arg0 ids.ID) (uint64, error) {
+func (m *MockState) GetCurrentSupply(subnetID ids.ID) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentSupply", arg0)
+	ret := m.ctrl.Call(m, "GetCurrentSupply", subnetID)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -1273,13 +1330,13 @@ func (m *MockState) GetCurrentSupply(arg0 ids.ID) (uint64, error) {
 // GetCurrentSupply indicates an expected call of GetCurrentSupply.
 func (mr *MockStateMockRecorder) GetCurrentSupply(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentSupply", reflect.TypeOf((*MockState)(nil).GetCurrentSupply), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentSupply", reflect.TypeOf((*MockState)(nil).GetCurrentSupply), subnetID)
 }
 
 // GetCurrentValidator mocks base method.
-func (m *MockState) GetCurrentValidator(arg0 ids.ID, arg1 ids.NodeID) (*Staker, error) {
+func (m *MockState) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentValidator", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetCurrentValidator", subnetID, nodeID)
 	ret0, _ := ret[0].(*Staker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -1288,7 +1345,36 @@ func (m *MockState) GetCurrentValidator(arg0 ids.ID, arg1 ids.NodeID) (*Staker, 
 // GetCurrentValidator indicates an expected call of GetCurrentValidator.
 func (mr *MockStateMockRecorder) GetCurrentValidator(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentValidator", reflect.TypeOf((*MockState)(nil).GetCurrentValidator), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentValidator", reflect.TypeOf((*MockState)(nil).GetCurrentValidator), subnetID, nodeID)
+}
+
+// GetDelegateeReward mocks base method.
+func (m *MockState) GetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDelegateeReward", subnetID, nodeID)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDelegateeReward indicates an expected call of GetDelegateeReward.
+func (mr *MockStateMockRecorder) GetDelegateeReward(subnetID, nodeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDelegateeReward", reflect.TypeOf((*MockState)(nil).GetDelegateeReward), subnetID, nodeID)
+}
+
+// GetFeeState mocks base method.
+func (m *MockState) GetFeeState() gas.State {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFeeState")
+	ret0, _ := ret[0].(gas.State)
+	return ret0
+}
+
+// GetFeeState indicates an expected call of GetFeeState.
+func (mr *MockStateMockRecorder) GetFeeState() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeeState", reflect.TypeOf((*MockState)(nil).GetFeeState))
 }
 
 // GetDelegateeReward mocks base method.
@@ -1321,10 +1407,10 @@ func (mr *MockStateMockRecorder) GetLastAccepted() *gomock.Call {
 }
 
 // GetPendingDelegatorIterator mocks base method.
-func (m *MockState) GetPendingDelegatorIterator(arg0 ids.ID, arg1 ids.NodeID) (StakerIterator, error) {
+func (m *MockState) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingDelegatorIterator", arg0, arg1)
-	ret0, _ := ret[0].(StakerIterator)
+	ret := m.ctrl.Call(m, "GetPendingDelegatorIterator", subnetID, nodeID)
+	ret0, _ := ret[0].(iterator.Iterator[*Staker])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1332,14 +1418,14 @@ func (m *MockState) GetPendingDelegatorIterator(arg0 ids.ID, arg1 ids.NodeID) (S
 // GetPendingDelegatorIterator indicates an expected call of GetPendingDelegatorIterator.
 func (mr *MockStateMockRecorder) GetPendingDelegatorIterator(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingDelegatorIterator", reflect.TypeOf((*MockState)(nil).GetPendingDelegatorIterator), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingDelegatorIterator", reflect.TypeOf((*MockState)(nil).GetPendingDelegatorIterator), subnetID, nodeID)
 }
 
 // GetPendingStakerIterator mocks base method.
-func (m *MockState) GetPendingStakerIterator() (StakerIterator, error) {
+func (m *MockState) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPendingStakerIterator")
-	ret0, _ := ret[0].(StakerIterator)
+	ret0, _ := ret[0].(iterator.Iterator[*Staker])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1351,9 +1437,9 @@ func (mr *MockStateMockRecorder) GetPendingStakerIterator() *gomock.Call {
 }
 
 // GetPendingValidator mocks base method.
-func (m *MockState) GetPendingValidator(arg0 ids.ID, arg1 ids.NodeID) (*Staker, error) {
+func (m *MockState) GetPendingValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingValidator", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetPendingValidator", subnetID, nodeID)
 	ret0, _ := ret[0].(*Staker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -1362,7 +1448,7 @@ func (m *MockState) GetPendingValidator(arg0 ids.ID, arg1 ids.NodeID) (*Staker, 
 // GetPendingValidator indicates an expected call of GetPendingValidator.
 func (mr *MockStateMockRecorder) GetPendingValidator(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingValidator", reflect.TypeOf((*MockState)(nil).GetPendingValidator), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingValidator", reflect.TypeOf((*MockState)(nil).GetPendingValidator), subnetID, nodeID)
 }
 
 // GetRewardUTXOs mocks base method.
@@ -1377,7 +1463,7 @@ func (m *MockState) GetRewardUTXOs(arg0 ids.ID) ([]*lux.UTXO, error) {
 // GetRewardUTXOs indicates an expected call of GetRewardUTXOs.
 func (mr *MockStateMockRecorder) GetRewardUTXOs(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardUTXOs", reflect.TypeOf((*MockState)(nil).GetRewardUTXOs), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardUTXOs", reflect.TypeOf((*MockState)(nil).GetRewardUTXOs), txID)
 }
 
 // GetStartTime mocks base method.
@@ -1407,7 +1493,22 @@ func (m *MockState) GetStatelessBlock(arg0 ids.ID) (block.Block, error) {
 // GetStatelessBlock indicates an expected call of GetStatelessBlock.
 func (mr *MockStateMockRecorder) GetStatelessBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatelessBlock", reflect.TypeOf((*MockState)(nil).GetStatelessBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetManager", reflect.TypeOf((*MockState)(nil).GetSubnetManager), subnetID)
+}
+
+// GetSubnetOwner mocks base method.
+func (m *MockState) GetSubnetOwner(subnetID ids.ID) (fx.Owner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSubnetOwner", subnetID)
+	ret0, _ := ret[0].(fx.Owner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSubnetOwner indicates an expected call of GetSubnetOwner.
+func (mr *MockStateMockRecorder) GetSubnetOwner(subnetID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetOwner", reflect.TypeOf((*MockState)(nil).GetSubnetOwner), subnetID)
 }
 
 // GetSubnetIDs mocks base method.
@@ -1441,9 +1542,9 @@ func (mr *MockStateMockRecorder) GetSubnetOwner(arg0 any) *gomock.Call {
 }
 
 // GetSubnetTransformation mocks base method.
-func (m *MockState) GetSubnetTransformation(arg0 ids.ID) (*txs.Tx, error) {
+func (m *MockState) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetTransformation", arg0)
+	ret := m.ctrl.Call(m, "GetSubnetTransformation", subnetID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -1470,9 +1571,9 @@ func (mr *MockStateMockRecorder) GetTimestamp() *gomock.Call {
 }
 
 // GetTx mocks base method.
-func (m *MockState) GetTx(arg0 ids.ID) (*txs.Tx, status.Status, error) {
+func (m *MockState) GetTx(txID ids.ID) (*txs.Tx, status.Status, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTx", arg0)
+	ret := m.ctrl.Call(m, "GetTx", txID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(status.Status)
 	ret2, _ := ret[2].(error)
@@ -1482,7 +1583,7 @@ func (m *MockState) GetTx(arg0 ids.ID) (*txs.Tx, status.Status, error) {
 // GetTx indicates an expected call of GetTx.
 func (mr *MockStateMockRecorder) GetTx(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockState)(nil).GetTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockState)(nil).GetTx), txID)
 }
 
 // GetUTXO mocks base method.
@@ -1497,7 +1598,7 @@ func (m *MockState) GetUTXO(arg0 ids.ID) (*lux.UTXO, error) {
 // GetUTXO indicates an expected call of GetUTXO.
 func (mr *MockStateMockRecorder) GetUTXO(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockState)(nil).GetUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockState)(nil).GetUTXO), utxoID)
 }
 
 // GetUptime mocks base method.
@@ -1517,51 +1618,69 @@ func (mr *MockStateMockRecorder) GetUptime(arg0, arg1 any) *gomock.Call {
 }
 
 // PutCurrentDelegator mocks base method.
-func (m *MockState) PutCurrentDelegator(arg0 *Staker) {
+func (m *MockState) PutCurrentDelegator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PutCurrentDelegator", arg0)
+	m.ctrl.Call(m, "PutCurrentDelegator", staker)
 }
 
 // PutCurrentDelegator indicates an expected call of PutCurrentDelegator.
 func (mr *MockStateMockRecorder) PutCurrentDelegator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutCurrentDelegator", reflect.TypeOf((*MockState)(nil).PutCurrentDelegator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutCurrentDelegator", reflect.TypeOf((*MockState)(nil).PutCurrentDelegator), staker)
 }
 
 // PutCurrentValidator mocks base method.
-func (m *MockState) PutCurrentValidator(arg0 *Staker) {
+func (m *MockState) PutCurrentValidator(staker *Staker) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PutCurrentValidator", arg0)
+	ret := m.ctrl.Call(m, "PutCurrentValidator", staker)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // PutCurrentValidator indicates an expected call of PutCurrentValidator.
 func (mr *MockStateMockRecorder) PutCurrentValidator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutCurrentValidator", reflect.TypeOf((*MockState)(nil).PutCurrentValidator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutCurrentValidator", reflect.TypeOf((*MockState)(nil).PutCurrentValidator), staker)
 }
 
 // PutPendingDelegator mocks base method.
-func (m *MockState) PutPendingDelegator(arg0 *Staker) {
+func (m *MockState) PutPendingDelegator(staker *Staker) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PutPendingDelegator", arg0)
+	m.ctrl.Call(m, "PutPendingDelegator", staker)
 }
 
 // PutPendingDelegator indicates an expected call of PutPendingDelegator.
 func (mr *MockStateMockRecorder) PutPendingDelegator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutPendingDelegator", reflect.TypeOf((*MockState)(nil).PutPendingDelegator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutPendingDelegator", reflect.TypeOf((*MockState)(nil).PutPendingDelegator), staker)
 }
 
 // PutPendingValidator mocks base method.
-func (m *MockState) PutPendingValidator(arg0 *Staker) {
+func (m *MockState) PutPendingValidator(staker *Staker) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PutPendingValidator", arg0)
+	ret := m.ctrl.Call(m, "PutPendingValidator", staker)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // PutPendingValidator indicates an expected call of PutPendingValidator.
 func (mr *MockStateMockRecorder) PutPendingValidator(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutPendingValidator", reflect.TypeOf((*MockState)(nil).PutPendingValidator), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutPendingValidator", reflect.TypeOf((*MockState)(nil).PutPendingValidator), staker)
+}
+
+// ReindexBlocks mocks base method.
+func (m *MockState) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReindexBlocks", lock, log)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReindexBlocks indicates an expected call of ReindexBlocks.
+func (mr *MockStateMockRecorder) ReindexBlocks(lock, log any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReindexBlocks", reflect.TypeOf((*MockState)(nil).ReindexBlocks), lock, log)
 }
 
 // ReindexBlocks mocks base method.
@@ -1579,15 +1698,41 @@ func (mr *MockStateMockRecorder) ReindexBlocks(arg0, arg1 any) *gomock.Call {
 }
 
 // SetCurrentSupply mocks base method.
-func (m *MockState) SetCurrentSupply(arg0 ids.ID, arg1 uint64) {
+func (m *MockState) SetCurrentSupply(subnetID ids.ID, cs uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetCurrentSupply", arg0, arg1)
+	m.ctrl.Call(m, "SetCurrentSupply", subnetID, cs)
 }
 
 // SetCurrentSupply indicates an expected call of SetCurrentSupply.
 func (mr *MockStateMockRecorder) SetCurrentSupply(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCurrentSupply", reflect.TypeOf((*MockState)(nil).SetCurrentSupply), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCurrentSupply", reflect.TypeOf((*MockState)(nil).SetCurrentSupply), subnetID, cs)
+}
+
+// SetDelegateeReward mocks base method.
+func (m *MockState) SetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID, amount uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDelegateeReward", subnetID, nodeID, amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDelegateeReward indicates an expected call of SetDelegateeReward.
+func (mr *MockStateMockRecorder) SetDelegateeReward(subnetID, nodeID, amount any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDelegateeReward", reflect.TypeOf((*MockState)(nil).SetDelegateeReward), subnetID, nodeID, amount)
+}
+
+// SetFeeState mocks base method.
+func (m *MockState) SetFeeState(f gas.State) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetFeeState", f)
+}
+
+// SetFeeState indicates an expected call of SetFeeState.
+func (mr *MockStateMockRecorder) SetFeeState(f any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFeeState", reflect.TypeOf((*MockState)(nil).SetFeeState), f)
 }
 
 // SetDelegateeReward mocks base method.
@@ -1605,27 +1750,51 @@ func (mr *MockStateMockRecorder) SetDelegateeReward(arg0, arg1, arg2 any) *gomoc
 }
 
 // SetHeight mocks base method.
-func (m *MockState) SetHeight(arg0 uint64) {
+func (m *MockState) SetHeight(height uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetHeight", arg0)
+	m.ctrl.Call(m, "SetHeight", height)
 }
 
 // SetHeight indicates an expected call of SetHeight.
 func (mr *MockStateMockRecorder) SetHeight(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeight", reflect.TypeOf((*MockState)(nil).SetHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeight", reflect.TypeOf((*MockState)(nil).SetHeight), height)
 }
 
 // SetLastAccepted mocks base method.
-func (m *MockState) SetLastAccepted(arg0 ids.ID) {
+func (m *MockState) SetLastAccepted(blkID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastAccepted", arg0)
+	m.ctrl.Call(m, "SetLastAccepted", blkID)
 }
 
 // SetLastAccepted indicates an expected call of SetLastAccepted.
 func (mr *MockStateMockRecorder) SetLastAccepted(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockState)(nil).SetLastAccepted), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockState)(nil).SetLastAccepted), blkID)
+}
+
+// SetSubnetManager mocks base method.
+func (m *MockState) SetSubnetManager(subnetID, chainID ids.ID, addr []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSubnetManager", subnetID, chainID, addr)
+}
+
+// SetSubnetManager indicates an expected call of SetSubnetManager.
+func (mr *MockStateMockRecorder) SetSubnetManager(subnetID, chainID, addr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSubnetManager", reflect.TypeOf((*MockState)(nil).SetSubnetManager), subnetID, chainID, addr)
+}
+
+// SetSubnetOwner mocks base method.
+func (m *MockState) SetSubnetOwner(subnetID ids.ID, owner fx.Owner) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSubnetOwner", subnetID, owner)
+}
+
+// SetSubnetOwner indicates an expected call of SetSubnetOwner.
+func (mr *MockStateMockRecorder) SetSubnetOwner(subnetID, owner any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSubnetOwner", reflect.TypeOf((*MockState)(nil).SetSubnetOwner), subnetID, owner)
 }
 
 // SetSubnetOwner mocks base method.
@@ -1641,15 +1810,15 @@ func (mr *MockStateMockRecorder) SetSubnetOwner(arg0, arg1 any) *gomock.Call {
 }
 
 // SetTimestamp mocks base method.
-func (m *MockState) SetTimestamp(arg0 time.Time) {
+func (m *MockState) SetTimestamp(tm time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTimestamp", arg0)
+	m.ctrl.Call(m, "SetTimestamp", tm)
 }
 
 // SetTimestamp indicates an expected call of SetTimestamp.
 func (mr *MockStateMockRecorder) SetTimestamp(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockState)(nil).SetTimestamp), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockState)(nil).SetTimestamp), tm)
 }
 
 // SetUptime mocks base method.
@@ -1667,9 +1836,9 @@ func (mr *MockStateMockRecorder) SetUptime(arg0, arg1, arg2, arg3 any) *gomock.C
 }
 
 // UTXOIDs mocks base method.
-func (m *MockState) UTXOIDs(arg0 []byte, arg1 ids.ID, arg2 int) ([]ids.ID, error) {
+func (m *MockState) UTXOIDs(addr []byte, previous ids.ID, limit int) ([]ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UTXOIDs", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UTXOIDs", addr, previous, limit)
 	ret0, _ := ret[0].([]ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

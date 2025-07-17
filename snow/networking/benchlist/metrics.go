@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
@@ -9,11 +9,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metrics struct {
+type benchlistMetrics struct {
 	numBenched, weightBenched prometheus.Gauge
 }
 
-func (m *metrics) Initialize(registerer prometheus.Registerer) error {
+func (m *benchlistMetrics) Initialize(registerer prometheus.Registerer) error {
 	m.numBenched = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "benchlist",
 		Name:      "benched_num",

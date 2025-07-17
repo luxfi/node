@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -18,6 +18,7 @@ var _ txs.Visitor = (*AtomicTxExecutor)(nil)
 type AtomicTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
 	*Backend
+	FeeCalculator fee.Calculator
 	ParentID      ids.ID
 	StateVersions state.Versions
 	Tx            *txs.Tx
@@ -99,9 +100,10 @@ func (e *AtomicTxExecutor) atomicTx(tx txs.UnsignedTx) error {
 	e.OnAccept = onAccept
 
 	executor := StandardTxExecutor{
-		Backend: e.Backend,
-		State:   e.OnAccept,
-		Tx:      e.Tx,
+		Backend:       e.Backend,
+		State:         e.OnAccept,
+		FeeCalculator: e.FeeCalculator,
+		Tx:            e.Tx,
 	}
 	err = tx.Visit(&executor)
 	e.Inputs = executor.Inputs

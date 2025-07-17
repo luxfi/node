@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -53,7 +53,7 @@ type BloomFilter struct {
 	metrics *bloom.Metrics
 
 	maxCount int
-	bloom    *bloom.Filter
+	bloom    bloom.Filter
 	// salt is provided to eventually unblock collisions in Bloom. It's possible
 	// that conflicting Gossipable items collide in the bloom filter, so a salt
 	// is generated to eventually resolve collisions.
@@ -113,7 +113,9 @@ func resetBloomFilter(
 		targetElements,
 		targetFalsePositiveProbability,
 	)
-	newBloom, err := bloom.New(numHashes, numEntries)
+	// Use a reasonable max size for the bloom filter
+	const maxBloomFilterSize = 1 << 20 // 1 MB
+	newBloom, err := bloom.New(uint64(targetElements), targetFalsePositiveProbability, maxBloomFilterSize)
 	if err != nil {
 		return err
 	}

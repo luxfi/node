@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -440,6 +440,50 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't encode message: %w", err)
 	}
+	
+	// Prepare genesis data for new chains
+	aChainGenesisData := ""
+	if config.AChainGenesis != "" {
+		aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.AChainGenesis))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode A-chain genesis: %w", err)
+		}
+	} else {
+		// Default A-chain genesis
+		aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"agents":[]}`))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode default A-chain genesis: %w", err)
+		}
+	}
+	
+	bChainGenesisData := ""
+	if config.BChainGenesis != "" {
+		bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.BChainGenesis))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode B-chain genesis: %w", err)
+		}
+	} else {
+		// Default B-chain genesis
+		bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"ethereumConfig":{"chainId":1,"initialBlock":0,"bridgeContracts":[]},"otherChains":[]}`))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode default B-chain genesis: %w", err)
+		}
+	}
+	
+	zChainGenesisData := ""
+	if config.ZChainGenesis != "" {
+		zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.ZChainGenesis))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode Z-chain genesis: %w", err)
+		}
+	} else {
+		// Default Z-chain genesis
+		zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"verifierKeys":[],"privacyConfig":{"initialShieldedSupply":0}}`))
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't encode default Z-chain genesis: %w", err)
+		}
+	}
+	
 	platformvmArgs.Chains = []api.Chain{
 		{
 			GenesisData: avmReply.Bytes,
@@ -457,6 +501,24 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			SubnetID:    constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
+		},
+		{
+			GenesisData: aChainGenesisData,
+			SubnetID:    constants.PrimaryNetworkID,
+			VMID:        constants.AIVMID,
+			Name:        "A-Chain",
+		},
+		{
+			GenesisData: bChainGenesisData,
+			SubnetID:    constants.PrimaryNetworkID,
+			VMID:        constants.BridgeVMID,
+			Name:        "B-Chain",
+		},
+		{
+			GenesisData: zChainGenesisData,
+			SubnetID:    constants.PrimaryNetworkID,
+			VMID:        constants.ZKVMID,
+			Name:        "Z-Chain",
 		},
 	}
 

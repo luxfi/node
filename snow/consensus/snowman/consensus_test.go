@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -896,10 +896,10 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	require.NoError(sm.Add(block3))
 
 	require.Equal(block0.ID(), sm.Preference())
-	require.Equal(choices.Processing, block0.Status(), "should not be decided yet")
-	require.Equal(choices.Processing, block1.Status(), "should not be decided yet")
-	require.Equal(choices.Processing, block2.Status(), "should not be decided yet")
-	require.Equal(choices.Processing, block3.Status(), "should not be decided yet")
+	require.Equal(snowtest.Undecided, block0.Status, "should not be decided yet")
+	require.Equal(snowtest.Undecided, block1.Status, "should not be decided yet")
+	require.Equal(snowtest.Undecided, block2.Status, "should not be decided yet")
+	require.Equal(snowtest.Undecided, block3.Status, "should not be decided yet")
 
 	// Current graph structure:
 	//       G

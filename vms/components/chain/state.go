@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -464,7 +464,7 @@ func (s *State) deduplicate(ctx context.Context, blk snowman.Block) (snowman.Blo
 	// Defensive: buildBlock should not return a block that has already been verified.
 	// If it does, make sure to return the existing reference to the block.
 	if existingBlk, ok := s.getCachedBlock(blkID); ok {
-		return existingBlk, nil
+		return existingBlk
 	}
 	// Evict the produced block from missing blocks in case it was previously
 	// marked as missing.
@@ -493,10 +493,8 @@ func (s *State) addBlockOutsideConsensus(ctx context.Context, blk snowman.Block)
 	switch status {
 	case choices.Accepted, choices.Rejected:
 		s.decidedBlocks.Put(blkID, wrappedBlk)
-	case choices.Processing:
-		s.unverifiedBlocks.Put(blkID, wrappedBlk)
 	default:
-		return nil, fmt.Errorf("found unexpected status for blk %s: %s", blkID, status)
+		s.unverifiedBlocks.Put(blkID, wrappedBlk)
 	}
 
 	return wrappedBlk, nil

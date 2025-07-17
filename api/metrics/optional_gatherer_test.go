@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -12,7 +12,10 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-var errTest = errors.New("non-nil error")
+var (
+	errTest = errors.New("non-nil error")
+	hello   = "hello"
+)
 
 func TestOptionalGathererEmptyGather(t *testing.T) {
 	require := require.New(t)

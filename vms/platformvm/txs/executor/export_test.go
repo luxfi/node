@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -24,7 +24,7 @@ func TestNewExportTx(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	type test struct {
+	tests := []struct {
 		description        string
 		destinationChainID ids.ID
 		sourceKeys         []*secp256k1.PrivateKey
@@ -48,7 +48,6 @@ func TestNewExportTx(t *testing.T) {
 		},
 	}
 
-	to := ids.GenerateTestShortID()
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)

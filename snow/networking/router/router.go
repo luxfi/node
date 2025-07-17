@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -50,8 +50,7 @@ type InternalHandler interface {
 	RegisterRequest(
 		ctx context.Context,
 		nodeID ids.NodeID,
-		sourceChainID ids.ID,
-		destinationChainID ids.ID,
+		chainID ids.ID,
 		requestID uint32,
 		op message.Op,
 		failedMsg message.InboundMessage,

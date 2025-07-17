@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -130,6 +130,8 @@ type Config struct {
 	StateSyncConfig  `json:"stateSyncConfig"`
 	BootstrapConfig  `json:"bootstrapConfig"`
 	DatabaseConfig   `json:"databaseConfig"`
+
+	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`

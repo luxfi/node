@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -186,6 +186,10 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		timer.Reset(waitDuration)
 		select {
 		case <-ctx.Done():
+			// Satisfy [t.timerPool] invariant.
+			if !timer.Stop() {
+				<-timer.C
+			}
 			return
 		case <-timer.C:
 		}

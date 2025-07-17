@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -32,7 +32,13 @@ func TestDiffMissingState(t *testing.T) {
 	require.ErrorIs(t, err, ErrMissingParentState)
 }
 
-func TestDiffCreation(t *testing.T) {
+func TestDiffMissingState(t *testing.T) {
+	parentID := ids.GenerateTestID()
+	_, err := NewDiff(parentID, nilStateGetter{})
+	require.ErrorIs(t, err, ErrMissingParentState)
+}
+
+func TestNewDiffOn(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -41,8 +47,30 @@ func TestDiffCreation(t *testing.T) {
 	versions := NewMockVersions(ctrl)
 	versions.EXPECT().GetState(lastAcceptedID).AnyTimes().Return(state, true)
 
-	d, err := NewDiff(lastAcceptedID, versions)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
+
+	assertChainsEqual(t, state, d)
+}
+
+func TestDiffFeeState(t *testing.T) {
+	require := require.New(t)
+
+	state := newTestState(t, memdb.New())
+
+	d, err := NewDiffOn(state)
+	require.NoError(err)
+
+	initialFeeState := state.GetFeeState()
+	newFeeState := gas.State{
+		Capacity: initialFeeState.Capacity + 1,
+		Excess:   initialFeeState.Excess + 1,
+	}
+	d.SetFeeState(newFeeState)
+	require.Equal(newFeeState, d.GetFeeState())
+	require.Equal(initialFeeState, state.GetFeeState())
+
+	require.NoError(d.Apply(state))
 	assertChainsEqual(t, state, d)
 }
 
@@ -55,7 +83,7 @@ func TestDiffCurrentSupply(t *testing.T) {
 	versions := NewMockVersions(ctrl)
 	versions.EXPECT().GetState(lastAcceptedID).AnyTimes().Return(state, true)
 
-	d, err := NewDiff(lastAcceptedID, versions)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	initialCurrentSupply, err := d.GetCurrentSupply(constants.PrimaryNetworkID)
@@ -71,21 +99,21 @@ func TestDiffCurrentSupply(t *testing.T) {
 	returnedBaseCurrentSupply, err := state.GetCurrentSupply(constants.PrimaryNetworkID)
 	require.NoError(err)
 	require.Equal(initialCurrentSupply, returnedBaseCurrentSupply)
+
+	require.NoError(d.Apply(state))
+	assertChainsEqual(t, state, d)
 }
 
 func TestDiffCurrentValidator(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	lastAcceptedID := ids.GenerateTestID()
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a current validator
@@ -94,7 +122,7 @@ func TestDiffCurrentValidator(t *testing.T) {
 		SubnetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
-	d.PutCurrentValidator(currentValidator)
+	require.NoError(d.PutCurrentValidator(currentValidator))
 
 	// Assert that we get the current validator back
 	gotCurrentValidator, err := d.GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID)
@@ -114,15 +142,12 @@ func TestDiffPendingValidator(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	lastAcceptedID := ids.GenerateTestID()
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a pending validator
@@ -131,7 +156,7 @@ func TestDiffPendingValidator(t *testing.T) {
 		SubnetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
-	d.PutPendingValidator(pendingValidator)
+	require.NoError(d.PutPendingValidator(pendingValidator))
 
 	// Assert that we get the pending validator back
 	gotPendingValidator, err := d.GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID)
@@ -158,14 +183,11 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	}
 
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a current delegator
@@ -173,7 +195,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 
 	// Assert that we get the current delegator back
 	// Mock iterator for [state] returns no delegators.
-	stateCurrentDelegatorIter := NewMockStakerIterator(ctrl)
+	stateCurrentDelegatorIter := iteratormock.NewIterator[*Staker](ctrl)
 	stateCurrentDelegatorIter.EXPECT().Next().Return(false).Times(2)
 	stateCurrentDelegatorIter.EXPECT().Release().Times(2)
 	state.EXPECT().GetCurrentDelegatorIterator(
@@ -207,14 +229,11 @@ func TestDiffPendingDelegator(t *testing.T) {
 	}
 
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a pending delegator
@@ -222,7 +241,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 
 	// Assert that we get the pending delegator back
 	// Mock iterator for [state] returns no delegators.
-	statePendingDelegatorIter := NewMockStakerIterator(ctrl)
+	statePendingDelegatorIter := iteratormock.NewIterator[*Staker](ctrl)
 	statePendingDelegatorIter.EXPECT().Next().Return(false).Times(2)
 	statePendingDelegatorIter.EXPECT().Release().Times(2)
 	state.EXPECT().GetPendingDelegatorIterator(
@@ -266,9 +285,13 @@ func TestDiffSubnet(t *testing.T) {
 		parentStateCreateSubnetTx.ID(),
 	}, subnetIDs)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
+	// Initialize parent with one subnet
+	parentStateCreateSubnetTx := &txs.Tx{
+		Unsigned: &txs.CreateSubnetTx{
+			Owner: fxmock.NewOwner(ctrl),
+		},
+	}
+	state.AddSubnet(parentStateCreateSubnetTx.ID())
 
 	diff, err := NewDiff(lastAcceptedID, states)
 	require.NoError(err)
@@ -347,14 +370,11 @@ func TestDiffTx(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a tx
@@ -413,9 +433,16 @@ func TestDiffRewardUTXO(t *testing.T) {
 		parentRewardUTXO,
 	}, rewardUTXOs)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
+	// Initialize parent with one reward UTXO
+	var (
+		txID             = ids.GenerateTestID()
+		parentRewardUTXO = &avax.UTXO{
+			UTXOID: avax.UTXOID{
+				TxID: txID,
+			},
+		}
+	)
+	state.AddRewardUTXO(txID, parentRewardUTXO)
 
 	diff, err := NewDiff(lastAcceptedID, states)
 	require.NoError(err)
@@ -443,14 +470,11 @@ func TestDiffUTXO(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	state := NewMockState(ctrl)
-	// Called in NewDiff
+	// Called in NewDiffOn
 	state.EXPECT().GetTimestamp().Return(time.Now()).Times(1)
+	state.EXPECT().GetFeeState().Return(gas.State{}).Times(1)
 
-	states := NewMockVersions(ctrl)
-	lastAcceptedID := ids.GenerateTestID()
-	states.EXPECT().GetState(lastAcceptedID).Return(state, true).AnyTimes()
-
-	d, err := NewDiff(lastAcceptedID, states)
+	d, err := NewDiffOn(state)
 	require.NoError(err)
 
 	// Put a UTXO

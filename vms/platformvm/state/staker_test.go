@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -180,15 +180,41 @@ func TestNewPendingStaker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	txID := ids.GenerateTestID()
+	staker, err := NewPendingStaker(txID, stakerTx)
+	require.NoError(err)
+	publicKey, isNil, err := stakerTx.PublicKey()
+	require.NoError(err)
+	require.True(isNil)
+	require.Equal(&Staker{
+		TxID:      txID,
+		NodeID:    stakerTx.NodeID(),
+		PublicKey: publicKey,
+		SubnetID:  stakerTx.SubnetID(),
+		Weight:    stakerTx.Weight(),
+		StartTime: stakerTx.StartTime(),
+		EndTime:   stakerTx.EndTime(),
+		NextTime:  stakerTx.StartTime(),
+		Priority:  stakerTx.PendingPriority(),
+	}, staker)
+
+	ctrl := gomock.NewController(t)
+	signer := signermock.NewSigner(ctrl)
+	signer.EXPECT().Verify().Return(errCustom)
+	stakerTx.Signer = signer
+
+	_, err = NewPendingStaker(txID, stakerTx)
+	require.ErrorIs(err, errCustom)
+}
+
+func generateStakerTx(require *require.Assertions) *txs.AddPermissionlessValidatorTx {
 	nodeID := ids.GenerateTestNodeID()
 	sk, err := bls.NewSecretKey()
 	require.NoError(err)
 	publicKey := bls.PublicFromSecretKey(sk)
 	subnetID := ids.GenerateTestID()
 	weight := uint64(12345)
-	startTime := time.Now()
-	endTime := time.Now()
-	pendingPriority := txs.SubnetPermissionedValidatorPendingPriority
+	startTime := time.Now().Truncate(time.Second)
+	endTime := startTime.Add(time.Hour)
 
 	stakerTx := txs.NewMockScheduledStaker(ctrl)
 	stakerTx.EXPECT().NodeID().Return(nodeID)

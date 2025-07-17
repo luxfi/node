@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -33,8 +33,9 @@ var (
 type StandardTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
 	*Backend
-	State state.Diff // state is expected to be modified
-	Tx    *txs.Tx
+	State         state.Diff // state is expected to be modified
+	FeeCalculator fee.Calculator
+	Tx            *txs.Tx
 
 	// outputs of visitor execution
 	OnAccept       func() // may be nil
@@ -326,6 +327,7 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 
 	if _, err := verifyAddValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -355,6 +357,7 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
 	if err := verifyAddSubnetValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -375,6 +378,7 @@ func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	if _, err := verifyAddDelegatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -400,6 +404,7 @@ func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
 	staker, isCurrentValidator, err := verifyRemoveSubnetValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -424,6 +429,11 @@ func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidat
 }
 
 func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+	currentTimestamp := e.State.GetTimestamp()
+	if e.Config.UpgradeConfig.IsEtnaActivated(currentTimestamp) {
+		return errTransformSubnetTxPostEtna
+	}
+
 	if err := e.Tx.SyntacticVerify(e.Ctx); err != nil {
 		return err
 	}
@@ -484,6 +494,7 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	if err := verifyAddPermissionlessValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -516,6 +527,7 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
 	if err := verifyAddPermissionlessDelegatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,

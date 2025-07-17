@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -10,18 +10,8 @@ type Weighted interface {
 	Sample(sampleValue uint64) (int, bool)
 }
 
-// NewWeighted returns a new sampler
 func NewWeighted() Weighted {
-	return &weightedBest{
-		samplers: []Weighted{
-			&weightedArray{},
-			&weightedHeap{},
-			&weightedUniform{
-				maxWeight: 1024,
-			},
-		},
-		benchmarkIterations: 100,
-	}
+	return &weightedHeap{}
 }
 
 func NewDeterministicWeighted() Weighted {

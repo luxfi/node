@@ -1,31 +1,33 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package cache
+package cache_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/cachetest"
 	"github.com/luxfi/node/ids"
 )
 
 func TestLRU(t *testing.T) {
-	cache := &LRU[ids.ID, int64]{Size: 1}
+	cache := &cache.LRU[ids.ID, int64]{Size: 1}
 
-	TestBasic(t, cache)
+	cachetest.TestBasic(t, cache)
 }
 
 func TestLRUEviction(t *testing.T) {
-	cache := &LRU[ids.ID, int64]{Size: 2}
+	cache := &cache.LRU[ids.ID, int64]{Size: 2}
 
-	TestEviction(t, cache)
+	cachetest.TestEviction(t, cache)
 }
 
 func TestLRUResize(t *testing.T) {
 	require := require.New(t)
-	cache := LRU[ids.ID, int64]{Size: 2}
+	cache := cache.LRU[ids.ID, int64]{Size: 2}
 
 	id1 := ids.ID{1}
 	id2 := ids.ID{2}

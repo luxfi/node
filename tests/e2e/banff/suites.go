@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -63,7 +63,7 @@ var _ = ginkgo.Describe("[Banff]", func() {
 				require.NoError(err)
 				assetID = assetTx.ID()
 
-				tests.Outf("{{green}}created new X-chain asset{{/}}: %s\n", assetID)
+				tc.Outf("{{green}}created new X-chain asset{{/}}: %s\n", assetID)
 			})
 
 			ginkgo.By("export new X-chain asset to P-chain", func() {

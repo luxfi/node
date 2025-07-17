@@ -1,52 +1,54 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package cache
+package cache_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/cachetest"
 	"github.com/luxfi/node/ids"
 )
 
 func TestSizedLRU(t *testing.T) {
-	cache := NewSizedLRU[ids.ID, int64](TestIntSize, TestIntSizeFunc)
+	c := cache.NewSizedLRU[ids.ID, int64](cachetest.IntSize, cachetest.IntSizeFunc)
 
-	TestBasic(t, cache)
+	cachetest.TestBasic(t, c)
 }
 
 func TestSizedLRUEviction(t *testing.T) {
-	cache := NewSizedLRU[ids.ID, int64](2*TestIntSize, TestIntSizeFunc)
+	c := cache.NewSizedLRU[ids.ID, int64](2*cachetest.IntSize, cachetest.IntSizeFunc)
 
-	TestEviction(t, cache)
+	cachetest.TestEviction(t, c)
 }
 
 func TestSizedLRUWrongKeyEvictionRegression(t *testing.T) {
 	require := require.New(t)
 
-	cache := NewSizedLRU[string, struct{}](
+	c := cache.NewSizedLRU[string, struct{}](
 		3,
 		func(key string, _ struct{}) int {
 			return len(key)
 		},
 	)
 
-	cache.Put("a", struct{}{})
-	cache.Put("b", struct{}{})
-	cache.Put("c", struct{}{})
-	cache.Put("dd", struct{}{})
+	c.Put("a", struct{}{})
+	c.Put("b", struct{}{})
+	c.Put("c", struct{}{})
+	c.Put("dd", struct{}{})
 
-	_, ok := cache.Get("a")
+	_, ok := c.Get("a")
 	require.False(ok)
 
-	_, ok = cache.Get("b")
+	_, ok = c.Get("b")
 	require.False(ok)
 
-	_, ok = cache.Get("c")
+	_, ok = c.Get("c")
 	require.True(ok)
 
-	_, ok = cache.Get("dd")
+	_, ok = c.Get("dd")
 	require.True(ok)
 }
