@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -65,7 +65,6 @@ type Block interface {
 type PostForkBlock interface {
 	Block
 
-	setStatus(choices.Status)
 	getStatelessBlk() block.Block
 	setInnerBlk(snowman.Block)
 }
@@ -74,7 +73,6 @@ type PostForkBlock interface {
 type postForkCommonComponents struct {
 	vm       *VM
 	innerBlk snowman.Block
-	status   choices.Status
 }
 
 // Return the inner block's height
@@ -268,7 +266,6 @@ func (p *postForkCommonComponents) buildChild(
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       p.vm,
 			innerBlk: innerBlock,
-			status:   choices.Processing,
 		},
 	}
 

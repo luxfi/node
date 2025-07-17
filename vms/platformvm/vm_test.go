@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -88,10 +88,13 @@ const (
 	defaultWeight uint64 = 10000
 )
 
-var (
 	defaultMinStakingDuration = 24 * time.Hour
 	defaultMaxStakingDuration = 365 * 24 * time.Hour
 
+	defaultTxFee = 100 * units.NanoAvax
+)
+
+var (
 	defaultRewardConfig = reward.Config{
 		MaxConsumptionRate: .12 * reward.PercentDenominator,
 		MinConsumptionRate: .10 * reward.PercentDenominator,
@@ -629,6 +632,25 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	tx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
+	// create valid tx
+	tx, err := wallet.IssueAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: repeatNodeID,
+				Start:  uint64(startTime.Unix()),
+				End:    uint64(endTime.Unix()),
+				Wght:   vm.MinValidatorStake,
+			},
+			Subnet: constants.PrimaryNetworkID,
+		},
+		signer.NewProofOfPossession(sk),
+		vm.ctx.AVAXAssetID,
+		rewardsOwner,
+		rewardsOwner,
+		reward.PercentDenominator,
+	)
+	require.NoError(err)
+
 	// trigger block creation
 	vm.ctx.Lock.Unlock()
 	err = vm.issueTxFromRPC(tx)
@@ -747,7 +769,7 @@ func TestRewardValidatorAccept(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
-	vm.clock.Set(defaultValidateEndTime)
+	vm.clock.Set(genesistest.DefaultValidatorEndTime)
 
 	// Advance time and create proposal to reward a genesis validator
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -815,7 +837,7 @@ func TestRewardValidatorReject(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
-	vm.clock.Set(defaultValidateEndTime)
+	vm.clock.Set(genesistest.DefaultValidatorEndTime)
 
 	// Advance time and create proposal to reward a genesis validator
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -1026,7 +1048,7 @@ func TestCreateSubnet(t *testing.T) {
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
 	require.NoError(err)
 
-	// fast forward clock to time validator should stop validating
+	// remove validator from current validator set
 	vm.clock.Set(endTime)
 	blk, err = vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -1051,13 +1073,9 @@ func TestAtomicImport(t *testing.T) {
 		TxID:        ids.Empty.Prefix(1),
 		OutputIndex: 1,
 	}
-	amount := uint64(50000)
-	recipientKey := keys[1]
 
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, baseDB))
-
 	mutableSharedMemory.SharedMemory = m.NewSharedMemory(vm.ctx.ChainID)
-	peerSharedMemory := m.NewSharedMemory(vm.ctx.XChainID)
 
 	builder, _ := factory.NewWallet(keys[0])
 	_, err := builder.NewImportTx(
@@ -1075,10 +1093,24 @@ func TestAtomicImport(t *testing.T) {
 		UTXOID: utxoID,
 		Asset:  lux.Asset{ID: vm.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt: amount,
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{recipientKey.PublicKey().Address()},
+			Amt:          50 * units.MicroAvax,
+			OutputOwners: *importOwners,
+		},
+	}
+	utxoBytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
+	require.NoError(err)
+
+	inputID := utxo.InputID()
+	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
+		vm.ctx.ChainID: {
+			PutRequests: []*atomic.Element{
+				{
+					Key:   inputID[:],
+					Value: utxoBytes,
+					Traits: [][]byte{
+						recipientKey.Address().Bytes(),
+					},
+				},
 			},
 		},
 	}
@@ -1459,7 +1491,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		prometheus.NewRegistry(),
 	))
 
-	externalSender := &sender.ExternalSenderTest{TB: t}
+	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 
 	// Passes messages from the consensus engine to the network
@@ -1810,23 +1842,23 @@ func TestMaxStakeAmount(t *testing.T) {
 	}{
 		{
 			description: "[validator.StartTime] == [startTime] < [endTime] == [validator.EndTime]",
-			startTime:   defaultValidateStartTime,
-			endTime:     defaultValidateEndTime,
+			startTime:   genesistest.DefaultValidatorStartTime,
+			endTime:     genesistest.DefaultValidatorEndTime,
 		},
 		{
 			description: "[validator.StartTime] < [startTime] < [endTime] == [validator.EndTime]",
-			startTime:   defaultValidateStartTime.Add(time.Minute),
-			endTime:     defaultValidateEndTime,
+			startTime:   genesistest.DefaultValidatorStartTime.Add(time.Minute),
+			endTime:     genesistest.DefaultValidatorEndTime,
 		},
 		{
 			description: "[validator.StartTime] == [startTime] < [endTime] < [validator.EndTime]",
-			startTime:   defaultValidateStartTime,
-			endTime:     defaultValidateEndTime.Add(-time.Minute),
+			startTime:   genesistest.DefaultValidatorStartTime,
+			endTime:     genesistest.DefaultValidatorEndTime.Add(-time.Minute),
 		},
 		{
 			description: "[validator.StartTime] < [startTime] < [endTime] < [validator.EndTime]",
-			startTime:   defaultValidateStartTime.Add(time.Minute),
-			endTime:     defaultValidateEndTime.Add(-time.Minute),
+			startTime:   genesistest.DefaultValidatorStartTime.Add(time.Minute),
+			endTime:     genesistest.DefaultValidatorEndTime.Add(-time.Minute),
 		},
 	}
 

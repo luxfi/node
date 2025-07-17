@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -21,8 +21,8 @@ const (
 var c codec.Manager
 
 func init() {
-	lc := linearcodec.New([]string{reflectcodec.DefaultTagName + "V0"}, maxSize)
-	lc2 := linearcodec.New([]string{reflectcodec.DefaultTagName + "V1"}, maxSize)
+	lc := linearcodec.New([]string{reflectcodec.DefaultTagName + "V0"})
+	lc2 := linearcodec.New([]string{reflectcodec.DefaultTagName + "V1"})
 
 	c = codec.NewManager(maxSize)
 	// for backward compatibility, still register the initial codec version

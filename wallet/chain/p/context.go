@@ -1,17 +1,21 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
-	stdcontext "context"
+	"context"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/avm"
 )
 
-var _ Context = (*context)(nil)
+// gasPriceMultiplier increases the gas price to support multiple transactions
+// to be issued.
+//
+// TODO: Handle this better. Either here or in the mempool.
+const gasPriceMultiplier = 2
 
 type Context interface {
 	NetworkID() uint32
@@ -42,14 +46,16 @@ type context struct {
 func NewContextFromURI(ctx stdcontext.Context, uri string) (Context, error) {
 	infoClient := info.NewClient(uri)
 	xChainClient := avm.NewClient(uri, "X")
-	return NewContextFromClients(ctx, infoClient, xChainClient)
+	pChainClient := platformvm.NewClient(uri)
+	return NewContextFromClients(ctx, infoClient, xChainClient, pChainClient)
 }
 
 func NewContextFromClients(
-	ctx stdcontext.Context,
+	ctx context.Context,
 	infoClient info.Client,
 	xChainClient avm.Client,
-) (Context, error) {
+	pChainClient platformvm.Client,
+) (*builder.Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
 		return nil, err
@@ -60,24 +66,17 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	txFees, err := infoClient.GetTxFee(ctx)
+	dynamicFeeConfig, err := pChainClient.GetFeeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewContext(
-		networkID,
-		asset.AssetID,
-		uint64(txFees.TxFee),
-		uint64(txFees.CreateSubnetTxFee),
-		uint64(txFees.TransformSubnetTxFee),
-		uint64(txFees.CreateBlockchainTxFee),
-		uint64(txFees.AddPrimaryNetworkValidatorFee),
-		uint64(txFees.AddPrimaryNetworkDelegatorFee),
-		uint64(txFees.AddSubnetValidatorFee),
-		uint64(txFees.AddSubnetDelegatorFee),
-	), nil
-}
+	// TODO: After Etna is activated, assume the gas price is always non-zero.
+	if dynamicFeeConfig.MinPrice != 0 {
+		_, gasPrice, _, err := pChainClient.GetFeeState(ctx)
+		if err != nil {
+			return nil, err
+		}
 
 func NewContext(
 	networkID uint32,
@@ -103,7 +102,6 @@ func NewContext(
 		addSubnetValidatorFee:         addSubnetValidatorFee,
 		addSubnetDelegatorFee:         addSubnetDelegatorFee,
 	}
-}
 
 func (c *context) NetworkID() uint32 {
 	return c.networkID

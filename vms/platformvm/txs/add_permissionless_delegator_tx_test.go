@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -1583,7 +1583,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid rewards owner",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1609,7 +1609,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid stake output",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
 				stakeOut := lux.NewMockTransferableOut(ctrl)
@@ -1636,7 +1636,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "multiple staked assets",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1670,7 +1670,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake not sorted",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1741,7 +1741,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "weight mismatch",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1776,7 +1776,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid subnet validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1811,7 +1811,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid primary network validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{

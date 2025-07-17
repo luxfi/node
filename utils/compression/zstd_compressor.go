@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package compression
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -13,13 +12,7 @@ import (
 	"github.com/DataDog/zstd"
 )
 
-var (
-	_ Compressor = (*zstdCompressor)(nil)
-
-	ErrInvalidMaxSizeCompressor = errors.New("invalid compressor max size")
-	ErrDecompressedMsgTooLarge  = errors.New("decompressed msg too large")
-	ErrMsgTooLarge              = errors.New("msg too large to be compressed")
-)
+var _ Compressor = (*zstdCompressor)(nil)
 
 func NewZstdCompressor(maxSize int64) (Compressor, error) {
 	if maxSize == math.MaxInt64 {

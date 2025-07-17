@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -172,6 +172,7 @@ type network struct {
 // NewNetwork returns a new Network implementation with the provided parameters.
 func NewNetwork(
 	config *Config,
+	minCompatibleTime time.Time,
 	msgCreator message.Creator,
 	metricsRegisterer prometheus.Registerer,
 	log logging.Logger,

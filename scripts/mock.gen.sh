@@ -14,7 +14,11 @@ source ./scripts/constants.sh
 
 outputted_files=()
 
-# tuples of (source interface import path, comma-separated interface names, output file path)
+source ./scripts/constants.sh
+
+outputted_files=()
+
+# tuples of (source import path, comma-separated interface names, output file path)
 input="scripts/mocks.mockgen.txt"
 while IFS= read -r line
 do

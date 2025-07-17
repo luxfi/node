@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -74,9 +74,12 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/aivm"
 	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/bridgevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -633,6 +636,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
+		n.Config.UpgradeConfig.DurangoTime,
 		n.msgCreator,
 		reg,
 		n.Log,
@@ -1255,6 +1259,9 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bridgevm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
 	)
 	if err != nil {
 		return err

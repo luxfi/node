@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -280,7 +280,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			}
 			stake[i] = utxo
 
-			newWeight, err := math.Add64(weight, uint64(apiUTXO.Amount))
+			newWeight, err := math.Add(weight, uint64(apiUTXO.Amount))
 			if err != nil {
 				return errStakeOverflow
 			}

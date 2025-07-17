@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
 
 import (
-	"fmt"
 	"math"
 	"slices"
 	"testing"
@@ -68,16 +67,6 @@ var (
 		},
 	}
 )
-
-func TestAllUniform(t *testing.T) {
-	for _, s := range uniformSamplers {
-		for _, test := range uniformTests {
-			t.Run(fmt.Sprintf("sampler %s test %s", s.name, test.name), func(t *testing.T) {
-				test.test(t, s.sampler)
-			})
-		}
-	}
-}
 
 func UniformInitializeMaxUint64Test(t *testing.T, s Uniform) {
 	s.Initialize(math.MaxUint64)

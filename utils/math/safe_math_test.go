@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package math
@@ -19,11 +19,11 @@ func TestAdd64(t *testing.T) {
 	require.NoError(err)
 	require.Equal(maxUint64, sum)
 
-	sum, err = Add64(maxUint64, 0)
+	sum, err = Add(maxUint64, 0)
 	require.NoError(err)
 	require.Equal(maxUint64, sum)
 
-	sum, err = Add64(uint64(1<<62), uint64(1<<62))
+	sum, err = Add(uint64(1<<62), uint64(1<<62))
 	require.NoError(err)
 	require.Equal(uint64(1<<63), sum)
 

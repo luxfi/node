@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -233,8 +233,7 @@ type ManagerConfig struct {
 	// containers in an ancestors message it receives.
 	BootstrapAncestorsMaxContainersReceived int
 
-	ApricotPhase4Time            time.Time
-	ApricotPhase4MinPChainHeight uint64
+	Upgrades upgrade.Config
 
 	// Tracks CPU/disk usage caused by each peer.
 	ResourceTracker timetracker.ResourceTracker

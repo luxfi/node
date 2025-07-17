@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -6,7 +6,6 @@ package proposervm
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -31,8 +30,8 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	require := require.New(t)
 
 	innerVM := &fullVM{
-		TestVM: &block.TestVM{
-			TestVM: common.TestVM{
+		VM: &blocktest.VM{
+			VM: enginetest.VM{
 				T: t,
 			},
 		},
@@ -62,6 +61,34 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 			ActivationTime:      time.Unix(0, 0),
 			DurangoTime:         time.Unix(0, 0),
 			MinimumPChainHeight: 0,
+			MinBlkDelay:         DefaultMinBlockDelay,
+			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
+			StakingLeafSigner:   pTestSigner,
+			StakingCertLeaf:     pTestCert,
+			Registerer:          prometheus.NewRegistry(),
+		},
+	)
+
+	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+
+	require.NoError(vm.Initialize(
+		context.Background(),
+		ctx,
+		prefixdb.New([]byte{}, memdb.New()),
+		snowmantest.GenesisBytes,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+	))
+
+	// create the VM
+	vm := New(
+		innerVM,
+		Config{
+			Upgrades:            upgradetest.GetConfig(upgradetest.Latest),
 			MinBlkDelay:         DefaultMinBlockDelay,
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
@@ -121,7 +148,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -187,7 +214,6 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -205,7 +231,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -271,7 +297,6 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -290,7 +315,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -358,7 +383,6 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -376,7 +400,7 @@ func TestParseStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -430,7 +454,6 @@ func TestParseStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -454,7 +477,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -521,7 +544,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -563,7 +586,6 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))

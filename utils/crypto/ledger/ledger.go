@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -46,12 +46,17 @@ func (l *Ledger) Address(hrp string, addressIndex uint32) (ids.ShortID, error) {
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	return ids.ToShortID(resp.Hash)
+	// TODO: Fix ledger API - resp.Hash is no longer exported
+	// return ids.ToShortID(resp.Hash)
+	return ids.ShortEmpty, fmt.Errorf("ledger API has changed - Hash field not accessible")
 }
 
 func (l *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
 	if l.epk == nil {
-		pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
+		// TODO: Fix ledger API - GetExtPubKey method no longer exists
+		// pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
+		var pk, chainCode []byte
+		err := fmt.Errorf("ledger API has changed - GetExtPubKey method not available")
 		if err != nil {
 			return nil, err
 		}

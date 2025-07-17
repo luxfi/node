@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -230,6 +230,7 @@ func addSubnet(t *testing.T, env *environment) {
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
+	feeCalculator := state.PickFeeCalculator(env.config, env.state)
 	executor := StandardTxExecutor{
 		Backend: &env.backend,
 		State:   stateDiff,
@@ -260,9 +261,6 @@ func defaultState(
 		metrics.Noop,
 		rewards,
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	// persist and reload to init a bunch of in-memory stuff
 	state.SetHeight(0)

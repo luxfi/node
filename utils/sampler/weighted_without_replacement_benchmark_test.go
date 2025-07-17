@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// BenchmarkAllWeightedWithoutReplacement
-func BenchmarkAllWeightedWithoutReplacement(b *testing.B) {
+func BenchmarkWeightedWithoutReplacement(b *testing.B) {
 	sizes := []int{
 		1,
 		5,

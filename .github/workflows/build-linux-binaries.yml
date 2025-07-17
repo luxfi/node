@@ -11,11 +11,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-          check-latest: true
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go-for-project
+
       - run: go version
 
       - name: Build the node binaries
@@ -26,23 +25,32 @@ jobs:
           sudo apt update
           sudo apt -y install awscli
 
-      - name: Get the version
-        id: get_version
-        run: |
-          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-        shell: bash
-
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Create tgz package structure
+      - name: Try to get tag from git
+        if: "${{ github.event.inputs.tag == '' }}"
+        id: get_tag_from_git
+        run: |
+          echo "TAG=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Try to get tag from workflow dispatch
+        if: "${{ github.event.inputs.tag != '' }}"
+        id: get_tag_from_workflow
+        run: |
+          echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          TAG: ${{ env.VERSION }}
+          PKG_ROOT: /tmp/avalanchego
+          TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "amd64"
           RELEASE: "focal"
@@ -51,11 +59,12 @@ jobs:
     runs-on: [self-hosted, linux, ARM64, focal]
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-          check-latest: true
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-focal-deps
+
+      - uses: ./.github/actions/setup-go-for-project
+
       - run: go version
 
       - name: Build the node binaries
@@ -66,23 +75,32 @@ jobs:
           sudo apt update
           sudo apt -y install awscli
 
-      - name: Get the version
-        id: get_version
-        run: |
-          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-        shell: bash
-
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Create tgz package structure
+      - name: Try to get tag from git
+        if: "${{ github.event.inputs.tag == '' }}"
+        id: get_tag_from_git
+        run: |
+          echo "TAG=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Try to get tag from workflow dispatch
+        if: "${{ github.event.inputs.tag != '' }}"
+        id: get_tag_from_workflow
+        run: |
+          echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          TAG: ${{ env.VERSION }}
+          PKG_ROOT: /tmp/avalanchego
+          TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"
           RELEASE: "focal"

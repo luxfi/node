@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -8,6 +8,13 @@ import (
 
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
+)
+
+const (
+	pullGossipSource = "pull_gossip"
+	pushGossipSource = "push_gossip"
+	builtSource      = "built"
+	unknownSource    = "unknown"
 )
 
 const (

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package database
@@ -38,10 +38,6 @@ func GetID(db KeyValueReader, key []byte) (ids.ID, error) {
 	if err != nil {
 		return ids.Empty, err
 	}
-	return ids.ToID(b)
-}
-
-func ParseID(b []byte) (ids.ID, error) {
 	return ids.ToID(b)
 }
 
@@ -161,13 +157,6 @@ func Size(db Iteratee) (int, error) {
 		size += len(iterator.Key()) + len(iterator.Value()) + kvPairOverhead
 	}
 	return size, iterator.Error()
-}
-
-func IsEmpty(db Iteratee) (bool, error) {
-	iterator := db.NewIterator()
-	defer iterator.Release()
-
-	return !iterator.Next(), iterator.Error()
 }
 
 func AtomicClear(readerDB Iteratee, deleterDB KeyValueDeleter) error {

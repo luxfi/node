@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -48,6 +48,12 @@ func (b *TestBlock) Bytes() []byte {
 	return b.BytesV
 }
 
-func (b *TestBlock) Less(other *TestBlock) bool {
-	return b.HeightV < other.HeightV
+func (b *TestBlock) Compare(other *TestBlock) int {
+	if b.HeightV < other.HeightV {
+		return -1
+	}
+	if b.HeightV > other.HeightV {
+		return 1
+	}
+	return 0
 }

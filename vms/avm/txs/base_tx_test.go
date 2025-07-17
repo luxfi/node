@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -15,6 +15,12 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+)
+
+var (
+	chainID = ids.ID{5, 4, 3, 2, 1}
+	assetID = ids.ID{1, 2, 3}
+	keys    = secp256k1.TestKeys()
 )
 
 var (

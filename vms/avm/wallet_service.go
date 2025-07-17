@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -229,7 +229,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 			assetIDs[output.AssetID] = assetID
 		}
 		currentAmount := amounts[assetID]
-		newAmount, err := math.Add64(currentAmount, uint64(output.Amount))
+		newAmount, err := math.Add(currentAmount, uint64(output.Amount))
 		if err != nil {
 			return fmt.Errorf("problem calculating required spend amount: %w", err)
 		}
@@ -257,7 +257,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 
 	amountsWithFee := maps.Clone(amounts)
 
-	amountWithFee, err := math.Add64(amounts[w.vm.feeAssetID], w.vm.TxFee)
+	amountWithFee, err := math.Add(amounts[w.vm.feeAssetID], w.vm.TxFee)
 	if err != nil {
 		return fmt.Errorf("problem calculating required spend amount: %w", err)
 	}

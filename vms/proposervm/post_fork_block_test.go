@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -74,7 +74,6 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: innerOracleBlk,
-			status:   choices.Processing,
 		},
 	}
 
@@ -139,7 +138,6 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: childCoreBlk,
-			status:   choices.Processing,
 		},
 	}
 
@@ -351,7 +349,6 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: childCoreBlk,
-			status:   choices.Processing,
 		},
 	}
 
@@ -540,7 +537,6 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: childCoreBlk,
-			status:   choices.Processing,
 		},
 	}
 
@@ -724,7 +720,6 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: childCoreBlk,
-			status:   choices.Processing,
 		},
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -296,7 +296,7 @@ func testAtomicTx() (*txs.Tx, error) {
 					Amt: uint64(1234),
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
-						Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+						Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 					},
 				},
 			}},
@@ -345,7 +345,7 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 						Amt: uint64(1234),
 						OutputOwners: secp256k1fx.OutputOwners{
 							Threshold: 1,
-							Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+							Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 						},
 					},
 				}},

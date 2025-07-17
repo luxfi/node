@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -311,10 +311,36 @@ func (e *tracedEngine) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []b
 	return e.engine.AppGossip(ctx, nodeID, msg)
 }
 
-func (e *tracedEngine) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+func (e *tracedEngine) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Connected", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", nodeID),
+		attribute.Stringer("version", nodeVersion),
+	))
+	defer span.End()
+
+	return e.engine.Connected(ctx, nodeID, nodeVersion)
+}
+
+func (e *tracedEngine) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	ctx, span := e.tracer.Start(ctx, "tracedEngine.Disconnected", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", nodeID),
+	))
+	defer span.End()
+
+	return e.engine.Disconnected(ctx, nodeID)
+}
+
+func (e *tracedEngine) CrossChainAppRequest(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	deadline time.Time,
+	request []byte,
+) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.CrossChainAppRequest", oteltrace.WithAttributes(
 		attribute.Stringer("chainID", chainID),
 		attribute.Int64("requestID", int64(requestID)),
+		attribute.String("deadline", deadline.String()),
 		attribute.Int("requestLen", len(request)),
 	))
 	defer span.End()
@@ -322,7 +348,12 @@ func (e *tracedEngine) CrossChainAppRequest(ctx context.Context, chainID ids.ID,
 	return e.engine.CrossChainAppRequest(ctx, chainID, requestID, deadline, request)
 }
 
-func (e *tracedEngine) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+func (e *tracedEngine) CrossChainAppResponse(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	response []byte,
+) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.CrossChainAppResponse", oteltrace.WithAttributes(
 		attribute.Stringer("chainID", chainID),
 		attribute.Int64("requestID", int64(requestID)),
@@ -341,25 +372,6 @@ func (e *tracedEngine) CrossChainAppRequestFailed(ctx context.Context, chainID i
 	defer span.End()
 
 	return e.engine.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
-}
-
-func (e *tracedEngine) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	ctx, span := e.tracer.Start(ctx, "tracedEngine.Connected", oteltrace.WithAttributes(
-		attribute.Stringer("nodeID", nodeID),
-		attribute.Stringer("version", nodeVersion),
-	))
-	defer span.End()
-
-	return e.engine.Connected(ctx, nodeID, nodeVersion)
-}
-
-func (e *tracedEngine) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	ctx, span := e.tracer.Start(ctx, "tracedEngine.Disconnected", oteltrace.WithAttributes(
-		attribute.Stringer("nodeID", nodeID),
-	))
-	defer span.End()
-
-	return e.engine.Disconnected(ctx, nodeID)
 }
 
 func (e *tracedEngine) Timeout(ctx context.Context) error {

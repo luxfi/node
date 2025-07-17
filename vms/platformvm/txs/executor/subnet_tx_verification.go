@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -36,6 +36,14 @@ func verifyPoASubnetAuthorization(
 	}
 
 	_, err = chainState.GetSubnetTransformation(subnetID)
+	if err == nil {
+		return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
+	}
+	if err != database.ErrNotFound {
+		return nil, err
+	}
+
+	_, _, err = chainState.GetSubnetManager(subnetID)
 	if err == nil {
 		return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
 	}

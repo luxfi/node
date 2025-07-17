@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -54,9 +54,8 @@ func TestApricotStandardBlockTimeVerification(t *testing.T) {
 	env.blkManager.(*manager).lastAccepted = parentID
 
 	chainTime := env.clk.Time().Truncate(time.Second)
-	env.mockedState.EXPECT().GetLastAccepted().Return(parentID).AnyTimes()
-	env.mockedState.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
+	onParentAccept.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
 
 	// wrong height
 	apricotChildBlk, err := block.NewApricotStandardBlock(
@@ -111,13 +110,11 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		timestamp:      chainTime,
 	}
 	env.blkManager.(*manager).lastAccepted = parentID
-	env.mockedState.EXPECT().GetLastAccepted().Return(parentID).AnyTimes()
-	env.mockedState.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 
 	nextStakerTime := chainTime.Add(executor.SyncBound).Add(-1 * time.Second)
 
 	// store just once current staker to mark next staker time.
-	currentStakerIt := state.NewMockStakerIterator(ctrl)
+	currentStakerIt := iteratormock.NewIterator[*state.Staker](ctrl)
 	currentStakerIt.EXPECT().Next().Return(true).AnyTimes()
 	currentStakerIt.EXPECT().Value().Return(
 		&state.Staker{
@@ -129,12 +126,13 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetCurrentStakerIterator().Return(currentStakerIt, nil).AnyTimes()
 
 	// no pending stakers
-	pendingIt := state.NewMockStakerIterator(ctrl)
+	pendingIt := iteratormock.NewIterator[*state.Staker](ctrl)
 	pendingIt.EXPECT().Next().Return(false).AnyTimes()
 	pendingIt.EXPECT().Release().Return().AnyTimes()
 	onParentAccept.EXPECT().GetPendingStakerIterator().Return(pendingIt, nil).AnyTimes()
 
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
+	onParentAccept.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
 
 	txID := ids.GenerateTestID()
 	utxo := &lux.UTXO{
@@ -295,11 +293,12 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 
 	// Case: Timestamp is after next validator start time
 	// Add a pending validator
-	pendingValidatorStartTime := defaultGenesisTime.Add(1 * time.Second)
+	pendingValidatorStartTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Second)
 	pendingValidatorEndTime := pendingValidatorStartTime.Add(defaultMinStakingDuration)
 	nodeID := ids.GenerateTestNodeID()
 	rewardAddress := ids.GenerateTestShortID()
-	addPendingValidatorTx, err := addPendingValidator(
+	addPendingValidatorTx := addPendingValidator(
+		t,
 		env,
 		pendingValidatorStartTime,
 		pendingValidatorEndTime,
@@ -307,7 +306,6 @@ func TestBanffStandardBlockUpdatePrimaryNetworkStakers(t *testing.T) {
 		rewardAddress,
 		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 	)
-	require.NoError(err)
 
 	// build standard block moving ahead chain time
 	preferredID := env.state.GetLastAccepted()
@@ -498,7 +496,8 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 			env.config.TrackedSubnets.Add(subnetID)
 
 			for _, staker := range test.stakers {
-				_, err := addPendingValidator(
+				addPendingValidator(
+					t,
 					env,
 					staker.startTime,
 					staker.endTime,
@@ -506,7 +505,6 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 					staker.rewardAddress,
 					[]*secp256k1.PrivateKey{preFundedKeys[0]},
 				)
-				require.NoError(err)
 			}
 
 			for _, staker := range test.subnetStakers {
@@ -532,7 +530,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 				)
 				require.NoError(err)
 
-				env.state.PutPendingValidator(staker)
+				require.NoError(env.state.PutPendingValidator(staker))
 				env.state.AddTx(tx, status.Committed)
 			}
 			env.state.SetHeight( /*dummyHeight*/ 1)
@@ -629,7 +627,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(staker)
+	require.NoError(env.state.PutCurrentValidator(staker))
 	env.state.AddTx(tx, status.Committed)
 	require.NoError(env.state.Commit())
 
@@ -658,7 +656,7 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutPendingValidator(staker)
+	require.NoError(env.state.PutPendingValidator(staker))
 	env.state.AddTx(tx, status.Committed)
 	require.NoError(env.state.Commit())
 
@@ -732,7 +730,7 @@ func TestBanffStandardBlockTrackedSubnet(t *testing.T) {
 			)
 			require.NoError(err)
 
-			env.state.PutPendingValidator(staker)
+			require.NoError(env.state.PutPendingValidator(staker))
 			env.state.AddTx(tx, status.Committed)
 			require.NoError(env.state.Commit())
 
@@ -767,11 +765,12 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 
 	// Case: Timestamp is after next validator start time
 	// Add a pending validator
-	pendingValidatorStartTime := defaultGenesisTime.Add(1 * time.Second)
+	pendingValidatorStartTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Second)
 	pendingValidatorEndTime := pendingValidatorStartTime.Add(defaultMaxStakingDuration)
 	nodeID := ids.GenerateTestNodeID()
 	rewardAddress := ids.GenerateTestShortID()
-	_, err := addPendingValidator(
+	addPendingValidator(
+		t,
 		env,
 		pendingValidatorStartTime,
 		pendingValidatorEndTime,
@@ -779,7 +778,6 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 		rewardAddress,
 		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 	)
-	require.NoError(err)
 
 	// build standard block moving ahead chain time
 	preferredID := env.state.GetLastAccepted()
@@ -800,6 +798,8 @@ func TestBanffStandardBlockDelegatorStakerWeight(t *testing.T) {
 	// Test validator weight before delegation
 	vdrWeight := env.config.Validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	require.Equal(env.config.MinValidatorStake, vdrWeight)
+
+	wallet := newWallet(t, env, walletConfig{})
 
 	// Add delegator
 	pendingDelegatorStartTime := pendingValidatorStartTime.Add(1 * time.Second)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package math
@@ -31,6 +31,11 @@ func Add64(a, b uint64) (uint64, error) {
 	return a + b, nil
 }
 
+// Add is a generic version of Add64 for uint64 types
+func Add(a, b uint64) (uint64, error) {
+	return Add64(a, b)
+}
+
 // Sub returns:
 // 1) a - b
 // 2) If there is underflow, an error
@@ -41,7 +46,7 @@ func Sub[T constraints.Unsigned](a, b T) (T, error) {
 	return a - b, nil
 }
 
-// Mul64 returns:
+// Mul returns:
 // 1) a * b
 // 2) If there is overflow, an error
 //

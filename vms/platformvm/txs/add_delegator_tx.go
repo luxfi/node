@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -99,7 +99,7 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx *snow.Context) error {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("output verification failed: %w", err)
 		}
-		newWeight, err := math.Add64(totalStakeWeight, out.Output().Amount())
+		newWeight, err := math.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}

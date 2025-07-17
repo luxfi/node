@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -11,6 +12,8 @@ import (
 
 	dto "github.com/prometheus/client_model/go"
 )
+
+var errReregisterGatherer = errors.New("attempted to register a gatherer when one is already registered")
 
 var _ OptionalGatherer = (*optionalGatherer)(nil)
 

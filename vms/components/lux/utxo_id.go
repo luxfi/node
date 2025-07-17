@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -103,4 +103,20 @@ func (utxo *UTXOID) Less(other *UTXOID) bool {
 	default:
 		return false
 	}
+}
+
+func (utxo *UTXOID) Compare(other *UTXOID) int {
+	utxoID, utxoIndex := utxo.InputSource()
+	otherID, otherIndex := other.InputSource()
+
+	if cmp := bytes.Compare(utxoID[:], otherID[:]); cmp != 0 {
+		return cmp
+	}
+	if utxoIndex < otherIndex {
+		return -1
+	}
+	if utxoIndex > otherIndex {
+		return 1
+	}
+	return 0
 }

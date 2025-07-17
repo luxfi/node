@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -97,6 +97,9 @@ type Chain interface {
 
 	GetTimestamp() time.Time
 	SetTimestamp(tm time.Time)
+
+	GetFeeState() gas.State
+	SetFeeState(f gas.State)
 
 	GetCurrentSupply(subnetID ids.ID) (uint64, error)
 	SetCurrentSupply(subnetID ids.ID, cs uint64)
@@ -266,6 +269,7 @@ type stateBlk struct {
  *   |-- initializedKey -> nil
  *   |-- blocksReindexedKey -> nil
  *   |-- timestampKey -> timestamp
+ *   |-- feeStateKey -> feeState
  *   |-- currentSupplyKey -> currentSupply
  *   |-- lastAcceptedKey -> lastAccepted
  *   '-- heightsIndexKey -> startIndexHeight + endIndexHeight
@@ -353,6 +357,7 @@ type state struct {
 
 	// The persisted fields represent the current database value
 	timestamp, persistedTimestamp         time.Time
+	feeState, persistedFeeState           gas.State
 	currentSupply, persistedCurrentSupply uint64
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
@@ -445,7 +450,7 @@ func New(
 		execCfg,
 		ctx,
 		metricsReg,
-		rewards,
+		&cache.LRU[uint64, ids.ID]{Size: execCfg.BlockIDCacheSize},
 	)
 	if err != nil {
 		return nil, err
@@ -665,15 +670,16 @@ func (s *state) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker
 	return s.currentStakers.GetValidator(subnetID, nodeID)
 }
 
-func (s *state) PutCurrentValidator(staker *Staker) {
+func (s *state) PutCurrentValidator(staker *Staker) error {
 	s.currentStakers.PutValidator(staker)
+	return nil
 }
 
 func (s *state) DeleteCurrentValidator(staker *Staker) {
 	s.currentStakers.DeleteValidator(staker)
 }
 
-func (s *state) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (s *state) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	return s.currentStakers.GetDelegatorIterator(subnetID, nodeID), nil
 }
 
@@ -685,7 +691,7 @@ func (s *state) DeleteCurrentDelegator(staker *Staker) {
 	s.currentStakers.DeleteDelegator(staker)
 }
 
-func (s *state) GetCurrentStakerIterator() (StakerIterator, error) {
+func (s *state) GetCurrentStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.currentStakers.GetStakerIterator(), nil
 }
 
@@ -693,15 +699,16 @@ func (s *state) GetPendingValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker
 	return s.pendingStakers.GetValidator(subnetID, nodeID)
 }
 
-func (s *state) PutPendingValidator(staker *Staker) {
+func (s *state) PutPendingValidator(staker *Staker) error {
 	s.pendingStakers.PutValidator(staker)
+	return nil
 }
 
 func (s *state) DeletePendingValidator(staker *Staker) {
 	s.pendingStakers.DeleteValidator(staker)
 }
 
-func (s *state) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (s *state) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetDelegatorIterator(subnetID, nodeID), nil
 }
 
@@ -713,7 +720,7 @@ func (s *state) DeletePendingDelegator(staker *Staker) {
 	s.pendingStakers.DeleteDelegator(staker)
 }
 
-func (s *state) GetPendingStakerIterator() (StakerIterator, error) {
+func (s *state) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetStakerIterator(), nil
 }
 
@@ -1670,7 +1677,7 @@ func (s *state) Close() error {
 }
 
 func (s *state) sync(genesis []byte) error {
-	shouldInit, err := s.shouldInit()
+	wasInitialized, err := isInitialized(s.singletonDB)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to check if the database is initialized: %w",
@@ -1678,9 +1685,9 @@ func (s *state) sync(genesis []byte) error {
 		)
 	}
 
-	// If the database is empty, create the platform chain anew using the
-	// provided genesis state
-	if shouldInit {
+	// If the database wasn't previously initialized, create the platform chain
+	// anew using the provided genesis state.
+	if !wasInitialized {
 		if err := s.init(genesis); err != nil {
 			return fmt.Errorf(
 				"failed to initialize the database: %w",
@@ -1716,7 +1723,7 @@ func (s *state) init(genesisBytes []byte) error {
 		return err
 	}
 
-	if err := s.doneInit(); err != nil {
+	if err := markInitialized(s.singletonDB); err != nil {
 		return err
 	}
 
@@ -2020,7 +2027,7 @@ func writeCurrentDelegatorDiff(
 	validatorDiff *diffValidator,
 	codecVersion uint16,
 ) error {
-	addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+	addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
 	for addedDelegatorIterator.Next() {
 		staker := addedDelegatorIterator.Value()
@@ -2094,7 +2101,7 @@ func writePendingDiff(
 		}
 	}
 
-	addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+	addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
 	for addedDelegatorIterator.Next() {
 		staker := addedDelegatorIterator.Value()
@@ -2260,6 +2267,12 @@ func (s *state) writeMetadata() error {
 			return fmt.Errorf("failed to write timestamp: %w", err)
 		}
 		s.persistedTimestamp = s.timestamp
+	}
+	if s.feeState != s.persistedFeeState {
+		if err := putFeeState(s.singletonDB, s.feeState); err != nil {
+			return fmt.Errorf("failed to write fee state: %w", err)
+		}
+		s.persistedFeeState = s.feeState
 	}
 	if s.persistedCurrentSupply != s.currentSupply {
 		if err := database.PutUInt64(s.singletonDB, CurrentSupplyKey, s.currentSupply); err != nil {

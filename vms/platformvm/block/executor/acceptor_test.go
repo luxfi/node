@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -82,7 +82,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -161,7 +161,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	clk := &mockable.Clock{}
@@ -251,7 +251,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -361,7 +361,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{

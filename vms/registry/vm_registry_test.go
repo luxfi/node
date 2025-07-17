@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -27,10 +27,12 @@ func TestReload_Success(t *testing.T) {
 
 	resources := initVMRegistryTest(t)
 
-	factory1 := vms.NewMockFactory(resources.ctrl)
-	factory2 := vms.NewMockFactory(resources.ctrl)
-	factory3 := vms.NewMockFactory(resources.ctrl)
-	factory4 := vms.NewMockFactory(resources.ctrl)
+	resources := initVMRegistryTest(t)
+
+	factory1 := vmsmock.NewFactory(resources.ctrl)
+	factory2 := vmsmock.NewFactory(resources.ctrl)
+	factory3 := vmsmock.NewFactory(resources.ctrl)
+	factory4 := vmsmock.NewFactory(resources.ctrl)
 
 	registeredVms := map[ids.ID]vms.Factory{
 		id1: factory1,
@@ -81,10 +83,12 @@ func TestReload_PartialRegisterFailure(t *testing.T) {
 
 	resources := initVMRegistryTest(t)
 
-	factory1 := vms.NewMockFactory(resources.ctrl)
-	factory2 := vms.NewMockFactory(resources.ctrl)
-	factory3 := vms.NewMockFactory(resources.ctrl)
-	factory4 := vms.NewMockFactory(resources.ctrl)
+	resources := initVMRegistryTest(t)
+
+	factory1 := vmsmock.NewFactory(resources.ctrl)
+	factory2 := vmsmock.NewFactory(resources.ctrl)
+	factory3 := vmsmock.NewFactory(resources.ctrl)
+	factory4 := vmsmock.NewFactory(resources.ctrl)
 
 	registeredVms := map[ids.ID]vms.Factory{
 		id1: factory1,

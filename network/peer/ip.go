@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -16,6 +16,11 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
+)
+
+var (
+	errTimestampTooFarInFuture = errors.New("timestamp too far in the future")
+	errInvalidTLSSignature     = errors.New("invalid TLS signature")
 )
 
 var (

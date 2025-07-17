@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //nolint:stylecheck // proto generates interfaces that fail linting
@@ -360,8 +360,8 @@ func InternalCrossChainAppRequest(
 	sourceChainID ids.ID,
 	destinationChainID ids.ID,
 	requestID uint32,
-	deadline time.Duration,
 	msg []byte,
+	deadline time.Duration,
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,

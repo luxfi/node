@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -163,6 +163,10 @@ func (in *TransferableInput) Verify() error {
 
 func (in *TransferableInput) Less(other *TransferableInput) bool {
 	return in.UTXOID.Less(&other.UTXOID)
+}
+
+func (in *TransferableInput) Compare(other *TransferableInput) int {
+	return in.UTXOID.Compare(&other.UTXOID)
 }
 
 type innerSortTransferableInputsWithSigners struct {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package benchlist
@@ -294,7 +294,7 @@ func (b *benchlist) bench(nodeID ids.NodeID) {
 		return
 	}
 
-	newBenchedStake, err := safemath.Add64(benchedStake, validatorStake)
+	newBenchedStake, err := safemath.Add(benchedStake, validatorStake)
 	if err != nil {
 		// This should never happen
 		b.ctx.Log.Error("overflow calculating new benched stake",

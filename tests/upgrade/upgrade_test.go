@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgrade
@@ -51,7 +51,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.NodeID, luxNodeExecPathToUpgradeTo))
 			require.NoError(node.Stop(e2e.DefaultContext()))
 
-			node.RuntimeConfig.Lux NodePath = luxNodeExecPathToUpgradeTo
+			node.RuntimeConfig.LuxNodePath = luxNodeExecPathToUpgradeTo
 
 			require.NoError(network.StartNode(e2e.DefaultContext(), ginkgo.GinkgoWriter, node))
 

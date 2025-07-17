@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package state manages the meta-data required by consensus for an lux
@@ -8,7 +8,6 @@ package state
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/database"
@@ -86,7 +85,7 @@ func (s *Serializer) BuildStopVtx(
 			return nil, err
 		}
 		parentHeight := parent.v.vtx.Height()
-		childHeight, err := math.Add64(parentHeight, 1)
+		childHeight, err := math.Add(parentHeight, 1)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
@@ -95,6 +96,9 @@ type Config struct {
 	InitialStakers             []Staker      `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
+	AChainGenesis string `json:"aChainGenesis,omitempty"`
+	BChainGenesis string `json:"bChainGenesis,omitempty"`
+	ZChainGenesis string `json:"zChainGenesis,omitempty"`
 
 	Message string `json:"message"`
 }
@@ -170,6 +174,10 @@ var (
 	// LocalConfig is the config that should be used to generate a local
 	// genesis.
 	LocalConfig Config
+
+	// unmodifiedLocalConfig is the LocalConfig before advancing the StartTime
+	// to a recent value.
+	unmodifiedLocalConfig Config
 )
 
 func init() {
@@ -200,6 +208,27 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	FujiConfig, err = unparsedFujiConfig.Parse()
+	if err != nil {
+		panic(err)
+	}
+
+	unmodifiedLocalConfig, err = unparsedLocalConfig.Parse()
+	if err != nil {
+		panic(err)
+	}
+
+	// Renew the staking start time of the local config if required
+	definedStartTime := time.Unix(int64(unmodifiedLocalConfig.StartTime), 0)
+	recentStartTime := getRecentStartTime(
+		definedStartTime,
+		time.Now(),
+		localNetworkUpdateStartTimePeriod,
+	)
+
+	LocalConfig = unmodifiedLocalConfig
+	LocalConfig.StartTime = uint64(recentStartTime.Unix())
 }
 
 func GetConfig(networkID uint32) *Config {
@@ -246,4 +275,22 @@ func parseGenesisJSONBytesToConfig(bytes []byte) (*Config, error) {
 		return nil, fmt.Errorf("unable to parse config: %w", err)
 	}
 	return &config, nil
+}
+
+// getRecentStartTime advances [definedStartTime] in chunks of [period]. It
+// returns the latest startTime that isn't after [now].
+func getRecentStartTime(
+	definedStartTime time.Time,
+	now time.Time,
+	period time.Duration,
+) time.Time {
+	startTime := definedStartTime
+	for {
+		nextStartTime := startTime.Add(period)
+		if now.Before(nextStartTime) {
+			break
+		}
+		startTime = nextStartTime
+	}
+	return startTime
 }

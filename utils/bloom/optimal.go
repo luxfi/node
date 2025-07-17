@@ -1,11 +1,31 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
 
-import "math"
+import (
+	"errors"
+	"math"
+)
 
-const ln2Squared = math.Ln2 * math.Ln2
+const (
+	ln2Squared = math.Ln2 * math.Ln2
+	
+	minHashes   = 1
+	maxHashes   = 16
+	minEntries  = 1
+	bitsPerByte = 8
+	
+	bytesPerUint64 = 8
+	hashRotation   = 17
+)
+
+var (
+	errInvalidNumHashes = errors.New("invalid num hashes")
+	errTooFewHashes     = errors.New("too few hashes")
+	errTooManyHashes    = errors.New("too many hashes")
+	errTooFewEntries    = errors.New("too few entries")
+)
 
 // OptimalParameters calculates the optimal [numHashes] and [numEntries] that
 // should be allocated for a bloom filter which will contain [count] and target

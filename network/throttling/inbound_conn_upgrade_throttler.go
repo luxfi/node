@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -131,10 +132,7 @@ func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) boo
 }
 
 func (n *inboundConnUpgradeThrottler) Dispatch() {
-	timer := time.NewTimer(0)
-	if !timer.Stop() {
-		<-timer.C
-	}
+	timer := timer.StoppedTimer()
 
 	defer timer.Stop()
 	for {

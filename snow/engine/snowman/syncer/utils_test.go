@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package syncer
@@ -53,8 +53,8 @@ func init() {
 }
 
 type fullVM struct {
-	*block.TestVM
-	*block.TestStateSyncableVM
+	*blocktest.VM
+	*blocktest.StateSyncableVM
 }
 
 func buildTestPeers(t *testing.T, subnetID ids.ID) validators.Manager {
@@ -77,15 +77,15 @@ func buildTestsObjects(
 ) (
 	*stateSyncer,
 	*fullVM,
-	*common.SenderTest,
+	*enginetest.Sender,
 ) {
 	require := require.New(t)
 
 	fullVM := &fullVM{
-		TestVM: &block.TestVM{
-			TestVM: common.TestVM{T: t},
+		VM: &blocktest.VM{
+			VM: enginetest.VM{T: t},
 		},
-		TestStateSyncableVM: &block.TestStateSyncableVM{
+		StateSyncableVM: &blocktest.StateSyncableVM{
 			T: t,
 		},
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -108,7 +108,7 @@ func TestGet_Success(t *testing.T) {
 	registeredVMId := ids.GenerateTestID()
 	unregisteredVMId := ids.GenerateTestID()
 
-	registeredVMFactory := vms.NewMockFactory(resources.ctrl)
+	registeredVMFactory := vmsmock.NewFactory(resources.ctrl)
 
 	resources.mockReader.EXPECT().ReadDir(pluginDir).Times(1).Return(twoValidVMs, nil)
 	resources.mockManager.EXPECT().Lookup(registeredVMName).Times(1).Return(registeredVMId, nil)
@@ -130,8 +130,8 @@ func TestGet_Success(t *testing.T) {
 
 type vmGetterTestResources struct {
 	ctrl        *gomock.Controller
-	mockReader  *filesystem.MockReader
-	mockManager *vms.MockManager
+	mockReader  *filesystemmock.Reader
+	mockManager *vmsmock.Manager
 	getter      VMGetter
 }
 

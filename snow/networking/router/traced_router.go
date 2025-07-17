@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -66,8 +66,7 @@ func (r *tracedRouter) Initialize(
 func (r *tracedRouter) RegisterRequest(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	requestingChainID ids.ID,
-	respondingChainID ids.ID,
+	chainID ids.ID,
 	requestID uint32,
 	op message.Op,
 	failedMsg message.InboundMessage,
@@ -76,8 +75,7 @@ func (r *tracedRouter) RegisterRequest(
 	r.router.RegisterRequest(
 		ctx,
 		nodeID,
-		requestingChainID,
-		respondingChainID,
+		chainID,
 		requestID,
 		op,
 		failedMsg,
