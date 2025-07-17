@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	ethcommon "github.com/ava-labs/libevm/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"

@@ -11,11 +11,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/core/types"
-	"github.com/luxfi/libevm/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
 
-	ethereum "github.com/luxfi/libevm"
+	ethereum "github.com/luxfi/geth"
 )
 
 type Wallet struct {

@@ -16,8 +16,8 @@ func TestMustNotImport(t *testing.T) {
 	require := require.New(t)
 
 	mustNotImport := map[string][]string{
-		// Importing these packages configures libevm globally. This must not be
-		// done to support both geth and subnet-evm.
+		// Importing these packages configures the EVM plugin globally. This must not be
+		// done to support both geth (go-ethereum) and subnet-evm.
 		"tests/...": {
 			"github.com/luxfi/geth/params",
 			"github.com/luxfi/geth/plugin/evm/customtypes",

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/libevm/core/types"
+	"github.com/luxfi/geth/core/types"
 
-	ethereum "github.com/luxfi/libevm"
+	ethereum "github.com/luxfi/geth"
 )
 
 type NewHeadSubscriber interface {
