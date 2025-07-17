@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/choices"
 )
 
 var (
@@ -22,15 +23,19 @@ type Decidable struct {
 	IDV     ids.ID
 	AcceptV error
 	RejectV error
-	Status  Status
+	StatusV Status
 }
 
 func (d *Decidable) ID() ids.ID {
 	return d.IDV
 }
 
+func (d *Decidable) Status() choices.Status {
+	return choices.Status(d.StatusV)
+}
+
 func (d *Decidable) Accept(context.Context) error {
-	if d.Status == Rejected {
+	if d.StatusV == Rejected {
 		return fmt.Errorf("%w from %s to %s",
 			ErrInvalidStateTransition,
 			Rejected,
@@ -38,12 +43,12 @@ func (d *Decidable) Accept(context.Context) error {
 		)
 	}
 
-	d.Status = Accepted
+	d.StatusV = Accepted
 	return d.AcceptV
 }
 
 func (d *Decidable) Reject(context.Context) error {
-	if d.Status == Accepted {
+	if d.StatusV == Accepted {
 		return fmt.Errorf("%w from %s to %s",
 			ErrInvalidStateTransition,
 			Accepted,
@@ -51,6 +56,6 @@ func (d *Decidable) Reject(context.Context) error {
 		)
 	}
 
-	d.Status = Rejected
+	d.StatusV = Rejected
 	return d.RejectV
 }
