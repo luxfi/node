@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -15,7 +15,8 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
@@ -82,29 +83,32 @@ func TestHealthCheckSubnet(t *testing.T) {
 			)
 			require.NoError(err)
 
+			subscription, _ := createSubscriber()
+
 			handlerIntf, err := New(
 				ctx,
+				&block.ChangeNotifier{},
+				subscription,
 				vdrs,
-				nil,
 				time.Second,
 				testThreadPoolSize,
 				resourceTracker,
-				validators.UnhandledSubnetConnector,
 				sb,
 				peerTracker,
 				p2pTracker,
 				prometheus.NewRegistry(),
+				func() {},
 			)
 			require.NoError(err)
 
-			bootstrapper := &common.BootstrapperTest{
-				EngineTest: common.EngineTest{
+			bootstrapper := &enginetest.Bootstrapper{
+				Engine: enginetest.Engine{
 					T: t,
 				},
 			}
 			bootstrapper.Default(false)
 
-			engine := &common.EngineTest{T: t}
+			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
 			engine.ContextF = func() *snow.ConsensusContext {
 				return ctx
@@ -136,8 +140,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 				require.NoError(vdrs.AddStaker(ctx.SubnetID, vdrID, nil, ids.Empty, 100))
 			}
-
-			for index, nodeID := range vdrIDs.List() {
+			vdrIDsList := vdrIDs.List()
+			for index, nodeID := range vdrIDsList {
 				require.NoError(peerTracker.Connected(context.Background(), nodeID, nil))
 
 				details, err := handlerIntf.HealthCheck(context.Background())
@@ -152,13 +156,13 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 				detailsMap, ok := details.(map[string]interface{})
 				require.True(ok)
-				networkingMap, ok := detailsMap["networking"]
-				require.True(ok)
-				networkingDetails, ok := networkingMap.(map[string]float64)
-				require.True(ok)
-				percentConnected, ok := networkingDetails["percentConnected"]
-				require.True(ok)
-				require.Equal(expectedPercentConnected, percentConnected)
+				require.Equal(
+					map[string]interface{}{
+						"percentConnected":       expectedPercentConnected,
+						"disconnectedValidators": set.Of(vdrIDsList[index+1:]...),
+					},
+					detailsMap["networking"],
+				)
 			}
 		})
 	}

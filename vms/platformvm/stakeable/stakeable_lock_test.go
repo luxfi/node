@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package stakeable
@@ -11,6 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/lux/luxmock"
 )
 
 var errTest = errors.New("hi mom")
@@ -26,7 +27,7 @@ func TestLockOutVerify(t *testing.T) {
 			name:     "happy path",
 			locktime: 1,
 			transferableOutF: func(ctrl *gomock.Controller) lux.TransferableOut {
-				o := lux.NewMockTransferableOut(ctrl)
+				o := luxmock.NewTransferableOut(ctrl)
 				o.EXPECT().Verify().Return(nil)
 				return o
 			},
@@ -52,7 +53,7 @@ func TestLockOutVerify(t *testing.T) {
 			name:     "inner output fails verification",
 			locktime: 1,
 			transferableOutF: func(ctrl *gomock.Controller) lux.TransferableOut {
-				o := lux.NewMockTransferableOut(ctrl)
+				o := luxmock.NewTransferableOut(ctrl)
 				o.EXPECT().Verify().Return(errTest)
 				return o
 			},
@@ -84,7 +85,7 @@ func TestLockInVerify(t *testing.T) {
 			name:     "happy path",
 			locktime: 1,
 			transferableInF: func(ctrl *gomock.Controller) lux.TransferableIn {
-				o := lux.NewMockTransferableIn(ctrl)
+				o := luxmock.NewTransferableIn(ctrl)
 				o.EXPECT().Verify().Return(nil)
 				return o
 			},
@@ -110,7 +111,7 @@ func TestLockInVerify(t *testing.T) {
 			name:     "inner input fails verification",
 			locktime: 1,
 			transferableInF: func(ctrl *gomock.Controller) lux.TransferableIn {
-				o := lux.NewMockTransferableIn(ctrl)
+				o := luxmock.NewTransferableIn(ctrl)
 				o.EXPECT().Verify().Return(errTest)
 				return o
 			},

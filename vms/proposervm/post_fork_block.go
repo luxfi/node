@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
 
 import (
 	"context"
+	"time"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
@@ -37,7 +38,19 @@ func (b *postForkBlock) Accept(ctx context.Context) error {
 	if b.slot != nil {
 		b.vm.acceptedBlocksSlotHistogram.Observe(float64(*b.slot))
 	}
+	b.updateLastAcceptedTimestampMetric(outerBlockTypeMetricLabel, b.Timestamp())
+	b.updateLastAcceptedTimestampMetric(innerBlockTypeMetricLabel, b.innerBlk.Timestamp())
 	return nil
+}
+
+const (
+	innerBlockTypeMetricLabel = "inner"
+	outerBlockTypeMetricLabel = "proposervm"
+)
+
+func (b *postForkBlock) updateLastAcceptedTimestampMetric(blockTypeLabel string, t time.Time) {
+	g := b.vm.lastAcceptedTimestampGaugeVec.WithLabelValues(blockTypeLabel)
+	g.Set(float64(t.Unix()))
 }
 
 func (b *postForkBlock) acceptOuterBlk() error {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	_ StakerDiffIterator = (*stakerDiffIterator)(nil)
-	_ StakerIterator     = (*mutableStakerIterator)(nil)
+	_ StakerDiffIterator         = (*stakerDiffIterator)(nil)
+	_ iterator.Iterator[*Staker] = (*mutableStakerIterator)(nil)
 )
 
 // StakerDiffIterator is an iterator that iterates over the events that will be
@@ -112,7 +112,7 @@ func (it *stakerDiffIterator) advancePending() {
 
 type mutableStakerIterator struct {
 	iteratorExhausted bool
-	iterator          StakerIterator
+	iterator          iterator.Iterator[*Staker]
 	heap              heap.Queue[*Staker]
 }
 

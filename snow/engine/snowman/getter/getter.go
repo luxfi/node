@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package getter
@@ -42,7 +42,7 @@ func New(
 
 	var err error
 	gh.getAncestorsBlks, err = metric.NewAverager(
-		"bs_get_ancestors_blks",
+		"get_ancestors_blks",
 		"blocks fetched in a call to GetAncestors",
 		reg,
 	)
@@ -147,16 +147,34 @@ func (gh *getter) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 }
 
 func (gh *getter) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
+	lastAcceptedID, err := gh.vm.LastAccepted(ctx)
+	if err != nil {
+		return err
+	}
+	lastAccepted, err := gh.vm.GetBlock(ctx, lastAcceptedID)
+	if err != nil {
+		return err
+	}
+	lastAcceptedHeight := lastAccepted.Height()
+
 	acceptedIDs := make([]ids.ID, 0, containerIDs.Len())
 	for blkID := range containerIDs {
 		blk, err := gh.vm.GetBlock(ctx, blkID)
 		if err != nil {
 			continue
 		}
-		
-		// Check if the block is accepted by comparing with the accepted block at its height
-		acceptedBlkID, err := gh.vm.GetBlockIDAtHeight(ctx, blk.Height())
-		if err == nil && acceptedBlkID == blkID {
+
+		height := blk.Height()
+		if height > lastAcceptedHeight {
+			continue
+		}
+
+		acceptedBlkID, err := gh.vm.GetBlockIDAtHeight(ctx, height)
+		if err != nil {
+			continue
+		}
+
+		if blkID == acceptedBlkID {
 			acceptedIDs = append(acceptedIDs, blkID)
 		}
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,24 +12,26 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestAtomicTxImports(t *testing.T) {
 	require := require.New(t)
 
-	env := newEnvironment(t, latestFork)
+	env := newEnvironment(t, upgradetest.Latest)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	utxoID := lux.UTXOID{
-		TxID:        ids.Empty.Prefix(1),
-		OutputIndex: 1,
+	addr := genesistest.DefaultFundedKeys[0].Address()
+	owner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{addr},
 	}
 
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, env.baseDB))
@@ -37,10 +39,13 @@ func TestAtomicTxImports(t *testing.T) {
 	env.msm.SharedMemory = m.NewSharedMemory(env.ctx.ChainID)
 	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
 	utxo := &lux.UTXO{
-		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: env.ctx.LUXAssetID},
+		UTXOID: lux.UTXOID{
+			TxID:        ids.GenerateTestID(),
+			OutputIndex: 1,
+		},
+		Asset: lux.Asset{ID: env.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          70 * units.MicroAvax,
+			Amt:          70 * units.MicroLux,
 			OutputOwners: *owner,
 		},
 	}
@@ -58,16 +63,12 @@ func TestAtomicTxImports(t *testing.T) {
 		}}},
 	}))
 
-	builder, signer := env.factory.NewWallet(recipientKey)
-	utx, err := builder.NewImportTx(
+	wallet := newWallet(t, env, walletConfig{})
+
+	tx, err := wallet.IssueImportTx(
 		env.ctx.XChainID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{recipientKey.PublicKey().Address()},
-		},
+		owner,
 	)
-	require.NoError(err)
-	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	require.NoError(env.Builder.Add(tx))

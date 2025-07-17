@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -18,8 +18,9 @@ func TestWeightedInitializeOverflow(t *testing.T) {
 	require.ErrorIs(t, err, safemath.ErrOverflow)
 }
 
-func WeightedOutOfRangeTest(t *testing.T, s Weighted) {
+func TestWeightedOutOfRange(t *testing.T) {
 	require := require.New(t)
+	s := &weightedHeap{}
 
 	require.NoError(s.Initialize([]uint64{1}))
 
@@ -27,8 +28,9 @@ func WeightedOutOfRangeTest(t *testing.T, s Weighted) {
 	require.False(ok)
 }
 
-func WeightedSingletonTest(t *testing.T, s Weighted) {
+func TestWeightedSingleton(t *testing.T) {
 	require := require.New(t)
+	s := &weightedHeap{}
 
 	require.NoError(s.Initialize([]uint64{1}))
 
@@ -37,8 +39,9 @@ func WeightedSingletonTest(t *testing.T, s Weighted) {
 	require.Zero(index)
 }
 
-func WeightedWithZeroTest(t *testing.T, s Weighted) {
+func TestWeightedWithZero(t *testing.T) {
 	require := require.New(t)
+	s := &weightedHeap{}
 
 	require.NoError(s.Initialize([]uint64{0, 1}))
 
@@ -47,8 +50,9 @@ func WeightedWithZeroTest(t *testing.T, s Weighted) {
 	require.Equal(1, index)
 }
 
-func WeightedDistributionTest(t *testing.T, s Weighted) {
+func TestWeightedDistribution(t *testing.T) {
 	require := require.New(t)
+	s := &weightedHeap{}
 
 	require.NoError(s.Initialize([]uint64{1, 1, 2, 3, 4}))
 

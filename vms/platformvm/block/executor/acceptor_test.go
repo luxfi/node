@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,10 +11,10 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/chains/atomic/atomicmock"
+	"github.com/luxfi/node/database/databasemock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/vms/platformvm/validators/validatorstest"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -61,7 +61,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			state: s,
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	require.NoError(acceptor.ApricotProposalBlock(blk))
@@ -96,7 +96,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotAtomicBlock(
@@ -112,12 +112,6 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Set expected calls on the state.
-	// We should error after [commonAccept] is called.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-
 	err = acceptor.ApricotAtomicBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
 
@@ -126,8 +120,12 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	childID := ids.GenerateTestID()
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
+		statelessBlock: blk,
 		onAcceptState:  onAcceptState,
 		atomicRequests: atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -146,7 +144,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -176,7 +174,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewBanffStandardBlock(
@@ -195,12 +193,6 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Set expected calls on the state.
-	// We should error after [commonAccept] is called.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-
 	err = acceptor.BanffStandardBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
 
@@ -210,12 +202,16 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	calledOnAcceptFunc := false
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
-		onAcceptState: onAcceptState,
+		statelessBlock: blk,
+		onAcceptState:  onAcceptState,
 		onAcceptFunc: func() {
 			calledOnAcceptFunc = true
 		},
 
 		atomicRequests: atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -234,7 +230,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -264,9 +260,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotCommitBlock(parentID, 1 /*height*/)
@@ -307,10 +302,6 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
 		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
-
-		s.EXPECT().SetLastAccepted(blkID).Times(1),
-		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotCommitBlock(blk)
@@ -321,15 +312,19 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	// Set [blk]'s state in the map as though it had been verified.
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
-		onAcceptState: parentState.onCommitState,
-		onAcceptFunc:  parentState.onAcceptFunc,
+		statelessBlock: blk,
+		onAcceptState:  parentState.onCommitState,
+		onAcceptFunc:   parentState.onAcceptFunc,
 
 		inputs:         parentState.inputs,
 		timestamp:      parentOnCommitState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
@@ -374,9 +369,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotAbortBlock(parentID, 1 /*height*/)
@@ -417,10 +411,6 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
 		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
-
-		s.EXPECT().SetLastAccepted(blkID).Times(1),
-		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotAbortBlock(blk)
@@ -431,15 +421,19 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	// Set [blk]'s state in the map as though it had been verified.
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
-		onAcceptState: parentState.onAbortState,
-		onAcceptFunc:  parentState.onAcceptFunc,
+		statelessBlock: blk,
+		onAcceptState:  parentState.onAbortState,
+		onAcceptFunc:   parentState.onAcceptFunc,
 
 		inputs:         parentState.inputs,
 		timestamp:      parentOnAbortState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.

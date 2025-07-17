@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package iterator_test
@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/iterator"
+	"github.com/luxfi/node/vms/platformvm/state"
 )
 
 var defaultTreeDegree = 2
@@ -32,7 +34,7 @@ func TestTree(t *testing.T) {
 		},
 	}
 
-	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
+	tree := btree.NewG(defaultTreeDegree, (*state.Staker).Less)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}
@@ -46,8 +48,8 @@ func TestTree(t *testing.T) {
 	it.Release()
 }
 
-func TestTreeIteratorNil(t *testing.T) {
-	it := NewTreeIterator(nil)
+func TestTreeNil(t *testing.T) {
+	it := iterator.FromTree[*state.Staker](nil)
 	require.False(t, it.Next())
 	it.Release()
 }
@@ -69,7 +71,7 @@ func TestTreeEarlyRelease(t *testing.T) {
 		},
 	}
 
-	tree := btree.NewG(defaultTreeDegree, (*Staker).Less)
+	tree := btree.NewG(defaultTreeDegree, (*state.Staker).Less)
 	for _, staker := range stakers {
 		require.Nil(tree.ReplaceOrInsert(staker))
 	}

@@ -1,49 +1,40 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestNewExportTx(t *testing.T) {
-	env := newEnvironment(t, banff)
+	env := newEnvironment(t, upgradetest.Banff)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
 	tests := []struct {
 		description        string
 		destinationChainID ids.ID
-		sourceKeys         []*secp256k1.PrivateKey
 		timestamp          time.Time
-	}
-
-	sourceKey := preFundedKeys[0]
-
-	tests := []test{
+	}{
 		{
 			description:        "P->X export",
 			destinationChainID: env.ctx.XChainID,
-			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
-			timestamp:          defaultValidateStartTime,
+			timestamp:          genesistest.DefaultValidatorStartTime,
 		},
 		{
 			description:        "P->C export",
 			destinationChainID: env.ctx.CChainID,
-			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          env.config.UpgradeConfig.ApricotPhase5Time,
 		},
 	}
@@ -52,23 +43,21 @@ func TestNewExportTx(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
 
-			builder, signer := env.factory.NewWallet(tt.sourceKeys...)
-			utx, err := builder.NewExportTx(
+			wallet := newWallet(t, env, walletConfig{})
+
+			tx, err := wallet.IssueExportTx(
 				tt.destinationChainID,
 				[]*lux.TransferableOutput{{
 					Asset: lux.Asset{ID: env.ctx.LUXAssetID},
 					Out: &secp256k1fx.TransferOutput{
-						Amt: defaultBalance - defaultTxFee,
+						Amt: genesistest.DefaultInitialBalance - defaultTxFee,
 						OutputOwners: secp256k1fx.OutputOwners{
-							Locktime:  0,
 							Threshold: 1,
-							Addrs:     []ids.ShortID{to},
+							Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 						},
 					},
 				}},
 			)
-			require.NoError(err)
-			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 			require.NoError(err)
 
 			stateDiff, err := state.NewDiff(lastAcceptedID, env)
@@ -76,12 +65,14 @@ func TestNewExportTx(t *testing.T) {
 
 			stateDiff.SetTimestamp(tt.timestamp)
 
-			verifier := StandardTxExecutor{
-				Backend: &env.backend,
-				State:   stateDiff,
-				Tx:      tx,
-			}
-			require.NoError(tx.Unsigned.Visit(&verifier))
+			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
+			_, _, _, err = StandardTx(
+				&env.backend,
+				feeCalculator,
+				tx,
+				stateDiff,
+			)
+			require.NoError(err)
 		})
 	}
 }

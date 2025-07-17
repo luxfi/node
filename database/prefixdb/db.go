@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package prefixdb
@@ -313,6 +313,7 @@ func (b *batch) Reset() {
 	if cap(b.ops) > len(b.ops)*database.MaxExcessCapacityFactor {
 		b.ops = make([]batchOp, 0, cap(b.ops)/database.CapacityReductionFactor)
 	} else {
+		clear(b.ops)
 		b.ops = b.ops[:0]
 	}
 	b.Batch.Reset()

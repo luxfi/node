@@ -9,14 +9,16 @@ set -euo pipefail
 # TODO(marun) Perform more extensive validation (e.g. e2e testing) against one or more images
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
-source "$LUX_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/git_commit.sh
+source "$AVALANCHE_PATH"/scripts/image_tag.sh
 
 build_and_test() {
   local image_name=$1
 
-  DOCKER_IMAGE="$image_name" ./scripts/build_image.sh
+  BUILD_MULTI_ARCH=1 DOCKER_IMAGE="$image_name" ./scripts/build_image.sh
 
   echo "listing images"
   docker images
@@ -36,13 +38,13 @@ build_and_test() {
   local target_images=(
     "$image_name:$commit_hash"
     "$image_name:$image_tag"
-    "$image_name:$commit_hash-race"
-    "$image_name:$image_tag-race"
+    "$image_name:$commit_hash-r"
+    "$image_name:$image_tag-r"
   )
 
   for arch in "${arches[@]}"; do
     for target_image in "${target_images[@]}"; do
-      if [[ "$host_arch" == "amd64" && "$arch" == "arm64" && "$target_image" =~ "-race" ]]; then
+      if [[ "$host_arch" == "amd64" && "$arch" == "arm64" && "$target_image" =~ "-r" ]]; then
         # Error reported when trying to sanity check this configuration in github ci:
         #
         #   FATAL: ThreadSanitizer: unsupported VMA range

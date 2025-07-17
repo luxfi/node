@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1
@@ -8,8 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
 
@@ -45,7 +43,7 @@ func TestCachedRecover(t *testing.T) {
 	sig, err := key.Sign(msg)
 	require.NoError(err)
 
-	r := RecoverCache{LRU: cache.LRU[ids.ID, *PublicKey]{Size: 1}}
+	r := NewRecoverCache(1)
 	pub1, err := r.RecoverPublicKey(msg, sig)
 	require.NoError(err)
 	pub2, err := r.RecoverPublicKey(msg, sig)

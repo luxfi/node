@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
@@ -32,17 +32,14 @@ type Backend interface {
 type backend struct {
 	common.ChainUTXOs
 
-	context *builder.Context
-
-	subnetOwnerLock sync.RWMutex
-	subnetOwner     map[ids.ID]fx.Owner // subnetID -> owner
+	ownersLock sync.RWMutex
+	owners     map[ids.ID]fx.Owner // subnetID or validationID -> owner
 }
 
-func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetOwner map[ids.ID]fx.Owner) Backend {
+func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
 	return &backend{
-		ChainUTXOs:  utxos,
-		context:     context,
-		subnetOwner: subnetOwner,
+		ChainUTXOs: utxos,
+		owners:     owners,
 	}
 }
 
@@ -61,7 +58,7 @@ func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	return b.addUTXOs(ctx, constants.PlatformChainID, producedUTXOSlice)
 }
 
-func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*avax.UTXO) error {
+func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*lux.UTXO) error {
 	for _, utxo := range utxos {
 		if err := b.AddUTXO(ctx, destinationChainID, utxo); err != nil {
 			return err
@@ -79,20 +76,20 @@ func (b *backend) removeUTXOs(ctx context.Context, sourceChain ids.ID, utxoIDs s
 	return nil
 }
 
-func (b *backend) GetSubnetOwner(_ context.Context, subnetID ids.ID) (fx.Owner, error) {
-	b.subnetOwnerLock.RLock()
-	defer b.subnetOwnerLock.RUnlock()
+func (b *backend) GetOwner(_ context.Context, ownerID ids.ID) (fx.Owner, error) {
+	b.ownersLock.RLock()
+	defer b.ownersLock.RUnlock()
 
-	owner, exists := b.subnetOwner[subnetID]
+	owner, exists := b.owners[ownerID]
 	if !exists {
 		return nil, database.ErrNotFound
 	}
 	return owner, nil
 }
 
-func (b *backend) setSubnetOwner(subnetID ids.ID, owner fx.Owner) {
-	b.subnetOwnerLock.Lock()
-	defer b.subnetOwnerLock.Unlock()
+func (b *backend) setOwner(ownerID ids.ID, owner fx.Owner) {
+	b.ownersLock.Lock()
+	defer b.ownersLock.Unlock()
 
-	b.subnetOwner[subnetID] = owner
+	b.owners[ownerID] = owner
 }

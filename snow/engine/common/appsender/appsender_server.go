@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package appsender
@@ -25,33 +25,6 @@ type Server struct {
 // NewServer returns a messenger connected to a remote channel
 func NewServer(appSender common.AppSender) *Server {
 	return &Server{appSender: appSender}
-}
-
-func (s *Server) SendCrossChainAppRequest(ctx context.Context, msg *appsenderpb.SendCrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, s.appSender.SendCrossChainAppRequest(ctx, chainID, msg.RequestId, msg.Request)
-}
-
-func (s *Server) SendCrossChainAppResponse(ctx context.Context, msg *appsenderpb.SendCrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, s.appSender.SendCrossChainAppResponse(ctx, chainID, msg.RequestId, msg.Response)
-}
-
-func (s *Server) SendCrossChainAppError(ctx context.Context, msg *appsenderpb.SendCrossChainAppErrorMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, s.appSender.SendCrossChainAppError(ctx, chainID, msg.RequestId, msg.ErrorCode, msg.ErrorMessage)
 }
 
 func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppRequestMsg) (*emptypb.Empty, error) {

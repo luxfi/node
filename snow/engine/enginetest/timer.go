@@ -1,7 +1,5 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
-
-//go:build test
 
 package enginetest
 
@@ -10,11 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/node/snow/engine/common"
 )
-
-var _ common.Timer = (*Timer)(nil)
 
 // Timer is a test timer
 type Timer struct {
@@ -23,11 +17,6 @@ type Timer struct {
 	CantRegisterTimout bool
 
 	RegisterTimeoutF func(time.Duration)
-}
-
-// Default set the default callable value to [cant]
-func (t *Timer) Default(cant bool) {
-	t.CantRegisterTimout = cant
 }
 
 func (t *Timer) RegisterTimeout(delay time.Duration) {

@@ -1,7 +1,5 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
-
-//go:build test
 
 package enginetest
 
@@ -21,7 +19,6 @@ import (
 )
 
 var (
-	errTimeout                       = errors.New("unexpectedly called Timeout")
 	errGossip                        = errors.New("unexpectedly called Gossip")
 	errNotify                        = errors.New("unexpectedly called Notify")
 	errGetStateSummaryFrontier       = errors.New("unexpectedly called GetStateSummaryFrontier")
@@ -112,7 +109,7 @@ type Engine struct {
 	ContextF                     func() *snow.ConsensusContext
 	HaltF                        func(context.Context)
 	TimeoutF, GossipF, ShutdownF func(context.Context) error
-	NotifyF                      func(context.Context, Message) error
+	NotifyF                      func(context.Context, common.Message) error
 	GetF, GetAncestorsF          func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error
 	PullQueryF                   func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID, requestedHeight uint64) error
 	PutF                         func(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error
@@ -120,24 +117,21 @@ type Engine struct {
 	AncestorsF                   func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) error
 	AcceptedFrontierF            func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error
 	GetAcceptedF, AcceptedF      func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredIDs set.Set[ids.ID]) error
-	ChitsF                       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID) error
+	ChitsF                       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID, acceptedHeight uint64) error
 	GetStateSummaryFrontierF, GetStateSummaryFrontierFailedF, GetAcceptedStateSummaryFailedF,
 	GetAcceptedFrontierF, GetFailedF, GetAncestorsFailedF,
 	QueryFailedF, GetAcceptedFrontierFailedF, GetAcceptedFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32) error
-	AppRequestFailedF           func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *AppError) error
-	StateSummaryFrontierF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error
-	GetAcceptedStateSummaryF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, keys set.Set[uint64]) error
-	AcceptedStateSummaryF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error
-	ConnectedF                  func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
-	DisconnectedF               func(ctx context.Context, nodeID ids.NodeID) error
-	HealthF                     func(context.Context) (interface{}, error)
-	GetVMF                      func() VM
-	AppRequestF                 func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
-	AppResponseF                func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error
-	AppGossipF                  func(ctx context.Context, nodeID ids.NodeID, msg []byte) error
-	CrossChainAppRequestF       func(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error
-	CrossChainAppResponseF      func(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error
-	CrossChainAppRequestFailedF func(ctx context.Context, chainID ids.ID, requestID uint32, appErr *AppError) error
+	AppRequestFailedF        func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error
+	StateSummaryFrontierF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error
+	GetAcceptedStateSummaryF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, keys set.Set[uint64]) error
+	AcceptedStateSummaryF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error
+	ConnectedF               func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
+	DisconnectedF            func(ctx context.Context, nodeID ids.NodeID) error
+	HealthF                  func(context.Context) (interface{}, error)
+	GetVMF                   func() common.VM
+	AppRequestF              func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
+	AppResponseF             func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error
+	AppGossipF               func(ctx context.Context, nodeID ids.NodeID, msg []byte) error
 }
 
 func (e *Engine) Default(cant bool) {
@@ -181,7 +175,7 @@ func (e *Engine) Default(cant bool) {
 	e.CantGetVM = cant
 }
 
-func (e *EngineTest) Start(ctx context.Context, startReqID uint32) error {
+func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	if e.StartF != nil {
 		return e.StartF(ctx, startReqID)
 	}
@@ -194,33 +188,7 @@ func (e *EngineTest) Start(ctx context.Context, startReqID uint32) error {
 	return errStart
 }
 
-func (e *Engine) Context() *snow.ConsensusContext {
-	if e.ContextF != nil {
-		return e.ContextF()
-	}
-	if !e.CantContext {
-		return nil
-	}
-	if e.T != nil {
-		require.FailNow(e.T, "Unexpectedly called Context")
-	}
-	return nil
-}
-
-func (e *EngineTest) Timeout(ctx context.Context) error {
-	if e.TimeoutF != nil {
-		return e.TimeoutF(ctx)
-	}
-	if !e.CantTimeout {
-		return nil
-	}
-	if e.T != nil {
-		require.FailNow(e.T, errTimeout.Error())
-	}
-	return errTimeout
-}
-
-func (e *EngineTest) Gossip(ctx context.Context) error {
+func (e *Engine) Gossip(ctx context.Context) error {
 	if e.GossipF != nil {
 		return e.GossipF(ctx)
 	}
@@ -233,20 +201,7 @@ func (e *EngineTest) Gossip(ctx context.Context) error {
 	return errGossip
 }
 
-func (e *EngineTest) Halt(ctx context.Context) {
-	if e.HaltF != nil {
-		e.HaltF(ctx)
-		return
-	}
-	if !e.CantHalt {
-		return
-	}
-	if e.T != nil {
-		require.FailNow(e.T, "Unexpectedly called Halt")
-	}
-}
-
-func (e *EngineTest) Shutdown(ctx context.Context) error {
+func (e *Engine) Shutdown(ctx context.Context) error {
 	if e.ShutdownF != nil {
 		return e.ShutdownF(ctx)
 	}
@@ -259,7 +214,7 @@ func (e *EngineTest) Shutdown(ctx context.Context) error {
 	return errShutdown
 }
 
-func (e *EngineTest) Notify(ctx context.Context, msg Message) error {
+func (e *Engine) Notify(ctx context.Context, msg common.Message) error {
 	if e.NotifyF != nil {
 		return e.NotifyF(ctx, msg)
 	}
@@ -311,7 +266,7 @@ func (e *Engine) GetStateSummaryFrontierFailed(ctx context.Context, validatorID 
 	return errGetStateSummaryFrontierFailed
 }
 
-func (e *EngineTest) GetAcceptedStateSummary(ctx context.Context, validatorID ids.NodeID, requestID uint32, keys set.Set[uint64]) error {
+func (e *Engine) GetAcceptedStateSummary(ctx context.Context, validatorID ids.NodeID, requestID uint32, keys set.Set[uint64]) error {
 	if e.GetAcceptedStateSummaryF != nil {
 		return e.GetAcceptedStateSummaryF(ctx, validatorID, requestID, keys)
 	}
@@ -324,7 +279,7 @@ func (e *EngineTest) GetAcceptedStateSummary(ctx context.Context, validatorID id
 	return errGetAcceptedStateSummary
 }
 
-func (e *EngineTest) AcceptedStateSummary(ctx context.Context, validatorID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error {
+func (e *Engine) AcceptedStateSummary(ctx context.Context, validatorID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error {
 	if e.AcceptedStateSummaryF != nil {
 		return e.AcceptedStateSummaryF(ctx, validatorID, requestID, summaryIDs)
 	}
@@ -376,7 +331,7 @@ func (e *Engine) GetAcceptedFrontierFailed(ctx context.Context, nodeID ids.NodeI
 	return errGetAcceptedFrontierFailed
 }
 
-func (e *EngineTest) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error {
+func (e *Engine) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error {
 	if e.AcceptedFrontierF != nil {
 		return e.AcceptedFrontierF(ctx, nodeID, requestID, containerID)
 	}
@@ -389,7 +344,7 @@ func (e *EngineTest) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 	return errAcceptedFrontier
 }
 
-func (e *EngineTest) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
+func (e *Engine) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
 	if e.GetAcceptedF != nil {
 		return e.GetAcceptedF(ctx, nodeID, requestID, containerIDs)
 	}
@@ -415,7 +370,7 @@ func (e *Engine) GetAcceptedFailed(ctx context.Context, nodeID ids.NodeID, reque
 	return errGetAcceptedFailed
 }
 
-func (e *EngineTest) Accepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
+func (e *Engine) Accepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs set.Set[ids.ID]) error {
 	if e.AcceptedF != nil {
 		return e.AcceptedF(ctx, nodeID, requestID, containerIDs)
 	}
@@ -506,7 +461,7 @@ func (e *Engine) Ancestors(ctx context.Context, nodeID ids.NodeID, requestID uin
 	return errAncestors
 }
 
-func (e *EngineTest) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte, requestedHeight uint64) error {
+func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte, requestedHeight uint64) error {
 	if e.PushQueryF != nil {
 		return e.PushQueryF(ctx, nodeID, requestID, container, requestedHeight)
 	}
@@ -519,7 +474,7 @@ func (e *EngineTest) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID
 	return errPushQuery
 }
 
-func (e *EngineTest) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID, requestedHeight uint64) error {
+func (e *Engine) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID, requestedHeight uint64) error {
 	if e.PullQueryF != nil {
 		return e.PullQueryF(ctx, nodeID, requestID, containerID, requestedHeight)
 	}
@@ -545,46 +500,7 @@ func (e *Engine) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID u
 	return errQueryFailed
 }
 
-func (e *EngineTest) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	if e.CrossChainAppRequestF != nil {
-		return e.CrossChainAppRequestF(ctx, chainID, requestID, deadline, request)
-	}
-	if !e.CantCrossChainAppRequest {
-		return nil
-	}
-	if e.T != nil {
-		require.FailNow(e.T, errCrossChainAppRequest.Error())
-	}
-	return errCrossChainAppRequest
-}
-
-func (e *EngineTest) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *AppError) error {
-	if e.CrossChainAppRequestFailedF != nil {
-		return e.CrossChainAppRequestFailedF(ctx, chainID, requestID, appErr)
-	}
-	if !e.CantCrossChainAppRequestFailed {
-		return nil
-	}
-	if e.T != nil {
-		require.FailNow(e.T, errCrossChainAppRequestFailed.Error())
-	}
-	return errCrossChainAppRequestFailed
-}
-
-func (e *EngineTest) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	if e.CrossChainAppResponseF != nil {
-		return e.CrossChainAppResponseF(ctx, chainID, requestID, response)
-	}
-	if !e.CantCrossChainAppResponse {
-		return nil
-	}
-	if e.T != nil {
-		require.FailNow(e.T, errCrossChainAppResponse.Error())
-	}
-	return errCrossChainAppResponse
-}
-
-func (e *EngineTest) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+func (e *Engine) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	if e.AppRequestF != nil {
 		return e.AppRequestF(ctx, nodeID, requestID, deadline, request)
 	}
@@ -610,7 +526,7 @@ func (e *Engine) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 	return errAppResponse
 }
 
-func (e *EngineTest) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *AppError) error {
+func (e *Engine) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
 	if e.AppRequestFailedF != nil {
 		return e.AppRequestFailedF(ctx, nodeID, requestID, appErr)
 	}
@@ -636,9 +552,9 @@ func (e *Engine) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) e
 	return errAppGossip
 }
 
-func (e *EngineTest) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID) error {
+func (e *Engine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID, acceptedHeight uint64) error {
 	if e.ChitsF != nil {
-		return e.ChitsF(ctx, nodeID, requestID, preferredID, preferredIDAtHeight, acceptedID)
+		return e.ChitsF(ctx, nodeID, requestID, preferredID, preferredIDAtHeight, acceptedID, acceptedHeight)
 	}
 	if !e.CantChits {
 		return nil
@@ -649,7 +565,7 @@ func (e *EngineTest) Chits(ctx context.Context, nodeID ids.NodeID, requestID uin
 	return errChits
 }
 
-func (e *EngineTest) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+func (e *Engine) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	if e.ConnectedF != nil {
 		return e.ConnectedF(ctx, nodeID, nodeVersion)
 	}
@@ -662,7 +578,7 @@ func (e *EngineTest) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersi
 	return errConnected
 }
 
-func (e *EngineTest) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+func (e *Engine) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	if e.DisconnectedF != nil {
 		return e.DisconnectedF(ctx, nodeID)
 	}
@@ -675,7 +591,7 @@ func (e *EngineTest) Disconnected(ctx context.Context, nodeID ids.NodeID) error 
 	return errDisconnected
 }
 
-func (e *EngineTest) HealthCheck(ctx context.Context) (interface{}, error) {
+func (e *Engine) HealthCheck(ctx context.Context) (interface{}, error) {
 	if e.HealthF != nil {
 		return e.HealthF(ctx)
 	}

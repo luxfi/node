@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -20,9 +20,10 @@ import (
 	"github.com/luxfi/node/snow/uptime"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -75,7 +76,6 @@ func StartTestPeer(
 	}
 
 	mc, err := message.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -100,7 +100,7 @@ func StartTestPeer(
 	}
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSecretKey()
+	blsKey, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func StartTestPeer(
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
-			VersionCompatibility: version.GetCompatibility(networkID),
+			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 			MySubnets:            set.Set[ids.ID]{},
 			Beacons:              validators.NewManager(),
 			Validators:           validators.NewManager(),
@@ -140,6 +140,7 @@ func StartTestPeer(
 			logging.NoLog{},
 			maxMessageToSend,
 		),
+		false,
 	)
 	return peer, peer.AwaitReady(ctx)
 }

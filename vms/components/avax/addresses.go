@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -131,7 +131,7 @@ func ParseServiceAddress(a AddressManager, addrStr string) (ids.ShortID, error) 
 	return addr, nil
 }
 
-// ParseServiceAddress get addresses IDs from addresses strings, being them either localized or not
+// ParseServiceAddresses get addresses IDs from addresses strings, being them either localized or not
 func ParseServiceAddresses(a AddressManager, addrStrs []string) (set.Set[ids.ShortID], error) {
 	addrs := set.NewSet[ids.ShortID](len(addrStrs))
 	for _, addrStr := range addrStrs {

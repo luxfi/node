@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -29,7 +29,7 @@ type Signer interface {
 
 type Backend interface {
 	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
-	GetSubnetOwner(ctx stdcontext.Context, subnetID ids.ID) (fx.Owner, error)
+	GetOwner(ctx stdcontext.Context, ownerID ids.ID) (fx.Owner, error)
 }
 
 type txSigner struct {

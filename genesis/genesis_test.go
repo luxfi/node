@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -13,11 +13,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/libevm/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/perms"
@@ -30,6 +32,9 @@ var (
 	invalidGenesisConfigJSON = []byte(`{
 		"networkID": 9999}}}}
 	}`)
+
+	//go:embed genesis_test_invalid_allocations.json
+	customGenesisConfigInvalidAllocationsJSON []byte
 
 	genesisStakingCfg = &StakingConfig{
 		MaxStakeDuration: 365 * 24 * time.Hour,
@@ -197,12 +202,12 @@ func TestGenesisFromFile(t *testing.T) {
 		"local": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  nil,
+			expectedErr:  errOverridesStandardNetworkConfig,
 		},
 		"local (with custom specified)": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  nil,
+			expectedErr:  errOverridesStandardNetworkConfig,
 		},
 		"custom": {
 			networkID:    9999,
@@ -224,6 +229,11 @@ func TestGenesisFromFile(t *testing.T) {
 			networkID:       9999,
 			missingFilepath: "missing.json",
 			expectedErr:     os.ErrNotExist,
+		},
+		"custom (locked allocations amount too low)": {
+			networkID:    9999,
+			customConfig: customGenesisConfigInvalidAllocationsJSON,
+			expectedErr:  errAllocationsLockedAmountTooLow,
 		},
 	}
 
@@ -272,12 +282,12 @@ func TestGenesisFromFlag(t *testing.T) {
 		},
 		"local": {
 			networkID:   constants.LocalID,
-			expectedErr: nil,
+			expectedErr: errOverridesStandardNetworkConfig,
 		},
 		"local (with custom specified)": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  nil,
+			expectedErr:  errOverridesStandardNetworkConfig,
 		},
 		"custom": {
 			networkID:    9999,
@@ -355,8 +365,8 @@ func TestGenesis(t *testing.T) {
 			expectedID: "MSj6o9TpezwsQx4Tv7SHqpVvCbJ8of1ikjsqPZ1bKRjc9zBy3",
 		},
 		{
-			config:     &LocalConfig,
-			expectedID: "S4BvHv1XyihF9gXkJKXWWwQuuDWZqesRXz6wnqavQ9FrjGfAa",
+			config:     &unmodifiedLocalConfig,
+			expectedID: "2nRRoR76HuEk1JjDpRdN8FKvZFvUXWxY3b9C5rZRPFjcgEh7S7",
 		},
 	}
 	for _, test := range tests {
@@ -416,7 +426,7 @@ func TestVMGenesis(t *testing.T) {
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2CA6j5zYzasynPsFeNoqWkmTCt3VScMvXUZHbfDJ8k3oGzAPtU",
+					expectedID: "2owdGqyG6FFzTHy5qhenDXQcEghvr571KZE3gSfRJERSJinuwC",
 				},
 			},
 		},
@@ -481,6 +491,42 @@ func TestLUXAssetID(t *testing.T) {
 				test.expectedID,
 				luxAssetID.String(),
 				"LUX assetID with networkID %d mismatch",
+				test.networkID,
+			)
+		})
+	}
+}
+
+func TestCChainGenesisTimestamp(t *testing.T) {
+	tests := []struct {
+		networkID           uint32
+		expectedGenesisTime uint64
+	}{
+		{
+			networkID:           constants.MainnetID,
+			expectedGenesisTime: 0,
+		},
+		{
+			networkID:           constants.FujiID,
+			expectedGenesisTime: 0,
+		},
+		{
+			networkID:           constants.LocalID,
+			expectedGenesisTime: uint64(upgrade.InitiallyActiveTime.Unix()),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(constants.NetworkIDToNetworkName[test.networkID], func(t *testing.T) {
+			require := require.New(t)
+
+			config := GetConfig(test.networkID)
+			var cChainGenesis core.Genesis
+			require.NoError(json.Unmarshal([]byte(config.CChainGenesis), &cChainGenesis))
+			require.Equal(
+				test.expectedGenesisTime,
+				cChainGenesis.Timestamp,
+				"C-Chain genesis time with networkID %d mismatch",
 				test.networkID,
 			)
 		})

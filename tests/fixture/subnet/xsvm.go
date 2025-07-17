@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subnet
@@ -33,11 +33,16 @@ func NewXSVMOrPanic(name string, key *secp256k1.PrivateKey, nodes ...*tmpnet.Nod
 
 	return &tmpnet.Subnet{
 		Name: name,
+		Config: tmpnet.ConfigMap{
+			// Reducing this from the 1s default speeds up tx acceptance
+			"proposerMinBlockDelay": 0,
+		},
 		Chains: []*tmpnet.Chain{
 			{
 				VMID:         constants.XSVMID,
 				Genesis:      genesisBytes,
 				PreFundedKey: key,
+				VersionArgs:  []string{"version-json"},
 			},
 		},
 		ValidatorIDs: tmpnet.NodesToIDs(nodes...),

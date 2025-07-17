@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
@@ -27,7 +27,7 @@ func Sample[T comparable](elements map[T]uint64, maxSize int) (set.Set[T], error
 	for key, weight := range elements {
 		keys[i] = key
 		weights[i] = weight
-		totalWeight, err = math.Add64(totalWeight, weight)
+		totalWeight, err = math.Add(totalWeight, weight)
 		if err != nil {
 			return nil, err
 		}

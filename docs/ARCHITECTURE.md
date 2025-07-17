@@ -19,7 +19,7 @@ Lux Network implements a 7-chain architecture optimized for specific use cases:
    - Threshold signatures using CGGMP21
 
 3. **C-Chain (ContractVM - cvm)**
-   - EVM-compatible smart contracts via Coreth
+   - EVM-compatible smart contracts via Geth
    - DeFi applications
    - NFT contracts
    - General purpose computation

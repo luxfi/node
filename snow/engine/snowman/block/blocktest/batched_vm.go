@@ -1,9 +1,7 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//go:build test
-
-package block
+package blocktest
 
 import (
 	"context"
@@ -15,6 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 var (
@@ -50,7 +49,7 @@ func (vm *BatchedVM) Default(cant bool) {
 	vm.CantBatchParseBlock = cant
 }
 
-func (vm *TestBatchedVM) GetAncestors(
+func (vm *BatchedVM) GetAncestors(
 	ctx context.Context,
 	blkID ids.ID,
 	maxBlocksNum int,
@@ -72,7 +71,7 @@ func (vm *TestBatchedVM) GetAncestors(
 	return nil, errGetAncestor
 }
 
-func (vm *TestBatchedVM) BatchedParseBlock(
+func (vm *BatchedVM) BatchedParseBlock(
 	ctx context.Context,
 	blks [][]byte,
 ) ([]snowman.Block, error) {

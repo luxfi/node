@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
@@ -6,12 +6,28 @@ package bloom
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/bits"
 	"sync"
 )
 
-// constants and errors are defined in optimal.go
+const (
+	minHashes  = 1
+	maxHashes  = 16 // Supports a false positive probability of 2^-16 when using optimal size values
+	minEntries = 1
+
+	bitsPerByte    = 8
+	bytesPerUint64 = 8
+	hashRotation   = 17
+)
+
+var (
+	errInvalidNumHashes = errors.New("invalid num hashes")
+	errTooFewHashes     = errors.New("too few hashes")
+	errTooManyHashes    = errors.New("too many hashes")
+	errTooFewEntries    = errors.New("too few entries")
+)
 
 type Filter struct {
 	// numBits is always equal to [bitsPerByte * len(entries)]
@@ -71,14 +87,14 @@ func (f *Filter) Contains(hash uint64) bool {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
-	return containsCommon(f.hashSeeds, f.entries, hash)
+	return contains(f.hashSeeds, f.entries, hash)
 }
 
 func (f *Filter) Marshal() []byte {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
-	return marshalCommon(f.hashSeeds, f.entries)
+	return marshal(f.hashSeeds, f.entries)
 }
 
 func newHashSeeds(count int) ([]uint64, error) {
@@ -101,3 +117,31 @@ func newHashSeeds(count int) ([]uint64, error) {
 	return seeds, nil
 }
 
+func contains(hashSeeds []uint64, entries []byte, hash uint64) bool {
+	var (
+		numBits          = bitsPerByte * uint64(len(entries))
+		_                = 1 % numBits // hint to the compiler that numBits is not 0
+		accumulator byte = 1
+	)
+	for seedIndex := 0; seedIndex < len(hashSeeds) && accumulator != 0; seedIndex++ {
+		hash = bits.RotateLeft64(hash, hashRotation) ^ hashSeeds[seedIndex]
+		index := hash % numBits
+		byteIndex := index / bitsPerByte
+		bitIndex := index % bitsPerByte
+		accumulator &= entries[byteIndex] >> bitIndex
+	}
+	return accumulator != 0
+}
+
+func marshal(hashSeeds []uint64, entries []byte) []byte {
+	numHashes := len(hashSeeds)
+	entriesOffset := 1 + numHashes*bytesPerUint64
+
+	bytes := make([]byte, entriesOffset+len(entries))
+	bytes[0] = byte(numHashes)
+	for i, seed := range hashSeeds {
+		binary.BigEndian.PutUint64(bytes[1+i*bytesPerUint64:], seed)
+	}
+	copy(bytes[entriesOffset:], entries)
+	return bytes
+}

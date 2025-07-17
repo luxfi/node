@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -32,20 +32,28 @@ type UnsignedIP struct {
 }
 
 // Sign this IP with the provided signer and return the signed IP.
-func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner *bls.SecretKey) (*SignedIP, error) {
+func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner bls.Signer) (*SignedIP, error) {
 	ipBytes := ip.bytes()
 	tlsSignature, err := tlsSigner.Sign(
 		rand.Reader,
 		hashing.ComputeHash256(ipBytes),
 		crypto.SHA256,
 	)
-	blsSignature := bls.SignProofOfPossession(blsSigner, ipBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	blsSignature, err := blsSigner.SignProofOfPossession(ipBytes)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SignedIP{
 		UnsignedIP:        *ip,
 		TLSSignature:      tlsSignature,
 		BLSSignature:      blsSignature,
 		BLSSignatureBytes: bls.SignatureToBytes(blsSignature),
-	}, err
+	}, nil
 }
 
 func (ip *UnsignedIP) bytes() []byte {

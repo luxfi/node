@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package consistent
@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/hashing/hashingmock"
 )
 
@@ -436,9 +435,9 @@ func TestIteration(t *testing.T) {
 	require.Equal(node2, node)
 }
 
-func setupTest(t *testing.T, virtualNodes int) (Ring, *hashingmock.MockHasher) {
+func setupTest(t *testing.T, virtualNodes int) (Ring, *hashingmock.Hasher) {
 	ctrl := gomock.NewController(t)
-	hasher := hashingmock.NewMockHasher(ctrl)
+	hasher := hashingmock.NewHasher(ctrl)
 
 	return NewHashRing(RingConfig{
 		VirtualNodes: virtualNodes,

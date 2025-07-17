@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -6,38 +6,35 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"time"
 
-	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"
 
 type SimpleTestContext struct {
+	log           logging.Logger
 	cleanupFuncs  []func()
 	cleanupCalled bool
 }
 
-func NewTestContext() *SimpleTestContext {
-	return &SimpleTestContext{}
+func NewTestContext(log logging.Logger) *SimpleTestContext {
+	return &SimpleTestContext{
+		log: log,
+	}
 }
 
-func (*SimpleTestContext) Errorf(format string, args ...interface{}) {
-	log.Printf("error: "+format, args...)
+func (tc *SimpleTestContext) Errorf(format string, args ...interface{}) {
+	tc.log.Error(fmt.Sprintf(format, args...))
 }
 
 func (*SimpleTestContext) FailNow() {
 	panic(failNowMessage)
-}
-
-func (*SimpleTestContext) GetWriter() io.Writer {
-	return os.Stdout
 }
 
 // Cleanup is intended to be deferred by the caller to ensure cleanup is performed even
@@ -92,10 +89,8 @@ func (tc *SimpleTestContext) By(_ string, _ ...func()) {
 	tc.FailNow()
 }
 
-// TODO(marun) Enable color output equivalent to GinkgoTestContext.Outf
-func (*SimpleTestContext) Outf(format string, args ...interface{}) {
-	s := formatter.F(format, args...)
-	log.Print(s)
+func (tc *SimpleTestContext) Log() logging.Logger {
+	return tc.log
 }
 
 // Helper simplifying use of a timed context by canceling the context on ginkgo teardown.

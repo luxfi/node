@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
@@ -57,9 +57,9 @@ func Parse(bytes []byte) (*ReadFilter, error) {
 }
 
 func (f *ReadFilter) Contains(hash uint64) bool {
-	return containsCommon(f.hashSeeds, f.entries, hash)
+	return contains(f.hashSeeds, f.entries, hash)
 }
 
 func (f *ReadFilter) Marshal() []byte {
-	return marshalCommon(f.hashSeeds, f.entries)
+	return marshal(f.hashSeeds, f.entries)
 }

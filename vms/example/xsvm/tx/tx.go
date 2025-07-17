@@ -1,20 +1,15 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tx
 
 import (
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 )
 
-var secpCache = secp256k1.RecoverCache{
-	LRU: cache.LRU[ids.ID, *secp256k1.PublicKey]{
-		Size: 2048,
-	},
-}
+var secpCache = secp256k1.NewRecoverCache(2048)
 
 type Tx struct {
 	Unsigned  `serialize:"true" json:"unsigned"`

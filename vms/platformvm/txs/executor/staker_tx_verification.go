@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -30,7 +30,7 @@ var (
 	ErrNotValidator                    = errors.New("isn't a current or pending validator")
 	ErrRemovePermissionlessValidator   = errors.New("attempting to remove permissionless validator")
 	ErrStakeOverflow                   = errors.New("validator stake exceeds limit")
-	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependant staking period")
+	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependent staking period")
 	ErrOverDelegated                   = errors.New("validator would be over delegated")
 	ErrIsNotTransformSubnetTx          = errors.New("is not a transform subnet tx")
 	ErrTimestampNotBeforeStartTime     = errors.New("chain timestamp not before start time")
@@ -165,11 +165,10 @@ func verifyAddValidatorTx(
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return nil, err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -177,7 +176,7 @@ func verifyAddValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -253,17 +252,16 @@ func verifyAddSubnetValidatorTx(
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(backend, chainState, sTx, tx.SubnetValidator.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(backend.Fx, chainState, sTx, tx.SubnetValidator.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -271,7 +269,7 @@ func verifyAddSubnetValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -334,17 +332,16 @@ func verifyRemoveSubnetValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return nil, false, err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -352,7 +349,7 @@ func verifyRemoveSubnetValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return nil, false, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -428,7 +425,7 @@ func verifyAddDelegatorTx(
 		)
 	}
 
-	maximumWeight, err := safemath.Mul64(MaxValidatorWeightFactor, primaryNetworkValidator.Weight)
+	maximumWeight, err := safemath.Mul(MaxValidatorWeightFactor, primaryNetworkValidator.Weight)
 	if err != nil {
 		return nil, ErrStakeOverflow
 	}
@@ -461,11 +458,10 @@ func verifyAddDelegatorTx(
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return nil, err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -473,7 +469,7 @@ func verifyAddDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -584,11 +580,10 @@ func verifyAddPermissionlessValidatorTx(
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -596,7 +591,7 @@ func verifyAddPermissionlessValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -683,7 +678,7 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	maximumWeight, err := safemath.Mul64(
+	maximumWeight, err := safemath.Mul(
 		uint64(delegatorRules.maxValidatorWeightFactor),
 		validator.Weight,
 	)
@@ -732,11 +727,10 @@ func verifyAddPermissionlessDelegatorTx(
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -744,7 +738,7 @@ func verifyAddPermissionlessDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -765,7 +759,11 @@ func verifyTransferSubnetOwnershipTx(
 	sTx *txs.Tx,
 	tx *txs.TransferSubnetOwnershipTx,
 ) error {
-	if !backend.Config.UpgradeConfig.IsDurangoActivated(chainState.GetTimestamp()) {
+	var (
+		currentTimestamp = chainState.GetTimestamp()
+		upgrades         = backend.Config.UpgradeConfig
+	)
+	if !upgrades.IsDurangoActivated(currentTimestamp) {
 		return ErrDurangoUpgradeNotActive
 	}
 
@@ -783,17 +781,16 @@ func verifyTransferSubnetOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
 
 	// Verify the flowcheck
-	txFee, err := feeCalculator.CalculateFee(tx)
+	fee, err := feeCalculator.CalculateFee(tx)
 	if err != nil {
 		return err
 	}
-
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
@@ -801,7 +798,7 @@ func verifyTransferSubnetOwnershipTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: txFee,
+			backend.Ctx.LUXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)

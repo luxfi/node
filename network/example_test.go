@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/genesis"
@@ -89,12 +90,24 @@ func ExampleNewTestNetwork() {
 	handler := &testExternalHandler{
 		log: log,
 	}
-
-	network, err := NewTestNetwork(
-		log,
+	metrics := prometheus.NewRegistry()
+	cfg, err := NewTestNetworkConfig(
+		metrics,
 		constants.FujiID,
 		validators,
 		trackedSubnets,
+	)
+	if err != nil {
+		log.Fatal(
+			"failed to create test network config",
+			zap.Error(err),
+		)
+		return
+	}
+	network, err := NewTestNetwork(
+		log,
+		metrics,
+		cfg,
 		handler,
 	)
 	if err != nil {

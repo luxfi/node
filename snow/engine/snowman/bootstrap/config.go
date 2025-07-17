@@ -1,15 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
 
 import (
-	"context"
-
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/block"
@@ -26,7 +23,6 @@ type Config struct {
 	StartupTracker   tracker.Startup
 	Sender           common.Sender
 	BootstrapTracker common.BootstrapTracker
-	Timer            common.Timer
 
 	// PeerTracker manages the set of nodes that we fetch the next block from.
 	PeerTracker *p2p.PeerTracker
@@ -42,7 +38,9 @@ type Config struct {
 	VM block.ChainVM
 
 	// NonVerifyingParse parses blocks without verifying them.
-	NonVerifyingParse func(context.Context, []byte) (snowman.Block, error)
+	NonVerifyingParse block.ParseFunc
 
 	Bootstrapped func()
+
+	common.Haltable
 }

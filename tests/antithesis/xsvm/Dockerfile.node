@@ -1,11 +1,11 @@
-# TAG should identify the builder image
-ARG TAG
+# BUILDER_IMAGE_TAG should identify the builder image
+ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silences a warning
 
 # LUXD_NODE_IMAGE needs to identify an existing node node image and should include the tag
-ARG LUXD_NODE_IMAGE
+ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-node-builder:$TAG AS builder
+FROM antithesis-node-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
@@ -23,9 +23,11 @@ FROM $LUXD_NODE_IMAGE AS execution
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
 
+# Configure the node with the location of the xsvm plugin
+ENV AVAGO_PLUGIN_DIR=/node/build/plugins
+
 # Copy the executable into the container
-RUN mkdir -p /root/.node/plugins
 COPY --from=builder $BUILDER_WORKDIR/build/xsvm \
-    /root/.node/plugins/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
+    $AVAGO_PLUGIN_DIR/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
 
 # The node image's entrypoint will be reused.

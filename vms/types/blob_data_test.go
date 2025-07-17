@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package types
@@ -38,7 +38,7 @@ func TestJSON(t *testing.T) {
 
 			jsonBytes, err := json.Marshal(test.value)
 			require.NoError(err)
-			require.Equal(test.expectedJSON, string(jsonBytes))
+			require.JSONEq(test.expectedJSON, string(jsonBytes))
 
 			var unmarshaled JSONByteSlice
 			require.NoError(json.Unmarshal(jsonBytes, &unmarshaled))

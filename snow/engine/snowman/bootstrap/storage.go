@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/bootstrap/interval"
 	"github.com/luxfi/node/utils/logging"
@@ -38,7 +37,7 @@ const (
 func getMissingBlockIDs(
 	ctx context.Context,
 	db database.KeyValueReader,
-	parser block.Parser,
+	nonVerifyingParser block.Parser,
 	tree *interval.Tree,
 	lastAcceptedHeight uint64,
 ) (set.Set[ids.ID], error) {
@@ -57,7 +56,7 @@ func getMissingBlockIDs(
 			return nil, err
 		}
 
-		blk, err := parser.ParseBlock(ctx, blkBytes)
+		blk, err := nonVerifyingParser.ParseBlock(ctx, blkBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -127,10 +126,10 @@ func process(
 // TODO: Replace usage of haltable with context cancellation.
 func execute(
 	ctx context.Context,
-	haltable common.Haltable,
+	shouldHalt func() bool,
 	log logging.Func,
 	db database.Database,
-	parser block.Parser,
+	nonVerifyingParser block.Parser,
 	tree *interval.Tree,
 	lastAcceptedHeight uint64,
 ) error {
@@ -172,7 +171,7 @@ func execute(
 
 		var (
 			numProcessed = totalNumberToProcess - tree.Len()
-			halted       = haltable.Halted()
+			halted       = shouldHalt()
 		)
 		if numProcessed >= minBlocksToCompact && !halted {
 			log("compacting database after executing blocks...")
@@ -196,9 +195,9 @@ func execute(
 		zap.Uint64("numToExecute", totalNumberToProcess),
 	)
 
-	for !haltable.Halted() && iterator.Next() {
+	for !shouldHalt() && iterator.Next() {
 		blkBytes := iterator.Value()
-		blk, err := parser.ParseBlock(ctx, blkBytes)
+		blk, err := nonVerifyingParser.ParseBlock(ctx, blkBytes)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -23,9 +23,10 @@ import (
 	"github.com/luxfi/node/snow/consensus/snowstorm"
 	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/getter"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/snow/engine/lux/vertex/vertextest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
@@ -56,7 +57,7 @@ func (t *testTx) Accept(ctx context.Context) error {
 	return nil
 }
 
-func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.TestManager, *vertex.TestVM) {
+func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextest.Manager, *vertextest.VM) {
 	require := require.New(t)
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
@@ -64,9 +65,9 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 
 	vdrs := validators.NewManager()
 	db := memdb.New()
-	sender := &common.SenderTest{T: t}
-	manager := vertex.NewTestManager(t)
-	vm := &vertex.TestVM{}
+	sender := &enginetest.Sender{T: t}
+	manager := vertextest.NewManager(t)
+	vm := &vertextest.VM{}
 	vm.T = t
 
 	sender.Default(true)
@@ -113,6 +114,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 		TxBlocked:                      txBlocker,
 		Manager:                        manager,
 		VM:                             vm,
+		Haltable:                       &common.Halter{},
 	}, peer, sender, manager, vm
 }
 
@@ -167,7 +169,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -274,7 +276,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -441,7 +443,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -565,7 +567,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -575,12 +577,12 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	require.NoError(err)
 
 	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
-		switch {
-		case vtxID == vtxID0:
+		switch vtxID {
+		case vtxID0:
 			return nil, errUnknownVertex
-		case vtxID == vtxID1:
+		case vtxID1:
 			return nil, errUnknownVertex
-		case vtxID == vtxID2:
+		case vtxID2:
 			return vtx2, nil
 		default:
 			require.FailNow(errUnknownVertex.Error())

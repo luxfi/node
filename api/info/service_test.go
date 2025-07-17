@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -12,20 +12,19 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/vmsmock"
 )
 
 var errTest = errors.New("non-nil error")
 
 type getVMsTest struct {
 	info          *Info
-	ctrl          *gomock.Controller
-	mockVMManager *vms.MockManager
+	mockVMManager *vmsmock.Manager
 }
 
 func initGetVMsTest(t *testing.T) *getVMsTest {
 	ctrl := gomock.NewController(t)
-	mockVMManager := vms.NewMockManager(ctrl)
+	mockVMManager := vmsmock.NewManager(ctrl)
 	return &getVMsTest{
 		info: &Info{
 			Parameters: Parameters{
@@ -33,7 +32,6 @@ func initGetVMsTest(t *testing.T) *getVMsTest {
 			},
 			log: logging.NoLog{},
 		},
-		ctrl:          ctrl,
 		mockVMManager: mockVMManager,
 	}
 }

@@ -1,9 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
 
 import (
+	"encoding/json"
+	"fmt"
+
 	_ "embed"
 
 	"github.com/luxfi/node/ids"
@@ -19,11 +22,9 @@ var (
 )
 
 func init() {
-	// TODO: Fix validators.json checksum issues
-	// if err := json.Unmarshal(validatorsPerNetworkJSON, &validatorsPerNetwork); err != nil {
-	// 	panic(fmt.Sprintf("failed to decode validators.json: %v", err))
-	// }
-	validatorsPerNetwork = make(map[string]set.Set[ids.NodeID])
+	if err := json.Unmarshal(validatorsPerNetworkJSON, &validatorsPerNetwork); err != nil {
+		panic(fmt.Sprintf("failed to decode validators.json: %v", err))
+	}
 }
 
 // GetValidators returns recent validators for the requested network.

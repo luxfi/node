@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
 	"context"
-	"errors"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,26 +13,24 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/vms/txs/mempool"
 )
-
-const TxGossipHandlerID = 0
-
-var errMempoolDisabledWithPartialSync = errors.New("mempool is disabled partial syncing")
 
 type Network struct {
 	*p2p.Network
 
 	log                       logging.Logger
-	txVerifier                TxVerifier
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
-	appSender                 common.AppSender
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -46,11 +44,14 @@ func New(
 	subnetID ids.ID,
 	vdrs validators.State,
 	txVerifier TxVerifier,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
 	appSender common.AppSender,
+	stateLock sync.Locker,
+	state state.Chain,
+	signer warp.Signer,
 	registerer prometheus.Registerer,
-	config Config,
+	config config.Network,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
 	if err != nil {
@@ -66,7 +67,7 @@ func New(
 		config.MaxValidatorSetStaleness,
 	)
 	txGossipClient := p2pNetwork.NewClient(
-		TxGossipHandlerID,
+		p2p.TxGossipHandlerID,
 		p2p.WithValidatorSampling(validators),
 	)
 	txGossipMetrics, err := gossip.NewMetrics(registerer, "tx")
@@ -154,17 +155,26 @@ func New(
 		appRequestHandler: validatorHandler,
 	}
 
-	if err := p2pNetwork.AddHandler(TxGossipHandlerID, txGossipHandler); err != nil {
+	if err := p2pNetwork.AddHandler(p2p.TxGossipHandlerID, txGossipHandler); err != nil {
+		return nil, err
+	}
+
+	// We allow all peers to request warp messaging signatures
+	signatureRequestVerifier := signatureRequestVerifier{
+		stateLock: stateLock,
+		state:     state,
+	}
+	signatureRequestHandler := acp118.NewHandler(signatureRequestVerifier, signer)
+
+	if err := p2pNetwork.AddHandler(acp118.HandlerID, signatureRequestHandler); err != nil {
 		return nil, err
 	}
 
 	return &Network{
 		Network:                   p2pNetwork,
 		log:                       log,
-		txVerifier:                txVerifier,
 		mempool:                   gossipMempool,
 		partialSyncPrimaryNetwork: partialSyncPrimaryNetwork,
-		appSender:                 appSender,
 		txPushGossiper:            txPushGossiper,
 		txPushGossipFrequency:     config.PushGossipFrequency,
 		txPullGossiper:            txPullGossiper,
@@ -173,18 +183,12 @@ func New(
 }
 
 func (n *Network) PushGossip(ctx context.Context) {
-	// TODO: Even though the node is running partial sync, we should support
-	// issuing transactions from the RPC.
-	if n.partialSyncPrimaryNetwork {
-		return
-	}
-
 	gossip.Every(ctx, n.log, n.txPushGossiper, n.txPushGossipFrequency)
 }
 
 func (n *Network) PullGossip(ctx context.Context) {
-	// If the node is running partial sync, we should not perform any pull
-	// gossip.
+	// If the node is running partial sync, we do not perform any pull gossip
+	// because we should never be a validator.
 	if n.partialSyncPrimaryNetwork {
 		return
 	}
@@ -204,15 +208,6 @@ func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []b
 }
 
 func (n *Network) IssueTxFromRPC(tx *txs.Tx) error {
-	// If we are partially syncing the Primary Network, we should not be
-	// maintaining the transaction mempool locally.
-	//
-	// TODO: We should still push the transaction to some peers when partial
-	// syncing.
-	if n.partialSyncPrimaryNetwork {
-		return errMempoolDisabledWithPartialSync
-	}
-
 	if err := n.mempool.Add(tx); err != nil {
 		return err
 	}

@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/luxfi/node/ids"
@@ -20,7 +21,57 @@ import (
 
 var (
 	_ Verifier = (*verifier)(nil)
+
+	ErrInsufficientFunds            = errors.New("insufficient funds")
+	ErrInsufficientUnlockedFunds    = errors.New("insufficient unlocked funds")
+	ErrInsufficientLockedFunds      = errors.New("insufficient locked funds")
+	errWrongNumberCredentials       = errors.New("wrong number of credentials")
+	errWrongNumberUTXOs             = errors.New("wrong number of UTXOs")
+	errAssetIDMismatch              = errors.New("input asset ID does not match UTXO asset ID")
+	errLocktimeMismatch             = errors.New("input locktime does not match UTXO locktime")
+	errLockedFundsNotMarkedAsLocked = errors.New("locked funds not marked as locked")
 )
+
+type Verifier interface {
+	// Verify that [tx] is semantically valid.
+	// [ins] and [outs] are the inputs and outputs of [tx].
+	// [creds] are the credentials of [tx], which allow [ins] to be spent.
+	// [unlockedProduced] is the map of assets that were produced and their
+	// amounts.
+	// The [ins] must have at least [unlockedProduced] than the [outs].
+	//
+	// Precondition: [tx] has already been syntactically verified.
+	//
+	// Note: [unlockedProduced] is modified by this method.
+	VerifySpend(
+		tx txs.UnsignedTx,
+		utxoDB lux.UTXOGetter,
+		ins []*lux.TransferableInput,
+		outs []*lux.TransferableOutput,
+		creds []verify.Verifiable,
+		unlockedProduced map[ids.ID]uint64,
+	) error
+
+	// Verify that [tx] is semantically valid.
+	// [utxos[i]] is the UTXO being consumed by [ins[i]].
+	// [ins] and [outs] are the inputs and outputs of [tx].
+	// [creds] are the credentials of [tx], which allow [ins] to be spent.
+	// [unlockedProduced] is the map of assets that were produced and their
+	// amounts.
+	// The [ins] must have at least [unlockedProduced] more than the [outs].
+	//
+	// Precondition: [tx] has already been syntactically verified.
+	//
+	// Note: [unlockedProduced] is modified by this method.
+	VerifySpendUTXOs(
+		tx txs.UnsignedTx,
+		utxos []*lux.UTXO,
+		ins []*lux.TransferableInput,
+		outs []*lux.TransferableOutput,
+		creds []verify.Verifiable,
+		unlockedProduced map[ids.ID]uint64,
+	) error
+}
 
 func NewVerifier(
 	ctx *snow.Context,
@@ -155,7 +206,7 @@ func (h *verifier) VerifySpendUTXOs(
 		amount := in.Amount()
 
 		if now >= locktime {
-			newUnlockedConsumed, err := math.Add64(unlockedConsumed[realAssetID], amount)
+			newUnlockedConsumed, err := math.Add(unlockedConsumed[realAssetID], amount)
 			if err != nil {
 				return err
 			}
@@ -183,7 +234,7 @@ func (h *verifier) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedConsumedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := math.Add(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}
@@ -204,7 +255,7 @@ func (h *verifier) VerifySpendUTXOs(
 		amount := output.Amount()
 
 		if locktime == 0 {
-			newUnlockedProduced, err := math.Add64(unlockedProduced[assetID], amount)
+			newUnlockedProduced, err := math.Add(unlockedProduced[assetID], amount)
 			if err != nil {
 				return err
 			}
@@ -232,7 +283,7 @@ func (h *verifier) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedProducedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := math.Add(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -66,7 +66,7 @@ func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block
 	if err != nil {
 		return nil, fmt.Errorf("could not parse inner summary due to: %w", err)
 	}
-	block, err := vm.parsePostForkBlock(ctx, statelessSummary.BlockBytes())
+	block, err := vm.parsePostForkBlock(ctx, statelessSummary.BlockBytes(), true)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse proposervm block bytes from summary due to: %w", err)
 	}

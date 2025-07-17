@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # This script defines helper functions to enable building images for antithesis test setups. It is
-# intended to be reusable by repos other than avalanchego so almost all inputs are accepted as parameters
+# intended to be reusable by repos other than node so almost all inputs are accepted as parameters
 # rather than being discovered from the environment.
 #
 # Since this file only defines functions, it is intended to be sourced rather than executed.
@@ -14,10 +14,10 @@ set -euo pipefail
 function build_antithesis_builder_image {
   local go_version=$1
   local image_name=$2
-  local avalanchego_path=$3
+  local node_path=$3
   local target_path=$4
 
-  local base_dockerfile="${avalanchego_path}/tests/antithesis/Dockerfile"
+  local base_dockerfile="${node_path}/tests/antithesis/Dockerfile"
   local builder_dockerfile="${base_dockerfile}.builder-instrumented"
   if [[ "$(go env GOARCH)" == "arm64" ]]; then
     # Antithesis instrumentation is only supported on amd64. On apple silicon (arm64),
@@ -39,6 +39,7 @@ function build_antithesis_images {
   local uninstrumented_node_dockerfile=$7
   local target_path=$8
   local node_only=${9:-}
+  local node_commit=${10:-}
 
   # Define image names
   if [[ -n "${image_prefix}" ]]; then
@@ -65,9 +66,12 @@ function build_antithesis_images {
  --build-arg GO_VERSION=${go_version}\
  --build-arg BUILDER_IMAGE_TAG=${image_tag}\
  --build-arg BUILDER_WORKDIR=${builder_workdir}"
+  if [[ -n "${node_commit}" ]]; then
+    docker_cmd="${docker_cmd} --build-arg LUXD_COMMIT=${node_commit}"
+  fi
 
   # By default the node image is intended to be local-only.
-  AVALANCHEGO_NODE_IMAGE="antithesis-avalanchego-node:${node_image_tag}"
+  LUXD_NODE_IMAGE="antithesis-node-node:${node_image_tag}"
 
   if [[ -n "${image_prefix}" && -z "${node_only}" ]]; then
     # Push images with an image prefix since the prefix defines a registry location, and only if building
@@ -75,17 +79,17 @@ function build_antithesis_images {
     docker_cmd="${docker_cmd} --push"
 
     # When the node image is pushed as part of the build, references to the image must be qualified.
-    AVALANCHEGO_NODE_IMAGE="${image_prefix}/${AVALANCHEGO_NODE_IMAGE}"
+    LUXD_NODE_IMAGE="${image_prefix}/${LUXD_NODE_IMAGE}"
   fi
 
   # Ensure the correct node image name is configured
-  docker_cmd="${docker_cmd} --build-arg AVALANCHEGO_NODE_IMAGE=${AVALANCHEGO_NODE_IMAGE}"
+  docker_cmd="${docker_cmd} --build-arg LUXD_NODE_IMAGE=${LUXD_NODE_IMAGE}"
 
   # Build node image first to allow the workload image to use it.
   ${docker_cmd} -t "${node_image_name}" -f "${node_dockerfile}" "${target_path}"
 
   if [[ -n "${node_only}" ]]; then
-    # Skip building the config and workload images. Supports building the avalanchego node image as the
+    # Skip building the config and workload images. Supports building the node node image as the
     # base image for a VM node image.
     return
   fi

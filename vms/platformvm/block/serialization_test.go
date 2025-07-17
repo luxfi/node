@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -142,7 +142,7 @@ func TestBanffProposalBlockJSON(t *testing.T) {
 	simpleBanffProposalBlockBytes, err := json.MarshalIndent(simpleBanffProposalBlock, "", "\t")
 	require.NoError(err)
 
-	require.Equal(`{
+	require.JSONEq(`{
 	"time": 123456,
 	"txs": null,
 	"parentID": "rVcYrvnGXdoJBeYQRm5ZNaCGHeVyqcHHJu8Yd89kJcef6V5Eg",
@@ -186,7 +186,7 @@ func TestBanffProposalBlockJSON(t *testing.T) {
 	complexBanffProposalBlockBytes, err := json.MarshalIndent(complexBanffProposalBlock, "", "\t")
 	require.NoError(err)
 
-	require.Equal(`{
+	require.JSONEq(`{
 	"time": 123456,
 	"txs": [
 		{

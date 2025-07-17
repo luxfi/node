@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/validators"
@@ -99,7 +98,7 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 	xTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]snowman.Block{
+		opts: [2]*snowmantest.Block{
 			snowmantest.BuildChild(xTestBlock),
 			snowmantest.BuildChild(xTestBlock),
 		},
@@ -152,14 +151,10 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 	wrappedXBlock, err := proVM.ParseBlock(context.Background(), xBlock.Bytes())
 	require.NoError(err)
 
+	// This should never be invoked by the consensus engine. However, it is
+	// enforced to fail verification as a failsafe.
 	err = wrappedXBlock.Verify(context.Background())
 	require.ErrorIs(err, errUnexpectedBlockType)
-
-	require.NoError(aBlock.Accept(context.Background()))
-
-	// Because the wrappedXBlock never passed verification and is now rejected,
-	// the consensus engine will never verify any of its children.
-	require.Equal(choices.Rejected, wrappedXBlock.Status())
 }
 
 // Ensure that a byzantine node issuing an invalid PostForkBlock (B) when the
@@ -223,15 +218,10 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 	wrappedXBlock, err := proVM.ParseBlock(context.Background(), xBlock.Bytes())
 	require.NoError(err)
 
-	// If there wasn't an error parsing - verify must return an error
+	// This should never be invoked by the consensus engine. However, it is
+	// enforced to fail verification as a failsafe.
 	err = wrappedXBlock.Verify(context.Background())
 	require.ErrorIs(err, errUnexpectedBlockType)
-
-	require.NoError(aBlock.Accept(context.Background()))
-
-	// Because the wrappedXBlock never passed verification and is now rejected,
-	// the consensus engine will never verify any of its children.
-	require.Equal(choices.Rejected, wrappedXBlock.Status())
 }
 
 // Ensure that a byzantine node issuing an invalid OptionBlock (B) which
@@ -258,7 +248,7 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 
 	xBlock := &TestOptionsBlock{
 		Block: *snowmantest.BuildChild(snowmantest.Genesis),
-		opts: [2]snowman.Block{ // valid blocks should reference xBlock
+		opts: [2]*snowmantest.Block{ // valid blocks should reference xBlock
 			snowmantest.BuildChild(snowmantest.Genesis),
 			snowmantest.BuildChild(snowmantest.Genesis),
 		},
@@ -339,7 +329,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	xTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]snowman.Block{
+		opts: [2]*snowmantest.Block{
 			snowmantest.BuildChild(xTestBlock),
 			snowmantest.BuildChild(xTestBlock),
 		},
@@ -418,7 +408,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	zTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
 	zBlock := &TestOptionsBlock{
 		Block: *zTestBlock,
-		opts: [2]snowman.Block{
+		opts: [2]*snowmantest.Block{
 			snowmantest.BuildChild(zTestBlock),
 			snowmantest.BuildChild(zTestBlock),
 		},

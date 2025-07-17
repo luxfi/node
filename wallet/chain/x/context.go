@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -19,8 +19,8 @@ func NewContextFromURI(ctx context.Context, uri string) (*builder.Context, error
 
 func NewContextFromClients(
 	ctx context.Context,
-	infoClient info.Client,
-	xChainClient avm.Client,
+	infoClient *info.Client,
+	xChainClient *avm.Client,
 ) (*builder.Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -37,7 +37,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	txFees, err := infoClient.GetTxFee(ctx)
+	baseTxFee, createAssetTxFee, err := xChainClient.GetTxFee(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func NewContextFromClients(
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
 		LUXAssetID:      asset.AssetID,
-		BaseTxFee:        uint64(txFees.TxFee),
-		CreateAssetTxFee: uint64(txFees.CreateAssetTxFee),
+		BaseTxFee:        baseTxFee,
+		CreateAssetTxFee: createAssetTxFee,
 	}, nil
 }

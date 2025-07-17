@@ -1,18 +1,21 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgrade
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
 )
 
 func TestUpgrade(t *testing.T) {
@@ -20,45 +23,102 @@ func TestUpgrade(t *testing.T) {
 }
 
 var (
-	luxNodeExecPath            string
-	luxNodeExecPathToUpgradeTo string
+	luxExecPath            string
+	luxExecPathToUpgradeTo string
+	collectorVars                  *flags.CollectorVars
+	checkMetricsCollected          bool
+	checkLogsCollected             bool
 )
 
 func init() {
 	flag.StringVar(
-		&luxNodeExecPath,
+		&luxExecPath,
 		"node-path",
 		"",
 		"node executable path",
 	)
 	flag.StringVar(
-		&luxNodeExecPathToUpgradeTo,
+		&luxExecPathToUpgradeTo,
 		"node-path-to-upgrade-to",
 		"",
 		"node executable path to upgrade to",
 	)
+	collectorVars = flags.NewCollectorFlagVars()
+	e2e.SetCheckCollectionFlags(
+		&checkMetricsCollected,
+		&checkLogsCollected,
+	)
 }
 
 var _ = ginkgo.Describe("[Upgrade]", func() {
-	require := require.New(ginkgo.GinkgoT())
+	tc := e2e.NewTestContext()
+	require := require.New(tc)
 
 	ginkgo.It("can upgrade versions", func() {
 		network := tmpnet.NewDefaultNetwork("node-upgrade")
-		e2e.StartNetwork(network, luxNodeExecPath, "" /* pluginDir */, 0 /* shutdownDelay */, false /* reuseNetwork */)
 
-		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", luxNodeExecPathToUpgradeTo))
-		for _, node := range network.Nodes {
-			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.NodeID, luxNodeExecPathToUpgradeTo))
-			require.NoError(node.Stop(e2e.DefaultContext()))
-
-			node.RuntimeConfig.LuxNodePath = luxNodeExecPathToUpgradeTo
-
-			require.NoError(network.StartNode(e2e.DefaultContext(), ginkgo.GinkgoWriter, node))
-
-			ginkgo.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.NodeID))
-			e2e.WaitForHealthy(node)
+		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxGoPath: luxExecPath,
+			},
 		}
 
-		e2e.CheckBootstrapIsPossible(network)
+		// Get the default genesis so we can modify it
+		genesis, err := network.DefaultGenesis()
+		require.NoError(err)
+		network.Genesis = genesis
+
+		shutdownDelay := 0 * time.Second
+		if collectorVars.StartMetricsCollector {
+			require.NoError(tmpnet.StartPrometheus(tc.DefaultContext(), tc.Log()))
+			shutdownDelay = tmpnet.NetworkShutdownDelay // Ensure a final metrics scrape
+		}
+		if collectorVars.StartLogsCollector {
+			require.NoError(tmpnet.StartPromtail(tc.DefaultContext(), tc.Log()))
+		}
+
+		// Since cleanups are run in LIFO order, adding these cleanups before StartNetwork
+		// is called ensures network shutdown will be called first.
+		if checkMetricsCollected {
+			tc.DeferCleanup(func() {
+				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultTimeout)
+				defer cancel()
+				require.NoError(tmpnet.CheckMetricsExist(ctx, tc.Log(), network.UUID))
+			})
+		}
+		if checkLogsCollected {
+			tc.DeferCleanup(func() {
+				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultTimeout)
+				defer cancel()
+				require.NoError(tmpnet.CheckLogsExist(ctx, tc.Log(), network.UUID))
+			})
+		}
+
+		e2e.StartNetwork(
+			tc,
+			network,
+			"", /* rootNetworkDir */
+			shutdownDelay,
+			e2e.EmptyNetworkCmd,
+		)
+
+		tc.By(fmt.Sprintf("restarting all nodes with %q binary", luxExecPathToUpgradeTo))
+		for _, node := range network.Nodes {
+			tc.By(fmt.Sprintf("restarting node %q with %q binary", node.NodeID, luxExecPathToUpgradeTo))
+			require.NoError(node.Stop(tc.DefaultContext()))
+
+			node.RuntimeConfig = &tmpnet.NodeRuntimeConfig{
+				Process: &tmpnet.ProcessRuntimeConfig{
+					LuxGoPath: luxExecPathToUpgradeTo,
+				},
+			}
+
+			require.NoError(network.StartNode(tc.DefaultContext(), node))
+
+			tc.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.NodeID))
+			e2e.WaitForHealthy(tc, node)
+		}
+
+		_ = e2e.CheckBootstrapIsPossible(tc, network)
 	})
 })

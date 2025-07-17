@@ -11,9 +11,9 @@ set -euo pipefail
 # Mostly taken from https://github.com/golang/go/issues/46312#issuecomment-1153345129
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
-source "$LUX_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/constants.sh
 
 fuzzTime=${1:-1}
 fuzzDir=${2:-.}

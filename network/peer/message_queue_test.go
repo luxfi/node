@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -9,9 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -33,14 +31,7 @@ func TestMessageQueue(t *testing.T) {
 
 	// Assert that the messages are popped in the same order they were pushed
 	for i := 0; i < numToSend; i++ {
-		testID := ids.GenerateTestID()
-		testID2 := ids.GenerateTestID()
-		m, err := mc.Ping(
-			uint32(i),
-			[]*p2p.SubnetUptime{
-				{SubnetId: testID[:], Uptime: uint32(i)},
-				{SubnetId: testID2[:], Uptime: uint32(i)},
-			})
+		m, err := mc.Ping(uint32(i))
 		require.NoError(err)
 		msgs = append(msgs, m)
 	}
@@ -65,23 +56,18 @@ func TestMessageQueue(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	expectFail = true
-	done := make(chan struct{})
+	gotOk := make(chan bool)
 	go func() {
-		ok := q.Push(ctx, msgs[0])
-		require.False(ok)
-		close(done)
+		gotOk <- q.Push(ctx, msgs[0])
 	}()
-	<-done
+	require.False(<-gotOk)
 
 	// Assert that Push returns false when the queue is closed
-	done = make(chan struct{})
 	go func() {
-		ok := q.Push(context.Background(), msgs[0])
-		require.False(ok)
-		close(done)
+		gotOk <- q.Push(context.Background(), msgs[0])
 	}()
 	q.Close()
-	<-done
+	require.False(<-gotOk)
 
 	// Assert Pop returns false when the queue is closed
 	_, ok = q.Pop()

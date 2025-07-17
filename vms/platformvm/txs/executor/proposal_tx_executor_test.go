@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"context"
 	"math"
 	"testing"
 	"time"
@@ -13,21 +12,24 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 func TestProposalTxExecuteAddDelegator(t *testing.T) {
 	dummyHeight := uint64(1)
-	rewardAddress := preFundedKeys[0].PublicKey().Address()
-	nodeID := genesisNodeIDs[0]
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
+	nodeID := genesistest.DefaultNodeIDs[0]
 
 	newValidatorID := ids.GenerateTestNodeID()
 	newValidatorStartTime := uint64(genesistest.DefaultValidatorStartTime.Add(5 * time.Second).Unix())
@@ -38,22 +40,20 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 	addMinStakeValidator := func(env *environment) {
 		require := require.New(t)
 
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			keys: genesistest.DefaultFundedKeys[:1],
+		})
+
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: newValidatorID,
 				Start:  newValidatorStartTime,
 				End:    newValidatorEndTime,
 				Wght:   env.config.MinValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{rewardAddress},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		addValTx := tx.Unsigned.(*txs.AddValidatorTx)
@@ -65,7 +65,7 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 		)
 		require.NoError(err)
 
-		env.state.PutCurrentValidator(staker)
+		require.NoError(env.state.PutCurrentValidator(staker))
 		env.state.AddTx(tx, status.Committed)
 		env.state.SetHeight(dummyHeight)
 		require.NoError(env.state.Commit())
@@ -76,22 +76,20 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 	addMaxStakeValidator := func(env *environment) {
 		require := require.New(t)
 
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			keys: genesistest.DefaultFundedKeys[:1],
+		})
+
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: newValidatorID,
 				Start:  newValidatorStartTime,
 				End:    newValidatorEndTime,
 				Wght:   env.config.MaxValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{rewardAddress},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		addValTx := tx.Unsigned.(*txs.AddValidatorTx)
@@ -103,13 +101,13 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 		)
 		require.NoError(err)
 
-		env.state.PutCurrentValidator(staker)
+		require.NoError(env.state.PutCurrentValidator(staker))
 		env.state.AddTx(tx, status.Committed)
 		env.state.SetHeight(dummyHeight)
 		require.NoError(env.state.Commit())
 	}
 
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	currentTimestamp := env.state.GetTimestamp()
 
 	type test struct {
@@ -128,23 +126,23 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 		{
 			description: "validator stops validating earlier than delegator",
 			stakeAmount: env.config.MinDelegatorStake,
-			startTime:   uint64(defaultValidateStartTime.Unix()) + 1,
-			endTime:     uint64(defaultValidateEndTime.Unix()) + 1,
+			startTime:   genesistest.DefaultValidatorStartTimeUnix + 1,
+			endTime:     genesistest.DefaultValidatorEndTimeUnix + 1,
 			nodeID:      nodeID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       nil,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrPeriodMismatch,
 		},
 		{
 			description: "validator not in the current or pending validator sets",
 			stakeAmount: env.config.MinDelegatorStake,
-			startTime:   uint64(defaultValidateStartTime.Add(5 * time.Second).Unix()),
-			endTime:     uint64(defaultValidateEndTime.Add(-5 * time.Second).Unix()),
+			startTime:   uint64(genesistest.DefaultValidatorStartTime.Add(5 * time.Second).Unix()),
+			endTime:     uint64(genesistest.DefaultValidatorEndTime.Add(-5 * time.Second).Unix()),
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       nil,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: database.ErrNotFound,
 		},
 		{
@@ -153,9 +151,9 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			startTime:   newValidatorStartTime - 1, // start validating subnet before primary network
 			endTime:     newValidatorEndTime,
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       addMinStakeValidator,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrPeriodMismatch,
 		},
 		{
@@ -164,9 +162,9 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			startTime:   newValidatorStartTime,
 			endTime:     newValidatorEndTime + 1, // stop validating subnet after stopping validating primary network
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       addMinStakeValidator,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrPeriodMismatch,
 		},
 		{
@@ -175,32 +173,32 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			startTime:   newValidatorStartTime, // same start time as for primary network
 			endTime:     newValidatorEndTime,   // same end time as for primary network
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       addMinStakeValidator,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: nil,
 		},
 		{
 			description: "starts delegating at current timestamp",
 			stakeAmount: env.config.MinDelegatorStake,
 			startTime:   uint64(currentTimestamp.Unix()),
-			endTime:     uint64(defaultValidateEndTime.Unix()),
+			endTime:     genesistest.DefaultValidatorEndTimeUnix,
 			nodeID:      nodeID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       nil,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrTimestampNotBeforeStartTime,
 		},
 		{
 			description: "tx fee paying key has no funds",
 			stakeAmount: env.config.MinDelegatorStake,
-			startTime:   uint64(defaultValidateStartTime.Unix()) + 1,
-			endTime:     uint64(defaultValidateEndTime.Unix()),
+			startTime:   genesistest.DefaultValidatorStartTimeUnix + 1,
+			endTime:     genesistest.DefaultValidatorEndTimeUnix,
 			nodeID:      nodeID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[1]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[1]},
 			setup: func(env *environment) { // Remove all UTXOs owned by keys[1]
 				utxoIDs, err := env.state.UTXOIDs(
-					preFundedKeys[1].PublicKey().Address().Bytes(),
+					genesistest.DefaultFundedKeys[1].Address().Bytes(),
 					ids.Empty,
 					math.MaxInt32)
 				require.NoError(t, err)
@@ -211,7 +209,7 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 				env.state.SetHeight(dummyHeight)
 				require.NoError(t, env.state.Commit())
 			},
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrFlowCheckFailed,
 		},
 		{
@@ -220,9 +218,9 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			startTime:   newValidatorStartTime, // same start time as for primary network
 			endTime:     newValidatorEndTime,   // same end time as for primary network
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       addMaxStakeValidator,
-			AP3Time:     defaultValidateEndTime,
+			AP3Time:     genesistest.DefaultValidatorEndTime,
 			expectedErr: nil,
 		},
 		{
@@ -231,9 +229,9 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			startTime:   newValidatorStartTime, // same start time as for primary network
 			endTime:     newValidatorEndTime,   // same end time as for primary network
 			nodeID:      newValidatorID,
-			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
+			feeKeys:     []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
 			setup:       addMaxStakeValidator,
-			AP3Time:     defaultGenesisTime,
+			AP3Time:     genesistest.DefaultValidatorStartTime,
 			expectedErr: ErrOverDelegated,
 		},
 	}
@@ -241,24 +239,22 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
-			env := newEnvironment(t, apricotPhase5)
+			env := newEnvironment(t, upgradetest.ApricotPhase5)
 			env.config.UpgradeConfig.ApricotPhase3Time = tt.AP3Time
 
-			builder, signer := env.factory.NewWallet(tt.feeKeys...)
-			utx, err := builder.NewAddDelegatorTx(
+			wallet := newWallet(t, env, walletConfig{
+				keys: tt.feeKeys,
+			})
+
+			tx, err := wallet.IssueAddDelegatorTx(
 				&txs.Validator{
 					NodeID: tt.nodeID,
 					Start:  tt.startTime,
 					End:    tt.endTime,
 					Wght:   tt.stakeAmount,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{rewardAddress},
-				},
+				rewardsOwner,
 			)
-			require.NoError(err)
-			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 			require.NoError(err)
 
 			if tt.setup != nil {
@@ -272,13 +268,13 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			require.NoError(err)
 
 			feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-			executor := ProposalTxExecutor{
-				OnCommitState: onCommitState,
-				OnAbortState:  onAbortState,
-				Backend:       &env.backend,
-				Tx:            tx,
-			}
-			err = tx.Unsigned.Visit(&executor)
+			err = ProposalTx(
+				&env.backend,
+				feeCalculator,
+				tx,
+				onCommitState,
+				onAbortState,
+			)
 			require.ErrorIs(err, tt.expectedErr)
 		})
 	}
@@ -286,29 +282,30 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 
 func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	nodeID := genesisNodeIDs[0]
+	nodeID := genesistest.DefaultNodeIDs[0]
+	subnetID := testSubnet1.ID()
 	{
 		// Case: Proposed validator currently validating primary network
 		// but stops validating subnet after stops validating primary network
 		// (note that keys[0] is a genesis validator)
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateEndTime.Unix()) + 1,
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    genesistest.DefaultValidatorEndTimeUnix + 1,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -318,14 +315,13 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrPeriodMismatch)
 	}
 
@@ -334,20 +330,20 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		// and proposed subnet validation period is subset of
 		// primary network validation period
 		// (note that keys[0] is a genesis validator)
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateEndTime.Unix()),
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    genesistest.DefaultValidatorEndTimeUnix,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -357,24 +353,25 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		require.NoError(tx.Unsigned.Visit(&executor))
+		require.NoError(ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		))
 	}
 
 	// Add a validator to pending validator set of primary network
 	// Starts validating primary network 10 seconds after genesis
 	pendingDSValidatorID := ids.GenerateTestNodeID()
-	dsStartTime := defaultValidateStartTime.Add(10 * time.Second)
+	dsStartTime := genesistest.DefaultValidatorStartTime.Add(10 * time.Second)
 	dsEndTime := dsStartTime.Add(5 * defaultMinStakingDuration)
 
-	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	utx, err := builder.NewAddValidatorTx(
+	wallet := newWallet(t, env, walletConfig{
+		keys: genesistest.DefaultFundedKeys[:1],
+	})
+	addDSTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: pendingDSValidatorID,
 			Start:  uint64(dsStartTime.Unix()),
@@ -388,25 +385,23 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		reward.PercentDenominator,
 	)
 	require.NoError(err)
-	addDSTx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
-	require.NoError(err)
 
 	{
 		// Case: Proposed validator isn't in pending or current validator sets
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()), // start validating subnet before primary network
 					End:    uint64(dsEndTime.Unix()),
-					Wght:   defaultWeight,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -416,14 +411,13 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrNotValidator)
 	}
 
@@ -447,20 +441,20 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	{
 		// Case: Proposed validator is pending validator of primary network
 		// but starts validating subnet before primary network
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()) - 1, // start validating subnet before primary network
 					End:    uint64(dsEndTime.Unix()),
-					Wght:   defaultWeight,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -470,34 +464,33 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrPeriodMismatch)
 	}
 
 	{
 		// Case: Proposed validator is pending validator of primary network
 		// but stops validating subnet after primary network
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()),
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating subnet after stopping validating primary network
-					Wght:   defaultWeight,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -507,34 +500,33 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrPeriodMismatch)
 	}
 
 	{
 		// Case: Proposed validator is pending validator of primary network and
 		// period validating subnet is subset of time validating primary network
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()), // same start time as for primary network
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
-					Wght:   defaultWeight,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -544,36 +536,35 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		require.NoError(tx.Unsigned.Visit(&executor))
+		require.NoError(ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		))
 	}
 
 	// Case: Proposed validator start validating at/before current timestamp
 	// First, advance the timestamp
-	newTimestamp := defaultValidateStartTime.Add(2 * time.Second)
+	newTimestamp := genesistest.DefaultValidatorStartTime.Add(2 * time.Second)
 	env.state.SetTimestamp(newTimestamp)
 
 	{
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(newTimestamp.Unix()),
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
-					Wght:   defaultWeight,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -583,36 +574,35 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrTimestampNotBeforeStartTime)
 	}
 
 	// reset the timestamp
-	env.state.SetTimestamp(defaultValidateStartTime)
+	env.state.SetTimestamp(genesistest.DefaultValidatorStartTime)
 
 	// Case: Proposed validator already validating the subnet
 	// First, add validator as validator of subnet
-	builder, signer = env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-	uSubnetTx, err := builder.NewAddSubnetValidatorTx(
+	wallet = newWallet(t, env, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
+	subnetTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
-				Start:  uint64(defaultValidateStartTime.Unix()),
-				End:    uint64(defaultValidateEndTime.Unix()),
-				Wght:   defaultWeight,
+				Start:  genesistest.DefaultValidatorStartTimeUnix,
+				End:    genesistest.DefaultValidatorEndTimeUnix,
+				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Subnet: testSubnet1.ID(),
+			Subnet: subnetID,
 		},
 	)
-	require.NoError(err)
-	subnetTx, err := walletsigner.SignUnsigned(context.Background(), signer, uSubnetTx)
 	require.NoError(err)
 
 	addSubnetValTx := subnetTx.Unsigned.(*txs.AddSubnetValidatorTx)
@@ -630,21 +620,21 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	{
-		// Node with ID nodeIDKey.PublicKey().Address() now validating subnet with ID testSubnet1.ID
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		// Node with ID nodeIDKey.Address() now validating subnet with ID testSubnet1.ID
+		wallet = newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		duplicateSubnetTx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateEndTime.Unix()),
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    genesistest.DefaultValidatorEndTimeUnix,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		duplicateSubnetTx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -654,14 +644,13 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            duplicateSubnetTx,
-		}
-		err = duplicateSubnetTx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			duplicateSubnetTx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrDuplicateValidator)
 	}
 
@@ -671,20 +660,20 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		// Case: Too few signatures
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet = newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		// Remove a signature
@@ -701,37 +690,36 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
-		require.ErrorIs(err, errUnauthorizedSubnetModification)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
+		require.ErrorIs(err, errUnauthorizedModification)
 	}
 
 	{
 		// Case: Control Signature from invalid key (keys[3] is not a control key)
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], preFundedKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet = newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
 		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
-		require.NoError(err)
 
 		// Replace a valid signature with one from keys[3]
-		sig, err := preFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
+		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
 		require.NoError(err)
 		copy(tx.Creds[0].(*secp256k1fx.Credential).Sigs[0][:], sig)
 
@@ -742,34 +730,33 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
-		require.ErrorIs(err, errUnauthorizedSubnetModification)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
+		require.ErrorIs(err, errUnauthorizedModification)
 	}
 
 	{
 		// Case: Proposed validator in pending validator set for subnet
 		// First, add validator to pending validator set of subnet
-		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
+		wallet = newWallet(t, env, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+		tx, err := wallet.IssueAddSubnetValidatorTx(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
-					Wght:   defaultWeight,
+					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
+					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Subnet: subnetID,
 			},
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		addSubnetValTx := subnetTx.Unsigned.(*txs.AddSubnetValidatorTx)
@@ -793,45 +780,43 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrDuplicateValidator)
 	}
 }
 
 func TestProposalTxExecuteAddValidator(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
 	nodeID := ids.GenerateTestNodeID()
 	chainTime := env.state.GetTimestamp()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
 	{
 		// Case: Validator's start time too early
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		wallet := newWallet(t, env, walletConfig{})
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(chainTime.Unix()),
-				End:    uint64(defaultValidateEndTime.Unix()),
+				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   env.config.MinValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -841,37 +826,31 @@ func TestProposalTxExecuteAddValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrTimestampNotBeforeStartTime)
 	}
 
 	{
-		nodeID := genesisNodeIDs[0]
+		nodeID := genesistest.DefaultNodeIDs[0]
 
 		// Case: Validator already validating primary network
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		wallet := newWallet(t, env, walletConfig{})
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: nodeID,
-				Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-				End:    uint64(defaultValidateEndTime.Unix()),
+				Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   env.config.MinValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
@@ -881,36 +860,30 @@ func TestProposalTxExecuteAddValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrAlreadyValidator)
 	}
 
 	{
 		// Case: Validator in pending validator set of primary network
-		startTime := defaultValidateStartTime.Add(1 * time.Second)
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		startTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Second)
+		wallet := newWallet(t, env, walletConfig{})
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()),
 				Wght:   env.config.MinValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
-		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
 		addValTx := tx.Unsigned.(*txs.AddValidatorTx)
@@ -922,7 +895,7 @@ func TestProposalTxExecuteAddValidator(t *testing.T) {
 		)
 		require.NoError(err)
 
-		env.state.PutPendingValidator(staker)
+		require.NoError(env.state.PutPendingValidator(staker))
 		env.state.AddTx(tx, status.Committed)
 		dummyHeight := uint64(1)
 		env.state.SetHeight(dummyHeight)
@@ -935,39 +908,35 @@ func TestProposalTxExecuteAddValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrAlreadyValidator)
 	}
 
 	{
 		// Case: Validator doesn't have enough tokens to cover stake amount
-		builder, signer := env.factory.NewWallet(preFundedKeys[0])
-		utx, err := builder.NewAddValidatorTx(
+		wallet := newWallet(t, env, walletConfig{
+			keys: genesistest.DefaultFundedKeys[:1],
+		})
+		tx, err := wallet.IssueAddValidatorTx(
 			&txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
-				Start:  uint64(defaultValidateStartTime.Unix()) + 1,
-				End:    uint64(defaultValidateEndTime.Unix()),
+				Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
+				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   env.config.MinValidatorStake,
 			},
-			&secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-			},
+			rewardsOwner,
 			reward.PercentDenominator,
 		)
 		require.NoError(err)
-		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
-		require.NoError(err)
 
 		// Remove all UTXOs owned by preFundedKeys[0]
-		utxoIDs, err := env.state.UTXOIDs(preFundedKeys[0].PublicKey().Address().Bytes(), ids.Empty, math.MaxInt32)
+		utxoIDs, err := env.state.UTXOIDs(genesistest.DefaultFundedKeys[0].Address().Bytes(), ids.Empty, math.MaxInt32)
 		require.NoError(err)
 
 		for _, utxoID := range utxoIDs {
@@ -981,14 +950,13 @@ func TestProposalTxExecuteAddValidator(t *testing.T) {
 		require.NoError(err)
 
 		feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
-		executor := ProposalTxExecutor{
-			OnCommitState: onCommitState,
-			OnAbortState:  onAbortState,
-			Backend:       &env.backend,
-			FeeCalculator: feeCalculator,
-			Tx:            tx,
-		}
-		err = tx.Unsigned.Visit(&executor)
+		err = ProposalTx(
+			&env.backend,
+			feeCalculator,
+			tx,
+			onCommitState,
+			onAbortState,
+		)
 		require.ErrorIs(err, ErrFlowCheckFailed)
 	}
 }

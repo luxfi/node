@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -17,14 +17,12 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
 )
 
 func TestMessage(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -54,7 +52,7 @@ func TestMessage(t *testing.T) {
 		bytesSaved       bool // if true, outbound message saved bytes must be non-zero
 	}{
 		{
-			desc: "ping message with no compression no subnet uptimes",
+			desc: "ping message with no compression no uptime",
 			op:   PingOp,
 			msg: &p2p.Message{
 				Message: &p2p.Message_Ping{
@@ -78,17 +76,12 @@ func TestMessage(t *testing.T) {
 			bytesSaved:       false,
 		},
 		{
-			desc: "ping message with no compression and subnet uptimes",
+			desc: "ping message with no compression and uptime",
 			op:   PingOp,
 			msg: &p2p.Message{
 				Message: &p2p.Message_Ping{
 					Ping: &p2p.Ping{
-						SubnetUptimes: []*p2p.SubnetUptime{
-							{
-								SubnetId: testID[:],
-								Uptime:   100,
-							},
-						},
+						Uptime: 100,
 					},
 				},
 			},
@@ -384,7 +377,7 @@ func TestMessage(t *testing.T) {
 						RequestId:   1,
 						Deadline:    1,
 						ContainerId: testID[:],
-						EngineType:  p2p.EngineType_ENGINE_TYPE_LUX,
+						EngineType:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 					},
 				},
 			},
@@ -636,6 +629,26 @@ func TestMessage(t *testing.T) {
 			bypassThrottling: true,
 			bytesSaved:       true,
 		},
+		{
+			desc: "simplex message with no compression",
+			op:   SimplexOp,
+			msg: &p2p.Message{
+				Message: &p2p.Message_Simplex{
+					Simplex: &p2p.Simplex{
+						ChainId: testID[:],
+						Message: &p2p.Simplex_ReplicationRequest{
+							ReplicationRequest: &p2p.ReplicationRequest{
+								Seqs:        []uint64{1, 2, 3},
+								LatestRound: 1,
+							},
+						},
+					},
+				},
+			},
+			compressionType:  compression.TypeNone,
+			bypassThrottling: true,
+			bytesSaved:       false,
+		},
 	}
 
 	for _, tv := range tests {
@@ -649,7 +662,7 @@ func TestMessage(t *testing.T) {
 			require.Equal(tv.op, encodedMsg.Op())
 
 			if bytesSaved := encodedMsg.BytesSavedCompression(); tv.bytesSaved {
-				require.Greater(bytesSaved, 0)
+				require.Positive(bytesSaved)
 			}
 
 			parsedMsg, err := mb.parseInbound(encodedMsg.Bytes(), ids.EmptyNodeID, func() {})
@@ -666,7 +679,6 @@ func TestInboundMessageToString(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -696,7 +708,6 @@ func TestEmptyInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -716,7 +727,6 @@ func TestNilInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
