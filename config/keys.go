@@ -153,6 +153,10 @@ const (
 	HealthCheckFreqKey                                 = "health-check-frequency"
 	HealthCheckAveragerHalflifeKey                     = "health-check-averager-halflife"
 	PluginDirKey                                       = "plugin-dir"
+	// DevModeKey enables the local PoA + auto mine behavior
+   DevModeKey                                         = "dev"
+	// DevBlockDelayKey specifies the C-Chain block proposal delay in dev mode
+	DevBlockDelayKey                                   = "dev-block-delay"
 	BootstrapBeaconConnectionTimeoutKey                = "bootstrap-beacon-connection-timeout"
 	BootstrapMaxTimeGetAncestorsKey                    = "bootstrap-max-time-get-ancestors"
 	BootstrapAncestorsMaxContainersSentKey             = "bootstrap-ancestors-max-containers-sent"

@@ -43,6 +43,9 @@ func init() {
 		c.SkipRegistrations(4)
 
 		errs.Add(RegisterDUnsignedTxsTypes(c))
+		
+		// Register Banff types for local network support
+		errs.Add(RegisterBanffTypes(c))
 	}
 
 	Codec = codec.NewDefaultManager()

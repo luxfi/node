@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/ethclient"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/database"

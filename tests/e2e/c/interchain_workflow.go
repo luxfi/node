@@ -8,8 +8,8 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/coreth/core/types"
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/plugin/evm"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"

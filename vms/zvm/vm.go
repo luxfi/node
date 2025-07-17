@@ -310,7 +310,9 @@ func (vm *VM) SetState(ctx context.Context, state snow.State) error {
 
 // Shutdown shuts down the VM
 func (vm *VM) Shutdown(ctx context.Context) error {
-	vm.log.Info("Shutting down ZK UTXO VM")
+	if vm.log != nil {
+		vm.log.Info("Shutting down ZK UTXO VM")
+	}
 	
 	if vm.utxoDB != nil {
 		vm.utxoDB.Close()
@@ -328,7 +330,10 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 		vm.addressManager.Close()
 	}
 	
-	return vm.db.Close()
+	if vm.db != nil {
+		return vm.db.Close()
+	}
+	return nil
 }
 
 // Version returns the VM version

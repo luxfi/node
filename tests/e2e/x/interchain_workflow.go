@@ -8,7 +8,7 @@ package x
 import (
 	"math/big"
 
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"

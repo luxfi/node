@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/coreth/plugin/evm"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/plugin/evm"
+	"github.com/ava-labs/libevm/common"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"

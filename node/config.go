@@ -156,12 +156,16 @@ type Config struct {
 	LoggingConfig logging.Config `json:"loggingConfig"`
 
 	PluginDir string `json:"pluginDir"`
+	// DevMode enables local PoA + auto-mine mode (network-id=local, sybil-protection disabled)
+	DevMode bool `json:"devMode"`
 
 	// File Descriptor Limit
 	FdLimit uint64 `json:"fdLimit"`
 
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
+	// Delay between automatic block proposals when DevMode is set
+	DevBlockDelay time.Duration `json:"devBlockDelay"`
 
 	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`

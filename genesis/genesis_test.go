@@ -197,12 +197,12 @@ func TestGenesisFromFile(t *testing.T) {
 		"local": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  errOverridesStandardNetworkConfig,
+			expectedErr:  nil,
 		},
 		"local (with custom specified)": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  errOverridesStandardNetworkConfig,
+			expectedErr:  nil,
 		},
 		"custom": {
 			networkID:    9999,
@@ -272,12 +272,12 @@ func TestGenesisFromFlag(t *testing.T) {
 		},
 		"local": {
 			networkID:   constants.LocalID,
-			expectedErr: errOverridesStandardNetworkConfig,
+			expectedErr: nil,
 		},
 		"local (with custom specified)": {
 			networkID:    constants.LocalID,
 			customConfig: customGenesisConfigJSON,
-			expectedErr:  errOverridesStandardNetworkConfig,
+			expectedErr:  nil,
 		},
 		"custom": {
 			networkID:    9999,

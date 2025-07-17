@@ -202,7 +202,7 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 //  2. The asset ID of LUX
 func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+	case constants.MainnetID, constants.TestnetID:
 		return nil, ids.Empty, fmt.Errorf(
 			"%w: %s",
 			errOverridesStandardNetworkConfig,
@@ -243,14 +243,14 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 //     (ie the genesis state of the network)
 //  2. The asset ID of LUX
 func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
-		return nil, ids.Empty, fmt.Errorf(
-			"%w: %s",
-			errOverridesStandardNetworkConfig,
-			constants.NetworkName(networkID),
-		)
-	}
+   switch networkID {
+   case constants.MainnetID, constants.TestnetID:
+       return nil, ids.Empty, fmt.Errorf(
+           "%w: %s",
+           errOverridesStandardNetworkConfig,
+           constants.NetworkName(networkID),
+       )
+   }
 
 	customConfig, err := GetConfigContent(genesisContent)
 	if err != nil {
@@ -442,43 +442,43 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	
 	// Prepare genesis data for new chains
-	aChainGenesisData := ""
+	// aChainGenesisData := ""
 	if config.AChainGenesis != "" {
-		aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.AChainGenesis))
+		// aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.AChainGenesis))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode A-chain genesis: %w", err)
 		}
 	} else {
 		// Default A-chain genesis
-		aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"agents":[]}`))
+		// aChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"agents":[]}`))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode default A-chain genesis: %w", err)
 		}
 	}
 	
-	bChainGenesisData := ""
+	// bChainGenesisData := ""
 	if config.BChainGenesis != "" {
-		bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.BChainGenesis))
+		// bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.BChainGenesis))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode B-chain genesis: %w", err)
 		}
 	} else {
 		// Default B-chain genesis
-		bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"ethereumConfig":{"chainId":1,"initialBlock":0,"bridgeContracts":[]},"otherChains":[]}`))
+		// bChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"ethereumConfig":{"chainId":1,"initialBlock":0,"bridgeContracts":[]},"otherChains":[]}`))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode default B-chain genesis: %w", err)
 		}
 	}
 	
-	zChainGenesisData := ""
+	// zChainGenesisData := ""
 	if config.ZChainGenesis != "" {
-		zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.ZChainGenesis))
+		// zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(config.ZChainGenesis))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode Z-chain genesis: %w", err)
 		}
 	} else {
 		// Default Z-chain genesis
-		zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"verifierKeys":[],"privacyConfig":{"initialShieldedSupply":0}}`))
+		// zChainGenesisData, err = formatting.Encode(defaultEncoding, []byte(`{"verifierKeys":[],"privacyConfig":{"initialShieldedSupply":0}}`))
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("couldn't encode default Z-chain genesis: %w", err)
 		}
@@ -502,24 +502,25 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},
-		{
-			GenesisData: aChainGenesisData,
-			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.AttestVMID,
-			Name:        "A-Chain",
-		},
-		{
-			GenesisData: bChainGenesisData,
-			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.BridgeVMID,
-			Name:        "B-Chain",
-		},
-		{
-			GenesisData: zChainGenesisData,
-			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.ZVMID,
-			Name:        "Z-Chain",
-		},
+		// TODO: Enable these chains once VMs are fully implemented
+		// {
+		// 	GenesisData: aChainGenesisData,
+		// 	SubnetID:    constants.PrimaryNetworkID,
+		// 	VMID:        constants.AttestVMID,
+		// 	Name:        "A-Chain",
+		// },
+		// {
+		// 	GenesisData: bChainGenesisData,
+		// 	SubnetID:    constants.PrimaryNetworkID,
+		// 	VMID:        constants.BridgeVMID,
+		// 	Name:        "B-Chain",
+		// },
+		// {
+		// 	GenesisData: zChainGenesisData,
+		// 	SubnetID:    constants.PrimaryNetworkID,
+		// 	VMID:        constants.ZVMID,
+		// 	Name:        "Z-Chain",
+		// },
 	}
 
 	platformvmReply := api.BuildGenesisReply{}
@@ -537,6 +538,10 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 }
 
 func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
+	if numSplits == 0 {
+		return [][]Allocation{}
+	}
+	
 	totalAmount := uint64(0)
 	for _, allocation := range allocations {
 		for _, unlock := range allocation.UnlockSchedule {

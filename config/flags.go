@@ -78,6 +78,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// System
 	fs.Uint64(FdLimitKey, ulimit.DefaultFDLimit, "Attempts to raise the process file descriptor limit to at least this value and error if the value is above the system max")
 
+   // Dev mode: local PoA + auto-mine blocks
+   fs.Bool(DevModeKey, false, "Enable local PoA/dev mode: network=local, sybil-protection disabled, auto-mine C-Chain blocks")
 	// Plugin directory
 	fs.String(PluginDirKey, defaultPluginDir, "Path to the plugin directory")
 
@@ -184,6 +186,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(ConsensusAppConcurrencyKey, constants.DefaultConsensusAppConcurrency, "Maximum number of goroutines to use when handling App messages on a chain")
 	fs.Duration(ConsensusShutdownTimeoutKey, constants.DefaultConsensusShutdownTimeout, "Timeout before killing an unresponsive chain")
 	fs.Duration(ConsensusFrontierPollFrequencyKey, constants.DefaultFrontierPollFrequency, "Frequency of polling for new consensus frontiers")
+
+	// Dev mode block delay (for C-Chain/SubnetEVM auto-mining)
+	fs.Duration("dev-block-delay", time.Second, "Delay between C-Chain block proposals when dev mode is enabled")
 
 	// Inbound Throttling
 	fs.Uint64(InboundThrottlerAtLargeAllocSizeKey, constants.DefaultInboundThrottlerAtLargeAllocSize, "Size, in bytes, of at-large byte allocation in inbound message throttler")

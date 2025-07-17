@@ -4,15 +4,15 @@
 package genesis
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/netip"
+   "encoding/json"
+   "fmt"
+   "net/netip"
 
-	_ "embed"
+   _ "embed"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/sampler"
+   "github.com/luxfi/node/ids"
+   "github.com/luxfi/node/utils/constants"
+   "github.com/luxfi/node/utils/sampler"
 )
 
 var (
@@ -23,8 +23,12 @@ var (
 )
 
 func init() {
+   // Load default bootstrappers per network from embedded JSON
+   bootstrappersPerNetwork = make(map[string][]Bootstrapper)
+   // NOTE: no default bootstrappers for local/unit networks
+	// Load bootstrappers for public networks only
 	if err := json.Unmarshal(bootstrappersPerNetworkJSON, &bootstrappersPerNetwork); err != nil {
-		panic(fmt.Sprintf("failed to decode bootstrappers.json %v", err))
+	    panic(fmt.Sprintf("failed to decode bootstrappers.json: %v", err))
 	}
 }
 

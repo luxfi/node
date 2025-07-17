@@ -780,21 +780,19 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
-	// try first loading genesis content directly from flag/env-var
-	if v.IsSet(GenesisFileContentKey) {
-		genesisData := v.GetString(GenesisFileContentKey)
-		return genesis.FromFlag(networkID, genesisData, stakingCfg)
-	}
+   // If a genesis file is specified, load genesis from that file
+   if genesisFile := GetExpandedArg(v, GenesisFileKey); genesisFile != "" {
+       return genesis.FromFile(networkID, genesisFile, stakingCfg)
+   }
 
-	// if content is not specified go for the file
-	if v.IsSet(GenesisFileKey) {
-		genesisFileName := GetExpandedArg(v, GenesisFileKey)
-		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
-	}
+   // If inline genesis content is specified, load genesis from that content
+   if genesisData := v.GetString(GenesisFileContentKey); genesisData != "" {
+       return genesis.FromFlag(networkID, genesisData, stakingCfg)
+   }
 
-	// finally if file is not specified/readable go for the predefined config
-	config := genesis.GetConfig(networkID)
-	return genesis.FromConfig(config)
+   // Otherwise, use the predefined network genesis
+   config := genesis.GetConfig(networkID)
+   return genesis.FromConfig(config)
 }
 
 func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
@@ -1202,9 +1200,23 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		err        error
 	)
 
+	// Plugin directory
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {
 		return node.Config{}, err
+   }
+
+	// Record dev mode settings
+	nodeConfig.DevMode = v.GetBool(DevModeKey)
+	nodeConfig.DevBlockDelay = v.GetDuration(DevBlockDelayKey)
+	// Dev mode: override for single-node PoA + auto-mine
+	if v.GetBool(DevModeKey) {
+		v.Set(NetworkNameKey, constants.LocalName)
+		v.Set(SybilProtectionEnabledKey, false)
+		v.Set(GenesisFileKey, filepath.Join("genesis", "genesis_poa.json"))
+		if !v.IsSet(DevBlockDelayKey) {
+			v.Set(DevBlockDelayKey, time.Second)
+		}
 	}
 
 	nodeConfig.ConsensusShutdownTimeout = v.GetDuration(ConsensusShutdownTimeoutKey)

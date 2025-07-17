@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/coreth/ethclient"
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
@@ -26,7 +26,7 @@ import (
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ava-labs/libevm/common"
 )
 
 const (

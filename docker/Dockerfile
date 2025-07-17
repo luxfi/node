@@ -26,12 +26,17 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
     ; fi
 
 # Copy and download lux dependencies using go mod
-COPY go.mod .
-COPY go.sum .
+COPY node/go.mod .
+COPY node/go.sum .
+
+# Copy geth to satisfy replace directive
+COPY geth /geth
+
+# Download dependencies after geth is available
 RUN go mod download
 
-# Copy the code into the container
-COPY . .
+# Copy the node code into the container
+COPY node/ .
 
 # Ensure pre-existing builds are not available for inclusion in the final image
 RUN [ -d ./build ] && rm -rf ./build/* || true
