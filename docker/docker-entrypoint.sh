@@ -12,36 +12,34 @@ if [ ! -f "/luxd/staking/staker.crt" ] || [ ! -f "/luxd/staking/staker.key" ]; t
     echo "Certificates generated successfully"
 fi
 
-# Check if we need to perform data migration
-if [ -n "$IMPORT_CHAIN_DATA" ] && [ -d "$IMPORT_CHAIN_DATA" ]; then
-    echo "Chain data import path specified: $IMPORT_CHAIN_DATA"
+# Check if we need to prepare for chain data import
+if [ -n "$PREPARE_IMPORT" ] && [ "$PREPARE_IMPORT" = "true" ]; then
+    echo "Preparing for chain data import after network startup..."
     
-    # Check if import has already been done
-    if [ ! -f "/luxd/.import_done" ]; then
-        echo "Preparing chain data import..."
-        
-        # We'll handle the import differently since it's subnet-evm data
-        # For now, we'll skip the import and let the node start fresh
-        # In production, you'd want to write a custom migration tool
-        
-        echo "Note: Direct import from subnet-evm to C-Chain requires custom migration"
-        echo "Starting with fresh chain data instead"
-        
-        touch /luxd/.import_done
-    else
-        echo "Import already completed, skipping..."
+    # Create a marker file to indicate import is pending
+    if [ ! -f "/luxd/.import_pending" ]; then
+        touch /luxd/.import_pending
+        echo "Import will be initiated after network is running"
     fi
 fi
 
-# Set up C-Chain configuration if not exists
-if [ ! -f "/luxd/configs/chains/C/config.json" ]; then
-    echo "Creating C-Chain configuration..."
-    cat > /luxd/configs/chains/C/config.json << EOF
+# Set up C-Chain configuration
+echo "Creating C-Chain configuration..."
+mkdir -p /luxd/configs/chains/C
+
+cat > /luxd/configs/chains/C/config.json << EOF
 {
   "snowman-api-enabled": false,
   "coreth-admin-api-enabled": true,
-  "eth-apis": ["eth", "eth-filter", "net", "web3", "internal-eth", "internal-blockchain", "internal-debug", "debug", "personal", "admin", "miner", "txpool"],
+  "eth-apis": ["eth", "eth-filter", "net", "web3", "internal-eth", "internal-blockchain", "internal-debug", "internal-tx-pool", "debug", "trace"],
   "personal-api-enabled": true,
+  "tx-pool-api-enabled": true,
+  "debug-api-enabled": true,
+  "trace-api-enabled": true,
+  "net-api-enabled": true,
+  "web3-api-enabled": true,
+  "eth-api-enabled": true,
+  "internal-public-api-enabled": true,
   "database-backend": "pebbledb",
   "local-txs-enabled": true,
   "api-max-duration": 0,
@@ -64,7 +62,6 @@ if [ ! -f "/luxd/configs/chains/C/config.json" ]; then
   "rpc-tx-fee-cap": 0
 }
 EOF
-fi
 
 # Set up genesis if not exists
 if [ ! -f "/luxd/configs/chains/C/genesis.json" ] && [ -n "$GENESIS_FILE" ]; then
@@ -126,6 +123,30 @@ elif [ ! -f "/luxd/configs/chains/C/genesis.json" ]; then
 EOF
 fi
 
+# Handle initial data setup for validators
+if [ -n "$NODE_ID" ] && [ -d "/import/c-chain" ] && [ -d "/import/p-chain" ]; then
+    echo "Setting up validator node $NODE_ID..."
+    
+    # Setup database directories
+    mkdir -p "/luxd/db/luxnet/${NETWORK_ID:-96369}/chains"
+    
+    # Copy C-Chain data if not already present
+    C_CHAIN_DIR="/luxd/db/luxnet/${NETWORK_ID:-96369}/chains/C"
+    if [ ! -d "$C_CHAIN_DIR" ] || [ -z "$(ls -A $C_CHAIN_DIR 2>/dev/null)" ]; then
+        echo "Copying C-Chain data..."
+        mkdir -p "$C_CHAIN_DIR"
+        cp -r /import/c-chain/* "$C_CHAIN_DIR/"
+    fi
+    
+    # Copy P-Chain data if not already present
+    P_CHAIN_DIR="/luxd/db/luxnet/${NETWORK_ID:-96369}/chains/11111111111111111111111111111111LpoYY"
+    if [ ! -d "$P_CHAIN_DIR" ] || [ -z "$(ls -A $P_CHAIN_DIR 2>/dev/null)" ]; then
+        echo "Copying P-Chain data..."
+        mkdir -p "$P_CHAIN_DIR"
+        cp -r /import/p-chain/* "$P_CHAIN_DIR/"
+    fi
+fi
+
 # Start the node
 echo "Starting Lux node..."
 
@@ -134,15 +155,25 @@ CMD_ARGS=(
     "--data-dir=/luxd"
     "--network-id=${NETWORK_ID:-96369}"
     "--http-host=0.0.0.0"
-    "--http-port=9650"
+    "--http-port=${HTTP_PORT:-9650}"
+    "--staking-port=${STAKING_PORT:-9651}"
     "--chain-config-dir=/luxd/configs/chains"
     "--index-allow-incomplete"
     "--force-ignore-checksum"
     "--log-level=${LOG_LEVEL:-info}"
 )
 
+# Add bootstrap nodes if provided
+if [ -n "$BOOTSTRAP_IPS" ]; then
+    CMD_ARGS+=("--bootstrap-ips=$BOOTSTRAP_IPS")
+fi
+
+if [ -n "$BOOTSTRAP_IDS" ]; then
+    CMD_ARGS+=("--bootstrap-ids=$BOOTSTRAP_IDS")
+fi
+
 # Add conditional arguments
-if [ "${DEV_MODE:-true}" = "true" ]; then
+if [ "${DEV_MODE:-false}" = "true" ]; then
     CMD_ARGS+=("--dev")
 fi
 
@@ -152,6 +183,26 @@ fi
 
 if [ "${INDEX_ENABLED:-true}" = "true" ]; then
     CMD_ARGS+=("--index-enabled")
+fi
+
+# For mainnet validators, add specific settings
+if [ -n "$NODE_ID" ]; then
+    CMD_ARGS+=(
+        "--staking-enabled=true"
+        "--sybil-protection-enabled=true"
+        "--snow-sample-size=5"
+        "--snow-quorum-size=3"
+        "--snow-virtuous-commit-threshold=5"
+        "--snow-rogue-commit-threshold=10"
+    )
+else
+    # Single node or dev mode
+    CMD_ARGS+=(
+        "--staking-enabled=false"
+        "--sybil-protection-enabled=false"
+        "--snow-sample-size=1"
+        "--snow-quorum-size=1"
+    )
 fi
 
 exec luxd "${CMD_ARGS[@]}" "$@"
