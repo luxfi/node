@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -24,7 +24,7 @@ func GetBalance(db UTXOReader, addrs set.Set[ids.ShortID]) (uint64, error) {
 	balance := uint64(0)
 	for _, utxo := range utxos {
 		if out, ok := utxo.Out.(Amounter); ok {
-			balance, err = safemath.Add64(out.Amount(), balance)
+			balance, err = safemath.Add(out.Amount(), balance)
 			if err != nil {
 				return 0, err
 			}

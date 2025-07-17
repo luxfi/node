@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -125,7 +125,7 @@ func overDelegated(
 	if err != nil {
 		return true, err
 	}
-	newMaxWeight, err := math.Add64(maxWeight, delegatorWeight)
+	newMaxWeight, err := math.Add(maxWeight, delegatorWeight)
 	if err != nil {
 		return true, err
 	}
@@ -159,7 +159,7 @@ func GetMaxWeight(
 	for currentDelegatorIterator.Next() {
 		currentDelegator := currentDelegatorIterator.Value()
 
-		currentWeight, err = math.Add64(currentWeight, currentDelegator.Weight)
+		currentWeight, err = math.Add(currentWeight, currentDelegator.Weight)
 		if err != nil {
 			currentDelegatorIterator.Release()
 			return 0, err
@@ -202,9 +202,9 @@ func GetMaxWeight(
 
 		var op func(uint64, uint64) (uint64, error)
 		if isAdded {
-			op = math.Add64
+			op = math.Add
 		} else {
-			op = math.Sub[uint64]
+			op = math.Sub
 		}
 		currentWeight, err = op(currentWeight, delegator.Weight)
 		if err != nil {

@@ -3,11 +3,11 @@
 set -euo pipefail
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
-source "$LUX_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/constants.sh
 
-EXCLUDED_TARGETS="| grep -v /mocks | grep -v proto | grep -v tests/e2e | grep -v tests/upgrade"
+EXCLUDED_TARGETS="| grep -v /mocks | grep -v proto | grep -v tests/e2e | grep -v tests/load/c | grep -v tests/upgrade | grep -v tests/fixture/bootstrapmonitor/e2e"
 
 if [[ "$(go env GOOS)" == "windows" ]]; then
   # Test discovery for the antithesis test setups is broken due to

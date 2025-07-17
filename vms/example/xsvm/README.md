@@ -14,15 +14,21 @@ Cross Subnet Asset Transfers README Overview
 
 ## Lux Subnets and Custom VMs
 
-Lux is a network composed of multiple sub-networks (called [subnets][Subnet]) that each contain any number of blockchains. Each blockchain is an instance of a [Virtual Machine (VM)](https://docs.lux.network/learn/platform-overview#virtual-machines), much like an object in an object-oriented language is an instance of a class. That is, the VM defines the behavior of the blockchain where it is instantiated. For example, [Coreth (EVM)][Coreth] is a VM that is instantiated by the [C-Chain]. Likewise, one could deploy another instance of the EVM as their own blockchain (to take this to its logical conclusion).
+Lux is a network composed of multiple sub-networks (called [subnets][Subnet])
+that each contain any number of blockchains. Each blockchain is an instance of a
+[Virtual Machine
+(VM)](https://build.lux.network/docs/quick-start/virtual-machines), much like an
+object in an object-oriented language is an instance of a class. That is, the VM
+defines the behavior of the blockchain where it is instantiated. For example,
+[Go Ethereum Virtual Machine (EVM)][Geth] is a VM that is instantiated by the [C-Chain]. Likewise, one could deploy another instance of the EVM as their own blockchain (to take this to its logical conclusion).
 
 ## Introduction
 
-Just as [Coreth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Subnet]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
+Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Subnet]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
 
 ## How it Works
 
-XSVM utilizes Lux Node's [teleporter] package to create and authenticate Subnet Messages.
+XSVM utilizes LuxGo's [interchain messaging] package to create and authenticate Subnet Messages.
 
 ### Transfer
 
@@ -66,6 +72,7 @@ Available Commands:
   help        Help about any command
   issue       Issues transactions
   version     Prints out the version
+  versionjson Prints out the version in json format
 
 Flags:
   -h, --help   help for xsvm
@@ -73,7 +80,7 @@ Flags:
 Use "xsvm [command] --help" for more information about a command.
 ```
 
-### [Golang SDK](https://github.com/luxfi/node/blob/master/vms/example/xsvm/client/client.go)
+### [Golang SDK](https://github.com/luxfi/node/blob/master/vms/example/xsvm/api/client.go)
 
 ```golang
 // Client defines xsvm client operations.
@@ -120,7 +127,7 @@ type Client interface {
     ctx context.Context,
     txID ids.ID,
     options ...rpc.Option,
-  ) (*teleporter.UnsignedMessage, []byte, error)
+  ) (*warp.UnsignedMessage, []byte, error)
 }
 ```
 
@@ -282,12 +289,11 @@ P-Chain.
 
 You can do this by following the [subnet tutorial] or by using the [subnet-cli].
 
-[teleporter]: https://github.com/luxfi/node/tree/master/vms/platformvm/teleporter
-[subnet tutorial]: https://docs.lux.network/build/tutorials/platform/subnets/create-a-subnet
-[subnet-cli]: https://github.com/luxfi/subnet-cli
-[Coreth]: https://github.com/luxfi/coreth
-[C-Chain]: https://docs.lux.network/learn/platform-overview/#contract-chain-c-chain
-[Subnet]: https://docs.lux.network/learn/platform-overview/#subnets
+[interchain messaging]: https://github.com/luxfi/node/tree/master/vms/platformvm/warp/README.md
+[subnet tutorial]: https://build.lux.network/docs/tooling/create-lux-l1
+[Geth]: https://github.com/luxfi/geth
+[C-Chain]: https://build.lux.network/docs/quick-start/primary-network#c-chain
+[Subnet]: https://build.lux.network/docs/lux-l1s
 
 ## Cross Subnet Transaction Example
 

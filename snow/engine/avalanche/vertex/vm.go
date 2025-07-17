@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertex
@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
@@ -30,7 +29,6 @@ type LinearizableVMWithEngine interface {
 	Linearize(
 		ctx context.Context,
 		stopVertexID ids.ID,
-		toEngine chan<- common.Message,
 	) error
 }
 

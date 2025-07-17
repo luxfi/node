@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -10,12 +10,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/params"
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/libevm/core"
+	"github.com/luxfi/libevm/params"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -116,7 +116,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[evm.GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[key.EthAddress()] = core.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}
@@ -146,10 +146,12 @@ func NewTestGenesis(
 		)
 	}
 
+	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		Config:     params.LuxLocalChainConfig,
-		Difficulty: big.NewInt(0), // Difficulty is a mandatory field
+		Config:     &params.ChainConfig{ChainID: chainID},      // The rest of the config is set in geth on VM initialization
+		Difficulty: big.NewInt(0),                              // Difficulty is a mandatory field
+		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()), // This time enables Lux upgrades by default
 		GasLimit:   defaultGasLimit,
 		Alloc:      cChainBalances,
 	}

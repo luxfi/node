@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -175,10 +175,8 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 		expectedUptimePercentage = float64(transformSubnet.UptimeRequirement) / reward.PercentDenominator
 	}
 
-	// TODO: calculate subnet uptimes
 	uptime, err := o.uptimes.CalculateUptimePercentFrom(
 		nodeID,
-		constants.PrimaryNetworkID,
 		primaryNetworkValidator.StartTime,
 	)
 	if err != nil {

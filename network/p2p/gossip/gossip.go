@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow/engine/common"
@@ -42,7 +43,6 @@ var (
 	_ Gossiper = (*PullGossiper[*testTx])(nil)
 	_ Gossiper = (*NoOpGossiper)(nil)
 
-	_ Set[*testTx] = (*EmptySet[*testTx])(nil)
 	_ Set[*testTx] = (*FullSet[*testTx])(nil)
 
 	ioTypeLabels   = []string{ioLabel, typeLabel}
@@ -77,8 +77,6 @@ var (
 	ErrInvalidDiscardedSize     = errors.New("discarded size cannot be negative")
 	ErrInvalidTargetGossipSize  = errors.New("target gossip size cannot be negative")
 	ErrInvalidRegossipFrequency = errors.New("re-gossip frequency cannot be negative")
-
-	errEmptySetCantAdd = errors.New("empty set can not add")
 )
 
 // Gossiper gossips Gossipables to other nodes
@@ -327,7 +325,7 @@ func NewPushGossiper[T Gossipable](
 		tracking:   make(map[ids.ID]*tracking),
 		toGossip:   buffer.NewUnboundedDeque[T](0),
 		toRegossip: buffer.NewUnboundedDeque[T](0),
-		discarded:  &cache.LRU[ids.ID, struct{}]{Size: discardedSize},
+		discarded:  lru.NewCache[ids.ID, struct{}](discardedSize),
 	}, nil
 }
 
@@ -349,7 +347,7 @@ type PushGossiper[T Gossipable] struct {
 	addedTimeSum float64 // unix nanoseconds
 	toGossip     buffer.Deque[T]
 	toRegossip   buffer.Deque[T]
-	discarded    *cache.LRU[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
+	discarded    *lru.Cache[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
 }
 
 type BranchingFactor struct {
@@ -601,26 +599,6 @@ type TestGossiper struct {
 
 func (t *TestGossiper) Gossip(ctx context.Context) error {
 	return t.GossipF(ctx)
-}
-
-type EmptySet[T Gossipable] struct{}
-
-func (EmptySet[_]) Gossip(context.Context) error {
-	return nil
-}
-
-func (EmptySet[T]) Add(T) error {
-	return errEmptySetCantAdd
-}
-
-func (EmptySet[T]) Has(ids.ID) bool {
-	return false
-}
-
-func (EmptySet[T]) Iterate(func(gossipable T) bool) {}
-
-func (EmptySet[_]) GetFilter() ([]byte, []byte) {
-	return bloom.EmptyFilter.Marshal(), ids.Empty[:]
 }
 
 type FullSet[T Gossipable] struct{}

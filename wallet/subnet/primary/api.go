@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -8,9 +8,10 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -21,12 +22,13 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"
+	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	ethcommon "github.com/ava-labs/libevm/common"
+	ethcommon "github.com/luxfi/libevm/common"
 )
 
 const (
@@ -37,11 +39,9 @@ const (
 	fetchLimit = 1024
 )
 
-// TODO: Refactor UTXOClient definition to allow the client implementations to
-// perform their own assertions.
 var (
-	_ UTXOClient = platformvm.Client(nil)
-	_ UTXOClient = avm.Client(nil)
+	_ UTXOClient = (*platformvm.Client)(nil)
+	_ UTXOClient = (*avm.Client)(nil)
 )
 
 type UTXOClient interface {
@@ -57,11 +57,11 @@ type UTXOClient interface {
 }
 
 type LUXState struct {
-	PClient platformvm.Client
+	PClient *platformvm.Client
 	PCTX    *pbuilder.Context
-	XClient avm.Client
+	XClient *avm.Client
 	XCTX    *xbuilder.Context
-	CClient evm.Client
+	CClient client.Client
 	CCTX    *c.Context
 	UTXOs   walletcommon.UTXOs
 }
@@ -77,9 +77,9 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := avm.NewClient(uri, "X")
-	cClient := evm.NewCChainClient(uri)
+	cClient := client.NewCChainClient(uri)
 
-	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
+	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func FetchState(
 		{
 			id:     cCTX.BlockchainID,
 			client: cClient,
-			codec:  evm.Codec,
+			codec:  atomic.Codec,
 		},
 	}
 	for _, destinationChain := range chains {
@@ -144,8 +144,40 @@ func FetchState(
 	}, nil
 }
 
+func FetchPState(
+	ctx context.Context,
+	uri string,
+	addrs set.Set[ids.ShortID],
+) (
+	*platformvm.Client,
+	*pbuilder.Context,
+	walletcommon.UTXOs,
+	error,
+) {
+	infoClient := info.NewClient(uri)
+	chainClient := platformvm.NewClient(uri)
+
+	context, err := p.NewContextFromClients(ctx, infoClient, chainClient)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	utxos := walletcommon.NewUTXOs()
+	addrList := addrs.List()
+	err = AddAllUTXOs(
+		ctx,
+		utxos,
+		chainClient,
+		txs.Codec,
+		constants.PlatformChainID,
+		constants.PlatformChainID,
+		addrList,
+	)
+	return chainClient, context, utxos, err
+}
+
 type EthState struct {
-	Client   ethclient.Client
+	Client   *ethclient.Client
 	Accounts map[ethcommon.Address]*c.Account
 }
 

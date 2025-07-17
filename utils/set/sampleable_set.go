@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package set
@@ -108,9 +108,7 @@ func (s *SampleableSet[T]) Remove(elements ...T) {
 // Clear empties this set
 func (s *SampleableSet[T]) Clear() {
 	clear(s.indices)
-	for i := range s.elements {
-		s.elements[i] = utils.Zero[T]()
-	}
+	clear(s.elements)
 	s.elements = s.elements[:0]
 }
 

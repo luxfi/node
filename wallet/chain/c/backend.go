@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -10,14 +10,14 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/ava-labs/libevm/common"
+	ethcommon "github.com/luxfi/libevm/common"
 )
 
 var (
@@ -32,7 +32,7 @@ type Backend interface {
 	BuilderBackend
 	SignerBackend
 
-	AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error
+	AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error
 }
 
 type backend struct {
@@ -57,9 +57,9 @@ func NewBackend(
 	}
 }
 
-func (b *backend) AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error {
+func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 	switch tx := tx.UnsignedAtomicTx.(type) {
-	case *evm.UnsignedImportTx:
+	case *atomic.UnsignedImportTx:
 		for _, input := range tx.ImportedInputs {
 			utxoID := input.InputID()
 			if err := b.RemoveUTXO(ctx, tx.SourceChain, utxoID); err != nil {
@@ -80,7 +80,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error {
 			balance.Mul(balance, luxConversionRate)
 			account.Balance.Add(account.Balance, balance)
 		}
-	case *evm.UnsignedExportTx:
+	case *atomic.UnsignedExportTx:
 		txID := tx.ID()
 		for i, out := range tx.ExportedOutputs {
 			err := b.AddUTXO(
@@ -116,7 +116,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error {
 			}
 			account.Balance.Sub(account.Balance, balance)
 
-			newNonce, err := math.Add64(input.Nonce, 1)
+			newNonce, err := math.Add(input.Nonce, 1)
 			if err != nil {
 				return err
 			}

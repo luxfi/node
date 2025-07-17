@@ -1,15 +1,15 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
@@ -23,11 +23,8 @@ type TestContext interface {
 	// Provides a simple alternative to ginkgo.DeferCleanup
 	DeferCleanup(cleanup func())
 
-	// Enables color output to stdout
-	Outf(format string, args ...interface{})
-
-	// Ensures compatibility with ginkgo.GinkgoWriter
-	GetWriter() io.Writer
+	// Returns a logger that can be used to log test output
+	Log() logging.Logger
 
 	// Context helpers requiring cleanup with DeferCleanup
 	ContextWithTimeout(duration time.Duration) context.Context

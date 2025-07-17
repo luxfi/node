@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -59,7 +59,6 @@ type UnparsedStaker struct {
 	RewardAddress string                    `json:"rewardAddress"`
 	DelegationFee uint32                    `json:"delegationFee"`
 	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
-	ValidatorNFT  *ValidatorNFT             `json:"validatorNFT,omitempty"`
 }
 
 func (us UnparsedStaker) Parse() (Staker, error) {
@@ -67,15 +66,6 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 		NodeID:        us.NodeID,
 		DelegationFee: us.DelegationFee,
 		Signer:        us.Signer,
-	}
-	
-	// Convert ValidatorNFT to StakerValidatorNFT if present
-	if us.ValidatorNFT != nil {
-		s.ValidatorNFT = &StakerValidatorNFT{
-			ContractAddress: "", // Not used in full ValidatorNFT
-			TokenID:         us.ValidatorNFT.TokenID,
-			CollectionName:  us.ValidatorNFT.Tier + " Validator",
-		}
 	}
 
 	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
@@ -103,13 +93,6 @@ type UnparsedConfig struct {
 	InitialStakers             []UnparsedStaker `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
-	AChainGenesis string `json:"aChainGenesis,omitempty"`
-	BChainGenesis string `json:"bChainGenesis,omitempty"`
-	ZChainGenesis string `json:"zChainGenesis,omitempty"`
-
-	NFTStakingConfig *NFTStakingConfig `json:"nftStakingConfig,omitempty"`
-	RingtailConfig   *RingtailConfig   `json:"ringtailConfig,omitempty"`
-	MPCConfig        *MPCConfig        `json:"mpcConfig,omitempty"`
 
 	Message string `json:"message"`
 }

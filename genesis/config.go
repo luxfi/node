@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
-const localNetworkUpdateStartTimePeriod = 5 * time.Minute
+const localNetworkUpdateStartTimePeriod = 9 * 30 * 24 * time.Hour // 9 months
 
 var (
 	_ utils.Sortable[Allocation] = Allocation{}
@@ -69,13 +69,6 @@ type Staker struct {
 	RewardAddress ids.ShortID               `json:"rewardAddress"`
 	DelegationFee uint32                    `json:"delegationFee"`
 	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
-	ValidatorNFT  *StakerValidatorNFT             `json:"validatorNFT,omitempty"`
-}
-
-type StakerValidatorNFT struct {
-	ContractAddress string `json:"contractAddress"`
-	TokenID         uint64 `json:"tokenId"`
-	CollectionName  string `json:"collectionName"`
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
@@ -105,45 +98,8 @@ type Config struct {
 	InitialStakers             []Staker      `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
-	AChainGenesis string `json:"aChainGenesis,omitempty"`
-	BChainGenesis string `json:"bChainGenesis,omitempty"`
-	ZChainGenesis string `json:"zChainGenesis,omitempty"`
-
-	NFTStakingConfig *NFTStakingConfig `json:"nftStakingConfig,omitempty"`
-	RingtailConfig   *RingtailConfig   `json:"ringtailConfig,omitempty"`
-	MPCConfig        *MPCConfig        `json:"mpcConfig,omitempty"`
 
 	Message string `json:"message"`
-}
-
-type NFTStakingConfig struct {
-	Enabled         bool             `json:"enabled"`
-	NFTContract     string           `json:"nftContract"`
-	RequiredBalance uint64           `json:"requiredBalance"`
-	ValidatorTiers  []ValidatorTier  `json:"validatorTiers"`
-}
-
-type ValidatorTier struct {
-	Name              string `json:"name"`
-	MinTokenID        uint64 `json:"minTokenId"`
-	MaxTokenID        uint64 `json:"maxTokenId"`
-	StakingMultiplier uint32 `json:"stakingMultiplier"`
-}
-
-type RingtailConfig struct {
-	Enabled           bool   `json:"enabled"`
-	SignatureVersion  string `json:"signatureVersion"`
-	RingSize          uint32 `json:"ringSize"`
-	PublicParameters  string `json:"publicParameters"`
-}
-
-type MPCConfig struct {
-	Enabled              bool     `json:"enabled"`
-	Threshold            uint32   `json:"threshold"`
-	Parties              uint32   `json:"parties"`
-	PerAccountMPC        bool     `json:"perAccountMPC"`
-	DefaultKeyGenProtocol string   `json:"defaultKeyGenProtocol"`
-	SupportedProtocols   []string `json:"supportedProtocols"`
 }
 
 func (c Config) Unparse() (UnparsedConfig, error) {
@@ -190,12 +146,12 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 func (c *Config) InitialSupply() (uint64, error) {
 	initialSupply := uint64(0)
 	for _, allocation := range c.Allocations {
-		newInitialSupply, err := math.Add64(initialSupply, allocation.InitialAmount)
+		newInitialSupply, err := math.Add(initialSupply, allocation.InitialAmount)
 		if err != nil {
 			return 0, err
 		}
 		for _, unlock := range allocation.UnlockSchedule {
-			newInitialSupply, err = math.Add64(newInitialSupply, unlock.Amount)
+			newInitialSupply, err = math.Add(newInitialSupply, unlock.Amount)
 			if err != nil {
 				return 0, err
 			}
@@ -237,18 +193,12 @@ func init() {
 		panic(err)
 	}
 
-	// TODO: Fix mainnet genesis checksum issues
-	// MainnetConfig, err = unparsedMainnetConfig.Parse()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	MainnetConfig, err = unparsedMainnetConfig.Parse()
+	if err != nil {
+		panic(err)
+	}
 
-	// FujiConfig, err = unparsedFujiConfig.Parse()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	LocalConfig, err = unparsedLocalConfig.Parse()
+	FujiConfig, err = unparsedFujiConfig.Parse()
 	if err != nil {
 		panic(err)
 	}

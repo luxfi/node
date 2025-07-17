@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package statetest
@@ -30,23 +30,32 @@ import (
 var DefaultNodeID = ids.GenerateTestNodeID()
 
 type Config struct {
-	DB              database.Database
-	Genesis         []byte
-	Registerer      prometheus.Registerer
-	Validators      validators.Manager
-	Upgrades        upgrade.Config
-	ExecutionConfig config.ExecutionConfig
-	Context         *snow.Context
-	Metrics         metrics.Metrics
-	Rewards         reward.Calculator
+	DB         database.Database
+	Genesis    []byte
+	Registerer prometheus.Registerer
+	Validators validators.Manager
+	Upgrades   upgrade.Config
+	Config     config.Config
+	Context    *snow.Context
+	Metrics    metrics.Metrics
+	Rewards    reward.Calculator
 }
 
 func New(t testing.TB, c Config) state.State {
 	if c.DB == nil {
 		c.DB = memdb.New()
 	}
+	if c.Context == nil {
+		c.Context = &snow.Context{
+			NetworkID: constants.UnitTestID,
+			NodeID:    DefaultNodeID,
+			Log:       logging.NoLog{},
+		}
+	}
 	if len(c.Genesis) == 0 {
-		c.Genesis = genesistest.NewBytes(t, genesistest.Config{})
+		c.Genesis = genesistest.NewBytes(t, genesistest.Config{
+			NetworkID: c.Context.NetworkID,
+		})
 	}
 	if c.Registerer == nil {
 		c.Registerer = prometheus.NewRegistry()
@@ -57,15 +66,8 @@ func New(t testing.TB, c Config) state.State {
 	if c.Upgrades == (upgrade.Config{}) {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
-	if c.ExecutionConfig == (config.ExecutionConfig{}) {
-		c.ExecutionConfig = config.DefaultExecutionConfig
-	}
-	if c.Context == nil {
-		c.Context = &snow.Context{
-			NetworkID: constants.UnitTestID,
-			NodeID:    DefaultNodeID,
-			Log:       logging.NoLog{},
-		}
+	if c.Config == (config.Config{}) {
+		c.Config = config.Default
 	}
 	if c.Metrics == nil {
 		c.Metrics = metrics.Noop
@@ -75,7 +77,7 @@ func New(t testing.TB, c Config) state.State {
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
+			SupplyCap:          720 * units.MegaLux,
 		})
 	}
 
@@ -85,7 +87,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Registerer,
 		c.Validators,
 		c.Upgrades,
-		&c.ExecutionConfig,
+		&c.Config,
 		c.Context,
 		c.Metrics,
 		c.Rewards,

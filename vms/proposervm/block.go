@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -141,7 +141,7 @@ func (p *postForkCommonComponents) Verify(
 		}
 
 		var shouldHaveProposer bool
-		if p.vm.IsDurangoActivated(parentTimestamp) {
+		if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
 			shouldHaveProposer, err = p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
 		} else {
 			shouldHaveProposer, err = p.verifyPreDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
@@ -162,10 +162,17 @@ func (p *postForkCommonComponents) Verify(
 		)
 	}
 
+	var contextPChainHeight uint64
+	if p.vm.Upgrades.IsEtnaActivated(childTimestamp) {
+		contextPChainHeight = childPChainHeight
+	} else {
+		contextPChainHeight = parentPChainHeight
+	}
+
 	return p.vm.verifyAndRecordInnerBlk(
 		ctx,
 		&smblock.Context{
-			PChainHeight: parentPChainHeight,
+			PChainHeight: contextPChainHeight,
 		},
 		child,
 	)
@@ -186,7 +193,7 @@ func (p *postForkCommonComponents) buildChild(
 
 	// The child's P-Chain height is proposed as the optimal P-Chain height that
 	// is at least the parent's P-Chain height
-	pChainHeight, err := p.vm.optimalPChainHeight(ctx, parentPChainHeight)
+	pChainHeight, err := p.vm.selectChildPChainHeight(ctx, parentPChainHeight)
 	if err != nil {
 		p.vm.ctx.Log.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate optimal P-chain height"),
@@ -197,7 +204,7 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 	var shouldBuildSignedBlock bool
-	if p.vm.IsDurangoActivated(parentTimestamp) {
+	if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
 		shouldBuildSignedBlock, err = p.shouldBuildSignedBlockPostDurango(
 			ctx,
 			parentID,
@@ -218,10 +225,17 @@ func (p *postForkCommonComponents) buildChild(
 		return nil, err
 	}
 
+	var contextPChainHeight uint64
+	if p.vm.Upgrades.IsEtnaActivated(newTimestamp) {
+		contextPChainHeight = pChainHeight
+	} else {
+		contextPChainHeight = parentPChainHeight
+	}
+
 	var innerBlock snowman.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
-			PChainHeight: parentPChainHeight,
+			PChainHeight: contextPChainHeight,
 		})
 	} else {
 		innerBlock, err = p.vm.ChainVM.BuildBlock(ctx)
@@ -430,37 +444,6 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 		zap.Uint64("slot", currentSlot),
 		zap.Stringer("expectedProposer", expectedProposerID),
 	)
-
-	// We need to reschedule the block builder to the next time we can try to
-	// build a block.
-	//
-	// TODO: After Durango activates, restructure this logic to separate
-	// updating the scheduler from verifying the proposerID.
-	nextStartTime, err := p.vm.getPostDurangoSlotTime(
-		ctx,
-		parentHeight+1,
-		parentPChainHeight,
-		currentSlot+1, // We know we aren't the proposer for the current slot
-		parentTimestamp,
-	)
-	if err != nil {
-		p.vm.ctx.Log.Error("failed to reset block builder scheduler",
-			zap.String("reason", "failed to calculate expected proposer"),
-			zap.Stringer("parentID", parentID),
-			zap.Error(err),
-		)
-		return false, err
-	}
-
-	// report the build slot to the metrics.
-	p.vm.proposerBuildSlotGauge.Set(float64(proposer.TimeToSlot(parentTimestamp, nextStartTime)))
-
-	// set the scheduler to let us know when the next block need to be built.
-	p.vm.Scheduler.SetBuildBlockTime(nextStartTime)
-
-	// In case the inner VM only issued one pendingTxs message, we should
-	// attempt to re-handle that once it is our turn to build the block.
-	p.vm.notifyInnerBlockReady()
 	return false, fmt.Errorf("%w: slot %d expects %s", errUnexpectedProposer, currentSlot, expectedProposerID)
 }
 
@@ -502,9 +485,5 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 		zap.Duration("minDelay", minDelay),
 		zap.Time("blockTimestamp", newTimestamp),
 	)
-
-	// In case the inner VM only issued one pendingTxs message, we should
-	// attempt to re-handle that once it is our turn to build the block.
-	p.vm.notifyInnerBlockReady()
 	return false, fmt.Errorf("%w: delay %s < minDelay %s", errProposerWindowNotStarted, delay, minDelay)
 }

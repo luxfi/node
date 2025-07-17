@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -14,16 +14,19 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 )
 
-var errDuplicateVerify = errors.New("duplicate verify")
+var (
+	errDuplicateVerify          = errors.New("duplicate verify")
+	errUnexpectedBlockRejection = errors.New("unexpected block rejection")
+)
 
 // ProposerBlock Option interface tests section
 func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
@@ -53,7 +56,7 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 	innerTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
 	innerOracleBlk := &TestOptionsBlock{
 		Block: *innerTestBlock,
-		opts: [2]snowman.Block{
+		opts: [2]*snowmantest.Block{
 			snowmantest.BuildChild(innerTestBlock),
 			snowmantest.BuildChild(innerTestBlock),
 		},
@@ -227,7 +230,6 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
 			innerBlk: childCoreBlk,
-			status:   choices.Processing,
 		},
 	}
 
@@ -655,7 +657,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		Block: *innerTestBlock,
 	}
 	preferredOracleBlkChild := snowmantest.BuildChild(innerTestBlock)
-	oracleCoreBlk.opts = [2]snowman.Block{
+	oracleCoreBlk.opts = [2]*snowmantest.Block{
 		preferredOracleBlkChild,
 		snowmantest.BuildChild(innerTestBlock),
 	}
@@ -905,12 +907,12 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 	// test
 	require.NoError(builtBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		if coreBlk.Status() == choices.Accepted {
-			return coreBlk.ID(), nil
-		}
-		return snowmantest.GenesisID, nil
-	}
+	coreVM.LastAcceptedF = snowmantest.MakeLastAcceptedBlockF(
+		[]*snowmantest.Block{
+			snowmantest.Genesis,
+			coreBlk,
+		},
+	)
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 	require.Equal(builtBlk.ID(), acceptedID)
@@ -951,7 +953,7 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 
 	// set proBlk1 as preferred
 	require.NoError(proBlk1.Accept(context.Background()))
-	require.Equal(choices.Accepted, coreBlk.Status())
+	require.Equal(snowtest.Accepted, coreBlk.Status)
 
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
@@ -972,6 +974,7 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 	}()
 
 	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
+	coreBlk.RejectV = errUnexpectedBlockRejection
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
 	}
@@ -982,9 +985,6 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 	proBlk := sb.(*postForkBlock)
 
 	require.NoError(proBlk.Reject(context.Background()))
-
-	require.Equal(choices.Rejected, proBlk.Status())
-	require.NotEqual(choices.Rejected, proBlk.innerBlk.Status())
 }
 
 func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
@@ -1003,7 +1003,7 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 	coreTestBlk := snowmantest.BuildChild(snowmantest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]snowman.Block{
+		opts: [2]*snowmantest.Block{
 			snowmantest.BuildChild(coreTestBlk),
 			snowmantest.BuildChild(coreTestBlk),
 		},

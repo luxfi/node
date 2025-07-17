@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subprocess
@@ -14,7 +14,7 @@ import (
 
 var _ runtime.Initializer = (*initializer)(nil)
 
-// Subprocess VM Runtime intializer.
+// Subprocess VM Runtime initializer.
 type initializer struct {
 	path string
 
@@ -37,7 +37,7 @@ func newInitializer(path string) *initializer {
 func (i *initializer) Initialize(_ context.Context, protocolVersion uint, vmAddr string) error {
 	i.once.Do(func() {
 		if version.RPCChainVMProtocol != protocolVersion {
-			i.err = fmt.Errorf("%w. Lux Node version %s implements RPCChainVM protocol version %d. The VM located at %s implements RPCChainVM protocol version %d. Please make sure that there is an exact match of the protocol versions. This can be achieved by updating your VM or running an older/newer version of Lux Node. Please be advised that some virtual machines may not yet support the latest RPCChainVM protocol version",
+			i.err = fmt.Errorf("%w. LuxGo version %s implements RPCChainVM protocol version %d. The VM located at %s implements RPCChainVM protocol version %d. Please make sure that there is an exact match of the protocol versions. This can be achieved by updating your VM or running an older/newer version of LuxGo. Please be advised that some virtual machines may not yet support the latest RPCChainVM protocol version",
 				runtime.ErrProtocolVersionMismatch,
 				version.Current,
 				version.RPCChainVMProtocol,

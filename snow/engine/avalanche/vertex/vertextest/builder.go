@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertextest
@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/avalanche"
-	"github.com/luxfi/node/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
 )
 
 var (
@@ -24,14 +24,14 @@ var (
 type Builder struct {
 	T             *testing.T
 	CantBuildVtx  bool
-	BuildStopVtxF func(ctx context.Context, parentIDs []ids.ID) (avalanche.Vertex, error)
+	BuildStopVtxF func(ctx context.Context, parentIDs []ids.ID) (lux.Vertex, error)
 }
 
 func (b *Builder) Default(cant bool) {
 	b.CantBuildVtx = cant
 }
 
-func (b *Builder) BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (avalanche.Vertex, error) {
+func (b *Builder) BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (lux.Vertex, error) {
 	if b.BuildStopVtxF != nil {
 		return b.BuildStopVtxF(ctx, parentIDs)
 	}

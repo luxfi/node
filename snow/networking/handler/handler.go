@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/subnets"
@@ -46,10 +47,10 @@ var (
 
 	errMissingEngine  = errors.New("missing engine")
 	errNoStartingGear = errors.New("failed to select starting gear")
+	errorShuttingDown = errors.New("shutting down")
 )
 
 type Handler interface {
-	common.Timer
 	health.Checker
 
 	Context() *snow.ConsensusContext
@@ -77,7 +78,13 @@ type Handler interface {
 // handler passes incoming messages from the network to the consensus engine.
 // (Actually, it receives the incoming messages from a ChainRouter, but same difference.)
 type handler struct {
+	haltBootstrapping func()
+
 	metrics *metrics
+
+	nf           *common.NotificationForwarder
+	subscription common.Subscription
+	cn           *block.ChangeNotifier
 
 	// Useful for faking time in tests
 	clock mockable.Clock
@@ -87,8 +94,7 @@ type handler struct {
 	// since peerTracker is already tracking validators
 	validators validators.Manager
 	// Receives messages from the VM
-	msgFromVMChan   <-chan common.Message
-	preemptTimeouts chan struct{}
+	msgFromVMChan   chan common.Message
 	gossipFrequency time.Duration
 
 	engineManager *EngineManager
@@ -108,7 +114,6 @@ type handler struct {
 	asyncMessageQueue MessageQueue
 	// Worker pool for handling asynchronous consensus messages
 	asyncMessagePool errgroup.Group
-	timeouts         chan struct{}
 
 	closeOnce            sync.Once
 	startClosingTime     time.Time
@@ -117,8 +122,6 @@ type handler struct {
 	numDispatchersClosed atomic.Uint32
 	// Closed when this handler and [engine] are done shutting down
 	closed chan struct{}
-
-	subnetConnector validators.SubnetConnector
 
 	subnet subnets.Subnet
 
@@ -131,31 +134,32 @@ type handler struct {
 // [engine] must be initialized before initializing this handler
 func New(
 	ctx *snow.ConsensusContext,
+	cn *block.ChangeNotifier,
+	subscription common.Subscription,
 	validators validators.Manager,
-	msgFromVMChan <-chan common.Message,
 	gossipFrequency time.Duration,
 	threadPoolSize int,
 	resourceTracker tracker.ResourceTracker,
-	subnetConnector validators.SubnetConnector,
 	subnet subnets.Subnet,
 	peerTracker commontracker.Peers,
 	p2pTracker *p2p.PeerTracker,
 	reg prometheus.Registerer,
+	haltBootstrapping func(),
 ) (Handler, error) {
 	h := &handler{
-		ctx:             ctx,
-		validators:      validators,
-		msgFromVMChan:   msgFromVMChan,
-		preemptTimeouts: subnet.OnBootstrapCompleted(),
-		gossipFrequency: gossipFrequency,
-		timeouts:        make(chan struct{}, 1),
-		closingChan:     make(chan struct{}),
-		closed:          make(chan struct{}),
-		resourceTracker: resourceTracker,
-		subnetConnector: subnetConnector,
-		subnet:          subnet,
-		peerTracker:     peerTracker,
-		p2pTracker:      p2pTracker,
+		subscription:      subscription,
+		cn:                cn,
+		msgFromVMChan:     make(chan common.Message),
+		haltBootstrapping: haltBootstrapping,
+		ctx:               ctx,
+		validators:        validators,
+		gossipFrequency:   gossipFrequency,
+		closingChan:       make(chan struct{}),
+		closed:            make(chan struct{}),
+		resourceTracker:   resourceTracker,
+		subnet:            subnet,
+		peerTracker:       peerTracker,
+		p2pTracker:        p2pTracker,
 	}
 	h.asyncMessagePool.SetLimit(threadPoolSize)
 
@@ -245,6 +249,9 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
+	h.nf = common.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
+	h.cn.OnChange = h.nf.CheckForEvent
+
 	h.ctx.Lock.Lock()
 	err = gear.Start(ctx, 0)
 	h.ctx.Lock.Unlock()
@@ -283,11 +290,21 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	}
 }
 
+func (h *handler) Notify(ctx context.Context, msg common.Message) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-h.closed:
+		return errorShuttingDown
+	case h.msgFromVMChan <- msg:
+		return nil
+	}
+}
+
 // Push the message onto the handler's queue
 func (h *handler) Push(ctx context.Context, msg Message) {
 	switch msg.Op() {
-	case message.AppRequestOp, message.AppErrorOp, message.AppResponseOp, message.AppGossipOp,
-		message.CrossChainAppRequestOp, message.CrossChainAppErrorOp, message.CrossChainAppResponseOp:
+	case message.AppRequestOp, message.AppErrorOp, message.AppResponseOp, message.AppGossipOp:
 		h.asyncMessageQueue.Push(ctx, msg)
 	default:
 		h.syncMessageQueue.Push(ctx, msg)
@@ -298,30 +315,10 @@ func (h *handler) Len() int {
 	return h.syncMessageQueue.Len() + h.asyncMessageQueue.Len()
 }
 
-func (h *handler) RegisterTimeout(d time.Duration) {
-	go func() {
-		timer := time.NewTimer(d)
-		defer timer.Stop()
-
-		select {
-		case <-timer.C:
-		case <-h.preemptTimeouts:
-		}
-
-		// If there is already a timeout ready to fire - just drop the
-		// additional timeout. This ensures that all goroutines that are spawned
-		// here are able to close if the chain is shutdown.
-		select {
-		case h.timeouts <- struct{}{}:
-		default:
-		}
-	}()
-}
-
 // Note: It is possible for Stop to be called before/concurrently with Start.
 //
 // Invariant: Stop must never block.
-func (h *handler) Stop(ctx context.Context) {
+func (h *handler) Stop(_ context.Context) {
 	h.closeOnce.Do(func() {
 		h.startClosingTime = h.clock.Time()
 
@@ -330,25 +327,7 @@ func (h *handler) Stop(ctx context.Context) {
 		h.syncMessageQueue.Shutdown()
 		h.asyncMessageQueue.Shutdown()
 		close(h.closingChan)
-
-		// TODO: switch this to use a [context.Context] with a cancel function.
-		//
-		// Don't process any more bootstrap messages. If a dispatcher is
-		// processing a bootstrap message, stop. We do this because if we
-		// didn't, and the engine was in the middle of executing state
-		// transitions during bootstrapping, we wouldn't be able to grab
-		// [h.ctx.Lock] until the engine finished executing state transitions,
-		// which may take a long time. As a result, the router would time out on
-		// shutting down this chain.
-		state := h.ctx.State.Get()
-		bootstrapper, ok := h.engineManager.Get(state.Type).Get(snow.Bootstrapping)
-		if !ok {
-			h.ctx.Log.Error("bootstrapping engine doesn't exist",
-				zap.Stringer("type", state.Type),
-			)
-			return
-		}
-		bootstrapper.Halt(ctx)
+		h.haltBootstrapping()
 	})
 }
 
@@ -440,9 +419,6 @@ func (h *handler) dispatchChans(ctx context.Context) {
 
 		case <-gossiper.C:
 			msg = message.InternalGossipRequest(h.ctx.NodeID)
-
-		case <-h.timeouts:
-			msg = message.InternalTimeout(h.ctx.NodeID)
 		}
 
 		if err := h.handleChanMsg(msg); err != nil {
@@ -517,7 +493,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	// we are currently in.
 	currentState := h.ctx.State.Get()
 	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_SNOWMAN &&
-		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_LUX {
+		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_AVALANCHE {
 		// The peer is requesting an engine type that hasn't been initialized
 		// yet. This means we know that this isn't a response, so we can safely
 		// drop the message.
@@ -532,13 +508,13 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 
 	var engineType p2ppb.EngineType
 	switch msg.EngineType {
-	case p2ppb.EngineType_ENGINE_TYPE_LUX, p2ppb.EngineType_ENGINE_TYPE_SNOWMAN:
+	case p2ppb.EngineType_ENGINE_TYPE_AVALANCHE, p2ppb.EngineType_ENGINE_TYPE_SNOWMAN:
 		// The peer is requesting an engine type that has been initialized, so
 		// we should attempt to honor the request.
 		engineType = msg.EngineType
 	default:
 		// Note: [msg.EngineType] may have been provided by the peer as an
-		// invalid option. I.E. not one of LUX, SNOWMAN, or UNSPECIFIED.
+		// invalid option. I.E. not one of AVALANCHE, SNOWMAN, or UNSPECIFIED.
 		// In this case, we treat the value the same way as UNSPECIFIED.
 		//
 		// If the peer didn't request a specific engine type, we default to the
@@ -755,11 +731,18 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 			return engine.QueryFailed(ctx, nodeID, msg.RequestId)
 		}
 
-		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID)
+		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID, msg.AcceptedHeight)
 
 	case *message.QueryFailed:
 		return engine.QueryFailed(ctx, nodeID, msg.RequestID)
 
+	case *p2ppb.Simplex:
+		h.ctx.Log.Debug("received simplex message",
+			zap.Stringer("nodeID", nodeID),
+			zap.String("messageOp", op),
+			zap.Stringer("message", body),
+		)
+		return nil
 	// Connection messages can be sent to the currently executing engine
 	case *message.Connected:
 		err := h.peerTracker.Connected(ctx, nodeID, msg.NodeVersion)
@@ -768,9 +751,6 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		}
 		h.p2pTracker.Connected(nodeID, msg.NodeVersion)
 		return engine.Connected(ctx, nodeID, msg.NodeVersion)
-
-	case *message.ConnectedSubnet:
-		return h.subnetConnector.ConnectedSubnet(ctx, nodeID, msg.SubnetID)
 
 	case *message.Disconnected:
 		err := h.peerTracker.Disconnected(ctx, nodeID)
@@ -881,36 +861,6 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 	case *p2ppb.AppGossip:
 		return engine.AppGossip(ctx, nodeID, m.AppBytes)
 
-	case *message.CrossChainAppRequest:
-		return engine.CrossChainAppRequest(
-			ctx,
-			m.SourceChainID,
-			m.RequestID,
-			msg.Expiration(),
-			m.Message,
-		)
-
-	case *message.CrossChainAppResponse:
-		return engine.CrossChainAppResponse(
-			ctx,
-			m.SourceChainID,
-			m.RequestID,
-			m.Message,
-		)
-
-	case *message.CrossChainAppRequestFailed:
-		err := &common.AppError{
-			Code:    m.ErrorCode,
-			Message: m.ErrorMessage,
-		}
-
-		return engine.CrossChainAppRequestFailed(
-			ctx,
-			m.SourceChainID,
-			m.RequestID,
-			err,
-		)
-
 	default:
 		return fmt.Errorf(
 			"attempt to submit unhandled async msg %s from %s",
@@ -988,9 +938,6 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 	case *message.GossipRequest:
 		return engine.Gossip(context.TODO())
 
-	case *message.Timeout:
-		return engine.Timeout(context.TODO())
-
 	default:
 		return fmt.Errorf(
 			"attempt to submit unhandled chan msg %s",
@@ -1043,6 +990,12 @@ func (h *handler) closeDispatcher(ctx context.Context) {
 // Note: shutdown is only called after all message dispatchers have exited or if
 // no message dispatchers ever started.
 func (h *handler) shutdown(ctx context.Context, startClosingTime time.Time) {
+	// If we are shutting down but haven't properly started, we don't need to
+	// close the notification forwarder.
+	if h.nf != nil {
+		h.nf.Close()
+	}
+
 	defer func() {
 		if h.onStopped != nil {
 			go h.onStopped()

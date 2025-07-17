@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -40,7 +40,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require.ErrorIs(err, ErrNilTx)
 
 	validatorWeight := uint64(2022)
-	rewardAddress := preFundedKeys[0].PublicKey().Address()
+	rewardAddress := preFundedKeys[0].Address()
 	inputs := []*lux.TransferableInput{{
 		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
@@ -156,7 +156,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 
 	assetID := ids.GenerateTestID()
 	validatorWeight := uint64(2022)
-	rewardAddress := preFundedKeys[0].PublicKey().Address()
+	rewardAddress := preFundedKeys[0].Address()
 	inputs := []*lux.TransferableInput{{
 		UTXOID: lux.UTXOID{
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},

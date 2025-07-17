@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -18,6 +18,11 @@ import (
 const EnvPrefix = "avago"
 
 var DashesToUnderscores = strings.NewReplacer("-", "_")
+
+func EnvVarName(prefix string, key string) string {
+	// e.g. MY_PREFIX, network-id -> MY_PREFIX_NETWORK_ID
+	return strings.ToUpper(prefix + "_" + DashesToUnderscores.Replace(key))
+}
 
 // BuildViper returns the viper environment from parsing config file from
 // default search paths and any parsed command line flags
@@ -52,7 +57,7 @@ func BuildViper(fs *pflag.FlagSet, args []string) (*viper.Viper, error) {
 		}
 
 	case v.IsSet(ConfigFileKey):
-		filename := GetExpandedArg(v, ConfigFileKey)
+		filename := getExpandedArg(v, ConfigFileKey)
 		v.SetConfigFile(filename)
 		if err := v.ReadInConfig(); err != nil {
 			return nil, err

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package syncer
@@ -13,9 +13,10 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 	"github.com/luxfi/node/snow/engine/snowman/getter"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/hashing"
@@ -89,7 +90,7 @@ func buildTestsObjects(
 			T: t,
 		},
 	}
-	sender := &common.SenderTest{T: t}
+	sender := &enginetest.Sender{T: t}
 	dummyGetter, err := getter.New(
 		fullVM,
 		sender,
@@ -106,7 +107,7 @@ func buildTestsObjects(
 		startupTracker,
 		sender,
 		beacons,
-		beacons.Count(ctx.SubnetID),
+		beacons.NumValidators(ctx.SubnetID),
 		alpha,
 		nil,
 		fullVM,

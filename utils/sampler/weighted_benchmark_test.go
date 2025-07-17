@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -145,31 +145,4 @@ func WeightedSingletonBenchmarkSampler(b *testing.B, s Weighted, size int) bool 
 		_, _ = s.Sample(globalRNG.Uint64Inclusive(math.MaxUint64 - 1))
 	}
 	return true
-}
-
-func WeightedPowBenchmarkInitializer(
-	b *testing.B,
-	s Weighted,
-	exponent float64,
-	size int,
-) {
-	_, weights, _ := CalcWeightedPoW(exponent, size)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = s.Initialize(weights)
-	}
-}
-
-func WeightedSingletonBenchmarkInitializer(b *testing.B, s Weighted, size int) {
-	weights := make([]uint64, size)
-	weights[0] = math.MaxUint64 - uint64(size-1)
-	for i := 1; i < len(weights); i++ {
-		weights[i] = 1
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = s.Initialize(weights)
-	}
 }

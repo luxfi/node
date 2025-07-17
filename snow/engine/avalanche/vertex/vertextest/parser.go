@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertextest
@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow/consensus/avalanche"
-	"github.com/luxfi/node/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
 )
 
 var (
@@ -23,14 +23,14 @@ var (
 type Parser struct {
 	T            *testing.T
 	CantParseVtx bool
-	ParseVtxF    func(context.Context, []byte) (avalanche.Vertex, error)
+	ParseVtxF    func(context.Context, []byte) (lux.Vertex, error)
 }
 
 func (p *Parser) Default(cant bool) {
 	p.CantParseVtx = cant
 }
 
-func (p *Parser) ParseVtx(ctx context.Context, b []byte) (avalanche.Vertex, error) {
+func (p *Parser) ParseVtx(ctx context.Context, b []byte) (lux.Vertex, error) {
 	if p.ParseVtxF != nil {
 		return p.ParseVtxF(ctx, b)
 	}

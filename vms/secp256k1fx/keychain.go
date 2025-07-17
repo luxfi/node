@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -8,8 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ava-labs/libevm/common"
-	"github.com/ava-labs/libevm/crypto"
+	"github.com/luxfi/libevm/common"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
@@ -55,7 +54,7 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 	luxAddr := pk.Address()
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
-		ethAddr := publicKeyToEthAddress(pk)
+		ethAddr := pk.EthAddress()
 		kc.ethAddrToKeyIndex[ethAddr] = len(kc.Keys)
 		kc.Keys = append(kc.Keys, key)
 		kc.Addrs.Add(luxAddr)
@@ -168,8 +167,4 @@ func (kc Keychain) get(id ids.ShortID) (*secp256k1.PrivateKey, bool) {
 		return kc.Keys[i], true
 	}
 	return nil, false
-}
-
-func publicKeyToEthAddress(pk *secp256k1.PublicKey) common.Address {
-	return crypto.PubkeyToAddress(*(pk.ToECDSA()))
 }

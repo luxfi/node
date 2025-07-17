@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -6,19 +6,19 @@ package handler
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
@@ -66,24 +66,27 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	)
 	require.NoError(err)
 
+	subscription, _ := createSubscriber()
+
 	handlerIntf, err := New(
 		ctx,
+		&block.ChangeNotifier{},
+		subscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
-		validators.UnhandledSubnetConnector,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 	handler := handlerIntf.(*handler)
 
-	bootstrapper := &common.BootstrapperTest{
-		EngineTest: common.EngineTest{
+	bootstrapper := &enginetest.Bootstrapper{
+		Engine: enginetest.Engine{
 			T: t,
 		},
 	}
@@ -173,18 +176,24 @@ func TestHandlerClosesOnError(t *testing.T) {
 	)
 	require.NoError(err)
 
+	var cn block.ChangeNotifier
+	subscription := func(context.Context) (common.Message, error) {
+		return common.PendingTxs, nil
+	}
+
 	handlerIntf, err := New(
 		ctx,
+		&cn,
+		subscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
-		validators.UnhandledSubnetConnector,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 	handler := handlerIntf.(*handler)
@@ -194,8 +203,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 		closed <- struct{}{}
 	})
 
-	bootstrapper := &common.BootstrapperTest{
-		EngineTest: common.EngineTest{
+	bootstrapper := &enginetest.Bootstrapper{
+		Engine: enginetest.Engine{
 			T: t,
 		},
 	}
@@ -276,26 +285,29 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	)
 	require.NoError(err)
 
+	subscription, _ := createSubscriber()
+
 	handlerIntf, err := New(
 		ctx,
+		&block.ChangeNotifier{},
+		subscription,
 		vdrs,
-		nil,
 		1,
 		testThreadPoolSize,
 		resourceTracker,
-		validators.UnhandledSubnetConnector,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 	handler := handlerIntf.(*handler)
 
 	handler.clock.Set(time.Now())
 
-	bootstrapper := &common.BootstrapperTest{
-		EngineTest: common.EngineTest{
+	bootstrapper := &enginetest.Bootstrapper{
+		Engine: enginetest.Engine{
 			T: t,
 		},
 	}
@@ -346,7 +358,6 @@ func TestHandlerDispatchInternal(t *testing.T) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	msgFromVMChan := make(chan common.Message)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -367,23 +378,27 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	)
 	require.NoError(err)
 
+	subscription, messages := createSubscriber()
+	notified := make(chan common.Message)
+
 	handler, err := New(
 		ctx,
+		&block.ChangeNotifier{},
+		subscription,
 		vdrs,
-		msgFromVMChan,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
-		validators.UnhandledSubnetConnector,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 
-	bootstrapper := &common.BootstrapperTest{
-		EngineTest: common.EngineTest{
+	bootstrapper := &enginetest.Bootstrapper{
+		Engine: enginetest.Engine{
 			T: t,
 		},
 	}
@@ -395,10 +410,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return ctx
 	}
 
-	wg := &sync.WaitGroup{}
-	engine.NotifyF = func(context.Context, common.Message) error {
-		wg.Done()
-		return nil
+	engine.NotifyF = func(ctx context.Context, msg common.Message) error {
+		select {
+		case notified <- msg:
+			notified <- msg
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 
 	handler.SetEngineManager(&EngineManager{
@@ -417,102 +436,14 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return nil
 	}
 
-	wg.Add(1)
 	handler.Start(context.Background(), false)
-	msgFromVMChan <- 0
-	wg.Wait()
-}
-
-func TestHandlerSubnetConnector(t *testing.T) {
-	require := require.New(t)
-
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
-	vdrs := validators.NewManager()
-	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
-
-	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
-		resource.NoUsage,
-		meter.ContinuousFactory{},
-		time.Second,
-	)
-	require.NoError(err)
-	ctrl := gomock.NewController(t)
-	connector := validators.NewMockSubnetConnector(ctrl)
-
-	nodeID := ids.GenerateTestNodeID()
-	subnetID := ids.GenerateTestID()
-
-	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
-		"",
-		prometheus.NewRegistry(),
-		nil,
-		version.CurrentApp,
-	)
-	require.NoError(err)
-
-	handler, err := New(
-		ctx,
-		vdrs,
-		nil,
-		time.Second,
-		testThreadPoolSize,
-		resourceTracker,
-		connector,
-		subnets.New(ctx.NodeID, subnets.Config{}),
-		commontracker.NewPeers(),
-		peerTracker,
-		prometheus.NewRegistry(),
-	)
-	require.NoError(err)
-
-	bootstrapper := &common.BootstrapperTest{
-		EngineTest: common.EngineTest{
-			T: t,
-		},
+	messages <- common.PendingTxs
+	select {
+	case msg := <-notified:
+		require.Equal(common.PendingTxs, msg)
+	case <-time.After(time.Minute):
+		require.FailNow("Handler did not dispatch expected message")
 	}
-	bootstrapper.Default(false)
-
-	engine := &common.EngineTest{T: t}
-	engine.Default(false)
-	engine.ContextF = func() *snow.ConsensusContext {
-		return ctx
-	}
-
-	handler.SetEngineManager(&EngineManager{
-		Snowman: &Engine{
-			Bootstrapper: bootstrapper,
-			Consensus:    engine,
-		},
-	})
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.NormalOp, // assumed bootstrap is done
-	})
-
-	bootstrapper.StartF = func(context.Context, uint32) error {
-		return nil
-	}
-
-	handler.Start(context.Background(), false)
-
-	// Handler should call subnet connector when ConnectedSubnet message is received
-	var wg sync.WaitGroup
-	connector.EXPECT().ConnectedSubnet(gomock.Any(), nodeID, subnetID).Do(
-		func(context.Context, ids.NodeID, ids.ID) {
-			wg.Done()
-		})
-
-	wg.Add(1)
-	defer wg.Wait()
-
-	subnetInboundMessage := Message{
-		InboundMessage: message.InternalConnectedSubnet(nodeID, subnetID),
-		EngineType:     p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-	}
-	handler.Push(context.Background(), subnetInboundMessage)
 }
 
 // Tests that messages are routed to the correct engine type
@@ -529,7 +460,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -544,8 +475,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - lux, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Lux: &Engine{
@@ -575,7 +506,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		{
 			name:                "current - snowman, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Lux: &Engine{
@@ -635,34 +566,37 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			)
 			require.NoError(err)
 
+			subscription, _ := createSubscriber()
+
 			handler, err := New(
 				ctx,
+				&block.ChangeNotifier{},
+				subscription,
 				vdrs,
-				nil,
 				time.Second,
 				testThreadPoolSize,
 				resourceTracker,
-				validators.UnhandledSubnetConnector,
 				subnets.New(ids.EmptyNodeID, subnets.Config{}),
 				commontracker.NewPeers(),
 				peerTracker,
 				prometheus.NewRegistry(),
+				func() {},
 			)
 			require.NoError(err)
 
-			bootstrapper := &common.BootstrapperTest{
-				EngineTest: common.EngineTest{
+			bootstrapper := &enginetest.Bootstrapper{
+				Engine: enginetest.Engine{
 					T: t,
 				},
 			}
 			bootstrapper.Default(false)
 
-			engine := &common.EngineTest{T: t}
+			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
 			engine.ContextF = func() *snow.ConsensusContext {
 				return ctx
 			}
-			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID) error {
+			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID, uint64) error {
 				close(messageReceived)
 				return nil
 			}
@@ -718,18 +652,21 @@ func TestHandlerStartError(t *testing.T) {
 	)
 	require.NoError(err)
 
+	subscription, _ := createSubscriber()
+
 	handler, err := New(
 		ctx,
+		&block.ChangeNotifier{},
+		subscription,
 		validators.NewManager(),
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
-		nil,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 
@@ -744,4 +681,19 @@ func TestHandlerStartError(t *testing.T) {
 
 	_, err = handler.AwaitStopped(context.Background())
 	require.NoError(err)
+}
+
+func createSubscriber() (common.Subscription, chan<- common.Message) {
+	messages := make(chan common.Message, 1)
+
+	subscription := func(ctx context.Context) (common.Message, error) {
+		select {
+		case msg := <-messages:
+			return msg, nil
+		case <-ctx.Done():
+			return common.Message(0), ctx.Err()
+		}
+	}
+
+	return subscription, messages
 }

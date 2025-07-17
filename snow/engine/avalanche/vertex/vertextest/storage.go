@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertextest
@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/avalanche"
-	"github.com/luxfi/node/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 type Storage struct {
 	T                                            *testing.T
 	CantGetVtx, CantEdge, CantStopVertexAccepted bool
-	GetVtxF                                      func(context.Context, ids.ID) (avalanche.Vertex, error)
+	GetVtxF                                      func(context.Context, ids.ID) (lux.Vertex, error)
 	EdgeF                                        func(context.Context) []ids.ID
 	StopVertexAcceptedF                          func(context.Context) (bool, error)
 }
@@ -36,7 +36,7 @@ func (s *Storage) Default(cant bool) {
 	s.CantEdge = cant
 }
 
-func (s *Storage) GetVtx(ctx context.Context, vtxID ids.ID) (avalanche.Vertex, error) {
+func (s *Storage) GetVtx(ctx context.Context, vtxID ids.ID) (lux.Vertex, error) {
 	if s.GetVtxF != nil {
 		return s.GetVtxF(ctx, vtxID)
 	}

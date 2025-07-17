@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -12,6 +12,8 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/registry/registrymock"
+	"github.com/luxfi/node/vms/vmsmock"
 )
 
 var (
@@ -24,8 +26,6 @@ var (
 // Tests the happy case where Reload succeeds.
 func TestReload_Success(t *testing.T) {
 	require := require.New(t)
-
-	resources := initVMRegistryTest(t)
 
 	resources := initVMRegistryTest(t)
 
@@ -83,8 +83,6 @@ func TestReload_PartialRegisterFailure(t *testing.T) {
 
 	resources := initVMRegistryTest(t)
 
-	resources := initVMRegistryTest(t)
-
 	factory1 := vmsmock.NewFactory(resources.ctrl)
 	factory2 := vmsmock.NewFactory(resources.ctrl)
 	factory3 := vmsmock.NewFactory(resources.ctrl)
@@ -123,16 +121,16 @@ func TestReload_PartialRegisterFailure(t *testing.T) {
 
 type registryTestResources struct {
 	ctrl          *gomock.Controller
-	mockVMGetter  *MockVMGetter
-	mockVMManager *vms.MockManager
+	mockVMGetter  *registrymock.VMGetter
+	mockVMManager *vmsmock.Manager
 	vmRegistry    VMRegistry
 }
 
 func initVMRegistryTest(t *testing.T) *registryTestResources {
 	ctrl := gomock.NewController(t)
 
-	mockVMGetter := NewMockVMGetter(ctrl)
-	mockVMManager := vms.NewMockManager(ctrl)
+	mockVMGetter := registrymock.NewVMGetter(ctrl)
+	mockVMManager := vmsmock.NewManager(ctrl)
 
 	vmRegistry := NewVMRegistry(
 		VMRegistryConfig{

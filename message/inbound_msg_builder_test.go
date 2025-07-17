@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -22,7 +21,6 @@ func Test_newMsgBuilder(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		10*time.Second,
 	)
@@ -142,7 +140,6 @@ func TestInboundMsgBuilder(t *testing.T) {
 			require.Equal(requestID, innerMsg.RequestId)
 			summaryIDsBytes := make([][]byte, len(summaryIDs))
 			for i, id := range summaryIDs {
-				id := id
 				summaryIDsBytes[i] = id[:]
 			}
 			require.Equal(summaryIDsBytes, innerMsg.SummaryIds)
@@ -244,7 +241,6 @@ func TestInboundMsgBuilder(t *testing.T) {
 			require.Equal(requestID, innerMsg.RequestId)
 			containerIDsBytes := make([][]byte, len(containerIDs))
 			for i, id := range containerIDs {
-				id := id
 				containerIDsBytes[i] = id[:]
 			}
 			require.Equal(containerIDsBytes, innerMsg.ContainerIds)
@@ -391,7 +387,6 @@ func TestAppError(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		time.Second,
 	)

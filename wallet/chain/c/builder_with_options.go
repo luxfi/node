@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -6,13 +6,13 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/ava-labs/libevm/common"
+	ethcommon "github.com/luxfi/libevm/common"
 )
 
 var _ Builder = (*builderWithOptions)(nil)
@@ -59,7 +59,7 @@ func (b *builderWithOptions) NewImportTx(
 	to ethcommon.Address,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*evm.UnsignedImportTx, error) {
+) (*atomic.UnsignedImportTx, error) {
 	return b.Builder.NewImportTx(
 		chainID,
 		to,
@@ -73,7 +73,7 @@ func (b *builderWithOptions) NewExportTx(
 	outputs []*secp256k1fx.TransferOutput,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*evm.UnsignedExportTx, error) {
+) (*atomic.UnsignedExportTx, error) {
 	return b.Builder.NewExportTx(
 		chainID,
 		outputs,

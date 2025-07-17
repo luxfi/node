@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -6,6 +6,7 @@ package executor
 import (
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -16,6 +17,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
+	toEngine        chan<- common.Message
 	addTxsToMempool bool
 }
 
@@ -82,7 +84,14 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 		}
 	}
 
-	r.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
+	if r.Mempool.Len() == 0 {
+		return nil
+	}
+
+	select {
+	case r.toEngine <- common.PendingTxs:
+	default:
+	}
 
 	return nil
 }

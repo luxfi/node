@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -16,10 +16,8 @@ import (
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
+	"github.com/luxfi/node/vms/txs/mempool"
 )
-
-const txGossipHandlerID = 0
 
 var (
 	_ common.AppHandler    = (*Network)(nil)
@@ -29,10 +27,8 @@ var (
 type Network struct {
 	*p2p.Network
 
-	log       logging.Logger
-	parser    txs.Parser
-	mempool   *gossipMempool
-	appSender common.AppSender
+	log     logging.Logger
+	mempool *gossipMempool
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -47,7 +43,7 @@ func New(
 	vdrs validators.State,
 	parser txs.Parser,
 	txVerifier TxVerifier,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	appSender common.AppSender,
 	registerer prometheus.Registerer,
 	config Config,
@@ -68,7 +64,7 @@ func New(
 		config.MaxValidatorSetStaleness,
 	)
 	txGossipClient := p2pNetwork.NewClient(
-		txGossipHandlerID,
+		p2p.TxGossipHandlerID,
 		p2p.WithValidatorSampling(validators),
 	)
 	txGossipMetrics, err := gossip.NewMetrics(registerer, "tx")
@@ -81,7 +77,6 @@ func New(
 		registerer,
 		log,
 		txVerifier,
-		parser,
 		config.ExpectedBloomFilterElements,
 		config.ExpectedBloomFilterFalsePositiveProbability,
 		config.MaxBloomFilterFalsePositiveProbability,
@@ -157,16 +152,14 @@ func New(
 		appRequestHandler: validatorHandler,
 	}
 
-	if err := p2pNetwork.AddHandler(txGossipHandlerID, txGossipHandler); err != nil {
+	if err := p2pNetwork.AddHandler(p2p.TxGossipHandlerID, txGossipHandler); err != nil {
 		return nil, err
 	}
 
 	return &Network{
 		Network:               p2pNetwork,
 		log:                   log,
-		parser:                parser,
 		mempool:               gossipMempool,
-		appSender:             appSender,
 		txPushGossiper:        txPushGossiper,
 		txPushGossipFrequency: config.PushGossipFrequency,
 		txPullGossiper:        txPullGossiper,

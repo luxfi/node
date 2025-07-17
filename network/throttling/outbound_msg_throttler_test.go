@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -12,6 +12,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/message/messagemock"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -226,7 +227,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.NoError(err)
 	throttler := throttlerIntf.(*outboundMsgThrottler)
 	nonVdrNodeID1 := ids.GenerateTestNodeID()
-	msg := message.NewMockOutboundMessage(ctrl)
+	msg := messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
 	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, config.NodeMaxAtLargeBytes)).AnyTimes()
@@ -234,7 +235,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.True(acquired)
 
 	// Acquiring more should not fail
-	msg = message.NewMockOutboundMessage(ctrl)
+	msg = messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
 	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, 1)).AnyTimes()
@@ -247,7 +248,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.True(acquired)
 
 	// Validator should only be able to take [MaxAtLargeBytes]
-	msg = message.NewMockOutboundMessage(ctrl)
+	msg = messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
 	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, config.NodeMaxAtLargeBytes+1)).AnyTimes()
@@ -259,7 +260,7 @@ func TestBypassThrottling(t *testing.T) {
 }
 
 func testMsgWithSize(ctrl *gomock.Controller, size uint64) message.OutboundMessage {
-	msg := message.NewMockOutboundMessage(ctrl)
+	msg := messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(false).AnyTimes()
 	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, size)).AnyTimes()

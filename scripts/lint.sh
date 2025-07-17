@@ -32,8 +32,7 @@ fi
 TESTS=${TESTS:-"golangci_lint license_header require_error_is_no_funcs_as_params single_import interface_compliance_nil require_no_error_inline_func import_testing_only_in_tests"}
 
 function test_golangci_lint {
-  go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1
-  golangci-lint run --config .golangci.yml
+  go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run --config .golangci.yml
 }
 
 # automatically checks license headers
@@ -41,12 +40,20 @@ function test_golangci_lint {
 # TESTS='license_header' ADDLICENSE_FLAGS="--debug" ./scripts/lint.sh
 _addlicense_flags=${ADDLICENSE_FLAGS:-"--verify --debug"}
 function test_license_header {
-  go install -v github.com/palantir/go-license@v1.25.0
   local files=()
-  while IFS= read -r line; do files+=("$line"); done < <(find . -type f -name '*.go' ! -name '*.pb.go' ! -name 'mock_*.go')
+  while IFS= read -r line; do files+=("$line"); done < <(
+    find . -type f -name '*.go' \
+      ! -name '*.pb.go' \
+      ! -name '*.connect.go' \
+      ! -name 'mock_*.go' \
+      ! -name 'mocks_*.go' \
+      ! -path './**/*mock/*.go' \
+      ! -name '*.canoto.go' \
+      ! -name '*.bindings.go'
+    )
 
   # shellcheck disable=SC2086
-  go-license \
+  go run github.com/palantir/go-license@v1.25.0 \
   --config=./header.yml \
   ${_addlicense_flags} \
   "${files[@]}"
@@ -88,25 +95,31 @@ function test_interface_compliance_nil {
 
 function test_import_testing_only_in_tests {
   ROOT=$( git rev-parse --show-toplevel )
-  NON_TEST_GO_FILES=$( find "${ROOT}" -iname '*.go' ! -iname '*_test.go');
+  NON_TEST_GO_FILES=$( find "${ROOT}" -iname '*.go' ! -iname '*_test.go' ! -path "${ROOT}/tests/*" );
 
   IMPORT_TESTING=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '^\s*(import\s+)?"testing"');
   IMPORT_TESTIFY=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/stretchr/testify');
+  IMPORT_FROM_TESTS=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/luxfi/node/tests/');
+  IMPORT_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '"github.com/luxfi/node/.*?test"');
+
   # TODO(arr4n): send a PR to add support for build tags in `mockgen` and then enable this.
   # IMPORT_GOMOCK=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"go.uber.org/mock');
-  HAVE_TEST_LOGIC=$( printf "%s\n%s" "${IMPORT_TESTING}" "${IMPORT_TESTIFY}" );
+  HAVE_TEST_LOGIC=$( printf "%s\n%s\n%s\n%s" "${IMPORT_TESTING}" "${IMPORT_TESTIFY}" "${IMPORT_FROM_TESTS}" "${IMPORT_TEST_PKG}" );
 
-  TAGGED_AS_TEST=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '^\/\/go:build\s+(.+(,|\s+))?test[,\s]?');
+  IN_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | grep -P '.*test/[^/]+\.go$' ) # directory (hence package name) ends in "test"
+
+  # Files in /tests/ are already excluded by the `find ... ! -path`
+  INTENDED_FOR_TESTING="${IN_TEST_PKG}"
 
   # -3 suppresses files that have test logic and have the "test" build tag
   # -2 suppresses files that are tagged despite not having detectable test logic
-  UNTAGGED=$( comm -23 <( echo "${HAVE_TEST_LOGIC}" | sort -u ) <( echo "${TAGGED_AS_TEST}" | sort -u ) );
+  UNTAGGED=$( comm -23 <( echo "${HAVE_TEST_LOGIC}" | sort -u ) <( echo "${INTENDED_FOR_TESTING}" | sort -u ) );
   if [ -z "${UNTAGGED}" ];
   then
     return 0;
   fi
 
-  echo "Non-test Go files importing test-only packages MUST have '//go:build test' tag:";
+  echo 'Non-test Go files importing test-only packages MUST (a) be in *test package; or (b) be in /tests/ directory:';
   echo "${UNTAGGED}";
   return 1;
 }

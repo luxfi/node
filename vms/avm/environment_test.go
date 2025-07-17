@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -6,27 +6,22 @@ package avm
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/avm/block/executor"
 	"github.com/luxfi/node/vms/avm/config"
 	"github.com/luxfi/node/vms/avm/fxs"
@@ -35,44 +30,17 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	avajson "github.com/luxfi/node/utils/json"
-	keystoreutils "github.com/luxfi/node/vms/components/keystore"
 )
 
-type fork uint8
-
 const (
-	durango fork = iota
-	eUpgrade
-
-	latest = durango
-
 	testTxFee    uint64 = 1000
 	startBalance uint64 = 50000
 
-	username       = "bobby"
-	password       = "StrnasfqewiurPasswdn56d" //#nosec G101
 	feeAssetName   = "TEST"
 	otherAssetName = "OTHER"
 )
 
 var (
-	testChangeAddr = ids.GenerateTestShortID()
-	testCases      = []struct {
-		name      string
-		luxAsset bool
-	}{
-		{
-			name:      "genesis asset is LUX",
-			luxAsset: true,
-		},
-		{
-			name:      "genesis asset is TEST",
-			luxAsset: false,
-		},
-	}
-
 	assetID = ids.ID{1, 2, 3}
 
 	keys  = secp256k1.TestKeys()[:3] // TODO: Remove [:3]
@@ -86,16 +54,9 @@ func init() {
 	}
 }
 
-type user struct {
-	username    string
-	password    string
-	initialKeys []*secp256k1.PrivateKey
-}
-
 type envConfig struct {
-	fork             fork
+	fork             upgradetest.Fork
 	isCustomFeeAsset bool
-	keystoreUsers    []*user
 	vmStaticConfig   *config.Config
 	vmDynamicConfig  *Config
 	additionalFxs    []*common.Fx
@@ -107,7 +68,6 @@ type environment struct {
 	genesisBytes []byte
 	genesisTx    *txs.Tx
 	sharedMemory *atomic.Memory
-	issuer       chan common.Message
 	vm           *VM
 	txBuilder    *txstest.Builder
 }
@@ -117,17 +77,21 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	require := require.New(tb)
 
 	var (
-		genesisArgs *BuildGenesisArgs
+		networkID   = uint32(0)
+		genesisData map[string]AssetDefinition
 		assetName   = "LUX"
 	)
 	if c.isCustomFeeAsset {
-		genesisArgs = makeCustomAssetGenesis(tb)
+		genesisData = makeCustomAssetGenesisData(tb)
 		assetName = feeAssetName
 	} else {
-		genesisArgs = makeDefaultGenesis(tb)
+		genesisData = makeDefaultGenesisData(tb)
 	}
 
-	genesisBytes := buildGenesisTestWithArgs(tb, genesisArgs)
+	genesis, err := NewGenesis(networkID, genesisData)
+	require.NoError(err)
+	genesisBytes, err := genesis.Bytes()
+	require.NoError(err)
 
 	ctx := snowtest.Context(tb, snowtest.XChainID)
 
@@ -139,21 +103,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// The caller of this function is responsible for unlocking.
 	ctx.Lock.Lock()
 
-	userKeystore := keystore.New(logging.NoLog{}, memdb.New())
-	ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
-
-	for _, user := range c.keystoreUsers {
-		require.NoError(userKeystore.CreateUser(user.username, user.password))
-
-		// Import the initially funded private keys
-		keystoreUser, err := keystoreutils.NewUserFromKeystore(ctx.Keystore, user.username, user.password)
-		require.NoError(err)
-
-		require.NoError(keystoreUser.PutKeys(user.initialKeys...))
-		require.NoError(keystoreUser.Close())
+	vmStaticConfig := config.Config{
+		Upgrades:         upgradetest.GetConfig(c.fork),
+		TxFee:            testTxFee,
+		CreateAssetTxFee: testTxFee,
 	}
-
-	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {
 		vmStaticConfig = *c.vmStaticConfig
 	}
@@ -163,7 +117,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	}
 
 	vmDynamicConfig := DefaultConfig
-	vmDynamicConfig.IndexTransactions = true
 	if c.vmDynamicConfig != nil {
 		vmDynamicConfig = *c.vmDynamicConfig
 	}
@@ -175,7 +128,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		ctx,
 		prefixdb.New([]byte{1}, baseDB),
 		genesisBytes,
-		nil,
 		configBytes,
 		nil,
 		append(
@@ -191,17 +143,15 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			},
 			c.additionalFxs...,
 		),
-		&common.SenderTest{},
+		&enginetest.Sender{},
 	))
 
 	stopVertexID := ids.GenerateTestID()
-	issuer := make(chan common.Message, 1)
 
 	env := &environment{
 		genesisBytes: genesisBytes,
 		genesisTx:    getCreateTxFromGenesisTest(tb, genesisBytes, assetName),
 		sharedMemory: m,
-		issuer:       issuer,
 		vm:           vm,
 		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
 	}
@@ -211,7 +161,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		return env
 	}
 
-	require.NoError(vm.Linearize(context.Background(), stopVertexID, issuer))
+	require.NoError(vm.Linearize(context.Background(), stopVertexID))
 	if c.notBootstrapped {
 		return env
 	}
@@ -226,24 +176,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	})
 
 	return env
-}
-
-func staticConfig(tb testing.TB, f fork) config.Config {
-	c := config.Config{
-		TxFee:            testTxFee,
-		CreateAssetTxFee: testTxFee,
-		EUpgradeTime:     mockable.MaxTime,
-	}
-
-	switch f {
-	case eUpgrade:
-		c.EUpgradeTime = time.Time{}
-	case durango:
-	default:
-		require.FailNow(tb, "unhandled fork", f)
-	}
-
-	return c
 }
 
 // Returns:
@@ -282,23 +214,17 @@ func getCreateTxFromGenesisTest(tb testing.TB, genesisBytes []byte, assetName st
 	return tx
 }
 
-// buildGenesisTest is the common Genesis builder for most tests
-func buildGenesisTest(tb testing.TB) []byte {
-	defaultArgs := makeDefaultGenesis(tb)
-	return buildGenesisTestWithArgs(tb, defaultArgs)
-}
-
-// buildGenesisTestWithArgs allows building the genesis while injecting different starting points (args)
-func buildGenesisTestWithArgs(tb testing.TB, args *BuildGenesisArgs) []byte {
+func newGenesisBytesTest(tb testing.TB) []byte {
 	require := require.New(tb)
-
-	ss := CreateStaticService()
-
-	reply := BuildGenesisReply{}
-	require.NoError(ss.BuildGenesis(nil, args, &reply))
-
-	b, err := formatting.Decode(reply.Encoding, reply.Bytes)
+	genesisData := makeDefaultGenesisData(tb)
+	genesis, err := NewGenesis(
+		constants.UnitTestID,
+		genesisData,
+	)
 	require.NoError(err)
+	b, err := genesis.Bytes()
+	require.NoError(err)
+	require.NotEmpty(b)
 	return b
 }
 
@@ -327,37 +253,13 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 			}},
 		},
 	}}
-	require.NoError(tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}))
+	require.NoError(
+		tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}),
+	)
 	return tx
 }
 
-// Sample from a set of addresses and return them raw and formatted as strings.
-// The size of the sample is between 1 and len(addrs)
-// If len(addrs) == 0, returns nil
-func sampleAddrs(tb testing.TB, addressFormatter lux.AddressManager, addrs []ids.ShortID) ([]ids.ShortID, []string) {
-	require := require.New(tb)
-
-	sampledAddrs := []ids.ShortID{}
-	sampledAddrsStr := []string{}
-
-	sampler := sampler.NewUniform()
-	sampler.Initialize(uint64(len(addrs)))
-
-	numAddrs := 1 + rand.Intn(len(addrs)) // #nosec G404
-	indices, ok := sampler.Sample(numAddrs)
-	require.True(ok)
-	for _, index := range indices {
-		addr := addrs[index]
-		addrStr, err := addressFormatter.FormatLocalAddress(addr)
-		require.NoError(err)
-
-		sampledAddrs = append(sampledAddrs, addr)
-		sampledAddrsStr = append(sampledAddrsStr, addrStr)
-	}
-	return sampledAddrs, sampledAddrsStr
-}
-
-func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
+func makeDefaultGenesisData(tb testing.TB) map[string]AssetDefinition {
 	require := require.New(tb)
 
 	addr0Str, err := address.FormatBech32(constants.UnitTestHRP, addrs[0].Bytes())
@@ -369,77 +271,74 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 	addr2Str, err := address.FormatBech32(constants.UnitTestHRP, addrs[2].Bytes())
 	require.NoError(err)
 
-	return &BuildGenesisArgs{
-		Encoding: formatting.Hex,
-		GenesisData: map[string]AssetDefinition{
-			"asset1": {
-				Name:   "LUX",
-				Symbol: "SYMB",
-				InitialState: map[string][]interface{}{
-					"fixedCap": {
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr0Str,
+	return map[string]AssetDefinition{
+		"asset1": {
+			Name:   "LUX",
+			Symbol: "SYMB",
+			InitialState: AssetInitialState{
+				FixedCap: []Holder{
+					{
+						Amount:  startBalance,
+						Address: addr0Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr1Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr2Str,
+					},
+				},
+			},
+		},
+		"asset2": {
+			Name:   "myVarCapAsset",
+			Symbol: "MVCA",
+			InitialState: AssetInitialState{
+				VariableCap: []Owners{
+					{
+						Threshold: 1,
+						Minters: []string{
+							addr0Str,
+							addr1Str,
 						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr1Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr2Str,
+					},
+					{
+						Threshold: 2,
+						Minters: []string{
+							addr0Str,
+							addr1Str,
+							addr2Str,
 						},
 					},
 				},
 			},
-			"asset2": {
-				Name:   "myVarCapAsset",
-				Symbol: "MVCA",
-				InitialState: map[string][]interface{}{
-					"variableCap": {
-						Owners{
-							Threshold: 1,
-							Minters: []string{
-								addr0Str,
-								addr1Str,
-							},
-						},
-						Owners{
-							Threshold: 2,
-							Minters: []string{
-								addr0Str,
-								addr1Str,
-								addr2Str,
-							},
+		},
+		"asset3": {
+			Name: "myOtherVarCapAsset",
+			InitialState: AssetInitialState{
+				VariableCap: []Owners{
+					{
+						Threshold: 1,
+						Minters: []string{
+							addr0Str,
 						},
 					},
 				},
 			},
-			"asset3": {
-				Name: "myOtherVarCapAsset",
-				InitialState: map[string][]interface{}{
-					"variableCap": {
-						Owners{
-							Threshold: 1,
-							Minters: []string{
-								addr0Str,
-							},
-						},
+		},
+		"asset4": {
+			Name: "myFixedCapAsset",
+			InitialState: AssetInitialState{
+				FixedCap: []Holder{
+					{
+						Amount:  startBalance,
+						Address: addr0Str,
 					},
-				},
-			},
-			"asset4": {
-				Name: "myFixedCapAsset",
-				InitialState: map[string][]interface{}{
-					"fixedCap": {
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr0Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr1Str,
-						},
+					{
+						Amount:  startBalance,
+						Address: addr1Str,
 					},
 				},
 			},
@@ -447,7 +346,7 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 	}
 }
 
-func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
+func makeCustomAssetGenesisData(tb testing.TB) map[string]AssetDefinition {
 	require := require.New(tb)
 
 	addr0Str, err := address.FormatBech32(constants.UnitTestHRP, addrs[0].Bytes())
@@ -459,46 +358,43 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 	addr2Str, err := address.FormatBech32(constants.UnitTestHRP, addrs[2].Bytes())
 	require.NoError(err)
 
-	return &BuildGenesisArgs{
-		Encoding: formatting.Hex,
-		GenesisData: map[string]AssetDefinition{
-			"asset1": {
-				Name:   feeAssetName,
-				Symbol: "TST",
-				InitialState: map[string][]interface{}{
-					"fixedCap": {
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr0Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr1Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr2Str,
-						},
+	return map[string]AssetDefinition{
+		"asset1": {
+			Name:   feeAssetName,
+			Symbol: "TST",
+			InitialState: AssetInitialState{
+				FixedCap: []Holder{
+					{
+						Amount:  startBalance,
+						Address: addr0Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr1Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr2Str,
 					},
 				},
 			},
-			"asset2": {
-				Name:   otherAssetName,
-				Symbol: "OTH",
-				InitialState: map[string][]interface{}{
-					"fixedCap": {
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr0Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr1Str,
-						},
-						Holder{
-							Amount:  avajson.Uint64(startBalance),
-							Address: addr2Str,
-						},
+		},
+		"asset2": {
+			Name:   otherAssetName,
+			Symbol: "OTH",
+			InitialState: AssetInitialState{
+				FixedCap: []Holder{
+					{
+						Amount:  startBalance,
+						Address: addr0Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr1Str,
+					},
+					{
+						Amount:  startBalance,
+						Address: addr2Str,
 					},
 				},
 			},
@@ -510,24 +406,24 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 func issueAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan common.Message,
 	tx *txs.Tx,
 ) {
 	txID, err := vm.issueTxFromRPC(tx)
 	require.NoError(err)
 	require.Equal(tx.ID(), txID)
 
-	buildAndAccept(require, vm, issuer, txID)
+	buildAndAccept(require, vm, txID)
 }
 
 // buildAndAccept expects the context lock not to be held
 func buildAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan common.Message,
 	txID ids.ID,
 ) {
-	require.Equal(common.PendingTxs, <-issuer)
+	msg, err := vm.WaitForEvent(context.Background())
+	require.NoError(err)
+	require.Equal(common.PendingTxs, msg)
 
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()

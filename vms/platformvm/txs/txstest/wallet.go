@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
@@ -13,11 +13,12 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
@@ -28,10 +29,11 @@ import (
 func NewWallet(
 	t testing.TB,
 	ctx *snow.Context,
-	config *config.Config,
+	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,
 	subnetIDs []ids.ID,
+	validationIDs []ids.ID,
 	chainIDs []ids.ID,
 ) wallet.Wallet {
 	var (
@@ -40,7 +42,7 @@ func NewWallet(
 		utxos   = common.NewUTXOs()
 	)
 
-	pChainUTXOs, err := avax.GetAllUTXOs(state, addrs)
+	pChainUTXOs, err := lux.GetAllUTXOs(state, addrs)
 	require.NoError(err)
 
 	for _, utxo := range pChainUTXOs {
@@ -53,7 +55,7 @@ func NewWallet(
 	}
 
 	for _, chainID := range chainIDs {
-		remoteChainUTXOs, _, _, err := avax.GetAtomicUTXOs(
+		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
 			ctx.SharedMemory,
 			txs.Codec,
 			chainID,
@@ -74,19 +76,30 @@ func NewWallet(
 		}
 	}
 
-	owners := make(map[ids.ID]fx.Owner, len(subnetIDs))
+	owners := make(map[ids.ID]fx.Owner, len(subnetIDs)+len(validationIDs))
 	for _, subnetID := range subnetIDs {
 		owner, err := state.GetSubnetOwner(subnetID)
 		require.NoError(err)
 		owners[subnetID] = owner
 	}
+	for _, validationID := range validationIDs {
+		l1Validator, err := state.GetL1Validator(validationID)
+		require.NoError(err)
 
-	builderContext := newContext(ctx, config, state)
+		var owner message.PChainOwner
+		_, err = txs.Codec.Unmarshal(l1Validator.DeactivationOwner, &owner)
+		require.NoError(err)
+		owners[validationID] = &secp256k1fx.OutputOwners{
+			Threshold: owner.Threshold,
+			Addrs:     owner.Addresses,
+		}
+	}
+
 	backend := wallet.NewBackend(
-		builderContext,
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
+	builderContext := newContext(ctx, config, state)
 	return wallet.New(
 		&client{
 			backend: backend,
@@ -112,9 +125,17 @@ func (c *client) IssueTx(
 	options ...common.Option,
 ) error {
 	ops := common.NewOptions(options)
-	if f := ops.PostIssuanceFunc(); f != nil {
-		txID := tx.ID()
-		f(txID)
+	if f := ops.IssuanceHandler(); f != nil {
+		f(common.IssuanceReceipt{
+			ChainAlias: builder.Alias,
+			TxID:       tx.ID(),
+		})
+	}
+	if f := ops.ConfirmationHandler(); f != nil {
+		f(common.ConfirmationReceipt{
+			ChainAlias: builder.Alias,
+			TxID:       tx.ID(),
+		})
 	}
 	ctx := ops.Context()
 	return c.backend.AcceptTx(ctx, tx)

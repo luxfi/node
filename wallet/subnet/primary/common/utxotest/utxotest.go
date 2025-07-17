@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxotest
@@ -12,11 +12,11 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
-func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*avax.UTXO) *DeterministicChainUTXOs {
+func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*lux.UTXO) *DeterministicChainUTXOs {
 	globalUTXOs := common.NewUTXOs()
 	for subnetID, utxos := range utxoSets {
 		for _, utxo := range utxos {
@@ -34,13 +34,13 @@ type DeterministicChainUTXOs struct {
 	common.ChainUTXOs
 }
 
-func (c *DeterministicChainUTXOs) UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*avax.UTXO, error) {
+func (c *DeterministicChainUTXOs) UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error) {
 	utxos, err := c.ChainUTXOs.UTXOs(ctx, sourceChainID)
 	if err != nil {
 		return nil, err
 	}
 
-	slices.SortFunc(utxos, func(a, b *avax.UTXO) int {
+	slices.SortFunc(utxos, func(a, b *lux.UTXO) int {
 		return a.Compare(&b.UTXOID)
 	})
 	return utxos, nil

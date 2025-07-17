@@ -1,16 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/node/utils/units"
 )
 
-// TODO: Update these tests for the new bloom filter API
-/*
 func TestNewErrors(t *testing.T) {
 	tests := []struct {
 		numHashes  int
@@ -35,40 +36,45 @@ func TestNewErrors(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.err.Error(), func(t *testing.T) {
-			_, err := New(1000, 0.01, 1<<20) // maxN=1000, p=0.01, maxSize=1MB
+			_, err := New(test.numHashes, test.numEntries)
 			require.ErrorIs(t, err, test.err)
 		})
 	}
 }
-*/
 
-// TODO: Rewrite test for new bloom filter API
 func TestNormalUsage(t *testing.T) {
 	require := require.New(t)
 
-	// Basic test for new API
-	filter, err := New(1000, 0.01, 1<<20) // maxN=1000, p=0.01, maxSize=1MB
+	toAdd := make([]uint64, 1024)
+	for i := range toAdd {
+		toAdd[i] = rand.Uint64() //#nosec G404
+	}
+
+	initialNumHashes, initialNumBytes := OptimalParameters(1024, 0.01)
+	filter, err := New(initialNumHashes, initialNumBytes)
 	require.NoError(err)
 
-	// Add some values
-	testData := [][]byte{
-		[]byte("test1"),
-		[]byte("test2"),
-		[]byte("test3"),
+	for i, elem := range toAdd {
+		filter.Add(elem)
+		for _, elem := range toAdd[:i] {
+			require.True(filter.Contains(elem))
+		}
 	}
-	
-	filter.Add(testData...)
-	
-	// Check they exist
-	for _, data := range testData {
-		require.True(filter.Check(data))
+
+	require.Equal(len(toAdd), filter.Count())
+
+	filterBytes := filter.Marshal()
+	parsedFilter, err := Parse(filterBytes)
+	require.NoError(err)
+
+	for _, elem := range toAdd {
+		require.True(parsedFilter.Contains(elem))
 	}
-	
-	// Check non-existent value
-	require.False(filter.Check([]byte("nonexistent")))
+
+	parsedFilterBytes := parsedFilter.Marshal()
+	require.Equal(filterBytes, parsedFilterBytes)
 }
 
-/*
 func BenchmarkAdd(b *testing.B) {
 	f, err := New(8, 16*units.KiB)
 	require.NoError(b, err)
@@ -88,4 +94,3 @@ func BenchmarkMarshal(b *testing.B) {
 		f.Marshal()
 	}
 }
-*/

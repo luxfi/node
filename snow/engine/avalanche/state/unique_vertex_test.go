@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -16,6 +16,7 @@ import (
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/snow/engine/lux/vertex/vertextest"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -23,7 +24,7 @@ import (
 var errUnknownTx = errors.New("unknown tx")
 
 func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (snowstorm.Tx, error)) *Serializer {
-	vm := vertex.TestVM{}
+	vm := vertextest.VM{}
 	vm.T = t
 	vm.Default(true)
 	vm.ParseTxF = parse

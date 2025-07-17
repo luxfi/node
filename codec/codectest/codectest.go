@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package codectest provides a test suite for testing codec implementations.
@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/node/utils/wrappers"
 
 	codecpkg "github.com/luxfi/node/codec"
 )
@@ -33,7 +35,7 @@ func RunAll(t *testing.T, ctor func() codecpkg.GeneralCodec) {
 	}
 }
 
-// RunAll runs all [MultipleTagsTests], constructing a new GeneralCodec for each.
+// RunAllMultipleTags runs all [MultipleTagsTests], constructing a new GeneralCodec for each.
 func RunAllMultipleTags(t *testing.T, ctor func() codecpkg.GeneralCodec) {
 	for _, tt := range MultipleTagsTests {
 		tt.Run(t, ctor())
@@ -75,6 +77,7 @@ var (
 		{"Slice Length Overflow", TestSliceLengthOverflow},
 		{"Map", TestMap},
 		{"Can Marshal Large Slices", TestCanMarshalLargeSlices},
+		{"Implements UnmarshalFrom", TestImplementsUnmarshalFrom},
 	}
 
 	MultipleTagsTests = []NamedTest{
@@ -647,7 +650,7 @@ func TestSerializeUnexportedField(t testing.TB, codec codecpkg.GeneralCodec) {
 
 	type s struct {
 		ExportedField   string `serialize:"true"`
-		unexportedField string `serialize:"true"` //nolint:revive
+		unexportedField string `serialize:"true"` //nolint:revive,unused
 	}
 
 	myS := s{
@@ -1152,4 +1155,35 @@ func FuzzStructUnmarshal(codec codecpkg.GeneralCodec, f *testing.F) {
 		require.NoError(err)
 		require.Len(bytes, size)
 	})
+}
+
+func TestImplementsUnmarshalFrom(t testing.TB, codec codecpkg.GeneralCodec) {
+	require := require.New(t)
+
+	p := wrappers.Packer{MaxSize: 1024}
+	p.PackFixedBytes([]byte{0, 1, 2}) // pack 3 extra bytes prefix
+
+	mySlice := []bool{true, false, true, true}
+
+	require.NoError(codec.MarshalInto(mySlice, &p))
+
+	p.PackFixedBytes([]byte{7, 7, 7}) // pack 3 extra bytes suffix
+
+	bytesLen, err := codec.Size(mySlice)
+	require.NoError(err)
+	require.Equal(3+bytesLen+3, p.Offset)
+
+	p = wrappers.Packer{Bytes: p.Bytes, MaxSize: p.MaxSize, Offset: 3}
+
+	var sliceUnmarshaled []bool
+	require.NoError(codec.UnmarshalFrom(&p, &sliceUnmarshaled))
+	require.Equal(mySlice, sliceUnmarshaled)
+	require.Equal(
+		wrappers.Packer{
+			Bytes:   p.Bytes,
+			MaxSize: p.MaxSize,
+			Offset:  11,
+		},
+		p,
+	)
 }

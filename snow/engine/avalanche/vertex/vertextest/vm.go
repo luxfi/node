@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vertextest
@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/engine/lux/vertex"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 )
 

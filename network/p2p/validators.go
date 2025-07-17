@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -97,6 +97,8 @@ func (v *Validators) refresh(ctx context.Context) {
 		v.log.Warn("failed to get validator set", zap.Error(err))
 		return
 	}
+
+	delete(validatorSet, ids.EmptyNodeID) // Ignore inactive ACP-77 validators.
 
 	for nodeID, vdr := range validatorSet {
 		v.validatorList = append(v.validatorList, validator{

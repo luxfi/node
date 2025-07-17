@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -18,7 +18,8 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
@@ -614,7 +615,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
-	require.Equal(`{
+	require.JSONEq(`{
 	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
@@ -1370,7 +1371,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 
 	unsignedComplexAddSubnetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddSubnetTx, "", "\t")
 	require.NoError(err)
-	require.Equal(`{
+	require.JSONEq(`{
 	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
@@ -1612,7 +1613,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := lux.NewMockTransferableOut(ctrl)
+				stakeOut := luxmock.NewTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1705,7 +1706,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake overflow",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{

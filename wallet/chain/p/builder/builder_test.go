@@ -1,27 +1,27 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
 
 import (
 	"math/rand"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*avax.UTXO {
-	utxos := make([]*avax.UTXO, random.Intn(10))
+func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*lux.UTXO {
+	utxos := make([]*lux.UTXO, random.Intn(10))
 	for i := range utxos {
-		var output avax.TransferableOut = &secp256k1fx.TransferOutput{
+		var output lux.TransferableOut = &secp256k1fx.TransferOutput{
 			Amt: random.Uint64(),
 			OutputOwners: secp256k1fx.OutputOwners{
 				Locktime:  random.Uint64(),
@@ -35,12 +35,12 @@ func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*avax.U
 				TransferableOut: output,
 			}
 		}
-		utxos[i] = &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxos[i] = &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: random.Uint32(),
 			},
-			Asset: avax.Asset{
+			Asset: lux.Asset{
 				ID: assetID,
 			},
 			Out: output,
@@ -58,16 +58,16 @@ func TestSplitByLocktime(t *testing.T) {
 		require = require.New(t)
 
 		unlockedTime     uint64 = 100
-		expectedUnlocked        = utils.Join(
+		expectedUnlocked        = slices.Concat(
 			generateUTXOs(random, ids.GenerateTestID(), 0),
 			generateUTXOs(random, ids.GenerateTestID(), unlockedTime-1),
 			generateUTXOs(random, ids.GenerateTestID(), unlockedTime),
 		)
-		expectedLocked = utils.Join(
+		expectedLocked = slices.Concat(
 			generateUTXOs(random, ids.GenerateTestID(), unlockedTime+100),
 			generateUTXOs(random, ids.GenerateTestID(), unlockedTime+1),
 		)
-		utxos = utils.Join(
+		utxos = slices.Concat(
 			expectedUnlocked,
 			expectedLocked,
 		)
@@ -92,7 +92,7 @@ func TestByAssetID(t *testing.T) {
 		assetID           = ids.GenerateTestID()
 		expectedRequested = generateUTXOs(random, assetID, random.Uint64())
 		expectedOther     = generateUTXOs(random, ids.GenerateTestID(), random.Uint64())
-		utxos             = utils.Join(
+		utxos             = slices.Concat(
 			expectedRequested,
 			expectedOther,
 		)

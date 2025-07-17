@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
+	"math"
 	"time"
 
 	"go.uber.org/zap"
@@ -15,22 +15,32 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/txs/mempool"
 
+	smblock "github.com/luxfi/node/snow/engine/snowman/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
-// targetBlockSize is maximum number of transaction bytes to place into a
-// StandardBlock
-const targetBlockSize = 128 * units.KiB
+const (
+	// targetBlockSize is maximum number of transaction bytes to place into a
+	// StandardBlock
+	targetBlockSize = 128 * units.KiB
+
+	// maxTimeToSleep is the maximum time to sleep between checking if a block
+	// should be produced.
+	maxTimeToSleep = time.Hour
+)
 
 var (
 	_ Builder = (*builder)(nil)
@@ -42,49 +52,30 @@ var (
 )
 
 type Builder interface {
-	mempool.Mempool
-
-	// StartBlockTimer starts to issue block creation requests to advance the
-	// chain timestamp.
-	StartBlockTimer()
-
-	// ResetBlockTimer forces the block timer to recalculate when it should
-	// advance the chain timestamp.
-	ResetBlockTimer()
-
-	// ShutdownBlockTimer stops block creation requests to advance the chain
-	// timestamp.
-	//
-	// Invariant: Assumes the context lock is held when calling.
-	ShutdownBlockTimer()
+	smblock.BuildBlockWithContextChainVM
+	mempool.Mempool[*txs.Tx]
 
 	// BuildBlock can be called to attempt to create a new block
 	BuildBlock(context.Context) (snowman.Block, error)
 
-	// PackBlockTxs returns an array of txs that can fit into a valid block of
-	// size [targetBlockSize]. The returned txs are all verified against the
-	// preferred state.
+	// PackAllBlockTxs returns an array of all txs that could be packed into a
+	// valid block of infinite size. The returned txs are all verified against
+	// the preferred state.
 	//
 	// Note: This function does not call the consensus engine.
-	PackBlockTxs(targetBlockSize int) ([]*txs.Tx, error)
+	PackAllBlockTxs() ([]*txs.Tx, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
 type builder struct {
-	mempool.Mempool
+	mempool.Mempool[*txs.Tx]
 
 	txExecutorBackend *txexecutor.Backend
 	blkManager        blockexecutor.Manager
-
-	// resetTimer is used to signal that the block builder timer should update
-	// when it will trigger building of a block.
-	resetTimer chan struct{}
-	closed     chan struct{}
-	closeOnce  sync.Once
 }
 
 func New(
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	txExecutorBackend *txexecutor.Backend,
 	blkManager blockexecutor.Manager,
 ) Builder {
@@ -92,61 +83,48 @@ func New(
 		Mempool:           mempool,
 		txExecutorBackend: txExecutorBackend,
 		blkManager:        blkManager,
-		resetTimer:        make(chan struct{}, 1),
-		closed:            make(chan struct{}),
 	}
 }
 
-func (b *builder) StartBlockTimer() {
-	go func() {
-		timer := time.NewTimer(0)
-		defer timer.Stop()
-
-		for {
-			// Invariant: The [timer] is not stopped.
-			select {
-			case <-timer.C:
-			case <-b.resetTimer:
-				if !timer.Stop() {
-					<-timer.C
-				}
-			case <-b.closed:
-				return
-			}
-
-			// Note: Because the context lock is not held here, it is possible
-			// that [ShutdownBlockTimer] is called concurrently with this
-			// execution.
-			for {
-				duration, err := b.durationToSleep()
-				if err != nil {
-					b.txExecutorBackend.Ctx.Log.Error("block builder encountered a fatal error",
-						zap.Error(err),
-					)
-					return
-				}
-
-				if duration > 0 {
-					timer.Reset(duration)
-					break
-				}
-
-				// Block needs to be issued to advance time.
-				b.Mempool.RequestBuildBlock(true /*=emptyBlockPermitted*/)
-
-				// Invariant: ResetBlockTimer is guaranteed to be called after
-				// [durationToSleep] returns a value <= 0. This is because we
-				// are guaranteed to attempt to build block. After building a
-				// valid block, the chain will have its preference updated which
-				// may change the duration to sleep and trigger a timer reset.
-				select {
-				case <-b.resetTimer:
-				case <-b.closed:
-					return
-				}
-			}
+func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return 0, err
 		}
-	}()
+
+		duration, err := b.durationToSleep()
+		if err != nil {
+			b.txExecutorBackend.Ctx.Log.Error("block builder failed to calculate next staker change time",
+				zap.Error(err),
+			)
+			return 0, err
+		}
+		if duration <= 0 {
+			b.txExecutorBackend.Ctx.Log.Debug("Skipping block build wait, next staker change is ready")
+			// The next staker change is ready to be performed.
+			return common.PendingTxs, nil
+		}
+
+		b.txExecutorBackend.Ctx.Log.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
+
+		// Wait for a transaction in the mempool until there is a next staker
+		// change ready to be performed.
+		newCtx, cancel := context.WithTimeout(ctx, duration)
+		msg, err := b.Mempool.WaitForEvent(newCtx)
+		cancel()
+
+		switch {
+		case err == nil:
+			b.txExecutorBackend.Ctx.Log.Debug("New transaction received", zap.Stringer("msg", msg))
+			return msg, nil
+		case errors.Is(err, context.DeadlineExceeded):
+			continue // Recheck the staker change time before returning
+		default:
+			// Error could have been due to the parent context being cancelled
+			// or another unexpected error.
+			return 0, err
+		}
+	}
 }
 
 func (b *builder) durationToSleep() (time.Duration, error) {
@@ -155,53 +133,39 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 	b.txExecutorBackend.Ctx.Lock.Lock()
 	defer b.txExecutorBackend.Ctx.Lock.Unlock()
 
-	// If [ShutdownBlockTimer] was called, we want to exit the block timer
-	// goroutine. We check this with the context lock held because
-	// [ShutdownBlockTimer] is expected to only be called with the context lock
-	// held.
-	select {
-	case <-b.closed:
-		return 0, nil
-	default:
-	}
-
 	preferredID := b.blkManager.Preferred()
 	preferredState, ok := b.blkManager.GetState(preferredID)
 	if !ok {
 		return 0, fmt.Errorf("%w: %s", errMissingPreferredState, preferredID)
 	}
 
-	nextStakerChangeTime, err := state.GetNextStakerChangeTime(preferredState)
+	now := b.txExecutorBackend.Clk.Time()
+	maxTimeToAwake := now.Add(maxTimeToSleep)
+	nextStakerChangeTime, err := state.GetNextStakerChangeTime(
+		b.txExecutorBackend.Config.ValidatorFeeConfig,
+		preferredState,
+		maxTimeToAwake,
+	)
 	if err != nil {
 		return 0, fmt.Errorf("%w of %s: %w", errCalculatingNextStakerTime, preferredID, err)
 	}
 
-	now := b.txExecutorBackend.Clk.Time()
 	return nextStakerChangeTime.Sub(now), nil
 }
 
-func (b *builder) ResetBlockTimer() {
-	// Ensure that the timer will be reset at least once.
-	select {
-	case b.resetTimer <- struct{}{}:
-	default:
-	}
+func (b *builder) BuildBlock(ctx context.Context) (snowman.Block, error) {
+	return b.BuildBlockWithContext(
+		ctx,
+		&smblock.Context{
+			PChainHeight: 0,
+		},
+	)
 }
 
-func (b *builder) ShutdownBlockTimer() {
-	b.closeOnce.Do(func() {
-		close(b.closed)
-	})
-}
-
-// BuildBlock builds a block to be added to consensus.
-// This method removes the transactions from the returned
-// blocks from the mempool.
-func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
-	// If there are still transactions in the mempool, then we need to
-	// re-trigger block building.
-	defer b.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
-
+func (b *builder) BuildBlockWithContext(
+	ctx context.Context,
+	blockContext *smblock.Context,
+) (snowman.Block, error) {
 	b.txExecutorBackend.Ctx.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
@@ -216,18 +180,24 @@ func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 		return nil, fmt.Errorf("%w: %s", state.ErrMissingParentState, preferredID)
 	}
 
-	timestamp, timeWasCapped, err := state.NextBlockTime(preferredState, b.txExecutorBackend.Clk)
+	timestamp, timeWasCapped, err := state.NextBlockTime(
+		b.txExecutorBackend.Config.ValidatorFeeConfig,
+		preferredState,
+		b.txExecutorBackend.Clk,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not calculate next staker change time: %w", err)
 	}
 
 	statelessBlk, err := buildBlock(
+		ctx,
 		b,
 		preferredID,
 		nextHeight,
 		timestamp,
 		timeWasCapped,
 		preferredState,
+		blockContext.PChainHeight,
 	)
 	if err != nil {
 		return nil, err
@@ -236,43 +206,97 @@ func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 	return b.blkManager.NewBlock(statelessBlk), nil
 }
 
-func (b *builder) PackBlockTxs(targetBlockSize int) ([]*txs.Tx, error) {
+func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 	preferredID := b.blkManager.Preferred()
 	preferredState, ok := b.blkManager.GetState(preferredID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", errMissingPreferredState, preferredID)
 	}
 
-	return packBlockTxs(
+	timestamp, _, err := state.NextBlockTime(
+		b.txExecutorBackend.Config.ValidatorFeeConfig,
+		preferredState,
+		b.txExecutorBackend.Clk,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not calculate next staker change time: %w", err)
+	}
+
+	recommendedPChainHeight, err := b.txExecutorBackend.Ctx.ValidatorState.GetMinimumHeight(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
+	if !b.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+		return packDurangoBlockTxs(
+			context.TODO(),
+			preferredID,
+			preferredState,
+			b.Mempool,
+			b.txExecutorBackend,
+			b.blkManager,
+			timestamp,
+			recommendedPChainHeight,
+			math.MaxInt,
+		)
+	}
+	return packEtnaBlockTxs(
+		context.TODO(),
 		preferredID,
 		preferredState,
 		b.Mempool,
 		b.txExecutorBackend,
 		b.blkManager,
-		b.txExecutorBackend.Clk.Time(),
-		targetBlockSize,
+		timestamp,
+		recommendedPChainHeight,
+		math.MaxUint64,
 	)
 }
 
 // [timestamp] is min(max(now, parent timestamp), next staker change time)
 func buildBlock(
+	ctx context.Context,
 	builder *builder,
 	parentID ids.ID,
 	height uint64,
 	timestamp time.Time,
 	forceAdvanceTime bool,
 	parentState state.Chain,
+	pChainHeight uint64,
 ) (block.Block, error) {
-	blockTxs, err := packBlockTxs(
-		parentID,
-		parentState,
-		builder.Mempool,
-		builder.txExecutorBackend,
-		builder.blkManager,
-		timestamp,
-		targetBlockSize,
+	var (
+		blockTxs []*txs.Tx
+		err      error
 	)
+	if builder.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+		blockTxs, err = packEtnaBlockTxs(
+			ctx,
+			parentID,
+			parentState,
+			builder.Mempool,
+			builder.txExecutorBackend,
+			builder.blkManager,
+			timestamp,
+			pChainHeight,
+			0, // minCapacity is 0 as we want to honor the capacity in state.
+		)
+	} else {
+		blockTxs, err = packDurangoBlockTxs(
+			ctx,
+			parentID,
+			parentState,
+			builder.Mempool,
+			builder.txExecutorBackend,
+			builder.blkManager,
+			timestamp,
+			pChainHeight,
+			targetBlockSize,
+		)
+	}
 	if err != nil {
+		builder.txExecutorBackend.Ctx.Log.Warn("failed to pack block transactions",
+			zap.Error(err),
+		)
 		return nil, fmt.Errorf("failed to pack block txs: %w", err)
 	}
 
@@ -313,13 +337,15 @@ func buildBlock(
 	)
 }
 
-func packBlockTxs(
+func packDurangoBlockTxs(
+	ctx context.Context,
 	parentID ids.ID,
 	parentState state.Chain,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	backend *txexecutor.Backend,
 	manager blockexecutor.Manager,
 	timestamp time.Time,
+	pChainHeight uint64,
 	remainingSize int,
 ) ([]*txs.Tx, error) {
 	stateDiff, err := state.NewDiffOn(parentState)
@@ -332,10 +358,10 @@ func packBlockTxs(
 	}
 
 	var (
-		blockTxs []*txs.Tx
-		inputs   set.Set[ids.ID]
+		blockTxs      []*txs.Tx
+		inputs        set.Set[ids.ID]
+		feeCalculator = state.PickFeeCalculator(backend.Config, stateDiff)
 	)
-
 	for {
 		tx, exists := mempool.Peek()
 		if !exists {
@@ -345,45 +371,24 @@ func packBlockTxs(
 		if txSize > remainingSize {
 			break
 		}
-		mempool.Remove(tx)
 
-		// Invariant: [tx] has already been syntactically verified.
-
-		txDiff, err := state.NewDiffOn(stateDiff)
+		shouldAdd, err := executeTx(
+			ctx,
+			parentID,
+			stateDiff,
+			mempool,
+			backend,
+			manager,
+			pChainHeight,
+			&inputs,
+			feeCalculator,
+			tx,
+		)
 		if err != nil {
 			return nil, err
 		}
-
-		executor := &txexecutor.StandardTxExecutor{
-			Backend: backend,
-			State:   txDiff,
-			Tx:      tx,
-		}
-
-		err = tx.Unsigned.Visit(executor)
-		if err != nil {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, err)
+		if !shouldAdd {
 			continue
-		}
-
-		if inputs.Overlaps(executor.Inputs) {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, blockexecutor.ErrConflictingBlockTxs)
-			continue
-		}
-		err = manager.VerifyUniqueInputs(parentID, executor.Inputs)
-		if err != nil {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, err)
-			continue
-		}
-		inputs.Union(executor.Inputs)
-
-		txDiff.AddTx(tx, status.Committed)
-		err = txDiff.Apply(stateDiff)
-		if err != nil {
-			return nil, err
 		}
 
 		remainingSize -= txSize
@@ -391,6 +396,191 @@ func packBlockTxs(
 	}
 
 	return blockTxs, nil
+}
+
+func packEtnaBlockTxs(
+	ctx context.Context,
+	parentID ids.ID,
+	parentState state.Chain,
+	mempool mempool.Mempool[*txs.Tx],
+	backend *txexecutor.Backend,
+	manager blockexecutor.Manager,
+	timestamp time.Time,
+	pChainHeight uint64,
+	minCapacity gas.Gas,
+) ([]*txs.Tx, error) {
+	stateDiff, err := state.NewDiffOn(parentState)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := txexecutor.AdvanceTimeTo(backend, stateDiff, timestamp); err != nil {
+		return nil, err
+	}
+
+	feeState := stateDiff.GetFeeState()
+	capacity := max(feeState.Capacity, minCapacity)
+
+	var (
+		blockTxs        []*txs.Tx
+		inputs          set.Set[ids.ID]
+		blockComplexity gas.Dimensions
+		feeCalculator   = state.PickFeeCalculator(backend.Config, stateDiff)
+	)
+
+	backend.Ctx.Log.Debug("starting to pack block txs",
+		zap.Stringer("parentID", parentID),
+		zap.Time("blockTimestamp", timestamp),
+		zap.Uint64("capacity", uint64(capacity)),
+		zap.Int("mempoolLen", mempool.Len()),
+	)
+	for {
+		currentBlockGas, err := blockComplexity.ToGas(backend.Config.DynamicFeeConfig.Weights)
+		if err != nil {
+			return nil, err
+		}
+
+		tx, exists := mempool.Peek()
+		if !exists {
+			backend.Ctx.Log.Debug("mempool is empty",
+				zap.Uint64("capacity", uint64(capacity)),
+				zap.Uint64("blockGas", uint64(currentBlockGas)),
+				zap.Int("blockLen", len(blockTxs)),
+			)
+			break
+		}
+
+		txComplexity, err := fee.TxComplexity(tx.Unsigned)
+		if err != nil {
+			return nil, err
+		}
+		newBlockComplexity, err := blockComplexity.Add(&txComplexity)
+		if err != nil {
+			return nil, err
+		}
+		newBlockGas, err := newBlockComplexity.ToGas(backend.Config.DynamicFeeConfig.Weights)
+		if err != nil {
+			return nil, err
+		}
+		if newBlockGas > capacity {
+			backend.Ctx.Log.Debug("block is full",
+				zap.Uint64("nextBlockGas", uint64(newBlockGas)),
+				zap.Uint64("capacity", uint64(capacity)),
+				zap.Uint64("blockGas", uint64(currentBlockGas)),
+				zap.Int("blockLen", len(blockTxs)),
+			)
+			break
+		}
+
+		shouldAdd, err := executeTx(
+			ctx,
+			parentID,
+			stateDiff,
+			mempool,
+			backend,
+			manager,
+			pChainHeight,
+			&inputs,
+			feeCalculator,
+			tx,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if !shouldAdd {
+			continue
+		}
+
+		blockComplexity = newBlockComplexity
+		blockTxs = append(blockTxs, tx)
+	}
+
+	return blockTxs, nil
+}
+
+func executeTx(
+	ctx context.Context,
+	parentID ids.ID,
+	stateDiff state.Diff,
+	mempool mempool.Mempool[*txs.Tx],
+	backend *txexecutor.Backend,
+	manager blockexecutor.Manager,
+	pChainHeight uint64,
+	inputs *set.Set[ids.ID],
+	feeCalculator fee.Calculator,
+	tx *txs.Tx,
+) (bool, error) {
+	mempool.Remove(tx)
+
+	// Invariant: [tx] has already been syntactically verified.
+
+	txID := tx.ID()
+	err := txexecutor.VerifyWarpMessages(
+		ctx,
+		backend.Ctx.NetworkID,
+		backend.Ctx.ValidatorState,
+		pChainHeight,
+		tx.Unsigned,
+	)
+	if err != nil {
+		backend.Ctx.Log.Debug("transaction failed warp verification",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
+		mempool.MarkDropped(txID, err)
+		return false, nil
+	}
+
+	txDiff, err := state.NewDiffOn(stateDiff)
+	if err != nil {
+		return false, err
+	}
+
+	txInputs, _, _, err := txexecutor.StandardTx(
+		backend,
+		feeCalculator,
+		tx,
+		txDiff,
+	)
+	if err != nil {
+		backend.Ctx.Log.Debug("transaction failed execution",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
+		mempool.MarkDropped(txID, err)
+		return false, nil
+	}
+
+	if inputs.Overlaps(txInputs) {
+		// This log is a warn because the mempool should not have allowed this
+		// transaction to be included.
+		backend.Ctx.Log.Warn("transaction conflicts with prior transaction",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
+		mempool.MarkDropped(txID, blockexecutor.ErrConflictingBlockTxs)
+		return false, nil
+	}
+	if err := manager.VerifyUniqueInputs(parentID, txInputs); err != nil {
+		backend.Ctx.Log.Debug("transaction conflicts with ancestor's import transaction",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
+		mempool.MarkDropped(txID, err)
+		return false, nil
+	}
+	inputs.Union(txInputs)
+
+	backend.Ctx.Log.Debug("successfully executed transaction",
+		zap.Stringer("txID", txID),
+		zap.Error(err),
+	)
+	txDiff.AddTx(tx, status.Committed)
+	return true, txDiff.Apply(stateDiff)
 }
 
 // getNextStakerToReward returns the next staker txID to remove from the staking
