@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/snowtest"
 )
 
@@ -19,7 +20,7 @@ func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, err
 		)
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status != snowtest.Accepted {
+				if blk.Status() != choices.Accepted {
 					continue
 				}
 
@@ -37,7 +38,7 @@ func MakeGetBlockIDAtHeightF(blks ...[]*Block) func(context.Context, uint64) (id
 	return func(_ context.Context, height uint64) (ids.ID, error) {
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status != snowtest.Accepted {
+				if blk.Status() != choices.Accepted {
 					continue
 				}
 
