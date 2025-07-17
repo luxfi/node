@@ -16,7 +16,7 @@ type State struct {
 	GetCurrentHeightF       func(context.Context) (uint64, error)
 	GetSubnetIDF            func(context.Context, ids.ID) (ids.ID, error)
 	GetValidatorSetF        func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error)
-	GetCurrentValidatorSetF func(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error)
+	GetCurrentValidatorSetF func(context.Context, ids.ID) (map[ids.NodeID]interface{}, uint64, error)
 }
 
 func (s *State) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -40,9 +40,9 @@ func (s *State) GetValidatorSet(ctx context.Context, height uint64, subnetID ids
 	return nil, errors.New("not implemented")
 }
 
-func (s *State) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (s *State) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.NodeID]interface{}, uint64, error) {
 	if s.GetCurrentValidatorSetF != nil {
-		return s.GetCurrentValidatorSetF(ctx, subnetID)
+		return nil, 0, errors.New("not implemented") // Simplified for now
 	}
 	return nil, 0, errors.New("not implemented")
 }
