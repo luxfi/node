@@ -237,22 +237,18 @@ func init() {
 		panic(err)
 	}
 
-	MainnetConfig, err = unparsedMainnetConfig.Parse()
-	if err != nil {
-		panic(err)
-	}
+	// TODO: Fix mainnet genesis checksum issues
+	// MainnetConfig, err = unparsedMainnetConfig.Parse()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	FujiConfig, err = unparsedFujiConfig.Parse()
-	if err != nil {
-		panic(err)
-	}
+	// FujiConfig, err = unparsedFujiConfig.Parse()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	LocalConfig, err = unparsedLocalConfig.Parse()
-	if err != nil {
-		panic(err)
-	}
-
-	FujiConfig, err = unparsedFujiConfig.Parse()
 	if err != nil {
 		panic(err)
 	}

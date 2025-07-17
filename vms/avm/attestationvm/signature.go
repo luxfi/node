@@ -10,7 +10,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ava-labs/libevm/crypto"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils/logging"

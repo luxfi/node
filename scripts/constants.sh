@@ -11,7 +11,7 @@ set -euo pipefail
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
 # Where Lux Node binary goes
-node_path="$LUX_PATH/build/node"
+node_path="$LUX_PATH/build/luxd"
 
 # Image tag based on current branch  (shared between image build and its test script)
 # TODO: fix "fatal: No names found, cannot describe anything" in github CI

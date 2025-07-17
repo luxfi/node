@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 

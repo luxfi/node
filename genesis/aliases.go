@@ -63,9 +63,9 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 		case constants.AVMID:
 			apiAliases[endpoint] = []string{
 				"X",
-				"avm",
+				"xvm",
 				path.Join(constants.ChainAliasPrefix, "X"),
-				path.Join(constants.ChainAliasPrefix, "avm"),
+				path.Join(constants.ChainAliasPrefix, "xvm"),
 			}
 			chainAliases[chainID] = XChainAliases
 		case constants.EVMID:
