@@ -113,7 +113,10 @@ func resetBloomFilter(
 		targetElements,
 		targetFalsePositiveProbability,
 	)
-	newBloom := bloom.New(numHashes, numEntries)
+	newBloom, err := bloom.New(numHashes, numEntries)
+	if err != nil {
+		return err
+	}
 	var newSalt ids.ID
 	if _, err := rand.Read(newSalt[:]); err != nil {
 		return err
