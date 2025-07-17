@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package pebbledb
@@ -79,7 +79,10 @@ func (b *batch) Reset() {
 func (b *batch) Replay(w database.KeyValueWriterDeleter) error {
 	reader := b.batch.Reader()
 	for {
-		kind, k, v, ok := reader.Next()
+		kind, k, v, ok, err := reader.Next()
+		if err != nil {
+			return err
+		}
 		if !ok {
 			return nil
 		}
