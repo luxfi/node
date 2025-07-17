@@ -3,7 +3,7 @@
 
 package iterator
 
-import "github.com/ava-labs/avalanchego/utils"
+import "github.com/luxfi/node/utils"
 
 var _ Iterator[any] = Empty[any]{}
 

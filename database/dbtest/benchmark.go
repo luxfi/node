@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/utils/units"
 )
 
 var (

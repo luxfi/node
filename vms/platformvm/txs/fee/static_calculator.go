@@ -4,8 +4,8 @@
 package fee
 
 import (
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var (

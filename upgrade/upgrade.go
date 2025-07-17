@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/constants"
 )
 
 var (

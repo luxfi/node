@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 type TestContext interface {

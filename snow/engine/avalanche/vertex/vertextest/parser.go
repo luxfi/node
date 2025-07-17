@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/luxfi/node/snow/consensus/avalanche"
+	"github.com/luxfi/node/snow/engine/avalanche/vertex"
 )
 
 var (
