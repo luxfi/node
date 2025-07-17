@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/plugin/evm/atomic"
-	"github.com/luxfi/libevm/common"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"

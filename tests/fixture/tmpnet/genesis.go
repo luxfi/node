@@ -10,8 +10,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/libevm/core"
-	"github.com/luxfi/libevm/params"
+	"github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"

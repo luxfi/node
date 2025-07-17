@@ -11,15 +11,15 @@ import (
 	"math/big"
 	"math/rand/v2"
 
-	"github.com/luxfi/libevm/accounts/abi/bind"
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/core/types"
-	"github.com/luxfi/libevm/ethclient"
-	"github.com/luxfi/libevm/params"
+	"github.com/luxfi/geth/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/tests/load/c/contracts"
 
-	ethcrypto "github.com/luxfi/libevm/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (

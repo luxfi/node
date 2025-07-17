@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/luxfi/libevm/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 var _ Wallet = (*wallet)(nil)

@@ -30,14 +30,14 @@ The plugin version is updated to `41` all plugins must update to be compatible.
 - Move HTTP2 routing information into headers by @joshua-kim in https://github.com/luxfi/node/pull/4001
 - Clarify field names for simplex p2p messages by @samliok in https://github.com/luxfi/node/pull/4002
 - Remove gzip middleware from API server by @mpignatelli12 in https://github.com/luxfi/node/pull/4005
-- fix: allow for load tests to run in-cluster by @RodrigoVillar in https://github.com/luxfi/node/pull/4003
-- chore: update libevm version by @alarso16 in https://github.com/luxfi/node/pull/4006
+
+- fix: allow for load tests to run-in-cluster by @RodrigoVillar in https://github.com/luxfi/node/pull/4003
 - Add support for XSVM grpc server reflection by @joshua-kim in https://github.com/luxfi/node/pull/4010
 - fix: update log commands for stopping collectors by @RodrigoVillar in https://github.com/luxfi/node/pull/4011
 - [tmpnet] Enure node config is saved on restart for both runtimes by @maru-ava in https://github.com/luxfi/node/pull/4015
 - BLS Components for Simplex by @samliok in https://github.com/luxfi/node/pull/3993
 - Capitalize secrets references by @StephenButtolph in https://github.com/luxfi/node/pull/4018
-- build: update `libevm` to `v1.13.14-0.3.0.rc.1` by @alarso16 in https://github.com/luxfi/node/pull/4023
+
 - Allow internal messages from disallowed nodeIDs by @StephenButtolph in https://github.com/luxfi/node/pull/4024
 - optimize historical range by @rrazvan1 in https://github.com/luxfi/node/pull/3658
 
@@ -162,10 +162,9 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - Update minimum golang version to v1.23.9 by @StephenButtolph in https://github.com/luxfi/node/pull/3940
 - fix: validate allocations locked amount in genesis to prevent panic by @DracoLi in https://github.com/luxfi/node/pull/3941
 - [tmpnet] Enable runtime-specific restart behavior by @maru-ava in https://github.com/luxfi/node/pull/3882
-- [tooling] Misc direnv changes by @maru-ava in https://github.com/luxfi/node/pull/3944
-- Fully populate test context by @StephenButtolph in https://github.com/luxfi/node/pull/3943
-- Use libevm instead of geth by @ceyonur in https://github.com/luxfi/node/pull/3918
-- [tmpnet] Define reusable flags for configuring kubernetes client access by @maru-ava in https://github.com/luxfi/node/pull/3945
+[tooling] Misc direnv changes by @maru-ava in https://github.com/luxfi/node/pull/3944
+Fully populate test context by @StephenButtolph in https://github.com/luxfi/node/pull/3943
+[tmpnet] Define reusable flags for configuring kubernetes client access by @maru-ava in https://github.com/luxfi/node/pull/3945
 - Fix flaky bootstrapping test by @StephenButtolph in https://github.com/luxfi/node/pull/3955
 - [tmpnet] Separate start of prometheus and promtail collectors by @maru-ava in https://github.com/luxfi/node/pull/3947
 - Add L1 validators to getCurrentValidators response by @ceyonur in https://github.com/luxfi/node/pull/3843

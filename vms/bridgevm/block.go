@@ -8,8 +8,8 @@ import (
 	"errors"
 	"time"
 
-	ethcommon "github.com/ava-labs/libevm/common"
-	"github.com/ava-labs/libevm/core/types"
+		ethcommon "github.com/ethereum/go-ethereum/common"
+		"github.com/ethereum/go-ethereum/core/types"
 	
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"

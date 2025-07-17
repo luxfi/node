@@ -9,8 +9,8 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/ethclient"
 
 	"github.com/luxfi/node/tests/load"
 )

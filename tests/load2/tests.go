@@ -8,10 +8,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/core/types"
-	"github.com/luxfi/libevm/crypto"
-	"github.com/luxfi/libevm/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

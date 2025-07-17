@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/libevm/core/types"
+	"github.com/luxfi/geth/core/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethereum "github.com/luxfi/libevm"
+	ethereum "github.com/luxfi/geth"
 )
 
 const (
