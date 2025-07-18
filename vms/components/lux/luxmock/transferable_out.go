@@ -12,7 +12,7 @@ package luxmock
 import (
 	reflect "reflect"
 
-	snow "github.com/luxfi/node/snow"
+	snow "github.com/luxfi/node/consensus"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )

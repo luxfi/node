@@ -11,8 +11,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/router/routermock"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/networking/router/routermock"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
 )

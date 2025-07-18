@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/snow/uptime/uptimemock"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/uptime/uptimemock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"

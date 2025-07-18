@@ -4,8 +4,8 @@
 package chains
 
 import (
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/common"
 )
 
 // Registrant can register the existence of a chain

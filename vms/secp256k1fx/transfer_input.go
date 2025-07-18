@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 )
 
 var ErrNoValueInput = errors.New("input has no value")

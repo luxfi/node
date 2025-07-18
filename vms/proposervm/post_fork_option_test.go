@@ -14,11 +14,11 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/block"
 )

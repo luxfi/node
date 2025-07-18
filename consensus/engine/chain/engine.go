@@ -16,14 +16,14 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/poll"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
 	"github.com/luxfi/node/consensus/engine/chain/job"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/constants"
@@ -515,7 +515,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	e.metrics.bootstrapFinished.Set(1)
 
 	e.Ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.NormalOp,
 	})
 	if err := e.VM.SetState(ctx, snow.NormalOp); err != nil {

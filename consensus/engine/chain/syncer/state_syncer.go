@@ -13,10 +13,10 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -113,7 +113,7 @@ func (ss *stateSyncer) Start(ctx context.Context, startReqID uint32) error {
 	ss.Ctx.Log.Info("starting state sync")
 
 	ss.Ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.StateSyncing,
 	})
 	if err := ss.VM.SetState(ctx, snow.StateSyncing); err != nil {

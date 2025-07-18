@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	smblock "github.com/luxfi/node/consensus/engine/chain/block"

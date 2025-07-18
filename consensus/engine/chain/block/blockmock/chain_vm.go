@@ -17,9 +17,9 @@ import (
 
 	database "github.com/luxfi/node/database"
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	snow "github.com/luxfi/node/consensus"
 	chain "github.com/luxfi/node/consensus/chain"
-	common "github.com/luxfi/node/snow/engine/common"
+	common "github.com/luxfi/node/consensus/engine/common"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )

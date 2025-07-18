@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/block"

@@ -22,12 +22,12 @@ import (
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/appsender"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/appsender"
 	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/snow/validators/gvalidators"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -238,7 +238,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		WarpSigner: warpSignerClient,
 
 		ValidatorState: validatorStateClient,
-		// TODO: support remaining snowman++ fields
+		// TODO: support remaining chain++ fields
 
 		ChainDataDir: req.ChainDataDir,
 	}

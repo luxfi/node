@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/chain/chainmock"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/snowtest"
 )
 
 var (
