@@ -161,15 +161,10 @@ func (x *PushGossip) GetGossip() [][]byte {
 	return nil
 }
 
-// SignatureRequest is an AppRequest message type for requesting
-// a BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/avalanche-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
 type SignatureRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Warp message to be signed
-	Message []byte `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	// Justification for the message
-	Justification []byte `protobuf:"bytes,2,opt,name=justification,proto3" json:"justification,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       []byte                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Justification []byte                 `protobuf:"bytes,2,opt,name=justification,proto3" json:"justification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -218,13 +213,9 @@ func (x *SignatureRequest) GetJustification() []byte {
 	return nil
 }
 
-// SignatureResponse is an AppResponse message type for providing
-// a requested BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/avalanche-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
 type SignatureResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// BLS signature over the Warp message
-	Signature     []byte `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -283,7 +274,7 @@ const file_sdk_sdk_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\fR\amessage\x12$\n" +
 	"\rjustification\x18\x02 \x01(\fR\rjustification\"1\n" +
 	"\x11SignatureResponse\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignatureB.Z,github.com/ava-labs/avalanchego/proto/pb/sdkb\x06proto3"
+	"\tsignature\x18\x01 \x01(\fR\tsignatureB$Z\"github.com/luxfi/node/proto/pb/sdkb\x06proto3"
 
 var (
 	file_sdk_sdk_proto_rawDescOnce sync.Once

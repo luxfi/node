@@ -12,16 +12,16 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*avax.UTXO {
-	utxos := make([]*avax.UTXO, random.Intn(10))
+func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*lux.UTXO {
+	utxos := make([]*lux.UTXO, random.Intn(10))
 	for i := range utxos {
-		var output avax.TransferableOut = &secp256k1fx.TransferOutput{
+		var output lux.TransferableOut = &secp256k1fx.TransferOutput{
 			Amt: random.Uint64(),
 			OutputOwners: secp256k1fx.OutputOwners{
 				Locktime:  random.Uint64(),
@@ -35,12 +35,12 @@ func generateUTXOs(random *rand.Rand, assetID ids.ID, locktime uint64) []*avax.U
 				TransferableOut: output,
 			}
 		}
-		utxos[i] = &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		utxos[i] = &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: random.Uint32(),
 			},
-			Asset: avax.Asset{
+			Asset: lux.Asset{
 				ID: assetID,
 			},
 			Out: output,

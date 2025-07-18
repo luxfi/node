@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -204,7 +204,7 @@ func TxComplexity(txs ...txs.UnsignedTx) (gas.Dimensions, error) {
 }
 
 // OutputComplexity returns the complexity outputs add to a transaction.
-func OutputComplexity(outs ...*avax.TransferableOutput) (gas.Dimensions, error) {
+func OutputComplexity(outs ...*lux.TransferableOutput) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, out := range outs {
 		outputComplexity, err := outputComplexity(out)
@@ -220,7 +220,7 @@ func OutputComplexity(outs ...*avax.TransferableOutput) (gas.Dimensions, error) 
 	return complexity, nil
 }
 
-func outputComplexity(out *avax.TransferableOutput) (gas.Dimensions, error) {
+func outputComplexity(out *lux.TransferableOutput) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
 		gas.Bandwidth: intrinsicOutputBandwidth + intrinsicSECP256k1FxOutputBandwidth,
 		gas.DBRead:    0,
@@ -250,7 +250,7 @@ func outputComplexity(out *avax.TransferableOutput) (gas.Dimensions, error) {
 
 // InputComplexity returns the complexity inputs add to a transaction.
 // It includes the complexity that the corresponding credentials will add.
-func InputComplexity(ins ...*avax.TransferableInput) (gas.Dimensions, error) {
+func InputComplexity(ins ...*lux.TransferableInput) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, in := range ins {
 		inputComplexity, err := inputComplexity(in)
@@ -266,7 +266,7 @@ func InputComplexity(ins ...*avax.TransferableInput) (gas.Dimensions, error) {
 	return complexity, nil
 }
 
-func inputComplexity(in *avax.TransferableInput) (gas.Dimensions, error) {
+func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
 		gas.Bandwidth: intrinsicInputBandwidth + intrinsicSECP256k1FxTransferableInputBandwidth,
 		gas.DBRead:    intrinsicInputDBRead,

@@ -9,9 +9,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/luxfi/coreth/core/types"
-	"github.com/luxfi/coreth/params"
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/params"
+	"github.com/luxfi/geth/plugin/evm"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -46,7 +46,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 		key := privateNetwork.PreFundedKeys[0]
 		ethAddress := evm.GetEthAddress(key)
 
-		ginkgo.By("initializing a coreth client")
+		ginkgo.By("initializing a geth client")
 		node := privateNetwork.Nodes[0]
 		nodeURI := tmpnet.NodeURI{
 			NodeID: node.NodeID,

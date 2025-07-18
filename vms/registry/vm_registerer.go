@@ -105,17 +105,24 @@ func (r *vmRegisterer) createStaticHandlers(
 		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}
 
-	handlers, err := commonVM.CreateStaticHandlers(ctx)
-	if err != nil {
-		r.config.Log.Error("failed to create static API endpoints",
-			zap.Stringer("vmID", vmID),
-			zap.Error(err),
-		)
+	// Get static handlers if the VM supports them
+	var handlers map[string]http.Handler
+	if staticVM, ok := commonVM.(interface {
+		CreateStaticHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		var err error
+		handlers, err = staticVM.CreateStaticHandlers(ctx)
+		if err != nil {
+			r.config.Log.Error("failed to create static API endpoints",
+				zap.Stringer("vmID", vmID),
+				zap.Error(err),
+			)
 
-		if err := commonVM.Shutdown(ctx); err != nil {
-			return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+			if err := commonVM.Shutdown(ctx); err != nil {
+				return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+			}
+			return nil, err
 		}
-		return nil, err
 	}
 	return handlers, nil
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
 
-	ledger "github.com/luxfi/ledger/go"
+	ledger "github.com/luxfi/ledger-lux-go"
 	bip32 "github.com/tyler-smith/go-bip32"
 )
 
@@ -42,7 +42,7 @@ func addressPath(index uint32) string {
 }
 
 func (l *Ledger) Address(hrp string, addressIndex uint32) (ids.ShortID, error) {
-	resp, err := l.device.GetPubKey(addressPath(addressIndex), true, hrp, "")
+	_, err := l.device.GetPubKey(addressPath(addressIndex), true, hrp, "")
 	if err != nil {
 		return ids.ShortEmpty, err
 	}

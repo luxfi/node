@@ -10,4 +10,7 @@ const (
 
 	// AppName exports the name of the lux application
 	AppName = "node"
+
+	// VMAliasPrefix is the prefix for VM aliases
+	VMAliasPrefix = "/vm"
 )

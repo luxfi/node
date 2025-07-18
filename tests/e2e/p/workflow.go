@@ -200,8 +200,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			balances, err := xBuilder.GetFTBalance()
 			require.NoError(err)
 
-			initialAVAXBalance := balances[avaxAssetID]
-			tc.Outf("{{blue}} X-chain balance before P->X import: %d {{/}}\n", initialAVAXBalance)
+			initialLUXBalance := balances[luxAssetID]
+			tc.Outf("{{blue}} X-chain balance before P->X import: %d {{/}}\n", initialLUXBalance)
 
 			_, err = xWallet.IssueImportTx(
 				constants.PlatformChainID,
@@ -214,10 +214,10 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			balances, err = xBuilder.GetFTBalance()
 			require.NoError(err)
 
-			finalAVAXBalance := balances[avaxAssetID]
-			tc.Outf("{{blue}} X-chain balance after P->X import: %d {{/}}\n", finalAVAXBalance)
+			finalLUXBalance := balances[luxAssetID]
+			tc.Outf("{{blue}} X-chain balance after P->X import: %d {{/}}\n", finalLUXBalance)
 
-			require.Equal(initialAVAXBalance+toTransfer-xContext.BaseTxFee, finalAVAXBalance)
+			require.Equal(initialLUXBalance+toTransfer-xContext.BaseTxFee, finalLUXBalance)
 		})
 	})
 })

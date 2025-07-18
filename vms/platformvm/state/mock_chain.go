@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/node/ids"
 	iterator "github.com/luxfi/node/utils/iterator"
-	avax "github.com/luxfi/node/vms/components/avax"
+	lux "github.com/luxfi/node/vms/components/lux"
 	gas "github.com/luxfi/node/vms/components/gas"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
@@ -59,7 +59,7 @@ func (mr *MockChainMockRecorder) AddChain(createChainTx any) *gomock.Call {
 }
 
 // AddRewardUTXO mocks base method.
-func (m *MockChain) AddRewardUTXO(txID ids.ID, utxo *avax.UTXO) {
+func (m *MockChain) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
 }
@@ -107,7 +107,7 @@ func (mr *MockChainMockRecorder) AddTx(tx, status any) *gomock.Call {
 }
 
 // AddUTXO mocks base method.
-func (m *MockChain) AddUTXO(utxo *avax.UTXO) {
+func (m *MockChain) AddUTXO(utxo *lux.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddUTXO", utxo)
 }
@@ -389,10 +389,10 @@ func (mr *MockChainMockRecorder) GetTx(txID any) *gomock.Call {
 }
 
 // GetUTXO mocks base method.
-func (m *MockChain) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
+func (m *MockChain) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
-	ret0, _ := ret[0].(*avax.UTXO)
+	ret0, _ := ret[0].(*lux.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

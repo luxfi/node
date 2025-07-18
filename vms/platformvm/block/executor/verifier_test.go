@@ -1130,9 +1130,9 @@ func TestBlockExecutionWithComplexity(t *testing.T) {
 		nil, // chainIDs
 	)
 
-	baseTx0, err := wallet.IssueBaseTx([]*avax.TransferableOutput{})
+	baseTx0, err := wallet.IssueBaseTx([]*lux.TransferableOutput{})
 	require.NoError(t, err)
-	baseTx1, err := wallet.IssueBaseTx([]*avax.TransferableOutput{})
+	baseTx1, err := wallet.IssueBaseTx([]*lux.TransferableOutput{})
 	require.NoError(t, err)
 
 	blockComplexity, err := fee.TxComplexity(baseTx0.Unsigned, baseTx1.Unsigned)

@@ -47,7 +47,7 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: /tmp/avalanchego
+          PKG_ROOT: /tmp/luxd
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"
@@ -57,12 +57,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jammy
-          path: /tmp/avalanchego/avalanchego-${{ env.TAG }}-arm64.deb
+          path: /tmp/luxd/luxd-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf /tmp/avalanchego
+          rm -rf /tmp/luxd
 
   build-focal-arm64-package:
     runs-on: custom-arm64-focal
@@ -105,7 +105,7 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: /tmp/avalanchego
+          PKG_ROOT: /tmp/luxd
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"
@@ -115,9 +115,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: focal
-          path: /tmp/avalanchego/avalanchego-${{ env.TAG }}-arm64.deb
+          path: /tmp/luxd/luxd-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf /tmp/avalanchego
+          rm -rf /tmp/luxd

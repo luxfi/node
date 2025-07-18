@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -40,7 +40,7 @@ func NewWallet(
 		utxos   = common.NewUTXOs()
 	)
 
-	pChainUTXOs, err := avax.GetAllUTXOs(state, addrs)
+	pChainUTXOs, err := lux.GetAllUTXOs(state, addrs)
 	require.NoError(err)
 
 	for _, utxo := range pChainUTXOs {
@@ -53,7 +53,7 @@ func NewWallet(
 	}
 
 	for _, chainID := range chainIDs {
-		remoteChainUTXOs, _, _, err := avax.GetAtomicUTXOs(
+		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
 			ctx.SharedMemory,
 			txs.Codec,
 			chainID,

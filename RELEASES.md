@@ -1116,7 +1116,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Add fuzz test for `NewIteratorWithStartAndPrefix` by @danlaine in https://github.com/luxfi/node/pull/1992
 - Return if element was deleted from `Hashmap` by @dhrubabasu in https://github.com/luxfi/node/pull/2271
 - `mempool.NewMempool` -> `mempool.New` by @dhrubabasu in https://github.com/luxfi/node/pull/2276
-- e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by coreth by @marun in https://github.com/luxfi/node/pull/2265
+- e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by geth by @marun in https://github.com/luxfi/node/pull/2265
 - Cleanup platformvm mempool errs by @dhrubabasu in https://github.com/luxfi/node/pull/2278
 - MerkleDB:Naming and comments cleanup by @dboehm-avalabs in https://github.com/luxfi/node/pull/2274
 - Move `DropExpiredStakerTxs` to platformvm mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2279
@@ -1129,7 +1129,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Simplify get server creation by @StephenButtolph in https://github.com/luxfi/node/pull/2285
 - Move management of platformvm preferred block to `executor.Manager` by @dhrubabasu in https://github.com/luxfi/node/pull/2292
 - Add `recentTxsLock` to platform `network` struct by @dhrubabasu in https://github.com/luxfi/node/pull/2294
-- e2e: More fixture refinement in support of coreth integration testing  by @marun in https://github.com/luxfi/node/pull/2275
+- e2e: More fixture refinement in support of geth integration testing  by @marun in https://github.com/luxfi/node/pull/2275
 - Add `VerifyTx` to `executor.Manager` by @dhrubabasu in https://github.com/luxfi/node/pull/2293
 - Simplify lux bootstrapping by @StephenButtolph in https://github.com/luxfi/node/pull/2286
 - Replace unique slices with sets in the engine interface by @StephenButtolph in https://github.com/luxfi/node/pull/2317
@@ -1701,7 +1701,7 @@ The plugin version is unchanged at `27` and compatible with versions `v1.10.5 - 
 - Remove context.TODO from tests by @StephenButtolph in https://github.com/luxfi/node/pull/1778
 - Replace linkeddb iterator with native DB range queries by @StephenButtolph in https://github.com/luxfi/node/pull/1752
 - Add support for measuring key size in caches by @StephenButtolph in https://github.com/luxfi/node/pull/1781
-- Bump coreth to v0.12.5-rc.0 by @aaronbuchwald in https://github.com/luxfi/node/pull/1775
+- Bump geth to v0.12.5-rc.0 by @aaronbuchwald in https://github.com/luxfi/node/pull/1775
 - Add metric for the number of elements in a cache by @StephenButtolph in https://github.com/luxfi/node/pull/1782
 - Evict blocks based on size by @StephenButtolph in https://github.com/luxfi/node/pull/1766
 - Add proposervm state metrics by @StephenButtolph in https://github.com/luxfi/node/pull/1785
@@ -1810,7 +1810,7 @@ The plugin version is unchanged at `26` and compatible with versions `v1.10.1 - 
 - Update all AVM tests for post-linearization by @StephenButtolph in https://github.com/luxfi/node/pull/1631
 - Remove PendingTxs from the DAGVM interface by @StephenButtolph in https://github.com/luxfi/node/pull/1641
 - Remove GetTx from the DAGVM interface by @StephenButtolph in https://github.com/luxfi/node/pull/1642
-- Bump coreth v0.12.4 by @aaronbuchwald in https://github.com/luxfi/node/pull/1646
+- Bump geth v0.12.4 by @aaronbuchwald in https://github.com/luxfi/node/pull/1646
 - [x/merkledb] Remove useless `err` check by @patrick-ogrady in https://github.com/luxfi/node/pull/1650
 - [x/merkledb] Trailing whitespace removal on README by @patrick-ogrady in https://github.com/luxfi/node/pull/1649
 - Remove unneeded functions from UniqueTx by @StephenButtolph in https://github.com/luxfi/node/pull/1643
@@ -2446,7 +2446,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed `--public-ip` and `--public-ip-resolution-service` CLI flag descriptions
 - Updated `README.md` to explicitly reference `SECURITY.md`
 
-### Coreth
+### Geth
 
 - Enabled state sync by default when syncing from an empty database
 - Increased block gas limit to 15M for `Cortina` Network Upgrade
@@ -2609,7 +2609,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Removed incorrect `uintptr` handling in the generic codec
 - Removed message latency tracking on messages being sent to itself
 
-### Coreth
+### Geth
 
 - Added support for eth_call over VM2VM messaging
 - Added config flags for tx pool behavior
@@ -2672,7 +2672,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added race detection to the E2E tests
 - Added additional message and sender tests
 
-### Coreth
+### Geth
 
 - Improved header and logs caching using maximum accepted depth cache
 - Added config option to perform database inspection on startup
@@ -2726,7 +2726,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `--chain-aliases-file` and `--chain-aliases-file-content` CLI flags
 - Added `--proposervm-use-current-height` CLI flag
 
-### Coreth
+### Geth
 
 - Added metric for number of processed and accepted transactions
 - Added wait for state sync goroutines to complete on shutdown
@@ -2778,7 +2778,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
 
-### Coreth
+### Geth
 
 - Added trie clean cache journaling to disk to improve processing time after restart
 - Fixed regression where a snapshot could be marked as stale by the async acceptor during block processing
@@ -2914,7 +2914,7 @@ The default value of `--staking-signer-key-file` is `~/.node/staking/signer.key`
 - Removed unused `unknown_txs_count` metric
 - Replaced duplicated code with generic implementations
 
-### Coreth
+### Geth
 
 - Added failure reason to bad block API
 
@@ -2928,7 +2928,7 @@ The supported plugin version is `16`.
 
 - Fixed stale block reference by evicting blocks upon successful verification
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
@@ -2943,7 +2943,7 @@ The supported plugin version is `16`.
 - Added temporarily invalid block caching to reduce repeated network requests
 - Added caching to the proposervm's inner block parsing
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
@@ -2956,7 +2956,7 @@ The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on bot
 
 The supported plugin version is `16`.
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Fixed live-lock in bootstrapping, after performing state-sync, by properly reporting `database.ErrNotFound` in `GetBlockIDAtHeight` rather than a formatted error
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
@@ -2974,7 +2974,7 @@ The supported plugin version is `16`.
 
 - Reduced the severity of not quickly connecting to bootstrap nodes from `FATAL` to `WARN`
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
@@ -3071,7 +3071,7 @@ The supported plugin version is `16`.
   - `timer.NewStagedTimer`
   - `timer.TimedMeter`
 
-### [Coreth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Incorrectly deprecated Native Asset Call
 - Migrated to go-ethereum v1.10.23
@@ -3095,7 +3095,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Refactored platformvm block creation
 - Introduced support to prevent empty nodeID use on the P-chain to be activated in a future upgrade
 
-### Coreth
+### Geth
 
 - Updated gas price estimation to limit lookback window based on block timestamps
 - Added metrics for processed/accepted gas
@@ -3130,7 +3130,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added VMs README to begin fully documenting plugin invariants
 - Added various comments around expected usages of VM tools
 
-### Coreth
+### Geth
 
 - Added optional JSON logging
 - Added interface for supporting stateful precompiles
@@ -3171,7 +3171,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Removed child pointers from processing blocks
 - Added P-chain wallet helper for providing initial transactions
 
-### Coreth
+### Geth
 
 - Bumped go-ethereum dependency to v1.10.20
 - Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.lux.network/nodes/maintain/chain-config-flags#c-chain-configs)
@@ -3219,7 +3219,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Moved the `platformvm` transaction builder to be defined in a sub-package
 - Fixed uptime rounding during node shutdown
 
-### Coreth
+### Geth
 
 - Bumped go-ethereum dependency to v1.10.18
 - Parallelized state sync code fetching
@@ -3246,12 +3246,12 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### State Sync
 
-- Added peer bandwidth tracking to optimize `coreth` state sync message routing
-- Fixed `coreth` leaf request handler bug to ensure the handler delivers a valid range proof
-- Removed redundant proof keys from `coreth` leafs response message format
-- Improved `coreth` state sync request retry logic
-- Improved `coreth` state sync handler metrics
-- Improved `coreth` state sync ETA
+- Added peer bandwidth tracking to optimize `geth` state sync message routing
+- Fixed `geth` leaf request handler bug to ensure the handler delivers a valid range proof
+- Removed redundant proof keys from `geth` leafs response message format
+- Improved `geth` state sync request retry logic
+- Improved `geth` state sync handler metrics
+- Improved `geth` state sync ETA
 - Added `lux_{chainID}_handler_async_expired` metric
 
 ### Miscellaneous
@@ -3325,7 +3325,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added state sync support to the `metervm`
 - Added state sync support to the `proposervm`
 - Added state sync support to the `rpcchainvm`
-- Added beta state sync support to `coreth`
+- Added beta state sync support to `geth`
 
 ### ProposerVM
 
@@ -3338,9 +3338,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 ### Bug Fixes
 
 - Fixed IPC message issuance and restructured consensus event callbacks to be checked at compile time
-- Fixed `coreth` metrics initialization
+- Fixed `geth` metrics initialization
 - Fixed bootstrapping startup logic to correctly startup if initially connected to enough stake
-- Fixed `coreth` panic during metrics collection
+- Fixed `geth` panic during metrics collection
 - Fixed panic on concurrent map read/write in P-chain wallet SDK
 - Fixed `rpcchainvm` panic by sanitizing http response codes
 - Fixed incorrect JSON tag on `platformvm.BaseTx`
@@ -3378,7 +3378,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Standardized RPC specification of timestamp fields
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
-- Increased `coreth` trie tip buffer size to 32
+- Increased `geth` trie tip buffer size to 32
 - Added CPU usage metrics for Lux Node and all sub-processes
 - Added Disk IO usage metrics for Lux Node and all sub-processes
 
@@ -3424,7 +3424,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added grpc metrics.
 - Added grpc server health checks.
 
-### Coreth
+### Geth
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
@@ -3476,7 +3476,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Reused dialer across multiple outbound connections.
 - Exported `NewTestNetwork` for easier external testing.
 
-### Coreth
+### Geth
 
 - Reduced log level of snapshot regeneration logs.
 - Enabled atomic tx replacement with higher gas fees.
@@ -3515,7 +3515,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Removed duplicated message definitions.
 - Improved error reporting around invalid plugins.
 
-### Coreth
+### Geth
 
 - Optimized FeeHistory API.
 - Added protection to prevent accidental corruption of archival node trie index.
@@ -3557,7 +3557,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added `platform.getBlock` API.
 - Cleaned up block building logic to be more modular and testable.
 
-### Coreth
+### Geth
 
 - Increased `FeeHistory` maximum historical limit to improve MetaMask UI on the C-Chain.
 - Enabled chain state metrics.
@@ -3597,7 +3597,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added additional sanity checks to prevent users from incorrectly configuring their node.
 - Updated log timestamps to include milliseconds.
 
-### Coreth
+### Geth
 
 - Added beta support for offline pruning.
 - Refactored peer networking layer.
@@ -3622,7 +3622,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Introduced Whitelist conflicts into the Snowstorm specification that will be used in future X-chain improvements.
 - Refactored the separation between the Bootstrapping engine and the Consensus engine to support Fast-Sync.
 
-### Coreth
+### Geth
 
 - Added an index mapping height to the list of accepted atomic operations at that height in a trie. Generating this index will cause the node to take a few minutes longer to startup the C-Chain for the first restart.
 - Updated Geth dependency to `v1.10.15`.
@@ -3669,7 +3669,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Introduced a notion of vertex conflicts that will be used in future X-chain improvements.
 
-### Coreth
+### Geth
 
 - Added an index mapping height to the list of accepted atomic transactions at that height. Generating this index will cause the node to take approximately 2 minutes longer to startup the C-Chain for the first restart.
 - Fixed bug in base fee estimation API that impacted custom defined networks.
@@ -3689,13 +3689,13 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for Lux Node (not Coreth).
+- Fixed 32-bit architecture builds for Lux Node (not Geth).
 
 ## [v1.7.2](https://github.com/luxfi/node/releases/tag/v1.7.2)
 
 This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
-### Coreth
+### Geth
 
 - Fixed memory leak in the estimate gas API.
 - Reduced the default RPC gas limit to 50,000,000 gas.
@@ -3727,7 +3727,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 This update is backwards compatible with [v1.7.0](https://github.com/luxfi/node/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
 
-### Coreth
+### Geth
 
 - Reduced fee estimate volatility.
 
@@ -3753,7 +3753,7 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 - Enabled `AtomicTx`s to be issued into `StandardBlock`s and deprecated `AtomicBlock`s.
 - Added the ability to export/import LUX to/from the C-chain.
 
-### Coreth
+### Geth
 
 - Enabled multiple `AtomicTx`s to be issued per block.
 - Added the ability to export/import LUX to/from the P-chain.
@@ -3867,7 +3867,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
   - Added `lux_{DAGID}_vm_metervm_accept_{count,sum}`.
   - Added `lux_{DAGID}_vm_metervm_reject_{count,sum}`.
 
-### Coreth
+### Geth
 
 - Applied callTracer fault handling fix.
 - Initialized multicoin functions in the runtime environment.

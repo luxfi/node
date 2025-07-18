@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: warp/message.proto
+// source: signer/signer.proto
 
-package warp
+package signer
 
 import (
 	context "context"
@@ -19,13 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Signer_Sign_FullMethodName = "/warp.Signer/Sign"
+	Signer_PublicKey_FullMethodName = "/signer.Signer/PublicKey"
+	Signer_Sign_FullMethodName      = "/signer.Signer/Sign"
 )
 
 // SignerClient is the client API for Signer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SignerClient interface {
+	PublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 }
 
@@ -35,6 +37,16 @@ type signerClient struct {
 
 func NewSignerClient(cc grpc.ClientConnInterface) SignerClient {
 	return &signerClient{cc}
+}
+
+func (c *signerClient) PublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublicKeyResponse)
+	err := c.cc.Invoke(ctx, Signer_PublicKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *signerClient) Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error) {
@@ -51,6 +63,7 @@ func (c *signerClient) Sign(ctx context.Context, in *SignRequest, opts ...grpc.C
 // All implementations must embed UnimplementedSignerServer
 // for forward compatibility.
 type SignerServer interface {
+	PublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	mustEmbedUnimplementedSignerServer()
 }
@@ -62,6 +75,9 @@ type SignerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSignerServer struct{}
 
+func (UnimplementedSignerServer) PublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublicKey not implemented")
+}
 func (UnimplementedSignerServer) Sign(context.Context, *SignRequest) (*SignResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
 }
@@ -86,6 +102,24 @@ func RegisterSignerServer(s grpc.ServiceRegistrar, srv SignerServer) {
 	s.RegisterService(&Signer_ServiceDesc, srv)
 }
 
+func _Signer_PublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublicKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SignerServer).PublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Signer_PublicKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SignerServer).PublicKey(ctx, req.(*PublicKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Signer_Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignRequest)
 	if err := dec(in); err != nil {
@@ -108,14 +142,18 @@ func _Signer_Sign_Handler(srv interface{}, ctx context.Context, dec func(interfa
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Signer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "warp.Signer",
+	ServiceName: "signer.Signer",
 	HandlerType: (*SignerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PublicKey",
+			Handler:    _Signer_PublicKey_Handler,
+		},
 		{
 			MethodName: "Sign",
 			Handler:    _Signer_Sign_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "warp/message.proto",
+	Metadata: "signer/signer.proto",
 }

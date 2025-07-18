@@ -15,7 +15,7 @@ import (
 	ids "github.com/luxfi/node/ids"
 	snow "github.com/luxfi/node/snow"
 	set "github.com/luxfi/node/utils/set"
-	avax "github.com/luxfi/node/vms/components/avax"
+	lux "github.com/luxfi/node/vms/components/lux"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -84,10 +84,10 @@ func (mr *UnsignedTxMockRecorder) InputIDs() *gomock.Call {
 }
 
 // Outputs mocks base method.
-func (m *UnsignedTx) Outputs() []*avax.TransferableOutput {
+func (m *UnsignedTx) Outputs() []*lux.TransferableOutput {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Outputs")
-	ret0, _ := ret[0].([]*avax.TransferableOutput)
+	ret0, _ := ret[0].([]*lux.TransferableOutput)
 	return ret0
 }
 

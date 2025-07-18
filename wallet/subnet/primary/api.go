@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/coreth/ethclient"
-	"github.com/luxfi/coreth/plugin/evm"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
