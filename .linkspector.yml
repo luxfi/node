@@ -1,0 +1,8 @@
+dirs:
+  - .
+excludedFiles:
+  - RELEASES.md
+ignorePatterns:
+  - pattern: '^http://localhost'
+  - pattern: '^https://.+\\.internal\\.'
+useGitIgnore: true

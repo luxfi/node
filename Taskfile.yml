@@ -1,0 +1,28 @@
+version: '3'
+
+tasks:
+  default: ./scripts/run_task.sh --list
+
+  install-nix:
+    desc: Install Nix dev-shell
+    cmd: ./scripts/run_task.sh install-nix
+
+  build:
+    desc: Build the node binary
+    cmd: ./scripts/run_task.sh build
+
+  lint-all:
+    desc: Lint code
+    cmd: ./scripts/run_task.sh lint-all
+
+  test-e2e:
+    desc: Run end-to-end tests
+    cmd: ./scripts/run_task.sh test-e2e
+
+  generate-protobuf:
+    desc: Generate protobuf bindings
+    cmd: ./scripts/run_task.sh generate-protobuf
+
+  generate-mocks:
+    desc: Generate Go mocks
+    cmd: ./scripts/run_task.sh generate-mocks
