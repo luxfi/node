@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/ids"
@@ -155,6 +157,10 @@ func (k *PublicKey) ToECDSA() *stdecdsa.PublicKey {
 	return k.pk.ToECDSA()
 }
 
+func (k *PublicKey) EthAddress() common.Address {
+	return crypto.PubkeyToAddress(*(k.ToECDSA()))
+}
+
 func (k *PublicKey) Address() ids.ShortID {
 	if k.addr == ids.ShortEmpty {
 		addr, err := ids.ToShortID(hashing.PubkeyBytesToAddress(k.Bytes()))
@@ -188,6 +194,10 @@ func (k *PrivateKey) PublicKey() *PublicKey {
 
 func (k *PrivateKey) Address() ids.ShortID {
 	return k.PublicKey().Address()
+}
+
+func (k *PrivateKey) EthAddress() common.Address {
+	return crypto.PubkeyToAddress(*(k.PublicKey().ToECDSA()))
 }
 
 func (k *PrivateKey) Sign(msg []byte) ([]byte, error) {
