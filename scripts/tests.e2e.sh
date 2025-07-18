@@ -6,7 +6,8 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
-# LUXD_PATH=./build/node ./scripts/tests.e2e.sh                          # Customization of node path
+# E2E_RANDOM_SEED=1234882 ./scripts/tests.e2e.sh                                       # Specify a specific seed to order test execution by
+# LUXD_PATH=./build/luxd ./scripts/tests.e2e.sh                          # Customization of luxd path
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -19,21 +20,14 @@ fi
 # the instructions to build non-portable BLST.
 source ./scripts/constants.sh
 
-#################################
-echo "building e2e.test"
-# to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build --tags test ./tests/e2e
-./tests/e2e/e2e.test --help
+E2E_ARGS=("${@}")
 
-# Enable subnet testing by building xsvm
-./scripts/build_xsvm.sh
-echo ""
-
-# Ensure an absolute path to avoid dependency on the working directory
-# of script execution.
-LUXD_PATH="$(realpath "${LUXD_PATH:-./build/node}")"
-E2E_ARGS="--node-path=${LUXD_PATH}"
+# If not running in kubernetes, default to using a local luxd binary
+if ! [[ "${E2E_ARGS[*]}" =~ "--runtime=kube" && ! "${E2E_ARGS[*]}" =~ "--luxd-path" ]]; then
+  # Ensure an absolute path to avoid dependency on the working directory of script execution.
+  LUXD_PATH="$(realpath "${LUXD_PATH:-./build/luxd}")"
+  E2E_ARGS+=("--luxd-path=${LUXD_PATH}")
+fi
 
 #################################
 # Determine ginkgo args
@@ -54,7 +48,15 @@ else
   echo "tests will be executed in parallel"
   GINKGO_ARGS="-p"
 fi
+# Reference: https://onsi.github.io/ginkgo/#spec-randomization
+if [[ -n "${E2E_RANDOM_SEED:-}" ]]; then
+  # Supply a specific seed to simplify reproduction of test failures
+  GINKGO_ARGS+=" --seed=${E2E_RANDOM_SEED}"
+else
+  # Execute in random order to identify unwanted dependency
+  GINKGO_ARGS+=" --randomize-all"
+fi
 
 #################################
-# - Execute in random order to identify unwanted dependency
-ginkgo ${GINKGO_ARGS} -v --tags test --randomize-all ./tests/e2e/e2e.test -- "${E2E_ARGS[@]}" "${@}"
+# shellcheck disable=SC2086
+./bin/ginkgo ${GINKGO_ARGS} -v ./tests/e2e -- "${E2E_ARGS[@]}"

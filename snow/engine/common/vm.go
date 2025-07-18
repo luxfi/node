@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -51,7 +51,6 @@ type VM interface {
 		genesisBytes []byte,
 		upgradeBytes []byte,
 		configBytes []byte,
-		toEngine chan<- Message,
 		fxs []*Fx,
 		appSender AppSender,
 	) error
@@ -77,4 +76,12 @@ type VM interface {
 	// it have an extension called `accounts`, where clients could get
 	// information about their accounts.
 	CreateHandlers(context.Context) (map[string]http.Handler, error)
+
+	// NewHTTPHandler returns the handler to register into the luxd http
+	// server. The server.HTTPHeaderRoute header must be specified with this VM's
+	// corresponding chain id by clients to route requests to this handler.
+	NewHTTPHandler(ctx context.Context) (http.Handler, error)
+
+	// WaitForEvent blocks until either the given context is cancelled, or a message is returned.
+	WaitForEvent(ctx context.Context) (Message, error)
 }

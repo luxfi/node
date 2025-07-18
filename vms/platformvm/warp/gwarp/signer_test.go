@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gwarp
@@ -11,7 +11,9 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/vms/platformvm/warp/signertest"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	pb "github.com/luxfi/node/proto/pb/warp"
@@ -20,7 +22,7 @@ import (
 type testSigner struct {
 	client    *Client
 	server    warp.Signer
-	sk        *bls.SecretKey
+	sk        bls.Signer
 	networkID uint32
 	chainID   ids.ID
 }
@@ -28,7 +30,7 @@ type testSigner struct {
 func setupSigner(t testing.TB) *testSigner {
 	require := require.New(t)
 
-	sk, err := bls.NewSecretKey()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	chainID := ids.GenerateTestID()
@@ -65,7 +67,7 @@ func setupSigner(t testing.TB) *testSigner {
 }
 
 func TestInterface(t *testing.T) {
-	for name, test := range warp.SignerTests {
+	for name, test := range signertest.SignerTests {
 		t.Run(name, func(t *testing.T) {
 			s := setupSigner(t)
 			test(t, s.client, s.sk, s.networkID, s.chainID)

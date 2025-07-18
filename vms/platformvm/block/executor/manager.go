@@ -1,10 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
@@ -14,14 +16,16 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/vms/txs/mempool"
 )
 
 var (
 	_ Manager = (*manager)(nil)
 
-	ErrChainNotSynced = errors.New("chain not synced")
+	ErrChainNotSynced              = errors.New("chain not synced")
+	ErrImportTxWhilePartialSyncing = errors.New("issuing an import tx is not allowed while partial syncing")
 )
 
 type Manager interface {
@@ -30,7 +34,7 @@ type Manager interface {
 	// Returns the ID of the most recently accepted block.
 	LastAccepted() ids.ID
 
-	SetPreference(blkID ids.ID) (updated bool)
+	SetPreference(blkID ids.ID)
 	Preferred() ids.ID
 
 	GetBlock(blkID ids.ID) (snowman.Block, error)
@@ -47,7 +51,7 @@ type Manager interface {
 }
 
 func NewManager(
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	metrics metrics.Metrics,
 	s state.State,
 	txExecutorBackend *executor.Backend,
@@ -64,15 +68,10 @@ func NewManager(
 
 	return &manager{
 		backend: backend,
-		verifier: &verifier{
-			backend:           backend,
-			txExecutorBackend: txExecutorBackend,
-		},
 		acceptor: &acceptor{
-			backend:      backend,
-			metrics:      metrics,
-			validators:   validatorManager,
-			bootstrapped: txExecutorBackend.Bootstrapped,
+			backend:    backend,
+			metrics:    metrics,
+			validators: validatorManager,
 		},
 		rejector: &rejector{
 			backend:         backend,
@@ -85,7 +84,6 @@ func NewManager(
 
 type manager struct {
 	*backend
-	verifier block.Visitor
 	acceptor block.Visitor
 	rejector block.Visitor
 
@@ -112,10 +110,8 @@ func (m *manager) NewBlock(blk block.Block) snowman.Block {
 	}
 }
 
-func (m *manager) SetPreference(blkID ids.ID) bool {
-	updated := m.preferred != blkID
+func (m *manager) SetPreference(blkID ids.ID) {
 	m.preferred = blkID
-	return updated
 }
 
 func (m *manager) Preferred() ids.ID {
@@ -127,26 +123,78 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		return ErrChainNotSynced
 	}
 
-	stateDiff, err := state.NewDiff(m.preferred, m)
-	if err != nil {
-		return err
+	// If partial sync is enabled, this node isn't guaranteed to have the full
+	// UTXO set from shared memory. To avoid issuing invalid transactions,
+	// issuance of an ImportTx during this state is completely disallowed.
+	if m.txExecutorBackend.Config.PartialSyncPrimaryNetwork {
+		if _, isImportTx := tx.Unsigned.(*txs.ImportTx); isImportTx {
+			return ErrImportTxWhilePartialSyncing
+		}
 	}
 
-	nextBlkTime, _, err := state.NextBlockTime(stateDiff, m.txExecutorBackend.Clk)
+	recommendedPChainHeight, err := m.ctx.ValidatorState.GetMinimumHeight(context.TODO())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch P-chain height: %w", err)
+	}
+	err = executor.VerifyWarpMessages(
+		context.TODO(),
+		m.ctx.NetworkID,
+		m.ctx.ValidatorState,
+		recommendedPChainHeight,
+		tx.Unsigned,
+	)
+	if err != nil {
+		return fmt.Errorf("failed verifying warp messages: %w", err)
+	}
+
+	stateDiff, err := state.NewDiff(m.preferred, m)
+	if err != nil {
+		return fmt.Errorf("failed creating state diff: %w", err)
+	}
+
+	nextBlkTime, _, err := state.NextBlockTime(
+		m.txExecutorBackend.Config.ValidatorFeeConfig,
+		stateDiff,
+		m.txExecutorBackend.Clk,
+	)
+	if err != nil {
+		return fmt.Errorf("failed selecting next block time: %w", err)
 	}
 
 	_, err = executor.AdvanceTimeTo(m.txExecutorBackend, stateDiff, nextBlkTime)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to advance the chain time: %w", err)
 	}
 
-	return tx.Unsigned.Visit(&executor.StandardTxExecutor{
-		Backend: m.txExecutorBackend,
-		State:   stateDiff,
-		Tx:      tx,
-	})
+	if timestamp := stateDiff.GetTimestamp(); m.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+		complexity, err := fee.TxComplexity(tx.Unsigned)
+		if err != nil {
+			return fmt.Errorf("failed to calculate tx complexity: %w", err)
+		}
+		gas, err := complexity.ToGas(m.txExecutorBackend.Config.DynamicFeeConfig.Weights)
+		if err != nil {
+			return fmt.Errorf("failed to calculate tx gas: %w", err)
+		}
+
+		// TODO: After the mempool is updated, convert this check to use the
+		// maximum mempool capacity.
+		feeState := stateDiff.GetFeeState()
+		if gas > feeState.Capacity {
+			return fmt.Errorf("tx exceeds current gas capacity: %d > %d", gas, feeState.Capacity)
+		}
+	}
+
+	feeCalculator := state.PickFeeCalculator(m.txExecutorBackend.Config, stateDiff)
+	_, _, _, err = executor.StandardTx(
+		m.txExecutorBackend,
+		feeCalculator,
+		tx,
+		stateDiff,
+	)
+	if err != nil {
+		return fmt.Errorf("failed execution: %w", err)
+	}
+	return nil
 }
 
 func (m *manager) VerifyUniqueInputs(blkID ids.ID, inputs set.Set[ids.ID]) error {

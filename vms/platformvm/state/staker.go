@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -15,21 +15,6 @@ import (
 )
 
 var _ btree.LessFunc[*Staker] = (*Staker).Less
-
-// StakerIterator defines an interface for iterating over a set of stakers.
-type StakerIterator interface {
-	// Next attempts to move the iterator to the next staker. It returns false
-	// once there are no more stakers to return.
-	Next() bool
-
-	// Value returns the current staker. Value should only be called after a
-	// call to Next which returned true.
-	Value() *Staker
-
-	// Release any resources associated with the iterator. This must be called
-	// after the interator is no longer needed.
-	Release()
-}
 
 // Staker contains all information required to represent a validator or
 // delegator in the current and pending validator sets.

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package database
@@ -135,6 +135,21 @@ func GetBool(db KeyValueReader, key []byte) (bool, error) {
 		return false, fmt.Errorf("should be %d or %d but is %d", BoolFalse, BoolTrue, b[0])
 	}
 	return b[0] == BoolTrue, nil
+}
+
+// WithDefault returns the value at [key] in [db]. If the key doesn't exist, it
+// returns [def].
+func WithDefault[V any](
+	get func(KeyValueReader, []byte) (V, error),
+	db KeyValueReader,
+	key []byte,
+	def V,
+) (V, error) {
+	v, err := get(db, key)
+	if err == ErrNotFound {
+		return def, nil
+	}
+	return v, err
 }
 
 func Count(db Iteratee) (int, error) {

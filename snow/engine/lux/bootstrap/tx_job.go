@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -9,14 +9,13 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common/queue"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -24,9 +23,9 @@ import (
 var errMissingTxDependenciesOnAccept = errors.New("attempting to accept a transaction with missing dependencies")
 
 type txParser struct {
-	log                     logging.Logger
-	numAccepted, numDropped prometheus.Counter
-	vm                      vertex.LinearizableVM
+	log         logging.Logger
+	numAccepted prometheus.Counter
+	vm          vertex.LinearizableVM
 }
 
 func (p *txParser) Parse(ctx context.Context, txBytes []byte) (queue.Job, error) {
@@ -37,15 +36,14 @@ func (p *txParser) Parse(ctx context.Context, txBytes []byte) (queue.Job, error)
 	return &txJob{
 		log:         p.log,
 		numAccepted: p.numAccepted,
-		numDropped:  p.numDropped,
 		tx:          tx,
 	}, nil
 }
 
 type txJob struct {
-	log                     logging.Logger
-	numAccepted, numDropped prometheus.Counter
-	tx                      snowstorm.Tx
+	log         logging.Logger
+	numAccepted prometheus.Counter
+	tx          snowstorm.Tx
 }
 
 func (t *txJob) ID() ids.ID {
@@ -68,14 +66,12 @@ func (t *txJob) Execute(ctx context.Context) error {
 		return err
 	}
 	if hasMissingDeps {
-		t.numDropped.Inc()
 		return errMissingTxDependenciesOnAccept
 	}
 
 	status := t.tx.Status()
 	switch status {
 	case choices.Unknown, choices.Rejected:
-		t.numDropped.Inc()
 		return fmt.Errorf("attempting to execute transaction with status %s", status)
 	case choices.Processing:
 		txID := t.tx.ID()

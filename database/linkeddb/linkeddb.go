@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package linkeddb
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/database"
 )
 
@@ -62,7 +63,7 @@ type node struct {
 
 func New(db database.Database, cacheSize int) LinkedDB {
 	return &linkedDB{
-		nodeCache:    &cache.LRU[string, *node]{Size: cacheSize},
+		nodeCache:    lru.NewCache[string, *node](cacheSize),
 		updatedNodes: make(map[string]*node),
 		db:           db,
 		batch:        db.NewBatch(),
@@ -108,6 +109,8 @@ func (ldb *linkedDB) Put(key, value []byte) error {
 	}
 
 	// The key isn't currently in the list, so we should add it as the head.
+	// Note we will copy the key so it's safe to store references to it.
+	key = slices.Clone(key)
 	newHead := node{Value: slices.Clone(value)}
 	if headKey, err := ldb.getHeadKey(); err == nil {
 		// The list currently has a head, so we need to update the old head.

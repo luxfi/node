@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package hierarchycodec
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/codectest"
 )
 
 func TestVectors(t *testing.T) {
@@ -16,13 +17,12 @@ func TestVectors(t *testing.T) {
 }
 
 func TestMultipleTags(t *testing.T) {
-	for _, test := range codec.MultipleTagsTests {
-		c := New([]string{"tag1", "tag2"})
-		test(c, t)
-	}
+	codectest.RunAllMultipleTags(t, func() codec.GeneralCodec {
+		return New([]string{"tag1", "tag2"})
+	})
 }
 
 func FuzzStructUnmarshalHierarchyCodec(f *testing.F) {
 	c := NewDefault()
-	codec.FuzzStructUnmarshal(c, f)
+	codectest.FuzzStructUnmarshal(c, f)
 }

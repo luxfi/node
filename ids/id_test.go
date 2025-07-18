@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -6,12 +6,14 @@ package ids
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/cb58"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 func TestID(t *testing.T) {
@@ -23,6 +25,90 @@ func TestID(t *testing.T) {
 
 	require.Equal(idCopy, id)
 	require.Equal(prefixed, id.Prefix(0))
+}
+
+func TestIDPrefix(t *testing.T) {
+	id := GenerateTestID()
+	tests := []struct {
+		name             string
+		id               ID
+		prefix           []uint64
+		expectedPreimage []byte
+	}{
+		{
+			name:             "empty prefix",
+			id:               id,
+			prefix:           []uint64{},
+			expectedPreimage: id[:],
+		},
+		{
+			name:   "1 prefix",
+			id:     id,
+			prefix: []uint64{1},
+			expectedPreimage: slices.Concat(
+				[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+				id[:],
+			),
+		},
+		{
+			name:   "multiple prefixes",
+			id:     id,
+			prefix: []uint64{1, 256},
+			expectedPreimage: slices.Concat(
+				[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+				[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00},
+				id[:],
+			),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			expected := ID(hashing.ComputeHash256Array(test.expectedPreimage))
+			require.Equal(t, expected, test.id.Prefix(test.prefix...))
+		})
+	}
+}
+
+func TestIDAppend(t *testing.T) {
+	id := GenerateTestID()
+	tests := []struct {
+		name             string
+		id               ID
+		suffix           []uint32
+		expectedPreimage []byte
+	}{
+		{
+			name:             "empty suffix",
+			id:               id,
+			suffix:           []uint32{},
+			expectedPreimage: id[:],
+		},
+		{
+			name:   "1 suffix",
+			id:     id,
+			suffix: []uint32{1},
+			expectedPreimage: slices.Concat(
+				id[:],
+				[]byte{0x00, 0x00, 0x00, 0x01},
+			),
+		},
+		{
+			name:   "multiple suffixes",
+			id:     id,
+			suffix: []uint32{1, 256},
+			expectedPreimage: slices.Concat(
+				id[:],
+				[]byte{0x00, 0x00, 0x00, 0x01},
+				[]byte{0x00, 0x00, 0x01, 0x00},
+			),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			expected := ID(hashing.ComputeHash256Array(test.expectedPreimage))
+			require.Equal(t, expected, test.id.Append(test.suffix...))
+		})
+	}
 }
 
 func TestIDXOR(t *testing.T) {
@@ -109,7 +195,7 @@ func TestIDMarshalJSON(t *testing.T) {
 			nil,
 		},
 		{
-			`ID("lux")`,
+			`ID("ava labs")`,
 			ID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			[]byte(`"jvYi6Tn9idMi7BaymUVi9zWjg5tpmW7trfKG1AYJLKZJ2fsU7"`),
 			nil,
@@ -140,7 +226,7 @@ func TestIDUnmarshalJSON(t *testing.T) {
 			nil,
 		},
 		{
-			`ID("lux")`,
+			`ID("ava labs")`,
 			[]byte(`"jvYi6Tn9idMi7BaymUVi9zWjg5tpmW7trfKG1AYJLKZJ2fsU7"`),
 			ID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			nil,

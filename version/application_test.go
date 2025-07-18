@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -20,7 +20,7 @@ func TestNewDefaultApplication(t *testing.T) {
 		Patch: 3,
 	}
 
-	require.Equal("node/1.2.3", v.String())
+	require.Equal("luxd/1.2.3", v.String())
 	require.NoError(v.Compatible(v))
 	require.False(v.Before(v))
 }

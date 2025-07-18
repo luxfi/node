@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -21,6 +21,8 @@ import (
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
+
+const localNetworkUpdateStartTimePeriod = 9 * 30 * 24 * time.Hour // 9 months
 
 var (
 	_ utils.Sortable[Allocation] = Allocation{}
@@ -96,9 +98,6 @@ type Config struct {
 	InitialStakers             []Staker      `json:"initialStakers"`
 
 	CChainGenesis string `json:"cChainGenesis"`
-	AChainGenesis string `json:"aChainGenesis,omitempty"`
-	BChainGenesis string `json:"bChainGenesis,omitempty"`
-	ZChainGenesis string `json:"zChainGenesis,omitempty"`
 
 	Message string `json:"message"`
 }
@@ -147,12 +146,12 @@ func (c Config) Unparse() (UnparsedConfig, error) {
 func (c *Config) InitialSupply() (uint64, error) {
 	initialSupply := uint64(0)
 	for _, allocation := range c.Allocations {
-		newInitialSupply, err := math.Add64(initialSupply, allocation.InitialAmount)
+		newInitialSupply, err := math.Add(initialSupply, allocation.InitialAmount)
 		if err != nil {
 			return 0, err
 		}
 		for _, unlock := range allocation.UnlockSchedule {
-			newInitialSupply, err = math.Add64(newInitialSupply, unlock.Amount)
+			newInitialSupply, err = math.Add(newInitialSupply, unlock.Amount)
 			if err != nil {
 				return 0, err
 			}
@@ -195,16 +194,6 @@ func init() {
 	}
 
 	MainnetConfig, err = unparsedMainnetConfig.Parse()
-	if err != nil {
-		panic(err)
-	}
-
-	FujiConfig, err = unparsedFujiConfig.Parse()
-	if err != nil {
-		panic(err)
-	}
-
-	LocalConfig, err = unparsedLocalConfig.Parse()
 	if err != nil {
 		panic(err)
 	}

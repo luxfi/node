@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -15,10 +15,11 @@ import (
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -40,7 +41,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
 
-	sk, err := bls.SecretKeyFromBytes(skBytes)
+	sk, err := localsigner.FromBytes(skBytes)
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	luxAssetID, err := ids.FromString("FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z")
@@ -98,7 +101,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   2 * units.KiloLux,
 		},
 		Subnet: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -386,7 +389,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   5 * units.KiloLux,
 		},
 		Subnet: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1396,10 +1399,11 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}
 
-	blsSK, err := bls.NewSecretKey()
+	blsSK, err := localsigner.New()
 	require.NoError(t, err)
 
-	blsPOP := signer.NewProofOfPossession(blsSK)
+	blsPOP, err := signer.NewProofOfPossession(blsSK)
+	require.NoError(t, err)
 
 	// A BaseTx that fails syntactic verification.
 	invalidBaseTx := BaseTx{}
@@ -1558,7 +1562,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := lux.NewMockTransferableOut(ctrl)
+				stakeOut := luxmock.NewTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -1586,7 +1590,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake overflow",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{

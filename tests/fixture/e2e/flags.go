@@ -1,33 +1,104 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/spf13/cast"
+
 	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+)
+
+type NetworkCmd int
+
+const (
+	EmptyNetworkCmd NetworkCmd = iota
+	StartNetworkCmd
+	StopNetworkCmd
+	RestartNetworkCmd
+	ReuseNetworkCmd
 )
 
 type FlagVars struct {
-	luxNodeExecPath  string
-	pluginDir            string
-	networkDir           string
-	reuseNetwork         bool
-	delayNetworkShutdown bool
-	stopNetwork          bool
-	nodeCount            int
+	startNetwork     bool
+	startNetworkVars *flags.StartNetworkVars
+
+	collectorVars *flags.CollectorVars
+
+	checkMetricsCollected bool
+	checkLogsCollected    bool
+
+	networkDir     string
+	reuseNetwork   bool
+	stopNetwork    bool
+	restartNetwork bool
+
+	activateGranite bool
 }
 
-func (v *FlagVars) Lux NodeExecPath() string {
-	return v.luxNodeExecPath
+func (v *FlagVars) NetworkCmd() (NetworkCmd, error) {
+	cmd := EmptyNetworkCmd
+	count := 0
+	if v.startNetwork {
+		cmd = StartNetworkCmd
+		count++
+	}
+	if v.stopNetwork {
+		cmd = StopNetworkCmd
+		count++
+	}
+	if v.restartNetwork {
+		cmd = RestartNetworkCmd
+		count++
+	}
+	if v.reuseNetwork {
+		cmd = ReuseNetworkCmd
+		count++
+	}
+	if count > 1 {
+		return EmptyNetworkCmd, errors.New("only one of --start-network, --stop-network, --restart-network, or --reuse-network can be specified")
+	}
+
+	return cmd, nil
 }
 
-func (v *FlagVars) PluginDir() string {
-	return v.pluginDir
+func (v *FlagVars) RootNetworkDir() string {
+	return v.startNetworkVars.RootNetworkDir
+}
+
+func (v *FlagVars) NetworkOwner() string {
+	return v.startNetworkVars.NetworkOwner
+}
+
+func (v *FlagVars) NodeCount() (int, error) {
+	return v.startNetworkVars.GetNodeCount()
+}
+
+func (v *FlagVars) NodeRuntimeConfig() (*tmpnet.NodeRuntimeConfig, error) {
+	return v.startNetworkVars.GetNodeRuntimeConfig()
+}
+
+func (v *FlagVars) StartMetricsCollector() bool {
+	return v.collectorVars.StartMetricsCollector
+}
+
+func (v *FlagVars) StartLogsCollector() bool {
+	return v.collectorVars.StartLogsCollector
+}
+
+func (v *FlagVars) CheckMetricsCollected() bool {
+	return v.checkMetricsCollected
+}
+
+func (v *FlagVars) CheckLogsCollected() bool {
+	return v.checkLogsCollected
 }
 
 func (v *FlagVars) NetworkDir() string {
@@ -40,71 +111,130 @@ func (v *FlagVars) NetworkDir() string {
 	return os.Getenv(tmpnet.NetworkDirEnvName)
 }
 
-func (v *FlagVars) ReuseNetwork() bool {
-	return v.reuseNetwork
-}
-
 func (v *FlagVars) NetworkShutdownDelay() time.Duration {
-	if v.delayNetworkShutdown {
-		// Only return a non-zero value if the delay is enabled.  Make sure this value takes
-		// into account the scrape_interval defined in scripts/run_prometheus.sh.
-		return 12 * time.Second
+	if v.StartMetricsCollector() {
+		// Only return a non-zero value if we want to ensure the collectors have
+		// a chance to collect the metrics at the end of the test.
+		return tmpnet.NetworkShutdownDelay
 	}
 	return 0
 }
 
-func (v *FlagVars) StopNetwork() bool {
-	return v.stopNetwork
+func (v *FlagVars) ActivateGranite() bool {
+	return v.activateGranite
 }
 
-func (v *FlagVars) NodeCount() int {
-	return v.nodeCount
+type DefaultOption func(*DefaultOptions)
+
+type DefaultOptions struct {
+	owner     string
+	nodeCount int
 }
 
-func RegisterFlags() *FlagVars {
+func newDefaultOptions(ops []DefaultOption) *DefaultOptions {
+	o := &DefaultOptions{}
+	for _, op := range ops {
+		op(o)
+	}
+	return o
+}
+
+func (d *DefaultOptions) Owner() string {
+	return d.owner
+}
+
+func (d *DefaultOptions) NodeCount() int {
+	if d.nodeCount <= 0 {
+		return tmpnet.DefaultNodeCount
+	}
+
+	return d.nodeCount
+}
+
+func WithDefaultOwner(owner string) DefaultOption {
+	return func(d *DefaultOptions) {
+		d.owner = owner
+	}
+}
+
+func WithDefaultNodeCount(nodeCount int) DefaultOption {
+	return func(d *DefaultOptions) {
+		d.nodeCount = nodeCount
+	}
+}
+
+func RegisterFlags(ops ...DefaultOption) *FlagVars {
 	vars := FlagVars{}
-	flag.StringVar(
-		&vars.luxNodeExecPath,
-		"node-path",
-		os.Getenv(tmpnet.Lux NodePathEnvName),
-		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", tmpnet.Lux NodePathEnvName),
+
+	flag.BoolVar(
+		&vars.startNetwork,
+		"start-network",
+		false,
+		"[optional] start a new network and exit without executing any tests. The new network cannot be reused with --reuse-network.",
 	)
-	flag.StringVar(
-		&vars.pluginDir,
-		"plugin-dir",
-		os.ExpandEnv("$HOME/.node/plugins"),
-		"[optional] the dir containing VM plugins.",
+
+	options := newDefaultOptions(ops)
+	vars.startNetworkVars = flags.NewStartNetworkFlagVars(
+		options.Owner(),
+		options.NodeCount(),
 	)
+
+	vars.collectorVars = flags.NewCollectorFlagVars()
+
+	SetCheckCollectionFlags(
+		&vars.checkMetricsCollected,
+		&vars.checkLogsCollected,
+	)
+
 	flag.StringVar(
 		&vars.networkDir,
 		"network-dir",
-		"",
-		fmt.Sprintf("[optional] the dir containing the configuration of an existing network to target for testing. Will only be used if --reuse-network is specified. Also possible to configure via the %s env variable.", tmpnet.NetworkDirEnvName),
+		tmpnet.GetEnvWithDefault(tmpnet.NetworkDirEnvName, ""),
+		fmt.Sprintf("[optional] the dir containing the configuration of an existing network. Will only be used if --reuse-network, --restart-network or --stop-network are specified. Also possible to configure via the %s env variable.", tmpnet.NetworkDirEnvName),
 	)
+
 	flag.BoolVar(
 		&vars.reuseNetwork,
 		"reuse-network",
 		false,
-		"[optional] reuse an existing network. If an existing network is not already running, create a new one and leave it running for subsequent usage.",
+		"[optional] run tests against an existing network previously started with --reuse-network. If a network is not already running, create a new one and leave it running for subsequent usage.",
 	)
+
 	flag.BoolVar(
-		&vars.delayNetworkShutdown,
-		"delay-network-shutdown",
+		&vars.restartNetwork,
+		"restart-network",
 		false,
-		"[optional] whether to delay network shutdown to allow a final metrics scrape.",
+		"[optional] like --reuse-network except an already running network is restarted before running tests to ensure the network represents the current state of binaries on disk.",
 	)
+
 	flag.BoolVar(
 		&vars.stopNetwork,
 		"stop-network",
 		false,
-		"[optional] stop an existing network and exit without executing any tests.",
+		"[optional] stop an existing network started with --reuse-network and exit without executing any tests.",
 	)
-	flag.IntVar(
-		&vars.nodeCount,
-		"node-count",
-		tmpnet.DefaultNodeCount,
-		"number of nodes the network should initially consist of",
+
+	flag.BoolVar(
+		&vars.activateGranite,
+		"activate-granite",
+		false,
+		"[optional] activate the granite upgrade",
 	)
 
 	return &vars
+}
+
+func SetCheckCollectionFlags(checkMetricsCollected *bool, checkLogsCollected *bool) {
+	flag.BoolVar(
+		checkMetricsCollected,
+		"check-metrics-collected",
+		cast.ToBool(tmpnet.GetEnvWithDefault("TMPNET_CHECK_METRICS_COLLECTED", "false")),
+		"[optional] whether to check that metrics have been collected from nodes of the temporary network.",
+	)
+	flag.BoolVar(
+		checkLogsCollected,
+		"check-logs-collected",
+		cast.ToBool(tmpnet.GetEnvWithDefault("TMPNET_CHECK_LOGS_COLLECTED", "false")),
+		"[optional] whether to check that logs have been collected from nodes of the temporary network.",
+	)
 }

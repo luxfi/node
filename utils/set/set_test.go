@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package set
@@ -134,7 +134,7 @@ func TestSetMarshalJSON(t *testing.T) {
 	{
 		asJSON, err := set.MarshalJSON()
 		require.NoError(err)
-		require.Equal("[]", string(asJSON))
+		require.JSONEq("[]", string(asJSON))
 	}
 	id1, id2 := 1, 2
 	id1JSON, err := json.Marshal(id1)
@@ -145,13 +145,13 @@ func TestSetMarshalJSON(t *testing.T) {
 	{
 		asJSON, err := set.MarshalJSON()
 		require.NoError(err)
-		require.Equal(fmt.Sprintf("[%s]", string(id1JSON)), string(asJSON))
+		require.JSONEq(fmt.Sprintf("[%s]", string(id1JSON)), string(asJSON))
 	}
 	set.Add(id2)
 	{
 		asJSON, err := set.MarshalJSON()
 		require.NoError(err)
-		require.Equal(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)), string(asJSON))
+		require.JSONEq(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)), string(asJSON))
 	}
 }
 
@@ -168,25 +168,25 @@ func TestSetUnmarshalJSON(t *testing.T) {
 	id2JSON, err := json.Marshal(id2)
 	require.NoError(err)
 	{
-		require.NoError(set.UnmarshalJSON([]byte(fmt.Sprintf("[%s]", string(id1JSON)))))
+		require.NoError(set.UnmarshalJSON(fmt.Appendf(nil, "[%s]", string(id1JSON))))
 		require.Len(set, 1)
 		require.Contains(set, id1)
 	}
 	{
-		require.NoError(set.UnmarshalJSON([]byte(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)))))
+		require.NoError(set.UnmarshalJSON(fmt.Appendf(nil, "[%s,%s]", string(id1JSON), string(id2JSON))))
 		require.Len(set, 2)
 		require.Contains(set, id1)
 		require.Contains(set, id2)
 	}
 	{
-		require.NoError(set.UnmarshalJSON([]byte(fmt.Sprintf("[%d,%d,%d]", 3, 4, 5))))
+		require.NoError(set.UnmarshalJSON(fmt.Appendf(nil, "[%d,%d,%d]", 3, 4, 5)))
 		require.Len(set, 3)
 		require.Contains(set, 3)
 		require.Contains(set, 4)
 		require.Contains(set, 5)
 	}
 	{
-		require.NoError(set.UnmarshalJSON([]byte(fmt.Sprintf("[%d,%d,%d, %d]", 3, 4, 5, 3))))
+		require.NoError(set.UnmarshalJSON(fmt.Appendf(nil, "[%d,%d,%d, %d]", 3, 4, 5, 3)))
 		require.Len(set, 3)
 		require.Contains(set, 3)
 		require.Contains(set, 4)
@@ -195,8 +195,8 @@ func TestSetUnmarshalJSON(t *testing.T) {
 	{
 		set1 := Set[int]{}
 		set2 := Set[int]{}
-		require.NoError(set1.UnmarshalJSON([]byte(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)))))
-		require.NoError(set2.UnmarshalJSON([]byte(fmt.Sprintf("[%s,%s]", string(id2JSON), string(id1JSON)))))
+		require.NoError(set1.UnmarshalJSON(fmt.Appendf(nil, "[%s,%s]", string(id1JSON), string(id2JSON))))
+		require.NoError(set2.UnmarshalJSON(fmt.Appendf(nil, "[%s,%s]", string(id2JSON), string(id1JSON))))
 		require.Equal(set1, set2)
 	}
 }
@@ -207,7 +207,7 @@ func TestSetReflectJSONMarshal(t *testing.T) {
 	{
 		asJSON, err := json.Marshal(set)
 		require.NoError(err)
-		require.Equal("[]", string(asJSON))
+		require.JSONEq("[]", string(asJSON))
 	}
 	id1JSON, err := json.Marshal(1)
 	require.NoError(err)
@@ -217,12 +217,12 @@ func TestSetReflectJSONMarshal(t *testing.T) {
 	{
 		asJSON, err := json.Marshal(set)
 		require.NoError(err)
-		require.Equal(fmt.Sprintf("[%s]", string(id1JSON)), string(asJSON))
+		require.JSONEq(fmt.Sprintf("[%s]", string(id1JSON)), string(asJSON))
 	}
 	set.Add(2)
 	{
 		asJSON, err := json.Marshal(set)
 		require.NoError(err)
-		require.Equal(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)), string(asJSON))
+		require.JSONEq(fmt.Sprintf("[%s,%s]", string(id1JSON), string(id2JSON)), string(asJSON))
 	}
 }

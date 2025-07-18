@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -19,16 +19,10 @@ var (
 	PChainAliases = []string{"P", "platform"}
 	XChainAliases = []string{"X", "avm"}
 	CChainAliases = []string{"C", "evm"}
-	AChainAliases = []string{"A", "aivm"}
-	BChainAliases = []string{"B", "bridgevm"}
-	ZChainAliases = []string{"Z", "zkvm"}
 	VMAliases     = map[ids.ID][]string{
 		constants.PlatformVMID: {"platform"},
 		constants.AVMID:        {"avm"},
 		constants.EVMID:        {"evm"},
-		constants.AIVMID:       {"aivm"},
-		constants.BridgeVMID:   {"bridgevm"},
-		constants.ZKVMID:       {"zkvm"},
 		secp256k1fx.ID:         {"secp256k1fx"},
 		nftfx.ID:               {"nftfx"},
 		propertyfx.ID:          {"propertyfx"},
@@ -74,30 +68,6 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "evm"),
 			}
 			chainAliases[chainID] = CChainAliases
-		case constants.AIVMID:
-			apiAliases[endpoint] = []string{
-				"A",
-				"aivm",
-				path.Join(constants.ChainAliasPrefix, "A"),
-				path.Join(constants.ChainAliasPrefix, "aivm"),
-			}
-			chainAliases[chainID] = AChainAliases
-		case constants.BridgeVMID:
-			apiAliases[endpoint] = []string{
-				"B",
-				"bridgevm",
-				path.Join(constants.ChainAliasPrefix, "B"),
-				path.Join(constants.ChainAliasPrefix, "bridgevm"),
-			}
-			chainAliases[chainID] = BChainAliases
-		case constants.ZKVMID:
-			apiAliases[endpoint] = []string{
-				"Z",
-				"zkvm",
-				path.Join(constants.ChainAliasPrefix, "Z"),
-				path.Join(constants.ChainAliasPrefix, "zkvm"),
-			}
-			chainAliases[chainID] = ZChainAliases
 		}
 	}
 	return apiAliases, chainAliases, nil

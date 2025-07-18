@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package codectest provides a test suite for testing functionality related to
@@ -26,7 +26,7 @@ func (tt *AliasTest) Run(t *testing.T, r ids.AliaserReader, w ids.AliaserWriter)
 	})
 }
 
-// RunAll runs all [AliasTests], constructing a new GeneralCodec for each.
+// RunAllAlias runs all [AliasTests], constructing a new GeneralCodec for each.
 func RunAllAlias(t *testing.T, ctor func() (ids.AliaserReader, ids.AliaserWriter)) {
 	for _, tt := range AliasTests {
 		r, w := ctor()

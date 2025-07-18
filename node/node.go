@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -28,18 +28,15 @@ import (
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/meterdb"
 	"github.com/luxfi/node/database/pebbledb"
 	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/indexer"
@@ -74,16 +71,13 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/aivm"
 	"github.com/luxfi/node/vms/avm"
-	"github.com/luxfi/node/vms/bridgevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/zkvm"
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
+	databasefactory "github.com/luxfi/node/database/factory"
 	avmconfig "github.com/luxfi/node/vms/avm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	geth "github.com/luxfi/geth/plugin/evm"
@@ -113,8 +107,7 @@ var (
 	genesisHashKey     = []byte("genesisID")
 	ungracefulShutdown = []byte("ungracefulShutdown")
 
-	indexerDBPrefix  = []byte{0x00}
-	keystoreDBPrefix = []byte("keystore")
+	indexerDBPrefix = []byte{0x00}
 
 	errInvalidTLSKey = errors.New("invalid TLS key")
 	errShuttingDown  = errors.New("server shutting down")
@@ -122,7 +115,7 @@ var (
 
 // New returns an instance of Node
 func New(
-	config *Config,
+	config *node.Config,
 	logFactory logging.Factory,
 	logger logging.Logger,
 ) (*Node, error) {
@@ -141,11 +134,14 @@ func New(
 		Config:           config,
 	}
 
-	n.DoneShuttingDown.Add(1)
+	pop, err := signer.NewProofOfPossession(n.Config.StakingSigningKey)
+	if err != nil {
+		return nil, fmt.Errorf("problem creating proof of possession: %w", err)
+	}
 
-	pop := signer.NewProofOfPossession(n.Config.StakingSigningKey)
 	logger.Info("initializing node",
 		zap.Stringer("version", version.CurrentApp),
+		zap.String("commit", version.GitCommit),
 		zap.Stringer("nodeID", n.ID),
 		zap.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
 		zap.Reflect("nodePOP", pop),
@@ -195,10 +191,6 @@ func New(
 		return nil, fmt.Errorf("problem initializing database: %w", err)
 	}
 
-	if err := n.initKeystoreAPI(); err != nil { // Start the Keystore API
-		return nil, fmt.Errorf("couldn't initialize keystore API: %w", err)
-	}
-
 	n.initSharedMemory() // Initialize shared memory
 
 	// message.Creator is shared between networking, chainManager and the engine.
@@ -215,7 +207,6 @@ func New(
 	}
 
 	n.msgCreator, err = message.NewCreator(
-		n.Log,
 		networkRegisterer,
 		n.Config.NetworkConfig.CompressionType,
 		n.Config.NetworkConfig.MaximumInboundMessageTimeout,
@@ -309,9 +300,6 @@ type Node struct {
 	// Indexes blocks, transactions and blocks
 	indexer indexer.Indexer
 
-	// Handles calls to Keystore API
-	keystore keystore.Keystore
-
 	// Manages shared memory
 	sharedMemory *atomic.Memory
 
@@ -343,7 +331,7 @@ type Node struct {
 	// The staking address will optionally be written to a process context
 	// file to enable other nodes to be configured to use this node as a
 	// beacon.
-	stakingAddress string
+	stakingAddress netip.AddrPort
 
 	// tlsKeyLogWriterCloser is a debug file handle that writes all the TLS
 	// session keys. This value should only be non-nil during debugging.
@@ -361,7 +349,7 @@ type Node struct {
 	APIServer server.Server
 
 	// This node's configuration
-	Config *Config
+	Config *node.Config
 
 	tracer trace.Tracer
 
@@ -373,10 +361,6 @@ type Node struct {
 
 	// Sets the exit code
 	shuttingDownExitCode utils.Atomic[int]
-
-	// Incremented only once on initialization.
-	// Decremented when node is done shutting down.
-	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
 	MetricsGatherer        metrics.MultiGatherer
@@ -423,7 +407,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	//
 	//   - MacOS requires a manually-approved firewall exception [1] for each version of a given
 	//   binary that wants to bind to all interfaces (i.e. with an address of `:[port]`). Each
-	//   compiled version of node requires a separate exception to be allowed to bind to all
+	//   compiled version of luxd requires a separate exception to be allowed to bind to all
 	//   interfaces.
 	//
 	//   - A firewall exception is not required to bind to a loopback interface, but the only way for
@@ -431,7 +415,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	//   requires an exception.
 	//
 	//   - Thus, the only way to start a node on MacOS without approving a firewall exception for the
-	//   node binary is to bind to loopback by specifying the host to be `::1` or `127.0.0.1`.
+	//   luxd binary is to bind to loopback by specifying the host to be `::1` or `127.0.0.1`.
 	//
 	// 1: https://apple.stackexchange.com/questions/393715/do-you-want-the-application-main-to-accept-incoming-network-connections-pop
 	// 2: https://github.com/golang/go/issues/56998
@@ -444,15 +428,15 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	listener = throttling.NewThrottledListener(listener, n.Config.NetworkConfig.ThrottlerConfig.MaxInboundConnsPerSec)
 
 	// Record the bound address to enable inclusion in process context file.
-	n.stakingAddress = listener.Addr().String()
-	stakingAddrPort, err := ips.ParseAddrPort(n.stakingAddress)
+	n.stakingAddress, err = ips.ParseAddrPort(listener.Addr().String())
 	if err != nil {
 		return err
 	}
 
 	var (
-		publicAddr netip.Addr
-		atomicIP   *utils.Atomic[netip.AddrPort]
+		stakingPort = n.stakingAddress.Port()
+		publicAddr  netip.Addr
+		atomicIP    *utils.Atomic[netip.AddrPort]
 	)
 	switch {
 	case n.Config.PublicIP != "":
@@ -463,7 +447,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		}
 		atomicIP = utils.NewAtomic(netip.AddrPortFrom(
 			publicAddr,
-			stakingAddrPort.Port(),
+			stakingPort,
 		))
 		n.ipUpdater = dynamicip.NewNoUpdater()
 	case n.Config.PublicIPResolutionService != "":
@@ -482,7 +466,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		}
 		atomicIP = utils.NewAtomic(netip.AddrPortFrom(
 			publicAddr,
-			stakingAddrPort.Port(),
+			stakingPort,
 		))
 		n.ipUpdater = dynamicip.NewUpdater(atomicIP, resolver, n.Config.PublicIPResolutionFreq)
 	default:
@@ -492,7 +476,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		}
 		atomicIP = utils.NewAtomic(netip.AddrPortFrom(
 			publicAddr,
-			stakingAddrPort.Port(),
+			stakingPort,
 		))
 		n.ipUpdater = dynamicip.NewNoUpdater()
 	}
@@ -505,8 +489,8 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	// Regularly update our public IP and port mappings.
 	n.portMapper.Map(
-		stakingAddrPort.Port(),
-		stakingAddrPort.Port(),
+		stakingPort,
+		stakingPort,
 		stakingPortName,
 		atomicIP,
 		n.Config.PublicIPResolutionFreq,
@@ -555,7 +539,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	// Create chain router
 	n.chainRouter = &router.ChainRouter{}
-	if n.Config.TraceConfig.Enabled {
+	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		n.chainRouter = router.Trace(n.chainRouter, n.tracer)
 	}
 
@@ -587,7 +571,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		err := n.vdrs.AddStaker(
 			constants.PrimaryNetworkID,
 			n.ID,
-			bls.PublicFromSecretKey(n.Config.StakingSigningKey),
+			n.Config.StakingSigningKey.PublicKey(),
 			dummyTxID,
 			n.Config.SybilProtectionDisabledWeight,
 		)
@@ -604,7 +588,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	}
 
 	n.onSufficientlyConnected = make(chan struct{})
-	numBootstrappers := n.bootstrappers.Count(constants.PrimaryNetworkID)
+	numBootstrappers := n.bootstrappers.NumValidators(constants.PrimaryNetworkID)
 	requiredConns := (3*numBootstrappers + 3) / 4
 
 	if requiredConns > 0 {
@@ -636,7 +620,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
-		n.Config.UpgradeConfig.DurangoTime,
+		n.Config.UpgradeConfig.FortunaTime,
 		n.msgCreator,
 		reg,
 		n.Log,
@@ -648,24 +632,13 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	return err
 }
 
-type NodeProcessContext struct {
-	// The process id of the node
-	PID int `json:"pid"`
-	// URI to access the node API
-	// Format: [https|http]://[host]:[port]
-	URI string `json:"uri"`
-	// Address other nodes can use to communicate with this node
-	// Format: [host]:[port]
-	StakingAddress string `json:"stakingAddress"`
-}
-
 // Write process context to the configured path. Supports the use of
 // dynamically chosen network ports with local network orchestration.
 func (n *Node) writeProcessContext() error {
 	n.Log.Info("writing process context", zap.String("path", n.Config.ProcessContextFilePath))
 
 	// Write the process context to disk
-	processContext := &NodeProcessContext{
+	processContext := &node.ProcessContext{
 		PID:            os.Getpid(),
 		URI:            n.apiURI,
 		StakingAddress: n.stakingAddress, // Set by network initialization
@@ -702,7 +675,8 @@ func (n *Node) Dispatch() error {
 			)
 		}
 		// If the API server isn't running, shut down the node.
-		// If node is already shutting down, this does nothing.
+		// If node is already shutting down, this does not tigger shutdown again,
+		// and blocks until Shutdown returns.
 		n.Shutdown(1)
 	})
 
@@ -736,10 +710,11 @@ func (n *Node) Dispatch() error {
 	}
 
 	// Start P2P connections
-	err := n.Net.Dispatch()
+	retErr := n.Net.Dispatch()
 
 	// If the P2P server isn't running, shut down the node.
-	// If node is already shutting down, this does nothing.
+	// If node is already shutting down, this does not tigger shutdown again,
+	// and blocks until Shutdown returns.
 	n.Shutdown(1)
 
 	if n.tlsKeyLogWriterCloser != nil {
@@ -752,9 +727,6 @@ func (n *Node) Dispatch() error {
 		}
 	}
 
-	// Wait until the node is done shutting down before returning
-	n.DoneShuttingDown.Wait()
-
 	// Remove the process context file to communicate to an orchestrator
 	// that the node is no longer running.
 	if err := os.Remove(n.Config.ProcessContextFilePath); err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -764,7 +736,7 @@ func (n *Node) Dispatch() error {
 		)
 	}
 
-	return err
+	return retErr
 }
 
 /*
@@ -774,57 +746,33 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	dbRegisterer, err := metrics.MakeAndRegister(
-		n.MetricsGatherer,
-		dbNamespace,
-	)
-	if err != nil {
-		return err
-	}
-
-	// start the db
+	var dbFolderName string
 	switch n.Config.DatabaseConfig.Name {
 	case leveldb.Name:
 		// Prior to v1.10.15, the only on-disk database was leveldb, and its
 		// files went to [dbPath]/[networkID]/v1.4.5.
-		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
-		n.DB, err = leveldb.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, dbRegisterer)
-		if err != nil {
-			return fmt.Errorf("couldn't create %s at %s: %w", leveldb.Name, dbPath, err)
-		}
-	case memdb.Name:
-		n.DB = memdb.New()
+		dbFolderName = version.CurrentDatabase.String()
 	case pebbledb.Name:
-		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
-		n.DB, err = pebbledb.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, dbRegisterer)
-		if err != nil {
-			return fmt.Errorf("couldn't create %s at %s: %w", pebbledb.Name, dbPath, err)
-		}
+		dbFolderName = "pebble"
 	default:
-		return fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s, %s}",
-			n.Config.DatabaseConfig.Name,
-			leveldb.Name,
-			memdb.Name,
-			pebbledb.Name,
-		)
+		dbFolderName = "db"
 	}
+	// dbFolderName is appended to the database path given in the config
+	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 
-	if n.Config.ReadOnly && n.Config.DatabaseConfig.Name != memdb.Name {
-		n.DB = versiondb.New(n.DB)
-	}
-
-	meterDBReg, err := metrics.MakeAndRegister(
-		n.MeterDBMetricsGatherer,
+	var err error
+	n.DB, err = databasefactory.New(
+		n.Config.DatabaseConfig.Name,
+		dbFullPath,
+		n.Config.DatabaseConfig.ReadOnly,
+		n.Config.DatabaseConfig.Config,
+		n.MetricsGatherer,
+		n.Log,
+		dbNamespace,
 		"all",
 	)
 	if err != nil {
-		return err
-	}
-
-	n.DB, err = meterdb.New(meterDBReg, n.DB)
-	if err != nil {
-		return err
+		return fmt.Errorf("couldn't create database: %w", err)
 	}
 
 	rawExpectedGenesisHash := hashing.ComputeHash256(n.Config.GenesisBytes)
@@ -1048,12 +996,11 @@ func (n *Node) initAPIServer() error {
 
 	n.APIServer, err = server.New(
 		n.Log,
-		n.LogFactory,
 		listener,
 		n.Config.HTTPAllowedOrigins,
 		n.Config.ShutdownTimeout,
 		n.ID,
-		n.Config.TraceConfig.Enabled,
+		n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 		n.tracer,
 		apiRegisterer,
 		n.Config.HTTPConfig.HTTPConfig,
@@ -1169,7 +1116,6 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			NodeID:                                  n.ID,
 			NetworkID:                               n.Config.NetworkID,
 			Server:                                  n.APIServer,
-			Keystore:                                n.keystore,
 			AtomicMemory:                            n.sharedMemory,
 			LUXAssetID:                             luxAssetID,
 			XChainID:                                xChainID,
@@ -1188,11 +1134,10 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			BootstrapMaxTimeGetAncestors:            n.Config.BootstrapMaxTimeGetAncestors,
 			BootstrapAncestorsMaxContainersSent:     n.Config.BootstrapAncestorsMaxContainersSent,
 			BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
-			ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
-			ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
+			Upgrades:                                n.Config.UpgradeConfig,
 			ResourceTracker:                         n.resourceTracker,
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
-			TracingEnabled:                          n.Config.TraceConfig.Enabled,
+			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            n.Config.ChainDataDir,
 			Subnets:                                 subnets,
@@ -1221,17 +1166,17 @@ func (n *Node) initVMs() error {
 	}
 
 	// Register the VMs that Lux supports
-	eUpgradeTime := version.GetEUpgradeTime(n.Config.NetworkID)
 	err := errors.Join(
 		n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
-			Config: platformconfig.Config{
+			Internal: platformconfig.Internal{
 				Chains:                    n.chainManager,
 				Validators:                vdrs,
 				UptimeLockedCalculator:    n.uptimeCalculator,
 				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
 				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
 				TrackedSubnets:            n.Config.TrackedSubnets,
-				StaticFeeConfig:           n.Config.StaticConfig,
+				DynamicFeeConfig:          n.Config.DynamicFeeConfig,
+				ValidatorFeeConfig:        n.Config.ValidatorFeeConfig,
 				UptimePercentage:          n.Config.UptimeRequirement,
 				MinValidatorStake:         n.Config.MinValidatorStake,
 				MaxValidatorStake:         n.Config.MaxValidatorStake,
@@ -1240,28 +1185,18 @@ func (n *Node) initVMs() error {
 				MinStakeDuration:          n.Config.MinStakeDuration,
 				MaxStakeDuration:          n.Config.MaxStakeDuration,
 				RewardConfig:              n.Config.RewardConfig,
-				UpgradeConfig: upgrade.Config{
-					ApricotPhase3Time: version.GetApricotPhase3Time(n.Config.NetworkID),
-					ApricotPhase5Time: version.GetApricotPhase5Time(n.Config.NetworkID),
-					BanffTime:         version.GetBanffTime(n.Config.NetworkID),
-					CortinaTime:       version.GetCortinaTime(n.Config.NetworkID),
-					DurangoTime:       version.GetDurangoTime(n.Config.NetworkID),
-					EUpgradeTime:      eUpgradeTime,
-				},
-				UseCurrentHeight: n.Config.UseCurrentHeight,
+				UpgradeConfig:             n.Config.UpgradeConfig,
+				UseCurrentHeight:          n.Config.UseCurrentHeight,
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
 			Config: avmconfig.Config{
+				Upgrades:         n.Config.UpgradeConfig,
 				TxFee:            n.Config.TxFee,
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
-				EUpgradeTime:     eUpgradeTime,
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bridgevm.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
 	)
 	if err != nil {
 		return err
@@ -1304,23 +1239,6 @@ func (n *Node) initSharedMemory() {
 	n.Log.Info("initializing SharedMemory")
 	sharedMemoryDB := prefixdb.New([]byte("shared memory"), n.DB)
 	n.sharedMemory = atomic.NewMemory(sharedMemoryDB)
-}
-
-// initKeystoreAPI initializes the keystore service, which is an on-node wallet.
-// Assumes n.APIServer is already set
-func (n *Node) initKeystoreAPI() error {
-	n.Log.Info("initializing keystore")
-	n.keystore = keystore.New(n.Log, prefixdb.New(keystoreDBPrefix, n.DB))
-	handler, err := n.keystore.CreateHandler()
-	if err != nil {
-		return err
-	}
-	if !n.Config.KeystoreAPIEnabled {
-		n.Log.Info("skipping keystore API initialization because it has been disabled")
-		return nil
-	}
-	n.Log.Warn("initializing deprecated keystore API")
-	return n.APIServer.AddRoute(handler, "keystore", "")
 }
 
 // initMetricsAPI initializes the Metrics API
@@ -1426,22 +1344,22 @@ func (n *Node) initInfoAPI() error {
 
 	n.Log.Info("initializing info API")
 
+	pop, err := signer.NewProofOfPossession(n.Config.StakingSigningKey)
+	if err != nil {
+		return fmt.Errorf("problem creating proof of possession: %w", err)
+	}
+
 	service, err := info.NewService(
 		info.Parameters{
-			Version:                       version.CurrentApp,
-			NodeID:                        n.ID,
-			NodePOP:                       signer.NewProofOfPossession(n.Config.StakingSigningKey),
-			NetworkID:                     n.Config.NetworkID,
-			TxFee:                         n.Config.TxFee,
-			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
-			CreateSubnetTxFee:             n.Config.CreateSubnetTxFee,
-			TransformSubnetTxFee:          n.Config.TransformSubnetTxFee,
-			CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
-			AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
-			AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
-			AddSubnetValidatorFee:         n.Config.AddSubnetValidatorFee,
-			AddSubnetDelegatorFee:         n.Config.AddSubnetDelegatorFee,
-			VMManager:                     n.VMManager,
+			Version:   version.CurrentApp,
+			NodeID:    n.ID,
+			NodePOP:   pop,
+			NetworkID: n.Config.NetworkID,
+			VMManager: n.VMManager,
+			Upgrades:  n.Config.UpgradeConfig,
+
+			TxFee:            n.Config.TxFee,
+			CreateAssetTxFee: n.Config.CreateAssetTxFee,
 		},
 		n.Log,
 		n.vdrs,
@@ -1524,6 +1442,32 @@ func (n *Node) initHealthAPI() error {
 	err = n.health.RegisterHealthCheck("diskspace", diskSpaceCheck, health.ApplicationTag)
 	if err != nil {
 		return fmt.Errorf("couldn't register resource health check: %w", err)
+	}
+
+	wrongBLSKeyCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
+		vdr, ok := n.vdrs.GetValidator(constants.PrimaryNetworkID, n.ID)
+		if !ok {
+			return "node is not a validator", nil
+		}
+
+		vdrPK := vdr.PublicKey
+		if vdrPK == nil {
+			return "validator doesn't have a BLS key", nil
+		}
+
+		nodePK := n.Config.StakingSigningKey.PublicKey()
+		if nodePK.Equals(vdrPK) {
+			return "node has the correct BLS key", nil
+		}
+		return nil, fmt.Errorf("node has BLS key 0x%x, but is registered to the validator set with 0x%x",
+			bls.PublicKeyToCompressedBytes(nodePK),
+			bls.PublicKeyToCompressedBytes(vdrPK),
+		)
+	})
+
+	err = n.health.RegisterHealthCheck("bls", wrongBLSKeyCheck, health.ApplicationTag)
+	if err != nil {
+		return fmt.Errorf("couldn't register bls health check: %w", err)
 	}
 
 	handler, err := health.NewGetAndPostHandler(n.Log, n.health)
@@ -1675,11 +1619,11 @@ func (n *Node) initDiskTargeter(
 
 // Shutdown this node
 // May be called multiple times
+// All calls to shutdownOnce.Do block until the first call returns
 func (n *Node) Shutdown(exitCode int) {
-	if !n.shuttingDown.Get() { // only set the exit code once
+	if !n.shuttingDown.Swap(true) { // only set the exit code once
 		n.shuttingDownExitCode.Set(exitCode)
 	}
-	n.shuttingDown.Set(true)
 	n.shutdownOnce.Do(n.shutdown)
 }
 
@@ -1751,7 +1695,7 @@ func (n *Node) shutdown() {
 		}
 	}
 
-	if n.Config.TraceConfig.Enabled {
+	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		n.Log.Info("shutting down tracing")
 	}
 
@@ -1761,7 +1705,6 @@ func (n *Node) shutdown() {
 		)
 	}
 
-	n.DoneShuttingDown.Done()
 	n.Log.Info("finished node shutdown")
 }
 

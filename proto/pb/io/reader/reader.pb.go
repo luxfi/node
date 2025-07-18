@@ -21,6 +21,53 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ErrorCode provides information for special sentinel error types
+type ErrorCode int32
+
+const (
+	ErrorCode_ERROR_CODE_UNSPECIFIED ErrorCode = 0
+	ErrorCode_ERROR_CODE_EOF         ErrorCode = 1
+)
+
+// Enum value maps for ErrorCode.
+var (
+	ErrorCode_name = map[int32]string{
+		0: "ERROR_CODE_UNSPECIFIED",
+		1: "ERROR_CODE_EOF",
+	}
+	ErrorCode_value = map[string]int32{
+		"ERROR_CODE_UNSPECIFIED": 0,
+		"ERROR_CODE_EOF":         1,
+	}
+)
+
+func (x ErrorCode) Enum() *ErrorCode {
+	p := new(ErrorCode)
+	*p = x
+	return p
+}
+
+func (x ErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_io_reader_reader_proto_enumTypes[0].Descriptor()
+}
+
+func (ErrorCode) Type() protoreflect.EnumType {
+	return &file_io_reader_reader_proto_enumTypes[0]
+}
+
+func (x ErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ErrorCode.Descriptor instead.
+func (ErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_io_reader_reader_proto_rawDescGZIP(), []int{0}
+}
+
 type ReadRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// length is the request in bytes
@@ -71,7 +118,7 @@ type ReadResponse struct {
 	// read is the payload in bytes
 	Read []byte `protobuf:"bytes,1,opt,name=read,proto3" json:"read,omitempty"`
 	// error is an error message
-	Error         *string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+	Error         *Error `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -113,9 +160,61 @@ func (x *ReadResponse) GetRead() []byte {
 	return nil
 }
 
-func (x *ReadResponse) GetError() string {
-	if x != nil && x.Error != nil {
-		return *x.Error
+func (x *ReadResponse) GetError() *Error {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type Error struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode     ErrorCode              `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=io.reader.ErrorCode" json:"error_code,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Error) Reset() {
+	*x = Error{}
+	mi := &file_io_reader_reader_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Error) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Error) ProtoMessage() {}
+
+func (x *Error) ProtoReflect() protoreflect.Message {
+	mi := &file_io_reader_reader_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Error.ProtoReflect.Descriptor instead.
+func (*Error) Descriptor() ([]byte, []int) {
+	return file_io_reader_reader_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Error) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *Error) GetMessage() string {
+	if x != nil {
+		return x.Message
 	}
 	return ""
 }
@@ -126,13 +225,19 @@ const file_io_reader_reader_proto_rawDesc = "" +
 	"\n" +
 	"\x16io/reader/reader.proto\x12\tio.reader\"%\n" +
 	"\vReadRequest\x12\x16\n" +
-	"\x06length\x18\x01 \x01(\x05R\x06length\"G\n" +
+	"\x06length\x18\x01 \x01(\x05R\x06length\"J\n" +
 	"\fReadResponse\x12\x12\n" +
-	"\x04read\x18\x01 \x01(\fR\x04read\x12\x19\n" +
-	"\x05error\x18\x02 \x01(\tH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error2A\n" +
+	"\x04read\x18\x01 \x01(\fR\x04read\x12&\n" +
+	"\x05error\x18\x02 \x01(\v2\x10.io.reader.ErrorR\x05error\"V\n" +
+	"\x05Error\x123\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2\x14.io.reader.ErrorCodeR\terrorCode\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*;\n" +
+	"\tErrorCode\x12\x1a\n" +
+	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eERROR_CODE_EOF\x10\x012A\n" +
 	"\x06Reader\x127\n" +
-	"\x04Read\x12\x16.io.reader.ReadRequest\x1a\x17.io.reader.ReadResponseB*Z(github.com/luxfi/node/proto/pb/io/readerb\x06proto3"
+	"\x04Read\x12\x16.io.reader.ReadRequest\x1a\x17.io.reader.ReadResponseB4Z2github.com/luxfi/node/proto/pb/io/readerb\x06proto3"
 
 var (
 	file_io_reader_reader_proto_rawDescOnce sync.Once
@@ -146,19 +251,24 @@ func file_io_reader_reader_proto_rawDescGZIP() []byte {
 	return file_io_reader_reader_proto_rawDescData
 }
 
-var file_io_reader_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_io_reader_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_io_reader_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_io_reader_reader_proto_goTypes = []any{
-	(*ReadRequest)(nil),  // 0: io.reader.ReadRequest
-	(*ReadResponse)(nil), // 1: io.reader.ReadResponse
+	(ErrorCode)(0),       // 0: io.reader.ErrorCode
+	(*ReadRequest)(nil),  // 1: io.reader.ReadRequest
+	(*ReadResponse)(nil), // 2: io.reader.ReadResponse
+	(*Error)(nil),        // 3: io.reader.Error
 }
 var file_io_reader_reader_proto_depIdxs = []int32{
-	0, // 0: io.reader.Reader.Read:input_type -> io.reader.ReadRequest
-	1, // 1: io.reader.Reader.Read:output_type -> io.reader.ReadResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: io.reader.ReadResponse.error:type_name -> io.reader.Error
+	0, // 1: io.reader.Error.error_code:type_name -> io.reader.ErrorCode
+	1, // 2: io.reader.Reader.Read:input_type -> io.reader.ReadRequest
+	2, // 3: io.reader.Reader.Read:output_type -> io.reader.ReadResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_io_reader_reader_proto_init() }
@@ -166,19 +276,19 @@ func file_io_reader_reader_proto_init() {
 	if File_io_reader_reader_proto != nil {
 		return
 	}
-	file_io_reader_reader_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_io_reader_reader_proto_rawDesc), len(file_io_reader_reader_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_io_reader_reader_proto_goTypes,
 		DependencyIndexes: file_io_reader_reader_proto_depIdxs,
+		EnumInfos:         file_io_reader_reader_proto_enumTypes,
 		MessageInfos:      file_io_reader_reader_proto_msgTypes,
 	}.Build()
 	File_io_reader_reader_proto = out.File

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -18,11 +18,13 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/snow/networking/benchlist"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/nftfx"
@@ -31,7 +33,37 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-var errNoChainProvided = errors.New("argument 'chain' not given")
+var (
+	errNoChainProvided = errors.New("argument 'chain' not given")
+
+	mainnetGetTxFeeResponse = GetTxFeeResponse{
+		CreateSubnetTxFee:             json.Uint64(1 * units.Lux),
+		TransformSubnetTxFee:          json.Uint64(10 * units.Lux),
+		CreateBlockchainTxFee:         json.Uint64(1 * units.Lux),
+		AddPrimaryNetworkValidatorFee: json.Uint64(0),
+		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
+		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
+		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+	}
+	fujiGetTxFeeResponse = GetTxFeeResponse{
+		CreateSubnetTxFee:             json.Uint64(100 * units.MilliLux),
+		TransformSubnetTxFee:          json.Uint64(1 * units.Lux),
+		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
+		AddPrimaryNetworkValidatorFee: json.Uint64(0),
+		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
+		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
+		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+	}
+	defaultGetTxFeeResponse = GetTxFeeResponse{
+		CreateSubnetTxFee:             json.Uint64(100 * units.MilliLux),
+		TransformSubnetTxFee:          json.Uint64(100 * units.MilliLux),
+		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
+		AddPrimaryNetworkValidatorFee: json.Uint64(0),
+		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
+		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
+		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+	}
+)
 
 // Info is the API service for unprivileged info on a node
 type Info struct {
@@ -46,13 +78,15 @@ type Info struct {
 }
 
 type Parameters struct {
-	Version     *version.Application
-	NodeID      ids.NodeID
-	NodePOP     *signer.ProofOfPossession
-	NetworkID   uint32
-	TxFeeConfig genesis.TxFeeConfig
-	VMManager   vms.Manager
-	Upgrades    upgrade.Config
+	Version   *version.Application
+	NodeID    ids.NodeID
+	NodePOP   *signer.ProofOfPossession
+	NetworkID uint32
+	VMManager vms.Manager
+	Upgrades  upgrade.Config
+
+	TxFee            uint64
+	CreateAssetTxFee uint64
 }
 
 func NewService(
@@ -283,6 +317,17 @@ func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *
 	return nil
 }
 
+// Upgrades returns the upgrade schedule this node is running.
+func (i *Info) Upgrades(_ *http.Request, _ *struct{}, reply *upgrade.Config) error {
+	i.log.Debug("API called",
+		zap.String("service", "info"),
+		zap.String("method", "upgrades"),
+	)
+
+	*reply = i.Parameters.Upgrades
+	return nil
+}
+
 // UptimeResponse are the results from calling Uptime
 type UptimeResponse struct {
 	// RewardingStakePercentage shows what percent of network stake thinks we're
@@ -300,18 +345,13 @@ type UptimeResponse struct {
 	WeightedAveragePercentage json.Float64 `json:"weightedAveragePercentage"`
 }
 
-type UptimeRequest struct {
-	// if omitted, defaults to primary network
-	SubnetID ids.ID `json:"subnetID"`
-}
-
-func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeResponse) error {
+func (i *Info) Uptime(_ *http.Request, _ *struct{}, reply *UptimeResponse) error {
 	i.log.Debug("API called",
 		zap.String("service", "info"),
 		zap.String("method", "uptime"),
 	)
 
-	result, err := i.networking.NodeUptime(args.SubnetID)
+	result, err := i.networking.NodeUptime()
 	if err != nil {
 		return fmt.Errorf("couldn't get node uptime: %w", err)
 	}
@@ -392,20 +432,21 @@ type GetTxFeeResponse struct {
 
 // GetTxFee returns the transaction fee in nLUX.
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
-	i.log.Debug("API called",
+	i.log.Warn("deprecated API called",
 		zap.String("service", "info"),
 		zap.String("method", "getTxFee"),
 	)
 
+	switch i.NetworkID {
+	case constants.MainnetID:
+		*reply = mainnetGetTxFeeResponse
+	case constants.FujiID:
+		*reply = fujiGetTxFeeResponse
+	default:
+		*reply = defaultGetTxFeeResponse
+	}
 	reply.TxFee = json.Uint64(i.TxFee)
 	reply.CreateAssetTxFee = json.Uint64(i.CreateAssetTxFee)
-	reply.CreateSubnetTxFee = json.Uint64(i.CreateSubnetTxFee)
-	reply.TransformSubnetTxFee = json.Uint64(i.TransformSubnetTxFee)
-	reply.CreateBlockchainTxFee = json.Uint64(i.CreateBlockchainTxFee)
-	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.AddPrimaryNetworkValidatorFee)
-	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.AddPrimaryNetworkDelegatorFee)
-	reply.AddSubnetValidatorFee = json.Uint64(i.AddSubnetValidatorFee)
-	reply.AddSubnetDelegatorFee = json.Uint64(i.AddSubnetDelegatorFee)
 	return nil
 }
 

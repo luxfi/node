@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -12,7 +12,7 @@ import (
 // GitCommit is set in the build script at compile time
 var GitCommit string
 
-// Versions contains the versions relevant to a build of node. In
+// Versions contains the versions relevant to a build of luxd. In
 // addition to supporting construction of the string displayed by
 // --version, it is used to produce the output of --version-json and can
 // be used to unmarshal that output.

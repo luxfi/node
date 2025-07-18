@@ -1,12 +1,12 @@
 # The version is supplied as a build argument rather than hard-coded
 # to minimize the cost of version changes.
-ARG GO_VERSION
+ARG GO_VERSION=INVALID # This value is not intended to be used but silences a warning
 
 # LUXD_NODE_IMAGE needs to identify an existing node image and should include the tag
-ARG LUXD_NODE_IMAGE
+ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM golang:$GO_VERSION-bullseye AS builder
+FROM golang:$GO_VERSION-bookworm AS builder
 
 WORKDIR /build
 
@@ -24,8 +24,10 @@ RUN ./scripts/build_xsvm.sh
 # ============= Cleanup Stage ================
 FROM $LUXD_NODE_IMAGE AS execution
 
-# Copy the xsvm binary to the default plugin path
-RUN mkdir -p /root/.node/plugins
-COPY --from=builder /build/build/xsvm /root/.node/plugins/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
+# Configure the node with the location of the xsvm plugin
+ENV AVAGO_PLUGIN_DIR=/luxd/build/plugins
+
+# Copy the xsvm binary to the default plugin dir for images
+COPY --from=builder /build/build/xsvm $AVAGO_PLUGIN_DIR/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
 
 # The node image's entrypoint will be reused.

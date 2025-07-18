@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -33,13 +33,11 @@ type engine struct {
 	common.InternalHandler
 
 	ctx *snow.ConsensusContext
-	vm  common.VM
 }
 
 func New(
 	ctx *snow.ConsensusContext,
 	gets common.AllGetsServer,
-	vm common.VM,
 ) common.Engine {
 	return &engine{
 		AllGetsServer:               gets,
@@ -54,7 +52,6 @@ func New(
 		AppHandler:                  common.NewNoOpAppHandler(ctx.Log),
 		InternalHandler:             common.NewNoOpInternalHandler(ctx.Log),
 		ctx:                         ctx,
-		vm:                          vm,
 	}
 }
 

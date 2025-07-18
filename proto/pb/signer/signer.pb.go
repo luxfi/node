@@ -189,6 +189,94 @@ func (x *SignResponse) GetSignature() []byte {
 	return nil
 }
 
+type SignProofOfPossessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       []byte                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignProofOfPossessionRequest) Reset() {
+	*x = SignProofOfPossessionRequest{}
+	mi := &file_signer_signer_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignProofOfPossessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignProofOfPossessionRequest) ProtoMessage() {}
+
+func (x *SignProofOfPossessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_signer_signer_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignProofOfPossessionRequest.ProtoReflect.Descriptor instead.
+func (*SignProofOfPossessionRequest) Descriptor() ([]byte, []int) {
+	return file_signer_signer_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SignProofOfPossessionRequest) GetMessage() []byte {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
+type SignProofOfPossessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignProofOfPossessionResponse) Reset() {
+	*x = SignProofOfPossessionResponse{}
+	mi := &file_signer_signer_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignProofOfPossessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignProofOfPossessionResponse) ProtoMessage() {}
+
+func (x *SignProofOfPossessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_signer_signer_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignProofOfPossessionResponse.ProtoReflect.Descriptor instead.
+func (*SignProofOfPossessionResponse) Descriptor() ([]byte, []int) {
+	return file_signer_signer_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SignProofOfPossessionResponse) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
 var File_signer_signer_proto protoreflect.FileDescriptor
 
 const file_signer_signer_proto_rawDesc = "" +
@@ -201,10 +289,15 @@ const file_signer_signer_proto_rawDesc = "" +
 	"\vSignRequest\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\fR\amessage\",\n" +
 	"\fSignResponse\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignature2}\n" +
-	"\x06Signer\x12@\n" +
-	"\tPublicKey\x12\x18.signer.PublicKeyRequest\x1a\x19.signer.PublicKeyResponse\x121\n" +
-	"\x04Sign\x12\x13.signer.SignRequest\x1a\x14.signer.SignResponseB'Z%github.com/luxfi/node/proto/pb/signerb\x06proto3"
+	"\tsignature\x18\x01 \x01(\fR\tsignature\"8\n" +
+	"\x1cSignProofOfPossessionRequest\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\fR\amessage\"=\n" +
+	"\x1dSignProofOfPossessionResponse\x12\x1c\n" +
+	"\tsignature\x18\x01 \x01(\fR\tsignature2\xe9\x01\n" +
+	"\x06Signer\x12B\n" +
+	"\tPublicKey\x12\x18.signer.PublicKeyRequest\x1a\x19.signer.PublicKeyResponse\"\x00\x123\n" +
+	"\x04Sign\x12\x13.signer.SignRequest\x1a\x14.signer.SignResponse\"\x00\x12f\n" +
+	"\x15SignProofOfPossession\x12$.signer.SignProofOfPossessionRequest\x1a%.signer.SignProofOfPossessionResponse\"\x00B1Z/github.com/luxfi/node/proto/pb/signerb\x06proto3"
 
 var (
 	file_signer_signer_proto_rawDescOnce sync.Once
@@ -218,20 +311,24 @@ func file_signer_signer_proto_rawDescGZIP() []byte {
 	return file_signer_signer_proto_rawDescData
 }
 
-var file_signer_signer_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_signer_signer_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_signer_signer_proto_goTypes = []any{
-	(*PublicKeyRequest)(nil),  // 0: signer.PublicKeyRequest
-	(*PublicKeyResponse)(nil), // 1: signer.PublicKeyResponse
-	(*SignRequest)(nil),       // 2: signer.SignRequest
-	(*SignResponse)(nil),      // 3: signer.SignResponse
+	(*PublicKeyRequest)(nil),              // 0: signer.PublicKeyRequest
+	(*PublicKeyResponse)(nil),             // 1: signer.PublicKeyResponse
+	(*SignRequest)(nil),                   // 2: signer.SignRequest
+	(*SignResponse)(nil),                  // 3: signer.SignResponse
+	(*SignProofOfPossessionRequest)(nil),  // 4: signer.SignProofOfPossessionRequest
+	(*SignProofOfPossessionResponse)(nil), // 5: signer.SignProofOfPossessionResponse
 }
 var file_signer_signer_proto_depIdxs = []int32{
 	0, // 0: signer.Signer.PublicKey:input_type -> signer.PublicKeyRequest
 	2, // 1: signer.Signer.Sign:input_type -> signer.SignRequest
-	1, // 2: signer.Signer.PublicKey:output_type -> signer.PublicKeyResponse
-	3, // 3: signer.Signer.Sign:output_type -> signer.SignResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: signer.Signer.SignProofOfPossession:input_type -> signer.SignProofOfPossessionRequest
+	1, // 3: signer.Signer.PublicKey:output_type -> signer.PublicKeyResponse
+	3, // 4: signer.Signer.Sign:output_type -> signer.SignResponse
+	5, // 5: signer.Signer.SignProofOfPossession:output_type -> signer.SignProofOfPossessionResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -248,7 +345,7 @@ func file_signer_signer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_signer_signer_proto_rawDesc), len(file_signer_signer_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

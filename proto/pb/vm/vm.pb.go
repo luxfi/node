@@ -76,58 +76,6 @@ func (State) EnumDescriptor() ([]byte, []int) {
 	return file_vm_vm_proto_rawDescGZIP(), []int{0}
 }
 
-type Status int32
-
-const (
-	Status_STATUS_UNSPECIFIED Status = 0
-	Status_STATUS_PROCESSING  Status = 1
-	Status_STATUS_REJECTED    Status = 2
-	Status_STATUS_ACCEPTED    Status = 3
-)
-
-// Enum value maps for Status.
-var (
-	Status_name = map[int32]string{
-		0: "STATUS_UNSPECIFIED",
-		1: "STATUS_PROCESSING",
-		2: "STATUS_REJECTED",
-		3: "STATUS_ACCEPTED",
-	}
-	Status_value = map[string]int32{
-		"STATUS_UNSPECIFIED": 0,
-		"STATUS_PROCESSING":  1,
-		"STATUS_REJECTED":    2,
-		"STATUS_ACCEPTED":    3,
-	}
-)
-
-func (x Status) Enum() *Status {
-	p := new(Status)
-	*p = x
-	return p
-}
-
-func (x Status) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_vm_vm_proto_enumTypes[1].Descriptor()
-}
-
-func (Status) Type() protoreflect.EnumType {
-	return &file_vm_vm_proto_enumTypes[1]
-}
-
-func (x Status) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Status.Descriptor instead.
-func (Status) EnumDescriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{1}
-}
-
 type Error int32
 
 const (
@@ -165,11 +113,11 @@ func (x Error) String() string {
 }
 
 func (Error) Descriptor() protoreflect.EnumDescriptor {
-	return file_vm_vm_proto_enumTypes[2].Descriptor()
+	return file_vm_vm_proto_enumTypes[1].Descriptor()
 }
 
 func (Error) Type() protoreflect.EnumType {
-	return &file_vm_vm_proto_enumTypes[2]
+	return &file_vm_vm_proto_enumTypes[1]
 }
 
 func (x Error) Number() protoreflect.EnumNumber {
@@ -178,6 +126,55 @@ func (x Error) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Error.Descriptor instead.
 func (Error) EnumDescriptor() ([]byte, []int) {
+	return file_vm_vm_proto_rawDescGZIP(), []int{1}
+}
+
+type Message int32
+
+const (
+	Message_MESSAGE_UNSPECIFIED         Message = 0
+	Message_MESSAGE_BUILD_BLOCK         Message = 1
+	Message_MESSAGE_STATE_SYNC_FINISHED Message = 2
+)
+
+// Enum value maps for Message.
+var (
+	Message_name = map[int32]string{
+		0: "MESSAGE_UNSPECIFIED",
+		1: "MESSAGE_BUILD_BLOCK",
+		2: "MESSAGE_STATE_SYNC_FINISHED",
+	}
+	Message_value = map[string]int32{
+		"MESSAGE_UNSPECIFIED":         0,
+		"MESSAGE_BUILD_BLOCK":         1,
+		"MESSAGE_STATE_SYNC_FINISHED": 2,
+	}
+)
+
+func (x Message) Enum() *Message {
+	p := new(Message)
+	*p = x
+	return p
+}
+
+func (x Message) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Message) Descriptor() protoreflect.EnumDescriptor {
+	return file_vm_vm_proto_enumTypes[2].Descriptor()
+}
+
+func (Message) Type() protoreflect.EnumType {
+	return &file_vm_vm_proto_enumTypes[2]
+}
+
+func (x Message) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Message.Descriptor instead.
+func (Message) EnumDescriptor() ([]byte, []int) {
 	return file_vm_vm_proto_rawDescGZIP(), []int{2}
 }
 
@@ -244,18 +241,19 @@ type InitializeRequest struct {
 	PublicKey    []byte `protobuf:"bytes,5,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	XChainId     []byte `protobuf:"bytes,6,opt,name=x_chain_id,json=xChainId,proto3" json:"x_chain_id,omitempty"`
 	CChainId     []byte `protobuf:"bytes,7,opt,name=c_chain_id,json=cChainId,proto3" json:"c_chain_id,omitempty"`
-	LuxAssetId   []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
+	LuxAssetId  []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
 	ChainDataDir string `protobuf:"bytes,9,opt,name=chain_data_dir,json=chainDataDir,proto3" json:"chain_data_dir,omitempty"`
 	GenesisBytes []byte `protobuf:"bytes,10,opt,name=genesis_bytes,json=genesisBytes,proto3" json:"genesis_bytes,omitempty"`
 	UpgradeBytes []byte `protobuf:"bytes,11,opt,name=upgrade_bytes,json=upgradeBytes,proto3" json:"upgrade_bytes,omitempty"`
 	ConfigBytes  []byte `protobuf:"bytes,12,opt,name=config_bytes,json=configBytes,proto3" json:"config_bytes,omitempty"`
 	DbServerAddr string `protobuf:"bytes,13,opt,name=db_server_addr,json=dbServerAddr,proto3" json:"db_server_addr,omitempty"`
-	// server_addr is the address of the gRPC server which serves
-	// the messenger, keystore, shared memory, blockchain alias,
-	// subnet alias, and appSender services
-	ServerAddr    string `protobuf:"bytes,14,opt,name=server_addr,json=serverAddr,proto3" json:"server_addr,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// server_addr is the address of the gRPC server which serves the shared
+	// memory, blockchain alias, subnet alias, and appSender services
+	ServerAddr string `protobuf:"bytes,14,opt,name=server_addr,json=serverAddr,proto3" json:"server_addr,omitempty"`
+	// network_upgrades_bytes is the json encoded network upgrades
+	NetworkUpgrades *NetworkUpgrades `protobuf:"bytes,15,opt,name=network_upgrades,json=networkUpgrades,proto3" json:"network_upgrades,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *InitializeRequest) Reset() {
@@ -386,6 +384,177 @@ func (x *InitializeRequest) GetServerAddr() string {
 	return ""
 }
 
+func (x *InitializeRequest) GetNetworkUpgrades() *NetworkUpgrades {
+	if x != nil {
+		return x.NetworkUpgrades
+	}
+	return nil
+}
+
+type NetworkUpgrades struct {
+	state                         protoimpl.MessageState `protogen:"open.v1"`
+	ApricotPhase_1Time            *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=apricot_phase_1_time,json=apricotPhase1Time,proto3" json:"apricot_phase_1_time,omitempty"`
+	ApricotPhase_2Time            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=apricot_phase_2_time,json=apricotPhase2Time,proto3" json:"apricot_phase_2_time,omitempty"`
+	ApricotPhase_3Time            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=apricot_phase_3_time,json=apricotPhase3Time,proto3" json:"apricot_phase_3_time,omitempty"`
+	ApricotPhase_4Time            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=apricot_phase_4_time,json=apricotPhase4Time,proto3" json:"apricot_phase_4_time,omitempty"`
+	ApricotPhase_4MinPChainHeight uint64                 `protobuf:"varint,5,opt,name=apricot_phase_4_min_p_chain_height,json=apricotPhase4MinPChainHeight,proto3" json:"apricot_phase_4_min_p_chain_height,omitempty"`
+	ApricotPhase_5Time            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=apricot_phase_5_time,json=apricotPhase5Time,proto3" json:"apricot_phase_5_time,omitempty"`
+	ApricotPhasePre_6Time         *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=apricot_phase_pre_6_time,json=apricotPhasePre6Time,proto3" json:"apricot_phase_pre_6_time,omitempty"`
+	ApricotPhase_6Time            *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=apricot_phase_6_time,json=apricotPhase6Time,proto3" json:"apricot_phase_6_time,omitempty"`
+	ApricotPhasePost_6Time        *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=apricot_phase_post_6_time,json=apricotPhasePost6Time,proto3" json:"apricot_phase_post_6_time,omitempty"`
+	BanffTime                     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=banff_time,json=banffTime,proto3" json:"banff_time,omitempty"`
+	CortinaTime                   *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=cortina_time,json=cortinaTime,proto3" json:"cortina_time,omitempty"`
+	CortinaXChainStopVertexId     []byte                 `protobuf:"bytes,12,opt,name=cortina_x_chain_stop_vertex_id,json=cortinaXChainStopVertexId,proto3" json:"cortina_x_chain_stop_vertex_id,omitempty"`
+	DurangoTime                   *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=durango_time,json=durangoTime,proto3" json:"durango_time,omitempty"`
+	EtnaTime                      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=etna_time,json=etnaTime,proto3" json:"etna_time,omitempty"`
+	FortunaTime                   *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=fortuna_time,json=fortunaTime,proto3" json:"fortuna_time,omitempty"`
+	GraniteTime                   *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=granite_time,json=graniteTime,proto3" json:"granite_time,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
+}
+
+func (x *NetworkUpgrades) Reset() {
+	*x = NetworkUpgrades{}
+	mi := &file_vm_vm_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkUpgrades) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkUpgrades) ProtoMessage() {}
+
+func (x *NetworkUpgrades) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_vm_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkUpgrades.ProtoReflect.Descriptor instead.
+func (*NetworkUpgrades) Descriptor() ([]byte, []int) {
+	return file_vm_vm_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_1Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_1Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_2Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_2Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_3Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_3Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_4Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_4Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_4MinPChainHeight() uint64 {
+	if x != nil {
+		return x.ApricotPhase_4MinPChainHeight
+	}
+	return 0
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_5Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_5Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhasePre_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhasePre_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhase_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhase_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetApricotPhasePost_6Time() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApricotPhasePost_6Time
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetBanffTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.BanffTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetCortinaTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CortinaTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetCortinaXChainStopVertexId() []byte {
+	if x != nil {
+		return x.CortinaXChainStopVertexId
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetDurangoTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DurangoTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetEtnaTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EtnaTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetFortunaTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FortunaTime
+	}
+	return nil
+}
+
+func (x *NetworkUpgrades) GetGraniteTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.GraniteTime
+	}
+	return nil
+}
+
 type InitializeResponse struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	LastAcceptedId       []byte                 `protobuf:"bytes,1,opt,name=last_accepted_id,json=lastAcceptedId,proto3" json:"last_accepted_id,omitempty"`
@@ -399,7 +568,7 @@ type InitializeResponse struct {
 
 func (x *InitializeResponse) Reset() {
 	*x = InitializeResponse{}
-	mi := &file_vm_vm_proto_msgTypes[1]
+	mi := &file_vm_vm_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +580,7 @@ func (x *InitializeResponse) String() string {
 func (*InitializeResponse) ProtoMessage() {}
 
 func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[1]
+	mi := &file_vm_vm_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +593,7 @@ func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitializeResponse.ProtoReflect.Descriptor instead.
 func (*InitializeResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{1}
+	return file_vm_vm_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *InitializeResponse) GetLastAcceptedId() []byte {
@@ -471,7 +640,7 @@ type SetStateRequest struct {
 
 func (x *SetStateRequest) Reset() {
 	*x = SetStateRequest{}
-	mi := &file_vm_vm_proto_msgTypes[2]
+	mi := &file_vm_vm_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -483,7 +652,7 @@ func (x *SetStateRequest) String() string {
 func (*SetStateRequest) ProtoMessage() {}
 
 func (x *SetStateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[2]
+	mi := &file_vm_vm_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -496,7 +665,7 @@ func (x *SetStateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetStateRequest.ProtoReflect.Descriptor instead.
 func (*SetStateRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{2}
+	return file_vm_vm_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SetStateRequest) GetState() State {
@@ -519,7 +688,7 @@ type SetStateResponse struct {
 
 func (x *SetStateResponse) Reset() {
 	*x = SetStateResponse{}
-	mi := &file_vm_vm_proto_msgTypes[3]
+	mi := &file_vm_vm_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -531,7 +700,7 @@ func (x *SetStateResponse) String() string {
 func (*SetStateResponse) ProtoMessage() {}
 
 func (x *SetStateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[3]
+	mi := &file_vm_vm_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -544,7 +713,7 @@ func (x *SetStateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetStateResponse.ProtoReflect.Descriptor instead.
 func (*SetStateResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{3}
+	return file_vm_vm_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SetStateResponse) GetLastAcceptedId() []byte {
@@ -591,7 +760,7 @@ type CreateHandlersResponse struct {
 
 func (x *CreateHandlersResponse) Reset() {
 	*x = CreateHandlersResponse{}
-	mi := &file_vm_vm_proto_msgTypes[4]
+	mi := &file_vm_vm_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -603,7 +772,7 @@ func (x *CreateHandlersResponse) String() string {
 func (*CreateHandlersResponse) ProtoMessage() {}
 
 func (x *CreateHandlersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[4]
+	mi := &file_vm_vm_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -616,7 +785,7 @@ func (x *CreateHandlersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateHandlersResponse.ProtoReflect.Descriptor instead.
 func (*CreateHandlersResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{4}
+	return file_vm_vm_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreateHandlersResponse) GetHandlers() []*Handler {
@@ -638,7 +807,7 @@ type Handler struct {
 
 func (x *Handler) Reset() {
 	*x = Handler{}
-	mi := &file_vm_vm_proto_msgTypes[5]
+	mi := &file_vm_vm_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +819,7 @@ func (x *Handler) String() string {
 func (*Handler) ProtoMessage() {}
 
 func (x *Handler) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[5]
+	mi := &file_vm_vm_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +832,7 @@ func (x *Handler) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Handler.ProtoReflect.Descriptor instead.
 func (*Handler) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{5}
+	return file_vm_vm_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Handler) GetPrefix() string {
@@ -680,6 +849,96 @@ func (x *Handler) GetServerAddr() string {
 	return ""
 }
 
+type NewHTTPHandlerResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// server_addr is the address of the gRPC server which serves the
+	// HTTP service
+	ServerAddr    string `protobuf:"bytes,1,opt,name=server_addr,json=serverAddr,proto3" json:"server_addr,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NewHTTPHandlerResponse) Reset() {
+	*x = NewHTTPHandlerResponse{}
+	mi := &file_vm_vm_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NewHTTPHandlerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewHTTPHandlerResponse) ProtoMessage() {}
+
+func (x *NewHTTPHandlerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_vm_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewHTTPHandlerResponse.ProtoReflect.Descriptor instead.
+func (*NewHTTPHandlerResponse) Descriptor() ([]byte, []int) {
+	return file_vm_vm_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *NewHTTPHandlerResponse) GetServerAddr() string {
+	if x != nil {
+		return x.ServerAddr
+	}
+	return ""
+}
+
+type WaitForEventResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       Message                `protobuf:"varint,1,opt,name=message,proto3,enum=vm.Message" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WaitForEventResponse) Reset() {
+	*x = WaitForEventResponse{}
+	mi := &file_vm_vm_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WaitForEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WaitForEventResponse) ProtoMessage() {}
+
+func (x *WaitForEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_vm_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WaitForEventResponse.ProtoReflect.Descriptor instead.
+func (*WaitForEventResponse) Descriptor() ([]byte, []int) {
+	return file_vm_vm_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *WaitForEventResponse) GetMessage() Message {
+	if x != nil {
+		return x.Message
+	}
+	return Message_MESSAGE_UNSPECIFIED
+}
+
 type BuildBlockRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PChainHeight  *uint64                `protobuf:"varint,1,opt,name=p_chain_height,json=pChainHeight,proto3,oneof" json:"p_chain_height,omitempty"`
@@ -689,7 +948,7 @@ type BuildBlockRequest struct {
 
 func (x *BuildBlockRequest) Reset() {
 	*x = BuildBlockRequest{}
-	mi := &file_vm_vm_proto_msgTypes[6]
+	mi := &file_vm_vm_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -701,7 +960,7 @@ func (x *BuildBlockRequest) String() string {
 func (*BuildBlockRequest) ProtoMessage() {}
 
 func (x *BuildBlockRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[6]
+	mi := &file_vm_vm_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -714,7 +973,7 @@ func (x *BuildBlockRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildBlockRequest.ProtoReflect.Descriptor instead.
 func (*BuildBlockRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{6}
+	return file_vm_vm_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BuildBlockRequest) GetPChainHeight() uint64 {
@@ -739,7 +998,7 @@ type BuildBlockResponse struct {
 
 func (x *BuildBlockResponse) Reset() {
 	*x = BuildBlockResponse{}
-	mi := &file_vm_vm_proto_msgTypes[7]
+	mi := &file_vm_vm_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -751,7 +1010,7 @@ func (x *BuildBlockResponse) String() string {
 func (*BuildBlockResponse) ProtoMessage() {}
 
 func (x *BuildBlockResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[7]
+	mi := &file_vm_vm_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -764,7 +1023,7 @@ func (x *BuildBlockResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildBlockResponse.ProtoReflect.Descriptor instead.
 func (*BuildBlockResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{7}
+	return file_vm_vm_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *BuildBlockResponse) GetId() []byte {
@@ -818,7 +1077,7 @@ type ParseBlockRequest struct {
 
 func (x *ParseBlockRequest) Reset() {
 	*x = ParseBlockRequest{}
-	mi := &file_vm_vm_proto_msgTypes[8]
+	mi := &file_vm_vm_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +1089,7 @@ func (x *ParseBlockRequest) String() string {
 func (*ParseBlockRequest) ProtoMessage() {}
 
 func (x *ParseBlockRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[8]
+	mi := &file_vm_vm_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +1102,7 @@ func (x *ParseBlockRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParseBlockRequest.ProtoReflect.Descriptor instead.
 func (*ParseBlockRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{8}
+	return file_vm_vm_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ParseBlockRequest) GetBytes() []byte {
@@ -857,7 +1116,6 @@ type ParseBlockResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                []byte                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	ParentId          []byte                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
-	Status            Status                 `protobuf:"varint,3,opt,name=status,proto3,enum=vm.Status" json:"status,omitempty"`
 	Height            uint64                 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
 	Timestamp         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	VerifyWithContext bool                   `protobuf:"varint,6,opt,name=verify_with_context,json=verifyWithContext,proto3" json:"verify_with_context,omitempty"`
@@ -867,7 +1125,7 @@ type ParseBlockResponse struct {
 
 func (x *ParseBlockResponse) Reset() {
 	*x = ParseBlockResponse{}
-	mi := &file_vm_vm_proto_msgTypes[9]
+	mi := &file_vm_vm_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +1137,7 @@ func (x *ParseBlockResponse) String() string {
 func (*ParseBlockResponse) ProtoMessage() {}
 
 func (x *ParseBlockResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[9]
+	mi := &file_vm_vm_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +1150,7 @@ func (x *ParseBlockResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParseBlockResponse.ProtoReflect.Descriptor instead.
 func (*ParseBlockResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{9}
+	return file_vm_vm_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ParseBlockResponse) GetId() []byte {
@@ -907,13 +1165,6 @@ func (x *ParseBlockResponse) GetParentId() []byte {
 		return x.ParentId
 	}
 	return nil
-}
-
-func (x *ParseBlockResponse) GetStatus() Status {
-	if x != nil {
-		return x.Status
-	}
-	return Status_STATUS_UNSPECIFIED
 }
 
 func (x *ParseBlockResponse) GetHeight() uint64 {
@@ -946,7 +1197,7 @@ type GetBlockRequest struct {
 
 func (x *GetBlockRequest) Reset() {
 	*x = GetBlockRequest{}
-	mi := &file_vm_vm_proto_msgTypes[10]
+	mi := &file_vm_vm_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1209,7 @@ func (x *GetBlockRequest) String() string {
 func (*GetBlockRequest) ProtoMessage() {}
 
 func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[10]
+	mi := &file_vm_vm_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1222,7 @@ func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockRequest.ProtoReflect.Descriptor instead.
 func (*GetBlockRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{10}
+	return file_vm_vm_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetBlockRequest) GetId() []byte {
@@ -985,7 +1236,6 @@ type GetBlockResponse struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	ParentId  []byte                 `protobuf:"bytes,1,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	Bytes     []byte                 `protobuf:"bytes,2,opt,name=bytes,proto3" json:"bytes,omitempty"`
-	Status    Status                 `protobuf:"varint,3,opt,name=status,proto3,enum=vm.Status" json:"status,omitempty"`
 	Height    uint64                 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// used to propagate database.ErrNotFound through RPC
@@ -997,7 +1247,7 @@ type GetBlockResponse struct {
 
 func (x *GetBlockResponse) Reset() {
 	*x = GetBlockResponse{}
-	mi := &file_vm_vm_proto_msgTypes[11]
+	mi := &file_vm_vm_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1259,7 @@ func (x *GetBlockResponse) String() string {
 func (*GetBlockResponse) ProtoMessage() {}
 
 func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[11]
+	mi := &file_vm_vm_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1272,7 @@ func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockResponse.ProtoReflect.Descriptor instead.
 func (*GetBlockResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{11}
+	return file_vm_vm_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetBlockResponse) GetParentId() []byte {
@@ -1037,13 +1287,6 @@ func (x *GetBlockResponse) GetBytes() []byte {
 		return x.Bytes
 	}
 	return nil
-}
-
-func (x *GetBlockResponse) GetStatus() Status {
-	if x != nil {
-		return x.Status
-	}
-	return Status_STATUS_UNSPECIFIED
 }
 
 func (x *GetBlockResponse) GetHeight() uint64 {
@@ -1083,7 +1326,7 @@ type SetPreferenceRequest struct {
 
 func (x *SetPreferenceRequest) Reset() {
 	*x = SetPreferenceRequest{}
-	mi := &file_vm_vm_proto_msgTypes[12]
+	mi := &file_vm_vm_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1095,7 +1338,7 @@ func (x *SetPreferenceRequest) String() string {
 func (*SetPreferenceRequest) ProtoMessage() {}
 
 func (x *SetPreferenceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[12]
+	mi := &file_vm_vm_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1108,7 +1351,7 @@ func (x *SetPreferenceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPreferenceRequest.ProtoReflect.Descriptor instead.
 func (*SetPreferenceRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{12}
+	return file_vm_vm_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SetPreferenceRequest) GetId() []byte {
@@ -1130,7 +1373,7 @@ type BlockVerifyRequest struct {
 
 func (x *BlockVerifyRequest) Reset() {
 	*x = BlockVerifyRequest{}
-	mi := &file_vm_vm_proto_msgTypes[13]
+	mi := &file_vm_vm_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1142,7 +1385,7 @@ func (x *BlockVerifyRequest) String() string {
 func (*BlockVerifyRequest) ProtoMessage() {}
 
 func (x *BlockVerifyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[13]
+	mi := &file_vm_vm_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1155,7 +1398,7 @@ func (x *BlockVerifyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockVerifyRequest.ProtoReflect.Descriptor instead.
 func (*BlockVerifyRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{13}
+	return file_vm_vm_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *BlockVerifyRequest) GetBytes() []byte {
@@ -1181,7 +1424,7 @@ type BlockVerifyResponse struct {
 
 func (x *BlockVerifyResponse) Reset() {
 	*x = BlockVerifyResponse{}
-	mi := &file_vm_vm_proto_msgTypes[14]
+	mi := &file_vm_vm_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1193,7 +1436,7 @@ func (x *BlockVerifyResponse) String() string {
 func (*BlockVerifyResponse) ProtoMessage() {}
 
 func (x *BlockVerifyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[14]
+	mi := &file_vm_vm_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +1449,7 @@ func (x *BlockVerifyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockVerifyResponse.ProtoReflect.Descriptor instead.
 func (*BlockVerifyResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{14}
+	return file_vm_vm_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *BlockVerifyResponse) GetTimestamp() *timestamppb.Timestamp {
@@ -1225,7 +1468,7 @@ type BlockAcceptRequest struct {
 
 func (x *BlockAcceptRequest) Reset() {
 	*x = BlockAcceptRequest{}
-	mi := &file_vm_vm_proto_msgTypes[15]
+	mi := &file_vm_vm_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1237,7 +1480,7 @@ func (x *BlockAcceptRequest) String() string {
 func (*BlockAcceptRequest) ProtoMessage() {}
 
 func (x *BlockAcceptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[15]
+	mi := &file_vm_vm_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1250,7 +1493,7 @@ func (x *BlockAcceptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockAcceptRequest.ProtoReflect.Descriptor instead.
 func (*BlockAcceptRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{15}
+	return file_vm_vm_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *BlockAcceptRequest) GetId() []byte {
@@ -1269,7 +1512,7 @@ type BlockRejectRequest struct {
 
 func (x *BlockRejectRequest) Reset() {
 	*x = BlockRejectRequest{}
-	mi := &file_vm_vm_proto_msgTypes[16]
+	mi := &file_vm_vm_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1281,7 +1524,7 @@ func (x *BlockRejectRequest) String() string {
 func (*BlockRejectRequest) ProtoMessage() {}
 
 func (x *BlockRejectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[16]
+	mi := &file_vm_vm_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1294,7 +1537,7 @@ func (x *BlockRejectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockRejectRequest.ProtoReflect.Descriptor instead.
 func (*BlockRejectRequest) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{16}
+	return file_vm_vm_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *BlockRejectRequest) GetId() []byte {
@@ -1313,7 +1556,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_vm_vm_proto_msgTypes[17]
+	mi := &file_vm_vm_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1325,7 +1568,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[17]
+	mi := &file_vm_vm_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1338,7 +1581,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{17}
+	return file_vm_vm_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *HealthResponse) GetDetails() []byte {
@@ -1357,7 +1600,7 @@ type VersionResponse struct {
 
 func (x *VersionResponse) Reset() {
 	*x = VersionResponse{}
-	mi := &file_vm_vm_proto_msgTypes[18]
+	mi := &file_vm_vm_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1369,7 +1612,7 @@ func (x *VersionResponse) String() string {
 func (*VersionResponse) ProtoMessage() {}
 
 func (x *VersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[18]
+	mi := &file_vm_vm_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1382,7 +1625,7 @@ func (x *VersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionResponse.ProtoReflect.Descriptor instead.
 func (*VersionResponse) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{18}
+	return file_vm_vm_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *VersionResponse) GetVersion() string {
@@ -1408,7 +1651,7 @@ type AppRequestMsg struct {
 
 func (x *AppRequestMsg) Reset() {
 	*x = AppRequestMsg{}
-	mi := &file_vm_vm_proto_msgTypes[19]
+	mi := &file_vm_vm_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1663,7 @@ func (x *AppRequestMsg) String() string {
 func (*AppRequestMsg) ProtoMessage() {}
 
 func (x *AppRequestMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[19]
+	mi := &file_vm_vm_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +1676,7 @@ func (x *AppRequestMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestMsg.ProtoReflect.Descriptor instead.
 func (*AppRequestMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{19}
+	return file_vm_vm_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AppRequestMsg) GetNodeId() []byte {
@@ -1480,7 +1723,7 @@ type AppRequestFailedMsg struct {
 
 func (x *AppRequestFailedMsg) Reset() {
 	*x = AppRequestFailedMsg{}
-	mi := &file_vm_vm_proto_msgTypes[20]
+	mi := &file_vm_vm_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1492,7 +1735,7 @@ func (x *AppRequestFailedMsg) String() string {
 func (*AppRequestFailedMsg) ProtoMessage() {}
 
 func (x *AppRequestFailedMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[20]
+	mi := &file_vm_vm_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1505,7 +1748,7 @@ func (x *AppRequestFailedMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestFailedMsg.ProtoReflect.Descriptor instead.
 func (*AppRequestFailedMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{20}
+	return file_vm_vm_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *AppRequestFailedMsg) GetNodeId() []byte {
@@ -1550,7 +1793,7 @@ type AppResponseMsg struct {
 
 func (x *AppResponseMsg) Reset() {
 	*x = AppResponseMsg{}
-	mi := &file_vm_vm_proto_msgTypes[21]
+	mi := &file_vm_vm_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1562,7 +1805,7 @@ func (x *AppResponseMsg) String() string {
 func (*AppResponseMsg) ProtoMessage() {}
 
 func (x *AppResponseMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[21]
+	mi := &file_vm_vm_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1575,7 +1818,7 @@ func (x *AppResponseMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppResponseMsg.ProtoReflect.Descriptor instead.
 func (*AppResponseMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{21}
+	return file_vm_vm_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *AppResponseMsg) GetNodeId() []byte {
@@ -1611,7 +1854,7 @@ type AppGossipMsg struct {
 
 func (x *AppGossipMsg) Reset() {
 	*x = AppGossipMsg{}
-	mi := &file_vm_vm_proto_msgTypes[22]
+	mi := &file_vm_vm_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1623,7 +1866,7 @@ func (x *AppGossipMsg) String() string {
 func (*AppGossipMsg) ProtoMessage() {}
 
 func (x *AppGossipMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[22]
+	mi := &file_vm_vm_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1636,7 +1879,7 @@ func (x *AppGossipMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppGossipMsg.ProtoReflect.Descriptor instead.
 func (*AppGossipMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{22}
+	return file_vm_vm_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AppGossipMsg) GetNodeId() []byte {
@@ -1653,217 +1896,10 @@ func (x *AppGossipMsg) GetMsg() []byte {
 	return nil
 }
 
-type CrossChainAppRequestMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain that sent us this request
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// The ID of this request
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// deadline for this request
-	Deadline *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	// The request body
-	Request       []byte `protobuf:"bytes,4,opt,name=request,proto3" json:"request,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CrossChainAppRequestMsg) Reset() {
-	*x = CrossChainAppRequestMsg{}
-	mi := &file_vm_vm_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CrossChainAppRequestMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CrossChainAppRequestMsg) ProtoMessage() {}
-
-func (x *CrossChainAppRequestMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CrossChainAppRequestMsg.ProtoReflect.Descriptor instead.
-func (*CrossChainAppRequestMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *CrossChainAppRequestMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *CrossChainAppRequestMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *CrossChainAppRequestMsg) GetDeadline() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Deadline
-	}
-	return nil
-}
-
-func (x *CrossChainAppRequestMsg) GetRequest() []byte {
-	if x != nil {
-		return x.Request
-	}
-	return nil
-}
-
-type CrossChainAppRequestFailedMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain that we failed to get a response from
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// The ID of the request we sent and didn't get a response to
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// Application-defined error code
-	ErrorCode int32 `protobuf:"zigzag32,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	// Application-defined error message
-	ErrorMessage  string `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CrossChainAppRequestFailedMsg) Reset() {
-	*x = CrossChainAppRequestFailedMsg{}
-	mi := &file_vm_vm_proto_msgTypes[24]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CrossChainAppRequestFailedMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CrossChainAppRequestFailedMsg) ProtoMessage() {}
-
-func (x *CrossChainAppRequestFailedMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[24]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CrossChainAppRequestFailedMsg.ProtoReflect.Descriptor instead.
-func (*CrossChainAppRequestFailedMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *CrossChainAppRequestFailedMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *CrossChainAppRequestFailedMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *CrossChainAppRequestFailedMsg) GetErrorCode() int32 {
-	if x != nil {
-		return x.ErrorCode
-	}
-	return 0
-}
-
-func (x *CrossChainAppRequestFailedMsg) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-type CrossChainAppResponseMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain that we got a response from
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// Request ID of request that this is in response to
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// The response body
-	Response      []byte `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CrossChainAppResponseMsg) Reset() {
-	*x = CrossChainAppResponseMsg{}
-	mi := &file_vm_vm_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CrossChainAppResponseMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CrossChainAppResponseMsg) ProtoMessage() {}
-
-func (x *CrossChainAppResponseMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_vm_vm_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CrossChainAppResponseMsg.ProtoReflect.Descriptor instead.
-func (*CrossChainAppResponseMsg) Descriptor() ([]byte, []int) {
-	return file_vm_vm_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *CrossChainAppResponseMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *CrossChainAppResponseMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *CrossChainAppResponseMsg) GetResponse() []byte {
-	if x != nil {
-		return x.Response
-	}
-	return nil
-}
-
 type ConnectedRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	NodeId []byte                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Client name (e.g node)
+	// Client name (e.g luxd)
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Client semantic version
 	Major         uint32 `protobuf:"varint,3,opt,name=major,proto3" json:"major,omitempty"`
@@ -2818,7 +2854,7 @@ var File_vm_vm_proto protoreflect.FileDescriptor
 
 const file_vm_vm_proto_rawDesc = "" +
 	"\n" +
-	"\vvm/vm.proto\x12\x02vm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"io/prometheus/client/metrics.proto\"\xda\x03\n" +
+	"\vvm/vm.proto\x12\x02vm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"io/prometheus/client/metrics.proto\"\x9c\x04\n" +
 	"\x11InitializeRequest\x12\x1d\n" +
 	"\n" +
 	"network_id\x18\x01 \x01(\rR\tnetworkId\x12\x1b\n" +
@@ -2830,9 +2866,8 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\n" +
 	"x_chain_id\x18\x06 \x01(\fR\bxChainId\x12\x1c\n" +
 	"\n" +
-	"c_chain_id\x18\a \x01(\fR\bcChainId\x12 \n" +
-	"\flux_asset_id\x18\b \x01(\fR\n" +
-	"luxAssetId\x12$\n" +
+	"c_chain_id\x18\a \x01(\fR\bcChainId\x12\"\n" +
+	"\rlux_asset_id\x18\b \x01(\fR\vluxAssetId\x12$\n" +
 	"\x0echain_data_dir\x18\t \x01(\tR\fchainDataDir\x12#\n" +
 	"\rgenesis_bytes\x18\n" +
 	" \x01(\fR\fgenesisBytes\x12#\n" +
@@ -2840,7 +2875,27 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\fconfig_bytes\x18\f \x01(\fR\vconfigBytes\x12$\n" +
 	"\x0edb_server_addr\x18\r \x01(\tR\fdbServerAddr\x12\x1f\n" +
 	"\vserver_addr\x18\x0e \x01(\tR\n" +
-	"serverAddr\"\xdd\x01\n" +
+	"serverAddr\x12>\n" +
+	"\x10network_upgrades\x18\x0f \x01(\v2\x13.vm.NetworkUpgradesR\x0fnetworkUpgrades\"\x86\t\n" +
+	"\x0fNetworkUpgrades\x12K\n" +
+	"\x14apricot_phase_1_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase1Time\x12K\n" +
+	"\x14apricot_phase_2_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase2Time\x12K\n" +
+	"\x14apricot_phase_3_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase3Time\x12K\n" +
+	"\x14apricot_phase_4_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase4Time\x12H\n" +
+	"\"apricot_phase_4_min_p_chain_height\x18\x05 \x01(\x04R\x1capricotPhase4MinPChainHeight\x12K\n" +
+	"\x14apricot_phase_5_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase5Time\x12R\n" +
+	"\x18apricot_phase_pre_6_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x14apricotPhasePre6Time\x12K\n" +
+	"\x14apricot_phase_6_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x11apricotPhase6Time\x12T\n" +
+	"\x19apricot_phase_post_6_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x15apricotPhasePost6Time\x129\n" +
+	"\n" +
+	"banff_time\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tbanffTime\x12=\n" +
+	"\fcortina_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vcortinaTime\x12A\n" +
+	"\x1ecortina_x_chain_stop_vertex_id\x18\f \x01(\fR\x19cortinaXChainStopVertexId\x12=\n" +
+	"\fdurango_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\vdurangoTime\x127\n" +
+	"\tetna_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\betnaTime\x12=\n" +
+	"\ffortuna_time\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\vfortunaTime\x12=\n" +
+	"\fgranite_time\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\vgraniteTime\"\xdd\x01\n" +
 	"\x12InitializeResponse\x12(\n" +
 	"\x10last_accepted_id\x18\x01 \x01(\fR\x0elastAcceptedId\x125\n" +
 	"\x17last_accepted_parent_id\x18\x02 \x01(\fR\x14lastAcceptedParentId\x12\x16\n" +
@@ -2860,7 +2915,12 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\aHandler\x12\x16\n" +
 	"\x06prefix\x18\x01 \x01(\tR\x06prefix\x12\x1f\n" +
 	"\vserver_addr\x18\x02 \x01(\tR\n" +
-	"serverAddr\"Q\n" +
+	"serverAddr\"9\n" +
+	"\x16NewHTTPHandlerResponse\x12\x1f\n" +
+	"\vserver_addr\x18\x01 \x01(\tR\n" +
+	"serverAddr\"=\n" +
+	"\x14WaitForEventResponse\x12%\n" +
+	"\amessage\x18\x01 \x01(\x0e2\v.vm.MessageR\amessage\"Q\n" +
 	"\x11BuildBlockRequest\x12)\n" +
 	"\x0ep_chain_height\x18\x01 \x01(\x04H\x00R\fpChainHeight\x88\x01\x01B\x11\n" +
 	"\x0f_p_chain_height\"\xd9\x01\n" +
@@ -2872,22 +2932,18 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\ttimestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12.\n" +
 	"\x13verify_with_context\x18\x06 \x01(\bR\x11verifyWithContext\")\n" +
 	"\x11ParseBlockRequest\x12\x14\n" +
-	"\x05bytes\x18\x01 \x01(\fR\x05bytes\"\xe7\x01\n" +
+	"\x05bytes\x18\x01 \x01(\fR\x05bytes\"\xc3\x01\n" +
 	"\x12ParseBlockResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\fR\x02id\x12\x1b\n" +
-	"\tparent_id\x18\x02 \x01(\fR\bparentId\x12\"\n" +
-	"\x06status\x18\x03 \x01(\x0e2\n" +
-	".vm.StatusR\x06status\x12\x16\n" +
+	"\tparent_id\x18\x02 \x01(\fR\bparentId\x12\x16\n" +
 	"\x06height\x18\x04 \x01(\x04R\x06height\x128\n" +
 	"\ttimestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12.\n" +
 	"\x13verify_with_context\x18\x06 \x01(\bR\x11verifyWithContext\"!\n" +
 	"\x0fGetBlockRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\fR\x02id\"\x88\x02\n" +
+	"\x02id\x18\x01 \x01(\fR\x02id\"\xe4\x01\n" +
 	"\x10GetBlockResponse\x12\x1b\n" +
 	"\tparent_id\x18\x01 \x01(\fR\bparentId\x12\x14\n" +
-	"\x05bytes\x18\x02 \x01(\fR\x05bytes\x12\"\n" +
-	"\x06status\x18\x03 \x01(\x0e2\n" +
-	".vm.StatusR\x06status\x12\x16\n" +
+	"\x05bytes\x18\x02 \x01(\fR\x05bytes\x12\x16\n" +
 	"\x06height\x18\x04 \x01(\x04R\x06height\x128\n" +
 	"\ttimestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1b\n" +
 	"\x03err\x18\x06 \x01(\x0e2\t.vm.ErrorR\x03err\x12.\n" +
@@ -2928,25 +2984,7 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\bresponse\x18\x03 \x01(\fR\bresponse\"9\n" +
 	"\fAppGossipMsg\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\fR\x06nodeId\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\fR\x03msg\"\xa5\x01\n" +
-	"\x17CrossChainAppRequestMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x126\n" +
-	"\bdeadline\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x12\x18\n" +
-	"\arequest\x18\x04 \x01(\fR\arequest\"\x9d\x01\n" +
-	"\x1dCrossChainAppRequestFailedMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x12\x1d\n" +
-	"\n" +
-	"error_code\x18\x03 \x01(\x11R\terrorCode\x12#\n" +
-	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"p\n" +
-	"\x18CrossChainAppResponseMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x12\x1a\n" +
-	"\bresponse\x18\x03 \x01(\fR\bresponse\"\x81\x01\n" +
+	"\x03msg\x18\x02 \x01(\fR\x03msg\"\x81\x01\n" +
 	"\x10ConnectedRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\fR\x06nodeId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -3013,23 +3051,24 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13STATE_STATE_SYNCING\x10\x01\x12\x17\n" +
 	"\x13STATE_BOOTSTRAPPING\x10\x02\x12\x13\n" +
-	"\x0fSTATE_NORMAL_OP\x10\x03*a\n" +
-	"\x06Status\x12\x16\n" +
-	"\x12STATUS_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11STATUS_PROCESSING\x10\x01\x12\x13\n" +
-	"\x0fSTATUS_REJECTED\x10\x02\x12\x13\n" +
-	"\x0fSTATUS_ACCEPTED\x10\x03*k\n" +
+	"\x0fSTATE_NORMAL_OP\x10\x03*k\n" +
 	"\x05Error\x12\x15\n" +
 	"\x11ERROR_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fERROR_CLOSED\x10\x01\x12\x13\n" +
 	"\x0fERROR_NOT_FOUND\x10\x02\x12$\n" +
-	" ERROR_STATE_SYNC_NOT_IMPLEMENTED\x10\x032\x91\x0f\n" +
+	" ERROR_STATE_SYNC_NOT_IMPLEMENTED\x10\x03*\\\n" +
+	"\aMessage\x12\x17\n" +
+	"\x13MESSAGE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13MESSAGE_BUILD_BLOCK\x10\x01\x12\x1f\n" +
+	"\x1bMESSAGE_STATE_SYNC_FINISHED\x10\x022\x99\x10\n" +
 	"\x02VM\x12;\n" +
 	"\n" +
 	"Initialize\x12\x15.vm.InitializeRequest\x1a\x16.vm.InitializeResponse\x125\n" +
 	"\bSetState\x12\x13.vm.SetStateRequest\x1a\x14.vm.SetStateResponse\x12:\n" +
 	"\bShutdown\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12D\n" +
-	"\x0eCreateHandlers\x12\x16.google.protobuf.Empty\x1a\x1a.vm.CreateHandlersResponse\x129\n" +
+	"\x0eCreateHandlers\x12\x16.google.protobuf.Empty\x1a\x1a.vm.CreateHandlersResponse\x12D\n" +
+	"\x0eNewHTTPHandler\x12\x16.google.protobuf.Empty\x1a\x1a.vm.NewHTTPHandlerResponse\x12@\n" +
+	"\fWaitForEvent\x12\x16.google.protobuf.Empty\x1a\x18.vm.WaitForEventResponse\x129\n" +
 	"\tConnected\x12\x14.vm.ConnectedRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
 	"\fDisconnected\x12\x17.vm.DisconnectedRequest\x1a\x16.google.protobuf.Empty\x12;\n" +
 	"\n" +
@@ -3057,7 +3096,7 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\vBlockVerify\x12\x16.vm.BlockVerifyRequest\x1a\x17.vm.BlockVerifyResponse\x12=\n" +
 	"\vBlockAccept\x12\x16.vm.BlockAcceptRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\vBlockReject\x12\x16.vm.BlockRejectRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
-	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB#Z!github.com/luxfi/node/proto/pb/vmb\x06proto3"
+	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB-Z+github.com/luxfi/node/proto/pb/vmb\x06proto3"
 
 var (
 	file_vm_vm_proto_rawDescOnce sync.Once
@@ -3075,35 +3114,35 @@ var file_vm_vm_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_vm_vm_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_vm_vm_proto_goTypes = []any{
 	(State)(0),                                 // 0: vm.State
-	(Status)(0),                                // 1: vm.Status
-	(Error)(0),                                 // 2: vm.Error
+	(Error)(0),                                 // 1: vm.Error
+	(Message)(0),                               // 2: vm.Message
 	(StateSummaryAcceptResponse_Mode)(0),       // 3: vm.StateSummaryAcceptResponse.Mode
 	(*InitializeRequest)(nil),                  // 4: vm.InitializeRequest
-	(*InitializeResponse)(nil),                 // 5: vm.InitializeResponse
-	(*SetStateRequest)(nil),                    // 6: vm.SetStateRequest
-	(*SetStateResponse)(nil),                   // 7: vm.SetStateResponse
-	(*CreateHandlersResponse)(nil),             // 8: vm.CreateHandlersResponse
-	(*Handler)(nil),                            // 9: vm.Handler
-	(*BuildBlockRequest)(nil),                  // 10: vm.BuildBlockRequest
-	(*BuildBlockResponse)(nil),                 // 11: vm.BuildBlockResponse
-	(*ParseBlockRequest)(nil),                  // 12: vm.ParseBlockRequest
-	(*ParseBlockResponse)(nil),                 // 13: vm.ParseBlockResponse
-	(*GetBlockRequest)(nil),                    // 14: vm.GetBlockRequest
-	(*GetBlockResponse)(nil),                   // 15: vm.GetBlockResponse
-	(*SetPreferenceRequest)(nil),               // 16: vm.SetPreferenceRequest
-	(*BlockVerifyRequest)(nil),                 // 17: vm.BlockVerifyRequest
-	(*BlockVerifyResponse)(nil),                // 18: vm.BlockVerifyResponse
-	(*BlockAcceptRequest)(nil),                 // 19: vm.BlockAcceptRequest
-	(*BlockRejectRequest)(nil),                 // 20: vm.BlockRejectRequest
-	(*HealthResponse)(nil),                     // 21: vm.HealthResponse
-	(*VersionResponse)(nil),                    // 22: vm.VersionResponse
-	(*AppRequestMsg)(nil),                      // 23: vm.AppRequestMsg
-	(*AppRequestFailedMsg)(nil),                // 24: vm.AppRequestFailedMsg
-	(*AppResponseMsg)(nil),                     // 25: vm.AppResponseMsg
-	(*AppGossipMsg)(nil),                       // 26: vm.AppGossipMsg
-	(*CrossChainAppRequestMsg)(nil),            // 27: vm.CrossChainAppRequestMsg
-	(*CrossChainAppRequestFailedMsg)(nil),      // 28: vm.CrossChainAppRequestFailedMsg
-	(*CrossChainAppResponseMsg)(nil),           // 29: vm.CrossChainAppResponseMsg
+	(*NetworkUpgrades)(nil),                    // 5: vm.NetworkUpgrades
+	(*InitializeResponse)(nil),                 // 6: vm.InitializeResponse
+	(*SetStateRequest)(nil),                    // 7: vm.SetStateRequest
+	(*SetStateResponse)(nil),                   // 8: vm.SetStateResponse
+	(*CreateHandlersResponse)(nil),             // 9: vm.CreateHandlersResponse
+	(*Handler)(nil),                            // 10: vm.Handler
+	(*NewHTTPHandlerResponse)(nil),             // 11: vm.NewHTTPHandlerResponse
+	(*WaitForEventResponse)(nil),               // 12: vm.WaitForEventResponse
+	(*BuildBlockRequest)(nil),                  // 13: vm.BuildBlockRequest
+	(*BuildBlockResponse)(nil),                 // 14: vm.BuildBlockResponse
+	(*ParseBlockRequest)(nil),                  // 15: vm.ParseBlockRequest
+	(*ParseBlockResponse)(nil),                 // 16: vm.ParseBlockResponse
+	(*GetBlockRequest)(nil),                    // 17: vm.GetBlockRequest
+	(*GetBlockResponse)(nil),                   // 18: vm.GetBlockResponse
+	(*SetPreferenceRequest)(nil),               // 19: vm.SetPreferenceRequest
+	(*BlockVerifyRequest)(nil),                 // 20: vm.BlockVerifyRequest
+	(*BlockVerifyResponse)(nil),                // 21: vm.BlockVerifyResponse
+	(*BlockAcceptRequest)(nil),                 // 22: vm.BlockAcceptRequest
+	(*BlockRejectRequest)(nil),                 // 23: vm.BlockRejectRequest
+	(*HealthResponse)(nil),                     // 24: vm.HealthResponse
+	(*VersionResponse)(nil),                    // 25: vm.VersionResponse
+	(*AppRequestMsg)(nil),                      // 26: vm.AppRequestMsg
+	(*AppRequestFailedMsg)(nil),                // 27: vm.AppRequestFailedMsg
+	(*AppResponseMsg)(nil),                     // 28: vm.AppResponseMsg
+	(*AppGossipMsg)(nil),                       // 29: vm.AppGossipMsg
 	(*ConnectedRequest)(nil),                   // 30: vm.ConnectedRequest
 	(*DisconnectedRequest)(nil),                // 31: vm.DisconnectedRequest
 	(*GetAncestorsRequest)(nil),                // 32: vm.GetAncestorsRequest
@@ -3127,92 +3166,109 @@ var file_vm_vm_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),                      // 50: google.protobuf.Empty
 }
 var file_vm_vm_proto_depIdxs = []int32{
-	48, // 0: vm.InitializeResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 1: vm.SetStateRequest.state:type_name -> vm.State
-	48, // 2: vm.SetStateResponse.timestamp:type_name -> google.protobuf.Timestamp
-	9,  // 3: vm.CreateHandlersResponse.handlers:type_name -> vm.Handler
-	48, // 4: vm.BuildBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 5: vm.ParseBlockResponse.status:type_name -> vm.Status
-	48, // 6: vm.ParseBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 7: vm.GetBlockResponse.status:type_name -> vm.Status
-	48, // 8: vm.GetBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
-	2,  // 9: vm.GetBlockResponse.err:type_name -> vm.Error
-	48, // 10: vm.BlockVerifyResponse.timestamp:type_name -> google.protobuf.Timestamp
-	48, // 11: vm.AppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
-	48, // 12: vm.CrossChainAppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
-	13, // 13: vm.BatchedParseBlockResponse.response:type_name -> vm.ParseBlockResponse
-	2,  // 14: vm.GetBlockIDAtHeightResponse.err:type_name -> vm.Error
-	49, // 15: vm.GatherResponse.metric_families:type_name -> io.prometheus.client.MetricFamily
-	2,  // 16: vm.StateSyncEnabledResponse.err:type_name -> vm.Error
-	2,  // 17: vm.GetOngoingSyncStateSummaryResponse.err:type_name -> vm.Error
-	2,  // 18: vm.GetLastStateSummaryResponse.err:type_name -> vm.Error
-	2,  // 19: vm.ParseStateSummaryResponse.err:type_name -> vm.Error
-	2,  // 20: vm.GetStateSummaryResponse.err:type_name -> vm.Error
-	3,  // 21: vm.StateSummaryAcceptResponse.mode:type_name -> vm.StateSummaryAcceptResponse.Mode
-	2,  // 22: vm.StateSummaryAcceptResponse.err:type_name -> vm.Error
-	4,  // 23: vm.VM.Initialize:input_type -> vm.InitializeRequest
-	6,  // 24: vm.VM.SetState:input_type -> vm.SetStateRequest
-	50, // 25: vm.VM.Shutdown:input_type -> google.protobuf.Empty
-	50, // 26: vm.VM.CreateHandlers:input_type -> google.protobuf.Empty
-	30, // 27: vm.VM.Connected:input_type -> vm.ConnectedRequest
-	31, // 28: vm.VM.Disconnected:input_type -> vm.DisconnectedRequest
-	10, // 29: vm.VM.BuildBlock:input_type -> vm.BuildBlockRequest
-	12, // 30: vm.VM.ParseBlock:input_type -> vm.ParseBlockRequest
-	14, // 31: vm.VM.GetBlock:input_type -> vm.GetBlockRequest
-	16, // 32: vm.VM.SetPreference:input_type -> vm.SetPreferenceRequest
-	50, // 33: vm.VM.Health:input_type -> google.protobuf.Empty
-	50, // 34: vm.VM.Version:input_type -> google.protobuf.Empty
-	23, // 35: vm.VM.AppRequest:input_type -> vm.AppRequestMsg
-	24, // 36: vm.VM.AppRequestFailed:input_type -> vm.AppRequestFailedMsg
-	25, // 37: vm.VM.AppResponse:input_type -> vm.AppResponseMsg
-	26, // 38: vm.VM.AppGossip:input_type -> vm.AppGossipMsg
-	50, // 39: vm.VM.Gather:input_type -> google.protobuf.Empty
-	32, // 40: vm.VM.GetAncestors:input_type -> vm.GetAncestorsRequest
-	34, // 41: vm.VM.BatchedParseBlock:input_type -> vm.BatchedParseBlockRequest
-	36, // 42: vm.VM.GetBlockIDAtHeight:input_type -> vm.GetBlockIDAtHeightRequest
-	50, // 43: vm.VM.StateSyncEnabled:input_type -> google.protobuf.Empty
-	50, // 44: vm.VM.GetOngoingSyncStateSummary:input_type -> google.protobuf.Empty
-	50, // 45: vm.VM.GetLastStateSummary:input_type -> google.protobuf.Empty
-	42, // 46: vm.VM.ParseStateSummary:input_type -> vm.ParseStateSummaryRequest
-	44, // 47: vm.VM.GetStateSummary:input_type -> vm.GetStateSummaryRequest
-	17, // 48: vm.VM.BlockVerify:input_type -> vm.BlockVerifyRequest
-	19, // 49: vm.VM.BlockAccept:input_type -> vm.BlockAcceptRequest
-	20, // 50: vm.VM.BlockReject:input_type -> vm.BlockRejectRequest
-	46, // 51: vm.VM.StateSummaryAccept:input_type -> vm.StateSummaryAcceptRequest
-	5,  // 52: vm.VM.Initialize:output_type -> vm.InitializeResponse
-	7,  // 53: vm.VM.SetState:output_type -> vm.SetStateResponse
-	50, // 54: vm.VM.Shutdown:output_type -> google.protobuf.Empty
-	8,  // 55: vm.VM.CreateHandlers:output_type -> vm.CreateHandlersResponse
-	50, // 56: vm.VM.Connected:output_type -> google.protobuf.Empty
-	50, // 57: vm.VM.Disconnected:output_type -> google.protobuf.Empty
-	11, // 58: vm.VM.BuildBlock:output_type -> vm.BuildBlockResponse
-	13, // 59: vm.VM.ParseBlock:output_type -> vm.ParseBlockResponse
-	15, // 60: vm.VM.GetBlock:output_type -> vm.GetBlockResponse
-	50, // 61: vm.VM.SetPreference:output_type -> google.protobuf.Empty
-	21, // 62: vm.VM.Health:output_type -> vm.HealthResponse
-	22, // 63: vm.VM.Version:output_type -> vm.VersionResponse
-	50, // 64: vm.VM.AppRequest:output_type -> google.protobuf.Empty
-	50, // 65: vm.VM.AppRequestFailed:output_type -> google.protobuf.Empty
-	50, // 66: vm.VM.AppResponse:output_type -> google.protobuf.Empty
-	50, // 67: vm.VM.AppGossip:output_type -> google.protobuf.Empty
-	38, // 68: vm.VM.Gather:output_type -> vm.GatherResponse
-	33, // 69: vm.VM.GetAncestors:output_type -> vm.GetAncestorsResponse
-	35, // 70: vm.VM.BatchedParseBlock:output_type -> vm.BatchedParseBlockResponse
-	37, // 71: vm.VM.GetBlockIDAtHeight:output_type -> vm.GetBlockIDAtHeightResponse
-	39, // 72: vm.VM.StateSyncEnabled:output_type -> vm.StateSyncEnabledResponse
-	40, // 73: vm.VM.GetOngoingSyncStateSummary:output_type -> vm.GetOngoingSyncStateSummaryResponse
-	41, // 74: vm.VM.GetLastStateSummary:output_type -> vm.GetLastStateSummaryResponse
-	43, // 75: vm.VM.ParseStateSummary:output_type -> vm.ParseStateSummaryResponse
-	45, // 76: vm.VM.GetStateSummary:output_type -> vm.GetStateSummaryResponse
-	18, // 77: vm.VM.BlockVerify:output_type -> vm.BlockVerifyResponse
-	50, // 78: vm.VM.BlockAccept:output_type -> google.protobuf.Empty
-	50, // 79: vm.VM.BlockReject:output_type -> google.protobuf.Empty
-	47, // 80: vm.VM.StateSummaryAccept:output_type -> vm.StateSummaryAcceptResponse
-	52, // [52:81] is the sub-list for method output_type
-	23, // [23:52] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	5,  // 0: vm.InitializeRequest.network_upgrades:type_name -> vm.NetworkUpgrades
+	48, // 1: vm.NetworkUpgrades.apricot_phase_1_time:type_name -> google.protobuf.Timestamp
+	48, // 2: vm.NetworkUpgrades.apricot_phase_2_time:type_name -> google.protobuf.Timestamp
+	48, // 3: vm.NetworkUpgrades.apricot_phase_3_time:type_name -> google.protobuf.Timestamp
+	48, // 4: vm.NetworkUpgrades.apricot_phase_4_time:type_name -> google.protobuf.Timestamp
+	48, // 5: vm.NetworkUpgrades.apricot_phase_5_time:type_name -> google.protobuf.Timestamp
+	48, // 6: vm.NetworkUpgrades.apricot_phase_pre_6_time:type_name -> google.protobuf.Timestamp
+	48, // 7: vm.NetworkUpgrades.apricot_phase_6_time:type_name -> google.protobuf.Timestamp
+	48, // 8: vm.NetworkUpgrades.apricot_phase_post_6_time:type_name -> google.protobuf.Timestamp
+	48, // 9: vm.NetworkUpgrades.banff_time:type_name -> google.protobuf.Timestamp
+	48, // 10: vm.NetworkUpgrades.cortina_time:type_name -> google.protobuf.Timestamp
+	48, // 11: vm.NetworkUpgrades.durango_time:type_name -> google.protobuf.Timestamp
+	48, // 12: vm.NetworkUpgrades.etna_time:type_name -> google.protobuf.Timestamp
+	48, // 13: vm.NetworkUpgrades.fortuna_time:type_name -> google.protobuf.Timestamp
+	48, // 14: vm.NetworkUpgrades.granite_time:type_name -> google.protobuf.Timestamp
+	48, // 15: vm.InitializeResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 16: vm.SetStateRequest.state:type_name -> vm.State
+	48, // 17: vm.SetStateResponse.timestamp:type_name -> google.protobuf.Timestamp
+	10, // 18: vm.CreateHandlersResponse.handlers:type_name -> vm.Handler
+	2,  // 19: vm.WaitForEventResponse.message:type_name -> vm.Message
+	48, // 20: vm.BuildBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 21: vm.ParseBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 22: vm.GetBlockResponse.timestamp:type_name -> google.protobuf.Timestamp
+	1,  // 23: vm.GetBlockResponse.err:type_name -> vm.Error
+	48, // 24: vm.BlockVerifyResponse.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 25: vm.AppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
+	16, // 26: vm.BatchedParseBlockResponse.response:type_name -> vm.ParseBlockResponse
+	1,  // 27: vm.GetBlockIDAtHeightResponse.err:type_name -> vm.Error
+	49, // 28: vm.GatherResponse.metric_families:type_name -> io.prometheus.client.MetricFamily
+	1,  // 29: vm.StateSyncEnabledResponse.err:type_name -> vm.Error
+	1,  // 30: vm.GetOngoingSyncStateSummaryResponse.err:type_name -> vm.Error
+	1,  // 31: vm.GetLastStateSummaryResponse.err:type_name -> vm.Error
+	1,  // 32: vm.ParseStateSummaryResponse.err:type_name -> vm.Error
+	1,  // 33: vm.GetStateSummaryResponse.err:type_name -> vm.Error
+	3,  // 34: vm.StateSummaryAcceptResponse.mode:type_name -> vm.StateSummaryAcceptResponse.Mode
+	1,  // 35: vm.StateSummaryAcceptResponse.err:type_name -> vm.Error
+	4,  // 36: vm.VM.Initialize:input_type -> vm.InitializeRequest
+	7,  // 37: vm.VM.SetState:input_type -> vm.SetStateRequest
+	50, // 38: vm.VM.Shutdown:input_type -> google.protobuf.Empty
+	50, // 39: vm.VM.CreateHandlers:input_type -> google.protobuf.Empty
+	50, // 40: vm.VM.NewHTTPHandler:input_type -> google.protobuf.Empty
+	50, // 41: vm.VM.WaitForEvent:input_type -> google.protobuf.Empty
+	30, // 42: vm.VM.Connected:input_type -> vm.ConnectedRequest
+	31, // 43: vm.VM.Disconnected:input_type -> vm.DisconnectedRequest
+	13, // 44: vm.VM.BuildBlock:input_type -> vm.BuildBlockRequest
+	15, // 45: vm.VM.ParseBlock:input_type -> vm.ParseBlockRequest
+	17, // 46: vm.VM.GetBlock:input_type -> vm.GetBlockRequest
+	19, // 47: vm.VM.SetPreference:input_type -> vm.SetPreferenceRequest
+	50, // 48: vm.VM.Health:input_type -> google.protobuf.Empty
+	50, // 49: vm.VM.Version:input_type -> google.protobuf.Empty
+	26, // 50: vm.VM.AppRequest:input_type -> vm.AppRequestMsg
+	27, // 51: vm.VM.AppRequestFailed:input_type -> vm.AppRequestFailedMsg
+	28, // 52: vm.VM.AppResponse:input_type -> vm.AppResponseMsg
+	29, // 53: vm.VM.AppGossip:input_type -> vm.AppGossipMsg
+	50, // 54: vm.VM.Gather:input_type -> google.protobuf.Empty
+	32, // 55: vm.VM.GetAncestors:input_type -> vm.GetAncestorsRequest
+	34, // 56: vm.VM.BatchedParseBlock:input_type -> vm.BatchedParseBlockRequest
+	36, // 57: vm.VM.GetBlockIDAtHeight:input_type -> vm.GetBlockIDAtHeightRequest
+	50, // 58: vm.VM.StateSyncEnabled:input_type -> google.protobuf.Empty
+	50, // 59: vm.VM.GetOngoingSyncStateSummary:input_type -> google.protobuf.Empty
+	50, // 60: vm.VM.GetLastStateSummary:input_type -> google.protobuf.Empty
+	42, // 61: vm.VM.ParseStateSummary:input_type -> vm.ParseStateSummaryRequest
+	44, // 62: vm.VM.GetStateSummary:input_type -> vm.GetStateSummaryRequest
+	20, // 63: vm.VM.BlockVerify:input_type -> vm.BlockVerifyRequest
+	22, // 64: vm.VM.BlockAccept:input_type -> vm.BlockAcceptRequest
+	23, // 65: vm.VM.BlockReject:input_type -> vm.BlockRejectRequest
+	46, // 66: vm.VM.StateSummaryAccept:input_type -> vm.StateSummaryAcceptRequest
+	6,  // 67: vm.VM.Initialize:output_type -> vm.InitializeResponse
+	8,  // 68: vm.VM.SetState:output_type -> vm.SetStateResponse
+	50, // 69: vm.VM.Shutdown:output_type -> google.protobuf.Empty
+	9,  // 70: vm.VM.CreateHandlers:output_type -> vm.CreateHandlersResponse
+	11, // 71: vm.VM.NewHTTPHandler:output_type -> vm.NewHTTPHandlerResponse
+	12, // 72: vm.VM.WaitForEvent:output_type -> vm.WaitForEventResponse
+	50, // 73: vm.VM.Connected:output_type -> google.protobuf.Empty
+	50, // 74: vm.VM.Disconnected:output_type -> google.protobuf.Empty
+	14, // 75: vm.VM.BuildBlock:output_type -> vm.BuildBlockResponse
+	16, // 76: vm.VM.ParseBlock:output_type -> vm.ParseBlockResponse
+	18, // 77: vm.VM.GetBlock:output_type -> vm.GetBlockResponse
+	50, // 78: vm.VM.SetPreference:output_type -> google.protobuf.Empty
+	24, // 79: vm.VM.Health:output_type -> vm.HealthResponse
+	25, // 80: vm.VM.Version:output_type -> vm.VersionResponse
+	50, // 81: vm.VM.AppRequest:output_type -> google.protobuf.Empty
+	50, // 82: vm.VM.AppRequestFailed:output_type -> google.protobuf.Empty
+	50, // 83: vm.VM.AppResponse:output_type -> google.protobuf.Empty
+	50, // 84: vm.VM.AppGossip:output_type -> google.protobuf.Empty
+	38, // 85: vm.VM.Gather:output_type -> vm.GatherResponse
+	33, // 86: vm.VM.GetAncestors:output_type -> vm.GetAncestorsResponse
+	35, // 87: vm.VM.BatchedParseBlock:output_type -> vm.BatchedParseBlockResponse
+	37, // 88: vm.VM.GetBlockIDAtHeight:output_type -> vm.GetBlockIDAtHeightResponse
+	39, // 89: vm.VM.StateSyncEnabled:output_type -> vm.StateSyncEnabledResponse
+	40, // 90: vm.VM.GetOngoingSyncStateSummary:output_type -> vm.GetOngoingSyncStateSummaryResponse
+	41, // 91: vm.VM.GetLastStateSummary:output_type -> vm.GetLastStateSummaryResponse
+	43, // 92: vm.VM.ParseStateSummary:output_type -> vm.ParseStateSummaryResponse
+	45, // 93: vm.VM.GetStateSummary:output_type -> vm.GetStateSummaryResponse
+	21, // 94: vm.VM.BlockVerify:output_type -> vm.BlockVerifyResponse
+	50, // 95: vm.VM.BlockAccept:output_type -> google.protobuf.Empty
+	50, // 96: vm.VM.BlockReject:output_type -> google.protobuf.Empty
+	47, // 97: vm.VM.StateSummaryAccept:output_type -> vm.StateSummaryAcceptResponse
+	67, // [67:98] is the sub-list for method output_type
+	36, // [36:67] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_vm_vm_proto_init() }
@@ -3220,8 +3276,8 @@ func file_vm_vm_proto_init() {
 	if File_vm_vm_proto != nil {
 		return
 	}
-	file_vm_vm_proto_msgTypes[6].OneofWrappers = []any{}
-	file_vm_vm_proto_msgTypes[13].OneofWrappers = []any{}
+	file_vm_vm_proto_msgTypes[9].OneofWrappers = []any{}
+	file_vm_vm_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

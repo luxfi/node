@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/lux"
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_ cache.Evictable[ids.ID] = (*uniqueVertex)(nil)
-	_ lux.Vertex        = (*uniqueVertex)(nil)
+	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
+	_ lux.Vertex      = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")
 	errGetHeight  = errors.New("failed to get height for vertex")
@@ -300,13 +300,13 @@ func (vtx *uniqueVertex) String() string {
 		len(txs),
 	))
 
-	parentFormat := fmt.Sprintf("\n    Parent[%s]: ID = %%s, Status = %%s",
+	parentFormat := fmt.Sprintf("\n    Parent[%s]: ID = %%s, Status = %%s", //nolint:perfsprint
 		formatting.IntFormat(len(parents)-1))
 	for i, parent := range parents {
 		sb.WriteString(fmt.Sprintf(parentFormat, i, parent.ID(), parent.Status()))
 	}
 
-	txFormat := fmt.Sprintf("\n    Transaction[%s]: ID = %%s, Status = %%s",
+	txFormat := fmt.Sprintf("\n    Transaction[%s]: ID = %%s, Status = %%s", //nolint:perfsprint
 		formatting.IntFormat(len(txs)-1))
 	for i, tx := range txs {
 		sb.WriteString(fmt.Sprintf(txFormat, i, tx.ID(), tx.Status()))

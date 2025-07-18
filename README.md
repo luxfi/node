@@ -18,12 +18,12 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 - RAM: 16 GiB
 - Storage: 1 TiB
   - Nodes running for very long periods of time or nodes with custom configurations may observe higher storage requirements.
-- OS: Ubuntu 20.04/22.04 or macOS >= 12
+- OS: Ubuntu 22.04/24.04 or macOS >= 12
 - Network: Reliable IPv4 or IPv6 network connection, with an open public port.
 
-If you plan to build Lux Node from source, you will also need the following software:
+If you plan to build Lux from source, you will also need the following software:
 
-- [Go](https://golang.org/doc/install) version >= 1.21.12
+- [Go](https://golang.org/doc/install) version >= 1.23.9
 - [gcc](https://gcc.gnu.org/)
 - g++
 
@@ -31,32 +31,32 @@ If you plan to build Lux Node from source, you will also need the following soft
 
 #### Clone The Repository
 
-Clone the Lux Node repository:
+Clone the Lux repository:
 
 ```sh
 git clone git@github.com:luxfi/node.git
-cd node
+cd luxd
 ```
 
 This will clone and checkout the `master` branch.
 
-#### Building Lux Node
+#### Building Lux
 
-Build Lux Node by running the build script:
+Build Lux by running the build task:
 
 ```sh
-./scripts/build.sh
+./scripts/run_task.sh build
 ```
 
-The `node` binary is now in the `build` directory. To run:
+The `luxd` binary is now in the `build` directory. To run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 ### Binary Repository
 
-Install Lux Node using an `apt` repository.
+Install Lux using an `apt` repository.
 
 #### Adding the APT Repository
 
@@ -66,34 +66,34 @@ To add the repository on Ubuntu, run:
 
 ```sh
 sudo su -
-wget -qO - https://downloads.lux.network/node.gpg.key | tee /etc/apt/trusted.gpg.d/node.asc
+wget -qO - https://downloads.lux.network/luxd.gpg.key | tee /etc/apt/trusted.gpg.d/luxd.asc
 source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/lux.list
 exit
 ```
 
 #### Installing the Latest Version
 
-After adding the APT repository, install `node` by running:
+After adding the APT repository, install `luxd` by running:
 
 ```sh
 sudo apt update
-sudo apt install node
+sudo apt install luxd
 ```
 
 ### Binary Install
 
 Download the [latest build](https://github.com/luxfi/node/releases/latest) for your operating system and architecture.
 
-The Lux binary to be executed is named `node`.
+The Lux binary to be executed is named `luxd`.
 
 ### Docker Install
 
 Make sure Docker is installed on the machine - so commands like `docker run` etc. are available.
 
-Building the Docker image of latest `node` branch can be done by running:
+Building the Docker image of latest `luxd` branch can be done by running:
 
 ```sh
-./scripts/build_image.sh
+./scripts/run-task.sh build-image
 ```
 
 To check the built image, run:
@@ -102,10 +102,10 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `luxfi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
+The image should be tagged as `avaplatform/luxd:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 luxfi/node:xxxxxxxx /node/build/node
+docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/luxd:xxxxxxxx /luxd/build/luxd
 ```
 
 ## Running Lux
@@ -115,7 +115,7 @@ docker run -ti -p 9650:9650 -p 9651:9651 luxfi/node:xxxxxxxx /node/build/node
 To connect to the Lux Mainnet, run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 You should see some pretty ASCII art and log messages.
@@ -127,7 +127,7 @@ You can use `Ctrl+C` to kill the node.
 To connect to the Fuji Testnet, run:
 
 ```sh
-./build/node --network-id=fuji
+./build/luxd --network-id=fuji
 ```
 
 ### Creating a Local Testnet
@@ -143,7 +143,7 @@ lux network status
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://docs.lux.network/build/node-apis/health) until it is done bootstrapping.
+A node will not [report healthy](https://build.lux.network/docs/api-reference/health-api) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
@@ -151,11 +151,11 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-Lux Node uses multiple tools to generate efficient and boilerplate code.
+Lux uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
-To regenerate the protobuf go code, run `scripts/protobuf_codegen.sh` from the root of the repo.
+To regenerate the protobuf go code, run `scripts/run-task.sh generate-protobuf` from the root of the repo.
 
 This should only be necessary when upgrading protobuf versions or modifying .proto definition files.
 
@@ -180,22 +180,20 @@ If you extract buf to ~/software/buf/bin, the following should work:
 export PATH=$PATH:~/software/buf/bin/:~/go/bin
 go get google.golang.org/protobuf/cmd/protoc-gen-go
 go get google.golang.org/protobuf/cmd/protoc-gen-go-grpc
-scripts/protobuf_codegen.sh
+scripts/run_task.sh generate-protobuf
 ```
 
 For more information, refer to the [GRPC Golang Quick Start Guide](https://grpc.io/docs/languages/go/quickstart/).
 
 ### Running mock codegen
 
-To regenerate the [gomock](https://github.com/uber-go/mock) code, run `scripts/mock.gen.sh` from the root of the repo.
-
-This should only be necessary when modifying exported interfaces or after modifying `scripts/mock.mockgen.txt`.
+See [the Contributing document autogenerated mocks section](CONTRIBUTING.md####Autogenerated-mocks).
 
 ## Versioning
 
 ### Version Semantics
 
-Lux Node is first and foremost a client for the Lux network. The versioning of Lux Node follows that of the Lux network.
+Lux is first and foremost a client for the Lux network. The versioning of Lux follows that of the Lux network.
 
 - `v0.x.x` indicates a development network version.
 - `v1.x.x` indicates a production network version.
@@ -204,15 +202,15 @@ Lux Node is first and foremost a client for the Lux network. The versioning of L
 
 ### Library Compatibility Guarantees
 
-Because Lux Node's version denotes the network version, it is expected that interfaces exported by Lux Node's packages may change in `Patch` version updates.
+Because Lux's version denotes the network version, it is expected that interfaces exported by Lux's packages may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
-APIs exposed when running Lux Node will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
+APIs exposed when running Lux will maintain backwards compatibility, unless the functionality is explicitly deprecated and announced when removed.
 
 ## Supported Platforms
 
-Lux Node can run on different platforms, with different support tiers:
+Lux can run on different platforms, with different support tiers:
 
 - **Tier 1**: Fully supported by the maintainers, guaranteed to pass all tests including e2e and stress tests.
 - **Tier 2**: Passes all unit and integration tests but not necessarily e2e tests.
@@ -220,21 +218,21 @@ Lux Node can run on different platforms, with different support tiers:
 - **Not supported**: May not build and not tested, considered _unsafe_. To be supported in the future.
 
 The following table lists currently supported platforms and their corresponding
-Lux Node support tiers:
+Lux support tiers:
 
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
 |    amd64     |      Linux       |       1       |
 |    arm64     |      Linux       |       2       |
 |    amd64     |      Darwin      |       2       |
-|    amd64     |     Windows      |       3       |
+|    amd64     |     Windows      | Not supported |
 |     arm      |      Linux       | Not supported |
 |     i386     |      Linux       | Not supported |
 |    arm64     |      Darwin      | Not supported |
 
 To officially support a new platform, one must satisfy the following requirements:
 
-| Lux Node continuous integration | Tier 1  | Tier 2  | Tier 3  |
+| Lux continuous integration | Tier 1  | Tier 2  | Tier 3  |
 | ---------------------------------- | :-----: | :-----: | :-----: |
 | Build passes                       | &check; | &check; | &check; |
 | Unit and integration tests pass    | &check; | &check; |         |

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -7,8 +7,6 @@ import (
 	"context"
 	"log"
 	"time"
-
-	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
@@ -24,24 +22,26 @@ func main() {
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
 	luxAddr := key.Address()
-	ethAddr := evm.PublicKeyToEthAddress(key.PublicKey())
+	ethAddr := key.PublicKey().EthAddress()
 
 	ctx := context.Background()
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:          uri,
-		LUXKeychain: kc,
-		EthKeychain:  kc,
-	})
+	wallet, err := primary.MakeWallet(
+		ctx,
+		uri,
+		kc,
+		kc,
+		primary.WalletConfig{},
+	)
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)
 	}
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
-	// Get the P-chain wallet
+	// Get the chain wallets
 	pWallet := wallet.P()
 	cWallet := wallet.C()
 

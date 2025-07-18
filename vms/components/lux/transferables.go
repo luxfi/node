@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -159,10 +159,6 @@ func (in *TransferableInput) Verify() error {
 	default:
 		return verify.All(&in.UTXOID, &in.Asset, in.In)
 	}
-}
-
-func (in *TransferableInput) Less(other *TransferableInput) bool {
-	return in.UTXOID.Less(&other.UTXOID)
 }
 
 func (in *TransferableInput) Compare(other *TransferableInput) int {

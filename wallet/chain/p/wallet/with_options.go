@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -23,29 +24,29 @@ func WithOptions(
 	wallet Wallet,
 	options ...common.Option,
 ) Wallet {
-	return &walletWithOptions{
+	return &withOptions{
 		wallet:  wallet,
 		options: options,
 	}
 }
 
-type walletWithOptions struct {
+type withOptions struct {
 	wallet  Wallet
 	options []common.Option
 }
 
-func (w *walletWithOptions) Builder() builder.Builder {
-	return builder.NewWithOptions(
+func (w *withOptions) Builder() builder.Builder {
+	return builder.WithOptions(
 		w.wallet.Builder(),
 		w.options...,
 	)
 }
 
-func (w *walletWithOptions) Signer() walletsigner.Signer {
+func (w *withOptions) Signer() walletsigner.Signer {
 	return w.wallet.Signer()
 }
 
-func (w *walletWithOptions) IssueBaseTx(
+func (w *withOptions) IssueBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -55,7 +56,7 @@ func (w *walletWithOptions) IssueBaseTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddValidatorTx(
+func (w *withOptions) IssueAddValidatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
@@ -69,7 +70,7 @@ func (w *walletWithOptions) IssueAddValidatorTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddSubnetValidatorTx(
+func (w *withOptions) IssueAddSubnetValidatorTx(
 	vdr *txs.SubnetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -91,7 +92,7 @@ func (w *withOptions) IssueRemoveSubnetValidatorTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddDelegatorTx(
+func (w *withOptions) IssueAddDelegatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -131,7 +132,7 @@ func (w *withOptions) IssueCreateSubnetTx(
 	)
 }
 
-func (w *walletWithOptions) IssueTransferSubnetOwnershipTx(
+func (w *withOptions) IssueTransferSubnetOwnershipTx(
 	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -143,14 +144,64 @@ func (w *walletWithOptions) IssueTransferSubnetOwnershipTx(
 	)
 }
 
-func (w *withOptions) IssueTransferSubnetOwnershipTx(
+func (w *withOptions) IssueConvertSubnetToL1Tx(
 	subnetID ids.ID,
-	owner *secp256k1fx.OutputOwners,
+	chainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertSubnetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueTransferSubnetOwnershipTx(
+	return w.wallet.IssueConvertSubnetToL1Tx(
 		subnetID,
-		owner,
+		chainID,
+		address,
+		validators,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [bls.SignatureLen]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueRegisterL1ValidatorTx(
+		balance,
+		proofOfPossession,
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueSetL1ValidatorWeightTx(
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueIncreaseL1ValidatorBalanceTx(
+		validationID,
+		balance,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueDisableL1ValidatorTx(
+		validationID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -215,7 +266,7 @@ func (w *withOptions) IssueTransformSubnetTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddPermissionlessValidatorTx(
+func (w *withOptions) IssueAddPermissionlessValidatorTx(
 	vdr *txs.SubnetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
@@ -235,7 +286,7 @@ func (w *walletWithOptions) IssueAddPermissionlessValidatorTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddPermissionlessDelegatorTx(
+func (w *withOptions) IssueAddPermissionlessDelegatorTx(
 	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,

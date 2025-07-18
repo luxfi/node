@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -9,8 +9,9 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
 var (
@@ -19,16 +20,36 @@ var (
 
 	// MainnetParams are the params used for mainnet
 	MainnetParams = Params{
-		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.MilliLux,
-			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateSubnetTxFee:             1 * units.Lux,
-			TransformSubnetTxFee:          10 * units.Lux,
-			CreateBlockchainTxFee:         1 * units.Lux,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliLux,
-			AddSubnetDelegatorFee:         units.MilliLux,
+		TxFeeConfig: TxFeeConfig{
+			CreateAssetTxFee: 10 * units.MilliLux,
+			TxFee:            units.MilliLux,
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: 1,     // Max block size ~1MB
+					gas.DBRead:    1_000, // Max reads per block 1,000
+					gas.DBWrite:   1_000, // Max writes per block 1,000
+					gas.Compute:   4,     // Max compute time per block ~250ms
+				},
+				MaxCapacity:     1_000_000,
+				MaxPerSecond:    100_000, // Refill time 10s
+				TargetPerSecond: 50_000,  // Target is half of max
+				MinPrice:        1,
+				// ExcessConversionConstant = (MaxPerSecond - TargetPerSecond) * NumberOfSecondsPerDoubling / ln(2)
+				//
+				// ln(2) is a float and the result is consensus critical, so we
+				// hardcode the result.
+				ExcessConversionConstant: 2_164_043, // Double every 30s
+			},
+			ValidatorFeeConfig: fee.Config{
+				Capacity: 20_000,
+				Target:   10_000,
+				MinPrice: gas.Price(512 * units.NanoLux),
+				// ExcessConversionConstant = (Capacity - Target) * NumberOfSecondsPerDoubling / ln(2)
+				//
+				// ln(2) is a float and the result is consensus critical, so we
+				// hardcode the result.
+				ExcessConversionConstant: 1_246_488_515, // Double every day
+			},
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%

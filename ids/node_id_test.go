@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ids
@@ -75,7 +75,7 @@ func TestNodeIDMarshalJSON(t *testing.T) {
 			nil,
 		},
 		{
-			`ID("lux")`,
+			`ID("ava labs")`,
 			NodeID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			[]byte(`"NodeID-9tLMkeWFhWXd8QZc4rSiS5meuVXF5kRsz"`),
 			nil,
@@ -106,7 +106,7 @@ func TestNodeIDUnmarshalJSON(t *testing.T) {
 			nil,
 		},
 		{
-			`NodeID("lux")`,
+			`NodeID("ava labs")`,
 			[]byte(`"NodeID-9tLMkeWFhWXd8QZc4rSiS5meuVXF5kRsz"`),
 			NodeID{'a', 'v', 'a', ' ', 'l', 'a', 'b', 's'},
 			nil,

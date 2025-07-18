@@ -1,26 +1,28 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
 
 import (
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
 	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/queue"
 	"github.com/luxfi/node/snow/engine/common/tracker"
-	"github.com/luxfi/node/snow/validators"
 )
 
 type Config struct {
 	common.AllGetsServer
 
-	Ctx     *snow.ConsensusContext
-	Beacons validators.Manager
+	Ctx *snow.ConsensusContext
 
 	StartupTracker tracker.Startup
 	Sender         common.Sender
+
+	// PeerTracker manages the set of nodes that we fetch the next block from.
+	PeerTracker *p2p.PeerTracker
 
 	// This node will only consider the first [AncestorsMaxContainersReceived]
 	// containers in an ancestors message it receives.
@@ -37,4 +39,7 @@ type Config struct {
 	// If StopVertexID is empty, the engine will generate the stop vertex based
 	// on the current state.
 	StopVertexID ids.ID
+
+	// Haltable signals when the engine is stopped
+	common.Haltable
 }

@@ -1,21 +1,24 @@
 # Antithesis Testing
 
 This package supports testing with
-[Antithesis](https://antithesis.com/docs/introduction/introduction.html),
+[Antithesis](https://antithesis.com/docs/introduction/how_antithesis_works),
 a SaaS offering that enables deployment of distributed systems (such
 as Lux) to a deterministic and simulated environment that
 enables discovery and reproduction of anomalous behavior.
 
 ## Package details
 
-| Filename       | Purpose                                                                            |
-|:---------------|:-----------------------------------------------------------------------------------|
-| compose.go     | Generates Docker Compose project file and initial database for antithesis testing. |
-| config.go      | Defines common flags for the workload binary.                                      |
-| init_db.go     | Initializes initial db state for subnet testing.                                   |
-| node_health.go | Helper to check node health.                                                       |
-| node/   | Defines an antithesis test setup for node's primary chains.                 |
-| xsvm/          | Defines an antithesis test setup for the xsvm VM.                                  |
+| Filename                          | Purpose                                                                            |
+|:----------------------------------|:-----------------------------------------------------------------------------------|
+| compose.go                        | Generates Docker Compose project file and initial database for antithesis testing. |
+| config.go                         | Defines common flags for the workload binary.                                      |
+| Dockerfile.builder-instrumented   | Dockerfile for instrumented builds.                                                |
+| Dockerfile.builder-uninstrumented | Dockerfile for uninstrumented builds.                                              |
+| config.go                         | Defines common flags for the workload binary.                                      |
+| init_db.go                        | Initializes initial db state for subnet testing.                                   |
+| node_health.go                    | Helper to check node health.                                                       |
+| luxd/                      | Defines an antithesis test setup for luxd's primary chains.                 |
+| xsvm/                             | Defines an antithesis test setup for the xsvm VM.                                  |
 
 ## Instrumentation
 
@@ -29,7 +32,7 @@ on Macs, a local build will not be instrumented.
 
 ## Defining a new test setup
 
-When defining a new test setup - whether in the node repo or
+When defining a new test setup - whether in the luxd repo or
 for a VM in another repo - following the example of an existing test
 setup is suggested. The following table enumerates the files defining
 a test setup:
@@ -54,9 +57,9 @@ In addition, github workflows are suggested to ensure
 To simplify building instrumented (for running in CI) and
 non-instrumented (for running locally) versions of the workload and
 node images, a common builder image is used. If on an amd64 host,
-`tests/antithesis/node/Dockerfile.builder-instrumented` is used
+`tests/antithesis/luxd/Dockerfile.builder-instrumented` is used
 to create an instrumented builder. On an arm64 host,
-`tests/antithesis/node/Dockerfile.builder-uninstrumented` is
+`tests/antithesis/luxd/Dockerfile.builder-uninstrumented` is
 used to create an uninstrumented builder. In both cases, the builder
 image is based on the default golang image and will include the source
 code necessary to build the node and workload binaries. The
@@ -66,13 +69,13 @@ test setup.
 
 ## Troubleshooting a test setup
 
-### Running a workload directly
+### Running a workload with an existing network
 
-The workload of the 'node' test setup can be invoked against an
+The workload of the 'luxd' test setup can be invoked against an
 arbitrary network:
 
 ```bash
-$ AVAWL_URIS="http://10.0.20.3:9650 http://10.0.20.4:9650" go run ./tests/antithesis/node
+$ AVAWL_URIS="http://10.0.20.3:9650 http://10.0.20.4:9650" go run ./tests/antithesis/luxd
 ```
 
 The workload of a subnet test setup like 'xsvm' additionally requires
@@ -83,12 +86,26 @@ chain needs to be provided to the workload:
 $ AVAWL_URIS=... CHAIN_IDS="2S9ypz...AzMj9" go run ./tests/antithesis/xsvm
 ```
 
-### Running a workload with docker-compose
+### Running a workload with a tmpnet network
+
+Just like with e2e tests, running an antithesis workload against a
+tmpnet network requires specifying an luxd path (either as an
+argument or an env var):
+
+```bash
+$ go run ./tests/antithesis/luxd --luxd-path=/path/to/luxd
+```
+
+All tmpnet flags are supported (e.g. `--reuse-network`,
+`--stop-network`, `--restart-network`, `--node-count`).  See the
+[tmpnet documentation](../fixture/tmpnet/README.md) for more details.
+
+### Running a workload with docker compose v2
 
 Running the test script for a given test setup with the `DEBUG` flag
-set will avoid cleaning up the the temporary directory where the
-docker-compose setup is written to. This will allow manual invocation of
-docker-compose to see the log output of the workload.
+set will avoid cleaning up the temporary directory where the
+docker compose setup is written to. This will allow manual invocation of
+docker compose to see the log output of the workload.
 
 ```bash
 $ DEBUG=1 ./scripts/tests.build_antithesis_images.sh
@@ -99,7 +116,7 @@ directory will appear in the output of the script:
 
 ```
 ...
-using temporary directory /tmp/tmp.E6eHdDr4ln as the docker-compose path"
+using temporary directory /tmp/tmp.E6eHdDr4ln as the docker compose path
 ...
 ```
 
@@ -110,10 +127,10 @@ output appears on stdout for inspection:
 $ cd [temporary directory]
 
 # Start the compose project
-$ docker-compose up
+$ docker compose up
 
 # Cleanup the compose project
-$ docker-compose down --volumes
+$ docker compose down --volumes
 ```
 
 ## Manually triggering an Antithesis test run
@@ -122,7 +139,7 @@ When making changes to a test setup, it may be useful to manually
 trigger an Antithesis test run outside of the normal schedule. This
 can be performed against master or an arbitrary branch:
 
- - Navigate to the ['Actions' tab of the node
+ - Navigate to the ['Actions' tab of the luxd
    repo](https://github.com/luxfi/node/actions).
  - Select the [Publish Antithesis
    Images](https://github.com/luxfi/node/actions/workflows/publish_antithesis_images.yml)
@@ -130,16 +147,19 @@ can be performed against master or an arbitrary branch:
  - Find the 'Run workflow' drop-down on the right and trigger the
    workflow against the desired branch. The default value for
    `image_tag` (`latest`) is used by scheduled test runs, so consider
-   supplying a different value to avoid interferring with the results
+   supplying a different value to avoid interfering with the results
    of the scheduled runs.
  - Wait for the publication job to complete successfully so that the
    images are available to be tested against.
- - Select the [Trigger Antithesis Test Runs](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-runs.yml)
-   workflow on the left.
+ - Select one of the [Trigger Antithesis Luxgo
+   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-luxd.yml)
+   or [Trigger Antithesis XSVM
+   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-xsvm.yml)
+   workflows on the left.
  - Find the 'Run workflow' drop-down on the right and trigger the
    workflow against the desired branch. The branch only determines the
    CI configuration (the images have already been built), so master is
    probably fine. Make sure to supply the same `image_tag` that was
-   provided to the publishing workflow and consider setting
-   `recipients` to your own email rather than sending the test report
-   to everyone on the regular distribution list.
+   provided to the publishing workflow and provide a value for
+   `recipients` (e.g. your email address) to avoid sending the test
+   report to everyone on the regular distribution list.

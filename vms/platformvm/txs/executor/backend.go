@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,7 +15,7 @@ import (
 )
 
 type Backend struct {
-	Config       *config.Config
+	Config       *config.Internal
 	Ctx          *snow.Context
 	Clk          *mockable.Clock
 	Fx           fx.Fx

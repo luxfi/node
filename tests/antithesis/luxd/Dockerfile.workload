@@ -1,11 +1,11 @@
-# TAG should identify the builder image
-ARG TAG
+# BUILDER_IMAGE_TAG should identify the builder image
+ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silences a warning
 
-# NODE_IMAGE needs to identify an existing node image and should include the tag
-ARG NODE_IMAGE
+# LUXD_NODE_IMAGE needs to identify an existing node image and should include the tag
+ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-node-builder:$TAG AS builder
+FROM antithesis-luxd-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
@@ -13,16 +13,16 @@ ARG BUILDER_WORKDIR
 WORKDIR $BUILDER_WORKDIR
 
 # Build the workload
-RUN ./scripts/build_antithesis_node_workload.sh
+RUN ./scripts/build_antithesis_luxd_workload.sh
 
 # ============= Cleanup Stage ================
 # Base the workflow on the node image to support bootstrap testing
-FROM $NODE_IMAGE AS execution
+FROM $LUXD_NODE_IMAGE AS execution
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
 
 # Copy the executable into the container
-COPY --from=builder $BUILDER_WORKDIR/build/antithesis-node-workload ./workload
+COPY --from=builder $BUILDER_WORKDIR/build/antithesis-luxd-workload ./workload
 
 CMD [ "./workload" ]

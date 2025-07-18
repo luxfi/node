@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -9,8 +9,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
@@ -18,40 +17,33 @@ import (
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	psigner "github.com/luxfi/node/wallet/chain/p/signer"
+	pwallet "github.com/luxfi/node/wallet/chain/p/wallet"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	xsigner "github.com/luxfi/node/wallet/chain/x/signer"
 )
 
-var _ Wallet = (*wallet)(nil)
-
 // Wallet provides chain wallets for the primary network.
-type Wallet interface {
-	P() pwallet.Wallet
-	X() x.Wallet
-	C() c.Wallet
-}
-
-type wallet struct {
+type Wallet struct {
 	p pwallet.Wallet
 	x x.Wallet
 	c c.Wallet
 }
 
-func (w *wallet) P() p.Wallet {
+func (w *Wallet) P() pwallet.Wallet {
 	return w.p
 }
 
-func (w *wallet) X() x.Wallet {
+func (w *Wallet) X() x.Wallet {
 	return w.x
 }
 
-func (w *wallet) C() c.Wallet {
+func (w *Wallet) C() c.Wallet {
 	return w.c
 }
 
 // Creates a new default wallet
-func NewWallet(p p.Wallet, x x.Wallet, c c.Wallet) Wallet {
-	return &wallet{
+func NewWallet(p pwallet.Wallet, x x.Wallet, c c.Wallet) *Wallet {
+	return &Wallet{
 		p: p,
 		x: x,
 		c: c,
@@ -59,26 +51,21 @@ func NewWallet(p p.Wallet, x x.Wallet, c c.Wallet) Wallet {
 }
 
 // Creates a Wallet with the given set of options
-func NewWalletWithOptions(w Wallet, options ...common.Option) Wallet {
+func NewWalletWithOptions(w *Wallet, options ...common.Option) *Wallet {
 	return NewWallet(
-		pwallet.WithOptions(w.P(), options...),
-		x.NewWalletWithOptions(w.X(), options...),
-		c.NewWalletWithOptions(w.C(), options...),
+		pwallet.WithOptions(w.p, options...),
+		x.NewWalletWithOptions(w.x, options...),
+		c.NewWalletWithOptions(w.c, options...),
 	)
 }
 
 type WalletConfig struct {
-	// Base URI to use for all node requests.
-	URI string // required
-	// Keys to use for signing all transactions.
-	LUXKeychain keychain.Keychain // required
-	EthKeychain  c.EthKeychain     // required
-	// Set of P-chain transactions that the wallet should know about to be able
-	// to generate transactions.
-	PChainTxs map[ids.ID]*txs.Tx // optional
-	// Set of P-chain transactions that the wallet should fetch to be able to
-	// generate transactions.
-	PChainTxsToFetch set.Set[ids.ID] // optional
+	// Subnet IDs that the wallet should know about to be able to generate
+	// transactions.
+	SubnetIDs []ids.ID // optional
+	// Validation IDs that the wallet should know about to be able to generate
+	// transactions.
+	ValidationIDs []ids.ID // optional
 }
 
 // MakeWallet returns a wallet that supports issuing transactions to the chains
@@ -88,59 +75,88 @@ type WalletConfig struct {
 // that reference any of the provided keys. If the UTXOs are modified through an
 // external issuance process, such as another instance of the wallet, the UTXOs
 // may become out of sync. The wallet will also fetch all requested P-chain
-// transactions.
+// owners.
 //
 // The wallet manages all state locally, and performs all tx signing locally.
-func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
-	luxAddrs := config.LUXKeychain.Addresses()
-	luxState, err := FetchState(ctx, config.URI, luxAddrs)
+func MakeWallet(
+	ctx context.Context,
+	uri string,
+	luxKeychain keychain.Keychain,
+	ethKeychain c.EthKeychain,
+	config WalletConfig,
+) (*Wallet, error) {
+	luxAddrs := luxKeychain.Addresses()
+	luxState, err := FetchState(ctx, uri, luxAddrs)
 	if err != nil {
 		return nil, err
 	}
 
-	ethAddrs := config.EthKeychain.EthAddresses()
-	ethState, err := FetchEthState(ctx, config.URI, ethAddrs)
+	ethAddrs := ethKeychain.EthAddresses()
+	ethState, err := FetchEthState(ctx, uri, ethAddrs)
 	if err != nil {
 		return nil, err
 	}
 
-	pChainTxs := config.PChainTxs
-	if pChainTxs == nil {
-		pChainTxs = make(map[ids.ID]*txs.Tx)
-	}
-
-	for txID := range config.PChainTxsToFetch {
-		txBytes, err := luxState.PClient.GetTx(ctx, txID)
-		if err != nil {
-			return nil, err
-		}
-		tx, err := txs.Parse(txs.Codec, txBytes)
-		if err != nil {
-			return nil, err
-		}
-		pChainTxs[txID] = tx
+	owners, err := platformvm.GetOwners(luxState.PClient, ctx, config.SubnetIDs, config.ValidationIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
-	pBackend := p.NewBackend(luxState.PCTX, pUTXOs, pChainTxs)
+	pBackend := pwallet.NewBackend(pUTXOs, owners)
+	pClient := p.NewClient(luxState.PClient, pBackend)
 	pBuilder := pbuilder.New(luxAddrs, luxState.PCTX, pBackend)
-	pSigner := psigner.New(config.LUXKeychain, pBackend)
+	pSigner := psigner.New(luxKeychain, pBackend)
 
 	xChainID := luxState.XCTX.BlockchainID
 	xUTXOs := common.NewChainUTXOs(xChainID, luxState.UTXOs)
 	xBackend := x.NewBackend(luxState.XCTX, xUTXOs)
 	xBuilder := xbuilder.New(luxAddrs, luxState.XCTX, xBackend)
-	xSigner := xsigner.New(config.LUXKeychain, xBackend)
+	xSigner := xsigner.New(luxKeychain, xBackend)
 
 	cChainID := luxState.CCTX.BlockchainID
 	cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
 	cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
 	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
-	cSigner := c.NewSigner(config.LUXKeychain, config.EthKeychain, cBackend)
+	cSigner := c.NewSigner(luxKeychain, ethKeychain, cBackend)
 
 	return NewWallet(
-		p.NewWallet(pBuilder, pSigner, luxState.PClient, pBackend),
+		pwallet.New(pClient, pBuilder, pSigner),
 		x.NewWallet(xBuilder, xSigner, luxState.XClient, xBackend),
 		c.NewWallet(cBuilder, cSigner, luxState.CClient, ethState.Client, cBackend),
 	), nil
+}
+
+// MakePWallet returns a P-chain wallet that supports issuing transactions.
+//
+// On creation, the wallet attaches to the provided uri and fetches all UTXOs
+// that reference any of the provided keys. If the UTXOs are modified through an
+// external issuance process, such as another instance of the wallet, the UTXOs
+// may become out of sync. The wallet will also fetch all requested P-chain
+// owners.
+//
+// The wallet manages all state locally, and performs all tx signing locally.
+func MakePWallet(
+	ctx context.Context,
+	uri string,
+	keychain keychain.Keychain,
+	config WalletConfig,
+) (pwallet.Wallet, error) {
+	addrs := keychain.Addresses()
+	client, context, utxos, err := FetchPState(ctx, uri, addrs)
+	if err != nil {
+		return nil, err
+	}
+
+	owners, err := platformvm.GetOwners(client, ctx, config.SubnetIDs, config.ValidationIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, utxos)
+	pBackend := pwallet.NewBackend(pUTXOs, owners)
+	pClient := p.NewClient(client, pBackend)
+	pBuilder := pbuilder.New(addrs, context, pBackend)
+	pSigner := psigner.New(keychain, pBackend)
+	return pwallet.New(pClient, pBuilder, pSigner), nil
 }

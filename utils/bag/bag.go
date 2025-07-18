@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bag
@@ -173,4 +173,12 @@ func (b *Bag[T]) PrefixedString(prefix string) string {
 
 func (b *Bag[_]) String() string {
 	return b.PrefixedString("")
+}
+
+func (b *Bag[T]) Clone() Bag[T] {
+	var clone Bag[T]
+	for id, count := range b.counts {
+		clone.AddCount(id, count)
+	}
+	return clone
 }

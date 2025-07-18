@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -23,7 +23,6 @@ type Config struct {
 	StartupTracker   tracker.Startup
 	Sender           common.Sender
 	BootstrapTracker common.BootstrapTracker
-	Timer            common.Timer
 
 	// PeerTracker manages the set of nodes that we fetch the next block from.
 	PeerTracker *p2p.PeerTracker
@@ -42,4 +41,6 @@ type Config struct {
 	NonVerifyingParse block.ParseFunc
 
 	Bootstrapped func()
+
+	common.Haltable
 }

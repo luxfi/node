@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -13,12 +13,12 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/bootstrap/interval"
+	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -221,7 +221,7 @@ func TestExecute(t *testing.T) {
 
 	unhalted := &common.Halter{}
 	halted := &common.Halter{}
-	halted.Halt(context.Background())
+	halted.Halt()
 
 	tests := []struct {
 		name                      string
@@ -269,7 +269,7 @@ func TestExecute(t *testing.T) {
 
 			require.NoError(execute(
 				context.Background(),
-				test.haltable,
+				test.haltable.Halted,
 				logging.NoLog{}.Info,
 				db,
 				parser,
@@ -277,10 +277,10 @@ func TestExecute(t *testing.T) {
 				test.lastAcceptedHeight,
 			))
 			for _, height := range test.expectedProcessingHeights {
-				require.Equal(choices.Processing, blocks[height].Status())
+				require.Equal(snowtest.Undecided, blocks[height].Status)
 			}
 			for _, height := range test.expectedAcceptedHeights {
-				require.Equal(choices.Accepted, blocks[height].Status())
+				require.Equal(snowtest.Accepted, blocks[height].Status)
 			}
 
 			if test.haltable.Halted() {

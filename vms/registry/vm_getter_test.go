@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -15,9 +15,11 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/filesystem"
+	"github.com/luxfi/node/utils/filesystem/filesystemmock"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/vmsmock"
 )
 
 var (
@@ -138,8 +140,8 @@ type vmGetterTestResources struct {
 func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	ctrl := gomock.NewController(t)
 
-	mockReader := filesystem.NewMockReader(ctrl)
-	mockManager := vms.NewMockManager(ctrl)
+	mockReader := filesystemmock.NewReader(ctrl)
+	mockManager := vmsmock.NewManager(ctrl)
 	mockRegistry := prometheus.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
 		logging.NoLog{},

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -314,9 +314,21 @@ func InboundAppResponse(
 	}
 }
 
+// NewInboundSimplexMessage creates a new InboundMessage for simplex messages.
+func InboundSimplexMessage(
+	nodeID ids.NodeID,
+	msg *p2p.Simplex,
+) InboundMessage {
+	return &inboundMessage{
+		nodeID:     nodeID,
+		op:         SimplexOp,
+		message:    msg,
+		expiration: mockable.MaxTime,
+	}
+}
+
 func encodeIDs(ids []ids.ID, result [][]byte) {
 	for i, id := range ids {
-		id := id
 		result[i] = id[:]
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/timer/mockable"
+
+	timerpkg "github.com/luxfi/node/utils/timer"
 )
 
 var (
@@ -55,13 +55,12 @@ type InboundConnUpgradeThrottlerConfig struct {
 
 // Returns an InboundConnUpgradeThrottler that upgrades an inbound
 // connection from a given IP at most every [UpgradeCooldown].
-func NewInboundConnUpgradeThrottler(log logging.Logger, config InboundConnUpgradeThrottlerConfig) InboundConnUpgradeThrottler {
+func NewInboundConnUpgradeThrottler(config InboundConnUpgradeThrottlerConfig) InboundConnUpgradeThrottler {
 	if config.UpgradeCooldown <= 0 || config.MaxRecentConnsUpgraded <= 0 {
 		return &noInboundConnUpgradeThrottler{}
 	}
 	return &inboundConnUpgradeThrottler{
 		InboundConnUpgradeThrottlerConfig: config,
-		log:                               log,
 		done:                              make(chan struct{}),
 		recentIPsAndTimes:                 make(chan ipAndTime, config.MaxRecentConnsUpgraded),
 	}
@@ -85,7 +84,6 @@ type ipAndTime struct {
 
 type inboundConnUpgradeThrottler struct {
 	InboundConnUpgradeThrottlerConfig
-	log  logging.Logger
 	lock sync.Mutex
 	// Useful for faking time in tests
 	clock mockable.Clock
@@ -132,7 +130,7 @@ func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) boo
 }
 
 func (n *inboundConnUpgradeThrottler) Dispatch() {
-	timer := timer.StoppedTimer()
+	timer := timerpkg.StoppedTimer()
 
 	defer timer.Stop()
 	for {

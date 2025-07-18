@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snow
@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 )
 
 // Decidable represents element that can be decided.
@@ -31,13 +30,4 @@ type Decidable interface {
 	//
 	// This element will not be accepted by any correct node in the network.
 	Reject(context.Context) error
-
-	// Status returns this element's current status.
-	//
-	// If Accept has been called on an element with this ID, Accepted should be
-	// returned. Similarly, if Reject has been called on an element with this
-	// ID, Rejected should be returned. If the contents of this element are
-	// unknown, then Unknown should be returned. Otherwise, Processing should be
-	// returned.
-	Status() choices.Status
 }

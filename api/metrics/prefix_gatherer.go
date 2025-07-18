@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -45,11 +45,13 @@ func (g *prefixGatherer) Register(prefix string, gatherer prometheus.Gatherer) e
 		}
 	}
 
-	g.names = append(g.names, prefix)
-	g.gatherers = append(g.gatherers, &prefixedGatherer{
-		prefix:   prefix,
-		gatherer: gatherer,
-	})
+	g.register(
+		prefix,
+		&prefixedGatherer{
+			prefix:   prefix,
+			gatherer: gatherer,
+		},
+	)
 	return nil
 }
 

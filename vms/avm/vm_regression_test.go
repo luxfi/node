@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -18,7 +19,7 @@ import (
 func TestVerifyFxUsage(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: latest})
+	env := setup(t, &envConfig{fork: upgradetest.Latest})
 	env.vm.ctx.Lock.Unlock()
 
 	var (
@@ -57,7 +58,7 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	// Mint the NFT
 	mintNFTTx, err := env.txBuilder.MintNFT(
@@ -71,7 +72,7 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
+	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// move the NFT
 	to := keys[2].PublicKey().Address()
@@ -91,5 +92,5 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, spendTx)
+	issueAndAccept(require, env.vm, spendTx)
 }

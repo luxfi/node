@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package json
@@ -50,10 +50,10 @@ func TestFloat32(t *testing.T) {
 	for _, tt := range tests {
 		jsonBytes, err := tt.f.MarshalJSON()
 		require.NoError(err)
-		require.Equal(fmt.Sprintf(`"%s"`, tt.expectedStr), string(jsonBytes))
+		require.JSONEq(fmt.Sprintf(`"%s"`, tt.expectedStr), string(jsonBytes))
 
 		var f Float32
 		require.NoError(f.UnmarshalJSON(jsonBytes))
-		require.Equal(tt.expectedUnmarshalled, float32(f))
+		require.InDelta(tt.expectedUnmarshalled, float32(f), 0)
 	}
 }

@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
+	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
@@ -11,8 +12,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
@@ -92,5 +91,7 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 			require.Equal(newOwner.Threshold, subnetOwner.Threshold)
 			require.Equal(newOwner.Addrs, subnetOwner.Addrs)
 		})
+
+		_ = e2e.CheckBootstrapIsPossible(tc, env.GetNetwork())
 	})
 })

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -30,21 +30,6 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
-)
-
-const (
-	// maxBloomSaltLen restricts the allowed size of the bloom salt to prevent
-	// excessively expensive bloom filter contains checks.
-	maxBloomSaltLen = 32
-	// maxNumTrackedSubnets limits how many subnets a peer can track to prevent
-	// excessive memory usage.
-	maxNumTrackedSubnets = 16
-
-	disconnectingLog         = "disconnecting from peer"
-	failedToCreateMessageLog = "failed to create message"
-	failedToSetDeadlineLog   = "failed to set connection deadline"
-	failedToGetUptimeLog     = "failed to get peer uptime percentage"
-	malformedMessageLog      = "malformed message"
 )
 
 const (
@@ -109,10 +94,10 @@ type Peer interface {
 	// be called after [Ready] returns true.
 	TrackedSubnets() set.Set[ids.ID]
 
-	// ObservedUptime returns the local node's subnet uptime according to the
+	// ObservedUptime returns the local node's primary network uptime according to the
 	// peer. The value ranges from [0, 100]. It should only be called after
 	// [Ready] returns true.
-	ObservedUptime(subnetID ids.ID) (uint32, bool)
+	ObservedUptime() uint32
 
 	// Send attempts to send [msg] to the peer. The peer takes ownership of
 	// [msg] for reference counting. This returns false if the message is
@@ -173,10 +158,8 @@ type peer struct {
 	// this can only be accessed by the message sender goroutine.
 	txIDOfVerifiedBLSKey ids.ID
 
-	observedUptimesLock sync.RWMutex
-	// [observedUptimesLock] must be held while accessing [observedUptime]
-	// Subnet ID --> Our uptime for the given subnet as perceived by the peer
-	observedUptimes map[ids.ID]uint32
+	// Our primary network uptime perceived by the peer
+	observedUptime utils.Atomic[uint32]
 
 	// True if this peer has sent us a valid Handshake message and
 	// is running a compatible version.
@@ -211,6 +194,10 @@ type peer struct {
 	// getPeerListChan signals that we should attempt to send a GetPeerList to
 	// this peer
 	getPeerListChan chan struct{}
+
+	// isIngress is true only if the remote peer is connected to this node,
+	// in contrast of this node being connected to the remote peer.
+	isIngress bool
 }
 
 // Start a new peer instance.
@@ -223,9 +210,11 @@ func Start(
 	cert *staking.Certificate,
 	id ids.NodeID,
 	messageQueue MessageQueue,
+	isIngress bool,
 ) Peer {
 	onClosingCtx, onClosingCtxCancel := context.WithCancel(context.Background())
 	p := &peer{
+		isIngress:          isIngress,
 		Config:             config,
 		conn:               conn,
 		cert:               cert,
@@ -236,8 +225,11 @@ func Start(
 		onClosingCtx:       onClosingCtx,
 		onClosingCtxCancel: onClosingCtxCancel,
 		onClosed:           make(chan struct{}),
-		observedUptimes:    make(map[ids.ID]uint32),
 		getPeerListChan:    make(chan struct{}, 1),
+	}
+
+	if isIngress {
+		p.IngressConnectionCount.Add(1)
 	}
 
 	go p.readMessages()
@@ -285,33 +277,20 @@ func (p *peer) AwaitReady(ctx context.Context) error {
 }
 
 func (p *peer) Info() Info {
-	uptimes := make(map[ids.ID]json.Uint32, p.MySubnets.Len())
-	for subnetID := range p.MySubnets {
-		uptime, exist := p.ObservedUptime(subnetID)
-		if !exist {
-			continue
-		}
-		uptimes[subnetID] = json.Uint32(uptime)
-	}
-
-	primaryUptime, exist := p.ObservedUptime(constants.PrimaryNetworkID)
-	if !exist {
-		primaryUptime = 0
-	}
+	primaryUptime := p.ObservedUptime()
 
 	ip, _ := ips.ParseAddrPort(p.conn.RemoteAddr().String())
 	return Info{
-		IP:                    ip,
-		PublicIP:              p.ip.AddrPort,
-		ID:                    p.id,
-		Version:               p.version.String(),
-		LastSent:              p.LastSent(),
-		LastReceived:          p.LastReceived(),
-		ObservedUptime:        json.Uint32(primaryUptime),
-		ObservedSubnetUptimes: uptimes,
-		TrackedSubnets:        p.trackedSubnets,
-		SupportedACPs:         p.supportedACPs,
-		ObjectedACPs:          p.objectedACPs,
+		IP:             ip,
+		PublicIP:       p.ip.AddrPort,
+		ID:             p.id,
+		Version:        p.version.String(),
+		LastSent:       p.LastSent(),
+		LastReceived:   p.LastReceived(),
+		ObservedUptime: json.Uint32(primaryUptime),
+		TrackedSubnets: p.trackedSubnets,
+		SupportedACPs:  p.supportedACPs,
+		ObjectedACPs:   p.objectedACPs,
 	}
 }
 
@@ -327,12 +306,8 @@ func (p *peer) TrackedSubnets() set.Set[ids.ID] {
 	return p.trackedSubnets
 }
 
-func (p *peer) ObservedUptime(subnetID ids.ID) (uint32, bool) {
-	p.observedUptimesLock.RLock()
-	defer p.observedUptimesLock.RUnlock()
-
-	uptime, exist := p.observedUptimes[subnetID]
-	return uptime, exist
+func (p *peer) ObservedUptime() uint32 {
+	return p.observedUptime.Get()
 }
 
 func (p *peer) Send(ctx context.Context, msg message.OutboundMessage) bool {
@@ -383,6 +358,10 @@ func (p *peer) AwaitClosed(ctx context.Context) error {
 func (p *peer) close() {
 	if atomic.AddInt64(&p.numExecuting, -1) != 0 {
 		return
+	}
+
+	if p.isIngress {
+		p.IngressConnectionCount.Add(-1)
 	}
 
 	p.Network.Disconnected(p.id)
@@ -549,6 +528,7 @@ func (p *peer) writeMessages() {
 	myVersion := p.VersionCompatibility.Version()
 	knownPeersFilter, knownPeersSalt := p.Network.KnownPeers()
 
+	_, areWeAPrimaryNetworkValidator := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
 	msg, err := p.MessageCreator.Handshake(
 		p.NetworkID,
 		p.Clock.Unix(),
@@ -565,6 +545,7 @@ func (p *peer) writeMessages() {
 		p.ObjectedACPs,
 		knownPeersFilter,
 		knownPeersSalt,
+		areWeAPrimaryNetworkValidator,
 	)
 	if err != nil {
 		p.Log.Error(failedToCreateMessageLog,
@@ -659,7 +640,12 @@ func (p *peer) sendNetworkMessages() {
 		select {
 		case <-p.getPeerListChan:
 			knownPeersFilter, knownPeersSalt := p.Config.Network.KnownPeers()
-			msg, err := p.Config.MessageCreator.GetPeerList(knownPeersFilter, knownPeersSalt)
+			_, areWeAPrimaryNetworkValidator := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
+			msg, err := p.Config.MessageCreator.GetPeerList(
+				knownPeersFilter,
+				knownPeersSalt,
+				areWeAPrimaryNetworkValidator,
+			)
 			if err != nil {
 				p.Log.Error(failedToCreateMessageLog,
 					zap.Stringer("nodeID", p.id),
@@ -686,8 +672,8 @@ func (p *peer) sendNetworkMessages() {
 				return
 			}
 
-			primaryUptime, subnetUptimes := p.getUptimes()
-			pingMessage, err := p.MessageCreator.Ping(primaryUptime, subnetUptimes)
+			primaryUptime := p.getUptime()
+			pingMessage, err := p.MessageCreator.Ping(primaryUptime)
 			if err != nil {
 				p.Log.Error(failedToCreateMessageLog,
 					zap.Stringer("nodeID", p.id),
@@ -798,45 +784,7 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 		p.StartClose()
 		return
 	}
-	p.observeUptime(constants.PrimaryNetworkID, msg.Uptime)
-
-	for _, subnetUptime := range msg.SubnetUptimes {
-		subnetID, err := ids.ToID(subnetUptime.SubnetId)
-		if err != nil {
-			p.Log.Debug(malformedMessageLog,
-				zap.Stringer("nodeID", p.id),
-				zap.Stringer("messageOp", message.PingOp),
-				zap.String("field", "subnetID"),
-				zap.Error(err),
-			)
-			p.StartClose()
-			return
-		}
-
-		if !p.MySubnets.Contains(subnetID) {
-			p.Log.Debug(malformedMessageLog,
-				zap.Stringer("nodeID", p.id),
-				zap.Stringer("messageOp", message.PingOp),
-				zap.Stringer("subnetID", subnetID),
-				zap.String("reason", "not tracking subnet"),
-			)
-			p.StartClose()
-			return
-		}
-
-		uptime := subnetUptime.Uptime
-		if uptime > 100 {
-			p.Log.Debug(malformedMessageLog,
-				zap.Stringer("nodeID", p.id),
-				zap.Stringer("messageOp", message.PingOp),
-				zap.Stringer("subnetID", subnetID),
-				zap.Uint32("uptime", uptime),
-			)
-			p.StartClose()
-			return
-		}
-		p.observeUptime(subnetID, uptime)
-	}
+	p.observedUptime.Set(msg.Uptime)
 
 	pongMessage, err := p.MessageCreator.Pong()
 	if err != nil {
@@ -852,10 +800,9 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 	p.Send(p.onClosingCtx, pongMessage)
 }
 
-func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
+func (p *peer) getUptime() uint32 {
 	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(
 		p.id,
-		constants.PrimaryNetworkID,
 	)
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,
@@ -866,44 +813,11 @@ func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
 		primaryUptime = 0
 	}
 
-	subnetUptimes := make([]*p2p.SubnetUptime, 0, p.MySubnets.Len())
-	for subnetID := range p.MySubnets {
-		if !p.trackedSubnets.Contains(subnetID) {
-			continue
-		}
-
-		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, subnetID)
-		if err != nil {
-			p.Log.Debug(failedToGetUptimeLog,
-				zap.Stringer("nodeID", p.id),
-				zap.Stringer("subnetID", subnetID),
-				zap.Error(err),
-			)
-			continue
-		}
-
-		subnetID := subnetID
-		subnetUptimes = append(subnetUptimes, &p2p.SubnetUptime{
-			SubnetId: subnetID[:],
-			Uptime:   uint32(subnetUptime * 100),
-		})
-	}
-
 	primaryUptimePercent := uint32(primaryUptime * 100)
-	return primaryUptimePercent, subnetUptimes
+	return primaryUptimePercent
 }
 
 func (*peer) handlePong(*p2p.Pong) {}
-
-// Record that the given peer perceives our uptime for the given [subnetID]
-// to be [uptime].
-// Assumes [uptime] is in the range [0, 100] and [subnetID] is a valid ID of a
-// subnet this peer tracks.
-func (p *peer) observeUptime(subnetID ids.ID, uptime uint32) {
-	p.observedUptimesLock.Lock()
-	p.observedUptimes[subnetID] = uptime // [0, 100] percentage
-	p.observedUptimesLock.Unlock()
-}
 
 func (p *peer) handleHandshake(msg *p2p.Handshake) {
 	if p.gotHandshake.Get() {
@@ -1129,7 +1043,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	p.gotHandshake.Set(true)
 
-	peerIPs := p.Network.Peers(p.id, knownPeers, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedSubnets, msg.AllSubnets, knownPeers, salt)
 
 	// We bypass throttling here to ensure that the handshake message is
 	// acknowledged correctly.
@@ -1191,7 +1105,7 @@ func (p *peer) handleGetPeerList(msg *p2p.GetPeerList) {
 		return
 	}
 
-	peerIPs := p.Network.Peers(p.id, filter, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedSubnets, msg.AllSubnets, filter, salt)
 	if len(peerIPs) == 0 {
 		p.Log.Debug("skipping sending of empty peer list",
 			zap.Stringer("nodeID", p.id),

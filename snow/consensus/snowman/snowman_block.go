@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -36,7 +36,7 @@ func (n *snowmanBlock) AddChild(child Block) {
 	// if the snowball instance is nil, this is the first child. So the instance
 	// should be initialized.
 	if n.sb == nil {
-		n.sb = snowball.NewTree(snowball.SnowballFactory, n.t.params, childID)
+		n.sb = snowball.NewTree(n.t.Factory, n.t.params, childID)
 		n.children = make(map[ids.ID]Block)
 	} else {
 		n.sb.Add(childID)

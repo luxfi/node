@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -19,14 +19,18 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmanmock"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/snow/validators/validatorsmock"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
-	"github.com/luxfi/node/vms/proposervm/scheduler"
+	"github.com/luxfi/node/vms/proposervm/proposer/proposermock"
 )
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
@@ -46,33 +50,32 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blkID                  = ids.GenerateTestID()
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk := snowmanmock.NewBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := snowmantest.NewMockBlock(ctrl)
+	builtBlk := snowmanmock.NewBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
-	innerVM := block.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := block.NewMockBuildBlockWithContextChainVM(ctrl)
+	innerVM := blockmock.NewChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
-		PChainHeight: pChainHeight - 1,
+		PChainHeight: pChainHeight,
 	}).Return(builtBlk, nil).AnyTimes()
 
-	vdrState := validators.NewMockState(ctrl)
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposer.NewMockWindower(ctrl)
+	windower := proposermock.NewWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 	vm := &VM{
 		Config: Config{
-			ActivationTime:    time.Unix(0, 0),
-			DurangoTime:       time.Unix(0, 0),
+			Upgrades:          upgradetest.GetConfig(upgradetest.Latest),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
 			Registerer:        prometheus.NewRegistry(),
@@ -352,82 +355,63 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	}
 }
 
-// We consider cases where this node is not current proposer (may be scheduled in the next future or not).
-// We check that scheduler is called nonetheless, to be able to process innerVM block requests
-func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
+// Confirm that prior to Etna activation, the P-chain height passed to the
+// VM building the inner block is P-Chain height of the parent block.
+func TestPreEtnaContextPChainHeight(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
 	var (
-		thisNodeID              = ids.GenerateTestNodeID()
-		selectedProposer        = ids.GenerateTestNodeID()
-		pChainHeight     uint64 = 1337
-		parentID                = ids.GenerateTestID()
-		parentTimestamp         = time.Now().Truncate(time.Second)
-		now                     = parentTimestamp.Add(12 * time.Second)
-		parentHeight     uint64 = 1234
+		nodeID                   = ids.GenerateTestNodeID()
+		pChainHeight      uint64 = 1337
+		parentPChainHeght        = pChainHeight - 1
+		parentID                 = ids.GenerateTestID()
+		parentTimestamp          = time.Now().Truncate(time.Second)
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
-	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
+	innerParentBlock := snowmantest.Genesis
+	innerChildBlock := snowmantest.BuildChild(innerParentBlock)
 
-	vdrState := validators.NewMockState(ctrl)
+	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
+	// Expect the that context passed in has parent's P-Chain height
+	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
+		PChainHeight: parentPChainHeght,
+	}).Return(innerChildBlock, nil).AnyTimes()
+
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposer.NewMockWindower(ctrl)
-	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(selectedProposer, nil).AnyTimes() // return a proposer different from thisNode, to check whether scheduler is reset
+	windower := proposermock.NewWindower(ctrl)
+	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
-	scheduler := scheduler.NewMockScheduler(ctrl)
-
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(err)
 	vm := &VM{
 		Config: Config{
-			ActivationTime:    time.Unix(0, 0),
-			DurangoTime:       time.Unix(0, 0),
-			StakingCertLeaf:   &staking.Certificate{},
-			StakingLeafSigner: pk,
+			Upgrades:          upgradetest.GetConfig(upgradetest.Durango), // Use Durango for pre-Etna behavior
+			StakingCertLeaf:   pTestCert,
+			StakingLeafSigner: pTestSigner,
 			Registerer:        prometheus.NewRegistry(),
 		},
-		ChainVM: block.NewMockChainVM(ctrl),
+		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &snow.Context{
-			NodeID:         thisNodeID,
+			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
 		},
-		Windower:               windower,
-		Scheduler:              scheduler,
-		proposerBuildSlotGauge: prometheus.NewGauge(prometheus.GaugeOpts{}),
+		Windower: windower,
 	}
-	vm.Clock.Set(now)
 
 	blk := &postForkCommonComponents{
-		innerBlk: innerBlk,
+		innerBlk: innerChildBlock,
 		vm:       vm,
 	}
 
-	delays := []time.Duration{
-		proposer.MaxLookAheadWindow - time.Minute,
-		proposer.MaxLookAheadWindow,
-		proposer.MaxLookAheadWindow + time.Minute,
-	}
-
-	for _, delay := range delays {
-		windower.EXPECT().MinDelayForProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(delay, nil).Times(1)
-
-		// we mock the scheduler setting the exact time we expect it to be reset
-		// to
-		expectedSchedulerTime := parentTimestamp.Add(delay)
-		scheduler.EXPECT().SetBuildBlockTime(expectedSchedulerTime).Times(1)
-
-		_, err = blk.buildChild(
-			context.Background(),
-			parentID,
-			parentTimestamp,
-			pChainHeight-1,
-		)
-		require.ErrorIs(err, errUnexpectedProposer)
-	}
+	// Should call BuildBlockWithContext since proposervm is activated
+	gotChild, err := blk.buildChild(
+		context.Background(),
+		parentID,
+		parentTimestamp,
+		parentPChainHeght,
+	)
+	require.NoError(err)
+	require.Equal(innerChildBlock, gotChild.(*postForkBlock).innerBlk)
 }
