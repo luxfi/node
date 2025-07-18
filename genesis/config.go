@@ -192,20 +192,19 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
 	MainnetConfig, err = unparsedMainnetConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to parse mainnet config: %v", err))
 	}
 
 	FujiConfig, err = unparsedFujiConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to parse fuji config: %v", err))
 	}
 
 	unmodifiedLocalConfig, err = unparsedLocalConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to parse local config: %v", err))
 	}
 
 	// Renew the staking start time of the local config if required

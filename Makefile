@@ -18,7 +18,7 @@ BUILDFLAGS=-v
 .DEFAULT_GOAL := build
 
 # Build node
-build:
+build: protobuf
 	./scripts/build.sh
 
 # Test
@@ -78,6 +78,26 @@ mocks:
 	@echo "Generating mocks..."
 	$(GOCMD) generate ./...
 
+# Generate protobuf files
+protobuf:
+	@echo "Generating protobuf files..."
+	@if ! command -v buf &> /dev/null; then \
+		echo "buf not found, installing..."; \
+		go install github.com/bufbuild/buf/cmd/buf@v1.52.1; \
+	fi
+	@if ! command -v protoc-gen-go &> /dev/null; then \
+		echo "protoc-gen-go not found, installing..."; \
+		go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6; \
+	fi
+	@if ! command -v protoc-gen-go-grpc &> /dev/null; then \
+		echo "protoc-gen-go-grpc not found, installing..."; \
+		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1; \
+	fi
+	./scripts/protobuf_codegen.sh
+
+# Generate all code (mocks + protobuf)
+generate: protobuf mocks
+
 # Verify modules
 verify:
 	@echo "Verifying modules..."
@@ -100,7 +120,9 @@ help:
 	@echo "  make lint           Run linter"
 	@echo "  make security       Check for vulnerabilities"
 	@echo "  make mocks          Generate mocks"
+	@echo "  make protobuf       Generate protobuf files"
+	@echo "  make generate       Generate all code (protobuf + mocks)"
 	@echo "  make verify         Verify modules"
 	@echo "  make help           Show this help"
 
-.PHONY: build build-all test test-coverage bench clean deps update-deps fmt lint security mocks verify help
+.PHONY: build build-all test test-coverage bench clean deps update-deps fmt lint security mocks protobuf generate verify help

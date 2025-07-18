@@ -32,7 +32,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
 	github.com/luxfi/geth v0.15.4
-	github.com/luxfi/ledger/go v0.0.1
+	github.com/luxfi/ledger-lux-go v0.0.1
 	github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
@@ -52,7 +52,6 @@ require (
 	github.com/supranational/blst v0.3.15
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	github.com/thepudds/fzgen v0.4.3
-	github.com/tyler-smith/go-bip32 v1.0.0
 	go.opentelemetry.io/otel v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.22.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.22.0
@@ -83,8 +82,6 @@ require (
 )
 
 require (
-	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
-	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
@@ -199,5 +196,5 @@ require (
 
 replace (
 	github.com/luxfi/geth => /Users/z/work/lux/geth
-	github.com/luxfi/ledger/go => /Users/z/work/lux/ledger/go
+	github.com/luxfi/ledger-lux-go => /Users/z/work/lux/ledger/go
 )

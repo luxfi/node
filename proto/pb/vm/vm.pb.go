@@ -241,7 +241,7 @@ type InitializeRequest struct {
 	PublicKey    []byte `protobuf:"bytes,5,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	XChainId     []byte `protobuf:"bytes,6,opt,name=x_chain_id,json=xChainId,proto3" json:"x_chain_id,omitempty"`
 	CChainId     []byte `protobuf:"bytes,7,opt,name=c_chain_id,json=cChainId,proto3" json:"c_chain_id,omitempty"`
-	LuxAssetId  []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
+	LuxAssetId   []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
 	ChainDataDir string `protobuf:"bytes,9,opt,name=chain_data_dir,json=chainDataDir,proto3" json:"chain_data_dir,omitempty"`
 	GenesisBytes []byte `protobuf:"bytes,10,opt,name=genesis_bytes,json=genesisBytes,proto3" json:"genesis_bytes,omitempty"`
 	UpgradeBytes []byte `protobuf:"bytes,11,opt,name=upgrade_bytes,json=upgradeBytes,proto3" json:"upgrade_bytes,omitempty"`
@@ -2854,7 +2854,7 @@ var File_vm_vm_proto protoreflect.FileDescriptor
 
 const file_vm_vm_proto_rawDesc = "" +
 	"\n" +
-	"\vvm/vm.proto\x12\x02vm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"io/prometheus/client/metrics.proto\"\x9c\x04\n" +
+	"\vvm/vm.proto\x12\x02vm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"io/prometheus/client/metrics.proto\"\x9a\x04\n" +
 	"\x11InitializeRequest\x12\x1d\n" +
 	"\n" +
 	"network_id\x18\x01 \x01(\rR\tnetworkId\x12\x1b\n" +
@@ -2866,8 +2866,9 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\n" +
 	"x_chain_id\x18\x06 \x01(\fR\bxChainId\x12\x1c\n" +
 	"\n" +
-	"c_chain_id\x18\a \x01(\fR\bcChainId\x12\"\n" +
-	"\rlux_asset_id\x18\b \x01(\fR\vluxAssetId\x12$\n" +
+	"c_chain_id\x18\a \x01(\fR\bcChainId\x12 \n" +
+	"\flux_asset_id\x18\b \x01(\fR\n" +
+	"luxAssetId\x12$\n" +
 	"\x0echain_data_dir\x18\t \x01(\tR\fchainDataDir\x12#\n" +
 	"\rgenesis_bytes\x18\n" +
 	" \x01(\fR\fgenesisBytes\x12#\n" +
@@ -3096,7 +3097,7 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\vBlockVerify\x12\x16.vm.BlockVerifyRequest\x1a\x17.vm.BlockVerifyResponse\x12=\n" +
 	"\vBlockAccept\x12\x16.vm.BlockAcceptRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\vBlockReject\x12\x16.vm.BlockRejectRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
-	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB-Z+github.com/luxfi/node/proto/pb/vmb\x06proto3"
+	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB#Z!github.com/luxfi/node/proto/pb/vmb\x06proto3"
 
 var (
 	file_vm_vm_proto_rawDescOnce sync.Once
