@@ -74,7 +74,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm"
+	avm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
