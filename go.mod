@@ -193,8 +193,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace (
-	github.com/luxfi/geth => /Users/z/work/lux/geth
-	github.com/luxfi/ledger-lux-go => /Users/z/work/lux/ledger/go
-)
