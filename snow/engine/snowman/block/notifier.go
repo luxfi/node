@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 )
 
 var (
@@ -43,7 +43,7 @@ func (cn *ChangeNotifier) GetAncestors(ctx context.Context, blkID ids.ID, maxBlo
 	return nil, ErrRemoteVMNotImplemented
 }
 
-func (cn *ChangeNotifier) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+func (cn *ChangeNotifier) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
 	if batchedVM, ok := cn.ChainVM.(BatchedChainVM); ok {
 		return batchedVM.BatchedParseBlock(ctx, blks)
 	}
@@ -101,7 +101,7 @@ func (cn *ChangeNotifier) SetState(ctx context.Context, state snow.State) error 
 	return cn.ChainVM.SetState(ctx, state)
 }
 
-func (cn *ChangeNotifier) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (cn *ChangeNotifier) BuildBlock(ctx context.Context) (chain.Block, error) {
 	defer cn.OnChange()
 	return cn.ChainVM.BuildBlock(ctx)
 }

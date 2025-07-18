@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -41,8 +41,8 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xBlock := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return xBlock, nil
 	}
 
@@ -54,8 +54,8 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 	require.NoError(aBlock.Verify(context.Background()))
 	require.NoError(aBlock.Accept(context.Background()))
 
-	yBlock := snowmantest.BuildChild(xBlock)
-	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (snowman.Block, error) {
+	yBlock := chaintest.BuildChild(xBlock)
+	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (chain.Block, error) {
 		if !bytes.Equal(blockBytes, yBlock.Bytes()) {
 			return nil, errUnknownBlock
 		}
@@ -90,27 +90,27 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(snowmantest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*snowmantest.Block{
-			snowmantest.BuildChild(xTestBlock),
-			snowmantest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return xBlock, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case xBlock.opts[0].ID():
@@ -121,10 +121,10 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(b, xBlock.opts[0].Bytes()):
@@ -178,16 +178,16 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xBlock := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return xBlock, nil
 	}
 
-	yBlock := snowmantest.BuildChild(xBlock)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	yBlock := chaintest.BuildChild(xBlock)
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case yBlock.ID():
@@ -196,10 +196,10 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(blockBytes, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(blockBytes, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(blockBytes, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(blockBytes, yBlock.Bytes()):
@@ -241,26 +241,26 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(snowmantest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	xBlock := &TestOptionsBlock{
-		Block: *snowmantest.BuildChild(snowmantest.Genesis),
-		opts: [2]*snowmantest.Block{ // valid blocks should reference xBlock
-			snowmantest.BuildChild(snowmantest.Genesis),
-			snowmantest.BuildChild(snowmantest.Genesis),
+		Block: *chaintest.BuildChild(chaintest.Genesis),
+		opts: [2]*chaintest.Block{ // valid blocks should reference xBlock
+			chaintest.BuildChild(chaintest.Genesis),
+			chaintest.BuildChild(chaintest.Genesis),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return xBlock, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case xBlock.opts[0].ID():
@@ -271,10 +271,10 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(b, xBlock.opts[0].Bytes()):
@@ -320,18 +320,18 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(snowmantest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	// create an Oracle pre-fork block X
-	xTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*snowmantest.Block{
-			snowmantest.BuildChild(xTestBlock),
-			snowmantest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
@@ -340,10 +340,10 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	xInnerOption := xInnerOptions[0]
 
 	// create a non-Oracle pre-fork block Y
-	yBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	yBlock := chaintest.BuildChild(chaintest.Genesis)
 	ySlb, err := block.BuildUnsigned(
-		snowmantest.GenesisID,
-		snowmantest.GenesisTimestamp,
+		chaintest.GenesisID,
+		chaintest.GenesisTimestamp,
 		uint64(2000),
 		yBlock.Bytes(),
 	)
@@ -379,7 +379,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	require.ErrorIs(err, errUnexpectedBlockType)
 
 	// generate A from X and O2
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return xBlock, nil
 	}
 	aBlock, err := proVM.BuildBlock(context.Background())
@@ -405,16 +405,16 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 
 	// create an Oracle pre-fork block Z
 	// create post-fork block B from Y
-	zTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	zTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	zBlock := &TestOptionsBlock{
 		Block: *zTestBlock,
-		opts: [2]*snowmantest.Block{
-			snowmantest.BuildChild(zTestBlock),
-			snowmantest.BuildChild(zTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(zTestBlock),
+			chaintest.BuildChild(zTestBlock),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return zBlock, nil
 	}
 	cBlock, err := proVM.BuildBlock(context.Background())
@@ -463,15 +463,15 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 		}, nil
 	}
 
-	proVM.Set(snowmantest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 
 	// Create valid core blocks to build our chain on.
-	coreBlk0 := snowmantest.BuildChild(snowmantest.Genesis)
-	coreBlk1 := snowmantest.BuildChild(coreBlk0)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreBlk0 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := chaintest.BuildChild(coreBlk0)
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk0.ID():
 			return coreBlk0, nil
 		case coreBlk1.ID():
@@ -480,10 +480,10 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk0.Bytes()):
 			return coreBlk0, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):
@@ -494,7 +494,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	}
 
 	// Build the first proposal block
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk0, nil
 	}
 

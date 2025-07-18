@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/node/ids"
-	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	chain "github.com/luxfi/node/consensus/chain"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
@@ -46,10 +46,10 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // GetBlock mocks base method.
-func (m *Manager) GetBlock(blkID ids.ID) (snowman.Block, error) {
+func (m *Manager) GetBlock(blkID ids.ID) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blkID)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -105,10 +105,10 @@ func (mr *ManagerMockRecorder) LastAccepted() *gomock.Call {
 }
 
 // NewBlock mocks base method.
-func (m *Manager) NewBlock(arg0 block.Block) snowman.Block {
+func (m *Manager) NewBlock(arg0 block.Block) chain.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBlock", arg0)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	return ret0
 }
 

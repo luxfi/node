@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -89,21 +89,21 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 }
 
 // Return the two options for the block that follows [b]
-func (b *postForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
-	innerOracleBlk, ok := b.innerBlk.(snowman.OracleBlock)
+func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+	innerOracleBlk, ok := b.innerBlk.(chain.OracleBlock)
 	if !ok {
 		// [b]'s innerBlk isn't an oracle block
-		return [2]snowman.Block{}, snowman.ErrNotOracle
+		return [2]chain.Block{}, chain.ErrNotOracle
 	}
 
 	// The inner block's child options
 	innerOptions, err := innerOracleBlk.Options(ctx)
 	if err != nil {
-		return [2]snowman.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
 	parentID := b.ID()
-	outerOptions := [2]snowman.Block{}
+	outerOptions := [2]chain.Block{}
 	for i, innerOption := range innerOptions {
 		// Wrap the inner block's child option
 		statelessOuterOption, err := block.BuildOption(
@@ -111,7 +111,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 			innerOption.Bytes(),
 		)
 		if err != nil {
-			return [2]snowman.Block{}, err
+			return [2]chain.Block{}, err
 		}
 
 		outerOptions[i] = &postForkOption{

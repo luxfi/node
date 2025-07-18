@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -408,7 +408,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Nil(given)
 			},
-			expectedErr: snowball.ErrParametersInvalid,
+			expectedErr: binaryvote.ErrParametersInvalid,
 		},
 		"correct config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
@@ -501,7 +501,7 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Empty(given)
 			},
-			expectedErr: snowball.ErrParametersInvalid,
+			expectedErr: binaryvote.ErrParametersInvalid,
 		},
 		"correct config": {
 			givenJSON: `{

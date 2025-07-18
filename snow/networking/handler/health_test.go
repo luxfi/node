@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/networking/tracker"
@@ -33,14 +33,14 @@ import (
 
 func TestHealthCheckSubnet(t *testing.T) {
 	tests := map[string]struct {
-		consensusParams snowball.Parameters
+		consensusParams binaryvote.Parameters
 	}{
 		"default consensus params": {
-			consensusParams: snowball.DefaultParameters,
+			consensusParams: binaryvote.DefaultParameters,
 		},
 		"custom consensus params": {
-			func() snowball.Parameters {
-				params := snowball.DefaultParameters
+			func() binaryvote.Parameters {
+				params := binaryvote.DefaultParameters
 				params.K = params.AlphaConfidence
 				return params
 			}(),

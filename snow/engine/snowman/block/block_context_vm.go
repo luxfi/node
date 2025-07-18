@@ -8,7 +8,7 @@ package block
 import (
 	"context"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 )
 
 // Context defines the block context that will be optionally provided by the
@@ -36,7 +36,7 @@ type BuildBlockWithContextChainVM interface {
 	//
 	// This method will be called if and only if the proposervm is activated.
 	// Otherwise [BuildBlock] will be called.
-	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (snowman.Block, error)
+	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (chain.Block, error)
 }
 
 // WithVerifyContext defines the interface a Block can optionally implement to

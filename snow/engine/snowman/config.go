@@ -5,8 +5,8 @@ package snowman
 
 import (
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/block"
@@ -22,7 +22,7 @@ type Config struct {
 	Sender              common.Sender
 	Validators          validators.Manager
 	ConnectedValidators tracker.Peers
-	Params              snowball.Parameters
-	Consensus           snowman.Consensus
+	Params              binaryvote.Parameters
+	Consensus           chain.Consensus
 	PartialSync         bool
 }

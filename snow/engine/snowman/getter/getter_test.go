@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
@@ -79,20 +79,20 @@ func TestFilterAccepted(t *testing.T) {
 	require := require.New(t)
 	bs, vm, sender := newTest(t)
 
-	acceptedBlk := snowmantest.BuildChild(snowmantest.Genesis)
+	acceptedBlk := chaintest.BuildChild(chaintest.Genesis)
 	require.NoError(acceptedBlk.Accept(context.Background()))
 
 	var (
-		allBlocks = []*snowmantest.Block{
-			snowmantest.Genesis,
+		allBlocks = []*chaintest.Block{
+			chaintest.Genesis,
 			acceptedBlk,
 		}
 		unknownBlkID = ids.GenerateTestID()
 	)
 
-	vm.LastAcceptedF = snowmantest.MakeLastAcceptedBlockF(allBlocks)
-	vm.GetBlockIDAtHeightF = snowmantest.MakeGetBlockIDAtHeightF(allBlocks)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(allBlocks)
+	vm.GetBlockIDAtHeightF = chaintest.MakeGetBlockIDAtHeightF(allBlocks)
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		for _, blk := range allBlocks {
 			if blk.ID() == blkID {
 				return blk, nil
@@ -108,11 +108,11 @@ func TestFilterAccepted(t *testing.T) {
 		accepted = frontier
 	}
 
-	blkIDs := set.Of(snowmantest.GenesisID, acceptedBlk.ID(), unknownBlkID)
+	blkIDs := set.Of(chaintest.GenesisID, acceptedBlk.ID(), unknownBlkID)
 	require.NoError(bs.GetAccepted(context.Background(), ids.EmptyNodeID, 0, blkIDs))
 
 	require.Len(accepted, 2)
-	require.Contains(accepted, snowmantest.GenesisID)
+	require.Contains(accepted, chaintest.GenesisID)
 	require.Contains(accepted, acceptedBlk.ID())
 	require.NotContains(accepted, unknownBlkID)
 }

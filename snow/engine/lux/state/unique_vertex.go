@@ -11,17 +11,16 @@ import (
 
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/lux"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/hashing"
 )
 
 var (
 	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
-	_ lux.Vertex      = (*uniqueVertex)(nil)
+	_ dag.Vertex      = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")
 	errGetHeight  = errors.New("failed to get height for vertex")
@@ -65,7 +64,7 @@ func newUniqueVertex(ctx context.Context, s *Serializer, b []byte) (*uniqueVerte
 	}
 
 	unparsedTxs := innerVertex.Txs()
-	txs := make([]snowstorm.Tx, len(unparsedTxs))
+	txs := make([]dag.Tx, len(unparsedTxs))
 	for i, txBytes := range unparsedTxs {
 		tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
 		if err != nil {
@@ -221,7 +220,7 @@ func (vtx *uniqueVertex) Status() choices.Status {
 	return vtx.v.status
 }
 
-func (vtx *uniqueVertex) Parents() ([]lux.Vertex, error) {
+func (vtx *uniqueVertex) Parents() ([]dag.Vertex, error) {
 	vtx.refresh()
 
 	if vtx.v.vtx == nil {
@@ -230,7 +229,7 @@ func (vtx *uniqueVertex) Parents() ([]lux.Vertex, error) {
 
 	parentIDs := vtx.v.vtx.ParentIDs()
 	if len(vtx.v.parents) != len(parentIDs) {
-		vtx.v.parents = make([]lux.Vertex, len(parentIDs))
+		vtx.v.parents = make([]dag.Vertex, len(parentIDs))
 		for i, parentID := range parentIDs {
 			vtx.v.parents[i] = &uniqueVertex{
 				serializer: vtx.serializer,
@@ -252,7 +251,7 @@ func (vtx *uniqueVertex) Height() (uint64, error) {
 	return vtx.v.vtx.Height(), nil
 }
 
-func (vtx *uniqueVertex) Txs(ctx context.Context) ([]snowstorm.Tx, error) {
+func (vtx *uniqueVertex) Txs(ctx context.Context) ([]dag.Tx, error) {
 	vtx.refresh()
 
 	if vtx.v.vtx == nil {
@@ -261,7 +260,7 @@ func (vtx *uniqueVertex) Txs(ctx context.Context) ([]snowstorm.Tx, error) {
 
 	txs := vtx.v.vtx.Txs()
 	if len(txs) != len(vtx.v.txs) {
-		vtx.v.txs = make([]snowstorm.Tx, len(txs))
+		vtx.v.txs = make([]dag.Tx, len(txs))
 		for i, txBytes := range txs {
 			tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
 			if err != nil {
@@ -321,6 +320,6 @@ type vertexState struct {
 	vtx    vertex.StatelessVertex
 	status choices.Status
 
-	parents []lux.Vertex
-	txs     []snowstorm.Tx
+	parents []dag.Vertex
+	txs     []dag.Tx
 }

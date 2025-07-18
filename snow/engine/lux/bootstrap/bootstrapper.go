@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/heap"
@@ -196,7 +196,7 @@ func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 	// from the accepted frontier.
 	var (
 		numBytes          = len(vtxs[0])
-		verticesToProcess = make([]lux.Vertex, 1, len(vtxs))
+		verticesToProcess = make([]dag.Vertex, 1, len(vtxs))
 	)
 	verticesToProcess[0] = vtx
 
@@ -441,12 +441,12 @@ func (b *Bootstrapper) fetch(ctx context.Context, vtxIDs ...ids.ID) error {
 }
 
 // Process the vertices in [vtxs].
-func (b *Bootstrapper) process(ctx context.Context, vtxs ...lux.Vertex) error {
+func (b *Bootstrapper) process(ctx context.Context, vtxs ...dag.Vertex) error {
 	// Vertices that we need to process prioritized by vertices that are unknown
 	// or the furthest down the DAG. Unknown vertices are prioritized to ensure
 	// that once we have made it below a certain height in DAG traversal we do
 	// not need to reset and repeat DAG traversals.
-	toProcess := heap.NewMap[ids.ID, lux.Vertex](vertexLess)
+	toProcess := heap.NewMap[ids.ID, dag.Vertex](vertexLess)
 	for _, vtx := range vtxs {
 		vtxID := vtx.ID()
 		if _, ok := b.processedCache.Get(vtxID); !ok { // only process a vertex if we haven't already
@@ -573,7 +573,7 @@ func (b *Bootstrapper) startSyncing(ctx context.Context, acceptedContainerIDs []
 		zap.Int("numMissingVertices", len(pendingContainerIDs)),
 		zap.Int("numAcceptedVertices", len(acceptedContainerIDs)),
 	)
-	toProcess := make([]lux.Vertex, 0, len(pendingContainerIDs))
+	toProcess := make([]dag.Vertex, 0, len(pendingContainerIDs))
 	for _, vtxID := range pendingContainerIDs {
 		if vtx, err := b.Manager.GetVtx(ctx, vtxID); err == nil {
 			if vtx.Status() == choices.Accepted {
@@ -634,7 +634,7 @@ func (b *Bootstrapper) checkFinish(ctx context.Context) error {
 
 // A vertex is less than another vertex if it is unknown. Ties are broken by
 // prioritizing vertices that have a greater height.
-func vertexLess(i, j lux.Vertex) bool {
+func vertexLess(i, j dag.Vertex) bool {
 	if !i.Status().Fetched() {
 		return true
 	}

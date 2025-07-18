@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/poll"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/poll"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/ancestor"
@@ -40,7 +40,7 @@ const (
 
 var _ common.Engine = (*Engine)(nil)
 
-func cachedBlockSize(_ ids.ID, blk snowman.Block) int {
+func cachedBlockSize(_ ids.ID, blk chain.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
@@ -70,7 +70,7 @@ type Engine struct {
 
 	// blocks that are queued to be issued to consensus once missing dependencies are fetched
 	// Block ID --> Block
-	pending map[ids.ID]snowman.Block
+	pending map[ids.ID]chain.Block
 
 	// Block ID --> Parent ID
 	unverifiedIDToAncestor ancestor.Tree
@@ -80,7 +80,7 @@ type Engine struct {
 	// A block is put into this cache if its ancestry was fetched, but the block
 	// was not able to be issued. A block may fail to be issued if verification
 	// on the block or one of its ancestors returns an error.
-	unverifiedBlockCache cache.Cacher[ids.ID, snowman.Block]
+	unverifiedBlockCache cache.Cacher[ids.ID, chain.Block]
 
 	// acceptedFrontiers of the other validators of this chain
 	acceptedFrontiers tracker.Accepted
@@ -97,7 +97,7 @@ type Engine struct {
 func New(config Config) (*Engine, error) {
 	config.Ctx.Log.Info("initializing consensus engine")
 
-	nonVerifiedCache, err := metercacher.New[ids.ID, snowman.Block](
+	nonVerifiedCache, err := metercacher.New[ids.ID, chain.Block](
 		"non_verified_cache",
 		config.Ctx.Registerer,
 		lru.NewSizedCache(nonVerifiedCacheSize, cachedBlockSize),
@@ -142,7 +142,7 @@ func New(config Config) (*Engine, error) {
 		AncestorsHandler:            common.NewNoOpAncestorsHandler(config.Ctx.Log),
 		AppHandler:                  config.VM,
 		Connector:                   config.VM,
-		pending:                     make(map[ids.ID]snowman.Block),
+		pending:                     make(map[ids.ID]chain.Block),
 		unverifiedIDToAncestor:      ancestor.NewTree(),
 		unverifiedBlockCache:        nonVerifiedCache,
 		acceptedFrontiers:           acceptedFrontiers,
@@ -484,10 +484,10 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 
 	// to maintain the invariant that oracle blocks are issued in the correct
 	// preferences, we need to handle the case that we are bootstrapping into an oracle block
-	if oracleBlk, ok := lastAccepted.(snowman.OracleBlock); ok {
+	if oracleBlk, ok := lastAccepted.(chain.OracleBlock); ok {
 		options, err := oracleBlk.Options(ctx)
 		switch {
-		case err == snowman.ErrNotOracle:
+		case err == chain.ErrNotOracle:
 			// if there aren't blocks we need to deliver on startup, we need to set
 			// the preference to the last accepted block
 			if err := e.VM.SetPreference(ctx, lastAcceptedID); err != nil {
@@ -564,7 +564,7 @@ func (e *Engine) executeDeferredWork(ctx context.Context) error {
 	return nil
 }
 
-func (e *Engine) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (e *Engine) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	if blk, ok := e.pending[blkID]; ok {
 		return blk, nil
 	}
@@ -725,7 +725,7 @@ func (e *Engine) issueFromByID(
 func (e *Engine) issueFrom(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	blk snowman.Block,
+	blk chain.Block,
 	issuedMetric prometheus.Counter,
 ) error {
 	// issue [blk] and its ancestors to consensus.
@@ -764,7 +764,7 @@ func (e *Engine) issueFrom(
 // issuance will be abandoned.
 func (e *Engine) issueWithAncestors(
 	ctx context.Context,
-	blk snowman.Block,
+	blk chain.Block,
 	issuedMetric prometheus.Counter,
 ) error {
 	blkID := blk.ID()
@@ -798,7 +798,7 @@ func (e *Engine) issueWithAncestors(
 func (e *Engine) issue(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	blk snowman.Block,
+	blk chain.Block,
 	push bool,
 	issuedMetric prometheus.Counter,
 ) error {
@@ -942,7 +942,7 @@ func (e *Engine) abortDueToInsufficientConnectedStake(blkID ids.ID) bool {
 func (e *Engine) deliver(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	blk snowman.Block,
+	blk chain.Block,
 	push bool,
 	issuedMetric prometheus.Counter,
 ) error {
@@ -974,11 +974,11 @@ func (e *Engine) deliver(
 	// Add all the oracle blocks if they exist. We call verify on all the blocks
 	// and add them to consensus before marking anything as fulfilled to avoid
 	// any potential reentrant bugs.
-	added := []snowman.Block{}
-	dropped := []snowman.Block{}
-	if blk, ok := blk.(snowman.OracleBlock); ok {
+	added := []chain.Block{}
+	dropped := []chain.Block{}
+	if blk, ok := blk.(chain.OracleBlock); ok {
 		options, err := blk.Options(ctx)
-		if err != snowman.ErrNotOracle {
+		if err != chain.ErrNotOracle {
 			if err != nil {
 				return err
 			}
@@ -1047,7 +1047,7 @@ func (e *Engine) deliver(
 	return nil
 }
 
-func (e *Engine) markAsUnverified(blk snowman.Block) {
+func (e *Engine) markAsUnverified(blk chain.Block) {
 	// If this block is processing, we don't need to add it to non-verifieds.
 	blkID := blk.ID()
 	if e.Consensus.Processing(blkID) {
@@ -1071,7 +1071,7 @@ func (e *Engine) markAsUnverified(blk snowman.Block) {
 func (e *Engine) addUnverifiedBlockToConsensus(
 	ctx context.Context,
 	nodeID ids.NodeID,
-	blk snowman.Block,
+	blk chain.Block,
 	issuedMetric prometheus.Counter,
 ) (bool, error) {
 	blkID := blk.ID()
@@ -1160,7 +1160,7 @@ func (e *Engine) getProcessingAncestor(initialVote ids.ID) (ids.ID, bool) {
 // shouldIssueBlock returns true if the provided block should be enqueued for
 // issuance. If the block is already decided, already enqueued, or has already
 // been issued, this function will return false.
-func (e *Engine) shouldIssueBlock(blk snowman.Block) bool {
+func (e *Engine) shouldIssueBlock(blk chain.Block) bool {
 	if e.isDecided(blk) {
 		return false
 	}
@@ -1187,7 +1187,7 @@ func (e *Engine) canIssueChildOn(parentID ids.ID) bool {
 
 // isDecided reports true if the provided block's height implies that the block
 // is either Accepted or Rejected.
-func (e *Engine) isDecided(blk snowman.Block) bool {
+func (e *Engine) isDecided(blk chain.Block) bool {
 	height := blk.Height()
 	lastAcceptedID, lastAcceptedHeight := e.Consensus.LastAccepted()
 	if height <= lastAcceptedHeight {

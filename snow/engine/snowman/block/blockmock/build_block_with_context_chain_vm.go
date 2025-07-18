@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	chain "github.com/luxfi/node/consensus/chain"
 	block "github.com/luxfi/node/snow/engine/snowman/block"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -43,10 +43,10 @@ func (m *BuildBlockWithContextChainVM) EXPECT() *BuildBlockWithContextChainVMMoc
 }
 
 // BuildBlockWithContext mocks base method.
-func (m *BuildBlockWithContextChainVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
+func (m *BuildBlockWithContextChainVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildBlockWithContext", ctx, blockCtx)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

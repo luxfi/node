@@ -10,15 +10,15 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/dag"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ snowstorm.Tx                    = (*meterTx)(nil)
+	_ dag.Tx                    = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -64,7 +64,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (snowstorm.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
 	start := vm.clock.Time()
 	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, b)
 	end := vm.clock.Time()
@@ -81,7 +81,7 @@ func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (snowstorm.Tx, error)
 }
 
 type meterTx struct {
-	snowstorm.Tx
+	dag.Tx
 
 	vm *vertexVM
 }

@@ -6,15 +6,15 @@ package snowman
 import (
 	"context"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/ancestor"
 )
 
-var _ snowman.Block = (*memoryBlock)(nil)
+var _ chain.Block = (*memoryBlock)(nil)
 
 // memoryBlock wraps a snowman Block to manage non-verified blocks
 type memoryBlock struct {
-	snowman.Block
+	chain.Block
 
 	tree    ancestor.Tree
 	metrics *metrics

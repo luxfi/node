@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	consensuschain "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
@@ -34,7 +34,7 @@ var (
 )
 
 type Block interface {
-	snowman.Block
+	consensuschain.Block
 	smblock.WithVerifyContext
 
 	// State intends to return the new chain state following this block's

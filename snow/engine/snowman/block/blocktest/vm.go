@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 )
@@ -36,9 +36,9 @@ type VM struct {
 	CantLastAccepted,
 	CantGetBlockIDAtHeight bool
 
-	BuildBlockF         func(context.Context) (snowman.Block, error)
-	ParseBlockF         func(context.Context, []byte) (snowman.Block, error)
-	GetBlockF           func(context.Context, ids.ID) (snowman.Block, error)
+	BuildBlockF         func(context.Context) (chain.Block, error)
+	ParseBlockF         func(context.Context, []byte) (chain.Block, error)
+	GetBlockF           func(context.Context, ids.ID) (chain.Block, error)
 	SetPreferenceF      func(context.Context, ids.ID) error
 	LastAcceptedF       func(context.Context) (ids.ID, error)
 	GetBlockIDAtHeightF func(ctx context.Context, height uint64) (ids.ID, error)
@@ -54,7 +54,7 @@ func (vm *VM) Default(cant bool) {
 	vm.CantLastAccepted = cant
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	if vm.BuildBlockF != nil {
 		return vm.BuildBlockF(ctx)
 	}
@@ -64,7 +64,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	return nil, errBuildBlock
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
 	if vm.ParseBlockF != nil {
 		return vm.ParseBlockF(ctx, b)
 	}
@@ -74,7 +74,7 @@ func (vm *VM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
 	return nil, errParseBlock
 }
 
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	if vm.GetBlockF != nil {
 		return vm.GetBlockF(ctx, id)
 	}

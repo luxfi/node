@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm"
@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
 	timerpkg "github.com/luxfi/node/utils/timer"
-	xtxs "github.com/luxfi/node/vms/avm/txs"
+	xtxs "github.com/luxfi/node/vms/xvm/txs"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 )

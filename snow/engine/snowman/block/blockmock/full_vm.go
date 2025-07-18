@@ -18,7 +18,7 @@ import (
 	database "github.com/luxfi/node/database"
 	ids "github.com/luxfi/node/ids"
 	snow "github.com/luxfi/node/snow"
-	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	chain "github.com/luxfi/node/consensus/chain"
 	common "github.com/luxfi/node/snow/engine/common"
 	block "github.com/luxfi/node/snow/engine/snowman/block"
 	version "github.com/luxfi/node/version"
@@ -106,10 +106,10 @@ func (mr *FullVMMockRecorder) AppResponse(ctx, nodeID, requestID, response any) 
 }
 
 // BatchedParseBlock mocks base method.
-func (m *FullVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+func (m *FullVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BatchedParseBlock", ctx, blks)
-	ret0, _ := ret[0].([]snowman.Block)
+	ret0, _ := ret[0].([]chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -121,10 +121,10 @@ func (mr *FullVMMockRecorder) BatchedParseBlock(ctx, blks any) *gomock.Call {
 }
 
 // BuildBlock mocks base method.
-func (m *FullVM) BuildBlock(arg0 context.Context) (snowman.Block, error) {
+func (m *FullVM) BuildBlock(arg0 context.Context) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildBlock", arg0)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -194,10 +194,10 @@ func (mr *FullVMMockRecorder) GetAncestors(ctx, blkID, maxBlocksNum, maxBlocksSi
 }
 
 // GetBlock mocks base method.
-func (m *FullVM) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (m *FullVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", ctx, blkID)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -328,10 +328,10 @@ func (mr *FullVMMockRecorder) NewHTTPHandler(ctx any) *gomock.Call {
 }
 
 // ParseBlock mocks base method.
-func (m *FullVM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
+func (m *FullVM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseBlock", ctx, blockBytes)
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

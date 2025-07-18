@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/trace"
@@ -119,7 +119,7 @@ func (vm *blockVM) Initialize(
 	)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.buildBlockTag)
 	defer span.End()
 
@@ -130,7 +130,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	}, err
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (snowman.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.parseBlockTag, oteltrace.WithAttributes(
 		attribute.Int("blockLen", len(block)),
 	))
@@ -143,7 +143,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (snowman.Block,
 	}, err
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.getBlockTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", blkID),
 	))

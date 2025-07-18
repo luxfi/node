@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/simplex"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/tree"
@@ -36,7 +36,7 @@ type Block struct {
 	metadata simplex.ProtocolMetadata
 
 	// the parsed block
-	vmBlock snowman.Block
+	vmBlock chain.Block
 
 	blockTracker *blockTracker
 }

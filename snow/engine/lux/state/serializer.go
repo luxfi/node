@@ -13,9 +13,9 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/lux"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
@@ -68,14 +68,14 @@ func NewSerializer(config SerializerConfig) vertex.Manager {
 	return &s
 }
 
-func (s *Serializer) ParseVtx(ctx context.Context, b []byte) (lux.Vertex, error) {
+func (s *Serializer) ParseVtx(ctx context.Context, b []byte) (dag.Vertex, error) {
 	return newUniqueVertex(ctx, s, b)
 }
 
 func (s *Serializer) BuildStopVtx(
 	ctx context.Context,
 	parentIDs []ids.ID,
-) (lux.Vertex, error) {
+) (dag.Vertex, error) {
 	height := uint64(0)
 	for _, parentID := range parentIDs {
 		parent, err := s.getUniqueVertex(parentID)
@@ -108,7 +108,7 @@ func (s *Serializer) BuildStopVtx(
 	return uVtx, uVtx.setVertex(ctx, vtx)
 }
 
-func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 	return s.getUniqueVertex(vtxID)
 }
 

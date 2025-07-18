@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
@@ -43,7 +43,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &snowmantest.Block{
+	preSummaryBlk = &chaintest.Block{
 		Decidable: snowtest.Decidable{
 			IDV:    ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			Status: snowtest.Accepted,
@@ -52,7 +52,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &snowmantest.Block{
+	summaryBlk = &chaintest.Block{
 		Decidable: snowtest.Decidable{
 			IDV:    ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			Status: snowtest.Accepted,

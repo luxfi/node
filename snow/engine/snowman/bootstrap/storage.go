@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/bootstrap/interval"
 	"github.com/luxfi/node/utils/logging"
@@ -82,8 +82,8 @@ func process(
 	tree *interval.Tree,
 	missingBlockIDs set.Set[ids.ID],
 	lastAcceptedHeight uint64,
-	blk snowman.Block,
-	ancestors map[ids.ID]snowman.Block,
+	blk chain.Block,
+	ancestors map[ids.ID]chain.Block,
 ) (ids.ID, bool, error) {
 	for {
 		// It's possible that missingBlockIDs contain values contained inside of

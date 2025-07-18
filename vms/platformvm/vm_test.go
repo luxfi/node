@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/enginetest"
@@ -62,7 +62,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/snow/consensus/snowman"
+	smcon "github.com/luxfi/node/consensus/chain"
 	smeng "github.com/luxfi/node/snow/engine/snowman"
 	smblock "github.com/luxfi/node/snow/engine/snowman/block"
 	snowgetter "github.com/luxfi/node/snow/engine/snowman/getter"
@@ -1331,7 +1331,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		Sender:              bootstrapConfig.Sender,
 		Validators:          beacons,
 		ConnectedValidators: peers,
-		Params: snowball.Parameters{
+		Params: binaryvote.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -1341,7 +1341,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &smcon.Topological{Factory: snowball.SnowflakeFactory},
+		Consensus: &smcon.Topological{Factory: binaryvote.SnowflakeFactory},
 	}
 	engine, err := smeng.New(engineConfig)
 	require.NoError(err)

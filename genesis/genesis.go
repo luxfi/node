@@ -13,14 +13,14 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/avm"
-	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	xchaintxs "github.com/luxfi/node/vms/avm/txs"
+	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -295,11 +295,11 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
 	// Specify the genesis state of the AVM
-	lux := avm.AssetDefinition{
+	lux := xvm.AssetDefinition{
 		Name:         "Lux",
 		Symbol:       "LUX",
 		Denomination: 9,
-		InitialState: avm.AssetInitialState{},
+		InitialState: xvm.AssetInitialState{},
 	}
 	memoBytes := []byte{}
 	xAllocations := []Allocation(nil)
@@ -316,7 +316,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, err
 		}
 
-		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, avm.Holder{
+		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, xvm.Holder{
 			Amount:  allocation.InitialAmount,
 			Address: addr,
 		})
@@ -324,9 +324,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	lux.Memo = memoBytes
 
-	avmGenesis, err := avm.NewGenesis(
+	avmGenesis, err := xvm.NewGenesis(
 		config.NetworkID,
-		map[string]avm.AssetDefinition{
+		map[string]xvm.AssetDefinition{
 			"LUX": lux, // The AVM starts out with one asset: LUX
 		},
 	)
@@ -553,7 +553,7 @@ func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
 	}
 
 	genesisCodec := parser.GenesisCodec()
-	genesis := avm.Genesis{}
+	genesis := xvm.Genesis{}
 	if _, err := genesisCodec.Unmarshal(avmGenesisBytes, &genesis); err != nil {
 		return ids.Empty, err
 	}
