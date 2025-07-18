@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/snowtest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {

@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/bag"
 )
 

@@ -27,13 +27,13 @@ type Config struct {
 	ConsensusParameters binaryvote.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
-	// building a snowman++ block.
+	// building a chain++ block.
 	//
 	// TODO: Remove this flag once all VMs throttle their own block production.
 	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay" yaml:"proposerMinBlockDelay"`
-	// ProposerNumHistoricalBlocks is the number of historical snowman++ blocks
+	// ProposerNumHistoricalBlocks is the number of historical chain++ blocks
 	// this node will index per chain. If set to 0, the node will index all
-	// snowman++ blocks.
+	// chain++ blocks.
 	//
 	// Note: The last accepted block is not considered a historical block. This
 	// prevents the user from only storing the last accepted block, which can

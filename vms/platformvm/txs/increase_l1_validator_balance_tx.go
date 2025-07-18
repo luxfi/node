@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 )
 
 var (

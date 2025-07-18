@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 )
 

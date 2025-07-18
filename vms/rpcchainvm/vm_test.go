@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"

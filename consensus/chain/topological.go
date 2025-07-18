@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/set"
@@ -59,7 +59,7 @@ type Topological struct {
 	lastAcceptedHeight uint64
 
 	// blocks stores the last accepted block and all the pending blocks
-	blocks map[ids.ID]*snowmanBlock // blockID -> snowmanBlock
+	blocks map[ids.ID]*chainBlock // blockID -> chainBlock
 
 	// preferredIDs stores the set of IDs that are currently preferred.
 	preferredIDs set.Set[ids.ID]
@@ -129,7 +129,7 @@ func (ts *Topological) Initialize(
 	ts.params = params
 	ts.lastAcceptedID = lastAcceptedID
 	ts.lastAcceptedHeight = lastAcceptedHeight
-	ts.blocks = map[ids.ID]*snowmanBlock{
+	ts.blocks = map[ids.ID]*chainBlock{
 		lastAcceptedID: {t: ts},
 	}
 	ts.preferredHeights = make(map[uint64]ids.ID)
@@ -165,7 +165,7 @@ func (ts *Topological) Add(blk Block) error {
 
 	// add the block as a child of its parent, and add the block to the tree
 	parentNode.AddChild(blk)
-	ts.blocks[blkID] = &snowmanBlock{
+	ts.blocks[blkID] = &chainBlock{
 		t:   ts,
 		blk: blk,
 	}
@@ -579,7 +579,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 //
 // We accept a block once its parent's snowball instance has finalized
 // with it as the preference.
-func (ts *Topological) acceptPreferredChild(ctx context.Context, n *snowmanBlock) error {
+func (ts *Topological) acceptPreferredChild(ctx context.Context, n *chainBlock) error {
 	// We are finalizing the block's child, so we need to get the preference
 	pref := n.sb.Preference()
 

@@ -135,7 +135,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 			))
 		}
 
-		tc.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate snowman++ consensus",
+		tc.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate chain++ consensus",
 			destinationChain.ChainID, destinationSubnet.SubnetID))
 		recipientKey := e2e.NewPrivateKey(tc)
 		transferTxStatus, err := transfer.Transfer(

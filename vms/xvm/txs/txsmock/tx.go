@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	snow "github.com/luxfi/node/consensus"
 	set "github.com/luxfi/node/utils/set"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"

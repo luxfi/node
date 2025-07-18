@@ -27,20 +27,20 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/binaryvote"
-	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
-	"github.com/luxfi/node/snow/engine/lux/state"
+	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/node/consensus/engine/dag/state"
 	"github.com/luxfi/node/consensus/dag/vertex"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/syncer"
-	"github.com/luxfi/node/snow/networking/handler"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/sender"
-	"github.com/luxfi/node/snow/networking/timeout"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/networking/handler"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/sender"
+	"github.com/luxfi/node/consensus/networking/timeout"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -64,13 +64,13 @@ import (
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	smcon "github.com/luxfi/node/consensus/chain"
-	aveng "github.com/luxfi/node/snow/engine/lux"
-	avbootstrap "github.com/luxfi/node/snow/engine/lux/bootstrap"
-	avagetter "github.com/luxfi/node/snow/engine/lux/getter"
+	aveng "github.com/luxfi/node/consensus/engine/dag"
+	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
+	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
 	smeng "github.com/luxfi/node/consensus/engine/chain"
 	smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
 	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"
-	timetracker "github.com/luxfi/node/snow/networking/tracker"
+	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 )
 
 const (
@@ -85,7 +85,7 @@ const (
 	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
-	snowmanNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
+	chainNamespace        = constants.PlatformName + metric.NamespaceSeparator + "chain"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
 
@@ -268,7 +268,7 @@ type manager struct {
 	// Value: The chain
 	chains map[ids.ID]handler.Handler
 
-	// snowman++ related interface to allow validators retrieval
+	// chain++ related interface to allow validators retrieval
 	validatorState validators.State
 
 	luxGatherer    metrics.MultiGatherer            // chainID
@@ -314,8 +314,8 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	snowmanGatherer := metrics.NewLabelGatherer(ChainLabel)
-	if err := config.Metrics.Register(snowmanNamespace, snowmanGatherer); err != nil {
+	chainGatherer := metrics.NewLabelGatherer(ChainLabel)
+	if err := config.Metrics.Register(chainNamespace, chainGatherer); err != nil {
 		return nil, err
 	}
 
@@ -615,7 +615,7 @@ func (m *manager) createLuxChain(
 	defer ctx.Lock.Unlock()
 
 	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
 		State: snow.Initializing,
 	})
 
@@ -664,12 +664,12 @@ func (m *manager) createLuxChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_LUX,
+		p2ppb.EngineType_ENGINE_TYPE_DAG,
 		sb,
 		luxMetrics,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
+		return nil, fmt.Errorf("couldn't initialize dag sender: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -688,7 +688,7 @@ func (m *manager) createLuxChain(
 		ctx.Registerer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
+		return nil, fmt.Errorf("couldn't initialize dag sender: %w", err)
 	}
 
 	if m.TracingEnabled {

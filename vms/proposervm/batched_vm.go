@@ -32,7 +32,7 @@ func (vm *VM) GetAncestors(
 	currentByteLength := 0
 	startTime := vm.Clock.Time()
 
-	// hereinafter loop over proposerVM cache and DB, possibly till snowman++
+	// hereinafter loop over proposerVM cache and DB, possibly till chain++
 	// fork is hit
 	for {
 		blk, err := vm.getStatelessBlk(blkID)
@@ -59,7 +59,7 @@ func (vm *VM) GetAncestors(
 		}
 	}
 
-	// snowman++ fork may have been hit.
+	// chain++ fork may have been hit.
 	preMaxBlocksNum := maxBlocksNum - len(res)
 	preMaxBlocksSize := maxBlocksSize - currentByteLength
 	preMaxBlocksRetrivalTime := maxBlocksRetrievalTime - time.Since(startTime)
