@@ -5,7 +5,6 @@ package indexer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"

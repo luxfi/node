@@ -1439,21 +1439,21 @@ func createPermissionlessValidatorTx(r *require.Assertions, subnetID ids.ID, val
 
 	return &txs.AddPermissionlessValidatorTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
-				Outs:         []*avax.TransferableOutput{},
-				Ins: []*avax.TransferableInput{
+				Outs:         []*lux.TransferableOutput{},
+				Ins: []*lux.TransferableInput{
 					{
-						UTXOID: avax.UTXOID{
+						UTXOID: lux.UTXOID{
 							TxID:        ids.GenerateTestID(),
 							OutputIndex: 1,
 						},
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloAvax,
+							Amt: 2 * units.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -1467,13 +1467,13 @@ func createPermissionlessValidatorTx(r *require.Assertions, subnetID ids.ID, val
 		Subnet:    subnetID,
 		Signer:    sig,
 
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
+				Asset: lux.Asset{
 					ID: ids.GenerateTestID(),
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloAvax,
+					Amt: 2 * units.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -1505,21 +1505,21 @@ func createPermissionlessValidatorTx(r *require.Assertions, subnetID ids.ID, val
 func createPermissionlessDelegatorTx(subnetID ids.ID, delegatorData txs.Validator) *txs.AddPermissionlessDelegatorTx {
 	return &txs.AddPermissionlessDelegatorTx{
 		BaseTx: txs.BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
-				Outs:         []*avax.TransferableOutput{},
-				Ins: []*avax.TransferableInput{
+				Outs:         []*lux.TransferableOutput{},
+				Ins: []*lux.TransferableInput{
 					{
-						UTXOID: avax.UTXOID{
+						UTXOID: lux.UTXOID{
 							TxID:        ids.GenerateTestID(),
 							OutputIndex: 1,
 						},
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: ids.GenerateTestID(),
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloAvax,
+							Amt: 2 * units.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -1532,13 +1532,13 @@ func createPermissionlessDelegatorTx(subnetID ids.ID, delegatorData txs.Validato
 		Validator: delegatorData,
 		Subnet:    subnetID,
 
-		StakeOuts: []*avax.TransferableOutput{
+		StakeOuts: []*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
+				Asset: lux.Asset{
 					ID: ids.GenerateTestID(),
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloAvax,
+					Amt: 2 * units.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,

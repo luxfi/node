@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -81,7 +81,7 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 				require.NotEqual(subnetID, constants.PrimaryNetworkID)
 			})
 
-			validatorWeight := units.Avax
+			validatorWeight := units.Lux
 			initialSupply := 2 * validatorWeight
 			maxSupply := 2 * initialSupply
 
@@ -108,9 +108,9 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 			tc.By(fmt.Sprintf("Send %d of asset %s to the P-chain", maxSupply, subnetAssetID), func() {
 				_, err := xWallet.IssueExportTx(
 					constants.PlatformChainID,
-					[]*avax.TransferableOutput{
+					[]*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{
+							Asset: lux.Asset{
 								ID: subnetAssetID,
 							},
 							Out: &secp256k1fx.TransferOutput{

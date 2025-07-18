@@ -86,7 +86,7 @@ import (
 
 	avmconfig "github.com/luxfi/node/vms/avm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	coreth "github.com/luxfi/coreth/plugin/evm"
+	geth "github.com/luxfi/geth/plugin/evm"
 )
 
 const (
@@ -1258,7 +1258,7 @@ func (n *Node) initVMs() error {
 				EUpgradeTime:     eUpgradeTime,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bridgevm.Factory{}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),

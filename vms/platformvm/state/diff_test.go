@@ -436,8 +436,8 @@ func TestDiffRewardUTXO(t *testing.T) {
 	// Initialize parent with one reward UTXO
 	var (
 		txID             = ids.GenerateTestID()
-		parentRewardUTXO = &avax.UTXO{
-			UTXOID: avax.UTXOID{
+		parentRewardUTXO = &lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID: txID,
 			},
 		}

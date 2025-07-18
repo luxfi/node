@@ -14,11 +14,11 @@ Cross Subnet Asset Transfers README Overview
 
 ## Lux Subnets and Custom VMs
 
-Lux is a network composed of multiple sub-networks (called [subnets][Subnet]) that each contain any number of blockchains. Each blockchain is an instance of a [Virtual Machine (VM)](https://docs.lux.network/learn/platform-overview#virtual-machines), much like an object in an object-oriented language is an instance of a class. That is, the VM defines the behavior of the blockchain where it is instantiated. For example, [Coreth (EVM)][Coreth] is a VM that is instantiated by the [C-Chain]. Likewise, one could deploy another instance of the EVM as their own blockchain (to take this to its logical conclusion).
+Lux is a network composed of multiple sub-networks (called [subnets][Subnet]) that each contain any number of blockchains. Each blockchain is an instance of a [Virtual Machine (VM)](https://docs.lux.network/learn/platform-overview#virtual-machines), much like an object in an object-oriented language is an instance of a class. That is, the VM defines the behavior of the blockchain where it is instantiated. For example, [Geth (EVM)][Geth] is a VM that is instantiated by the [C-Chain]. Likewise, one could deploy another instance of the EVM as their own blockchain (to take this to its logical conclusion).
 
 ## Introduction
 
-Just as [Coreth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Subnet]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
+Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Subnet]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
 
 ## How it Works
 
@@ -285,7 +285,7 @@ You can do this by following the [subnet tutorial] or by using the [subnet-cli].
 [teleporter]: https://github.com/luxfi/node/tree/master/vms/platformvm/teleporter
 [subnet tutorial]: https://docs.lux.network/build/tutorials/platform/subnets/create-a-subnet
 [subnet-cli]: https://github.com/luxfi/subnet-cli
-[Coreth]: https://github.com/luxfi/coreth
+[Geth]: https://github.com/luxfi/geth
 [C-Chain]: https://docs.lux.network/learn/platform-overview/#contract-chain-c-chain
 [Subnet]: https://docs.lux.network/learn/platform-overview/#subnets
 

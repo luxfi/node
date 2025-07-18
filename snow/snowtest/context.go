@@ -25,7 +25,7 @@ var (
 	XChainID    = ids.GenerateTestID()
 	CChainID    = ids.GenerateTestID()
 	PChainID    = constants.PlatformChainID
-	AVAXAssetID = ids.GenerateTestID()
+	LUXAssetID = ids.GenerateTestID()
 
 	errMissing = errors.New("missing")
 
@@ -88,7 +88,7 @@ func Context(tb testing.TB, chainID ids.ID) *snow.Context {
 
 		XChainID:    XChainID,
 		CChainID:    CChainID,
-		AVAXAssetID: AVAXAssetID,
+		LUXAssetID: LUXAssetID,
 
 		Log:      logging.NoLog{},
 		BCLookup: aliaser,

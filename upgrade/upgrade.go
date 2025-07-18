@@ -31,7 +31,7 @@ var (
 		// The mainnet stop vertex is well known. It can be verified on any
 		// fully synced node by looking at the parentID of the genesis block.
 		//
-		// Ref: https://subnets.avax.network/x-chain/block/0
+		// Ref: https://subnets.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
 		DurangoTime:               time.Date(2024, time.March, 6, 16, 0, 0, 0, time.UTC),
 		EtnaTime:                  UnscheduledActivationTime,
@@ -51,7 +51,7 @@ var (
 		// The fuji stop vertex is well known. It can be verified on any fully
 		// synced node by looking at the parentID of the genesis block.
 		//
-		// Ref: https://subnets-test.avax.network/x-chain/block/0
+		// Ref: https://subnets-test.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
 		DurangoTime:               time.Date(2024, time.February, 13, 16, 0, 0, 0, time.UTC),
 		EtnaTime:                  UnscheduledActivationTime,

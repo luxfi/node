@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // The gas package implements dynamic gas pricing specified in ACP-103:
-// https://github.com/avalanche-foundation/ACPs/tree/main/ACPs/103-dynamic-fees
+// https://github.com/lux-foundation/ACPs/tree/main/ACPs/103-dynamic-fees
 package gas
 
 type Config struct {

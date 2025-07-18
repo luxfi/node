@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -25,16 +25,16 @@ import (
 
 const (
 	DefaultValidatorDuration = 28 * 24 * time.Hour
-	DefaultValidatorWeight   = 5 * units.MilliAvax
-	DefaultInitialBalance    = 1 * units.Avax
+	DefaultValidatorWeight   = 5 * units.MilliLux
+	DefaultInitialBalance    = 1 * units.Lux
 
 	ValidatorDelegationShares = reward.PercentDenominator
 	XChainName                = "x"
-	InitialSupply             = 360 * units.MegaAvax
+	InitialSupply             = 360 * units.MegaLux
 )
 
 var (
-	AVAXAsset = avax.Asset{ID: snowtest.AVAXAssetID}
+	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -96,12 +96,12 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		InitialSupply: InitialSupply,
 	}
 	for i, key := range c.FundedKeys {
-		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: avax.UTXO{
-			UTXOID: avax.UTXOID{
-				TxID:        snowtest.AVAXAssetID,
+		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
+			UTXOID: lux.UTXOID{
+				TxID:        snowtest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
-			Asset: AVAXAsset,
+			Asset: LUXAsset,
 			Out: &secp256k1fx.TransferOutput{
 				Amt: c.InitialBalance,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -122,7 +122,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			},
 		}
 		validator := &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    constants.UnitTestID,
 				BlockchainID: constants.PlatformChainID,
 			}},
@@ -132,9 +132,9 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 				End:    uint64(c.ValidatorEndTime.Unix()),
 				Wght:   c.ValidatorWeight,
 			},
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: AVAXAsset,
+					Asset: LUXAsset,
 					Out: &secp256k1fx.TransferOutput{
 						Amt:          c.ValidatorWeight,
 						OutputOwners: owner,
@@ -151,7 +151,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	}
 
 	chain := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
 			BlockchainID: constants.PlatformChainID,
 		}},

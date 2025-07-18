@@ -91,7 +91,7 @@ const (
 	defaultMinStakingDuration = 24 * time.Hour
 	defaultMaxStakingDuration = 365 * 24 * time.Hour
 
-	defaultTxFee = 100 * units.NanoAvax
+	defaultTxFee = 100 * units.NanoLux
 )
 
 var (
@@ -644,7 +644,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			Subnet: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
-		vm.ctx.AVAXAssetID,
+		vm.ctx.LUXAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -1093,7 +1093,7 @@ func TestAtomicImport(t *testing.T) {
 		UTXOID: utxoID,
 		Asset:  lux.Asset{ID: vm.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          50 * units.MicroAvax,
+			Amt:          50 * units.MicroLux,
 			OutputOwners: *importOwners,
 		},
 	}

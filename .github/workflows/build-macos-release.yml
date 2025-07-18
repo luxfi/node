@@ -42,7 +42,7 @@ jobs:
         shell: bash
 
       - name: Create zip file
-        run: 7z a "avalanchego-macos-${TAG}.zip" build/avalanchego
+        run: 7z a "luxd-macos-${TAG}.zip" build/luxd
         env:
           TAG: ${{ env.TAG }}
 
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build
-          path: avalanchego-macos-${{ env.TAG }}.zip
+          path: luxd-macos-${{ env.TAG }}.zip
 
       - name: Cleanup
         run: |

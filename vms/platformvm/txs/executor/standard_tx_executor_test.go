@@ -1789,7 +1789,7 @@ func TestDurangoMemoField(t *testing.T) {
 				var (
 					sourceChain  = env.ctx.XChainID
 					sourceKey    = genesistest.DefaultFundedKeys[1]
-					sourceAmount = 10 * units.Avax
+					sourceAmount = 10 * units.Lux
 				)
 
 				sharedMemory := fundedSharedMemory(
@@ -1798,7 +1798,7 @@ func TestDurangoMemoField(t *testing.T) {
 					sourceKey,
 					sourceChain,
 					map[ids.ID]uint64{
-						env.ctx.AVAXAssetID: sourceAmount,
+						env.ctx.LUXAssetID: sourceAmount,
 					},
 					rand.NewSource(0),
 				)
@@ -1828,10 +1828,10 @@ func TestDurangoMemoField(t *testing.T) {
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueExportTx(
 					env.ctx.XChainID,
-					[]*avax.TransferableOutput{{
-						Asset: avax.Asset{ID: env.ctx.AVAXAssetID},
+					[]*lux.TransferableOutput{{
+						Asset: lux.Asset{ID: env.ctx.LUXAssetID},
 						Out: &secp256k1fx.TransferOutput{
-							Amt:          units.Avax,
+							Amt:          units.Lux,
 							OutputOwners: *owners,
 						},
 					}},
@@ -1959,7 +1959,7 @@ func TestDurangoMemoField(t *testing.T) {
 						Subnet: constants.PrimaryNetworkID,
 					},
 					signer.NewProofOfPossession(sk),
-					env.ctx.AVAXAssetID,
+					env.ctx.LUXAssetID,
 					owners,
 					owners,
 					reward.PercentDenominator,
@@ -2001,7 +2001,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Subnet: constants.PrimaryNetworkID,
 					},
-					env.ctx.AVAXAssetID,
+					env.ctx.LUXAssetID,
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -2041,9 +2041,9 @@ func TestDurangoMemoField(t *testing.T) {
 
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueBaseTx(
-					[]*avax.TransferableOutput{
+					[]*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{ID: env.ctx.AVAXAssetID},
+							Asset: lux.Asset{ID: env.ctx.LUXAssetID},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: 1,
 								OutputOwners: secp256k1fx.OutputOwners{
@@ -2082,7 +2082,7 @@ func TestDurangoMemoField(t *testing.T) {
 				FeeCalculator: feeCalculator,
 				Tx:            tx,
 			})
-			require.ErrorIs(err, avax.ErrMemoTooLarge)
+			require.ErrorIs(err, lux.ErrMemoTooLarge)
 
 			// Empty memo field should not error
 			tx, onAcceptState = tt.setupTest(t, env, []byte{})
