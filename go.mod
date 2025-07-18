@@ -32,7 +32,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
 	github.com/luxfi/geth v0.15.4
-	github.com/luxfi/ledger-lux-go v0.0.1
+	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
