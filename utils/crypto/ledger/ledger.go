@@ -11,8 +11,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
 
-	ledger "github.com/luxfi/ledger/go"
-	bip32 "github.com/tyler-smith/go-bip32"
+	ledger "github.com/luxfi/ledger-lux-go"
 )
 
 const (
@@ -27,7 +26,6 @@ var _ keychain.Ledger = (*Ledger)(nil)
 // provides Lux-specific access.
 type Ledger struct {
 	device *ledger.LedgerLux
-	epk    *bip32.Key
 }
 
 func New() (keychain.Ledger, error) {
@@ -50,29 +48,18 @@ func (l *Ledger) Address(hrp string, addressIndex uint32) (ids.ShortID, error) {
 }
 
 func (l *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
-	if l.epk == nil {
-		pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
-		if err != nil {
-			return nil, err
-		}
-		l.epk = &bip32.Key{
-			Key:       pk,
-			ChainCode: chainCode,
-		}
-	}
-	// derivation path rootPath/0 (BIP44 change level, when set to 0, known as external chain)
-	externalChain, err := l.epk.NewChildKey(0)
-	if err != nil {
-		return nil, err
-	}
+	// Since GetExtPubKey is not available, we need to get addresses individually
 	addresses := make([]ids.ShortID, len(addressIndices))
 	for i, addressIndex := range addressIndices {
-		// derivation path rootPath/0/v (BIP44 address index level)
-		address, err := externalChain.NewChildKey(addressIndex)
+		resp, err := l.device.GetPubKey(addressPath(addressIndex), false, "", "")
 		if err != nil {
 			return nil, err
 		}
-		copy(addresses[i][:], hashing.PubkeyBytesToAddress(address.Key))
+		addr, err := ids.ToShortID(resp.Hash)
+		if err != nil {
+			return nil, err
+		}
+		addresses[i] = addr
 	}
 	return addresses, nil
 }

@@ -13,10 +13,12 @@ import (
 	"io"
 	"io/fs"
 	"net"
+	"net/http"
 	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,6 +49,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/networking/benchlist"
 	"github.com/luxfi/node/snow/networking/router"
 	"github.com/luxfi/node/snow/networking/timeout"
@@ -77,10 +80,10 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
+	geth "github.com/luxfi/geth/plugin/evm"
 	databasefactory "github.com/luxfi/node/database/factory"
 	avmconfig "github.com/luxfi/node/vms/avm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	geth "github.com/luxfi/geth/plugin/evm"
 )
 
 const (
@@ -1117,7 +1120,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			NetworkID:                               n.Config.NetworkID,
 			Server:                                  n.APIServer,
 			AtomicMemory:                            n.sharedMemory,
-			LUXAssetID:                             luxAssetID,
+			LUXAssetID:                              luxAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			CriticalChains:                          criticalChains,
@@ -1149,6 +1152,15 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 
 	// Notify the API server when new chains are created
 	n.chainManager.AddRegistrant(n.APIServer)
+
+	// Add dev mode registrant for simplified C-Chain routing
+	if n.Config.DevMode {
+		n.chainManager.AddRegistrant(&devModeRegistrant{
+			apiServer: n.APIServer,
+			log:       n.Log,
+		})
+	}
+
 	return nil
 }
 
@@ -1710,4 +1722,85 @@ func (n *Node) shutdown() {
 
 func (n *Node) ExitCode() int {
 	return n.shuttingDownExitCode.Get()
+}
+
+// devModeRegistrant adds simplified routing for C-Chain in dev mode
+type devModeRegistrant struct {
+	apiServer server.PathAdder
+	log       logging.Logger
+}
+
+func (d *devModeRegistrant) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+	// Check if this is the C-Chain
+	if chainName != "C" && !strings.Contains(strings.ToLower(chainName), "evm") {
+		return
+	}
+
+	d.log.Info("adding dev mode routes for C-Chain",
+		zap.String("chainName", chainName),
+		zap.Stringer("chainID", ctx.ChainID),
+	)
+
+	// Create proxy handlers that redirect to C-Chain endpoints
+	// This provides Ethereum-compatible endpoints at the root level
+
+	// JSON-RPC endpoint
+	rpcHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Preserve the original request but change the path
+		proxyReq, _ := http.NewRequest(r.Method, r.URL.String(), r.Body)
+		proxyReq.URL.Path = "/ext/bc/C/rpc"
+		proxyReq.Header = r.Header
+
+		// Simply redirect - the API server will handle the routing
+		http.Redirect(w, r, proxyReq.URL.String(), http.StatusPermanentRedirect)
+	})
+
+	// WebSocket endpoint
+	wsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// WebSocket upgrade will be handled by the redirect
+		r.URL.Path = "/ext/bc/C/ws"
+		http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
+	})
+
+	// Root handler that returns Ethereum-compatible info
+	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return a simple JSON response indicating this is an Ethereum-compatible node
+		w.Header().Set("Content-Type", "application/json")
+		response := map[string]interface{}{
+			"name":     "Lux C-Chain",
+			"chainId":  "0x539", // 1337 in hex
+			"rpc":      "/rpc",
+			"ws":       "/ws",
+			"explorer": "http://localhost:8545",
+		}
+		json.NewEncoder(w).Encode(response)
+	})
+
+	// Add the routes
+	if err := d.apiServer.AddRoute(rpcHandler, "", "rpc"); err != nil {
+		d.log.Error("failed to add /rpc route",
+			zap.Error(err),
+		)
+	}
+
+	if err := d.apiServer.AddRoute(wsHandler, "", "ws"); err != nil {
+		d.log.Error("failed to add /ws route",
+			zap.Error(err),
+		)
+	}
+
+	// Add root handler for dev mode
+	if err := d.apiServer.AddRoute(rootHandler, "", ""); err != nil {
+		d.log.Error("failed to add root handler",
+			zap.Error(err),
+		)
+	}
+
+	d.log.Info("successfully added dev mode routes",
+		zap.String("rpc", "/rpc -> /ext/bc/C/rpc"),
+		zap.String("ws", "/ws -> /ext/bc/C/ws"),
+		zap.String("root", "/ -> Ethereum-compatible info"),
+		zap.String("chainId", "1337"),
+		zap.String("port", "8545"),
+	)
 }

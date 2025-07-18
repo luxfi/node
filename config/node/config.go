@@ -130,6 +130,9 @@ type Config struct {
 	StateSyncConfig     `json:"stateSyncConfig"`
 	BootstrapConfig     `json:"bootstrapConfig"`
 	DatabaseConfig      `json:"databaseConfig"`
+	
+	// DevMode enables single-node development mode with simplified routing
+	DevMode bool `json:"devMode"`
 
 	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
 

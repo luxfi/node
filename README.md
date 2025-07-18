@@ -139,6 +139,41 @@ lux network start
 lux network status
 ```
 
+### Single-Node Development Mode
+
+For quick local development, you can run a single-node Lux network with sybil protection disabled:
+
+```sh
+# Using the convenience script
+./scripts/run_dev.sh
+
+# Or manually with all options
+./build/luxd \
+    --network-id=local \
+    --sybil-protection-enabled=false \
+    --http-host=0.0.0.0 \
+    --http-port=9630 \
+    --staking-port=9631 \
+    --api-admin-enabled=true \
+    --api-keystore-enabled=true \
+    --api-metrics-enabled=true
+```
+
+The single-node dev mode provides:
+- **HTTP RPC endpoint**: `http://localhost:9630`
+- **WebSocket endpoint**: `ws://localhost:9630/ext/bc/C/ws`
+- **C-Chain RPC**: `http://localhost:9630/ext/bc/C/rpc`
+
+You can interact with the C-Chain using standard Ethereum tools:
+```sh
+# Example using curl
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+     -H "Content-Type: application/json" \
+     http://localhost:9630/ext/bc/C/rpc
+```
+
+**Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Fuji).
+
 ## Bootstrapping
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.

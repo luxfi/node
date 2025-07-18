@@ -187,7 +187,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 		HTTPSEnabled:       v.GetBool(HTTPSEnabledKey),
 		HTTPSKey:           httpsKey,
 		HTTPSCert:          httpsCert,
-		HTTPAllowedOrigins: v.GetStringSlice(HTTPAllowedOrigins),
+		HTTPAllowedOrigins: v.GetStringSlice(HTTPAllowedOriginsKey),
 		HTTPAllowedHosts:   v.GetStringSlice(HTTPAllowedHostsKey),
 		ShutdownTimeout:    v.GetDuration(HTTPShutdownTimeoutKey),
 		ShutdownWait:       v.GetDuration(HTTPShutdownWaitKey),
@@ -1238,10 +1238,42 @@ func getPluginDir(v *viper.Viper) (string, error) {
 }
 
 func GetNodeConfig(v *viper.Viper) (node.Config, error) {
+	// Apply dev mode settings if enabled
+	if v.GetBool(DevModeKey) {
+		// Override network to local
+		v.Set(NetworkNameKey, constants.LocalName)
+		// Disable sybil protection for single-node operation
+		v.Set(SybilProtectionEnabledKey, false)
+		// Enable all APIs for development
+		v.Set(AdminAPIEnabledKey, true)
+		v.Set(InfoAPIEnabledKey, true)
+		v.Set(KeystoreAPIEnabledKey, true)
+		v.Set(MetricsAPIEnabledKey, true)
+		v.Set(HealthAPIEnabledKey, true)
+		// Use standard Ethereum ports for compatibility
+		if !v.IsSet(HTTPPortKey) {
+			v.Set(HTTPPortKey, 8545) // Standard Ethereum JSON-RPC port
+		}
+		// Set HTTP host to localhost by default in dev mode
+		if !v.IsSet(HTTPHostKey) {
+			v.Set(HTTPHostKey, "127.0.0.1")
+		}
+		// Allow all origins for CORS in dev mode
+		if !v.IsSet(HTTPAllowedOriginsKey) {
+			v.Set(HTTPAllowedOriginsKey, "*")
+		}
+		if !v.IsSet(HTTPAllowedHostsKey) {
+			v.Set(HTTPAllowedHostsKey, "*")
+		}
+	}
+
 	var (
 		nodeConfig node.Config
 		err        error
 	)
+	
+	// Set dev mode flag
+	nodeConfig.DevMode = v.GetBool(DevModeKey)
 
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {
