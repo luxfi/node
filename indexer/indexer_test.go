@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/consensus/dag/vertex/vertexmock"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"

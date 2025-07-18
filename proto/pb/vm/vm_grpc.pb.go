@@ -57,8 +57,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ref. https://pkg.go.dev/github.com/luxfi/node/snow/engine/snowman/block
-// ref. https://pkg.go.dev/github.com/luxfi/node/snow/consensus/snowman#Block
+// ref. https://pkg.go.dev/github.com/luxfi/node/consensus/engine/chain/block
+// ref. https://pkg.go.dev/github.com/luxfi/node/consensus/chain#Block
 type VMClient interface {
 	// ChainVM
 	//
@@ -448,8 +448,8 @@ func (c *vMClient) StateSummaryAccept(ctx context.Context, in *StateSummaryAccep
 // All implementations must embed UnimplementedVMServer
 // for forward compatibility.
 //
-// ref. https://pkg.go.dev/github.com/luxfi/node/snow/engine/snowman/block
-// ref. https://pkg.go.dev/github.com/luxfi/node/snow/consensus/snowman#Block
+// ref. https://pkg.go.dev/github.com/luxfi/node/consensus/engine/chain/block
+// ref. https://pkg.go.dev/github.com/luxfi/node/consensus/chain#Block
 type VMServer interface {
 	// ChainVM
 	//

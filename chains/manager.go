@@ -34,8 +34,8 @@ import (
 	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/syncer"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/syncer"
 	"github.com/luxfi/node/snow/networking/handler"
 	"github.com/luxfi/node/snow/networking/router"
 	"github.com/luxfi/node/snow/networking/sender"
@@ -67,9 +67,9 @@ import (
 	aveng "github.com/luxfi/node/snow/engine/lux"
 	avbootstrap "github.com/luxfi/node/snow/engine/lux/bootstrap"
 	avagetter "github.com/luxfi/node/snow/engine/lux/getter"
-	smeng "github.com/luxfi/node/snow/engine/snowman"
-	smbootstrap "github.com/luxfi/node/snow/engine/snowman/bootstrap"
-	snowgetter "github.com/luxfi/node/snow/engine/snowman/getter"
+	smeng "github.com/luxfi/node/consensus/engine/chain"
+	smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
+	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"
 	timetracker "github.com/luxfi/node/snow/networking/tracker"
 )
 
