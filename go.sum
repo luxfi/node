@@ -411,6 +411,10 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzWu4=
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
+github.com/luxfi/ledger-lux-go v0.0.1 h1:Pu6GPHRoJXc43kYQ6X+njsKRcShKv8LTLarrLGX1/dw=
+github.com/luxfi/ledger-lux-go v0.0.1/go.mod h1:T7kI7brkJ4HpBtf5gnsMXvWKfuSIoYbSliPZc2urms0=
+github.com/luxfi/ledger-lux-go v0.0.2 h1:2kHESEXdndkdyrTgimVxNJiBeP+wyPLEF7QRXSAT6UE=
+github.com/luxfi/ledger-lux-go v0.0.2/go.mod h1:BbL5bOv9OgEtzE+dQ180SmNRRc5APi/YksT20qt5TsQ=
 github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53 h1:m5kxUfW4/5edyFAKDPhSCXrfvSYps7zEbXzWpqwY4Yc=
 github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53/go.mod h1:D5rH4a9F2agb+TfFykYgQuggYZ008wugkAsOrbWQJSw=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
