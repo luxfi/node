@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

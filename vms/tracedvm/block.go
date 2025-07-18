@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )

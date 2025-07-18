@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"

@@ -23,9 +23,9 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
-	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

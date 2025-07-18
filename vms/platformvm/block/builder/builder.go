@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )

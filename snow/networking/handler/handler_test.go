@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"

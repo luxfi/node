@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/appsender"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/snow/validators/gvalidators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"

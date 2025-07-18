@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	snowmanblock "github.com/luxfi/node/snow/engine/snowman/block"
+	snowmanblock "github.com/luxfi/node/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
