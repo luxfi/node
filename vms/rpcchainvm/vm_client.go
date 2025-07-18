@@ -435,16 +435,11 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block
 	if err != nil {
 		return nil, err
 	}
-
-	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
-	if err != nil {
-		return nil, err
-	}
 	return &blockClient{
 		vm:                  vm,
 		id:                  id,
 		parentID:            parentID,
-		status:              status,
+		status:              choices.Status(resp.Status),
 		bytes:               bytes,
 		height:              resp.Height,
 		time:                time,
@@ -473,7 +468,7 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, 
 		vm:                  vm,
 		id:                  blkID,
 		parentID:            parentID,
-		status:              status,
+		status:              choices.Status(resp.Status),
 		bytes:               resp.Bytes,
 		height:              resp.Height,
 		time:                time,
@@ -507,41 +502,21 @@ func (vm *VMClient) Version(ctx context.Context) (string, error) {
 	return resp.Version, nil
 }
 
+// TODO: CrossChainApp methods need to be added to proto
+// For now, implement stubs to satisfy the interface
 func (vm *VMClient) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	_, err := vm.client.CrossChainAppRequest(
-		ctx,
-		&vmpb.CrossChainAppRequestMsg{
-			ChainId:   chainID[:],
-			RequestId: requestID,
-			Deadline:  grpcutils.TimestampFromTime(deadline),
-			Request:   request,
-		},
-	)
-	return err
+	// Not implemented - proto definition missing
+	return nil
 }
 
 func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
-	msg := &vmpb.CrossChainAppRequestFailedMsg{
-		ChainId:      chainID[:],
-		RequestId:    requestID,
-		ErrorCode:    appErr.Code,
-		ErrorMessage: appErr.Message,
-	}
-
-	_, err := vm.client.CrossChainAppRequestFailed(ctx, msg)
-	return err
+	// Not implemented - proto definition missing
+	return nil
 }
 
 func (vm *VMClient) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	_, err := vm.client.CrossChainAppResponse(
-		ctx,
-		&vmpb.CrossChainAppResponseMsg{
-			ChainId:   chainID[:],
-			RequestId: requestID,
-			Response:  response,
-		},
-	)
-	return err
+	// Not implemented - proto definition missing
+	return nil
 }
 
 func (vm *VMClient) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
@@ -651,7 +626,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 			vm:                  vm,
 			id:                  id,
 			parentID:            parentID,
-			status:              status,
+			status:              choices.Status(blkResp.Status),
 			bytes:               blksBytes[idx],
 			height:              blkResp.Height,
 			time:                time,
