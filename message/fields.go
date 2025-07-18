@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -32,6 +32,7 @@ var (
 	_ chainIDGetter = (*p2p.AppRequest)(nil)
 	_ chainIDGetter = (*p2p.AppResponse)(nil)
 	_ chainIDGetter = (*p2p.AppGossip)(nil)
+	_ chainIDGetter = (*p2p.Simplex)(nil)
 
 	_ requestIDGetter = (*p2p.GetStateSummaryFrontier)(nil)
 	_ requestIDGetter = (*p2p.StateSummaryFrontier)(nil)
@@ -77,32 +78,15 @@ func GetChainID(m any) (ids.ID, error) {
 	return ids.ToID(chainIDBytes)
 }
 
-type sourceChainIDGetter interface {
-	GetSourceChainID() ids.ID
-}
-
-func GetSourceChainID(m any) (ids.ID, error) {
-	msg, ok := m.(sourceChainIDGetter)
-	if !ok {
-		return GetChainID(m)
-	}
-	return msg.GetSourceChainID(), nil
-}
-
 type requestIDGetter interface {
 	GetRequestId() uint32
 }
 
 func GetRequestID(m any) (uint32, bool) {
 	if msg, ok := m.(requestIDGetter); ok {
-		requestID := msg.GetRequestId()
-		return requestID, true
+		return msg.GetRequestId(), true
 	}
-
-	// AppGossip is the only inbound message not containing a requestID. For
-	// ease of handling, imagine that it does have a requestID.
-	_, ok := m.(*p2p.AppGossip)
-	return 0, ok
+	return 0, false
 }
 
 type engineTypeGetter interface {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -15,8 +15,8 @@ import (
 type Op byte
 
 // Types of messages that may be sent between nodes
-// Note: If you add a new parseable Op below, you must also add it to ops
-// (declared below)
+// Note: If you add a new parseable Op below, you must add it to either
+// [UnrequestedOps] or [FailedToResponseOps].
 const (
 	// Handshake:
 	PingOp Op = iota
@@ -54,137 +54,19 @@ const (
 	AppErrorOp
 	AppResponseOp
 	AppGossipOp
-	// Cross chain:
-	CrossChainAppRequestOp
-	CrossChainAppErrorOp
-	CrossChainAppResponseOp
 	// Internal:
 	ConnectedOp
-	ConnectedSubnetOp
 	DisconnectedOp
 	NotifyOp
 	GossipRequestOp
-	TimeoutOp
+	// Simplex
+	SimplexOp
 )
 
 var (
-	HandshakeOps = []Op{
-		PingOp,
-		PongOp,
-		HandshakeOp,
-		GetPeerListOp,
-		PeerListOp,
-	}
-
-	// List of all consensus request message types
-	ConsensusRequestOps = []Op{
-		GetStateSummaryFrontierOp,
-		GetAcceptedStateSummaryOp,
-		GetAcceptedFrontierOp,
-		GetAcceptedOp,
-		GetAncestorsOp,
-		GetOp,
-		PushQueryOp,
-		PullQueryOp,
-		AppRequestOp,
-	}
-	ConsensusResponseOps = []Op{
-		StateSummaryFrontierOp,
-		AcceptedStateSummaryOp,
-		AcceptedFrontierOp,
-		AcceptedOp,
-		AncestorsOp,
-		PutOp,
-		ChitsOp,
-		AppResponseOp,
-		AppErrorOp,
-	}
-	// AppGossip is the only message that is sent unrequested without the
-	// expectation of a response
-	ConsensusExternalOps = append(
-		ConsensusRequestOps,
-		append(
-			ConsensusResponseOps,
-			AppGossipOp,
-		)...,
-	)
-	ConsensusInternalOps = []Op{
-		GetStateSummaryFrontierFailedOp,
-		GetAcceptedStateSummaryFailedOp,
-		GetAcceptedFrontierFailedOp,
-		GetAcceptedFailedOp,
-		GetAncestorsFailedOp,
-		GetFailedOp,
-		QueryFailedOp,
-		CrossChainAppRequestOp,
-		CrossChainAppErrorOp,
-		CrossChainAppResponseOp,
-		ConnectedOp,
-		ConnectedSubnetOp,
-		DisconnectedOp,
-		NotifyOp,
-		GossipRequestOp,
-		TimeoutOp,
-	}
-	ConsensusOps = append(ConsensusExternalOps, ConsensusInternalOps...)
-
-	ExternalOps = append(ConsensusExternalOps, HandshakeOps...)
-
-	SynchronousOps = []Op{
-		// State sync
-		GetStateSummaryFrontierOp,
-		GetStateSummaryFrontierFailedOp,
-		StateSummaryFrontierOp,
-		GetAcceptedStateSummaryOp,
-		GetAcceptedStateSummaryFailedOp,
-		AcceptedStateSummaryOp,
-		// Bootstrapping
-		GetAcceptedFrontierOp,
-		GetAcceptedFrontierFailedOp,
-		AcceptedFrontierOp,
-		GetAcceptedOp,
-		GetAcceptedFailedOp,
-		AcceptedOp,
-		GetAncestorsOp,
-		GetAncestorsFailedOp,
-		AncestorsOp,
-		// Consensus
-		GetOp,
-		GetFailedOp,
-		PutOp,
-		PushQueryOp,
-		PullQueryOp,
-		QueryFailedOp,
-		ChitsOp,
-		// Internal
-		ConnectedOp,
-		ConnectedSubnetOp,
-		DisconnectedOp,
-	}
-
-	AsynchronousOps = []Op{
-		// Application
-		AppRequestOp,
-		AppErrorOp,
-		AppGossipOp,
-		AppResponseOp,
-		// Cross chain
-		CrossChainAppRequestOp,
-		CrossChainAppErrorOp,
-		CrossChainAppResponseOp,
-	}
-
-	FailedToResponseOps = map[Op]Op{
-		GetStateSummaryFrontierFailedOp: StateSummaryFrontierOp,
-		GetAcceptedStateSummaryFailedOp: AcceptedStateSummaryOp,
-		GetAcceptedFrontierFailedOp:     AcceptedFrontierOp,
-		GetAcceptedFailedOp:             AcceptedOp,
-		GetAncestorsFailedOp:            AncestorsOp,
-		GetFailedOp:                     PutOp,
-		QueryFailedOp:                   ChitsOp,
-		AppErrorOp:                      AppResponseOp,
-		CrossChainAppErrorOp:            CrossChainAppResponseOp,
-	}
+	// UnrequestedOps are operations that are expected to be seen without having
+	// requested them. For example, a peer may receive a Get request for a block
+	// without having sent a message previously.
 	UnrequestedOps = set.Of(
 		GetAcceptedFrontierOp,
 		GetAcceptedOp,
@@ -194,10 +76,22 @@ var (
 		PullQueryOp,
 		AppRequestOp,
 		AppGossipOp,
-		CrossChainAppRequestOp,
 		GetStateSummaryFrontierOp,
 		GetAcceptedStateSummaryOp,
+		SimplexOp,
 	)
+	// FailedToResponseOps maps response failure messages to their successful
+	// counterparts.
+	FailedToResponseOps = map[Op]Op{
+		GetStateSummaryFrontierFailedOp: StateSummaryFrontierOp,
+		GetAcceptedStateSummaryFailedOp: AcceptedStateSummaryOp,
+		GetAcceptedFrontierFailedOp:     AcceptedFrontierOp,
+		GetAcceptedFailedOp:             AcceptedOp,
+		GetAncestorsFailedOp:            AncestorsOp,
+		GetFailedOp:                     PutOp,
+		QueryFailedOp:                   ChitsOp,
+		AppErrorOp:                      AppResponseOp,
+	}
 
 	errUnknownMessageType = errors.New("unknown message type")
 )
@@ -271,26 +165,18 @@ func (op Op) String() string {
 		return "app_response"
 	case AppGossipOp:
 		return "app_gossip"
-	// Cross chain
-	case CrossChainAppRequestOp:
-		return "cross_chain_app_request"
-	case CrossChainAppErrorOp:
-		return "cross_chain_app_error"
-	case CrossChainAppResponseOp:
-		return "cross_chain_app_response"
-		// Internal
+	// Internal
 	case ConnectedOp:
 		return "connected"
-	case ConnectedSubnetOp:
-		return "connected_subnet"
 	case DisconnectedOp:
 		return "disconnected"
 	case NotifyOp:
 		return "notify"
 	case GossipRequestOp:
 		return "gossip_request"
-	case TimeoutOp:
-		return "timeout"
+	// Simplex
+	case SimplexOp:
+		return "simplex"
 	default:
 		return "unknown"
 	}
@@ -351,6 +237,9 @@ func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 		return msg.AppError, nil
 	case *p2p.Message_AppGossip:
 		return msg.AppGossip, nil
+	// Simplex
+	case *p2p.Message_Simplex:
+		return msg.Simplex, nil
 	default:
 		return nil, fmt.Errorf("%w: %T", errUnknownMessageType, msg)
 	}
@@ -406,6 +295,8 @@ func ToOp(m *p2p.Message) (Op, error) {
 		return AppErrorOp, nil
 	case *p2p.Message_AppGossip:
 		return AppGossipOp, nil
+	case *p2p.Message_Simplex:
+		return SimplexOp, nil
 	default:
 		return 0, fmt.Errorf("%w: %T", errUnknownMessageType, msg)
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -16,20 +16,16 @@ func BenchmarkUniform(b *testing.B) {
 		10000,
 		100000,
 	}
-	for _, s := range uniformSamplers {
-		for _, size := range sizes {
-			b.Run(fmt.Sprintf("sampler %s with %d elements uniformly", s.name, size), func(b *testing.B) {
-				UniformBenchmark(b, s.sampler, size, 30)
-			})
-		}
-	}
-}
+	for _, size := range sizes {
+		b.Run(fmt.Sprintf("%d elements uniformly", size), func(b *testing.B) {
+			s := NewUniform()
 
-func UniformBenchmark(b *testing.B, s Uniform, size uint64, toSample int) {
-	s.Initialize(size)
+			s.Initialize(size)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = s.Sample(toSample)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_, _ = s.Sample(30)
+			}
+		})
 	}
 }

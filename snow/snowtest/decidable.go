@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowtest
@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
 )
 
 var (
@@ -23,19 +22,15 @@ type Decidable struct {
 	IDV     ids.ID
 	AcceptV error
 	RejectV error
-	StatusV Status
+	Status  Status
 }
 
 func (d *Decidable) ID() ids.ID {
 	return d.IDV
 }
 
-func (d *Decidable) Status() choices.Status {
-	return choices.Status(d.StatusV)
-}
-
 func (d *Decidable) Accept(context.Context) error {
-	if d.StatusV == Rejected {
+	if d.Status == Rejected {
 		return fmt.Errorf("%w from %s to %s",
 			ErrInvalidStateTransition,
 			Rejected,
@@ -43,12 +38,12 @@ func (d *Decidable) Accept(context.Context) error {
 		)
 	}
 
-	d.StatusV = Accepted
+	d.Status = Accepted
 	return d.AcceptV
 }
 
 func (d *Decidable) Reject(context.Context) error {
-	if d.StatusV == Accepted {
+	if d.Status == Accepted {
 		return fmt.Errorf("%w from %s to %s",
 			ErrInvalidStateTransition,
 			Accepted,
@@ -56,6 +51,6 @@ func (d *Decidable) Reject(context.Context) error {
 		)
 	}
 
-	d.StatusV = Rejected
+	d.Status = Rejected
 	return d.RejectV
 }

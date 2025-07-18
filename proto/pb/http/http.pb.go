@@ -9,7 +9,6 @@ package http
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -454,8 +453,6 @@ type Request struct {
 	// header contains the request header fields either received
 	// by the server or to be sent by the client
 	Header []*Element `protobuf:"bytes,6,rep,name=header,proto3" json:"header,omitempty"`
-	// body is the request payload in bytes
-	Body []byte `protobuf:"bytes,7,opt,name=body,proto3" json:"body,omitempty"`
 	// content_length records the length of the associated content
 	ContentLength int64 `protobuf:"varint,8,opt,name=content_length,json=contentLength,proto3" json:"content_length,omitempty"`
 	// transfer_encoding lists the transfer encodings from outermost to
@@ -550,13 +547,6 @@ func (x *Request) GetProtoMinor() int32 {
 func (x *Request) GetHeader() []*Element {
 	if x != nil {
 		return x.Header
-	}
-	return nil
-}
-
-func (x *Request) GetBody() []byte {
-	if x != nil {
-		return x.Body
 	}
 	return nil
 }
@@ -733,24 +723,70 @@ func (x *HTTPRequest) GetRequest() *Request {
 	return nil
 }
 
+type HTTPResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// header is the http headers for the response
+	Header        []*Element `protobuf:"bytes,1,rep,name=header,proto3" json:"header,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HTTPResponse) Reset() {
+	*x = HTTPResponse{}
+	mi := &file_http_http_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HTTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HTTPResponse) ProtoMessage() {}
+
+func (x *HTTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_http_http_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HTTPResponse.ProtoReflect.Descriptor instead.
+func (*HTTPResponse) Descriptor() ([]byte, []int) {
+	return file_http_http_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *HTTPResponse) GetHeader() []*Element {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
 type HandleSimpleHTTPRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// method specifies the HTTP method (GET, POST, PUT, etc.)
 	Method string `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
 	// url specifies either the URI being requested
 	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	// headers contains the request header fields either received
-	// by the server or to be sent by the client
-	Headers []*Element `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
+	// request_headers contains the request header fields received by the server
+	RequestHeaders []*Element `protobuf:"bytes,3,rep,name=request_headers,json=requestHeaders,proto3" json:"request_headers,omitempty"`
 	// body is the request payload in bytes
-	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Body []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	// response_headers contains headers that are to be sent by the server to the client
+	ResponseHeaders []*Element `protobuf:"bytes,5,rep,name=response_headers,json=responseHeaders,proto3" json:"response_headers,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *HandleSimpleHTTPRequest) Reset() {
 	*x = HandleSimpleHTTPRequest{}
-	mi := &file_http_http_proto_msgTypes[8]
+	mi := &file_http_http_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -762,7 +798,7 @@ func (x *HandleSimpleHTTPRequest) String() string {
 func (*HandleSimpleHTTPRequest) ProtoMessage() {}
 
 func (x *HandleSimpleHTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_http_http_proto_msgTypes[8]
+	mi := &file_http_http_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -775,7 +811,7 @@ func (x *HandleSimpleHTTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleSimpleHTTPRequest.ProtoReflect.Descriptor instead.
 func (*HandleSimpleHTTPRequest) Descriptor() ([]byte, []int) {
-	return file_http_http_proto_rawDescGZIP(), []int{8}
+	return file_http_http_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *HandleSimpleHTTPRequest) GetMethod() string {
@@ -792,9 +828,9 @@ func (x *HandleSimpleHTTPRequest) GetUrl() string {
 	return ""
 }
 
-func (x *HandleSimpleHTTPRequest) GetHeaders() []*Element {
+func (x *HandleSimpleHTTPRequest) GetRequestHeaders() []*Element {
 	if x != nil {
-		return x.Headers
+		return x.RequestHeaders
 	}
 	return nil
 }
@@ -802,6 +838,13 @@ func (x *HandleSimpleHTTPRequest) GetHeaders() []*Element {
 func (x *HandleSimpleHTTPRequest) GetBody() []byte {
 	if x != nil {
 		return x.Body
+	}
+	return nil
+}
+
+func (x *HandleSimpleHTTPRequest) GetResponseHeaders() []*Element {
+	if x != nil {
+		return x.ResponseHeaders
 	}
 	return nil
 }
@@ -821,7 +864,7 @@ type HandleSimpleHTTPResponse struct {
 
 func (x *HandleSimpleHTTPResponse) Reset() {
 	*x = HandleSimpleHTTPResponse{}
-	mi := &file_http_http_proto_msgTypes[9]
+	mi := &file_http_http_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -833,7 +876,7 @@ func (x *HandleSimpleHTTPResponse) String() string {
 func (*HandleSimpleHTTPResponse) ProtoMessage() {}
 
 func (x *HandleSimpleHTTPResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_http_http_proto_msgTypes[9]
+	mi := &file_http_http_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -846,7 +889,7 @@ func (x *HandleSimpleHTTPResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleSimpleHTTPResponse.ProtoReflect.Descriptor instead.
 func (*HandleSimpleHTTPResponse) Descriptor() ([]byte, []int) {
-	return file_http_http_proto_rawDescGZIP(), []int{9}
+	return file_http_http_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *HandleSimpleHTTPResponse) GetCode() int32 {
@@ -874,7 +917,7 @@ var File_http_http_proto protoreflect.FileDescriptor
 
 const file_http_http_proto_rawDesc = "" +
 	"\n" +
-	"\x0fhttp/http.proto\x12\x04http\x1a\x1bgoogle/protobuf/empty.proto\"\xf6\x01\n" +
+	"\x0fhttp/http.proto\x12\x04http\"\xf6\x01\n" +
 	"\x03URL\x12\x16\n" +
 	"\x06scheme\x18\x01 \x01(\tR\x06scheme\x12\x16\n" +
 	"\x06opaque\x18\x02 \x01(\tR\x06opaque\x12\"\n" +
@@ -908,7 +951,7 @@ const file_http_http_proto_rawDesc = "" +
 	"\x0fverified_chains\x18\b \x03(\v2\x12.http.CertificatesR\x0everifiedChains\x12B\n" +
 	"\x1dsigned_certificate_timestamps\x18\t \x03(\fR\x1bsignedCertificateTimestamps\x12#\n" +
 	"\rocsp_response\x18\n" +
-	" \x01(\fR\focspResponse\"\x96\x04\n" +
+	" \x01(\fR\focspResponse\"\x82\x04\n" +
 	"\aRequest\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12\x1b\n" +
 	"\x03url\x18\x02 \x01(\v2\t.http.URLR\x03url\x12\x14\n" +
@@ -917,8 +960,7 @@ const file_http_http_proto_rawDesc = "" +
 	"protoMajor\x12\x1f\n" +
 	"\vproto_minor\x18\x05 \x01(\x05R\n" +
 	"protoMinor\x12%\n" +
-	"\x06header\x18\x06 \x03(\v2\r.http.ElementR\x06header\x12\x12\n" +
-	"\x04body\x18\a \x01(\fR\x04body\x12%\n" +
+	"\x06header\x18\x06 \x03(\v2\r.http.ElementR\x06header\x12%\n" +
 	"\x0econtent_length\x18\b \x01(\x03R\rcontentLength\x12+\n" +
 	"\x11transfer_encoding\x18\t \x03(\tR\x10transferEncoding\x12\x12\n" +
 	"\x04host\x18\n" +
@@ -937,19 +979,22 @@ const file_http_http_proto_rawDesc = "" +
 	"serverAddr\"u\n" +
 	"\vHTTPRequest\x12=\n" +
 	"\x0fresponse_writer\x18\x01 \x01(\v2\x14.http.ResponseWriterR\x0eresponseWriter\x12'\n" +
-	"\arequest\x18\x02 \x01(\v2\r.http.RequestR\arequest\"\x80\x01\n" +
+	"\arequest\x18\x02 \x01(\v2\r.http.RequestR\arequest\"5\n" +
+	"\fHTTPResponse\x12%\n" +
+	"\x06header\x18\x01 \x03(\v2\r.http.ElementR\x06header\"\xc9\x01\n" +
 	"\x17HandleSimpleHTTPRequest\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12\x10\n" +
-	"\x03url\x18\x02 \x01(\tR\x03url\x12'\n" +
-	"\aheaders\x18\x03 \x03(\v2\r.http.ElementR\aheaders\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\"k\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x126\n" +
+	"\x0frequest_headers\x18\x03 \x03(\v2\r.http.ElementR\x0erequestHeaders\x12\x12\n" +
+	"\x04body\x18\x04 \x01(\fR\x04body\x128\n" +
+	"\x10response_headers\x18\x05 \x03(\v2\r.http.ElementR\x0fresponseHeaders\"k\n" +
 	"\x18HandleSimpleHTTPResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12'\n" +
 	"\aheaders\x18\x02 \x03(\v2\r.http.ElementR\aheaders\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body2\x8a\x01\n" +
-	"\x04HTTP\x123\n" +
-	"\x06Handle\x12\x11.http.HTTPRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
-	"\fHandleSimple\x12\x1d.http.HandleSimpleHTTPRequest\x1a\x1e.http.HandleSimpleHTTPResponseB%Z#github.com/luxfi/node/proto/pb/httpb\x06proto3"
+	"\x04body\x18\x03 \x01(\fR\x04body2\x86\x01\n" +
+	"\x04HTTP\x12/\n" +
+	"\x06Handle\x12\x11.http.HTTPRequest\x1a\x12.http.HTTPResponse\x12M\n" +
+	"\fHandleSimple\x12\x1d.http.HandleSimpleHTTPRequest\x1a\x1e.http.HandleSimpleHTTPResponseB/Z-github.com/luxfi/node/proto/pb/httpb\x06proto3"
 
 var (
 	file_http_http_proto_rawDescOnce sync.Once
@@ -963,7 +1008,7 @@ func file_http_http_proto_rawDescGZIP() []byte {
 	return file_http_http_proto_rawDescData
 }
 
-var file_http_http_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_http_http_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_http_http_proto_goTypes = []any{
 	(*URL)(nil),                      // 0: http.URL
 	(*Userinfo)(nil),                 // 1: http.Userinfo
@@ -973,9 +1018,9 @@ var file_http_http_proto_goTypes = []any{
 	(*Request)(nil),                  // 5: http.Request
 	(*ResponseWriter)(nil),           // 6: http.ResponseWriter
 	(*HTTPRequest)(nil),              // 7: http.HTTPRequest
-	(*HandleSimpleHTTPRequest)(nil),  // 8: http.HandleSimpleHTTPRequest
-	(*HandleSimpleHTTPResponse)(nil), // 9: http.HandleSimpleHTTPResponse
-	(*emptypb.Empty)(nil),            // 10: google.protobuf.Empty
+	(*HTTPResponse)(nil),             // 8: http.HTTPResponse
+	(*HandleSimpleHTTPRequest)(nil),  // 9: http.HandleSimpleHTTPRequest
+	(*HandleSimpleHTTPResponse)(nil), // 10: http.HandleSimpleHTTPResponse
 }
 var file_http_http_proto_depIdxs = []int32{
 	1,  // 0: http.URL.user:type_name -> http.Userinfo
@@ -989,17 +1034,19 @@ var file_http_http_proto_depIdxs = []int32{
 	2,  // 8: http.ResponseWriter.header:type_name -> http.Element
 	6,  // 9: http.HTTPRequest.response_writer:type_name -> http.ResponseWriter
 	5,  // 10: http.HTTPRequest.request:type_name -> http.Request
-	2,  // 11: http.HandleSimpleHTTPRequest.headers:type_name -> http.Element
-	2,  // 12: http.HandleSimpleHTTPResponse.headers:type_name -> http.Element
-	7,  // 13: http.HTTP.Handle:input_type -> http.HTTPRequest
-	8,  // 14: http.HTTP.HandleSimple:input_type -> http.HandleSimpleHTTPRequest
-	10, // 15: http.HTTP.Handle:output_type -> google.protobuf.Empty
-	9,  // 16: http.HTTP.HandleSimple:output_type -> http.HandleSimpleHTTPResponse
-	15, // [15:17] is the sub-list for method output_type
-	13, // [13:15] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	2,  // 11: http.HTTPResponse.header:type_name -> http.Element
+	2,  // 12: http.HandleSimpleHTTPRequest.request_headers:type_name -> http.Element
+	2,  // 13: http.HandleSimpleHTTPRequest.response_headers:type_name -> http.Element
+	2,  // 14: http.HandleSimpleHTTPResponse.headers:type_name -> http.Element
+	7,  // 15: http.HTTP.Handle:input_type -> http.HTTPRequest
+	9,  // 16: http.HTTP.HandleSimple:input_type -> http.HandleSimpleHTTPRequest
+	8,  // 17: http.HTTP.Handle:output_type -> http.HTTPResponse
+	10, // 18: http.HTTP.HandleSimple:output_type -> http.HandleSimpleHTTPResponse
+	17, // [17:19] is the sub-list for method output_type
+	15, // [15:17] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_http_http_proto_init() }
@@ -1013,7 +1060,7 @@ func file_http_http_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_http_http_proto_rawDesc), len(file_http_http_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

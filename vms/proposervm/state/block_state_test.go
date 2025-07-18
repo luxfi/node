@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -44,22 +43,20 @@ func testBlockState(require *require.Assertions, bs BlockState) {
 	)
 	require.NoError(err)
 
-	_, _, err = bs.GetBlock(b.ID())
+	_, err = bs.GetBlock(b.ID())
 	require.Equal(database.ErrNotFound, err)
 
-	_, _, err = bs.GetBlock(b.ID())
+	_, err = bs.GetBlock(b.ID())
 	require.Equal(database.ErrNotFound, err)
 
-	require.NoError(bs.PutBlock(b, choices.Accepted))
+	require.NoError(bs.PutBlock(b))
 
-	fetchedBlock, fetchedStatus, err := bs.GetBlock(b.ID())
+	fetchedBlock, err := bs.GetBlock(b.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, fetchedStatus)
 	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 
-	fetchedBlock, fetchedStatus, err = bs.GetBlock(b.ID())
+	fetchedBlock, err = bs.GetBlock(b.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, fetchedStatus)
 	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 }
 

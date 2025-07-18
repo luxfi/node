@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package corruptabledb
@@ -12,18 +12,21 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/databasemock"
+	"github.com/luxfi/node/database/dbtest"
 	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/utils/logging"
 )
 
 var errTest = errors.New("non-nil error")
 
 func newDB() *Database {
 	baseDB := memdb.New()
-	return New(baseDB)
+	return New(baseDB, logging.NoLog{})
 }
 
 func TestInterface(t *testing.T) {
-	for name, test := range database.Tests {
+	for name, test := range dbtest.Tests {
 		t.Run(name, func(t *testing.T) {
 			test(t, newDB())
 		})
@@ -31,15 +34,15 @@ func TestInterface(t *testing.T) {
 }
 
 func FuzzKeyValue(f *testing.F) {
-	database.FuzzKeyValue(f, newDB())
+	dbtest.FuzzKeyValue(f, newDB())
 }
 
 func FuzzNewIteratorWithPrefix(f *testing.F) {
-	database.FuzzNewIteratorWithPrefix(f, newDB())
+	dbtest.FuzzNewIteratorWithPrefix(f, newDB())
 }
 
 func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
-	database.FuzzNewIteratorWithStartAndPrefix(f, newDB())
+	dbtest.FuzzNewIteratorWithStartAndPrefix(f, newDB())
 }
 
 // TestCorruption tests to make sure corruptabledb wrapper works as expected.
@@ -110,7 +113,7 @@ func TestIterator(t *testing.T) {
 			databaseErrBefore: nil,
 			expectedErr:       errIter,
 			modifyIter: func(ctrl *gomock.Controller, iter *iterator) {
-				mockInnerIter := database.NewMockIterator(ctrl)
+				mockInnerIter := databasemock.NewIterator(ctrl)
 				mockInnerIter.EXPECT().Next().Return(false)
 				mockInnerIter.EXPECT().Error().Return(errIter)
 				iter.Iterator = mockInnerIter
@@ -134,7 +137,7 @@ func TestIterator(t *testing.T) {
 			databaseErrBefore: nil,
 			expectedErr:       errIter,
 			modifyIter: func(ctrl *gomock.Controller, iter *iterator) {
-				mockInnerIter := database.NewMockIterator(ctrl)
+				mockInnerIter := databasemock.NewIterator(ctrl)
 				mockInnerIter.EXPECT().Error().Return(errIter)
 				iter.Iterator = mockInnerIter
 			},
@@ -182,7 +185,7 @@ func TestIterator(t *testing.T) {
 			// Put a key-value pair in the database.
 			require.NoError(corruptableDB.Put([]byte{0}, []byte{1}))
 
-			// Mark database as corupted, if applicable
+			// Mark database as corrupted, if applicable
 			_ = corruptableDB.handleError(tt.databaseErrBefore)
 
 			// Make an iterator

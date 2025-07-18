@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -17,8 +17,9 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/snow/validators/validatorstest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -104,7 +105,7 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &common.FakeSender{
+			responseSender := &enginetest.SenderStub{
 				SentAppResponse: make(chan []byte, 1),
 			}
 			responseNetwork, err := p2p.NewNetwork(logging.NoLog{}, responseSender, prometheus.NewRegistry(), "")
@@ -133,7 +134,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &common.FakeSender{
+			requestSender := &enginetest.SenderStub{
 				SentAppRequest: make(chan []byte, 1),
 			}
 
@@ -208,7 +209,7 @@ func TestValidatorGossiper(t *testing.T) {
 
 	nodeID := ids.GenerateTestNodeID()
 
-	validators := testValidatorSet{
+	validators := &testValidatorSet{
 		validators: set.Of(nodeID),
 	}
 
@@ -231,7 +232,7 @@ func TestValidatorGossiper(t *testing.T) {
 	// we are not a validator, so we should not request gossip
 	validators.validators = set.Set[ids.NodeID]{}
 	require.NoError(gossiper.Gossip(context.Background()))
-	require.Equal(2, calls)
+	require.Equal(1, calls)
 }
 
 func TestPushGossiperNew(t *testing.T) {
@@ -509,7 +510,7 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &common.FakeSender{
+			sender := &enginetest.SenderStub{
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(
@@ -524,7 +525,7 @@ func TestPushGossiper(t *testing.T) {
 				&p2p.Peers{},
 				logging.NoLog{},
 				constants.PrimaryNetworkID,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 1, nil
 					},

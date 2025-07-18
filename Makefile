@@ -1,28 +1,106 @@
-.PHONY: help install-nix shell build lint fmt test proto mocks
+# Makefile for Lux Node
 
-help:
-	@echo "Targets: install-nix shell build lint fmt test proto mocks"
+# Go parameters
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+GOGET=$(GOCMD) get
+GOMOD=$(GOCMD) mod
+BINARY_NAME=geth
+BINARY_UNIX=$(BINARY_NAME)_unix
 
-install-nix:
-	@./scripts/run_task.sh install-nix
+# Build flags
+LDFLAGS=-ldflags "-s -w"
+BUILDFLAGS=-v
 
-shell:
-	@nix develop
+# Default target
+.DEFAULT_GOAL := build
 
+# Build node
 build:
-	@./scripts/run_task.sh build
+	./scripts/build.sh
 
-lint:
-	@./scripts/run_task.sh lint-all
-
-fmt:
-	@go fmt ./...
-
+# Test
 test:
-	@./scripts/run_task.sh test-e2e
+	@echo "Running tests..."
+	$(GOTEST) -v ./...
 
-proto:
-	@./scripts/run_task.sh generate-protobuf
+test-coverage:
+	@echo "Running tests with coverage..."
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 
+# Benchmarks
+bench:
+	@echo "Running benchmarks..."
+	$(GOTEST) -bench=. -benchmem ./...
+
+# Clean
+clean:
+	@echo "Cleaning..."
+	$(GOCLEAN)
+	rm -f $(BINARY_NAME)
+	rm -f $(BINARY_NAME)-*
+	rm -f coverage.out coverage.html
+
+# Install dependencies
+deps:
+	@echo "Installing dependencies..."
+	$(GOGET) -v -t -d ./...
+
+# Update dependencies
+update-deps:
+	@echo "Updating dependencies..."
+	$(GOMOD) download
+	$(GOMOD) tidy
+
+# Format code
+fmt:
+	@echo "Formatting code..."
+	$(GOCMD) fmt ./...
+
+# Lint
+lint:
+	@echo "Running linter..."
+	@which golangci-lint > /dev/null || (echo "golangci-lint not installed. Please install: https://golangci-lint.run/usage/install/" && exit 1)
+	golangci-lint run
+
+# Run and install targets are no longer supported; use the build script directly
+
+# Check for security vulnerabilities
+security:
+	@echo "Checking for vulnerabilities..."
+	$(GOCMD) list -json -m all | nancy sleuth
+
+# Generate mocks
 mocks:
-	@./scripts/run_task.sh generate-mocks
+	@echo "Generating mocks..."
+	$(GOCMD) generate ./...
+
+# Verify modules
+verify:
+	@echo "Verifying modules..."
+	$(GOMOD) verify
+
+# Show help
+help:
+	@echo "Makefile for Lux Geth"
+	@echo ""
+	@echo "Usage:"
+		@echo "  make build          Print Lux C-Chain plugin build instructions"
+		@echo "  make build-all      Alias for make build"
+	@echo "  make test           Run tests"
+	@echo "  make test-coverage  Run tests with coverage"
+	@echo "  make bench          Run benchmarks"
+	@echo "  make clean          Clean build files"
+	@echo "  make deps           Install dependencies"
+	@echo "  make update-deps    Update dependencies"
+	@echo "  make fmt            Format code"
+	@echo "  make lint           Run linter"
+	@echo "  make security       Check for vulnerabilities"
+	@echo "  make mocks          Generate mocks"
+	@echo "  make verify         Verify modules"
+	@echo "  make help           Show this help"
+
+.PHONY: build build-all test test-coverage bench clean deps update-deps fmt lint security mocks verify help

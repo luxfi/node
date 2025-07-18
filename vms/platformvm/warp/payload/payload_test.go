@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package payload
@@ -33,10 +33,10 @@ func TestParseWrongPayloadType(t *testing.T) {
 	require.NoError(err)
 
 	_, err = ParseAddressedCall(hashPayload.Bytes())
-	require.ErrorIs(err, errWrongType)
+	require.ErrorIs(err, ErrWrongType)
 
 	_, err = ParseHash(addressedPayload.Bytes())
-	require.ErrorIs(err, errWrongType)
+	require.ErrorIs(err, ErrWrongType)
 }
 
 func TestParse(t *testing.T) {

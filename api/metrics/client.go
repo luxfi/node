@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -15,7 +15,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-// Client for requesting metrics from a remote Lux Node instance
+// Client for requesting metrics from a remote Lux instance
 type Client struct {
 	uri string
 }

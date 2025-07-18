@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -53,7 +53,7 @@ type BloomFilter struct {
 	metrics *bloom.Metrics
 
 	maxCount int
-	bloom    bloom.Filter
+	bloom    *bloom.Filter
 	// salt is provided to eventually unblock collisions in Bloom. It's possible
 	// that conflicting Gossipable items collide in the bloom filter, so a salt
 	// is generated to eventually resolve collisions.
@@ -62,13 +62,13 @@ type BloomFilter struct {
 
 func (b *BloomFilter) Add(gossipable Gossipable) {
 	h := gossipable.GossipID()
-	bloom.Add(&b.bloom, h[:], b.salt[:])
+	bloom.Add(b.bloom, h[:], b.salt[:])
 	b.metrics.Count.Inc()
 }
 
 func (b *BloomFilter) Has(gossipable Gossipable) bool {
 	h := gossipable.GossipID()
-	return bloom.Contains(&b.bloom, h[:], b.salt[:])
+	return bloom.Contains(b.bloom, h[:], b.salt[:])
 }
 
 func (b *BloomFilter) Marshal() ([]byte, []byte) {
@@ -123,7 +123,7 @@ func resetBloomFilter(
 	}
 
 	bloomFilter.maxCount = bloom.EstimateCount(numHashes, numEntries, resetFalsePositiveProbability)
-	bloomFilter.bloom = *newBloom
+	bloomFilter.bloom = newBloom
 	bloomFilter.salt = newSalt
 
 	bloomFilter.metrics.Reset(newBloom, bloomFilter.maxCount)

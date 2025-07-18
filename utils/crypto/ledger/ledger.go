@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
 
-	ledger "github.com/luxfi/ledger-lux-go"
+	ledger "github.com/luxfi/ledger/go"
 	bip32 "github.com/tyler-smith/go-bip32"
 )
 
@@ -42,21 +42,16 @@ func addressPath(index uint32) string {
 }
 
 func (l *Ledger) Address(hrp string, addressIndex uint32) (ids.ShortID, error) {
-	_, err := l.device.GetPubKey(addressPath(addressIndex), true, hrp, "")
+	resp, err := l.device.GetPubKey(addressPath(addressIndex), true, hrp, "")
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	// TODO: Fix ledger API - resp.Hash is no longer exported
-	// return ids.ToShortID(resp.Hash)
-	return ids.ShortEmpty, fmt.Errorf("ledger API has changed - Hash field not accessible")
+	return ids.ToShortID(resp.Hash)
 }
 
 func (l *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
 	if l.epk == nil {
-		// TODO: Fix ledger API - GetExtPubKey method no longer exists
-		// pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
-		var pk, chainCode []byte
-		err := fmt.Errorf("ledger API has changed - GetExtPubKey method not available")
+		pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
 		if err != nil {
 			return nil, err
 		}

@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"context"
 	"math/rand"
 	"testing"
 	"time"
@@ -14,26 +13,24 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 var fundedSharedMemoryCalls byte
 
 func TestNewImportTx(t *testing.T) {
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 
 	type test struct {
 		description   string
 		sourceChainID ids.ID
 		sharedMemory  atomic.SharedMemory
-		sourceKeys    []*secp256k1.PrivateKey
 		timestamp     time.Time
 		expectedErr   error
 	}
@@ -53,12 +50,9 @@ func TestNewImportTx(t *testing.T) {
 				env,
 				sourceKey,
 				env.ctx.XChainID,
-				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee - 1,
-				},
+				map[ids.ID]uint64{},
 				randSrc,
 			),
-			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
 			expectedErr: builder.ErrInsufficientFunds,
 		},
 		{
@@ -70,11 +64,10 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
+					env.ctx.LUXAssetID: 1,
 				},
 				randSrc,
 			),
-			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
 			expectedErr: nil,
 		},
 		{
@@ -86,11 +79,10 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.CChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
+					env.ctx.LUXAssetID: 1,
 				},
 				randSrc,
 			),
-			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
 			timestamp:   env.config.UpgradeConfig.ApricotPhase5Time,
 			expectedErr: nil,
 		},
@@ -103,12 +95,10 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
-					customAssetID:       1,
+					customAssetID: 1,
 				},
 				randSrc,
 			),
-			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
 			timestamp:   env.config.UpgradeConfig.ApricotPhase5Time,
 			expectedErr: nil,
 		},
@@ -124,8 +114,12 @@ func TestNewImportTx(t *testing.T) {
 
 			env.msm.SharedMemory = tt.sharedMemory
 
-			builder, signer := env.factory.NewWallet(tt.sourceKeys...)
-			utx, err := builder.NewImportTx(
+			wallet := newWallet(t, env, walletConfig{
+				keys:     []*secp256k1.PrivateKey{sourceKey},
+				chainIDs: []ids.ID{tt.sourceChainID},
+			})
+
+			tx, err := wallet.IssueImportTx(
 				tt.sourceChainID,
 				to,
 			)
@@ -133,8 +127,6 @@ func TestNewImportTx(t *testing.T) {
 			if tt.expectedErr != nil {
 				return
 			}
-			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
-			require.NoError(err)
 
 			unsignedTx := tx.Unsigned.(*txs.ImportTx)
 			require.NotEmpty(unsignedTx.ImportedInputs)
@@ -153,19 +145,21 @@ func TestNewImportTx(t *testing.T) {
 				totalOut += out.Out.Amount()
 			}
 
-			require.Equal(env.config.StaticFeeConfig.TxFee, totalIn-totalOut)
+			require.Equal(totalIn, totalOut)
 
 			stateDiff, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)
 
 			stateDiff.SetTimestamp(tt.timestamp)
 
-			verifier := StandardTxExecutor{
-				Backend: &env.backend,
-				State:   stateDiff,
-				Tx:      tx,
-			}
-			require.NoError(tx.Unsigned.Visit(&verifier))
+			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
+			_, _, _, err = StandardTx(
+				&env.backend,
+				feeCalculator,
+				tx,
+				stateDiff,
+			)
+			require.NoError(err)
 		})
 	}
 }
@@ -197,7 +191,7 @@ func fundedSharedMemory(
 				Amt: amt,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
-					Addrs:     []ids.ShortID{sourceKey.PublicKey().Address()},
+					Addrs:     []ids.ShortID{sourceKey.Address()},
 					Threshold: 1,
 				},
 			},
@@ -213,7 +207,7 @@ func fundedSharedMemory(
 						Key:   inputID[:],
 						Value: utxoBytes,
 						Traits: [][]byte{
-							sourceKey.PublicKey().Address().Bytes(),
+							sourceKey.Address().Bytes(),
 						},
 					},
 				},

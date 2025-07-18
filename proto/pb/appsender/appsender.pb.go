@@ -298,204 +298,6 @@ func (x *SendAppGossipMsg) GetMsg() []byte {
 	return nil
 }
 
-type SendCrossChainAppRequestMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain to send this request to
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// the ID of this request
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// The request body
-	Request       []byte `protobuf:"bytes,3,opt,name=request,proto3" json:"request,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SendCrossChainAppRequestMsg) Reset() {
-	*x = SendCrossChainAppRequestMsg{}
-	mi := &file_appsender_appsender_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SendCrossChainAppRequestMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendCrossChainAppRequestMsg) ProtoMessage() {}
-
-func (x *SendCrossChainAppRequestMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_appsender_appsender_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendCrossChainAppRequestMsg.ProtoReflect.Descriptor instead.
-func (*SendCrossChainAppRequestMsg) Descriptor() ([]byte, []int) {
-	return file_appsender_appsender_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *SendCrossChainAppRequestMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *SendCrossChainAppRequestMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *SendCrossChainAppRequestMsg) GetRequest() []byte {
-	if x != nil {
-		return x.Request
-	}
-	return nil
-}
-
-type SendCrossChainAppResponseMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain to send this response to
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// the ID of this request
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// The response body
-	Response      []byte `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SendCrossChainAppResponseMsg) Reset() {
-	*x = SendCrossChainAppResponseMsg{}
-	mi := &file_appsender_appsender_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SendCrossChainAppResponseMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendCrossChainAppResponseMsg) ProtoMessage() {}
-
-func (x *SendCrossChainAppResponseMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_appsender_appsender_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendCrossChainAppResponseMsg.ProtoReflect.Descriptor instead.
-func (*SendCrossChainAppResponseMsg) Descriptor() ([]byte, []int) {
-	return file_appsender_appsender_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *SendCrossChainAppResponseMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *SendCrossChainAppResponseMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *SendCrossChainAppResponseMsg) GetResponse() []byte {
-	if x != nil {
-		return x.Response
-	}
-	return nil
-}
-
-type SendCrossChainAppErrorMsg struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The chain to send a response to
-	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	// ID of this request
-	RequestId uint32 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// Application-defined error code
-	ErrorCode int32 `protobuf:"zigzag32,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	// Application-defined error message
-	ErrorMessage  string `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SendCrossChainAppErrorMsg) Reset() {
-	*x = SendCrossChainAppErrorMsg{}
-	mi := &file_appsender_appsender_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SendCrossChainAppErrorMsg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendCrossChainAppErrorMsg) ProtoMessage() {}
-
-func (x *SendCrossChainAppErrorMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_appsender_appsender_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendCrossChainAppErrorMsg.ProtoReflect.Descriptor instead.
-func (*SendCrossChainAppErrorMsg) Descriptor() ([]byte, []int) {
-	return file_appsender_appsender_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *SendCrossChainAppErrorMsg) GetChainId() []byte {
-	if x != nil {
-		return x.ChainId
-	}
-	return nil
-}
-
-func (x *SendCrossChainAppErrorMsg) GetRequestId() uint32 {
-	if x != nil {
-		return x.RequestId
-	}
-	return 0
-}
-
-func (x *SendCrossChainAppErrorMsg) GetErrorCode() int32 {
-	if x != nil {
-		return x.ErrorCode
-	}
-	return 0
-}
-
-func (x *SendCrossChainAppErrorMsg) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 var File_appsender_appsender_proto protoreflect.FileDescriptor
 
 const file_appsender_appsender_proto_rawDesc = "" +
@@ -525,32 +327,12 @@ const file_appsender_appsender_proto_rawDesc = "" +
 	"validators\x12%\n" +
 	"\x0enon_validators\x18\x03 \x01(\x04R\rnonValidators\x12\x14\n" +
 	"\x05peers\x18\x04 \x01(\x04R\x05peers\x12\x10\n" +
-	"\x03msg\x18\x05 \x01(\fR\x03msg\"q\n" +
-	"\x1bSendCrossChainAppRequestMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x12\x18\n" +
-	"\arequest\x18\x03 \x01(\fR\arequest\"t\n" +
-	"\x1cSendCrossChainAppResponseMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x12\x1a\n" +
-	"\bresponse\x18\x03 \x01(\fR\bresponse\"\x99\x01\n" +
-	"\x19SendCrossChainAppErrorMsg\x12\x19\n" +
-	"\bchain_id\x18\x01 \x01(\fR\achainId\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x02 \x01(\rR\trequestId\x12\x1d\n" +
-	"\n" +
-	"error_code\x18\x03 \x01(\x11R\terrorCode\x12#\n" +
-	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage2\xb9\x04\n" +
+	"\x03msg\x18\x05 \x01(\fR\x03msg2\xa7\x02\n" +
 	"\tAppSender\x12F\n" +
 	"\x0eSendAppRequest\x12\x1c.appsender.SendAppRequestMsg\x1a\x16.google.protobuf.Empty\x12H\n" +
 	"\x0fSendAppResponse\x12\x1d.appsender.SendAppResponseMsg\x1a\x16.google.protobuf.Empty\x12B\n" +
 	"\fSendAppError\x12\x1a.appsender.SendAppErrorMsg\x1a\x16.google.protobuf.Empty\x12D\n" +
-	"\rSendAppGossip\x12\x1b.appsender.SendAppGossipMsg\x1a\x16.google.protobuf.Empty\x12Z\n" +
-	"\x18SendCrossChainAppRequest\x12&.appsender.SendCrossChainAppRequestMsg\x1a\x16.google.protobuf.Empty\x12\\\n" +
-	"\x19SendCrossChainAppResponse\x12'.appsender.SendCrossChainAppResponseMsg\x1a\x16.google.protobuf.Empty\x12V\n" +
-	"\x16SendCrossChainAppError\x12$.appsender.SendCrossChainAppErrorMsg\x1a\x16.google.protobuf.EmptyB*Z(github.com/luxfi/node/proto/pb/appsenderb\x06proto3"
+	"\rSendAppGossip\x12\x1b.appsender.SendAppGossipMsg\x1a\x16.google.protobuf.EmptyB4Z2github.com/luxfi/node/proto/pb/appsenderb\x06proto3"
 
 var (
 	file_appsender_appsender_proto_rawDescOnce sync.Once
@@ -564,34 +346,25 @@ func file_appsender_appsender_proto_rawDescGZIP() []byte {
 	return file_appsender_appsender_proto_rawDescData
 }
 
-var file_appsender_appsender_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_appsender_appsender_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_appsender_appsender_proto_goTypes = []any{
-	(*SendAppRequestMsg)(nil),            // 0: appsender.SendAppRequestMsg
-	(*SendAppResponseMsg)(nil),           // 1: appsender.SendAppResponseMsg
-	(*SendAppErrorMsg)(nil),              // 2: appsender.SendAppErrorMsg
-	(*SendAppGossipMsg)(nil),             // 3: appsender.SendAppGossipMsg
-	(*SendCrossChainAppRequestMsg)(nil),  // 4: appsender.SendCrossChainAppRequestMsg
-	(*SendCrossChainAppResponseMsg)(nil), // 5: appsender.SendCrossChainAppResponseMsg
-	(*SendCrossChainAppErrorMsg)(nil),    // 6: appsender.SendCrossChainAppErrorMsg
-	(*emptypb.Empty)(nil),                // 7: google.protobuf.Empty
+	(*SendAppRequestMsg)(nil),  // 0: appsender.SendAppRequestMsg
+	(*SendAppResponseMsg)(nil), // 1: appsender.SendAppResponseMsg
+	(*SendAppErrorMsg)(nil),    // 2: appsender.SendAppErrorMsg
+	(*SendAppGossipMsg)(nil),   // 3: appsender.SendAppGossipMsg
+	(*emptypb.Empty)(nil),      // 4: google.protobuf.Empty
 }
 var file_appsender_appsender_proto_depIdxs = []int32{
 	0, // 0: appsender.AppSender.SendAppRequest:input_type -> appsender.SendAppRequestMsg
 	1, // 1: appsender.AppSender.SendAppResponse:input_type -> appsender.SendAppResponseMsg
 	2, // 2: appsender.AppSender.SendAppError:input_type -> appsender.SendAppErrorMsg
 	3, // 3: appsender.AppSender.SendAppGossip:input_type -> appsender.SendAppGossipMsg
-	4, // 4: appsender.AppSender.SendCrossChainAppRequest:input_type -> appsender.SendCrossChainAppRequestMsg
-	5, // 5: appsender.AppSender.SendCrossChainAppResponse:input_type -> appsender.SendCrossChainAppResponseMsg
-	6, // 6: appsender.AppSender.SendCrossChainAppError:input_type -> appsender.SendCrossChainAppErrorMsg
-	7, // 7: appsender.AppSender.SendAppRequest:output_type -> google.protobuf.Empty
-	7, // 8: appsender.AppSender.SendAppResponse:output_type -> google.protobuf.Empty
-	7, // 9: appsender.AppSender.SendAppError:output_type -> google.protobuf.Empty
-	7, // 10: appsender.AppSender.SendAppGossip:output_type -> google.protobuf.Empty
-	7, // 11: appsender.AppSender.SendCrossChainAppRequest:output_type -> google.protobuf.Empty
-	7, // 12: appsender.AppSender.SendCrossChainAppResponse:output_type -> google.protobuf.Empty
-	7, // 13: appsender.AppSender.SendCrossChainAppError:output_type -> google.protobuf.Empty
-	7, // [7:14] is the sub-list for method output_type
-	0, // [0:7] is the sub-list for method input_type
+	4, // 4: appsender.AppSender.SendAppRequest:output_type -> google.protobuf.Empty
+	4, // 5: appsender.AppSender.SendAppResponse:output_type -> google.protobuf.Empty
+	4, // 6: appsender.AppSender.SendAppError:output_type -> google.protobuf.Empty
+	4, // 7: appsender.AppSender.SendAppGossip:output_type -> google.protobuf.Empty
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -608,7 +381,7 @@ func file_appsender_appsender_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_appsender_appsender_proto_rawDesc), len(file_appsender_appsender_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

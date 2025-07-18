@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -7,6 +7,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Network defines the interface that is used by a peer to help establish a well
@@ -35,6 +36,8 @@ type Network interface {
 	// Peers returns peers that are not known.
 	Peers(
 		peerID ids.NodeID,
+		trackedSubnets set.Set[ids.ID],
+		requestAllPeers bool,
 		knownPeers *bloom.ReadFilter,
 		peerSalt []byte,
 	) []*ips.ClaimedIPPort

@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Signer_PublicKey_FullMethodName = "/signer.Signer/PublicKey"
-	Signer_Sign_FullMethodName      = "/signer.Signer/Sign"
+	Signer_PublicKey_FullMethodName             = "/signer.Signer/PublicKey"
+	Signer_Sign_FullMethodName                  = "/signer.Signer/Sign"
+	Signer_SignProofOfPossession_FullMethodName = "/signer.Signer/SignProofOfPossession"
 )
 
 // SignerClient is the client API for Signer service.
@@ -29,6 +30,7 @@ const (
 type SignerClient interface {
 	PublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
+	SignProofOfPossession(ctx context.Context, in *SignProofOfPossessionRequest, opts ...grpc.CallOption) (*SignProofOfPossessionResponse, error)
 }
 
 type signerClient struct {
@@ -59,12 +61,23 @@ func (c *signerClient) Sign(ctx context.Context, in *SignRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *signerClient) SignProofOfPossession(ctx context.Context, in *SignProofOfPossessionRequest, opts ...grpc.CallOption) (*SignProofOfPossessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SignProofOfPossessionResponse)
+	err := c.cc.Invoke(ctx, Signer_SignProofOfPossession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SignerServer is the server API for Signer service.
 // All implementations must embed UnimplementedSignerServer
 // for forward compatibility.
 type SignerServer interface {
 	PublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
+	SignProofOfPossession(context.Context, *SignProofOfPossessionRequest) (*SignProofOfPossessionResponse, error)
 	mustEmbedUnimplementedSignerServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedSignerServer) PublicKey(context.Context, *PublicKeyRequest) (
 }
 func (UnimplementedSignerServer) Sign(context.Context, *SignRequest) (*SignResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
+}
+func (UnimplementedSignerServer) SignProofOfPossession(context.Context, *SignProofOfPossessionRequest) (*SignProofOfPossessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignProofOfPossession not implemented")
 }
 func (UnimplementedSignerServer) mustEmbedUnimplementedSignerServer() {}
 func (UnimplementedSignerServer) testEmbeddedByValue()                {}
@@ -138,6 +154,24 @@ func _Signer_Sign_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Signer_SignProofOfPossession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignProofOfPossessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SignerServer).SignProofOfPossession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Signer_SignProofOfPossession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SignerServer).SignProofOfPossession(ctx, req.(*SignProofOfPossessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Signer_ServiceDesc is the grpc.ServiceDesc for Signer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var Signer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Sign",
 			Handler:    _Signer_Sign_Handler,
+		},
+		{
+			MethodName: "SignProofOfPossession",
+			Handler:    _Signer_SignProofOfPossession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

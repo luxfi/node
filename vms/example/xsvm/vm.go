@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xsvm
@@ -8,18 +8,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"connectrpc.com/grpcreflect"
 	"github.com/gorilla/rpc/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -37,12 +41,11 @@ var (
 )
 
 type VM struct {
-	common.AppHandler
+	*p2p.Network
 
 	chainContext *snow.Context
 	db           database.Database
 	genesis      *genesis.Genesis
-	engineChan   chan<- common.Message
 
 	chain   chain.Chain
 	builder builder.Builder
@@ -55,15 +58,38 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
-	engineChan chan<- common.Message,
 	_ []*common.Fx,
-	_ common.AppSender,
+	appSender common.AppSender,
 ) error {
-	vm.AppHandler = common.NewNoOpAppHandler(chainContext.Log)
-
 	chainContext.Log.Info("initializing xsvm",
 		zap.Stringer("version", Version),
 	)
+
+	metrics := prometheus.NewRegistry()
+	err := chainContext.Metrics.Register("p2p", metrics)
+	if err != nil {
+		return err
+	}
+
+	vm.Network, err = p2p.NewNetwork(
+		chainContext.Log,
+		appSender,
+		metrics,
+		"",
+	)
+	if err != nil {
+		return err
+	}
+
+	// Allow signing of all warp messages. This is not typically safe, but is
+	// allowed for this example.
+	acp118Handler := acp118.NewHandler(
+		acp118Verifier{},
+		chainContext.WarpSigner,
+	)
+	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, acp118Handler); err != nil {
+		return err
+	}
 
 	vm.chainContext = chainContext
 	vm.db = db
@@ -81,14 +107,13 @@ func (vm *VM) Initialize(
 	}
 
 	vm.genesis = g
-	vm.engineChan = engineChan
 
 	vm.chain, err = chain.New(chainContext, vm.db)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chain manager: %w", err)
 	}
 
-	vm.builder = builder.New(chainContext, engineChan, vm.chain)
+	vm.builder = builder.New(chainContext, vm.chain)
 
 	chainContext.Log.Info("initialized xsvm",
 		zap.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
@@ -116,7 +141,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	api := api.NewServer(
+	jsonRPCAPI := api.NewServer(
 		vm.chainContext,
 		vm.genesis,
 		vm.db,
@@ -125,19 +150,26 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	)
 	return map[string]http.Handler{
 		"": server,
-	}, server.RegisterService(api, constants.XSVMName)
+	}, server.RegisterService(jsonRPCAPI, constants.XSVMName)
+}
+
+func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
+	mux := http.NewServeMux()
+
+	reflectionPattern, reflectionHandler := grpcreflect.NewHandlerV1(
+		grpcreflect.NewStaticReflector(xsvmconnect.PingName),
+	)
+	mux.Handle(reflectionPattern, reflectionHandler)
+
+	pingService := &api.PingService{Log: vm.chainContext.Log}
+	pingPath, pingHandler := xsvmconnect.NewPingHandler(pingService)
+	mux.Handle(pingPath, pingHandler)
+
+	return mux, nil
 }
 
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
-}
-
-func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
-	return nil
-}
-
-func (*VM) Disconnected(context.Context, ids.NodeID) error {
-	return nil
 }
 
 func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
@@ -150,6 +182,10 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, err
 		return nil, err
 	}
 	return vm.chain.NewBlock(blk)
+}
+
+func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
+	return vm.builder.WaitForEvent(ctx)
 }
 
 func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {

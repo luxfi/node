@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -11,9 +11,6 @@ const (
 	EVMName        = "evm"
 	SubnetEVMName  = "subnetevm"
 	XSVMName       = "xsvm"
-	AIVMName       = "aivm"
-	BridgeVMName   = "bridgevm"
-	ZKVMName       = "zkvm"
 )
 
 var (
@@ -22,9 +19,6 @@ var (
 	EVMID        = ids.ID{'e', 'v', 'm'}
 	SubnetEVMID  = ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'e', 'v', 'm'}
 	XSVMID       = ids.ID{'x', 's', 'v', 'm'}
-	AIVMID       = ids.ID{'a', 'i', 'v', 'm'}
-	BridgeVMID   = ids.ID{'b', 'r', 'i', 'd', 'g', 'e', 'v', 'm'}
-	ZKVMID       = ids.ID{'z', 'k', 'v', 'm'}
 )
 
 // VMName returns the name of the VM with the provided ID. If a human readable
@@ -41,12 +35,6 @@ func VMName(vmID ids.ID) string {
 		return SubnetEVMName
 	case XSVMID:
 		return XSVMName
-	case AIVMID:
-		return AIVMName
-	case BridgeVMID:
-		return BridgeVMName
-	case ZKVMID:
-		return ZKVMName
 	default:
 		return vmID.String()
 	}

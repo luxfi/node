@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -9,13 +9,14 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
+	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockexecutor "github.com/luxfi/node/vms/avm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/avm/txs/executor"
@@ -31,6 +32,9 @@ var (
 )
 
 type Builder interface {
+	// WaitForEvent waits until there is at least one tx available to the
+	// builder.
+	WaitForEvent(ctx context.Context) (common.Message, error)
 	// BuildBlock can be called to attempt to create a new block
 	BuildBlock(context.Context) (snowman.Block, error)
 }
@@ -42,14 +46,14 @@ type builder struct {
 	clk     *mockable.Clock
 
 	// Pool of all txs that may be able to be added
-	mempool mempool.Mempool
+	mempool mempool.Mempool[*txs.Tx]
 }
 
 func New(
 	backend *txexecutor.Backend,
 	manager blockexecutor.Manager,
 	clk *mockable.Clock,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 ) Builder {
 	return &builder{
 		backend: backend,
@@ -59,10 +63,12 @@ func New(
 	}
 }
 
+func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+	return b.mempool.WaitForEvent(ctx)
+}
+
 // BuildBlock builds a block to be added to consensus.
 func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
-	defer b.mempool.RequestBuildBlock()
-
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")
 

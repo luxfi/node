@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -14,24 +14,23 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/registry"
+	"github.com/luxfi/node/vms/registry/registrymock"
+	"github.com/luxfi/node/vms/vmsmock"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type loadVMsTest struct {
 	admin          *Admin
-	ctrl           *gomock.Controller
-	mockVMManager  *vms.MockManager
-	mockVMRegistry *registry.MockVMRegistry
+	mockVMManager  *vmsmock.Manager
+	mockVMRegistry *registrymock.VMRegistry
 }
 
 func initLoadVMsTest(t *testing.T) *loadVMsTest {
 	ctrl := gomock.NewController(t)
 
-	mockVMRegistry := registry.NewMockVMRegistry(ctrl)
-	mockVMManager := vms.NewMockManager(ctrl)
+	mockVMRegistry := registrymock.NewVMRegistry(ctrl)
+	mockVMManager := vmsmock.NewManager(ctrl)
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
@@ -39,7 +38,6 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
-		ctrl:           ctrl,
 		mockVMManager:  mockVMManager,
 		mockVMRegistry: mockVMRegistry,
 	}

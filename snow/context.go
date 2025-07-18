@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snow
@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/ids"
@@ -32,19 +31,24 @@ type ContextInitializable interface {
 // [ChainID] is the ID of the chain this context exists within.
 // [NodeID] is the ID of this node
 type Context struct {
-	NetworkID uint32
-	SubnetID  ids.ID
-	ChainID   ids.ID
-	NodeID    ids.NodeID
-	PublicKey *bls.PublicKey
+	NetworkID       uint32
+	SubnetID        ids.ID
+	ChainID         ids.ID
+	NodeID          ids.NodeID
+	PublicKey       *bls.PublicKey
+	NetworkUpgrades upgrade.Config
 
 	XChainID    ids.ID
 	CChainID    ids.ID
 	LUXAssetID ids.ID
 
-	Log          logging.Logger
+	Log logging.Logger
+	// Deprecated: This lock should not be used unless absolutely necessary.
+	// This lock will be removed in a future release once it is replaced with
+	// more granular locks.
+	//
+	// Warning: This lock is not correctly implemented over the rpcchainvm.
 	Lock         sync.RWMutex
-	Keystore     keystore.BlockchainKeystore
 	SharedMemory atomic.SharedMemory
 	BCLookup     ids.AliaserReader
 	Metrics      metrics.MultiGatherer
@@ -55,9 +59,6 @@ type Context struct {
 	ValidatorState validators.State // interface for P-Chain validators
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
-
-	// Upgrades config
-	NetworkUpgrades upgrade.Config
 }
 
 // Expose gatherer interface for unit testing.

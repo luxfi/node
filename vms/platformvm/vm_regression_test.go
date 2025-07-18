@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -7,10 +7,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -22,42 +22,41 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/uptime"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/node/vms/platformvm/network"
+	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/node/vms/platformvm/txs/txstest"
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
+
+	wallet := newWallet(t, vm, walletConfig{})
 
 	validatorStartTime := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
@@ -69,26 +68,16 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	}
 
 	// create valid tx
-	builder, txSigner := factory.NewWallet(keys[0])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(validatorStartTime.Unix()),
 			End:    uint64(validatorEndTime.Unix()),
 			Wght:   vm.MinValidatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	// trigger block creation
@@ -96,45 +85,26 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addValidatorBlock.Verify(context.Background()))
-	require.NoError(addValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// Advance the time
 	vm.clock.Set(validatorStartTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	firstAdvanceTimeBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(firstAdvanceTimeBlock.Verify(context.Background()))
-	require.NoError(firstAdvanceTimeBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
-
 	firstDelegatorStartTime := validatorStartTime.Add(executor.SyncBound).Add(1 * time.Second)
 	firstDelegatorEndTime := firstDelegatorStartTime.Add(vm.MinStakeDuration)
 
 	// create valid tx
-	builder, txSigner = factory.NewWallet(keys[0], keys[1])
-	uDelTx1, err := builder.NewAddDelegatorTx(
+	addFirstDelegatorTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(firstDelegatorStartTime.Unix()),
 			End:    uint64(firstDelegatorEndTime.Unix()),
 			Wght:   4 * vm.MinValidatorStake, // maximum amount of stake this delegator can provide
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		rewardsOwner,
 	)
-	require.NoError(err)
-	addFirstDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx1)
 	require.NoError(err)
 
 	// trigger block creation
@@ -142,20 +112,12 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
 	vm.ctx.Lock.Lock()
 
-	addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addFirstDelegatorBlock.Verify(context.Background()))
-	require.NoError(addFirstDelegatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addFirstDelegatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// Advance the time
 	vm.clock.Set(firstDelegatorStartTime)
-
-	secondAdvanceTimeBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(secondAdvanceTimeBlock.Verify(context.Background()))
-	require.NoError(secondAdvanceTimeBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	secondDelegatorStartTime := firstDelegatorEndTime.Add(2 * time.Second)
 	secondDelegatorEndTime := secondDelegatorStartTime.Add(vm.MinStakeDuration)
@@ -163,25 +125,15 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	vm.clock.Set(secondDelegatorStartTime.Add(-10 * executor.SyncBound))
 
 	// create valid tx
-	builder, txSigner = factory.NewWallet(keys[0], keys[1], keys[3])
-	uDelTx2, err := builder.NewAddDelegatorTx(
+	addSecondDelegatorTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(secondDelegatorStartTime.Unix()),
 			End:    uint64(secondDelegatorEndTime.Unix()),
 			Wght:   vm.MinDelegatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		rewardsOwner,
 	)
-	require.NoError(err)
-	addSecondDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx2)
 	require.NoError(err)
 
 	// trigger block creation
@@ -189,35 +141,22 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(vm.issueTxFromRPC(addSecondDelegatorTx))
 	vm.ctx.Lock.Lock()
 
-	addSecondDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addSecondDelegatorBlock.Verify(context.Background()))
-	require.NoError(addSecondDelegatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addSecondDelegatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	thirdDelegatorStartTime := firstDelegatorEndTime.Add(-time.Second)
 	thirdDelegatorEndTime := thirdDelegatorStartTime.Add(vm.MinStakeDuration)
 
-	// create valid tx
-	builder, txSigner = factory.NewWallet(keys[0], keys[1], keys[4])
-	uDelTx3, err := builder.NewAddDelegatorTx(
+	// create invalid tx
+	addThirdDelegatorTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(thirdDelegatorStartTime.Unix()),
 			End:    uint64(thirdDelegatorEndTime.Unix()),
 			Wght:   vm.MinDelegatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		rewardsOwner,
 	)
-	require.NoError(err)
-	addThirdDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx3)
 	require.NoError(err)
 
 	// trigger block creation
@@ -258,7 +197,7 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 		},
 		{
 			name:    "post-upgrade calculate max stake correctly",
-			ap3Time: defaultGenesisTime,
+			ap3Time: genesistest.DefaultValidatorStartTime,
 		},
 	}
 
@@ -266,40 +205,31 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			vm, factory, _, _ := defaultVM(t, apricotPhase3)
+			vm, _, _ := defaultVM(t, upgradetest.ApricotPhase3)
 			vm.UpgradeConfig.ApricotPhase3Time = test.ap3Time
 
 			vm.ctx.Lock.Lock()
 			defer vm.ctx.Lock.Unlock()
 
-			key, err := secp256k1.NewPrivateKey()
-			require.NoError(err)
+			wallet := newWallet(t, vm, walletConfig{})
 
-			id := key.PublicKey().Address()
 			nodeID := ids.GenerateTestNodeID()
-			changeAddr := keys[0].PublicKey().Address()
+			rewardsOwner := &secp256k1fx.OutputOwners{
+				Threshold: 1,
+				Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+			}
 
 			// create valid tx
-			builder, txSigner := factory.NewWallet(keys[0], keys[1])
-			utx, err := builder.NewAddValidatorTx(
+			addValidatorTx, err := wallet.IssueAddValidatorTx(
 				&txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(validatorStartTime.Unix()),
 					End:    uint64(validatorEndTime.Unix()),
 					Wght:   validatorStake,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{id},
-				},
+				rewardsOwner,
 				reward.PercentDenominator,
-				walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{changeAddr},
-				}),
 			)
-			require.NoError(err)
-			addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 			require.NoError(err)
 
 			// issue the add validator tx
@@ -307,32 +237,19 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(vm.issueTxFromRPC(addValidatorTx))
 			vm.ctx.Lock.Lock()
 
-			// trigger block creation for the validator tx
-			addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-			require.NoError(err)
-			require.NoError(addValidatorBlock.Verify(context.Background()))
-			require.NoError(addValidatorBlock.Accept(context.Background()))
-			require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+			// Accept addValidatorTx
+			require.NoError(buildAndAcceptStandardBlock(vm))
 
 			// create valid tx
-			uDelTx1, err := builder.NewAddDelegatorTx(
+			addFirstDelegatorTx, err := wallet.IssueAddDelegatorTx(
 				&txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(delegator1StartTime.Unix()),
 					End:    uint64(delegator1EndTime.Unix()),
 					Wght:   delegator1Stake,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-				},
-				walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{changeAddr},
-				}),
+				rewardsOwner,
 			)
-			require.NoError(err)
-			addFirstDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx1)
 			require.NoError(err)
 
 			// issue the first add delegator tx
@@ -340,32 +257,19 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
 			vm.ctx.Lock.Lock()
 
-			// trigger block creation for the first add delegator tx
-			addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-			require.NoError(err)
-			require.NoError(addFirstDelegatorBlock.Verify(context.Background()))
-			require.NoError(addFirstDelegatorBlock.Accept(context.Background()))
-			require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+			// Accept addFirstDelegatorTx
+			require.NoError(buildAndAcceptStandardBlock(vm))
 
 			// create valid tx
-			uDelTx2, err := builder.NewAddDelegatorTx(
+			addSecondDelegatorTx, err := wallet.IssueAddDelegatorTx(
 				&txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(delegator2StartTime.Unix()),
 					End:    uint64(delegator2EndTime.Unix()),
 					Wght:   delegator2Stake,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-				},
-				walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{changeAddr},
-				}),
+				rewardsOwner,
 			)
-			require.NoError(err)
-			addSecondDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx2)
 			require.NoError(err)
 
 			// issue the second add delegator tx
@@ -373,32 +277,19 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(vm.issueTxFromRPC(addSecondDelegatorTx))
 			vm.ctx.Lock.Lock()
 
-			// trigger block creation for the second add delegator tx
-			addSecondDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-			require.NoError(err)
-			require.NoError(addSecondDelegatorBlock.Verify(context.Background()))
-			require.NoError(addSecondDelegatorBlock.Accept(context.Background()))
-			require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+			// Accept addSecondDelegatorTx
+			require.NoError(buildAndAcceptStandardBlock(vm))
 
 			// create valid tx
-			uDelTx3, err := builder.NewAddDelegatorTx(
+			addThirdDelegatorTx, err := wallet.IssueAddDelegatorTx(
 				&txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(delegator3StartTime.Unix()),
 					End:    uint64(delegator3EndTime.Unix()),
 					Wght:   delegator3Stake,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-				},
-				walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{changeAddr},
-				}),
+				rewardsOwner,
 			)
-			require.NoError(err)
-			addThirdDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx3)
 			require.NoError(err)
 
 			// issue the third add delegator tx
@@ -406,32 +297,19 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(vm.issueTxFromRPC(addThirdDelegatorTx))
 			vm.ctx.Lock.Lock()
 
-			// trigger block creation for the third add delegator tx
-			addThirdDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-			require.NoError(err)
-			require.NoError(addThirdDelegatorBlock.Verify(context.Background()))
-			require.NoError(addThirdDelegatorBlock.Accept(context.Background()))
-			require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+			// Accept addThirdDelegatorTx
+			require.NoError(buildAndAcceptStandardBlock(vm))
 
 			// create valid tx
-			uDelTx4, err := builder.NewAddDelegatorTx(
+			addFourthDelegatorTx, err := wallet.IssueAddDelegatorTx(
 				&txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(delegator4StartTime.Unix()),
 					End:    uint64(delegator4EndTime.Unix()),
 					Wght:   delegator4Stake,
 				},
-				&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-				},
-				walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{changeAddr},
-				}),
+				rewardsOwner,
 			)
-			require.NoError(err)
-			addFourthDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx4)
 			require.NoError(err)
 
 			// issue the fourth add delegator tx
@@ -439,12 +317,8 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(vm.issueTxFromRPC(addFourthDelegatorTx))
 			vm.ctx.Lock.Lock()
 
-			// trigger block creation for the fourth add delegator tx
-			addFourthDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-			require.NoError(err)
-			require.NoError(addFourthDelegatorBlock.Verify(context.Background()))
-			require.NoError(addFourthDelegatorBlock.Accept(context.Background()))
-			require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+			// Accept addFourthDelegatorTx
+			require.NoError(buildAndAcceptStandardBlock(vm))
 		})
 	}
 }
@@ -457,19 +331,14 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	baseDB := memdb.New()
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 
-	vm := &VM{Config: config.Config{
+	vm := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
 		Validators:             validators.NewManager(),
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig:           defaultRewardConfig,
-		UpgradeConfig: upgrade.Config{
-			BanffTime:    latestForkTime,
-			CortinaTime:  mockable.MaxTime,
-			DurangoTime:  mockable.MaxTime,
-			EUpgradeTime: mockable.MaxTime,
-		},
+		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Banff, latestForkTime),
 	}}
 
 	ctx := snowtest.Context(t, snowtest.PChainID)
@@ -479,17 +348,13 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
-
-	msgChan := make(chan common.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
 		baseDB,
-		genesisBytes,
+		genesistest.NewBytes(t, genesistest.Config{}),
 		nil,
 		nil,
-		msgChan,
 		nil,
 		nil,
 	))
@@ -509,54 +374,39 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 			Addrs:     []ids.ShortID{addr0},
 		}
 
-	factory := txstest.NewWalletFactory(
-		vm.ctx,
-		&vm.Config,
-		vm.state,
-	)
-
-	builder, txSigner := factory.NewWallet(key0)
-	utx0, err := builder.NewCreateSubnetTx(
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr0},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr0},
-		}),
-	)
-	require.NoError(err)
-	addSubnetTx0, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx0)
-	require.NoError(err)
-
-	builder, txSigner = factory.NewWallet(key1)
-	utx1, err := builder.NewCreateSubnetTx(
-		&secp256k1fx.OutputOwners{
+		key1    = genesistest.DefaultFundedKeys[1]
+		addr1   = key1.Address()
+		owners1 = &secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{addr1},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr1},
-		}),
+		}
 	)
-	require.NoError(err)
-	addSubnetTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx1)
+
+	wallet := newWallet(t, vm, walletConfig{})
+	addSubnetTx0, err := wallet.IssueCreateSubnetTx(
+		owners0,
+		walletcommon.WithCustomAddresses(set.Of(
+			addr0,
+		)),
+	)
 	require.NoError(err)
 
-	utx2, err := builder.NewCreateSubnetTx(
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr1},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr0},
-		}),
+	addSubnetTx1, err := wallet.IssueCreateSubnetTx(
+		owners1,
+		walletcommon.WithCustomAddresses(set.Of(
+			addr1,
+		)),
 	)
 	require.NoError(err)
-	addSubnetTx2, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx2)
+
+	// Wallet needs to be re-created to generate a conflicting transaction
+	wallet = newWallet(t, vm, walletConfig{})
+	addSubnetTx2, err := wallet.IssueCreateSubnetTx(
+		owners1,
+		walletcommon.WithCustomAddresses(set.Of(
+			addr0,
+		)),
+	)
 	require.NoError(err)
 
 	preferredID := vm.manager.Preferred()
@@ -611,17 +461,18 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
+	vm, baseDB, mutableSharedMemory := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
+
+	wallet := newWallet(t, vm, walletConfig{})
 
 	nodeID := ids.GenerateTestNodeID()
 	newValidatorStartTime := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
 	newValidatorEndTime := newValidatorStartTime.Add(defaultMinStakingDuration)
 
 	// Create the tx to add a new validator
-	builder, txSigner := factory.NewWallet(keys[0])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(newValidatorStartTime.Unix()),
@@ -634,8 +485,6 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 		},
 		reward.PercentDenominator,
 	)
-	require.NoError(err)
-	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	// Create the standard block to add the new validator
@@ -674,7 +523,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          vm.StaticFeeConfig.TxFee,
+			Amt:          1,
 			OutputOwners: secp256k1fx.OutputOwners{},
 		},
 	}
@@ -691,7 +540,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,
 				In: &secp256k1fx.TransferInput{
-					Amt: vm.StaticFeeConfig.TxFee,
+					Amt: 1,
 				},
 			},
 		},
@@ -722,11 +571,6 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	err = importBlk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound)
 
-	// Because we no longer ever reject a block in verification, the status
-	// should remain as processing.
-	importBlkStatus := importBlk.Status()
-	require.Equal(choices.Processing, importBlkStatus)
-
 	// Populate the shared memory UTXO.
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, baseDB))
 
@@ -753,10 +597,6 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	// Because the shared memory UTXO has now been populated, the block should
 	// pass verification.
 	require.NoError(importBlk.Verify(context.Background()))
-
-	// The status shouldn't have been changed during a successful verification.
-	importBlkStatus = importBlk.Status()
-	require.Equal(choices.Processing, importBlkStatus)
 
 	// Move chain time ahead to bring the new validator from the pending
 	// validator set into the current validator set.
@@ -786,25 +626,17 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	}
 	for _, blk := range allBlocks {
 		require.NoError(blk.Accept(context.Background()))
-
-		status := blk.Status()
-		require.Equal(choices.Accepted, status)
 	}
 
 	// Force a reload of the state from the database.
-	vm.Config.Validators = validators.NewManager()
-	execCfg, _ := config.GetExecutionConfig(nil)
-	newState, err := state.New(
-		vm.db,
-		nil,
-		prometheus.NewRegistry(),
-		&vm.Config,
-		execCfg,
-		vm.ctx,
-		metrics.Noop,
-		reward.NewCalculator(vm.Config.RewardConfig),
-	)
-	require.NoError(err)
+	vm.Internal.Validators = validators.NewManager()
+	newState := statetest.New(t, statetest.Config{
+		DB:         vm.db,
+		Validators: vm.Internal.Validators,
+		Upgrades:   vm.Internal.UpgradeConfig,
+		Context:    vm.ctx,
+		Rewards:    reward.NewCalculator(vm.Internal.RewardConfig),
+	})
 
 	// Verify that new validator is now in the current validator set.
 	{
@@ -822,34 +654,34 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
+	vm, baseDB, mutableSharedMemory := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
 	vm.state.SetCurrentSupply(constants.PrimaryNetworkID, defaultRewardConfig.SupplyCap/2)
 
+	wallet := newWallet(t, vm, walletConfig{})
+
+	nodeID0 := ids.GenerateTestNodeID()
 	newValidatorStartTime0 := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
 	newValidatorEndTime0 := newValidatorStartTime0.Add(defaultMaxStakingDuration)
 
-	nodeID0 := ids.GenerateTestNodeID()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
 	// Create the tx to add the first new validator
-	builder, txSigner := factory.NewWallet(keys[0])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx0, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID0,
 			Start:  uint64(newValidatorStartTime0.Unix()),
 			End:    uint64(newValidatorEndTime0.Unix()),
 			Wght:   vm.MaxValidatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
 	)
-	require.NoError(err)
-	addValidatorTx0, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	// Create the standard block to add the first new validator
@@ -923,7 +755,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 			ID: vm.ctx.LUXAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          vm.StaticFeeConfig.TxFee,
+			Amt:          1,
 			OutputOwners: secp256k1fx.OutputOwners{},
 		},
 	}
@@ -940,7 +772,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,
 				In: &secp256k1fx.TransferInput{
-					Amt: vm.StaticFeeConfig.TxFee,
+					Amt: 1,
 				},
 			},
 		},
@@ -970,11 +802,6 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	err = importBlk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound)
 
-	// Because we no longer ever reject a block in verification, the status
-	// should remain as processing.
-	importBlkStatus := importBlk.Status()
-	require.Equal(choices.Processing, importBlkStatus)
-
 	// Populate the shared memory UTXO.
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, baseDB))
 
@@ -1002,32 +829,22 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	// pass verification.
 	require.NoError(importBlk.Verify(context.Background()))
 
-	// The status shouldn't have been changed during a successful verification.
-	importBlkStatus = importBlk.Status()
-	require.Equal(choices.Processing, importBlkStatus)
-
 	newValidatorStartTime1 := newValidatorStartTime0.Add(executor.SyncBound).Add(1 * time.Second)
 	newValidatorEndTime1 := newValidatorStartTime1.Add(defaultMaxStakingDuration)
 
 	nodeID1 := ids.GenerateTestNodeID()
 
 	// Create the tx to add the second new validator
-	builder, txSigner = factory.NewWallet(keys[1])
-	utx1, err := builder.NewAddValidatorTx(
+	addValidatorTx1, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID1,
 			Start:  uint64(newValidatorStartTime1.Unix()),
 			End:    uint64(newValidatorEndTime1.Unix()),
 			Wght:   vm.MaxValidatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
 	)
-	require.NoError(err)
-	addValidatorTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx1)
 	require.NoError(err)
 
 	// Create the standard block to add the second new validator
@@ -1101,25 +918,17 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	}
 	for _, blk := range allBlocks {
 		require.NoError(blk.Accept(context.Background()))
-
-		status := blk.Status()
-		require.Equal(choices.Accepted, status)
 	}
 
 	// Force a reload of the state from the database.
-	vm.Config.Validators = validators.NewManager()
-	execCfg, _ := config.GetExecutionConfig(nil)
-	newState, err := state.New(
-		vm.db,
-		nil,
-		prometheus.NewRegistry(),
-		&vm.Config,
-		execCfg,
-		vm.ctx,
-		metrics.Noop,
-		reward.NewCalculator(vm.Config.RewardConfig),
-	)
-	require.NoError(err)
+	vm.Internal.Validators = validators.NewManager()
+	newState := statetest.New(t, statetest.Config{
+		DB:         vm.db,
+		Validators: vm.Internal.Validators,
+		Upgrades:   vm.Internal.UpgradeConfig,
+		Context:    vm.ctx,
+		Rewards:    reward.NewCalculator(vm.Internal.RewardConfig),
+	})
 
 	// Verify that validators are in the current validator set with the correct
 	// reward calculated.
@@ -1146,7 +955,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
@@ -1155,11 +964,11 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	require.Equal(uint64(1), currentHeight)
 
 	expectedValidators1 := map[ids.NodeID]uint64{
-		genesisNodeIDs[0]: defaultWeight,
-		genesisNodeIDs[1]: defaultWeight,
-		genesisNodeIDs[2]: defaultWeight,
-		genesisNodeIDs[3]: defaultWeight,
-		genesisNodeIDs[4]: defaultWeight,
+		genesistest.DefaultNodeIDs[0]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[1]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[2]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[3]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[4]: genesistest.DefaultValidatorWeight,
 	}
 	validators, err := vm.GetValidatorSet(context.Background(), 1, constants.PrimaryNetworkID)
 	require.NoError(err)
@@ -1167,14 +976,15 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 		require.Equal(weight, validators[nodeID].Weight)
 	}
 
+	wallet := newWallet(t, vm, walletConfig{})
+
 	newValidatorStartTime0 := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
 	newValidatorEndTime0 := newValidatorStartTime0.Add(defaultMaxStakingDuration)
 
 	extraNodeID := ids.GenerateTestNodeID()
 
 	// Create the tx to add the first new validator
-	builder, txSigner := factory.NewWallet(keys[0])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx0, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: extraNodeID,
 			Start:  uint64(newValidatorStartTime0.Unix()),
@@ -1187,8 +997,6 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 		},
 		reward.PercentDenominator,
 	)
-	require.NoError(err)
-	addValidatorTx0, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	// Create the standard block to add the first new validator
@@ -1259,12 +1067,12 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	}
 
 	expectedValidators2 := map[ids.NodeID]uint64{
-		genesisNodeIDs[0]: defaultWeight,
-		genesisNodeIDs[1]: defaultWeight,
-		genesisNodeIDs[2]: defaultWeight,
-		genesisNodeIDs[3]: defaultWeight,
-		genesisNodeIDs[4]: defaultWeight,
-		extraNodeID:       vm.MaxValidatorStake,
+		genesistest.DefaultNodeIDs[0]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[1]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[2]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[3]: genesistest.DefaultValidatorWeight,
+		genesistest.DefaultNodeIDs[4]: genesistest.DefaultValidatorWeight,
+		extraNodeID:                   vm.MaxValidatorStake,
 	}
 	validators, err = vm.GetValidatorSet(context.Background(), 3, constants.PrimaryNetworkID)
 	require.NoError(err)
@@ -1288,38 +1096,29 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	delegator2EndTime := delegator2StartTime.Add(3 * defaultMinStakingDuration)
 	delegator2Stake := defaultMaxValidatorStake - validatorStake
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	key, err := secp256k1.NewPrivateKey()
-	require.NoError(err)
+	wallet := newWallet(t, vm, walletConfig{})
 
-	id := key.Address()
 	nodeID := ids.GenerateTestNodeID()
-	changeAddr := keys[0].PublicKey().Address()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
 	// create valid tx
-	builder, txSigner := factory.NewWallet(keys[0], keys[1])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(validatorStartTime.Unix()),
 			End:    uint64(validatorEndTime.Unix()),
 			Wght:   validatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{id},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	// issue the add validator tx
@@ -1327,32 +1126,19 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addValidatorBlock.Verify(context.Background()))
-	require.NoError(addValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// create valid tx
-	uDelTx, err := builder.NewAddDelegatorTx(
+	addFirstDelegatorTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(delegator1StartTime.Unix()),
 			End:    uint64(delegator1EndTime.Unix()),
 			Wght:   delegator1Stake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		rewardsOwner,
 	)
-	require.NoError(err)
-	addFirstDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx)
 	require.NoError(err)
 
 	// issue the first add delegator tx
@@ -1360,32 +1146,19 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the first add delegator tx
-	addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addFirstDelegatorBlock.Verify(context.Background()))
-	require.NoError(addFirstDelegatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addFirstDelegatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	// create valid tx
-	uDelTx, err = builder.NewAddDelegatorTx(
+	// create invalid tx
+	addSecondDelegatorTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(delegator2StartTime.Unix()),
 			End:    uint64(delegator2EndTime.Unix()),
 			Wght:   delegator2Stake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		rewardsOwner,
 	)
-	require.NoError(err)
-	addSecondDelegatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uDelTx)
 	require.NoError(err)
 
 	// attempting to issue the second add delegator tx should fail because the
@@ -1402,19 +1175,14 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	validatorStartTime := latestForkTime.Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	key, err := secp256k1.NewPrivateKey()
-	require.NoError(err)
+	wallet := newWallet(t, vm, walletConfig{})
 
-	id := key.Address()
 	nodeID := ids.GenerateTestNodeID()
-	changeAddr := keys[0].PublicKey().Address()
-
-	builder, txSigner := factory.NewWallet(keys[0], keys[1])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(validatorStartTime.Unix()),
@@ -1423,55 +1191,36 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 		},
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{id},
+			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addValidatorBlock.Verify(context.Background()))
-	require.NoError(addValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	uSubnetTx, err := builder.NewCreateSubnetTx(
+	createSubnetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
+			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	createSubnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uSubnetTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createSubnetTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the subnet tx
-	createSubnetBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(createSubnetBlock.Verify(context.Background()))
-	require.NoError(createSubnetBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept createSubnetTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	uSubnetValTx, err := builder.NewAddSubnetValidatorTx(
+	subnetID := createSubnetTx.ID()
+	addSubnetValidatorTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1479,46 +1228,33 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Subnet: createSubnetTx.ID(),
+			Subnet: subnetID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uSubnetValTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addSubnetValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	addSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
+	// Accept addSubnetValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
+
+	addSubnetValidatorHeight, err := vm.GetCurrentHeight(context.Background())
 	require.NoError(err)
-	require.NoError(addSubnetValidatorBlock.Verify(context.Background()))
-	require.NoError(addSubnetValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
 
 	emptyValidatorSet, err := vm.GetValidatorSet(
 		context.Background(),
-		addSubnetValidatorBlock.Height(),
-		createSubnetTx.ID(),
+		addSubnetValidatorHeight,
+		subnetID,
 	)
 	require.NoError(err)
 	require.Empty(emptyValidatorSet)
 
-	uRemoveSubnetValTx, err := builder.NewRemoveSubnetValidatorTx(
+	removeSubnetValidatorTx, err := wallet.IssueRemoveSubnetValidatorTx(
 		nodeID,
-		createSubnetTx.ID(),
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		subnetID,
 	)
-	require.NoError(err)
-	removeSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uRemoveSubnetValTx)
 	require.NoError(err)
 
 	// Set the clock so that the validator will be moved from the pending
@@ -1529,17 +1265,13 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	require.NoError(vm.issueTxFromRPC(removeSubnetValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	removeSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(removeSubnetValidatorBlock.Verify(context.Background()))
-	require.NoError(removeSubnetValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept removeSubnetValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	emptyValidatorSet, err = vm.GetValidatorSet(
 		context.Background(),
-		addSubnetValidatorBlock.Height(),
-		createSubnetTx.ID(),
+		addSubnetValidatorHeight,
+		subnetID,
 	)
 	require.NoError(err)
 	require.Empty(emptyValidatorSet)
@@ -1551,19 +1283,14 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	validatorStartTime := latestForkTime.Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	key, err := secp256k1.NewPrivateKey()
-	require.NoError(err)
+	wallet := newWallet(t, vm, walletConfig{})
 
-	id := key.PublicKey().Address()
 	nodeID := ids.GenerateTestNodeID()
-	changeAddr := keys[0].PublicKey().Address()
-
-	builder, txSigner := factory.NewWallet(keys[0], keys[1])
-	utx, err := builder.NewAddValidatorTx(
+	addValidatorTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(validatorStartTime.Unix()),
@@ -1572,55 +1299,36 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 		},
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{id},
+			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addValidatorBlock.Verify(context.Background()))
-	require.NoError(addValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	uCreateSubnetTx, err := builder.NewCreateSubnetTx(
+	createSubnetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
+			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	createSubnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uCreateSubnetTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createSubnetTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the subnet tx
-	createSubnetBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(createSubnetBlock.Verify(context.Background()))
-	require.NoError(createSubnetBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept createSubnetTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	uAddSubnetValTx, err := builder.NewAddSubnetValidatorTx(
+	subnetID := createSubnetTx.ID()
+	addSubnetValidatorTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1628,38 +1336,22 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Subnet: createSubnetTx.ID(),
+			Subnet: subnetID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
 	)
-	require.NoError(err)
-	addSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addSubnetValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	addSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
-	require.NoError(err)
-	require.NoError(addSubnetValidatorBlock.Verify(context.Background()))
-	require.NoError(addSubnetValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	// Accept addSubnetValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	uRemoveSubnetValTx, err := builder.NewRemoveSubnetValidatorTx(
+	removeSubnetValidatorTx, err := wallet.IssueRemoveSubnetValidatorTx(
 		nodeID,
-		createSubnetTx.ID(),
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{changeAddr},
-		}),
+		subnetID,
 	)
-	require.NoError(err)
-	removeSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uRemoveSubnetValTx)
 	require.NoError(err)
 
 	// Set the clock so that the validator will be moved from the pending
@@ -1670,33 +1362,104 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	require.NoError(vm.issueTxFromRPC(removeSubnetValidatorTx))
 	vm.ctx.Lock.Lock()
 
-	// trigger block creation for the validator tx
-	removeSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
+	// Accept removeSubnetValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
+}
+
+func TestAddValidatorDuringRemoval(t *testing.T) {
+	require := require.New(t)
+
+	vm, _, _ := defaultVM(t, upgradetest.Durango)
+	vm.ctx.Lock.Lock()
+	defer vm.ctx.Lock.Unlock()
+
+	var (
+		nodeID   = genesistest.DefaultNodeIDs[0]
+		subnetID = testSubnet1.ID()
+		wallet   = newWallet(t, vm, walletConfig{
+			subnetIDs: []ids.ID{subnetID},
+		})
+
+		duration     = defaultMinStakingDuration
+		firstEndTime = latestForkTime.Add(duration)
+	)
+
+	firstAddSubnetValidatorTx, err := wallet.IssueAddSubnetValidatorTx(&txs.SubnetValidator{
+		Validator: txs.Validator{
+			NodeID: nodeID,
+			End:    uint64(firstEndTime.Unix()),
+			Wght:   1,
+		},
+		Subnet: subnetID,
+	})
 	require.NoError(err)
-	require.NoError(removeSubnetValidatorBlock.Verify(context.Background()))
-	require.NoError(removeSubnetValidatorBlock.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+
+	vm.ctx.Lock.Unlock()
+	require.NoError(vm.issueTxFromRPC(firstAddSubnetValidatorTx))
+	vm.ctx.Lock.Lock()
+
+	// Accept firstAddSubnetValidatorTx
+	require.NoError(buildAndAcceptStandardBlock(vm))
+
+	// Verify that the validator was added
+	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	require.NoError(err)
+
+	secondEndTime := firstEndTime.Add(duration)
+	secondSubnetValidatorTx, err := wallet.IssueAddSubnetValidatorTx(&txs.SubnetValidator{
+		Validator: txs.Validator{
+			NodeID: nodeID,
+			End:    uint64(secondEndTime.Unix()),
+			Wght:   1,
+		},
+		Subnet: subnetID,
+	})
+	require.NoError(err)
+
+	vm.clock.Set(firstEndTime)
+	vm.ctx.Lock.Unlock()
+	err = vm.issueTxFromRPC(secondSubnetValidatorTx)
+	vm.ctx.Lock.Lock()
+	require.ErrorIs(err, state.ErrAddingStakerAfterDeletion)
+
+	// Remove the first subnet validator
+	require.NoError(buildAndAcceptStandardBlock(vm))
+
+	// Verify that the validator does not exist
+	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	require.ErrorIs(err, database.ErrNotFound)
+
+	// Verify that the invalid transaction was not executed
+	_, _, err = vm.state.GetTx(secondSubnetValidatorTx.ID())
+	require.ErrorIs(err, database.ErrNotFound)
 }
 
 // GetValidatorSet must return the BLS keys for a given validator correctly when
 // queried at a previous height, even in case it has currently expired
+//
+//  1. Add primary network validator
+//  2. Advance chain time for the primary network validator to be moved to the
+//     current validator set
+//  3. Add permissioned subnet validator
+//  4. Advance chain time for the subnet validator to be moved to the current
+//     validator set
+//  5. Advance chain time for the subnet validator to be removed
+//  6. Advance chain time for the primary network validator to be removed
+//  7. Re-add the primary network validator with a different BLS key
+//  8. Advance chain time for the primary network validator to be moved to the
+//     current validator set
 func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
-	// setup
-	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
 	subnetID := testSubnet1.TxID
+	wallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
 
-	// setup time
-	currentTime := defaultGenesisTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
-	// A subnet validator stakes and then stops; also its primary network counterpart stops staking
 	var (
-		primaryStartTime   = currentTime.Add(executor.SyncBound)
+		primaryStartTime   = genesistest.DefaultValidatorStartTime.Add(executor.SyncBound)
 		subnetStartTime    = primaryStartTime.Add(executor.SyncBound)
 		subnetEndTime      = subnetStartTime.Add(defaultMinStakingDuration)
 		primaryEndTime     = subnetEndTime.Add(time.Second)
@@ -1706,15 +1469,20 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 
 	// insert primary network validator
 	var (
-		nodeID = ids.GenerateTestNodeID()
-		addr   = keys[0].PublicKey().Address()
+		nodeID       = ids.GenerateTestNodeID()
+		rewardsOwner = &secp256k1fx.OutputOwners{
+			Threshold: 1,
+			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+		}
 	)
-	sk1, err := bls.NewSecretKey()
-	require.NoError(err)
+	sk1, err := localsigner.New()
+	require.NoError(t, err)
+	pk1 := sk1.PublicKey()
+	pop1, err := signer.NewProofOfPossession(sk1)
+	require.NoError(t, err)
 
 	// build primary network validator with BLS key
-	builder, txSigner := factory.NewWallet(keys...)
-	uPrimaryTx, err := builder.NewAddPermissionlessValidatorTx(
+	primaryTx, err := wallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1724,46 +1492,32 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk1),
+		pop1,
 		vm.ctx.LUXAssetID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	vm.ctx.Lock.Unlock()
-	require.NoError(vm.issueTxFromRPC(primaryTx))
+	require.NoError(t, vm.issueTxFromRPC(primaryTx))
 	vm.ctx.Lock.Lock()
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
-	currentTime = primaryStartTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	vm.clock.Set(primaryStartTime)
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	primaryStartHeight, err := vm.GetCurrentHeight(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
+	t.Logf("primaryStartHeight: %d", primaryStartHeight)
 
 	// insert the subnet validator
-	builder, txSigner = factory.NewWallet(keys[0], keys[1])
-	uAddSubnetValTx, err := builder.NewAddSubnetValidatorTx(
+	subnetTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1773,78 +1527,69 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 			},
 			Subnet: subnetID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	vm.ctx.Lock.Unlock()
-	require.NoError(vm.issueTxFromRPC(subnetTx))
+	require.NoError(t, vm.issueTxFromRPC(subnetTx))
 	vm.ctx.Lock.Lock()
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
-	currentTime = subnetStartTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	vm.clock.Set(subnetStartTime)
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	subnetStartHeight, err := vm.GetCurrentHeight(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
+	t.Logf("subnetStartHeight: %d", subnetStartHeight)
 
 	// move time ahead, terminating the subnet validator
-	currentTime = subnetEndTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	vm.clock.Set(subnetEndTime)
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
-	require.ErrorIs(err, database.ErrNotFound)
+	require.ErrorIs(t, err, database.ErrNotFound)
 
 	subnetEndHeight, err := vm.GetCurrentHeight(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
+	t.Logf("subnetEndHeight: %d", subnetEndHeight)
 
 	// move time ahead, terminating primary network validator
-	currentTime = primaryEndTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
+	vm.clock.Set(primaryEndTime)
 	blk, err := vm.Builder.BuildBlock(context.Background()) // must be a proposal block rewarding the primary validator
-	require.NoError(err)
-	require.NoError(blk.Verify(context.Background()))
+	require.NoError(t, err)
+	require.NoError(t, blk.Verify(context.Background()))
 
 	proposalBlk := blk.(snowman.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
 
 	commit := options[0].(*blockexecutor.Block)
-	require.IsType(&block.BanffCommitBlock{}, commit.Block)
+	require.IsType(t, &block.BanffCommitBlock{}, commit.Block)
 
-	require.NoError(blk.Accept(context.Background()))
-	require.NoError(commit.Verify(context.Background()))
-	require.NoError(commit.Accept(context.Background()))
-	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
+	require.NoError(t, blk.Accept(context.Background()))
+	require.NoError(t, commit.Verify(context.Background()))
+	require.NoError(t, commit.Accept(context.Background()))
+	require.NoError(t, vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
-	require.ErrorIs(err, database.ErrNotFound)
+	require.ErrorIs(t, err, database.ErrNotFound)
 
 	primaryEndHeight, err := vm.GetCurrentHeight(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
+	t.Logf("primaryEndHeight: %d", primaryEndHeight)
 
 	// reinsert primary validator with a different BLS key
-	sk2, err := bls.NewSecretKey()
-	require.NoError(err)
-	require.NotEqual(sk1, sk2)
+	sk2, err := localsigner.New()
+	require.NoError(t, err)
+	pk2 := sk2.PublicKey()
+	pop2, err := signer.NewProofOfPossession(sk2)
+	require.NoError(t, err)
 
-	builder, txSigner = factory.NewWallet(keys...)
-	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
+	primaryRestartTx, err := wallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1854,90 +1599,75 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop2,
 		vm.ctx.LUXAssetID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	vm.ctx.Lock.Unlock()
-	require.NoError(vm.issueTxFromRPC(primaryRestartTx))
+	require.NoError(t, vm.issueTxFromRPC(primaryRestartTx))
 	vm.ctx.Lock.Lock()
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
-	currentTime = primaryReStartTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	vm.clock.Set(primaryReStartTime)
+	require.NoError(t, buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	primaryRestartHeight, err := vm.GetCurrentHeight(context.Background())
-	require.NoError(err)
+	require.NoError(t, err)
+	t.Logf("primaryRestartHeight: %d", primaryRestartHeight)
 
-	// Show that validators are rebuilt with the right BLS key
-	for height := primaryStartHeight; height < primaryEndHeight; height++ {
-		require.NoError(checkValidatorBlsKeyIsSet(
-			vm.State,
-			nodeID,
-			constants.PrimaryNetworkID,
-			height,
-			uPrimaryTx.Signer.Key(),
-		))
-	}
-	for height := primaryEndHeight; height < primaryRestartHeight; height++ {
-		err := checkValidatorBlsKeyIsSet(
-			vm.State,
-			nodeID,
-			constants.PrimaryNetworkID,
-			primaryEndHeight,
-			uPrimaryTx.Signer.Key(),
-		)
-		require.ErrorIs(err, database.ErrNotFound)
-	}
-	require.NoError(checkValidatorBlsKeyIsSet(
-		vm.State,
-		nodeID,
-		constants.PrimaryNetworkID,
-		primaryRestartHeight,
-		uPrimaryRestartTx.Signer.Key(),
-	))
+	for height := uint64(0); height <= primaryRestartHeight; height++ {
+		t.Run(strconv.Itoa(int(height)), func(t *testing.T) {
+			require := require.New(t)
 
-	for height := subnetStartHeight; height < subnetEndHeight; height++ {
-		require.NoError(checkValidatorBlsKeyIsSet(
-			vm.State,
-			nodeID,
-			subnetID,
-			height,
-			uPrimaryTx.Signer.Key(),
-		))
-	}
+			// The primary network validator doesn't exist for heights
+			// [0, primaryStartHeight) and [primaryEndHeight, primaryRestartHeight).
+			var expectedPrimaryNetworkErr error
+			if height < primaryStartHeight || (height >= primaryEndHeight && height < primaryRestartHeight) {
+				expectedPrimaryNetworkErr = database.ErrNotFound
+			}
 
-	for height := subnetEndHeight; height <= primaryRestartHeight; height++ {
-		err := checkValidatorBlsKeyIsSet(
-			vm.State,
-			nodeID,
-			subnetID,
-			primaryEndHeight,
-			uPrimaryTx.Signer.Key(),
-		)
-		require.ErrorIs(err, database.ErrNotFound)
+			// The primary network validator's BLS key is pk1 for the first
+			// validation period and pk2 for the second validation period.
+			var expectedPrimaryNetworkBLSKey *bls.PublicKey
+			if height >= primaryStartHeight && height < primaryEndHeight {
+				expectedPrimaryNetworkBLSKey = pk1
+			} else if height >= primaryRestartHeight {
+				expectedPrimaryNetworkBLSKey = pk2
+			}
+
+			err := checkValidatorBlsKeyIsSet(
+				vm.State,
+				nodeID,
+				constants.PrimaryNetworkID,
+				height,
+				expectedPrimaryNetworkBLSKey,
+			)
+			require.ErrorIs(err, expectedPrimaryNetworkErr)
+
+			// The subnet validator doesn't exist for heights
+			// [0, subnetStartHeight) and [subnetEndHeight, primaryRestartHeight).
+			var expectedSubnetErr error
+			if height < subnetStartHeight || height >= subnetEndHeight {
+				expectedSubnetErr = database.ErrNotFound
+			}
+
+			err = checkValidatorBlsKeyIsSet(
+				vm.State,
+				nodeID,
+				subnetID,
+				height,
+				pk1,
+			)
+			require.ErrorIs(err, expectedSubnetErr)
+		})
 	}
 }
 
@@ -1948,18 +1678,15 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// setup time
-	currentTime := defaultGenesisTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	wallet := newWallet(t, vm, walletConfig{})
 
 	// A primary network validator stake twice
 	var (
-		primaryStartTime1 = currentTime.Add(executor.SyncBound)
+		primaryStartTime1 = genesistest.DefaultValidatorStartTime.Add(executor.SyncBound)
 		primaryEndTime1   = primaryStartTime1.Add(defaultMinStakingDuration)
 		primaryStartTime2 = primaryEndTime1.Add(executor.SyncBound)
 		primaryEndTime2   = primaryStartTime2.Add(defaultMinStakingDuration)
@@ -1967,28 +1694,21 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// Add a primary network validator with no BLS key
 	nodeID := ids.GenerateTestNodeID()
-	addr := keys[0].PublicKey().Address()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
-	builder, txSigner := factory.NewWallet(keys[0])
-	uAddValTx1, err := builder.NewAddValidatorTx(
+	primaryTx1, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(primaryStartTime1.Unix()),
 			End:    uint64(primaryEndTime1.Unix()),
 			Wght:   vm.MinValidatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddValTx1)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -1997,9 +1717,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
-	currentTime = primaryStartTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(primaryStartTime1)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
@@ -2009,10 +1727,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// move time ahead, terminating primary network validator
-	currentTime = primaryEndTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
+	vm.clock.Set(primaryEndTime1)
 	blk, err := vm.Builder.BuildBlock(context.Background()) // must be a proposal block rewarding the primary validator
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
@@ -2036,11 +1751,12 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// reinsert primary validator with a different BLS key
-	sk2, err := bls.NewSecretKey()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
-	builder, txSigner = factory.NewWallet(keys...)
-	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
+	primaryRestartTx, err := wallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -2050,24 +1766,12 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop,
 		vm.ctx.LUXAssetID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2076,22 +1780,19 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
-	currentTime = primaryStartTime2
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(primaryStartTime2)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
 	require.NoError(err)
 
-	emptySigner := &signer.Empty{}
 	for height := primaryStartHeight; height < primaryEndHeight; height++ {
 		require.NoError(checkValidatorBlsKeyIsSet(
 			vm.State,
 			nodeID,
 			constants.PrimaryNetworkID,
 			height,
-			emptySigner.Key(),
+			nil,
 		))
 	}
 }
@@ -2104,20 +1805,18 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
 	subnetID := testSubnet1.TxID
-
-	// setup time
-	currentTime := defaultGenesisTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	wallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
 
 	// A primary network validator stake twice
 	var (
-		primaryStartTime1 = currentTime.Add(executor.SyncBound)
+		primaryStartTime1 = genesistest.DefaultValidatorStartTime.Add(executor.SyncBound)
 		subnetStartTime   = primaryStartTime1.Add(executor.SyncBound)
 		subnetEndTime     = subnetStartTime.Add(defaultMinStakingDuration)
 		primaryEndTime1   = subnetEndTime.Add(time.Second)
@@ -2127,28 +1826,21 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// Add a primary network validator with no BLS key
 	nodeID := ids.GenerateTestNodeID()
-	addr := keys[0].PublicKey().Address()
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
 
-	builder, txSigner := factory.NewWallet(keys[0])
-	uPrimaryTx1, err := builder.NewAddValidatorTx(
+	primaryTx1, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(primaryStartTime1.Unix()),
 			End:    uint64(primaryEndTime1.Unix()),
 			Wght:   vm.MinValidatorStake,
 		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx1)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2157,9 +1849,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
-	currentTime = primaryStartTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(primaryStartTime1)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
@@ -2169,8 +1859,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// insert the subnet validator
-	builder, txSigner = factory.NewWallet(keys[0], keys[1])
-	uAddSubnetValTx, err := builder.NewAddSubnetValidatorTx(
+	subnetTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -2180,13 +1869,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			},
 			Subnet: subnetID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2195,9 +1878,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
-	currentTime = subnetStartTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(subnetStartTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
@@ -2207,9 +1888,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// move time ahead, terminating the subnet validator
-	currentTime = subnetEndTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(subnetEndTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
@@ -2219,10 +1898,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// move time ahead, terminating primary network validator
-	currentTime = primaryEndTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
+	vm.clock.Set(primaryEndTime1)
 	blk, err := vm.Builder.BuildBlock(context.Background()) // must be a proposal block rewarding the primary validator
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
@@ -2246,11 +1922,12 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	// reinsert primary validator with a different BLS key
-	sk2, err := bls.NewSecretKey()
+	sk2, err := localsigner.New()
+	require.NoError(err)
+	pop2, err := signer.NewProofOfPossession(sk2)
 	require.NoError(err)
 
-	builder, txSigner = factory.NewWallet(keys...)
-	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
+	primaryRestartTx, err := wallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -2260,24 +1937,12 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop2,
 		vm.ctx.LUXAssetID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2286,22 +1951,19 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
-	currentTime = primaryStartTime2
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
+	vm.clock.Set(primaryStartTime2)
 	require.NoError(buildAndAcceptStandardBlock(vm))
+
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
 	require.NoError(err)
 
-	emptySigner := &signer.Empty{}
 	for height := primaryStartHeight; height < primaryEndHeight; height++ {
 		require.NoError(checkValidatorBlsKeyIsSet(
 			vm.State,
 			nodeID,
 			constants.PrimaryNetworkID,
 			height,
-			emptySigner.Key(),
+			nil,
 		))
 	}
 	for height := subnetStartHeight; height < subnetEndHeight; height++ {
@@ -2310,9 +1972,25 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			nodeID,
 			subnetID,
 			height,
-			emptySigner.Key(),
+			nil,
 		))
 	}
+}
+
+func TestValidatorSetReturnsCopy(t *testing.T) {
+	require := require.New(t)
+
+	vm, _, _ := defaultVM(t, upgradetest.Latest)
+
+	validators1, err := vm.GetValidatorSet(context.Background(), 1, constants.PrimaryNetworkID)
+	require.NoError(err)
+
+	validators2, err := vm.GetValidatorSet(context.Background(), 1, constants.PrimaryNetworkID)
+	require.NoError(err)
+
+	require.NotNil(validators1[genesistest.DefaultNodeIDs[0]])
+	delete(validators1, genesistest.DefaultNodeIDs[0])
+	require.NotNil(validators2[genesistest.DefaultNodeIDs[0]])
 }
 
 func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
@@ -2323,20 +2001,18 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
 	subnetID := testSubnet1.TxID
-
-	// setup time
-	currentTime := defaultGenesisTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	wallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
 
 	// A primary network validator stake twice
 	var (
-		primaryStartTime1 = currentTime.Add(executor.SyncBound)
+		primaryStartTime1 = genesistest.DefaultValidatorStartTime.Add(executor.SyncBound)
 		subnetStartTime   = primaryStartTime1.Add(executor.SyncBound)
 		subnetEndTime     = subnetStartTime.Add(defaultMinStakingDuration)
 		primaryEndTime1   = subnetEndTime.Add(time.Second)
@@ -2344,10 +2020,8 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 	// Add a primary network validator with no BLS key
 	nodeID := ids.GenerateTestNodeID()
-	addr := keys[0].PublicKey().Address()
 
-	builder, txSigner := factory.NewWallet(keys[0])
-	uPrimaryTx1, err := builder.NewAddValidatorTx(
+	primaryTx1, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(primaryStartTime1.Unix()),
@@ -2356,16 +2030,10 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 		},
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
+			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx1)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2374,17 +2042,14 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
-	currentTime = primaryStartTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(primaryStartTime1)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
 	require.NoError(err)
 
 	// insert the subnet validator
-	builder, txSigner = factory.NewWallet(keys[0], keys[1])
-	uAddSubnetValTx, err := builder.NewAddSubnetValidatorTx(
+	subnetTx, err := wallet.IssueAddSubnetValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -2394,13 +2059,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 			},
 			Subnet: subnetID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	require.NoError(err)
-	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
 	vm.ctx.Lock.Unlock()
@@ -2409,9 +2068,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
-	currentTime = subnetStartTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(subnetStartTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
@@ -2421,19 +2078,14 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(err)
 
 	// move time ahead, terminating the subnet validator
-	currentTime = subnetEndTime
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
+	vm.clock.Set(subnetEndTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
 	// move time ahead, terminating primary network validator
-	currentTime = primaryEndTime1
-	vm.clock.Set(currentTime)
-	vm.state.SetTimestamp(currentTime)
-
+	vm.clock.Set(primaryEndTime1)
 	blk, err := vm.Builder.BuildBlock(context.Background()) // must be a proposal block rewarding the primary validator
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
@@ -2461,7 +2113,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 func TestValidatorSetRaceCondition(t *testing.T) {
 	require := require.New(t)
-	vm, _, _, _ := defaultVM(t, cortina)
+	vm, _, _ := defaultVM(t, upgradetest.Cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
@@ -2475,7 +2127,7 @@ func TestValidatorSetRaceCondition(t *testing.T) {
 	require.NoError(err)
 
 	appRequestBytes := p2p.PrefixMessage(
-		p2p.ProtocolPrefix(network.TxGossipHandlerID),
+		p2p.ProtocolPrefix(p2p.TxGossipHandlerID),
 		protocolAppRequestBytest,
 	)
 
@@ -2523,6 +2175,35 @@ func TestValidatorSetRaceCondition(t *testing.T) {
 	cancel() // stop and wait for workers
 	require.NoError(eg.Wait())
 	vm.ctx.Lock.Lock()
+}
+
+func TestBanffStandardBlockWithNoChangesRemainsInvalid(t *testing.T) {
+	require := require.New(t)
+	vm, _, _ := defaultVM(t, upgradetest.Etna)
+	vm.ctx.Lock.Lock()
+	defer vm.ctx.Lock.Unlock()
+
+	lastAcceptedID, err := vm.LastAccepted(context.Background())
+	require.NoError(err)
+
+	lastAccepted, err := vm.GetBlock(context.Background(), lastAcceptedID)
+	require.NoError(err)
+
+	statelessBlk, err := block.NewBanffStandardBlock(
+		lastAccepted.Timestamp(),
+		lastAcceptedID,
+		lastAccepted.Height()+1,
+		nil,
+	)
+	require.NoError(err)
+
+	blk, err := vm.ParseBlock(context.Background(), statelessBlk.Bytes())
+	require.NoError(err)
+
+	for range 2 {
+		err = blk.Verify(context.Background())
+		require.ErrorIs(err, blockexecutor.ErrStandardBlockWithoutChanges)
+	}
 }
 
 func buildAndAcceptStandardBlock(vm *VM) error {

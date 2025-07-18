@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -9,24 +9,26 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/lux"
+	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common/queue"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
 
-var errMissingVtxDependenciesOnAccept = errors.New("attempting to execute blocked vertex")
+var (
+	errMissingVtxDependenciesOnAccept = errors.New("attempting to execute blocked vertex")
+	errTxNotAcceptedInVtxOnAccept     = errors.New("attempting to execute vertex with non-accepted transaction")
+)
 
 type vtxParser struct {
-	log                     logging.Logger
-	numAccepted, numDropped prometheus.Counter
-	manager                 vertex.Manager
+	log         logging.Logger
+	numAccepted prometheus.Counter
+	manager     vertex.Manager
 }
 
 func (p *vtxParser) Parse(ctx context.Context, vtxBytes []byte) (queue.Job, error) {
@@ -37,15 +39,14 @@ func (p *vtxParser) Parse(ctx context.Context, vtxBytes []byte) (queue.Job, erro
 	return &vertexJob{
 		log:         p.log,
 		numAccepted: p.numAccepted,
-		numDropped:  p.numDropped,
 		vtx:         vtx,
 	}, nil
 }
 
 type vertexJob struct {
-	log                     logging.Logger
-	numAccepted, numDropped prometheus.Counter
-	vtx                     lux.Vertex
+	log         logging.Logger
+	numAccepted prometheus.Counter
+	vtx         lux.Vertex
 }
 
 func (v *vertexJob) ID() ids.ID {
@@ -86,7 +87,6 @@ func (v *vertexJob) Execute(ctx context.Context) error {
 		return err
 	}
 	if hasMissingDependencies {
-		v.numDropped.Inc()
 		return errMissingVtxDependenciesOnAccept
 	}
 	txs, err := v.vtx.Txs(ctx)
@@ -95,15 +95,12 @@ func (v *vertexJob) Execute(ctx context.Context) error {
 	}
 	for _, tx := range txs {
 		if tx.Status() != choices.Accepted {
-			v.numDropped.Inc()
-			v.log.Warn("attempting to execute vertex with non-accepted transactions")
-			return nil
+			return errTxNotAcceptedInVtxOnAccept
 		}
 	}
 	status := v.vtx.Status()
 	switch status {
 	case choices.Unknown, choices.Rejected:
-		v.numDropped.Inc()
 		return fmt.Errorf("attempting to execute vertex with status %s", status)
 	case choices.Processing:
 		v.numAccepted.Inc()

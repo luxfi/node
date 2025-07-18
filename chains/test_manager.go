@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -12,8 +12,6 @@ var TestManager Manager = testManager{}
 type testManager struct{}
 
 func (testManager) QueueChainCreation(ChainParameters) {}
-
-func (testManager) ForceCreateChain(ChainParameters) {}
 
 func (testManager) AddRegistrant(Registrant) {}
 
@@ -39,10 +37,6 @@ func (testManager) Shutdown() {}
 
 func (testManager) StartChainCreator(ChainParameters) error {
 	return nil
-}
-
-func (testManager) SubnetID(ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
 }
 
 func (testManager) IsBootstrapped(ids.ID) bool {

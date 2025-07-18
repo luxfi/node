@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"
@@ -184,7 +183,7 @@ func (m *metrics) Accepted(
 	if !ok {
 		m.log.Error("unable to measure latency",
 			zap.Stringer("blkID", blkID),
-			zap.Stringer("status", choices.Accepted),
+			zap.String("status", "accepted"),
 		)
 		return
 	}
@@ -210,7 +209,7 @@ func (m *metrics) Rejected(blkID ids.ID, pollNumber uint64, blockSize int) {
 	if !ok {
 		m.log.Error("unable to measure latency",
 			zap.Stringer("blkID", blkID),
-			zap.Stringer("status", choices.Rejected),
+			zap.String("status", "rejected"),
 		)
 		return
 	}

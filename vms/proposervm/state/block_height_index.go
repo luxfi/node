@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
@@ -60,7 +61,7 @@ func NewHeightIndex(db database.Database, commitable versiondb.Commitable) Heigh
 	return &heightIndex{
 		Commitable: commitable,
 
-		heightsCache: &cache.LRU[uint64, ids.ID]{Size: cacheSize},
+		heightsCache: lru.NewCache[uint64, ids.ID](cacheSize),
 		heightDB:     prefixdb.New(heightPrefix, db),
 		metadataDB:   prefixdb.New(metadataPrefix, db),
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package create
@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
@@ -38,22 +38,21 @@ func createFunc(c *cobra.Command, args []string) error {
 	ctx := c.Context()
 	kc := secp256k1fx.NewKeychain(config.PrivateKey)
 
-	// NewWalletFromURI fetches the available UTXOs owned by [kc] on the network
-	// that [uri] is hosting.
+	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
+	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:              config.URI,
-		LUXKeychain:     kc,
-		EthKeychain:      kc,
-		PChainTxsToFetch: set.Of(config.SubnetID),
-	})
+	wallet, err := primary.MakePWallet(
+		ctx,
+		config.URI,
+		kc,
+		primary.WalletConfig{
+			SubnetIDs: []ids.ID{config.SubnetID},
+		},
+	)
 	if err != nil {
 		return err
 	}
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
-
-	// Get the P-chain wallet
-	pWallet := wallet.P()
 
 	genesisBytes, err := genesis.Codec.Marshal(genesis.CodecVersion, &genesis.Genesis{
 		Timestamp: 0,
@@ -69,7 +68,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	}
 
 	createChainStartTime := time.Now()
-	createChainTxID, err := pWallet.IssueCreateChainTx(
+	createChainTxID, err := wallet.IssueCreateChainTx(
 		config.SubnetID,
 		genesisBytes,
 		constants.XSVMID,

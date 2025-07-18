@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"strconv"
@@ -83,40 +84,18 @@ func UTXOIDFromString(s string) (*UTXOID, error) {
 }
 
 func (utxo *UTXOID) Verify() error {
-	switch {
-	case utxo == nil:
+	if utxo == nil {
 		return errNilUTXOID
-	default:
-		return nil
 	}
-}
 
-func (utxo *UTXOID) Less(other *UTXOID) bool {
-	utxoID, utxoIndex := utxo.InputSource()
-	otherID, otherIndex := other.InputSource()
-
-	switch bytes.Compare(utxoID[:], otherID[:]) {
-	case -1:
-		return true
-	case 0:
-		return utxoIndex < otherIndex
-	default:
-		return false
-	}
+	return nil
 }
 
 func (utxo *UTXOID) Compare(other *UTXOID) int {
 	utxoID, utxoIndex := utxo.InputSource()
 	otherID, otherIndex := other.InputSource()
-
-	if cmp := bytes.Compare(utxoID[:], otherID[:]); cmp != 0 {
-		return cmp
+	if txIDComp := bytes.Compare(utxoID[:], otherID[:]); txIDComp != 0 {
+		return txIDComp
 	}
-	if utxoIndex < otherIndex {
-		return -1
-	}
-	if utxoIndex > otherIndex {
-		return 1
-	}
-	return 0
+	return cmp.Compare(utxoIndex, otherIndex)
 }

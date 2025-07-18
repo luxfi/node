@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bimap
@@ -349,7 +349,7 @@ func TestBiMapJSON(t *testing.T) {
 	require.NoError(err)
 
 	expectedJSONBytes := []byte(`{"1":2,"2":3}`)
-	require.Equal(expectedJSONBytes, jsonBytes)
+	require.JSONEq(string(expectedJSONBytes), string(jsonBytes))
 
 	var unmarshalledMap BiMap[int, int]
 	require.NoError(json.Unmarshal(jsonBytes, &unmarshalledMap))

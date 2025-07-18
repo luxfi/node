@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgradetest
@@ -17,8 +17,10 @@ const (
 	Cortina
 	Durango
 	Etna
+	Fortuna
+	Granite
 
-	Latest = Etna
+	Latest = Granite
 )
 
 // Fork is an enum of all the major network upgrades.
@@ -26,6 +28,10 @@ type Fork int
 
 func (f Fork) String() string {
 	switch f {
+	case Granite:
+		return "Granite"
+	case Fortuna:
+		return "Fortuna"
 	case Etna:
 		return "Etna"
 	case Durango:

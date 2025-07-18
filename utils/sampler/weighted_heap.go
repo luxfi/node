@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -67,7 +67,7 @@ func (s *weightedHeap) Initialize(weights []uint64) error {
 		// Explicitly performing a shift here allows the compiler to avoid
 		// checking for negative numbers, which saves a couple cycles
 		parentIndex := (i - 1) >> 1
-		newWeight, err := math.Add64(
+		newWeight, err := math.Add(
 			s.heap[parentIndex].cumulativeWeight,
 			s.heap[i].cumulativeWeight,
 		)

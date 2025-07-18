@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 )
 
 func TestIPSigner(t *testing.T) {
@@ -28,7 +28,7 @@ func TestIPSigner(t *testing.T) {
 	require.NoError(err)
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSecretKey()
+	blsKey, err := localsigner.New()
 	require.NoError(err)
 
 	s := NewIPSigner(dynIP, tlsKey, blsKey)

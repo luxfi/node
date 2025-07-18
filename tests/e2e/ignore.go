@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -9,5 +9,5 @@ package e2e
 // ```
 // Failed to compile e2e:
 //
-// github.com/luxfi/node/tests/e2e: no non-test Go files in /path/to/node/tests/e2e
+// github.com/luxfi/node/tests/e2e: no non-test Go files in /path/to/luxd/tests/e2e
 // ```

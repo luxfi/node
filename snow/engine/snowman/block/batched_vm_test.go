@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block_test
@@ -14,7 +14,10 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 	"github.com/luxfi/node/utils/logging"
+
+	. "github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 var errTest = errors.New("non-nil error")
@@ -22,7 +25,7 @@ var errTest = errors.New("non-nil error")
 func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 	require := require.New(t)
 
-	vm := &TestVM{}
+	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
 		require.Equal(someID, id)
@@ -38,7 +41,7 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 func TestGetAncestorsPropagatesErrors(t *testing.T) {
 	require := require.New(t)
 
-	vm := &TestVM{}
+	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
 		require.Equal(someID, id)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -15,6 +15,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/networking/tracker"
 	"github.com/luxfi/node/utils/timer/mockable"
+
+	timerpkg "github.com/luxfi/node/utils/timer"
 )
 
 const epsilon = time.Millisecond
@@ -107,11 +109,7 @@ func NewSystemThrottler(
 		timerPool: sync.Pool{
 			New: func() interface{} {
 				// Satisfy invariant that timer is stopped and drained.
-				timer := time.NewTimer(0)
-				if !timer.Stop() {
-					<-timer.C
-				}
-				return timer
+				return timerpkg.StoppedTimer()
 			},
 		},
 	}, nil
@@ -164,25 +162,14 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 			waitDuration = t.MaxRecheckDelay
 		}
 
-		// Reset [timer].
 		if timer == nil {
 			// Note this is called at most once.
 			t.metrics.awaitingAcquire.Inc()
 
 			timer = t.timerPool.Get().(*time.Timer)
-			defer func() {
-				// Satisfy [t.timerPool] invariant.
-				if !timer.Stop() {
-					// The default ensures we don't wait forever in the case
-					// that the channel was already drained.
-					select {
-					case <-timer.C:
-					default:
-					}
-				}
-				t.timerPool.Put(timer)
-			}()
+			defer t.timerPool.Put(timer)
 		}
+
 		timer.Reset(waitDuration)
 		select {
 		case <-ctx.Done():

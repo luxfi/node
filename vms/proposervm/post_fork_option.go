@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -39,9 +38,6 @@ func (b *postForkOption) Accept(ctx context.Context) error {
 }
 
 func (b *postForkOption) acceptOuterBlk() error {
-	// Update in-memory references
-	b.status = choices.Accepted
-
 	return b.vm.acceptPostForkBlock(b)
 }
 
@@ -124,10 +120,6 @@ func (b *postForkOption) pChainHeight(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 	return parent.pChainHeight(ctx)
-}
-
-func (b *postForkOption) setStatus(status choices.Status) {
-	b.status = status
 }
 
 func (b *postForkOption) getStatelessBlk() block.Block {

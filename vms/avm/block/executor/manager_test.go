@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -14,8 +14,9 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/state"
+	"github.com/luxfi/node/vms/avm/state/statemock"
 	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/avm/txs/txsmock"
 )
 
 var (
@@ -29,7 +30,7 @@ func TestManagerGetStatelessBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state := state.NewMockState(ctrl)
+	state := statemock.NewState(ctrl)
 	m := &manager{
 		state:        state,
 		blkIDToState: map[ids.ID]*blockState{},
@@ -71,7 +72,7 @@ func TestManagerGetState(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockState(ctrl)
+	s := statemock.NewState(ctrl)
 	m := &manager{
 		state:        s,
 		blkIDToState: map[ids.ID]*blockState{},
@@ -80,7 +81,7 @@ func TestManagerGetState(t *testing.T) {
 
 	// Case: Block is in memory
 	{
-		diff := state.NewMockDiff(ctrl)
+		diff := statemock.NewDiff(ctrl)
 		blkID := ids.GenerateTestID()
 		m.blkIDToState[blkID] = &blockState{
 			onAcceptState: diff,
@@ -130,7 +131,7 @@ func TestManagerVerifyTx(t *testing.T) {
 		{
 			name: "fails syntactic verification",
 			txF: func(ctrl *gomock.Controller) *txs.Tx {
-				unsigned := txs.NewMockUnsignedTx(ctrl)
+				unsigned := txsmock.NewUnsignedTx(ctrl)
 				unsigned.EXPECT().Visit(gomock.Any()).Return(errTestSyntacticVerifyFail)
 				return &txs.Tx{
 					Unsigned: unsigned,
@@ -146,7 +147,7 @@ func TestManagerVerifyTx(t *testing.T) {
 		{
 			name: "fails semantic verification",
 			txF: func(ctrl *gomock.Controller) *txs.Tx {
-				unsigned := txs.NewMockUnsignedTx(ctrl)
+				unsigned := txsmock.NewUnsignedTx(ctrl)
 				// Syntactic verification passes
 				unsigned.EXPECT().Visit(gomock.Any()).Return(nil)
 				// Semantic verification fails
@@ -159,7 +160,7 @@ func TestManagerVerifyTx(t *testing.T) {
 				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
-				state := state.NewMockState(ctrl)
+				state := statemock.NewState(ctrl)
 				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 
@@ -174,7 +175,7 @@ func TestManagerVerifyTx(t *testing.T) {
 		{
 			name: "fails execution",
 			txF: func(ctrl *gomock.Controller) *txs.Tx {
-				unsigned := txs.NewMockUnsignedTx(ctrl)
+				unsigned := txsmock.NewUnsignedTx(ctrl)
 				// Syntactic verification passes
 				unsigned.EXPECT().Visit(gomock.Any()).Return(nil)
 				// Semantic verification passes
@@ -189,7 +190,7 @@ func TestManagerVerifyTx(t *testing.T) {
 				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
-				state := state.NewMockState(ctrl)
+				state := statemock.NewState(ctrl)
 				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 
@@ -204,7 +205,7 @@ func TestManagerVerifyTx(t *testing.T) {
 		{
 			name: "happy path",
 			txF: func(ctrl *gomock.Controller) *txs.Tx {
-				unsigned := txs.NewMockUnsignedTx(ctrl)
+				unsigned := txsmock.NewUnsignedTx(ctrl)
 				// Syntactic verification passes
 				unsigned.EXPECT().Visit(gomock.Any()).Return(nil)
 				// Semantic verification passes
@@ -219,7 +220,7 @@ func TestManagerVerifyTx(t *testing.T) {
 				lastAcceptedID := ids.GenerateTestID()
 
 				// These values don't matter for this test
-				state := state.NewMockState(ctrl)
+				state := statemock.NewState(ctrl)
 				state.EXPECT().GetLastAccepted().Return(lastAcceptedID)
 				state.EXPECT().GetTimestamp().Return(time.Time{})
 

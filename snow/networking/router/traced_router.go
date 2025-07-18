@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -85,13 +85,7 @@ func (r *tracedRouter) RegisterRequest(
 
 func (r *tracedRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {
 	m := msg.Message()
-	destinationChainID, err := message.GetChainID(m)
-	if err != nil {
-		r.router.HandleInbound(ctx, msg)
-		return
-	}
-
-	sourceChainID, err := message.GetSourceChainID(m)
+	chainID, err := message.GetChainID(m)
 	if err != nil {
 		r.router.HandleInbound(ctx, msg)
 		return
@@ -100,12 +94,29 @@ func (r *tracedRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	ctx, span := r.tracer.Start(ctx, "tracedRouter.HandleInbound", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", msg.NodeID()),
 		attribute.Stringer("messageOp", msg.Op()),
-		attribute.Stringer("chainID", destinationChainID),
-		attribute.Stringer("sourceChainID", sourceChainID),
+		attribute.Stringer("chainID", chainID),
 	))
 	defer span.End()
 
 	r.router.HandleInbound(ctx, msg)
+}
+
+func (r *tracedRouter) HandleInternal(ctx context.Context, msg message.InboundMessage) {
+	m := msg.Message()
+	chainID, err := message.GetChainID(m)
+	if err != nil {
+		r.router.HandleInternal(ctx, msg)
+		return
+	}
+
+	ctx, span := r.tracer.Start(ctx, "tracedRouter.HandleInternal", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", msg.NodeID()),
+		attribute.Stringer("messageOp", msg.Op()),
+		attribute.Stringer("chainID", chainID),
+	))
+	defer span.End()
+
+	r.router.HandleInternal(ctx, msg)
 }
 
 func (r *tracedRouter) Shutdown(ctx context.Context) {

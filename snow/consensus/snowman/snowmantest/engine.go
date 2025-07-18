@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowmantest
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/snow/snowtest"
 )
 
 func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, error) {
@@ -19,7 +19,7 @@ func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, err
 		)
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status() != choices.Accepted {
+				if blk.Status != snowtest.Accepted {
 					continue
 				}
 
@@ -37,7 +37,7 @@ func MakeGetBlockIDAtHeightF(blks ...[]*Block) func(context.Context, uint64) (id
 	return func(_ context.Context, height uint64) (ids.ID, error) {
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status() != choices.Accepted {
+				if blk.Status != snowtest.Accepted {
 					continue
 				}
 

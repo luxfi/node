@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/snow/networking/router/routermock"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
@@ -36,7 +36,7 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	ctrl := gomock.NewController(t)
-	mockRouter := router.NewMockRouter(ctrl)
+	mockRouter := routermock.NewRouter(ctrl)
 
 	b := beaconManager{
 		Router:                  mockRouter,
@@ -55,7 +55,6 @@ func TestBeaconManager_DataRace(t *testing.T) {
 		})
 
 	for _, nodeID := range validatorIDs {
-		nodeID := nodeID
 		go func() {
 			b.Connected(nodeID, version.CurrentApp, constants.PrimaryNetworkID)
 			b.Connected(nodeID, version.CurrentApp, ids.GenerateTestID())

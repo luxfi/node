@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -15,11 +15,14 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/snow/engine/common/commonmock"
 	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/snow/validators/validatorstest"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm/block/executor"
+	"github.com/luxfi/node/vms/avm/block/executor/executormock"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -54,87 +57,145 @@ var (
 func TestNetworkIssueTxFromRPC(t *testing.T) {
 	type test struct {
 		name           string
-		mempoolFunc    func(*gomock.Controller) xmempool.Mempool
+		mempool        mempool.Mempool[*txs.Tx]
 		txVerifierFunc func(*gomock.Controller) TxVerifier
 		appSenderFunc  func(*gomock.Controller) common.AppSender
+		tx             *txs.Tx
 		expectedErr    error
 	}
 
 	tests := []test{
 		{
 			name: "mempool has transaction",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, true)
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: &txs.BaseTx{}}))
 				return mempool
-			},
+			}(),
+			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: mempool.ErrDuplicateTx,
 		},
 		{
 			name: "transaction marked as dropped in mempool",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
-				mempool.EXPECT().GetDropReason(gomock.Any()).Return(errTest)
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				mempool.MarkDropped(ids.Empty, errTest)
 				return mempool
-			},
+			}(),
+			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
 		},
 		{
-			name: "transaction invalid",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
-				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
-				mempool.EXPECT().MarkDropped(gomock.Any(), gomock.Any())
+			name: "tx too big",
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
 				return mempool
-			},
+			}(),
 			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
-				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(errTest)
-				return txVerifier
-			},
-			expectedErr: errTest,
-		},
-		{
-			name: "can't add transaction to mempool",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
-				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
-				mempool.EXPECT().Add(gomock.Any()).Return(errTest)
-				mempool.EXPECT().MarkDropped(gomock.Any(), gomock.Any())
-				return mempool
-			},
-			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
+				txVerifier := executormock.NewManager(ctrl)
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
-			expectedErr: errTest,
+			tx: func() *txs.Tx {
+				tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
+				bytes := make([]byte, mempool.MaxTxSize+1)
+				tx.SetBytes(bytes, bytes)
+				return tx
+			}(),
+			expectedErr: mempool.ErrTxTooLarge,
+		},
+		{
+			name: "tx conflicts",
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+
+				tx := &txs.Tx{
+					Unsigned: &txs.BaseTx{
+						BaseTx: lux.BaseTx{
+							Ins: []*lux.TransferableInput{
+								{
+									UTXOID: lux.UTXOID{},
+								},
+							},
+						},
+					},
+				}
+
+				require.NoError(t, mempool.Add(tx))
+				return mempool
+			}(),
+			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
+				txVerifier := executormock.NewManager(ctrl)
+				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
+				return txVerifier
+			},
+			tx: func() *txs.Tx {
+				tx := &txs.Tx{
+					Unsigned: &txs.BaseTx{
+						BaseTx: lux.BaseTx{
+							Ins: []*lux.TransferableInput{
+								{
+									UTXOID: lux.UTXOID{},
+								},
+							},
+						},
+					},
+					TxID: ids.ID{1},
+				}
+				return tx
+			}(),
+			expectedErr: mempool.ErrConflictsWithOtherTx,
+		},
+		{
+			name: "mempool full",
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				m, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+
+				for i := 0; i < 1024; i++ {
+					tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
+					bytes := make([]byte, mempool.MaxTxSize)
+					tx.SetBytes(bytes, bytes)
+					tx.TxID = ids.GenerateTestID()
+					require.NoError(t, m.Add(tx))
+				}
+
+				return m
+			}(),
+			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
+				txVerifier := executormock.NewManager(ctrl)
+				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
+				return txVerifier
+			},
+			tx: func() *txs.Tx {
+				tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{}}}
+				tx.SetBytes([]byte{1, 2, 3}, []byte{1, 2, 3})
+				return tx
+			}(),
+			expectedErr: mempool.ErrMempoolFull,
 		},
 		{
 			name: "happy path",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
-				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
-				mempool.EXPECT().Add(gomock.Any()).Return(nil)
-				mempool.EXPECT().Len().Return(0)
-				mempool.EXPECT().RequestBuildBlock()
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, true).Times(2)
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
 				return mempool
-			},
+			}(),
 			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
+				txVerifier := executormock.NewManager(ctrl)
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
+			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: nil,
 		},
 	}
@@ -153,22 +214,15 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			)
 			require.NoError(err)
 
-			mempoolFunc := func(ctrl *gomock.Controller) xmempool.Mempool {
-				return xmempool.NewMockMempool(ctrl)
-			}
-			if tt.mempoolFunc != nil {
-				mempoolFunc = tt.mempoolFunc
-			}
-
 			txVerifierFunc := func(ctrl *gomock.Controller) TxVerifier {
-				return executor.NewMockManager(ctrl)
+				return executormock.NewManager(ctrl)
 			}
 			if tt.txVerifierFunc != nil {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
-				return common.NewMockSender(ctrl)
+				return commonmock.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -178,7 +232,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -188,13 +242,13 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				},
 				parser,
 				txVerifierFunc(ctrl),
-				mempoolFunc(ctrl),
+				tt.mempool,
 				appSenderFunc(ctrl),
 				prometheus.NewRegistry(),
 				testConfig,
 			)
 			require.NoError(err)
-			err = n.IssueTxFromRPC(&txs.Tx{})
+			err = n.IssueTxFromRPC(tt.tx)
 			require.ErrorIs(err, tt.expectedErr)
 
 			require.NoError(n.txPushGossiper.Gossip(context.Background()))
@@ -205,34 +259,21 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 	type test struct {
 		name          string
-		mempoolFunc   func(*gomock.Controller) xmempool.Mempool
+		mempool       mempool.Mempool[*txs.Tx]
 		appSenderFunc func(*gomock.Controller) common.AppSender
 		expectedErr   error
 	}
 
 	tests := []test{
 		{
-			name: "can't add transaction to mempool",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Add(gomock.Any()).Return(errTest)
-				mempool.EXPECT().MarkDropped(gomock.Any(), gomock.Any())
-				return mempool
-			},
-			expectedErr: errTest,
-		},
-		{
 			name: "happy path",
-			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Get(gomock.Any()).Return(nil, true).Times(2)
-				mempool.EXPECT().Add(gomock.Any()).Return(nil)
-				mempool.EXPECT().Len().Return(0)
-				mempool.EXPECT().RequestBuildBlock()
+			mempool: func() mempool.Mempool[*txs.Tx] {
+				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
 				return mempool
-			},
+			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -254,15 +295,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			)
 			require.NoError(err)
 
-			mempoolFunc := func(ctrl *gomock.Controller) xmempool.Mempool {
-				return xmempool.NewMockMempool(ctrl)
-			}
-			if tt.mempoolFunc != nil {
-				mempoolFunc = tt.mempoolFunc
-			}
-
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
-				return common.NewMockSender(ctrl)
+				return commonmock.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -272,7 +306,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -281,14 +315,14 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 					},
 				},
 				parser,
-				executor.NewMockManager(ctrl), // Should never verify a tx
-				mempoolFunc(ctrl),
+				executormock.NewManager(ctrl), // Should never verify a tx
+				tt.mempool,
 				appSenderFunc(ctrl),
 				prometheus.NewRegistry(),
 				testConfig,
 			)
 			require.NoError(err)
-			err = n.IssueTxFromRPCWithoutVerification(&txs.Tx{})
+			err = n.IssueTxFromRPCWithoutVerification(&txs.Tx{Unsigned: &txs.BaseTx{}})
 			require.ErrorIs(err, tt.expectedErr)
 
 			require.NoError(n.txPushGossiper.Gossip(context.Background()))

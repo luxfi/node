@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
 )
 
 var _ Creator = (*creator)(nil)
@@ -25,13 +24,11 @@ type creator struct {
 }
 
 func NewCreator(
-	log logging.Logger,
 	metrics prometheus.Registerer,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {
 	builder, err := newMsgBuilder(
-		log,
 		metrics,
 		maxMessageTimeout,
 	)

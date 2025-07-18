@@ -22,89 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Request represents a request for information during syncing.
-type Request struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Message:
-	//
-	//	*Request_RangeProofRequest
-	//	*Request_ChangeProofRequest
-	Message       isRequest_Message `protobuf_oneof:"message"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Request) Reset() {
-	*x = Request{}
-	mi := &file_sync_sync_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Request) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Request) ProtoMessage() {}
-
-func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Request.ProtoReflect.Descriptor instead.
-func (*Request) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Request) GetMessage() isRequest_Message {
-	if x != nil {
-		return x.Message
-	}
-	return nil
-}
-
-func (x *Request) GetRangeProofRequest() *SyncGetRangeProofRequest {
-	if x != nil {
-		if x, ok := x.Message.(*Request_RangeProofRequest); ok {
-			return x.RangeProofRequest
-		}
-	}
-	return nil
-}
-
-func (x *Request) GetChangeProofRequest() *SyncGetChangeProofRequest {
-	if x != nil {
-		if x, ok := x.Message.(*Request_ChangeProofRequest); ok {
-			return x.ChangeProofRequest
-		}
-	}
-	return nil
-}
-
-type isRequest_Message interface {
-	isRequest_Message()
-}
-
-type Request_RangeProofRequest struct {
-	RangeProofRequest *SyncGetRangeProofRequest `protobuf:"bytes,1,opt,name=range_proof_request,json=rangeProofRequest,proto3,oneof"`
-}
-
-type Request_ChangeProofRequest struct {
-	ChangeProofRequest *SyncGetChangeProofRequest `protobuf:"bytes,2,opt,name=change_proof_request,json=changeProofRequest,proto3,oneof"`
-}
-
-func (*Request_RangeProofRequest) isRequest_Message() {}
-
-func (*Request_ChangeProofRequest) isRequest_Message() {}
-
 type GetMerkleRootResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RootHash      []byte                 `protobuf:"bytes,1,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
@@ -114,7 +31,7 @@ type GetMerkleRootResponse struct {
 
 func (x *GetMerkleRootResponse) Reset() {
 	*x = GetMerkleRootResponse{}
-	mi := &file_sync_sync_proto_msgTypes[1]
+	mi := &file_sync_sync_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -126,7 +43,7 @@ func (x *GetMerkleRootResponse) String() string {
 func (*GetMerkleRootResponse) ProtoMessage() {}
 
 func (x *GetMerkleRootResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[1]
+	mi := &file_sync_sync_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -139,7 +56,7 @@ func (x *GetMerkleRootResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMerkleRootResponse.ProtoReflect.Descriptor instead.
 func (*GetMerkleRootResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{1}
+	return file_sync_sync_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetMerkleRootResponse) GetRootHash() []byte {
@@ -158,7 +75,7 @@ type GetProofRequest struct {
 
 func (x *GetProofRequest) Reset() {
 	*x = GetProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[2]
+	mi := &file_sync_sync_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -170,7 +87,7 @@ func (x *GetProofRequest) String() string {
 func (*GetProofRequest) ProtoMessage() {}
 
 func (x *GetProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[2]
+	mi := &file_sync_sync_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -183,7 +100,7 @@ func (x *GetProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProofRequest.ProtoReflect.Descriptor instead.
 func (*GetProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{2}
+	return file_sync_sync_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetProofRequest) GetKey() []byte {
@@ -202,7 +119,7 @@ type GetProofResponse struct {
 
 func (x *GetProofResponse) Reset() {
 	*x = GetProofResponse{}
-	mi := &file_sync_sync_proto_msgTypes[3]
+	mi := &file_sync_sync_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +131,7 @@ func (x *GetProofResponse) String() string {
 func (*GetProofResponse) ProtoMessage() {}
 
 func (x *GetProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[3]
+	mi := &file_sync_sync_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +144,7 @@ func (x *GetProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProofResponse.ProtoReflect.Descriptor instead.
 func (*GetProofResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{3}
+	return file_sync_sync_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetProofResponse) GetProof() *Proof {
@@ -248,7 +165,7 @@ type Proof struct {
 
 func (x *Proof) Reset() {
 	*x = Proof{}
-	mi := &file_sync_sync_proto_msgTypes[4]
+	mi := &file_sync_sync_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -260,7 +177,7 @@ func (x *Proof) String() string {
 func (*Proof) ProtoMessage() {}
 
 func (x *Proof) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[4]
+	mi := &file_sync_sync_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,7 +190,7 @@ func (x *Proof) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Proof.ProtoReflect.Descriptor instead.
 func (*Proof) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{4}
+	return file_sync_sync_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Proof) GetKey() []byte {
@@ -313,7 +230,7 @@ type SyncGetChangeProofRequest struct {
 
 func (x *SyncGetChangeProofRequest) Reset() {
 	*x = SyncGetChangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[5]
+	mi := &file_sync_sync_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -325,7 +242,7 @@ func (x *SyncGetChangeProofRequest) String() string {
 func (*SyncGetChangeProofRequest) ProtoMessage() {}
 
 func (x *SyncGetChangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[5]
+	mi := &file_sync_sync_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -338,7 +255,7 @@ func (x *SyncGetChangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncGetChangeProofRequest.ProtoReflect.Descriptor instead.
 func (*SyncGetChangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{5}
+	return file_sync_sync_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SyncGetChangeProofRequest) GetStartRootHash() []byte {
@@ -396,7 +313,7 @@ type SyncGetChangeProofResponse struct {
 
 func (x *SyncGetChangeProofResponse) Reset() {
 	*x = SyncGetChangeProofResponse{}
-	mi := &file_sync_sync_proto_msgTypes[6]
+	mi := &file_sync_sync_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -408,7 +325,7 @@ func (x *SyncGetChangeProofResponse) String() string {
 func (*SyncGetChangeProofResponse) ProtoMessage() {}
 
 func (x *SyncGetChangeProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[6]
+	mi := &file_sync_sync_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -421,7 +338,7 @@ func (x *SyncGetChangeProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncGetChangeProofResponse.ProtoReflect.Descriptor instead.
 func (*SyncGetChangeProofResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{6}
+	return file_sync_sync_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SyncGetChangeProofResponse) GetResponse() isSyncGetChangeProofResponse_Response {
@@ -478,7 +395,7 @@ type GetChangeProofRequest struct {
 
 func (x *GetChangeProofRequest) Reset() {
 	*x = GetChangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[7]
+	mi := &file_sync_sync_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -490,7 +407,7 @@ func (x *GetChangeProofRequest) String() string {
 func (*GetChangeProofRequest) ProtoMessage() {}
 
 func (x *GetChangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[7]
+	mi := &file_sync_sync_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -503,7 +420,7 @@ func (x *GetChangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChangeProofRequest.ProtoReflect.Descriptor instead.
 func (*GetChangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{7}
+	return file_sync_sync_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetChangeProofRequest) GetStartRootHash() []byte {
@@ -554,7 +471,7 @@ type GetChangeProofResponse struct {
 
 func (x *GetChangeProofResponse) Reset() {
 	*x = GetChangeProofResponse{}
-	mi := &file_sync_sync_proto_msgTypes[8]
+	mi := &file_sync_sync_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -566,7 +483,7 @@ func (x *GetChangeProofResponse) String() string {
 func (*GetChangeProofResponse) ProtoMessage() {}
 
 func (x *GetChangeProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[8]
+	mi := &file_sync_sync_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,7 +496,7 @@ func (x *GetChangeProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChangeProofResponse.ProtoReflect.Descriptor instead.
 func (*GetChangeProofResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{8}
+	return file_sync_sync_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetChangeProofResponse) GetResponse() isGetChangeProofResponse_Response {
@@ -636,7 +553,7 @@ type VerifyChangeProofRequest struct {
 
 func (x *VerifyChangeProofRequest) Reset() {
 	*x = VerifyChangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[9]
+	mi := &file_sync_sync_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -648,7 +565,7 @@ func (x *VerifyChangeProofRequest) String() string {
 func (*VerifyChangeProofRequest) ProtoMessage() {}
 
 func (x *VerifyChangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[9]
+	mi := &file_sync_sync_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +578,7 @@ func (x *VerifyChangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyChangeProofRequest.ProtoReflect.Descriptor instead.
 func (*VerifyChangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{9}
+	return file_sync_sync_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *VerifyChangeProofRequest) GetProof() *ChangeProof {
@@ -702,7 +619,7 @@ type VerifyChangeProofResponse struct {
 
 func (x *VerifyChangeProofResponse) Reset() {
 	*x = VerifyChangeProofResponse{}
-	mi := &file_sync_sync_proto_msgTypes[10]
+	mi := &file_sync_sync_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +631,7 @@ func (x *VerifyChangeProofResponse) String() string {
 func (*VerifyChangeProofResponse) ProtoMessage() {}
 
 func (x *VerifyChangeProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[10]
+	mi := &file_sync_sync_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +644,7 @@ func (x *VerifyChangeProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyChangeProofResponse.ProtoReflect.Descriptor instead.
 func (*VerifyChangeProofResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{10}
+	return file_sync_sync_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *VerifyChangeProofResponse) GetError() string {
@@ -746,7 +663,7 @@ type CommitChangeProofRequest struct {
 
 func (x *CommitChangeProofRequest) Reset() {
 	*x = CommitChangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[11]
+	mi := &file_sync_sync_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -758,7 +675,7 @@ func (x *CommitChangeProofRequest) String() string {
 func (*CommitChangeProofRequest) ProtoMessage() {}
 
 func (x *CommitChangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[11]
+	mi := &file_sync_sync_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -771,7 +688,7 @@ func (x *CommitChangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitChangeProofRequest.ProtoReflect.Descriptor instead.
 func (*CommitChangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{11}
+	return file_sync_sync_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CommitChangeProofRequest) GetProof() *ChangeProof {
@@ -796,7 +713,7 @@ type SyncGetRangeProofRequest struct {
 
 func (x *SyncGetRangeProofRequest) Reset() {
 	*x = SyncGetRangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[12]
+	mi := &file_sync_sync_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -808,7 +725,7 @@ func (x *SyncGetRangeProofRequest) String() string {
 func (*SyncGetRangeProofRequest) ProtoMessage() {}
 
 func (x *SyncGetRangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[12]
+	mi := &file_sync_sync_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -821,7 +738,7 @@ func (x *SyncGetRangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncGetRangeProofRequest.ProtoReflect.Descriptor instead.
 func (*SyncGetRangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{12}
+	return file_sync_sync_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SyncGetRangeProofRequest) GetRootHash() []byte {
@@ -871,7 +788,7 @@ type GetRangeProofRequest struct {
 
 func (x *GetRangeProofRequest) Reset() {
 	*x = GetRangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[13]
+	mi := &file_sync_sync_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -883,7 +800,7 @@ func (x *GetRangeProofRequest) String() string {
 func (*GetRangeProofRequest) ProtoMessage() {}
 
 func (x *GetRangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[13]
+	mi := &file_sync_sync_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -896,7 +813,7 @@ func (x *GetRangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRangeProofRequest.ProtoReflect.Descriptor instead.
 func (*GetRangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{13}
+	return file_sync_sync_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetRangeProofRequest) GetRootHash() []byte {
@@ -936,7 +853,7 @@ type GetRangeProofResponse struct {
 
 func (x *GetRangeProofResponse) Reset() {
 	*x = GetRangeProofResponse{}
-	mi := &file_sync_sync_proto_msgTypes[14]
+	mi := &file_sync_sync_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -948,7 +865,7 @@ func (x *GetRangeProofResponse) String() string {
 func (*GetRangeProofResponse) ProtoMessage() {}
 
 func (x *GetRangeProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[14]
+	mi := &file_sync_sync_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +878,7 @@ func (x *GetRangeProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRangeProofResponse.ProtoReflect.Descriptor instead.
 func (*GetRangeProofResponse) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{14}
+	return file_sync_sync_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetRangeProofResponse) GetProof() *RangeProof {
@@ -982,7 +899,7 @@ type CommitRangeProofRequest struct {
 
 func (x *CommitRangeProofRequest) Reset() {
 	*x = CommitRangeProofRequest{}
-	mi := &file_sync_sync_proto_msgTypes[15]
+	mi := &file_sync_sync_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -994,7 +911,7 @@ func (x *CommitRangeProofRequest) String() string {
 func (*CommitRangeProofRequest) ProtoMessage() {}
 
 func (x *CommitRangeProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[15]
+	mi := &file_sync_sync_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1007,7 +924,7 @@ func (x *CommitRangeProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitRangeProofRequest.ProtoReflect.Descriptor instead.
 func (*CommitRangeProofRequest) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{15}
+	return file_sync_sync_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CommitRangeProofRequest) GetStartKey() *MaybeBytes {
@@ -1042,7 +959,7 @@ type ChangeProof struct {
 
 func (x *ChangeProof) Reset() {
 	*x = ChangeProof{}
-	mi := &file_sync_sync_proto_msgTypes[16]
+	mi := &file_sync_sync_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1054,7 +971,7 @@ func (x *ChangeProof) String() string {
 func (*ChangeProof) ProtoMessage() {}
 
 func (x *ChangeProof) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[16]
+	mi := &file_sync_sync_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1067,7 +984,7 @@ func (x *ChangeProof) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeProof.ProtoReflect.Descriptor instead.
 func (*ChangeProof) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{16}
+	return file_sync_sync_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ChangeProof) GetStartProof() []*ProofNode {
@@ -1102,7 +1019,7 @@ type RangeProof struct {
 
 func (x *RangeProof) Reset() {
 	*x = RangeProof{}
-	mi := &file_sync_sync_proto_msgTypes[17]
+	mi := &file_sync_sync_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1114,7 +1031,7 @@ func (x *RangeProof) String() string {
 func (*RangeProof) ProtoMessage() {}
 
 func (x *RangeProof) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[17]
+	mi := &file_sync_sync_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1127,7 +1044,7 @@ func (x *RangeProof) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RangeProof.ProtoReflect.Descriptor instead.
 func (*RangeProof) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{17}
+	return file_sync_sync_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RangeProof) GetStartProof() []*ProofNode {
@@ -1162,7 +1079,7 @@ type ProofNode struct {
 
 func (x *ProofNode) Reset() {
 	*x = ProofNode{}
-	mi := &file_sync_sync_proto_msgTypes[18]
+	mi := &file_sync_sync_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1174,7 +1091,7 @@ func (x *ProofNode) String() string {
 func (*ProofNode) ProtoMessage() {}
 
 func (x *ProofNode) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[18]
+	mi := &file_sync_sync_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1187,7 +1104,7 @@ func (x *ProofNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofNode.ProtoReflect.Descriptor instead.
 func (*ProofNode) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{18}
+	return file_sync_sync_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ProofNode) GetKey() *Key {
@@ -1221,7 +1138,7 @@ type KeyChange struct {
 
 func (x *KeyChange) Reset() {
 	*x = KeyChange{}
-	mi := &file_sync_sync_proto_msgTypes[19]
+	mi := &file_sync_sync_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1233,7 +1150,7 @@ func (x *KeyChange) String() string {
 func (*KeyChange) ProtoMessage() {}
 
 func (x *KeyChange) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[19]
+	mi := &file_sync_sync_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1246,7 +1163,7 @@ func (x *KeyChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyChange.ProtoReflect.Descriptor instead.
 func (*KeyChange) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{19}
+	return file_sync_sync_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *KeyChange) GetKey() []byte {
@@ -1273,7 +1190,7 @@ type Key struct {
 
 func (x *Key) Reset() {
 	*x = Key{}
-	mi := &file_sync_sync_proto_msgTypes[20]
+	mi := &file_sync_sync_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1285,7 +1202,7 @@ func (x *Key) String() string {
 func (*Key) ProtoMessage() {}
 
 func (x *Key) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[20]
+	mi := &file_sync_sync_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1298,7 +1215,7 @@ func (x *Key) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Key.ProtoReflect.Descriptor instead.
 func (*Key) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{20}
+	return file_sync_sync_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Key) GetLength() uint64 {
@@ -1327,7 +1244,7 @@ type MaybeBytes struct {
 
 func (x *MaybeBytes) Reset() {
 	*x = MaybeBytes{}
-	mi := &file_sync_sync_proto_msgTypes[21]
+	mi := &file_sync_sync_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1339,7 +1256,7 @@ func (x *MaybeBytes) String() string {
 func (*MaybeBytes) ProtoMessage() {}
 
 func (x *MaybeBytes) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[21]
+	mi := &file_sync_sync_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1352,7 +1269,7 @@ func (x *MaybeBytes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaybeBytes.ProtoReflect.Descriptor instead.
 func (*MaybeBytes) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{21}
+	return file_sync_sync_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MaybeBytes) GetValue() []byte {
@@ -1379,7 +1296,7 @@ type KeyValue struct {
 
 func (x *KeyValue) Reset() {
 	*x = KeyValue{}
-	mi := &file_sync_sync_proto_msgTypes[22]
+	mi := &file_sync_sync_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1391,7 +1308,7 @@ func (x *KeyValue) String() string {
 func (*KeyValue) ProtoMessage() {}
 
 func (x *KeyValue) ProtoReflect() protoreflect.Message {
-	mi := &file_sync_sync_proto_msgTypes[22]
+	mi := &file_sync_sync_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1404,7 +1321,7 @@ func (x *KeyValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyValue.ProtoReflect.Descriptor instead.
 func (*KeyValue) Descriptor() ([]byte, []int) {
-	return file_sync_sync_proto_rawDescGZIP(), []int{22}
+	return file_sync_sync_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *KeyValue) GetKey() []byte {
@@ -1425,11 +1342,7 @@ var File_sync_sync_proto protoreflect.FileDescriptor
 
 const file_sync_sync_proto_rawDesc = "" +
 	"\n" +
-	"\x0fsync/sync.proto\x12\x04sync\x1a\x1bgoogle/protobuf/empty.proto\"\xbb\x01\n" +
-	"\aRequest\x12P\n" +
-	"\x13range_proof_request\x18\x01 \x01(\v2\x1e.sync.SyncGetRangeProofRequestH\x00R\x11rangeProofRequest\x12S\n" +
-	"\x14change_proof_request\x18\x02 \x01(\v2\x1f.sync.SyncGetChangeProofRequestH\x00R\x12changeProofRequestB\t\n" +
-	"\amessage\"4\n" +
+	"\x0fsync/sync.proto\x12\x04sync\x1a\x1bgoogle/protobuf/empty.proto\"4\n" +
 	"\x15GetMerkleRootResponse\x12\x1b\n" +
 	"\troot_hash\x18\x01 \x01(\fR\brootHash\"#\n" +
 	"\x0fGetProofRequest\x12\x10\n" +
@@ -1535,7 +1448,7 @@ const file_sync_sync_proto_rawDesc = "" +
 	"\x11VerifyChangeProof\x12\x1e.sync.VerifyChangeProofRequest\x1a\x1f.sync.VerifyChangeProofResponse\x12K\n" +
 	"\x11CommitChangeProof\x12\x1e.sync.CommitChangeProofRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
 	"\rGetRangeProof\x12\x1a.sync.GetRangeProofRequest\x1a\x1b.sync.GetRangeProofResponse\x12I\n" +
-	"\x10CommitRangeProof\x12\x1d.sync.CommitRangeProofRequest\x1a\x16.google.protobuf.EmptyB%Z#github.com/luxfi/node/proto/pb/syncb\x06proto3"
+	"\x10CommitRangeProof\x12\x1d.sync.CommitRangeProofRequest\x1a\x16.google.protobuf.EmptyB/Z-github.com/luxfi/node/proto/pb/syncb\x06proto3"
 
 var (
 	file_sync_sync_proto_rawDescOnce sync.Once
@@ -1549,90 +1462,87 @@ func file_sync_sync_proto_rawDescGZIP() []byte {
 	return file_sync_sync_proto_rawDescData
 }
 
-var file_sync_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_sync_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_sync_sync_proto_goTypes = []any{
-	(*Request)(nil),                    // 0: sync.Request
-	(*GetMerkleRootResponse)(nil),      // 1: sync.GetMerkleRootResponse
-	(*GetProofRequest)(nil),            // 2: sync.GetProofRequest
-	(*GetProofResponse)(nil),           // 3: sync.GetProofResponse
-	(*Proof)(nil),                      // 4: sync.Proof
-	(*SyncGetChangeProofRequest)(nil),  // 5: sync.SyncGetChangeProofRequest
-	(*SyncGetChangeProofResponse)(nil), // 6: sync.SyncGetChangeProofResponse
-	(*GetChangeProofRequest)(nil),      // 7: sync.GetChangeProofRequest
-	(*GetChangeProofResponse)(nil),     // 8: sync.GetChangeProofResponse
-	(*VerifyChangeProofRequest)(nil),   // 9: sync.VerifyChangeProofRequest
-	(*VerifyChangeProofResponse)(nil),  // 10: sync.VerifyChangeProofResponse
-	(*CommitChangeProofRequest)(nil),   // 11: sync.CommitChangeProofRequest
-	(*SyncGetRangeProofRequest)(nil),   // 12: sync.SyncGetRangeProofRequest
-	(*GetRangeProofRequest)(nil),       // 13: sync.GetRangeProofRequest
-	(*GetRangeProofResponse)(nil),      // 14: sync.GetRangeProofResponse
-	(*CommitRangeProofRequest)(nil),    // 15: sync.CommitRangeProofRequest
-	(*ChangeProof)(nil),                // 16: sync.ChangeProof
-	(*RangeProof)(nil),                 // 17: sync.RangeProof
-	(*ProofNode)(nil),                  // 18: sync.ProofNode
-	(*KeyChange)(nil),                  // 19: sync.KeyChange
-	(*Key)(nil),                        // 20: sync.Key
-	(*MaybeBytes)(nil),                 // 21: sync.MaybeBytes
-	(*KeyValue)(nil),                   // 22: sync.KeyValue
-	nil,                                // 23: sync.ProofNode.ChildrenEntry
-	(*emptypb.Empty)(nil),              // 24: google.protobuf.Empty
+	(*GetMerkleRootResponse)(nil),      // 0: sync.GetMerkleRootResponse
+	(*GetProofRequest)(nil),            // 1: sync.GetProofRequest
+	(*GetProofResponse)(nil),           // 2: sync.GetProofResponse
+	(*Proof)(nil),                      // 3: sync.Proof
+	(*SyncGetChangeProofRequest)(nil),  // 4: sync.SyncGetChangeProofRequest
+	(*SyncGetChangeProofResponse)(nil), // 5: sync.SyncGetChangeProofResponse
+	(*GetChangeProofRequest)(nil),      // 6: sync.GetChangeProofRequest
+	(*GetChangeProofResponse)(nil),     // 7: sync.GetChangeProofResponse
+	(*VerifyChangeProofRequest)(nil),   // 8: sync.VerifyChangeProofRequest
+	(*VerifyChangeProofResponse)(nil),  // 9: sync.VerifyChangeProofResponse
+	(*CommitChangeProofRequest)(nil),   // 10: sync.CommitChangeProofRequest
+	(*SyncGetRangeProofRequest)(nil),   // 11: sync.SyncGetRangeProofRequest
+	(*GetRangeProofRequest)(nil),       // 12: sync.GetRangeProofRequest
+	(*GetRangeProofResponse)(nil),      // 13: sync.GetRangeProofResponse
+	(*CommitRangeProofRequest)(nil),    // 14: sync.CommitRangeProofRequest
+	(*ChangeProof)(nil),                // 15: sync.ChangeProof
+	(*RangeProof)(nil),                 // 16: sync.RangeProof
+	(*ProofNode)(nil),                  // 17: sync.ProofNode
+	(*KeyChange)(nil),                  // 18: sync.KeyChange
+	(*Key)(nil),                        // 19: sync.Key
+	(*MaybeBytes)(nil),                 // 20: sync.MaybeBytes
+	(*KeyValue)(nil),                   // 21: sync.KeyValue
+	nil,                                // 22: sync.ProofNode.ChildrenEntry
+	(*emptypb.Empty)(nil),              // 23: google.protobuf.Empty
 }
 var file_sync_sync_proto_depIdxs = []int32{
-	12, // 0: sync.Request.range_proof_request:type_name -> sync.SyncGetRangeProofRequest
-	5,  // 1: sync.Request.change_proof_request:type_name -> sync.SyncGetChangeProofRequest
-	4,  // 2: sync.GetProofResponse.proof:type_name -> sync.Proof
-	21, // 3: sync.Proof.value:type_name -> sync.MaybeBytes
-	18, // 4: sync.Proof.proof:type_name -> sync.ProofNode
-	21, // 5: sync.SyncGetChangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 6: sync.SyncGetChangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	16, // 7: sync.SyncGetChangeProofResponse.change_proof:type_name -> sync.ChangeProof
-	17, // 8: sync.SyncGetChangeProofResponse.range_proof:type_name -> sync.RangeProof
-	21, // 9: sync.GetChangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 10: sync.GetChangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	16, // 11: sync.GetChangeProofResponse.change_proof:type_name -> sync.ChangeProof
-	16, // 12: sync.VerifyChangeProofRequest.proof:type_name -> sync.ChangeProof
-	21, // 13: sync.VerifyChangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 14: sync.VerifyChangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	16, // 15: sync.CommitChangeProofRequest.proof:type_name -> sync.ChangeProof
-	21, // 16: sync.SyncGetRangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 17: sync.SyncGetRangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	21, // 18: sync.GetRangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 19: sync.GetRangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	17, // 20: sync.GetRangeProofResponse.proof:type_name -> sync.RangeProof
-	21, // 21: sync.CommitRangeProofRequest.start_key:type_name -> sync.MaybeBytes
-	21, // 22: sync.CommitRangeProofRequest.end_key:type_name -> sync.MaybeBytes
-	17, // 23: sync.CommitRangeProofRequest.range_proof:type_name -> sync.RangeProof
-	18, // 24: sync.ChangeProof.start_proof:type_name -> sync.ProofNode
-	18, // 25: sync.ChangeProof.end_proof:type_name -> sync.ProofNode
-	19, // 26: sync.ChangeProof.key_changes:type_name -> sync.KeyChange
-	18, // 27: sync.RangeProof.start_proof:type_name -> sync.ProofNode
-	18, // 28: sync.RangeProof.end_proof:type_name -> sync.ProofNode
-	22, // 29: sync.RangeProof.key_values:type_name -> sync.KeyValue
-	20, // 30: sync.ProofNode.key:type_name -> sync.Key
-	21, // 31: sync.ProofNode.value_or_hash:type_name -> sync.MaybeBytes
-	23, // 32: sync.ProofNode.children:type_name -> sync.ProofNode.ChildrenEntry
-	21, // 33: sync.KeyChange.value:type_name -> sync.MaybeBytes
-	24, // 34: sync.DB.GetMerkleRoot:input_type -> google.protobuf.Empty
-	24, // 35: sync.DB.Clear:input_type -> google.protobuf.Empty
-	2,  // 36: sync.DB.GetProof:input_type -> sync.GetProofRequest
-	7,  // 37: sync.DB.GetChangeProof:input_type -> sync.GetChangeProofRequest
-	9,  // 38: sync.DB.VerifyChangeProof:input_type -> sync.VerifyChangeProofRequest
-	11, // 39: sync.DB.CommitChangeProof:input_type -> sync.CommitChangeProofRequest
-	13, // 40: sync.DB.GetRangeProof:input_type -> sync.GetRangeProofRequest
-	15, // 41: sync.DB.CommitRangeProof:input_type -> sync.CommitRangeProofRequest
-	1,  // 42: sync.DB.GetMerkleRoot:output_type -> sync.GetMerkleRootResponse
-	24, // 43: sync.DB.Clear:output_type -> google.protobuf.Empty
-	3,  // 44: sync.DB.GetProof:output_type -> sync.GetProofResponse
-	8,  // 45: sync.DB.GetChangeProof:output_type -> sync.GetChangeProofResponse
-	10, // 46: sync.DB.VerifyChangeProof:output_type -> sync.VerifyChangeProofResponse
-	24, // 47: sync.DB.CommitChangeProof:output_type -> google.protobuf.Empty
-	14, // 48: sync.DB.GetRangeProof:output_type -> sync.GetRangeProofResponse
-	24, // 49: sync.DB.CommitRangeProof:output_type -> google.protobuf.Empty
-	42, // [42:50] is the sub-list for method output_type
-	34, // [34:42] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	3,  // 0: sync.GetProofResponse.proof:type_name -> sync.Proof
+	20, // 1: sync.Proof.value:type_name -> sync.MaybeBytes
+	17, // 2: sync.Proof.proof:type_name -> sync.ProofNode
+	20, // 3: sync.SyncGetChangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 4: sync.SyncGetChangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	15, // 5: sync.SyncGetChangeProofResponse.change_proof:type_name -> sync.ChangeProof
+	16, // 6: sync.SyncGetChangeProofResponse.range_proof:type_name -> sync.RangeProof
+	20, // 7: sync.GetChangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 8: sync.GetChangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	15, // 9: sync.GetChangeProofResponse.change_proof:type_name -> sync.ChangeProof
+	15, // 10: sync.VerifyChangeProofRequest.proof:type_name -> sync.ChangeProof
+	20, // 11: sync.VerifyChangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 12: sync.VerifyChangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	15, // 13: sync.CommitChangeProofRequest.proof:type_name -> sync.ChangeProof
+	20, // 14: sync.SyncGetRangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 15: sync.SyncGetRangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	20, // 16: sync.GetRangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 17: sync.GetRangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	16, // 18: sync.GetRangeProofResponse.proof:type_name -> sync.RangeProof
+	20, // 19: sync.CommitRangeProofRequest.start_key:type_name -> sync.MaybeBytes
+	20, // 20: sync.CommitRangeProofRequest.end_key:type_name -> sync.MaybeBytes
+	16, // 21: sync.CommitRangeProofRequest.range_proof:type_name -> sync.RangeProof
+	17, // 22: sync.ChangeProof.start_proof:type_name -> sync.ProofNode
+	17, // 23: sync.ChangeProof.end_proof:type_name -> sync.ProofNode
+	18, // 24: sync.ChangeProof.key_changes:type_name -> sync.KeyChange
+	17, // 25: sync.RangeProof.start_proof:type_name -> sync.ProofNode
+	17, // 26: sync.RangeProof.end_proof:type_name -> sync.ProofNode
+	21, // 27: sync.RangeProof.key_values:type_name -> sync.KeyValue
+	19, // 28: sync.ProofNode.key:type_name -> sync.Key
+	20, // 29: sync.ProofNode.value_or_hash:type_name -> sync.MaybeBytes
+	22, // 30: sync.ProofNode.children:type_name -> sync.ProofNode.ChildrenEntry
+	20, // 31: sync.KeyChange.value:type_name -> sync.MaybeBytes
+	23, // 32: sync.DB.GetMerkleRoot:input_type -> google.protobuf.Empty
+	23, // 33: sync.DB.Clear:input_type -> google.protobuf.Empty
+	1,  // 34: sync.DB.GetProof:input_type -> sync.GetProofRequest
+	6,  // 35: sync.DB.GetChangeProof:input_type -> sync.GetChangeProofRequest
+	8,  // 36: sync.DB.VerifyChangeProof:input_type -> sync.VerifyChangeProofRequest
+	10, // 37: sync.DB.CommitChangeProof:input_type -> sync.CommitChangeProofRequest
+	12, // 38: sync.DB.GetRangeProof:input_type -> sync.GetRangeProofRequest
+	14, // 39: sync.DB.CommitRangeProof:input_type -> sync.CommitRangeProofRequest
+	0,  // 40: sync.DB.GetMerkleRoot:output_type -> sync.GetMerkleRootResponse
+	23, // 41: sync.DB.Clear:output_type -> google.protobuf.Empty
+	2,  // 42: sync.DB.GetProof:output_type -> sync.GetProofResponse
+	7,  // 43: sync.DB.GetChangeProof:output_type -> sync.GetChangeProofResponse
+	9,  // 44: sync.DB.VerifyChangeProof:output_type -> sync.VerifyChangeProofResponse
+	23, // 45: sync.DB.CommitChangeProof:output_type -> google.protobuf.Empty
+	13, // 46: sync.DB.GetRangeProof:output_type -> sync.GetRangeProofResponse
+	23, // 47: sync.DB.CommitRangeProof:output_type -> google.protobuf.Empty
+	40, // [40:48] is the sub-list for method output_type
+	32, // [32:40] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_sync_sync_proto_init() }
@@ -1640,15 +1550,11 @@ func file_sync_sync_proto_init() {
 	if File_sync_sync_proto != nil {
 		return
 	}
-	file_sync_sync_proto_msgTypes[0].OneofWrappers = []any{
-		(*Request_RangeProofRequest)(nil),
-		(*Request_ChangeProofRequest)(nil),
-	}
-	file_sync_sync_proto_msgTypes[6].OneofWrappers = []any{
+	file_sync_sync_proto_msgTypes[5].OneofWrappers = []any{
 		(*SyncGetChangeProofResponse_ChangeProof)(nil),
 		(*SyncGetChangeProofResponse_RangeProof)(nil),
 	}
-	file_sync_sync_proto_msgTypes[8].OneofWrappers = []any{
+	file_sync_sync_proto_msgTypes[7].OneofWrappers = []any{
 		(*GetChangeProofResponse_ChangeProof)(nil),
 		(*GetChangeProofResponse_RootNotPresent)(nil),
 	}
@@ -1658,7 +1564,7 @@ func file_sync_sync_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sync_sync_proto_rawDesc), len(file_sync_sync_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

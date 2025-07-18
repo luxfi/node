@@ -8,4 +8,4 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 source "$LUX_PATH"/scripts/constants.sh
 
 echo "Building Workload..."
-go build -o "$LUX_PATH/build/antithesis-node-workload" "$LUX_PATH/tests/antithesis/node/"*.go
+go build -o "$LUX_PATH/build/antithesis-luxd-workload" "$LUX_PATH/tests/antithesis/luxd/"*.go

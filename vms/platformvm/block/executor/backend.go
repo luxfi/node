@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,14 +12,15 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/txs/mempool"
 )
 
 var errConflictingParentTxs = errors.New("block contains a transaction that conflicts with a transaction in a parent block")
 
 // Shared fields used by visitors.
 type backend struct {
-	mempool.Mempool
+	mempool.Mempool[*txs.Tx]
 	// lastAccepted is the ID of the last block that had Accept() called on it.
 	lastAccepted ids.ID
 

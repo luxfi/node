@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package state manages the meta-data required by consensus for an lux
@@ -8,9 +8,8 @@ package state
 import (
 	"context"
 	"errors"
-	"time"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -43,16 +42,14 @@ type Serializer struct {
 }
 
 type SerializerConfig struct {
-	ChainID     ids.ID
-	VM          vertex.DAGVM
-	DB          database.Database
-	Log         logging.Logger
-	CortinaTime time.Time
+	ChainID ids.ID
+	VM      vertex.DAGVM
+	DB      database.Database
+	Log     logging.Logger
 }
 
 func NewSerializer(config SerializerConfig) vertex.Manager {
 	versionDB := versiondb.New(config.DB)
-	dbCache := &cache.LRU[ids.ID, any]{Size: dbCacheSize}
 	s := Serializer{
 		SerializerConfig: config,
 		versionDB:        versionDB,
@@ -61,7 +58,7 @@ func NewSerializer(config SerializerConfig) vertex.Manager {
 	rawState := &state{
 		serializer: &s,
 		log:        config.Log,
-		dbCache:    dbCache,
+		dbCache:    lru.NewCache[ids.ID, any](dbCacheSize),
 		db:         versionDB,
 	}
 
@@ -86,11 +83,11 @@ func (s *Serializer) BuildStopVtx(
 			return nil, err
 		}
 		parentHeight := parent.v.vtx.Height()
-		childHeight, err := math.Add64(parentHeight, 1)
+		childHeight, err := math.Add(parentHeight, 1)
 		if err != nil {
 			return nil, err
 		}
-		height = math.Max(height, childHeight)
+		height = max(height, childHeight)
 	}
 
 	vtx, err := vertex.BuildStopVertex(

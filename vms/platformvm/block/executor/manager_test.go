@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -79,10 +79,9 @@ func TestManagerSetPreference(t *testing.T) {
 	manager := &manager{
 		preferred: initialPreference,
 	}
-	require.False(manager.SetPreference(initialPreference))
+	require.Equal(initialPreference, manager.Preferred())
 
 	newPreference := ids.GenerateTestID()
-	require.True(manager.SetPreference(newPreference))
-	require.False(manager.SetPreference(newPreference))
-	require.True(manager.SetPreference(initialPreference))
+	manager.SetPreference(newPreference)
+	require.Equal(newPreference, manager.Preferred())
 }

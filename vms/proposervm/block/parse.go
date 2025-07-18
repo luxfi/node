@@ -1,13 +1,39 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/luxfi/node/ids"
 )
+
+type ParseResult struct {
+	Block Block
+	Err   error
+}
+
+// ParseBlocks parses the given raw blocks into tuples of (Block, error).
+// Each ParseResult is returned in the same order as its corresponding bytes in the input.
+func ParseBlocks(blks [][]byte, chainID ids.ID) []ParseResult {
+	results := make([]ParseResult, len(blks))
+
+	var wg sync.WaitGroup
+	wg.Add(len(blks))
+
+	for i, blk := range blks {
+		go func(i int, blkBytes []byte) {
+			defer wg.Done()
+			results[i].Block, results[i].Err = Parse(blkBytes, chainID)
+		}(i, blk)
+	}
+
+	wg.Wait()
+
+	return results
+}
 
 // Parse a block and verify that the signature attached to the block is valid
 // for the certificate provided in the block.

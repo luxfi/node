@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -11,6 +11,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
@@ -23,7 +24,7 @@ func TestSetsAndGets(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
@@ -83,7 +84,7 @@ func TestSetsAndGets(t *testing.T) {
 
 func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
@@ -113,7 +114,7 @@ func TestFundingAddresses(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{

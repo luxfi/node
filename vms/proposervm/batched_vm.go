@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -7,9 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/utils/wrappers"
@@ -83,10 +81,6 @@ func (vm *VM) GetAncestors(
 }
 
 func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
-	if vm.batchedVM == nil {
-		return nil, block.ErrRemoteVMNotImplemented
-	}
-
 	type partialData struct {
 		index int
 		block statelessblock.Block
@@ -103,8 +97,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 	parsingResults := statelessblock.ParseBlocks(blks, vm.ctx.ChainID)
 
 	for ; blocksIndex < len(blks); blocksIndex++ {
-		blkBytes := blks[blocksIndex]
-		statelessBlock, err := statelessblock.Parse(blkBytes, vm.ctx.ChainID)
+		statelessBlock, err := parsingResults[blocksIndex].Block, parsingResults[blocksIndex].Err
 		if err != nil {
 			break
 		}
@@ -125,7 +118,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 	innerBlockBytes = append(innerBlockBytes, blks[blocksIndex:]...)
 
 	// parse all inner blocks at once
-	innerBlks, err := vm.batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
+	innerBlks, err := block.BatchedParseBlock(ctx, vm.ChainVM, innerBlockBytes)
 	if err != nil {
 		return nil, err
 	}

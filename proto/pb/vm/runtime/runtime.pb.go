@@ -24,7 +24,7 @@ const (
 
 type InitializeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// ProtocolVersion is used to identify incompatibilities with Lux Node and a VM.
+	// ProtocolVersion is used to identify incompatibilities with Lux and a VM.
 	ProtocolVersion uint32 `protobuf:"varint,1,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
 	// Address of the gRPC server endpoint serving the handshake logic.
 	// Example: 127.0.0.1:50001
@@ -88,7 +88,7 @@ const file_vm_runtime_runtime_proto_rawDesc = "" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr2N\n" +
 	"\aRuntime\x12C\n" +
 	"\n" +
-	"Initialize\x12\x1d.vm.runtime.InitializeRequest\x1a\x16.google.protobuf.EmptyB+Z)github.com/luxfi/node/proto/pb/vm/managerb\x06proto3"
+	"Initialize\x12\x1d.vm.runtime.InitializeRequest\x1a\x16.google.protobuf.EmptyB5Z3github.com/luxfi/node/proto/pb/vm/managerb\x06proto3"
 
 var (
 	file_vm_runtime_runtime_proto_rawDescOnce sync.Once

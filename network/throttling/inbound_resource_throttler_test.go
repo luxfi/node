@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/snow/networking/tracker/trackermock"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -33,7 +34,7 @@ func TestNewSystemThrottler(t *testing.T) {
 		Clock:           clock,
 		MaxRecheckDelay: time.Second,
 	}
-	targeter := tracker.NewMockTargeter(ctrl)
+	targeter := trackermock.NewTargeter(ctrl)
 	throttlerIntf, err := NewSystemThrottler("", reg, config, cpuTracker, targeter)
 	require.NoError(err)
 	require.IsType(&systemThrottler{}, throttlerIntf)
@@ -55,7 +56,7 @@ func TestSystemThrottler(t *testing.T) {
 		MaxRecheckDelay: maxRecheckDelay,
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-	targeter := tracker.NewMockTargeter(ctrl)
+	targeter := trackermock.NewTargeter(ctrl)
 	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
 	require.NoError(err)
 
@@ -137,7 +138,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 		MaxRecheckDelay: maxRecheckDelay,
 	}
 	vdrID := ids.GenerateTestNodeID()
-	targeter := tracker.NewMockTargeter(ctrl)
+	targeter := trackermock.NewTargeter(ctrl)
 	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
 	require.NoError(err)
 

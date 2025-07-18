@@ -1,9 +1,21 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package iterator
 
 var _ Iterator[any] = (*slice[any])(nil)
+
+// ToSlice returns a slice that contains all of the elements from [it] in order.
+// [it] will be released before returning.
+func ToSlice[T any](it Iterator[T]) []T {
+	defer it.Release()
+
+	var elements []T
+	for it.Next() {
+		elements = append(elements, it.Value())
+	}
+	return elements
+}
 
 type slice[T any] struct {
 	index    int

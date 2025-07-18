@@ -1,7 +1,9 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package iterator
+
+import "github.com/luxfi/node/utils/set"
 
 var _ Iterator[any] = (*filtered[any])(nil)
 
@@ -17,6 +19,19 @@ func Filter[T any](it Iterator[T], filter func(T) bool) Iterator[T] {
 		it:     it,
 		filter: filter,
 	}
+}
+
+// Deduplicate returns an iterator that skips the elements that have already
+// been returned from [it].
+func Deduplicate[T comparable](it Iterator[T]) Iterator[T] {
+	var seen set.Set[T]
+	return Filter(it, func(e T) bool {
+		if seen.Contains(e) {
+			return true
+		}
+		seen.Add(e)
+		return false
+	})
 }
 
 func (i *filtered[_]) Next() bool {
