@@ -10,22 +10,22 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (
-	_ snowman.Block           = (*tracedBlock)(nil)
-	_ snowman.OracleBlock     = (*tracedBlock)(nil)
+	_ chain.Block           = (*tracedBlock)(nil)
+	_ chain.OracleBlock     = (*tracedBlock)(nil)
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type tracedBlock struct {
-	snowman.Block
+	chain.Block
 
 	vm *blockVM
 }
@@ -60,10 +60,10 @@ func (b *tracedBlock) Reject(ctx context.Context) error {
 	return b.Block.Reject(ctx)
 }
 
-func (b *tracedBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
-	oracleBlock, ok := b.Block.(snowman.OracleBlock)
+func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+	oracleBlock, ok := b.Block.(chain.OracleBlock)
 	if !ok {
-		return [2]snowman.Block{}, snowman.ErrNotOracle
+		return [2]chain.Block{}, chain.ErrNotOracle
 	}
 
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.optionsTag, oteltrace.WithAttributes(
@@ -74,9 +74,9 @@ func (b *tracedBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 
 	blks, err := oracleBlock.Options(ctx)
 	if err != nil {
-		return [2]snowman.Block{}, err
+		return [2]chain.Block{}, err
 	}
-	return [2]snowman.Block{
+	return [2]chain.Block{
 		&tracedBlock{
 			Block: blks[0],
 			vm:    b.vm,

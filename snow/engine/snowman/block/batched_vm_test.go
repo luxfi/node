@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 	"github.com/luxfi/node/utils/logging"
 
@@ -27,7 +27,7 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
 		require.Equal(someID, id)
 		return nil, database.ErrNotFound
 	}
@@ -43,7 +43,7 @@ func TestGetAncestorsPropagatesErrors(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
 		require.Equal(someID, id)
 		return nil, errTest
 	}

@@ -12,10 +12,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
 	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -43,7 +43,7 @@ func (p *txParser) Parse(ctx context.Context, txBytes []byte) (queue.Job, error)
 type txJob struct {
 	log         logging.Logger
 	numAccepted prometheus.Counter
-	tx          snowstorm.Tx
+	tx          dag.Tx
 }
 
 func (t *txJob) ID() ids.ID {

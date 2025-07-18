@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 )

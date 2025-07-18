@@ -12,9 +12,9 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/lux"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -115,14 +115,14 @@ func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID
 		return nil //nolint:nilerr
 	}
 
-	queue := make([]lux.Vertex, 1, gh.maxContainersGetAncestors) // for BFS
+	queue := make([]dag.Vertex, 1, gh.maxContainersGetAncestors) // for BFS
 	queue[0] = vertex
 	ancestorsBytesLen := 0                                            // length, in bytes, of vertex and its ancestors
 	ancestorsBytes := make([][]byte, 0, gh.maxContainersGetAncestors) // vertex and its ancestors in BFS order
 	visited := set.Of(vertex.ID())                                    // IDs of vertices that have been in queue before
 
 	for len(ancestorsBytes) < gh.maxContainersGetAncestors && len(queue) > 0 && time.Since(startTime) < gh.maxTimeGetAncestors {
-		var vtx lux.Vertex
+		var vtx dag.Vertex
 		vtx, queue = queue[0], queue[1:] // pop
 		vtxBytes := vtx.Bytes()
 		// Ensure response size isn't too large. Include wrappers.IntLen because the size of the message

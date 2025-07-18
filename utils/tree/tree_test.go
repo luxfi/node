@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/snowtest"
 )
 
@@ -18,7 +18,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 
 	tr := New()
 
-	block := snowmantest.BuildChild(snowmantest.Genesis)
+	block := chaintest.BuildChild(chaintest.Genesis)
 	_, contains := tr.Get(block)
 	require.False(contains)
 
@@ -39,8 +39,8 @@ func TestAcceptBlockConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToReject := snowmantest.BuildChild(snowmantest.Genesis)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
 
 	// add conflicting blocks
 	tr.Add(blockToAccept)
@@ -69,9 +69,9 @@ func TestAcceptChainConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToReject := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToRejectChild := snowmantest.BuildChild(blockToReject)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
+	blockToRejectChild := chaintest.BuildChild(blockToReject)
 
 	// add conflicting blocks.
 	tr.Add(blockToAccept)

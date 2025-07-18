@@ -12,8 +12,8 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
@@ -128,7 +128,7 @@ func TestChangeNotifierBatchedChainVM(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fullVM := blockmock.NewFullVM(ctrl)
 	fullVM.EXPECT().GetAncestors(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([][]byte{}, nil)
-	fullVM.EXPECT().BatchedParseBlock(gomock.Any(), gomock.Any()).Return([]snowman.Block{}, nil)
+	fullVM.EXPECT().BatchedParseBlock(gomock.Any(), gomock.Any()).Return([]chain.Block{}, nil)
 
 	vm := &blockmock.ChainVM{}
 
@@ -183,7 +183,7 @@ func TestChangeNotifierNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	tvm := blockmock.NewFullVM(ctrl)
-	tvm.EXPECT().BuildBlock(gomock.Any()).Return(&snowmantest.Block{}, nil)
+	tvm.EXPECT().BuildBlock(gomock.Any()).Return(&chaintest.Block{}, nil)
 	tvm.EXPECT().SetState(gomock.Any(), gomock.Any()).Return(nil)
 	tvm.EXPECT().SetPreference(gomock.Any(), gomock.Any()).Return(nil)
 

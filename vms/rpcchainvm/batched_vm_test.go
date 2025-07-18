@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmanmock"
+	"github.com/luxfi/node/consensus/chain/snowmanmock"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
 	"github.com/luxfi/node/snow/snowtest"

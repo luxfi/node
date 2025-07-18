@@ -6,8 +6,8 @@ package snowman
 import (
 	"testing"
 
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
@@ -24,7 +24,7 @@ func DefaultConfig(t testing.TB) Config {
 		Sender:              &enginetest.Sender{},
 		Validators:          validators.NewManager(),
 		ConnectedValidators: tracker.NewPeers(),
-		Params: snowball.Parameters{
+		Params: binaryvote.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -34,6 +34,6 @@ func DefaultConfig(t testing.TB) Config {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &snowman.Topological{Factory: snowball.SnowflakeFactory},
+		Consensus: &chain.Topological{Factory: binaryvote.SnowflakeFactory},
 	}
 }

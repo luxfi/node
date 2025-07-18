@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 var (
-	_ snowman.Block           = (*BlockWrapper)(nil)
+	_ chain.Block           = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -22,7 +22,7 @@ var (
 // BlockWrapper wraps a snowman Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
-	snowman.Block
+	chain.Block
 
 	state *State
 }

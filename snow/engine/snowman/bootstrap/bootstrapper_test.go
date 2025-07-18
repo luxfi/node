@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/enginetest"
@@ -158,12 +158,12 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
-	vm.LastAcceptedF = snowmantest.MakeLastAcceptedBlockF(
-		[]*snowmantest.Block{snowmantest.Genesis},
+	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		require.Equal(snowmantest.GenesisID, blkID)
-		return snowmantest.Genesis, nil
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		require.Equal(chaintest.GenesisID, blkID)
+		return chaintest.Genesis, nil
 	}
 
 	// create bootstrapper
@@ -219,7 +219,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(1)
+	blks := chaintest.BuildChain(1)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -248,7 +248,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -282,7 +282,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2])))
 
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[1:2])))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
@@ -294,7 +294,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(4)
+	blks := chaintest.BuildChain(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -332,7 +332,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2]))) // respond with blk1
 
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
@@ -345,7 +345,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -385,7 +385,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), requestedNodeID, requestID, blocksToBytes(blks[1:2])))
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 }
 
 // There are multiple needed blocks and Ancestors returns all at once
@@ -394,7 +394,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(4)
+	blks := chaintest.BuildChain(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -429,7 +429,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks))) // respond with all the blocks
 
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
@@ -440,7 +440,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(3)
+	blks := chaintest.BuildChain(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -472,7 +472,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
 
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[2:3])))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
@@ -483,7 +483,7 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(5)
+	blks := chaintest.BuildChain(5)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -530,11 +530,11 @@ func TestRestartBootstrapping(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk1RequestID, blocksToBytes(blks[1:2])))
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(snowtest.Accepted, blks[0].Status)
-	snowmantest.RequireStatusIs(require, snowtest.Undecided, blks[1:]...)
+	chaintest.RequireStatusIs(require, snowtest.Undecided, blks[1:]...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk4RequestID, blocksToBytes(blks[4:5])))
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[4:5])))
 	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
@@ -545,7 +545,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[0].Status = snowtest.Undecided
@@ -589,7 +589,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 
 	config, _, _, vm, halt := newConfig(t)
 
-	blks := snowmantest.BuildChain(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -606,7 +606,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 	bs.TimeoutRegistrar = &enginetest.Timer{}
 
 	getBlockF := vm.GetBlockF
-	vm.GetBlockF = func(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 		halt()
 		return getBlockF(ctx, blkID)
 	}
@@ -658,11 +658,11 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
-	blk1 := snowmantest.BuildChild(snowmantest.Genesis)
+	blk1 := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
-		require.Equal(snowmantest.GenesisID, blkID)
-		return snowmantest.Genesis, nil
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		require.Equal(chaintest.GenesisID, blkID)
+		return chaintest.Genesis, nil
 	}
 
 	intervalDB := memdb.New()
@@ -717,7 +717,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(3)
+	blks := chaintest.BuildChain(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -750,7 +750,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
-	snowmantest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk1, blocksToBytes(blks[1:2])))
 	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
@@ -761,7 +761,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := snowmantest.BuildChain(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[1].Status = snowtest.Accepted
@@ -788,12 +788,12 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 	require.Equal(blks[0].HeightV, bs.startingHeight)
 }
 
-func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*snowmantest.Block) {
+func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*chaintest.Block) {
 	vm.CantSetState = false
-	vm.LastAcceptedF = snowmantest.MakeLastAcceptedBlockF(
+	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		blocks,
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		for _, blk := range blocks {
 			if blk.Status == snowtest.Accepted && blk.ID() == blkID {
 				return blk, nil
@@ -801,7 +801,7 @@ func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*snowmantest.Block) {
 		}
 		return nil, database.ErrNotFound
 	}
-	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (snowman.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (chain.Block, error) {
 		for _, blk := range blocks {
 			if bytes.Equal(blk.Bytes(), blkBytes) {
 				return blk, nil
@@ -811,7 +811,7 @@ func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*snowmantest.Block) {
 	}
 }
 
-func blocksToIDs(blocks []*snowmantest.Block) []ids.ID {
+func blocksToIDs(blocks []*chaintest.Block) []ids.ID {
 	blkIDs := make([]ids.ID, len(blocks))
 	for i, blk := range blocks {
 		blkIDs[i] = blk.ID()
@@ -819,7 +819,7 @@ func blocksToIDs(blocks []*snowmantest.Block) []ids.ID {
 	return blkIDs
 }
 
-func blocksToBytes(blocks []*snowmantest.Block) [][]byte {
+func blocksToBytes(blocks []*chaintest.Block) [][]byte {
 	numBlocks := len(blocks)
 	blkBytes := make([][]byte, numBlocks)
 	for i, blk := range blocks {

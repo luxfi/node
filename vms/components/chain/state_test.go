@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/hashing"
 )
@@ -36,10 +36,10 @@ var (
 
 // NewTestBlock returns a new test block with height, bytes, and ID derived from [i]
 // and using [parentID] as the parent block ID
-func NewTestBlock(i uint64, parentID ids.ID) *snowmantest.Block {
+func NewTestBlock(i uint64, parentID ids.ID) *chaintest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
-	return &snowmantest.Block{
+	return &chaintest.Block{
 		Decidable: snowtest.Decidable{
 			IDV:    id,
 			Status: Unknown,
@@ -51,8 +51,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *snowmantest.Block {
 }
 
 // NewTestBlocks generates [numBlocks] consecutive blocks
-func NewTestBlocks(numBlocks uint64) []*snowmantest.Block {
-	blks := make([]*snowmantest.Block, 0, numBlocks)
+func NewTestBlocks(numBlocks uint64) []*chaintest.Block {
+	blks := make([]*chaintest.Block, 0, numBlocks)
 	parentID := ids.Empty
 	for i := uint64(0); i < numBlocks; i++ {
 		blks = append(blks, NewTestBlock(i, parentID))
@@ -63,19 +63,19 @@ func NewTestBlocks(numBlocks uint64) []*snowmantest.Block {
 	return blks
 }
 
-func createInternalBlockFuncs(blks []*snowmantest.Block) (
-	func(ctx context.Context, blkID ids.ID) (snowman.Block, error),
-	func(ctx context.Context, b []byte) (snowman.Block, error),
+func createInternalBlockFuncs(blks []*chaintest.Block) (
+	func(ctx context.Context, blkID ids.ID) (chain.Block, error),
+	func(ctx context.Context, b []byte) (chain.Block, error),
 ) {
-	blkMap := make(map[ids.ID]*snowmantest.Block)
-	blkBytesMap := make(map[string]*snowmantest.Block)
+	blkMap := make(map[ids.ID]*chaintest.Block)
+	blkBytesMap := make(map[string]*chaintest.Block)
 	for _, blk := range blks {
 		blkMap[blk.ID()] = blk
 		blkBytes := blk.Bytes()
 		blkBytesMap[string(blkBytes)] = blk
 	}
 
-	getBlock := func(_ context.Context, id ids.ID) (snowman.Block, error) {
+	getBlock := func(_ context.Context, id ids.ID) (chain.Block, error) {
 		blk, ok := blkMap[id]
 		if !ok || blk.Status == Unknown {
 			return nil, database.ErrNotFound
@@ -84,7 +84,7 @@ func createInternalBlockFuncs(blks []*snowmantest.Block) (
 		return blk, nil
 	}
 
-	parseBlk := func(_ context.Context, b []byte) (snowman.Block, error) {
+	parseBlk := func(_ context.Context, b []byte) (chain.Block, error) {
 		blk, ok := blkBytesMap[string(b)]
 		if !ok {
 			return nil, fmt.Errorf("%w: %x", errUnexpectedBlockBytes, b)
@@ -100,13 +100,13 @@ func createInternalBlockFuncs(blks []*snowmantest.Block) (
 	return getBlock, parseBlk
 }
 
-func cantBuildBlock(context.Context) (snowman.Block, error) {
+func cantBuildBlock(context.Context) (chain.Block, error) {
 	return nil, errCantBuildBlock
 }
 
 // checkProcessingBlock checks that [blk] is of the correct type and is
 // correctly uniquified when calling GetBlock and ParseBlock.
-func checkProcessingBlock(t *testing.T, s *State, blk snowman.Block) {
+func checkProcessingBlock(t *testing.T, s *State, blk chain.Block) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -125,7 +125,7 @@ func checkProcessingBlock(t *testing.T, s *State, blk snowman.Block) {
 // checkDecidedBlock asserts that [blk] is returned with the correct status by ParseBlock
 // and GetBlock.
 // expectedStatus should be either Accepted or Rejected.
-func checkDecidedBlock(t *testing.T, s *State, blk snowman.Block, cached bool) {
+func checkDecidedBlock(t *testing.T, s *State, blk chain.Block, cached bool) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -168,7 +168,7 @@ func TestState(t *testing.T) {
 	blk2 := testBlks[2]
 	// Need to create a block with a different bytes and hash here
 	// to generate a conflict with blk2
-	blk3 := snowmantest.BuildChild(blk1)
+	blk3 := chaintest.BuildChild(blk1)
 	testBlks = append(testBlks, blk3)
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
@@ -250,7 +250,7 @@ func TestBuildBlock(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (snowman.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
 		blk1.Status = snowtest.Undecided
 		return blk1, nil
@@ -398,13 +398,13 @@ func TestGetBlockInternal(t *testing.T) {
 	})
 
 	genesisBlockInternal := chainState.LastAcceptedBlockInternal()
-	require.IsType(&snowmantest.Block{}, genesisBlockInternal)
+	require.IsType(&chaintest.Block{}, genesisBlockInternal)
 	require.Equal(genesisBlock.ID(), genesisBlockInternal.ID())
 
 	blk, err := chainState.GetBlockInternal(context.Background(), genesisBlock.ID())
 	require.NoError(err)
 
-	require.IsType(&snowmantest.Block{}, blk)
+	require.IsType(&chaintest.Block{}, blk)
 	require.Equal(genesisBlock.ID(), blk.ID())
 }
 
@@ -417,7 +417,7 @@ func TestGetBlockError(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	wrappedGetBlock := func(ctx context.Context, id ids.ID) (snowman.Block, error) {
+	wrappedGetBlock := func(ctx context.Context, id ids.ID) (chain.Block, error) {
 		blk, err := getBlock(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("wrapping error to prevent caching miss: %w", err)
@@ -526,7 +526,7 @@ func TestStateBytesToIDCache(t *testing.T) {
 	blk2 := testBlks[2]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (snowman.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		require.FailNow("shouldn't have been called")
 		return nil, nil
 	}
@@ -628,7 +628,7 @@ func TestSetLastAcceptedBlockWithProcessingBlocksErrors(t *testing.T) {
 	resetBlk := testBlks[4]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (snowman.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as undecided
 		genesisBlock.Status = snowtest.Undecided
 		return blk1, nil

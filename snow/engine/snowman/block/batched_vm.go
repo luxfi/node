@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -31,7 +31,7 @@ type BatchedChainVM interface {
 		maxBlocksRetrivalTime time.Duration, // max duration of retrival operation
 	) ([][]byte, error)
 
-	BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error)
+	BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error)
 }
 
 func GetAncestors(
@@ -111,7 +111,7 @@ func BatchedParseBlock(
 	ctx context.Context,
 	vm Parser,
 	blks [][]byte,
-) ([]snowman.Block, error) {
+) ([]chain.Block, error) {
 	// Try and batch ParseBlock requests
 	if vm, ok := vm.(BatchedChainVM); ok {
 		blocks, err := vm.BatchedParseBlock(ctx, blks)
@@ -125,7 +125,7 @@ func BatchedParseBlock(
 
 	// We couldn't batch the ParseBlock requests, try to parse them one at a
 	// time.
-	blocks := make([]snowman.Block, len(blks))
+	blocks := make([]chain.Block, len(blks))
 	for i, blockBytes := range blks {
 		block, err := vm.ParseBlock(ctx, blockBytes)
 		if err != nil {

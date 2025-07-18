@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
@@ -41,7 +41,7 @@ type BatchedVM struct {
 	BatchedParseBlockF func(
 		ctx context.Context,
 		blks [][]byte,
-	) ([]snowman.Block, error)
+	) ([]chain.Block, error)
 }
 
 func (vm *BatchedVM) Default(cant bool) {
@@ -74,7 +74,7 @@ func (vm *BatchedVM) GetAncestors(
 func (vm *BatchedVM) BatchedParseBlock(
 	ctx context.Context,
 	blks [][]byte,
-) ([]snowman.Block, error) {
+) ([]chain.Block, error) {
 	if vm.BatchedParseBlockF != nil {
 		return vm.BatchedParseBlockF(ctx, blks)
 	}

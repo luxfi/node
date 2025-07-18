@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/common/choices"
 	"github.com/luxfi/node/snow/uptime"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/upgrade"

@@ -9,13 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 var (
 	_ block.Parser  = (*parseAcceptor)(nil)
-	_ snowman.Block = (*blockAcceptor)(nil)
+	_ chain.Block = (*blockAcceptor)(nil)
 )
 
 type parseAcceptor struct {
@@ -24,7 +24,7 @@ type parseAcceptor struct {
 	numAccepted prometheus.Counter
 }
 
-func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
+func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
 	blk, err := p.parser.ParseBlock(ctx, bytes)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (snowman.B
 }
 
 type blockAcceptor struct {
-	snowman.Block
+	chain.Block
 
 	ctx         *snow.ConsensusContext
 	numAccepted prometheus.Counter

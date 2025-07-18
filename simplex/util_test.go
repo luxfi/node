@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
@@ -27,7 +27,7 @@ type newBlockConfig struct {
 func newBlock(t *testing.T, config newBlockConfig) *Block {
 	if config.prev == nil {
 		block := &Block{
-			vmBlock: snowmantest.Genesis,
+			vmBlock: chaintest.Genesis,
 			metadata: simplex.ProtocolMetadata{
 				Version: 1,
 				Epoch:   1,
@@ -48,7 +48,7 @@ func newBlock(t *testing.T, config newBlockConfig) *Block {
 		config.round = config.prev.metadata.Round + 1
 	}
 
-	vmBlock := snowmantest.BuildChild(config.prev.vmBlock.(*snowmantest.Block))
+	vmBlock := chaintest.BuildChild(config.prev.vmBlock.(*chaintest.Block))
 	block := &Block{
 		vmBlock:      vmBlock,
 		blockTracker: config.prev.blockTracker,

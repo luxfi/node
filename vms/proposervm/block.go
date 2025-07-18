@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
@@ -41,9 +41,9 @@ var (
 )
 
 type Block interface {
-	snowman.Block
+	chain.Block
 
-	getInnerBlk() snowman.Block
+	getInnerBlk() chain.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -65,13 +65,13 @@ type PostForkBlock interface {
 	Block
 
 	getStatelessBlk() block.Block
-	setInnerBlk(snowman.Block)
+	setInnerBlk(chain.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk snowman.Block
+	innerBlk chain.Block
 }
 
 // Return the inner block's height
@@ -232,7 +232,7 @@ func (p *postForkCommonComponents) buildChild(
 		contextPChainHeight = parentPChainHeight
 	}
 
-	var innerBlock snowman.Block
+	var innerBlock chain.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: contextPChainHeight,
@@ -293,19 +293,19 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() snowman.Block {
+func (p *postForkCommonComponents) getInnerBlk() chain.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk snowman.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk chain.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
+	oracle, ok := b.(chain.OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a snowman.OracleBlock but it's a %T",
+			"%w: expected block %s to be a chain.OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -313,8 +313,8 @@ func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
+	oracle, ok := b.(chain.OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -325,7 +325,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case snowman.ErrNotOracle:
+	case chain.ErrNotOracle:
 		return nil
 	default:
 		return err

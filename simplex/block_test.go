@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 	"github.com/luxfi/node/snow/snowtest"
@@ -24,7 +24,7 @@ import (
 func TestBlockSerialization(t *testing.T) {
 	unexpectedBlockBytes := errors.New("unexpected block bytes")
 	ctx := context.Background()
-	testBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	testBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	b := &Block{
 		vmBlock: testBlock,
@@ -43,14 +43,14 @@ func TestBlockSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		parseFunc     func(context.Context, []byte) (snowman.Block, error)
+		parseFunc     func(context.Context, []byte) (chain.Block, error)
 		expectedError error
 		blockBytes    []byte
 	}{
 		{
 			name:       "block serialization",
 			blockBytes: blockBytes,
-			parseFunc: func(_ context.Context, b []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, b []byte) (chain.Block, error) {
 				if !bytes.Equal(testBlock.BytesV, b) {
 					return nil, unexpectedBlockBytes
 				}
@@ -62,7 +62,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "block deserialization error",
 			blockBytes:    blockBytes,
 			expectedError: unexpectedBlockBytes,
-			parseFunc: func(_ context.Context, _ []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
 				return nil, unexpectedBlockBytes
 			},
 		},
@@ -70,7 +70,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "corrupted block data",
 			blockBytes:    []byte("corrupted data"),
 			expectedError: canoto.ErrInvalidWireType,
-			parseFunc: func(_ context.Context, _ []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
 				return nil, nil
 			},
 		},
@@ -129,7 +129,7 @@ func TestVerifyTwice(t *testing.T) {
 	require.NoError(t, err)
 
 	// Attempt to verify the block again
-	b.vmBlock.(*snowmantest.Block).VerifyV = errors.New("should not be called again")
+	b.vmBlock.(*chaintest.Block).VerifyV = errors.New("should not be called again")
 	_, err = b.Verify(ctx)
 	require.NoError(t, err)
 }
@@ -179,13 +179,13 @@ func TestVerifyParentAccepted(t *testing.T) {
 	_, err := seq1Block.Verify(ctx)
 	require.NoError(t, err)
 	require.NoError(t, seq1Block.blockTracker.indexBlock(ctx, seq1Block.digest))
-	require.Equal(t, snowtest.Accepted, seq1Block.vmBlock.(*snowmantest.Block).Decidable.Status)
+	require.Equal(t, snowtest.Accepted, seq1Block.vmBlock.(*chaintest.Block).Decidable.Status)
 
 	// Verify the second block with the first block as its parent
 	_, err = seq2Block.Verify(ctx)
 	require.NoError(t, err)
 	require.NoError(t, seq2Block.blockTracker.indexBlock(ctx, seq2Block.digest))
-	require.Equal(t, snowtest.Accepted, seq2Block.vmBlock.(*snowmantest.Block).Decidable.Status)
+	require.Equal(t, snowtest.Accepted, seq2Block.vmBlock.(*chaintest.Block).Decidable.Status)
 
 	// ensure tracker cleans up the block
 	require.NotContains(t, genesis.blockTracker.simplexDigestsToBlock, seq1Block.digest)
@@ -215,8 +215,8 @@ func TestVerifyBlockRejectsSiblings(t *testing.T) {
 
 	// When the we index the second block, the first block should be rejected
 	require.NoError(t, genesis.blockTracker.indexBlock(ctx, genesisChild1.digest))
-	require.Equal(t, snowtest.Rejected, genesisChild0.vmBlock.(*snowmantest.Block).Decidable.Status)
-	require.Equal(t, snowtest.Accepted, genesisChild1.vmBlock.(*snowmantest.Block).Decidable.Status)
+	require.Equal(t, snowtest.Rejected, genesisChild0.vmBlock.(*chaintest.Block).Decidable.Status)
+	require.Equal(t, snowtest.Accepted, genesisChild1.vmBlock.(*chaintest.Block).Decidable.Status)
 
 	_, exists := genesis.blockTracker.getBlockByDigest(genesis.digest)
 	require.False(t, exists)
@@ -232,7 +232,7 @@ func TestVerifyInnerBlockBreaksHashChain(t *testing.T) {
 
 	// This block does not extend the genesis, however it has a valid previous
 	// digest.
-	b.vmBlock.(*snowmantest.Block).ParentV[0]++
+	b.vmBlock.(*chaintest.Block).ParentV[0]++
 
 	_, err := b.Verify(ctx)
 	require.ErrorIs(t, err, errMismatchedPrevDigest)

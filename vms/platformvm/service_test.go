@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
@@ -350,9 +350,9 @@ func TestGetTx(t *testing.T) {
 
 				require.NoError(blk.Accept(context.Background()))
 
-				if blk, ok := blk.(snowman.OracleBlock); ok { // For proposal blocks, commit them
+				if blk, ok := blk.(chain.OracleBlock); ok { // For proposal blocks, commit them
 					options, err := blk.Options(context.Background())
-					if !errors.Is(err, snowman.ErrNotOracle) {
+					if !errors.Is(err, chain.ErrNotOracle) {
 						require.NoError(err)
 
 						commit := options[0].(*blockexecutor.Block)

@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/snowmantest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/engine/snowman/bootstrap/interval"
@@ -26,12 +26,12 @@ import (
 var _ block.Parser = testParser(nil)
 
 func TestGetMissingBlockIDs(t *testing.T) {
-	blocks := snowmantest.BuildChain(7)
+	blocks := chaintest.BuildChain(7)
 	parser := makeParser(blocks)
 
 	tests := []struct {
 		name               string
-		blocks             []snowman.Block
+		blocks             []chain.Block
 		lastAcceptedHeight uint64
 		expected           set.Set[ids.ID]
 	}{
@@ -43,37 +43,37 @@ func TestGetMissingBlockIDs(t *testing.T) {
 		},
 		{
 			name:               "wants one block",
-			blocks:             []snowman.Block{blocks[4]},
+			blocks:             []chain.Block{blocks[4]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[3].ID()),
 		},
 		{
 			name:               "wants multiple blocks",
-			blocks:             []snowman.Block{blocks[2], blocks[4]},
+			blocks:             []chain.Block{blocks[2], blocks[4]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[1].ID(), blocks[3].ID()),
 		},
 		{
 			name:               "doesn't want last accepted block",
-			blocks:             []snowman.Block{blocks[1]},
+			blocks:             []chain.Block{blocks[1]},
 			lastAcceptedHeight: 0,
 			expected:           nil,
 		},
 		{
 			name:               "doesn't want known block",
-			blocks:             []snowman.Block{blocks[2], blocks[3]},
+			blocks:             []chain.Block{blocks[2], blocks[3]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[1].ID()),
 		},
 		{
 			name:               "doesn't want already accepted block",
-			blocks:             []snowman.Block{blocks[1]},
+			blocks:             []chain.Block{blocks[1]},
 			lastAcceptedHeight: 4,
 			expected:           nil,
 		},
 		{
 			name:               "doesn't underflow",
-			blocks:             []snowman.Block{blocks[0]},
+			blocks:             []chain.Block{blocks[0]},
 			lastAcceptedHeight: 0,
 			expected:           nil,
 		},
@@ -104,15 +104,15 @@ func TestGetMissingBlockIDs(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	blocks := snowmantest.BuildChain(7)
+	blocks := chaintest.BuildChain(7)
 
 	tests := []struct {
 		name                        string
-		initialBlocks               []snowman.Block
+		initialBlocks               []chain.Block
 		lastAcceptedHeight          uint64
 		missingBlockIDs             set.Set[ids.ID]
-		blk                         snowman.Block
-		ancestors                   map[ids.ID]snowman.Block
+		blk                         chain.Block
+		ancestors                   map[ids.ID]chain.Block
 		expectedParentID            ids.ID
 		expectedShouldFetchParentID bool
 		expectedMissingBlockIDs     set.Set[ids.ID]
@@ -136,7 +136,7 @@ func TestProcess(t *testing.T) {
 			lastAcceptedHeight: 0,
 			missingBlockIDs:    set.Of(blocks[5].ID()),
 			blk:                blocks[5],
-			ancestors: map[ids.ID]snowman.Block{
+			ancestors: map[ids.ID]chain.Block{
 				blocks[4].ID(): blocks[4],
 			},
 			expectedParentID:            blocks[3].ID(),
@@ -150,7 +150,7 @@ func TestProcess(t *testing.T) {
 			lastAcceptedHeight: 0,
 			missingBlockIDs:    set.Of(blocks[3].ID(), blocks[5].ID()),
 			blk:                blocks[5],
-			ancestors: map[ids.ID]snowman.Block{
+			ancestors: map[ids.ID]chain.Block{
 				blocks[3].ID(): blocks[3],
 			},
 			expectedParentID:            blocks[4].ID(),
@@ -172,7 +172,7 @@ func TestProcess(t *testing.T) {
 		},
 		{
 			name:                        "do not request already known block",
-			initialBlocks:               []snowman.Block{blocks[2]},
+			initialBlocks:               []chain.Block{blocks[2]},
 			lastAcceptedHeight:          0,
 			missingBlockIDs:             set.Of(blocks[1].ID(), blocks[3].ID()),
 			blk:                         blocks[3],
@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			tree, err := interval.NewTree(db)
 			require.NoError(err)
 
-			blocks := snowmantest.BuildChain(numBlocks)
+			blocks := chaintest.BuildChain(numBlocks)
 			parser := makeParser(blocks)
 			for _, blk := range blocks {
 				_, err := interval.Add(db, tree, 0, blk.Height(), blk.Bytes())
@@ -294,14 +294,14 @@ func TestExecute(t *testing.T) {
 	}
 }
 
-type testParser func(context.Context, []byte) (snowman.Block, error)
+type testParser func(context.Context, []byte) (chain.Block, error)
 
-func (f testParser) ParseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
+func (f testParser) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
 	return f(ctx, bytes)
 }
 
-func makeParser(blocks []*snowmantest.Block) block.Parser {
-	return testParser(func(_ context.Context, b []byte) (snowman.Block, error) {
+func makeParser(blocks []*chaintest.Block) block.Parser {
+	return testParser(func(_ context.Context, b []byte) (chain.Block, error) {
 		for _, block := range blocks {
 			if bytes.Equal(b, block.Bytes()) {
 				return block, nil

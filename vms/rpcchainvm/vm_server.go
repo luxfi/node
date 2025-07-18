@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/appsender"
 	"github.com/luxfi/node/snow/engine/snowman/block"
@@ -408,7 +408,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
 	var (
-		blk snowman.Block
+		blk chain.Block
 		err error
 	)
 	if vm.bVM == nil || req.PChainHeight == nil {

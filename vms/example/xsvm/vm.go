@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	consensuschain "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -172,11 +172,11 @@ func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -201,7 +201,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 

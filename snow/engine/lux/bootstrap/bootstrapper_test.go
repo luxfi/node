@@ -18,12 +18,11 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/lux"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/dag"
 	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/getter"
-	"github.com/luxfi/node/snow/engine/lux/vertex/vertextest"
+	"github.com/luxfi/node/consensus/dag/vertex/vertextest"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/enginetest"
@@ -44,9 +43,9 @@ var (
 )
 
 type testTx struct {
-	snowstorm.Tx
+	dag.Tx
 
-	tx *snowstorm.TestTx
+	tx *dag.TestTx
 }
 
 func (t *testTx) Accept(ctx context.Context) error {
@@ -379,7 +378,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	txBytes0 := []byte{0}
 	txBytes1 := []byte{1}
 
-	innerTx0 := &snowstorm.TestTx{
+	innerTx0 := &dag.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     txID0,
 			StatusV: choices.Processing,
@@ -388,7 +387,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	}
 
 	// Depends on tx0
-	tx1 := &snowstorm.TestTx{
+	tx1 := &dag.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     txID1,
 			StatusV: choices.Processing,
@@ -407,7 +406,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 
 	vtxBytes0 := []byte{2}
 	vtxBytes1 := []byte{3}
-	vm.ParseTxF = func(_ context.Context, b []byte) (snowstorm.Tx, error) {
+	vm.ParseTxF = func(_ context.Context, b []byte) (dag.Tx, error) {
 		switch {
 		case bytes.Equal(b, txBytes0):
 			return tx0, nil
@@ -424,7 +423,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			StatusV: choices.Unknown,
 		},
 		HeightV: 0,
-		TxsV:    []snowstorm.Tx{tx1},
+		TxsV:    []dag.Tx{tx1},
 		BytesV:  vtxBytes0,
 	}
 	vtx1 := &lux.TestVertex{ // vtx1 is the stop vertex
@@ -434,7 +433,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		},
 		ParentsV: []lux.Vertex{vtx0}, // Depends on vtx0
 		HeightV:  1,
-		TxsV:     []snowstorm.Tx{tx0},
+		TxsV:     []dag.Tx{tx0},
 		BytesV:   vtxBytes1,
 	}
 

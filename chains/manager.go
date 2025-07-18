@@ -28,10 +28,10 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/binaryvote"
 	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
 	"github.com/luxfi/node/snow/engine/lux/state"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
+	"github.com/luxfi/node/consensus/dag/vertex"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/snowman/block"
@@ -63,7 +63,7 @@ import (
 	"github.com/luxfi/node/vms/tracedvm"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/snow/consensus/snowman"
+	smcon "github.com/luxfi/node/consensus/chain"
 	aveng "github.com/luxfi/node/snow/engine/lux"
 	avbootstrap "github.com/luxfi/node/snow/engine/lux/bootstrap"
 	avagetter "github.com/luxfi/node/snow/engine/lux/getter"
@@ -102,7 +102,7 @@ var (
 	// Bootstrapping prefixes for ChainVMs
 	ChainBootstrappingDBPrefix = []byte("interval_bs")
 
-	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
+	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or chain.ChainVM")
 	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped         = errors.New("subnets not bootstrapped")
 	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
@@ -918,7 +918,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
+	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: binaryvote.SnowflakeFactory}
 	if m.TracingEnabled {
 		snowmanConsensus = smcon.Trace(snowmanConsensus, m.Tracer)
 	}
@@ -1311,7 +1311,7 @@ func (m *manager) createSnowmanChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: binaryvote.SnowflakeFactory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}

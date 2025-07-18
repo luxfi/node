@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/job"
 )
 
@@ -19,7 +19,7 @@ var _ job.Job[ids.ID] = (*issuer)(nil)
 type issuer struct {
 	e            *Engine
 	nodeID       ids.NodeID // nodeID of the peer that provided this block
-	blk          snowman.Block
+	blk          chain.Block
 	push         bool
 	issuedMetric prometheus.Counter
 }

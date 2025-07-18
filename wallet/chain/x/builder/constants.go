@@ -4,8 +4,8 @@
 package builder
 
 import (
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/fxs"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"

@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -44,7 +44,7 @@ func (vm *blockVM) GetAncestors(
 	)
 }
 
-func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -59,7 +59,7 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snow
 		return nil, err
 	}
 
-	wrappedBlocks := make([]snowman.Block, len(blocks))
+	wrappedBlocks := make([]chain.Block, len(blocks))
 	for i, block := range blocks {
 		wrappedBlocks[i] = &tracedBlock{
 			Block: block,

@@ -16,7 +16,7 @@ graph LR
 
 ## Intro
 
-The Lux primary network consists of 3 built-in blockchains: the X-Chain, C-Chain, and P-Chain. All three chains rely on the Snowman consensus protocol. The X-Chain, which previously used DAG-based Lux consensus, was upgraded to Snowman in the Cortina network update. 
+The Lux primary network consists of 3 built-in blockchains: the X-Chain, C-Chain, and P-Chain. All three chains rely on the Chain consensus protocol (formerly called Snowman). The X-Chain, which previously used DAG-based consensus (formerly called Avalanche/Snowstorm), was upgraded to Chain consensus in the Cortina network update. 
 
 The X-Chain is used to manage assets. The C-Chain is used to create and interact with smart contracts. The P-Chain is used to coordinate validators and stake. At the time of writing, the Lux network has ~1200 validators. A set of validators makes up a subnet. Subnets can validate 1 or more chains. It is a common misconception that 1 subnet = 1 chain and this is shown by the primary subnet of Lux which is made up of the X-Chain, C-Chain, and P-Chain.
 
@@ -68,9 +68,9 @@ The main function of the `Handler` is to pass messages from the network to the c
 
 The main role of the `sender` is to build and send outbound messages. It is actually a very thin wrapper around the normal networking code. The main difference here is that sender registers timeouts and tells the [router] to expect a response message. The timer starts on the sender side. If there is no response, sender will send a failed response to the [router]. If a node is repeatedly unresponsive, that node will get benched and sender will immediately start marking those messages as failed. If a sufficient amount of network deems the node benched, it might not get rewards (as a validator).
 
-## [Consensus Engine](./consensus/snowman/consensus.go)
+## [Consensus Engine](../consensus/chain/consensus.go)
 
-Consensus is defined as getting a group of distributed systems to agree on an outcome. In the case of the Lux network, consensus is achieved when validators are in agreement with the state of the blockchain. The novel consensus algorithm is documented in the [white paper](https://assets.website-files.com/5d80307810123f5ffbb34d6e/6009805681b416f34dcae012_Lux%20Consensus%20Whitepaper.pdf). There are two main consensus algorithms: Lux and Snowman. The engine is responsible for proposing a new block to consensus, repeatedly polling the network for decisions (accept/reject), and communicating that decision to the `Sender`.
+Consensus is defined as getting a group of distributed systems to agree on an outcome. In the case of the Lux network, consensus is achieved when validators are in agreement with the state of the blockchain. The novel consensus algorithm is documented in the [white paper](https://assets.website-files.com/5d80307810123f5ffbb34d6e/6009805681b416f34dcae012_Lux%20Consensus%20Whitepaper.pdf). There are two main consensus algorithms: DAG consensus (for parallel transactions) and Chain consensus (for linear blockchains). The engine is responsible for proposing a new block to consensus, repeatedly polling the network for decisions (accept/reject), and communicating that decision to the `Sender`.
 
 ## [Blockchain Creation](../chains/manager.go)
 

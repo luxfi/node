@@ -74,7 +74,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
@@ -82,7 +82,7 @@ import (
 
 	geth "github.com/luxfi/geth/plugin/evm"
 	databasefactory "github.com/luxfi/node/database/factory"
-	avmconfig "github.com/luxfi/node/vms/avm/config"
+	avmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
 

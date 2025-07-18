@@ -7,15 +7,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	smblock "github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 var (
-	_ snowman.Block             = (*Block)(nil)
-	_ snowman.OracleBlock       = (*Block)(nil)
+	_ chain.Block             = (*Block)(nil)
+	_ chain.OracleBlock       = (*Block)(nil)
 	_ smblock.WithVerifyContext = (*Block)(nil)
 )
 
@@ -86,7 +86,7 @@ func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())
 }
 
-func (b *Block) Options(context.Context) ([2]snowman.Block, error) {
+func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
 		log:                     b.manager.ctx.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
@@ -94,10 +94,10 @@ func (b *Block) Options(context.Context) ([2]snowman.Block, error) {
 		state:                   b.manager.backend.state,
 	}
 	if err := b.Block.Visit(&options); err != nil {
-		return [2]snowman.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
-	return [2]snowman.Block{
+	return [2]chain.Block{
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil
