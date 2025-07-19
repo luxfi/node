@@ -96,7 +96,7 @@ func (cn *ChangeNotifier) SetPreference(ctx context.Context, blkID ids.ID) error
 	return cn.ChainVM.SetPreference(ctx, blkID)
 }
 
-func (cn *ChangeNotifier) SetState(ctx context.Context, state snow.State) error {
+func (cn *ChangeNotifier) SetState(ctx context.Context, state consensus.State) error {
 	defer cn.OnChange()
 	return cn.ChainVM.SetState(ctx, state)
 }

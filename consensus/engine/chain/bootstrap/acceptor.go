@@ -20,7 +20,7 @@ var (
 
 type parseAcceptor struct {
 	parser      block.Parser
-	ctx         *snow.ConsensusContext
+	ctx         *consensus.Context
 	numAccepted prometheus.Counter
 }
 
@@ -39,7 +39,7 @@ func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (chain.Blo
 type blockAcceptor struct {
 	chain.Block
 
-	ctx         *snow.ConsensusContext
+	ctx         *consensus.Context
 	numAccepted prometheus.Counter
 }
 

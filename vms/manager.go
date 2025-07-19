@@ -12,7 +12,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/logging"
 )
 

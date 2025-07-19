@@ -5,10 +5,10 @@ package chain
 
 import (
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/binaryvote"
+	sampling "github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	common "github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
 )
@@ -17,12 +17,12 @@ import (
 type Config struct {
 	common.AllGetsServer
 
-	Ctx                 *snow.ConsensusContext
+	Ctx                 *consensus.Context
 	VM                  block.ChainVM
 	Sender              common.Sender
 	Validators          validators.Manager
 	ConnectedValidators tracker.Peers
-	Params              binaryvote.Parameters
+	Params              sampling.Parameters
 	Consensus           chain.Consensus
 	PartialSync         bool
 }

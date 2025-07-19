@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/bootstrapper"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/bootstrap/interval"
 	"github.com/luxfi/node/utils/bimap"
@@ -153,7 +153,7 @@ func New(config Config, onFinished func(ctx context.Context, lastReqID uint32) e
 	return bs, err
 }
 
-func (b *Bootstrapper) Context() *snow.ConsensusContext {
+func (b *Bootstrapper) Context() *consensus.Context {
 	return b.Ctx
 }
 
@@ -165,11 +165,11 @@ func (b *Bootstrapper) Clear(context.Context) error {
 }
 
 func (b *Bootstrapper) Start(ctx context.Context, startReqID uint32) error {
-	b.Ctx.State.Set(snow.EngineState{
+	b.Ctx.State.Set(consensus.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.Bootstrapping,
+		State: consensus.Bootstrapping,
 	})
-	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
+	if err := b.VM.SetState(ctx, consensus.Bootstrapping); err != nil {
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w", err)
 	}
 
@@ -644,7 +644,7 @@ func (b *Bootstrapper) tryStartExecuting(ctx context.Context) error {
 		return nil
 	}
 
-	if b.Ctx.State.Get().State == snow.NormalOp || b.awaitingTimeout {
+	if b.Ctx.State.Get().State == consensus.NormalOp || b.awaitingTimeout {
 		return nil
 	}
 

@@ -6,7 +6,7 @@ package dag
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/choices"
 )
 
 var _ Vertex = (*TestVertex)(nil)

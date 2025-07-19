@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/node/ids"
 	message "github.com/luxfi/node/message"
-	snow "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -70,7 +70,7 @@ func (mr *ManagerMockRecorder) IsBenched(nodeID, chainID any) *gomock.Call {
 }
 
 // RegisterChain mocks base method.
-func (m *Manager) RegisterChain(ctx *snow.ConsensusContext) error {
+func (m *Manager) RegisterChain(ctx *consensus.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterChain", ctx)
 	ret0, _ := ret[0].(error)

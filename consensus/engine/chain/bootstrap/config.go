@@ -7,8 +7,8 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
 )
@@ -16,7 +16,7 @@ import (
 type Config struct {
 	common.AllGetsServer
 
-	Ctx     *snow.ConsensusContext
+	Ctx     *consensus.Context
 	Beacons validators.Manager
 
 	SampleK          int

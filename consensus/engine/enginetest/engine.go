@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -106,7 +106,7 @@ type Engine struct {
 
 	StartF                       func(ctx context.Context, startReqID uint32) error
 	IsBootstrappedF              func() bool
-	ContextF                     func() *snow.ConsensusContext
+	ContextF                     func() *consensus.Context
 	HaltF                        func(context.Context)
 	TimeoutF, GossipF, ShutdownF func(context.Context) error
 	NotifyF                      func(context.Context, common.Message) error

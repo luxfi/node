@@ -200,7 +200,7 @@ func TestChangeNotifierNormal(t *testing.T) {
 		{
 			name: "SetState",
 			f: func(t *testing.T, n *block.ChangeNotifier) {
-				require.NoError(t, n.SetState(context.Background(), snow.NormalOp))
+				require.NoError(t, n.SetState(context.Background(), consensus.NormalOp))
 			},
 		},
 		{

@@ -52,7 +52,7 @@ type failureStreak struct {
 type benchlist struct {
 	lock sync.RWMutex
 	// Context of the chain this is the benchlist for
-	ctx *snow.ConsensusContext
+	ctx *consensus.Context
 
 	numBenched, weightBenched prometheus.Gauge
 
@@ -95,7 +95,7 @@ type benchlist struct {
 
 // NewBenchlist returns a new Benchlist
 func NewBenchlist(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	benchable Benchable,
 	validators validators.Manager,
 	threshold int,

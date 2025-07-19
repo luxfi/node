@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"

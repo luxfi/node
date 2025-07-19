@@ -4,27 +4,28 @@
 package chain
 
 import (
+	"github.com/luxfi/node/consensus/factories"
 	"testing"
 
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 )
 
 func DefaultConfig(t testing.TB) Config {
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	return Config{
-		Ctx:                 snowtest.ConsensusContext(ctx),
+		Ctx:                 consensustest.ConsensusContext(ctx),
 		VM:                  &blocktest.VM{},
 		Sender:              &enginetest.Sender{},
 		Validators:          validators.NewManager(),
 		ConnectedValidators: tracker.NewPeers(),
-		Params: binaryvote.Parameters{
+		Params: sampling.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -34,6 +35,6 @@ func DefaultConfig(t testing.TB) Config {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &chain.Topological{Factory: binaryvote.SnowflakeFactory},
+		Consensus: &chain.Topological{Factory: factories.SnowflakeFactory},
 	}
 }

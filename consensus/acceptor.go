@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package snow
+package consensus
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ type Acceptor interface {
 	// If the returned error is non-nil, the chain associated with [ctx] should
 	// shut down and not commit [container] or any other container to its
 	// database as accepted.
-	Accept(ctx *ConsensusContext, containerID ids.ID, container []byte) error
+	Accept(ctx *Context, containerID ids.ID, container []byte) error
 }
 
 type acceptorWrapper struct {
@@ -67,7 +67,7 @@ func NewAcceptorGroup(log logging.Logger) AcceptorGroup {
 	}
 }
 
-func (a *acceptorGroup) Accept(ctx *ConsensusContext, containerID ids.ID, container []byte) error {
+func (a *acceptorGroup) Accept(ctx *Context, containerID ids.ID, container []byte) error {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 

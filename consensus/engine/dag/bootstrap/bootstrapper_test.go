@@ -18,15 +18,15 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/dag"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/getter"
-	"github.com/luxfi/node/consensus/dag/vertex/vertextest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/dag/vertex/vertextest"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -132,7 +132,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &lux.TestVertex{
+	vtx0 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Processing,
@@ -140,23 +140,23 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &lux.TestVertex{
+	vtx1 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []lux.Vertex{
+		ParentsV: []dag.Vertex{
 			vtx0,
 		},
 		HeightV: 1,
 		BytesV:  vtxBytes1,
 	}
-	vtx2 := &lux.TestVertex{ // vtx2 is the stop vertex
+	vtx2 := &dag.TestVertex{ // vtx2 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []lux.Vertex{
+		ParentsV: []dag.Vertex{
 			vtx1,
 		},
 		HeightV: 2,
@@ -167,9 +167,9 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -177,7 +177,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 		switch vtxID {
 		case vtxID0:
 			return vtx0, nil
@@ -191,7 +191,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		}
 	}
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (lux.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			return vtx0, nil
@@ -221,7 +221,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, vtx0.Status())
 	require.Equal(choices.Accepted, vtx1.Status())
 	require.Equal(choices.Accepted, vtx2.Status())
@@ -243,7 +243,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &lux.TestVertex{
+	vtx0 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
@@ -251,17 +251,17 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &lux.TestVertex{ // vtx1 is the stop vertex
+	vtx1 := &dag.TestVertex{ // vtx1 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []lux.Vertex{vtx0},
+		ParentsV: []dag.Vertex{vtx0},
 		HeightV:  1,
 		BytesV:   vtxBytes1,
 	}
 	// Should not receive transitive votes from [vtx1]
-	vtx2 := &lux.TestVertex{
+	vtx2 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Unknown,
@@ -274,9 +274,9 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -284,7 +284,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -306,7 +306,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		reqVtxID = vtxID
 	}
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (lux.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -332,7 +332,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	require.NotEqual(oldReqID, *requestID)                                                       // should have sent a new request
 
 	oldReqID = *requestID
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -360,7 +360,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, *requestID, [][]byte{vtxBytes0, vtxBytes2})) // send expected vertex and vertex that should not be accepted
 	require.Equal(oldReqID, *requestID)                                                                     // shouldn't have sent a new request
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, vtx0.Status())
 	require.Equal(choices.Accepted, vtx1.Status())
 	require.Equal(choices.Processing, vtx2.Status())
@@ -417,7 +417,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		}
 	}
 
-	vtx0 := &lux.TestVertex{
+	vtx0 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
@@ -426,12 +426,12 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		TxsV:    []dag.Tx{tx1},
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &lux.TestVertex{ // vtx1 is the stop vertex
+	vtx1 := &dag.TestVertex{ // vtx1 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []lux.Vertex{vtx0}, // Depends on vtx0
+		ParentsV: []dag.Vertex{vtx0}, // Depends on vtx0
 		HeightV:  1,
 		TxsV:     []dag.Tx{tx0},
 		BytesV:   vtxBytes1,
@@ -441,9 +441,9 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -451,7 +451,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (lux.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -462,7 +462,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			return nil, errParsedUnknownVertex
 		}
 	}
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -485,7 +485,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (lux.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -513,7 +513,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	}
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, *reqIDPtr, [][]byte{vtxBytes0}))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 	require.Equal(choices.Accepted, tx0.Status())
 	require.Equal(choices.Accepted, tx1.Status())
 	require.Equal(choices.Accepted, vtx0.Status())
@@ -534,7 +534,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &lux.TestVertex{
+	vtx0 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
@@ -542,21 +542,21 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &lux.TestVertex{
+	vtx1 := &dag.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Unknown,
 		},
-		ParentsV: []lux.Vertex{vtx0},
+		ParentsV: []dag.Vertex{vtx0},
 		HeightV:  1,
 		BytesV:   vtxBytes1,
 	}
-	vtx2 := &lux.TestVertex{ // vtx2 is the stop vertex
+	vtx2 := &dag.TestVertex{ // vtx2 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []lux.Vertex{vtx1},
+		ParentsV: []dag.Vertex{vtx1},
 		HeightV:  2,
 		BytesV:   vtxBytes2,
 	}
@@ -565,9 +565,9 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -575,7 +575,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (lux.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
 		switch vtxID {
 		case vtxID0:
 			return nil, errUnknownVertex
@@ -588,7 +588,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 			return nil, errUnknownVertex
 		}
 	}
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (lux.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -618,7 +618,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	require.Equal(vtxID1, requested)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, *reqIDPtr, [][]byte{vtxBytes1})) // Provide vtx1; should request vtx0
-	require.Equal(snow.Bootstrapping, bs.Context().State.Get().State)
+	require.Equal(consensus.Bootstrapping, bs.Context().State.Get().State)
 	require.Equal(vtxID0, requested)
 
 	manager.StopVertexAcceptedF = func(context.Context) (bool, error) {
@@ -636,7 +636,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	}
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, *reqIDPtr, [][]byte{vtxBytes0})) // Provide vtx0; can finish now
-	require.Equal(snow.NormalOp, bs.Context().State.Get().State)
+	require.Equal(consensus.NormalOp, bs.Context().State.Get().State)
 	require.Equal(choices.Accepted, vtx0.Status())
 	require.Equal(choices.Accepted, vtx1.Status())
 	require.Equal(choices.Accepted, vtx2.Status())

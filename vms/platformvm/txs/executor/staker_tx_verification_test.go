@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/tracker"
 )
 
 const (
@@ -53,7 +53,7 @@ var (
 type Handler interface {
 	health.Checker
 
-	Context() *snow.ConsensusContext
+	Context() *consensus.Context
 	// ShouldHandle returns true if the node with the given ID is allowed to send
 	// messages to this chain. If the node is not allowed to send messages to
 	// this chain, the message should be dropped.
@@ -89,7 +89,7 @@ type handler struct {
 	// Useful for faking time in tests
 	clock mockable.Clock
 
-	ctx *snow.ConsensusContext
+	ctx *consensus.Context
 	// TODO: consider using peerTracker instead of validators
 	// since peerTracker is already tracking validators
 	validators validators.Manager
@@ -133,7 +133,7 @@ type handler struct {
 // Initialize this consensus handler
 // [engine] must be initialized before initializing this handler
 func New(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	cn *block.ChangeNotifier,
 	subscription common.Subscription,
 	validators validators.Manager,
@@ -195,7 +195,7 @@ func New(
 	return h, nil
 }
 
-func (h *handler) Context() *snow.ConsensusContext {
+func (h *handler) Context() *consensus.Context {
 	return h.ctx
 }
 
@@ -441,7 +441,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		startTime = h.clock.Time()
 		// Check if the chain is in normal operation at the start of message
 		// execution (may change during execution)
-		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
+		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
 	if h.ctx.Log.Enabled(logging.Verbo) {
 		h.ctx.Log.Verbo("forwarding sync message to consensus",
@@ -877,7 +877,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		startTime = h.clock.Time()
 		// Check if the chain is in normal operation at the start of message
 		// execution (may change during execution)
-		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
+		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
 	if h.ctx.Log.Enabled(logging.Verbo) {
 		h.ctx.Log.Verbo("forwarding chan message to consensus",

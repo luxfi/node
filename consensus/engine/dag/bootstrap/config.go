@@ -8,15 +8,15 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
-	"github.com/luxfi/node/consensus/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 )
 
 type Config struct {
 	common.AllGetsServer
 
-	Ctx *snow.ConsensusContext
+	Ctx *consensus.Context
 
 	StartupTracker tracker.Startup
 	Sender         common.Sender

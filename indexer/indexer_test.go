@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/dag/vertex/vertexmock"
+	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )

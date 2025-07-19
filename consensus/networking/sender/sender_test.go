@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/message/messagemock"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/benchlist"
@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/networking/timeout/timeoutmock"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
@@ -44,7 +44,7 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/tracker"
 
 	. "github.com/luxfi/node/consensus/networking/sender"
 )
@@ -106,7 +106,7 @@ func TestTimeout(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		prometheus.NewRegistry(),
 	)
@@ -153,27 +153,27 @@ func TestTimeout(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
 	})
-	ctx2.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
+	ctx2.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -365,7 +365,7 @@ func TestReliableMessages(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		prometheus.NewRegistry(),
 	)
@@ -412,7 +412,7 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx2
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -429,20 +429,20 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.CantGossip = false
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
 	})
-	ctx2.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
+	ctx2.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -527,7 +527,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				externalSender,
 				&chainRouter,
 				tm,
-				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnet,
 				prometheus.NewRegistry(),
 			)
@@ -574,7 +574,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			}
 			bootstrapper.Default(true)
 			bootstrapper.CantGossip = false
-			bootstrapper.ContextF = func() *snow.ConsensusContext {
+			bootstrapper.ContextF = func() *consensus.Context {
 				return ctx2
 			}
 			bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -590,20 +590,20 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				return nil
 			}
 			h.SetEngineManager(&handler.EngineManager{
-				Lux: &handler.Engine{
+				DAG: &handler.Engine{
 					StateSyncer:  nil,
 					Bootstrapper: bootstrapper,
 					Consensus:    nil,
 				},
-				Snowman: &handler.Engine{
+				Chain: &handler.Engine{
 					StateSyncer:  nil,
 					Bootstrapper: bootstrapper,
 					Consensus:    nil,
 				},
 			})
-			ctx2.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-				State: snow.Bootstrapping, // assumed bootstrap is ongoing
+			ctx2.State.Set(consensus.EngineState{
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 			})
 
 			chainRouter.AddChain(context.Background(), h)
@@ -843,7 +843,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				prometheus.NewRegistry(),
 			)
@@ -1050,7 +1050,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				prometheus.NewRegistry(),
 			)
@@ -1089,7 +1089,7 @@ func TestSender_Single_Request(t *testing.T) {
 		deadline          = time.Second
 		requestID         = uint32(1337)
 		containerID       = ids.GenerateTestID()
-		engineType        = p2ppb.EngineType_ENGINE_TYPE_SNOWMAN
+		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
 	)
 	snowCtx := snowtest.Context(t, snowtest.PChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)

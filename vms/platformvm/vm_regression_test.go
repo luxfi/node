@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"

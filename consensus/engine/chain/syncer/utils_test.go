@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
@@ -71,7 +71,7 @@ func buildTestPeers(t *testing.T, subnetID ids.ID) validators.Manager {
 
 func buildTestsObjects(
 	t *testing.T,
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	startupTracker tracker.Startup,
 	beacons validators.Manager,
 	alpha uint64,

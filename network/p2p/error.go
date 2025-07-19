@@ -3,7 +3,7 @@
 
 package p2p
 
-import "github.com/luxfi/node/consensus/engine/common"
+import "github.com/luxfi/node/consensus/engine"
 
 var (
 	// ErrUnexpected should be used to indicate that a request failed due to a

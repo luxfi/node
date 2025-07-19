@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus/chain/chainmock"
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"

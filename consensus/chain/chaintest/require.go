@@ -6,7 +6,7 @@ package chaintest
 import (
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func RequireStatusIs(require *require.Assertions, status snowtest.Status, blks ...*Block) {

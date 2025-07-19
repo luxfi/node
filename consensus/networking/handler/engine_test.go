@@ -16,8 +16,8 @@ func TestEngineManager_Get(t *testing.T) {
 		engineType p2p.EngineType
 	}
 
-	lux := &Engine{}
-	snowman := &Engine{}
+	dag := &Engine{}
+	chain := &Engine{}
 
 	type expected struct {
 		engine *Engine
@@ -43,24 +43,24 @@ func TestEngineManager_Get(t *testing.T) {
 				engineType: p2p.EngineType_ENGINE_TYPE_DAG,
 			},
 			expected: expected{
-				engine: lux,
+				engine: dag,
 			},
 		},
 		{
-			name: "request snowman engine",
+			name: "request chain engine",
 			args: args{
-				engineType: p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+				engineType: p2p.EngineType_ENGINE_TYPE_CHAIN,
 			},
 			expected: expected{
-				engine: snowman,
+				engine: chain,
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			e := EngineManager{
-				Lux: lux,
-				Snowman:   snowman,
+				DAG:   dag,
+				Chain: chain,
 			}
 
 			require.Equal(t, test.expected.engine, e.Get(test.args.engineType))

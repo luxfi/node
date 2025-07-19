@@ -20,13 +20,13 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/chain/bootstrap/interval"
 	"github.com/luxfi/node/consensus/engine/chain/getter"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -168,9 +168,9 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	// create bootstrapper
 	dummyCallback := func(context.Context, uint32) error {
-		cfg.Ctx.State.Set(snow.EngineState{
+		cfg.Ctx.State.Set(consensus.EngineState{
 			Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			State: snow.NormalOp,
+			State: consensus.NormalOp,
 		})
 		return nil
 	}
@@ -225,9 +225,9 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -238,7 +238,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	require.NoError(bs.Start(context.Background(), 0))
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[0:1])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 // Requests the unknown block and gets back a Ancestors with unexpected block.
@@ -254,9 +254,9 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -281,11 +281,11 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2])))
 
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[1:2])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 // There are multiple needed blocks and multiple Ancestors are required
@@ -300,9 +300,9 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -331,11 +331,11 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2]))) // respond with blk1
 
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 // There are multiple needed blocks and some validators do not have all the
@@ -351,9 +351,9 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -384,7 +384,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 	require.NotEqual(requestedNodeID, peerID)
 
 	require.NoError(bs.Ancestors(context.Background(), requestedNodeID, requestID, blocksToBytes(blks[1:2])))
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 }
 
@@ -400,9 +400,9 @@ func TestBootstrapperAncestors(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -428,11 +428,11 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks))) // respond with all the blocks
 
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestBootstrapperFinalized(t *testing.T) {
@@ -446,9 +446,9 @@ func TestBootstrapperFinalized(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -471,11 +471,11 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
 
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[2:3])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestRestartBootstrapping(t *testing.T) {
@@ -489,9 +489,9 @@ func TestRestartBootstrapping(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -528,16 +528,16 @@ func TestRestartBootstrapping(t *testing.T) {
 	require.True(ok)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk1RequestID, blocksToBytes(blks[1:2])))
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	require.Equal(snowtest.Accepted, blks[0].Status)
 	chaintest.RequireStatusIs(require, snowtest.Undecided, blks[1:]...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk4RequestID, blocksToBytes(blks[4:5])))
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[4:5])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 }
 
 func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
@@ -554,9 +554,9 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -579,7 +579,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 	require.True(ok)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqID, blocksToBytes(blks[0:1])))
-	require.Equal(snow.NormalOp, config.Ctx.State.Get().State)
+	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
 	require.Equal(snowtest.Undecided, blks[0].Status)
 	require.Equal(snowtest.Accepted, blks[1].Status)
 }
@@ -595,9 +595,9 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -702,9 +702,9 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	_, err = New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -723,9 +723,9 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -749,11 +749,11 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 	require.True(ok)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk1, blocksToBytes(blks[1:2])))
-	require.Equal(snow.Bootstrapping, config.Ctx.State.Get().State)
+	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
 }
 
 func TestBootstrapperRollbackOnSetState(t *testing.T) {
@@ -769,9 +769,9 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
-			config.Ctx.State.Set(snow.EngineState{
+			config.Ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp,
+				State: consensus.NormalOp,
 			})
 			return nil
 		},
@@ -779,7 +779,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 	bs.TimeoutRegistrar = &enginetest.Timer{}
 	require.NoError(err)
 
-	vm.SetStateF = func(context.Context, snow.State) error {
+	vm.SetStateF = func(context.Context, consensus.State) error {
 		blks[1].Status = snowtest.Undecided
 		return nil
 	}

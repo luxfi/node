@@ -6,7 +6,8 @@ package handler
 import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	
+	common "github.com/luxfi/node/consensus/engine"
 )
 
 // Engine is a wrapper around a consensus engine's components.
@@ -18,16 +19,16 @@ type Engine struct {
 
 // Get returns the engine corresponding to the provided state,
 // and whether its corresponding engine is initialized (not nil).
-func (e *Engine) Get(state snow.State) (common.Engine, bool) {
+func (e *Engine) Get(state consensus.State) (common.Engine, bool) {
 	if e == nil {
 		return nil, false
 	}
 	switch state {
-	case snow.StateSyncing:
+	case consensus.StateSyncing:
 		return e.StateSyncer, e.StateSyncer != nil
-	case snow.Bootstrapping:
+	case consensus.Bootstrapping:
 		return e.Bootstrapper, e.Bootstrapper != nil
-	case snow.NormalOp:
+	case consensus.NormalOp:
 		return e.Consensus, e.Consensus != nil
 	default:
 		return nil, false

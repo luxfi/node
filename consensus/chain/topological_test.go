@@ -6,9 +6,9 @@ package chain
 import (
 	"testing"
 
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/factories"
 )
 
 func TestTopological(t *testing.T) {
-	runConsensusTests(t, TopologicalFactory{factory: binaryvote.SnowflakeFactory})
+	runConsensusTests(t, TopologicalFactory{factory: factories.SnowflakeFactory})
 }

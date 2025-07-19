@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus"
 	handler "github.com/luxfi/node/consensus/networking/handler"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -60,10 +60,10 @@ func (mr *HandlerMockRecorder) AwaitStopped(ctx any) *gomock.Call {
 }
 
 // Context mocks base method.
-func (m *Handler) Context() *snow.ConsensusContext {
+func (m *Handler) Context() *consensus.Context {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(*snow.ConsensusContext)
+	ret0, _ := ret[0].(*consensus.Context)
 	return ret0
 }
 

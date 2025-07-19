@@ -32,7 +32,7 @@ type Manager interface {
 	// Register the existence of the given chain.
 	// Must be called before any method calls that use the
 	// ID of the chain.
-	RegisterChain(ctx *snow.ConsensusContext) error
+	RegisterChain(ctx *consensus.Context) error
 	// RegisterRequest notes that we expect a response of type [op] from
 	// [nodeID] for chain [chainID]. If we don't receive a response in
 	// time, [timeoutHandler] is executed.
@@ -115,7 +115,7 @@ func (m *manager) IsBenched(nodeID ids.NodeID, chainID ids.ID) bool {
 	return m.benchlistMgr.IsBenched(nodeID, chainID)
 }
 
-func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
+func (m *manager) RegisterChain(ctx *consensus.Context) error {
 	if err := m.metrics.RegisterChain(ctx); err != nil {
 		return fmt.Errorf("couldn't register timeout metrics for chain %s: %w", ctx.ChainID, err)
 	}
