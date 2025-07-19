@@ -17,9 +17,9 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils/bag"
 )
 
@@ -83,7 +83,7 @@ func InitializeTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -114,7 +114,7 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -153,7 +153,7 @@ func AddToTailTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -191,7 +191,7 @@ func AddToNonTailTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -231,7 +231,7 @@ func AddOnUnknownParentTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -270,7 +270,7 @@ func StatusOrProcessingPreviouslyAcceptedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -304,7 +304,7 @@ func StatusOrProcessingPreviouslyRejectedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -340,7 +340,7 @@ func StatusOrProcessingUnissuedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -375,7 +375,7 @@ func StatusOrProcessingIssuedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -412,7 +412,7 @@ func RecordPollAcceptSingleBlockTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -453,7 +453,7 @@ func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -501,7 +501,7 @@ func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 	registerer := prometheus.NewRegistry()
 	ctx.Registerer = registerer
 
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     2,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -557,7 +557,7 @@ func RecordPollWhenFinalizedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -588,7 +588,7 @@ func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -643,7 +643,7 @@ func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -713,7 +713,7 @@ func RecordPollInvalidVoteTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -753,7 +753,7 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       3,
 		AlphaConfidence:       3,
@@ -834,7 +834,7 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -937,7 +937,7 @@ func RecordPollChangePreferredChainTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1022,7 +1022,7 @@ func LastAcceptedTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1096,7 +1096,7 @@ func MetricsProcessingErrorTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1130,7 +1130,7 @@ func MetricsAcceptedErrorTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1164,7 +1164,7 @@ func MetricsRejectedErrorTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1198,7 +1198,7 @@ func ErrorOnAcceptTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1234,7 +1234,7 @@ func ErrorOnRejectSiblingTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1272,7 +1272,7 @@ func ErrorOnTransitiveRejectionTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1311,7 +1311,7 @@ func RandomizedConsistencyTest(t *testing.T, factory Factory) {
 	var (
 		numColors = 50
 		numNodes  = 100
-		params    = binaryvote.Parameters{
+		params    = sampling.Parameters{
 			K:                     20,
 			AlphaPreference:       15,
 			AlphaConfidence:       15,
@@ -1346,7 +1346,7 @@ func ErrorOnAddDecidedBlockTest(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -1398,7 +1398,7 @@ func RecordPollWithDefaultParameters(t *testing.T, factory Factory) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.DefaultParameters
+	params := sampling.DefaultParameters
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
@@ -1435,7 +1435,7 @@ func RecordPollRegressionCalculateInDegreeIndegreeCalculation(t *testing.T, fact
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,

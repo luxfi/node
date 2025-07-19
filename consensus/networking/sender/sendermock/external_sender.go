@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/node/ids"
 	message "github.com/luxfi/node/message"
-	common "github.com/luxfi/node/consensus/engine/common"
+	common "github.com/luxfi/node/consensus/engine"
 	subnets "github.com/luxfi/node/subnets"
 	set "github.com/luxfi/node/utils/set"
 	gomock "go.uber.org/mock/gomock"

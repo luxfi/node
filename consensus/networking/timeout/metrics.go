@@ -54,7 +54,7 @@ func newTimeoutMetrics(reg prometheus.Registerer) (*timeoutMetrics, error) {
 	)
 }
 
-func (m *timeoutMetrics) RegisterChain(ctx *snow.ConsensusContext) error {
+func (m *timeoutMetrics) RegisterChain(ctx *consensus.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

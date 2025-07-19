@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/logging"

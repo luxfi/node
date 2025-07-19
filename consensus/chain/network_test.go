@@ -8,28 +8,28 @@ import (
 	"testing"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/sampler"
 )
 
 type Network struct {
-	params         binaryvote.Parameters
+	params         sampling.Parameters
 	colors         []*chaintest.Block
 	rngSource      sampler.Source
 	nodes, running []Consensus
 }
 
-func NewNetwork(params binaryvote.Parameters, numColors int, rngSource sampler.Source) *Network {
+func NewNetwork(params sampling.Parameters, numColors int, rngSource sampler.Source) *Network {
 	n := &Network{
 		params: params,
 		colors: []*chaintest.Block{{
-			Decidable: snowtest.Decidable{
+			Decidable: consensustest.Decidable{
 				IDV:    ids.Empty.Prefix(rngSource.Uint64()),
-				Status: snowtest.Undecided,
+				Status: consensustest.Undecided,
 			},
 			ParentV: chaintest.GenesisID,
 			HeightV: chaintest.GenesisHeight + 1,
@@ -43,9 +43,9 @@ func NewNetwork(params binaryvote.Parameters, numColors int, rngSource sampler.S
 		dependencyInd, _ := s.Next()
 		dependency := n.colors[dependencyInd]
 		n.colors = append(n.colors, &chaintest.Block{
-			Decidable: snowtest.Decidable{
+			Decidable: consensustest.Decidable{
 				IDV:    ids.Empty.Prefix(rngSource.Uint64()),
-				Status: snowtest.Undecided,
+				Status: consensustest.Undecided,
 			},
 			ParentV: dependency.IDV,
 			HeightV: dependency.HeightV + 1,
@@ -67,8 +67,8 @@ func (n *Network) shuffleColors() {
 }
 
 func (n *Network) AddNode(t testing.TB, sm Consensus) error {
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	if err := sm.Initialize(ctx, n.params, chaintest.GenesisID, chaintest.GenesisHeight, chaintest.GenesisTimestamp); err != nil {
 		return err
 	}

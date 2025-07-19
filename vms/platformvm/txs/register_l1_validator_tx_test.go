@@ -13,7 +13,7 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"

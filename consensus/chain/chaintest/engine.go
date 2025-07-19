@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, error) {

@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/binaryvote"
+	sampling "github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/set"
 )
@@ -30,7 +30,7 @@ var (
 
 // TopologicalFactory implements Factory by returning a topological struct
 type TopologicalFactory struct {
-	factory binaryvote.Factory
+	factory sampling.Factory
 }
 
 func (tf TopologicalFactory) New() Consensus {
@@ -41,7 +41,7 @@ func (tf TopologicalFactory) New() Consensus {
 // strongly preferred branch. This tree structure amortizes network polls to
 // vote on more than just the next block.
 type Topological struct {
-	Factory binaryvote.Factory
+	Factory sampling.Factory
 
 	metrics *metrics
 
@@ -49,11 +49,11 @@ type Topological struct {
 	pollNumber uint64
 
 	// ctx is the context this snowman instance is executing in
-	ctx *snow.ConsensusContext
+	ctx *consensus.Context
 
 	// params are the parameters that should be used to initialize snowball
 	// instances
-	params binaryvote.Parameters
+	params sampling.Parameters
 
 	lastAcceptedID     ids.ID
 	lastAcceptedHeight uint64
@@ -102,8 +102,8 @@ type votes struct {
 }
 
 func (ts *Topological) Initialize(
-	ctx *snow.ConsensusContext,
-	params binaryvote.Parameters,
+	ctx *consensus.Context,
+	params sampling.Parameters,
 	lastAcceptedID ids.ID,
 	lastAcceptedHeight uint64,
 	lastAcceptedTime time.Time,

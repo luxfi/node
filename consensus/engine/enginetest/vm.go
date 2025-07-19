@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/version"
 )
 
@@ -46,8 +46,8 @@ type VM struct {
 	CantHealthCheck, CantConnected, CantDisconnected, CantVersion,
 	CantAppRequest, CantAppResponse, CantAppGossip, CantAppRequestFailed bool
 
-	InitializeF       func(ctx context.Context, chainCtx *snow.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error
-	SetStateF         func(ctx context.Context, state snow.State) error
+	InitializeF       func(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error
+	SetStateF         func(ctx context.Context, state consensus.State) error
 	ShutdownF         func(context.Context) error
 	CreateHandlersF   func(context.Context) (map[string]http.Handler, error)
 	NewHTTPHandlerF   func(context.Context) (http.Handler, error)
@@ -88,7 +88,7 @@ func (vm *VM) Default(cant bool) {
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,
@@ -114,7 +114,7 @@ func (vm *VM) Initialize(
 	return errInitialize
 }
 
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+func (vm *VM) SetState(ctx context.Context, state consensus.State) error {
 	if vm.SetStateF != nil {
 		return vm.SetStateF(ctx, state)
 	}

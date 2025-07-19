@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"

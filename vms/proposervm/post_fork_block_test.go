@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/block"

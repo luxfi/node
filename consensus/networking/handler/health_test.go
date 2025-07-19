@@ -14,11 +14,11 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/logging"
@@ -28,19 +28,19 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/tracker"
 )
 
 func TestHealthCheckSubnet(t *testing.T) {
 	tests := map[string]struct {
-		consensusParams binaryvote.Parameters
+		consensusParams sampling.Parameters
 	}{
 		"default consensus params": {
-			consensusParams: binaryvote.DefaultParameters,
+			consensusParams: sampling.DefaultParameters,
 		},
 		"custom consensus params": {
-			func() binaryvote.Parameters {
-				params := binaryvote.DefaultParameters
+			func() sampling.Parameters {
+				params := sampling.DefaultParameters
 				params.K = params.AlphaConfidence
 				return params
 			}(),
@@ -110,7 +110,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
-			engine.ContextF = func() *snow.ConsensusContext {
+			engine.ContextF = func() *consensus.Context {
 				return ctx
 			}
 
@@ -121,9 +121,9 @@ func TestHealthCheckSubnet(t *testing.T) {
 				},
 			})
 
-			ctx.State.Set(snow.EngineState{
+			ctx.State.Set(consensus.EngineState{
 				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: snow.NormalOp, // assumed bootstrap is done
+				State: consensus.NormalOp, // assumed bootstrap is done
 			})
 
 			bootstrapper.StartF = func(context.Context, uint32) error {

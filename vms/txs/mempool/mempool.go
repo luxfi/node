@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/utils/set"

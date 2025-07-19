@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/benchlist"
@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/handler/handlermock"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/tests"
@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/tracker"
 )
 
 const (
@@ -128,7 +128,7 @@ func TestShutdown(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return chainCtx
 	}
 	bootstrapper.ShutdownF = func(context.Context) error {
@@ -143,7 +143,7 @@ func TestShutdown(t *testing.T) {
 	engine := &enginetest.Engine{T: t}
 	engine.Default(true)
 	engine.CantGossip = false
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return chainCtx
 	}
 	engine.ShutdownF = func(context.Context) error {
@@ -166,9 +166,9 @@ func TestShutdown(t *testing.T) {
 			Consensus:    engine,
 		},
 	})
-	chainCtx.State.Set(snow.EngineState{
+	chainCtx.State.Set(consensus.EngineState{
 		Type:  engineType,
-		State: snow.NormalOp, // assumed bootstrapping is done
+		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -253,7 +253,7 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 		StartF: func(context.Context, uint32) error {
 			return nil
 		},
-		ContextF: func() *snow.ConsensusContext {
+		ContextF: func() *consensus.Context {
 			return chainCtx
 		},
 		HaltF: func(context.Context) {},
@@ -284,9 +284,9 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 			Consensus:    &engine,
 		},
 	})
-	chainCtx.State.Set(snow.EngineState{
+	chainCtx.State.Set(consensus.EngineState{
 		Type:  engineType,
-		State: snow.NormalOp, // assumed bootstrapping is done
+		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -390,7 +390,7 @@ func TestShutdownTimesOut(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -406,7 +406,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	closed := new(int)
@@ -426,9 +426,9 @@ func TestShutdownTimesOut(t *testing.T) {
 			Consensus:    engine,
 		},
 	})
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  engineType,
-		State: snow.NormalOp, // assumed bootstrapping is done
+		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -559,7 +559,7 @@ func TestRouterTimeout(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -608,9 +608,9 @@ func TestRouterTimeout(t *testing.T) {
 		calledAppRequestFailed = true
 		return nil
 	}
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.Bootstrapping, // assumed bootstrapping is ongoing
+		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -1091,7 +1091,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.PullQueryF = func(context.Context, ids.NodeID, uint32, ids.ID, uint64) error {
@@ -1099,13 +1099,13 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		calledF = true
 		return nil
 	}
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.Bootstrapping, // assumed bootstrapping is ongoing
+		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
 	engine := &enginetest.Engine{T: t}
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	engine.Default(false)
@@ -1258,7 +1258,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.PullQueryF = func(context.Context, ids.NodeID, uint32, ids.ID, uint64) error {
@@ -1266,12 +1266,12 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 		calledF = true
 		return nil
 	}
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  engineType,
-		State: snow.Bootstrapping, // assumed bootstrapping is ongoing
+		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 	engine := &enginetest.Engine{T: t}
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	engine.Default(false)
@@ -1511,13 +1511,13 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	h.SetEngineManager(&handler.EngineManager{
@@ -1532,9 +1532,9 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 			Consensus:    engine,
 		},
 	})
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.NormalOp, // assumed bootstrapping is done
+		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 
 	chainRouter.AddChain(context.Background(), h)

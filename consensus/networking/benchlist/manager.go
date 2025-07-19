@@ -27,7 +27,7 @@ type Manager interface {
 	// [chainID] timed out
 	RegisterFailure(chainID ids.ID, nodeID ids.NodeID)
 	// RegisterChain registers a new chain with metrics under [namespace]
-	RegisterChain(ctx *snow.ConsensusContext) error
+	RegisterChain(ctx *consensus.Context) error
 	// IsBenched returns true if messages to [nodeID] regarding chain [chainID]
 	// should not be sent over the network and should immediately fail.
 	// Returns false if such messages should be sent, or if the chain is unknown.
@@ -102,7 +102,7 @@ func (m *manager) GetBenched(nodeID ids.NodeID) []ids.ID {
 	return benched
 }
 
-func (m *manager) RegisterChain(ctx *snow.ConsensusContext) error {
+func (m *manager) RegisterChain(ctx *consensus.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -165,7 +165,7 @@ func NewNoBenchlist() Manager {
 	return &noBenchlist{}
 }
 
-func (noBenchlist) RegisterChain(*snow.ConsensusContext) error {
+func (noBenchlist) RegisterChain(*consensus.Context) error {
 	return nil
 }
 

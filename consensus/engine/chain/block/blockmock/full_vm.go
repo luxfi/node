@@ -17,9 +17,9 @@ import (
 
 	database "github.com/luxfi/node/database"
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus"
 	chain "github.com/luxfi/node/consensus/chain"
-	common "github.com/luxfi/node/consensus/engine/common"
+	common "github.com/luxfi/node/consensus/engine"
 	block "github.com/luxfi/node/consensus/engine/chain/block"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
@@ -284,7 +284,7 @@ func (mr *FullVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *FullVM) Initialize(ctx context.Context, chainCtx *snow.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error {
+func (m *FullVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)
@@ -372,7 +372,7 @@ func (mr *FullVMMockRecorder) SetPreference(ctx, blkID any) *gomock.Call {
 }
 
 // SetState mocks base method.
-func (m *FullVM) SetState(ctx context.Context, state snow.State) error {
+func (m *FullVM) SetState(ctx context.Context, state consensus.State) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", ctx, state)
 	ret0, _ := ret[0].(error)

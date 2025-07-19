@@ -19,8 +19,8 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/poll"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
 	"github.com/luxfi/node/consensus/engine/chain/job"
 	"github.com/luxfi/node/consensus/validators"
@@ -457,7 +457,7 @@ func (e *Engine) Notify(ctx context.Context, msg common.Message) error {
 	}
 }
 
-func (e *Engine) Context() *snow.ConsensusContext {
+func (e *Engine) Context() *consensus.Context {
 	return e.Ctx
 }
 
@@ -514,11 +514,11 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	)
 	e.metrics.bootstrapFinished.Set(1)
 
-	e.Ctx.State.Set(snow.EngineState{
+	e.Ctx.State.Set(consensus.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.NormalOp,
+		State: consensus.NormalOp,
 	})
-	if err := e.VM.SetState(ctx, snow.NormalOp); err != nil {
+	if err := e.VM.SetState(ctx, consensus.NormalOp); err != nil {
 		return fmt.Errorf("failed to notify VM that consensus is starting: %w",
 			err)
 	}

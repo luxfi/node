@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/dag"
-	"github.com/luxfi/node/consensus/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"

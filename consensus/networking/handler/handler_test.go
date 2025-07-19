@@ -16,11 +16,11 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/logging"
@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/tracker"
 )
 
 const testThreadPoolSize = 2
@@ -91,7 +91,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.GetAcceptedFrontierF = func(context.Context, ids.NodeID, uint32) error {
@@ -107,9 +107,9 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 			Bootstrapper: bootstrapper,
 		},
 	})
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	pastTime := time.Now()
@@ -209,7 +209,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.GetAcceptedFrontierF = func(context.Context, ids.NodeID, uint32) error {
@@ -218,7 +218,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 
@@ -231,9 +231,9 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	// assume bootstrapping is ongoing so that InboundGetAcceptedFrontier
 	// should normally be handled
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping,
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Bootstrapping,
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -312,7 +312,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *snow.ConsensusContext {
+	bootstrapper.ContextF = func() *consensus.Context {
 		return ctx
 	}
 	bootstrapper.GetFailedF = func(context.Context, ids.NodeID, uint32) error {
@@ -324,9 +324,9 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 			Bootstrapper: bootstrapper,
 		},
 	})
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping, // assumed bootstrap is ongoing
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -406,7 +406,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *snow.ConsensusContext {
+	engine.ContextF = func() *consensus.Context {
 		return ctx
 	}
 
@@ -427,9 +427,9 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		},
 	})
 
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.NormalOp, // assumed bootstrap is done
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.NormalOp, // assumed bootstrap is done
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -469,7 +469,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 						Bootstrapper: b,
 						Consensus:    e,
 					},
-					Snowman: nil,
+					Chain: nil,
 				})
 			},
 		},
@@ -484,17 +484,17 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 						Bootstrapper: b,
 						Consensus:    e,
 					},
-					Snowman: nil,
+					Chain: nil,
 				})
 			},
 		},
 		{
 			name:                "current - snowman, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Lux: nil,
+					DAG: nil,
 					Chain: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
@@ -505,7 +505,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - snowman, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -524,11 +524,11 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - snowman, requested - snowman",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Lux: nil,
+					DAG: nil,
 					Chain: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
@@ -593,7 +593,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 
 			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
-			engine.ContextF = func() *snow.ConsensusContext {
+			engine.ContextF = func() *consensus.Context {
 				return ctx
 			}
 			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID, uint64) error {
@@ -603,9 +603,9 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 
 			test.setup(handler, bootstrapper, engine)
 
-			ctx.State.Set(snow.EngineState{
+			ctx.State.Set(consensus.EngineState{
 				Type:  test.currentEngineType,
-				State: snow.NormalOp, // assumed bootstrap is done
+				State: consensus.NormalOp, // assumed bootstrap is done
 			})
 
 			bootstrapper.StartF = func(context.Context, uint32) error {
@@ -673,9 +673,9 @@ func TestHandlerStartError(t *testing.T) {
 	// Starting a handler with an unprovided engine should immediately cause the
 	// handler to shutdown.
 	handler.SetEngineManager(&EngineManager{})
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Initializing,
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Initializing,
 	})
 	handler.Start(context.Background(), false)
 

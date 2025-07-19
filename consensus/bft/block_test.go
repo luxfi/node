@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func TestBlockSerialization(t *testing.T) {

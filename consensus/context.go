@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package snow
+package consensus
 
 import (
 	"sync"
@@ -59,16 +59,6 @@ type Context struct {
 	ValidatorState validators.State // interface for P-Chain validators
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
-}
-
-// Expose gatherer interface for unit testing.
-type Registerer interface {
-	prometheus.Registerer
-	prometheus.Gatherer
-}
-
-type ConsensusContext struct {
-	*Context
 
 	// PrimaryAlias is the primary alias of the chain this context exists
 	// within.
@@ -97,4 +87,10 @@ type ConsensusContext struct {
 
 	// True iff this chain is currently state-syncing
 	StateSyncing utils.Atomic[bool]
+}
+
+// Expose gatherer interface for unit testing.
+type Registerer interface {
+	prometheus.Registerer
+	prometheus.Gatherer
 }

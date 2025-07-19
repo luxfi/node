@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 )
 
 // ChainVM defines the required functionality of a Snowman VM.

@@ -5,7 +5,7 @@ package chain
 
 import (
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/binaryvote"
+	sampling "github.com/luxfi/node/consensus/sampling"
 )
 
 // Tracks the state of a chain block
@@ -22,7 +22,7 @@ type chainBlock struct {
 	// sb is the snowball instance used to decide which child is the canonical
 	// child of this block. If this node has not had a child issued under it,
 	// this value will be nil
-	sb binaryvote.Consensus
+	sb sampling.Consensus
 
 	// children is the set of blocks that have been issued that name this block
 	// as their parent. If this node has not had a child issued under it, this value
@@ -36,7 +36,7 @@ func (n *chainBlock) AddChild(child Block) {
 	// if the snowball instance is nil, this is the first child. So the instance
 	// should be initialized.
 	if n.sb == nil {
-		n.sb = binaryvote.NewTree(n.t.Factory, n.t.params, childID)
+		n.sb = sampling.NewTree(n.t.Factory, n.t.params, childID)
 		n.children = make(map[ids.ID]Block)
 	} else {
 		n.sb.Add(childID)

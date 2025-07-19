@@ -12,10 +12,10 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/dag"
-	"github.com/luxfi/node/consensus/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"

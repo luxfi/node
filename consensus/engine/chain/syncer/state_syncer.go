@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
@@ -112,11 +112,11 @@ func New(
 func (ss *stateSyncer) Start(ctx context.Context, startReqID uint32) error {
 	ss.Ctx.Log.Info("starting state sync")
 
-	ss.Ctx.State.Set(snow.EngineState{
+	ss.Ctx.State.Set(consensus.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.StateSyncing,
+		State: consensus.StateSyncing,
 	})
-	if err := ss.VM.SetState(ctx, snow.StateSyncing); err != nil {
+	if err := ss.VM.SetState(ctx, consensus.StateSyncing); err != nil {
 		return fmt.Errorf("failed to notify VM that state syncing has started: %w", err)
 	}
 

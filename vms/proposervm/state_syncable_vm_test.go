@@ -18,11 +18,11 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 

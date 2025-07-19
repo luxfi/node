@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/subnets"
@@ -35,7 +35,7 @@ var (
 // sender registers outbound requests with [router] so that [router]
 // fires a timeout if we don't get a response to the request.
 type sender struct {
-	ctx        *snow.ConsensusContext
+	ctx        *consensus.Context
 	msgCreator message.OutboundMsgBuilder
 
 	sender   ExternalSender // Actually does the sending over the network
@@ -50,7 +50,7 @@ type sender struct {
 }
 
 func New(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	msgCreator message.OutboundMsgBuilder,
 	externalSender ExternalSender,
 	router router.InternalHandler,

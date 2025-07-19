@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/common/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/dag"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/set"
@@ -106,7 +106,7 @@ type Bootstrapper struct {
 	onFinished func(ctx context.Context, lastReqID uint32) error
 }
 
-func (b *Bootstrapper) Context() *snow.ConsensusContext {
+func (b *Bootstrapper) Context() *consensus.Context {
 	return b.Ctx
 }
 
@@ -319,11 +319,11 @@ func (*Bootstrapper) Notify(context.Context, common.Message) error {
 func (b *Bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")
 
-	b.Ctx.State.Set(snow.EngineState{
+	b.Ctx.State.Set(consensus.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_DAG,
-		State: snow.Bootstrapping,
+		State: consensus.Bootstrapping,
 	})
-	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {
+	if err := b.VM.SetState(ctx, consensus.Bootstrapping); err != nil {
 		return fmt.Errorf("failed to notify VM that bootstrapping has started: %w",
 			err)
 	}

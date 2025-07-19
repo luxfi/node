@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"

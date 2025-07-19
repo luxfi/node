@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"

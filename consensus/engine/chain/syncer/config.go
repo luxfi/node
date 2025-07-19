@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
 )
@@ -17,7 +17,7 @@ import (
 type Config struct {
 	common.AllGetsServer
 
-	Ctx *snow.ConsensusContext
+	Ctx *consensus.Context
 
 	StartupTracker tracker.Startup
 	Sender         common.Sender
@@ -40,7 +40,7 @@ type Config struct {
 
 func NewConfig(
 	snowGetHandler common.AllGetsServer,
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	startupTracker tracker.Startup,
 	sender common.Sender,
 	beacons validators.Manager,

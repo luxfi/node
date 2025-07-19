@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"github.com/luxfi/node/consensus/factories"
 	"bytes"
 	"context"
 	"errors"
@@ -20,16 +21,16 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/chain/getter"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -310,7 +311,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -635,7 +636,7 @@ func TestVoteCanceling(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -1475,7 +1476,7 @@ func TestEngineDoubleChit(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     2,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -2149,7 +2150,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -2244,7 +2245,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,
@@ -2379,7 +2380,7 @@ func TestEngineVoteStallRegression(t *testing.T) {
 	require := require.New(t)
 
 	config := DefaultConfig(t)
-	config.Params = binaryvote.Parameters{
+	config.Params = sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -2414,7 +2415,7 @@ func TestEngineVoteStallRegression(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*snow.Context,
+				*consensus.Context,
 				database.Database,
 				[]byte,
 				[]byte,
@@ -2424,7 +2425,7 @@ func TestEngineVoteStallRegression(t *testing.T) {
 			) error {
 				return nil
 			},
-			SetStateF: func(context.Context, snow.State) error {
+			SetStateF: func(context.Context, consensus.State) error {
 				return nil
 			},
 		},
@@ -2638,7 +2639,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*snow.Context,
+				*consensus.Context,
 				database.Database,
 				[]byte,
 				[]byte,
@@ -2648,7 +2649,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 			) error {
 				return nil
 			},
-			SetStateF: func(context.Context, snow.State) error {
+			SetStateF: func(context.Context, consensus.State) error {
 				return nil
 			},
 		},
@@ -2788,7 +2789,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*snow.Context,
+				*consensus.Context,
 				database.Database,
 				[]byte,
 				[]byte,
@@ -2798,7 +2799,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 			) error {
 				return nil
 			},
-			SetStateF: func(context.Context, snow.State) error {
+			SetStateF: func(context.Context, consensus.State) error {
 				return nil
 			},
 		},
@@ -3024,11 +3025,11 @@ func TestGetProcessingAncestor(t *testing.T) {
 				ctx = snowtest.ConsensusContext(
 					snowtest.Context(t, snowtest.PChainID),
 				)
-				consensus = &chain.Topological{Factory: binaryvote.SnowflakeFactory}
+				consensus = &chain.Topological{Factory: factories.SnowflakeFactory}
 			)
 			require.NoError(consensus.Initialize(
 				ctx,
-				binaryvote.DefaultParameters,
+				sampling.DefaultParameters,
 				chaintest.GenesisID,
 				0,
 				time.Now(),
@@ -3098,10 +3099,10 @@ func TestShouldIssueBlock(t *testing.T) {
 
 	require.NoError(t, blocks[0].Accept(context.Background()))
 
-	c := &chain.Topological{Factory: binaryvote.SnowflakeFactory}
+	c := &chain.Topological{Factory: factories.SnowflakeFactory}
 	require.NoError(t, c.Initialize(
 		ctx,
-		binaryvote.DefaultParameters,
+		sampling.DefaultParameters,
 		blocks[0].ID(),
 		blocks[0].Height(),
 		blocks[0].Timestamp(),
@@ -3223,7 +3224,7 @@ func TestEngineAbortQueryWhenInPartition(t *testing.T) {
 	conf := DefaultConfig(t)
 	// Overwrite the log to record what it says
 	conf.Ctx.Log = logging.NewLogger("", logging.NewWrappedCore(logging.Verbo, &buff, logging.Plain.ConsoleEncoder()))
-	conf.Params = binaryvote.DefaultParameters
+	conf.Params = sampling.DefaultParameters
 	conf.ConnectedValidators = &mockConnVDR{percent: 0.7, Peers: conf.ConnectedValidators}
 
 	_, _, _, _, engine := setup(t, conf)
@@ -3238,7 +3239,7 @@ func TestEngineAcceptedHeight(t *testing.T) {
 	require := require.New(t)
 
 	engCfg := DefaultConfig(t)
-	engCfg.Params = binaryvote.Parameters{
+	engCfg.Params = sampling.Parameters{
 		K:                     2,
 		AlphaPreference:       2,
 		AlphaConfidence:       2,
@@ -3274,7 +3275,7 @@ func TestEngineAcceptedHeight(t *testing.T) {
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
 		AlphaConfidence:       1,

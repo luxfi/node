@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/consensus"
 	consensuschain "github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"

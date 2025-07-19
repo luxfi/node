@@ -10,13 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"
 
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/factories"
+	sampling "github.com/luxfi/node/consensus/sampling"
 )
 
 func TestConvergenceSnowFlakeSnowBall(t *testing.T) {
 	require := require.New(t)
 
-	params := binaryvote.Parameters{
+	params := sampling.Parameters{
 		K:                     20,
 		AlphaPreference:       11,
 		AlphaConfidence:       11,
@@ -33,11 +34,11 @@ func TestConvergenceSnowFlakeSnowBall(t *testing.T) {
 		t.Run(fmt.Sprintf("%d nodes", numNodes), func(t *testing.T) {
 			n := NewNetwork(params, 10, prng.NewMT19937())
 			for i := 0; i < numNodes; i++ {
-				var sbFactory binaryvote.Factory
+				var sbFactory sampling.Factory
 				if i%2 == 0 {
-					sbFactory = binaryvote.SnowflakeFactory
+					sbFactory = factories.SnowflakeFactory
 				} else {
-					sbFactory = binaryvote.SnowballFactory
+					sbFactory = factories.SnowballFactory
 				}
 
 				factory := TopologicalFactory{factory: sbFactory}

@@ -1,23 +1,23 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package dag
 
 import (
 	"context"
 	"errors"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	common "github.com/luxfi/node/consensus/engine"
 )
 
 var (
-	_ common.Engine = (*engine)(nil)
+	_ common.Engine = (*Engine)(nil)
 
 	errUnexpectedStart = errors.New("unexpectedly started engine")
 )
 
-type engine struct {
+type Engine struct {
 	common.AllGetsServer
 
 	// list of NoOpsHandler for messages dropped by engine
@@ -32,14 +32,14 @@ type engine struct {
 	common.AppHandler
 	common.InternalHandler
 
-	ctx *snow.ConsensusContext
+	ctx *consensus.Context
 }
 
 func New(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	gets common.AllGetsServer,
 ) common.Engine {
-	return &engine{
+	return &Engine{
 		AllGetsServer:               gets,
 		StateSummaryFrontierHandler: common.NewNoOpStateSummaryFrontierHandler(ctx.Log),
 		AcceptedStateSummaryHandler: common.NewNoOpAcceptedStateSummaryHandler(ctx.Log),
@@ -55,14 +55,14 @@ func New(
 	}
 }
 
-func (*engine) Start(context.Context, uint32) error {
+func (*Engine) Start(context.Context, uint32) error {
 	return errUnexpectedStart
 }
 
-func (e *engine) Context() *snow.ConsensusContext {
+func (e *Engine) Context() *consensus.Context {
 	return e.ctx
 }
 
-func (*engine) HealthCheck(context.Context) (interface{}, error) {
+func (*Engine) HealthCheck(context.Context) (interface{}, error) {
 	return nil, nil
 }

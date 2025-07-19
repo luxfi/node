@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"

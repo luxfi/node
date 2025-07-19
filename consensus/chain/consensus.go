@@ -10,19 +10,19 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/bag"
 )
 
-// Consensus represents a general snowman instance that can be used directly to
+// Consensus represents a general chain consensus instance that can be used directly to
 // process a series of dependent operations.
 type Consensus interface {
 	health.Checker
 
 	// Takes in the context, snowball parameters, and the last accepted block.
 	Initialize(
-		ctx *snow.ConsensusContext,
-		params binaryvote.Parameters,
+		ctx *consensus.Context,
+		params sampling.Parameters,
 		lastAcceptedID ids.ID,
 		lastAcceptedHeight uint64,
 		lastAcceptedTime time.Time,

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
 )
@@ -111,10 +111,10 @@ func (j *Jobs) Push(ctx context.Context, job Job) (bool, error) {
 
 func (j *Jobs) ExecuteAll(
 	ctx context.Context,
-	chainCtx *snow.ConsensusContext,
+	chainCtx *consensus.Context,
 	halter common.Haltable,
 	restarted bool,
-	acceptors ...snow.Acceptor,
+	acceptors ...consensus.Acceptor,
 ) (int, error) {
 	chainCtx.Executing.Set(true)
 	defer chainCtx.Executing.Set(false)

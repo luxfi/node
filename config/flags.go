@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/pebbledb"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/consensus/binaryvote"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
