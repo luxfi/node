@@ -20,16 +20,16 @@ import (
 )
 
 // Get requests are always served, regardless node state (bootstrapping or normal operations).
-var _ common.AllGetsServer = (*getter)(nil)
+var _ engine.AllGetsServer = (*getter)(nil)
 
 func New(
 	vm block.ChainVM,
-	sender common.Sender,
+	sender engine.Sender,
 	log logging.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
 	reg prometheus.Registerer,
-) (common.AllGetsServer, error) {
+) (engine.AllGetsServer, error) {
 	ssVM, _ := vm.(block.StateSyncableVM)
 	gh := &getter{
 		vm:                        vm,
@@ -53,7 +53,7 @@ type getter struct {
 	vm   block.ChainVM
 	ssVM block.StateSyncableVM // can be nil
 
-	sender common.Sender
+	sender engine.Sender
 	log    logging.Logger
 	// Max time to spend fetching a container and its ancestors when responding
 	// to a GetAncestors

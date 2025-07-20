@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 func main() {
@@ -37,7 +36,7 @@ func main() {
 	}
 	log.Printf("fetched state of %s in %s\n", addrStr, time.Since(fetchStartTime))
 
-	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
+	pUTXOs := primary.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
 	pBackend := wallet.NewBackend(pUTXOs, nil)
 	pBuilder := builder.New(addresses, state.PCTX, pBackend)
 

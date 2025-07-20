@@ -74,7 +74,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	avm "github.com/luxfi/node/vms/xvm"
+	xvm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
@@ -324,9 +324,9 @@ type Node struct {
 	uptimeCalculator uptime.LockedCalculator
 
 	// dispatcher for events as they happen in consensus
-	BlockAcceptorGroup  snow.AcceptorGroup
-	TxAcceptorGroup     snow.AcceptorGroup
-	VertexAcceptorGroup snow.AcceptorGroup
+	BlockAcceptorGroup  consensus.AcceptorGroup
+	TxAcceptorGroup     consensus.AcceptorGroup
+	VertexAcceptorGroup consensus.AcceptorGroup
 
 	// Net runs the networking stack
 	Net network.Network
@@ -842,9 +842,9 @@ func (n *Node) initBootstrappers() error {
 // Create the EventDispatcher used for hooking events
 // into the general process flow.
 func (n *Node) initEventDispatchers() {
-	n.BlockAcceptorGroup = snow.NewAcceptorGroup(n.Log)
-	n.TxAcceptorGroup = snow.NewAcceptorGroup(n.Log)
-	n.VertexAcceptorGroup = snow.NewAcceptorGroup(n.Log)
+	n.BlockAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
+	n.TxAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
+	n.VertexAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
 }
 
 // Initialize [n.indexer].
@@ -1201,7 +1201,7 @@ func (n *Node) initVMs() error {
 				UseCurrentHeight:          n.Config.UseCurrentHeight,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
+		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &xvm.Factory{
 			Config: avmconfig.Config{
 				Upgrades:         n.Config.UpgradeConfig,
 				TxFee:            n.Config.TxFee,
@@ -1730,7 +1730,7 @@ type devModeRegistrant struct {
 	log       logging.Logger
 }
 
-func (d *devModeRegistrant) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Context, vm engine.VM) {
 	// Check if this is the C-Chain
 	if chainName != "C" && !strings.Contains(strings.ToLower(chainName), "evm") {
 		return

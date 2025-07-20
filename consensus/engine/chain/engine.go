@@ -38,7 +38,7 @@ const (
 	errInsufficientStake = "insufficient connected stake"
 )
 
-var _ common.Engine = (*Engine)(nil)
+var _ engine.Engine = (*Engine)(nil)
 
 func cachedBlockSize(_ ids.ID, blk chain.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
@@ -51,12 +51,12 @@ type Engine struct {
 	*metrics
 
 	// list of NoOpsHandler for messages dropped by engine
-	common.StateSummaryFrontierHandler
-	common.AcceptedStateSummaryHandler
-	common.AcceptedFrontierHandler
-	common.AcceptedHandler
-	common.AncestorsHandler
-	common.AppHandler
+	engine.StateSummaryFrontierHandler
+	engine.AcceptedStateSummaryHandler
+	engine.AcceptedFrontierHandler
+	engine.AcceptedHandler
+	engine.AncestorsHandler
+	engine.AppHandler
 	validators.Connector
 
 	requestID uint32
@@ -65,8 +65,8 @@ type Engine struct {
 	polls poll.Set
 
 	// blocks that have we have sent get requests for but haven't yet received
-	blkReqs            *bimap.BiMap[common.Request, ids.ID]
-	blkReqSourceMetric map[common.Request]prometheus.Counter
+	blkReqs            *bimap.BiMap[engine.Request, ids.ID]
+	blkReqSourceMetric map[engine.Request]prometheus.Counter
 
 	// blocks that are queued to be issued to consensus once missing dependencies are fetched
 	// Block ID --> Block
@@ -135,11 +135,11 @@ func New(config Config) (*Engine, error) {
 	return &Engine{
 		Config:                      config,
 		metrics:                     metrics,
-		StateSummaryFrontierHandler: common.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
-		AcceptedStateSummaryHandler: common.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
-		AcceptedFrontierHandler:     common.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
-		AcceptedHandler:             common.NewNoOpAcceptedHandler(config.Ctx.Log),
-		AncestorsHandler:            common.NewNoOpAncestorsHandler(config.Ctx.Log),
+		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
+		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
+		AcceptedFrontierHandler:     engine.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
+		AcceptedHandler:             engine.NewNoOpAcceptedHandler(config.Ctx.Log),
+		AncestorsHandler:            engine.NewNoOpAncestorsHandler(config.Ctx.Log),
 		AppHandler:                  config.VM,
 		Connector:                   config.VM,
 		pending:                     make(map[ids.ID]chain.Block),
@@ -148,8 +148,8 @@ func New(config Config) (*Engine, error) {
 		acceptedFrontiers:           acceptedFrontiers,
 		blocked:                     job.NewScheduler[ids.ID](),
 		polls:                       polls,
-		blkReqs:                     bimap.New[common.Request, ids.ID](),
-		blkReqSourceMetric:          make(map[common.Request]prometheus.Counter),
+		blkReqs:                     bimap.New[engine.Request, ids.ID](),
+		blkReqSourceMetric:          make(map[engine.Request]prometheus.Counter),
 	}, nil
 }
 
@@ -228,7 +228,7 @@ func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, b
 	}
 
 	var (
-		req = common.Request{
+		req = engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -279,7 +279,7 @@ func (e *Engine) GetFailed(ctx context.Context, nodeID ids.NodeID, requestID uin
 	// We don't assume that this function is called after a failed Get message.
 	// Check to see if we have an outstanding request and also get what the
 	// request was for if it exists.
-	req := common.Request{
+	req := engine.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -440,13 +440,13 @@ func (e *Engine) Shutdown(ctx context.Context) error {
 	return e.VM.Shutdown(ctx)
 }
 
-func (e *Engine) Notify(ctx context.Context, msg common.Message) error {
+func (e *Engine) Notify(ctx context.Context, msg engine.Message) error {
 	switch msg {
-	case common.PendingTxs:
+	case engine.PendingTxs:
 		// the pending txs message means we should attempt to build a block.
 		e.pendingBuildBlocks++
 		return e.executeDeferredWork(ctx)
-	case common.StateSyncDone:
+	case engine.StateSyncDone:
 		e.Ctx.StateSyncing.Set(false)
 		return nil
 	default:
@@ -584,7 +584,7 @@ func (e *Engine) sendChits(ctx context.Context, nodeID ids.NodeID, requestID uin
 		if err != nil {
 			// Because we only return accepted state here, it's fairly likely
 			// that the requested height is higher than the last accepted block.
-			// That means that this code path is actually quite common.
+			// That means that this code path is actually quite engine.
 			e.Ctx.Log.Debug("unable to retrieve accepted block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint64("requestedHeight", requestedHeight),
@@ -848,7 +848,7 @@ func (e *Engine) sendRequest(
 	}
 
 	e.requestID++
-	req := common.Request{
+	req := engine.Request{
 		NodeID:    nodeID,
 		RequestID: e.requestID,
 	}

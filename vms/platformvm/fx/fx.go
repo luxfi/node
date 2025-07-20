@@ -47,7 +47,7 @@ type Owner interface {
 	verify.IsNotState
 
 	verify.Verifiable
-	snow.ContextInitializable
+	consensus.ContextInitializable
 }
 
 type Owned interface {

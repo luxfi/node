@@ -71,7 +71,7 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	walletbuilder "github.com/luxfi/node/wallet/chain/p/builder"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const (
@@ -163,7 +163,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	defer ctx.Lock.Unlock()
 	appSender := &enginetest.Sender{}
 	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	appSender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
 		return nil
 	}
 	appSender.SendAppErrorF = func(context.Context, ids.NodeID, uint32, int32, string) error {
@@ -188,7 +188,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		Capacity: defaultDynamicFeeConfig.MaxCapacity,
 	})
 
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	wallet := newWallet(t, vm, walletConfig{
 		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
@@ -910,7 +910,7 @@ func TestAtomicImport(t *testing.T) {
 	)
 	require.ErrorIs(err, walletbuilder.ErrInsufficientFunds)
 
-	// Provide the avm UTXO
+	// Provide the xvm UTXO
 	peerSharedMemory := m.NewSharedMemory(vm.ctx.XChainID)
 	utxoID := lux.UTXOID{
 		TxID:        ids.GenerateTestID(),
@@ -1007,13 +1007,13 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
 	require.NoError(blk.Accept(context.Background()))
 
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1279,7 +1279,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	bootstrapConfig := bootstrap.Config{
-		Haltable:                       &common.Halter{},
+		Haltable:                       &engine.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            consensusCtx,
@@ -1303,9 +1303,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
-	noopSubscription := func(ctx context.Context) (common.Message, error) {
+	noopSubscription := func(ctx context.Context) (engine.Message, error) {
 		<-ctx.Done()
-		return common.Message(0), ctx.Err()
+		return engine.Message(0), ctx.Err()
 	}
 
 	h, err := handler.New(
@@ -1362,9 +1362,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	})
 
-	consensusCtx.State.Set(snow.EngineState{
+	consensusCtx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: snow.Bootstrapping,
+		State: consensus.Bootstrapping,
 	})
 
 	// Allow incoming messages to be routed to the new chain
@@ -1377,7 +1377,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Mark the validator as connected. We should request the accepted frontier.
 	var reqID uint32
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1418,7 +1418,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Report the validator removal as the last accepted block with the accepted
 	// frontier. We should request a confirmation that this block is accepted.
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -1432,7 +1432,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Report the validator removal as accepted. We should request the validator
 	// removal block and any ancestors of it.
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
@@ -1451,7 +1451,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Provide the validator removal block. We should process this block and
 	// then do another round of bootstrapping.
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1467,7 +1467,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// We should again report the validator removal block as the last accepted
 	// block.
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -1691,8 +1691,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(firstVM.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(firstVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(firstVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(firstVM.SetState(context.Background(), consensus.NormalOp))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
 	durationForReward := genesistest.DefaultValidatorEndTime.Sub(genesistest.DefaultValidatorStartTime) * firstUptimePercentage / 100
@@ -1740,8 +1740,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	secondVM.clock.Set(vmStopTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(secondVM.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(secondVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(secondVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(secondVM.SetState(context.Background(), consensus.NormalOp))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
 	secondVM.clock.Set(genesistest.DefaultValidatorEndTime)
@@ -1838,8 +1838,8 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	vm.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.clock.Set(genesistest.DefaultValidatorEndTime)
@@ -2104,7 +2104,7 @@ func TestPruneMempool(t *testing.T) {
 				},
 			},
 		},
-		walletcommon.WithCustomAddresses(set.Of(
+		walletengine.WithCustomAddresses(set.Of(
 			genesistest.DefaultFundedKeys[0].Address(),
 		)),
 	)
@@ -2149,7 +2149,7 @@ func TestPruneMempool(t *testing.T) {
 		rewardsOwner,
 		rewardsOwner,
 		20000,
-		walletcommon.WithCustomAddresses(set.Of(
+		walletengine.WithCustomAddresses(set.Of(
 			genesistest.DefaultFundedKeys[1].Address(),
 		)),
 	)

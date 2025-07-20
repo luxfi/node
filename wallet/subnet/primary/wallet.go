@@ -10,10 +10,10 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	psigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -51,7 +51,7 @@ func NewWallet(p pwallet.Wallet, x x.Wallet, c c.Wallet) *Wallet {
 }
 
 // Creates a Wallet with the given set of options
-func NewWalletWithOptions(w *Wallet, options ...common.Option) *Wallet {
+func NewWalletWithOptions(w *Wallet, options ...Option) *Wallet {
 	return NewWallet(
 		pwallet.WithOptions(w.p, options...),
 		x.NewWalletWithOptions(w.x, options...),
@@ -102,20 +102,20 @@ func MakeWallet(
 		return nil, err
 	}
 
-	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
+	pUTXOs := wallet.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
 	pBackend := pwallet.NewBackend(pUTXOs, owners)
 	pClient := p.NewClient(luxState.PClient, pBackend)
 	pBuilder := pbuilder.New(luxAddrs, luxState.PCTX, pBackend)
 	pSigner := psigner.New(luxKeychain, pBackend)
 
 	xChainID := luxState.XCTX.BlockchainID
-	xUTXOs := common.NewChainUTXOs(xChainID, luxState.UTXOs)
+	xUTXOs := wallet.NewChainUTXOs(xChainID, luxState.UTXOs)
 	xBackend := x.NewBackend(luxState.XCTX, xUTXOs)
 	xBuilder := xbuilder.New(luxAddrs, luxState.XCTX, xBackend)
 	xSigner := xsigner.New(luxKeychain, xBackend)
 
 	cChainID := luxState.CCTX.BlockchainID
-	cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
+	cUTXOs := wallet.NewChainUTXOs(cChainID, luxState.UTXOs)
 	cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
 	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
 	cSigner := c.NewSigner(luxKeychain, ethKeychain, cBackend)
@@ -153,7 +153,7 @@ func MakePWallet(
 		return nil, err
 	}
 
-	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, utxos)
+	pUTXOs := NewChainUTXOs(constants.PlatformChainID, utxos)
 	pBackend := pwallet.NewBackend(pUTXOs, owners)
 	pClient := p.NewClient(client, pBackend)
 	pBuilder := pbuilder.New(addrs, context, pBackend)

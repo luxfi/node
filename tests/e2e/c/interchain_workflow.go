@@ -6,7 +6,7 @@ package c
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/luxfi/geth/core/types"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
@@ -131,7 +131,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		})
 
 		tc.By("checking that the recipient address has received imported funds on the X-Chain", func() {
-			balances, err := xWallet.Builder().GetFTBalance(common.WithCustomAddresses(set.Of(
+			balances, err := xWallet.Builder().GetFTBalance(primary.WithCustomAddresses(set.Of(
 				recipientKey.Address(),
 			)))
 			require.NoError(err)
@@ -158,7 +158,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		})
 
 		tc.By("checking that the recipient address has received imported funds on the P-Chain", func() {
-			balances, err := pWallet.Builder().GetBalance(common.WithCustomAddresses(set.Of(
+			balances, err := pWallet.Builder().GetBalance(primary.WithCustomAddresses(set.Of(
 				recipientKey.Address(),
 			)))
 			require.NoError(err)

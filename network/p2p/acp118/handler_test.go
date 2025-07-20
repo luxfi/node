@@ -36,12 +36,12 @@ func TestHandler(t *testing.T) {
 			name:   "signature fails verification",
 			cacher: &cache.Empty[ids.ID, []byte]{},
 			verifier: &testVerifier{
-				Errs: []*common.AppError{
+				Errs: []*engine.AppError{
 					{Code: 123},
 				},
 			},
 			expectedErrs: []error{
-				&common.AppError{Code: 123},
+				&engine.AppError{Code: 123},
 			},
 		},
 		{
@@ -56,7 +56,7 @@ func TestHandler(t *testing.T) {
 			name:   "signature is cached",
 			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
-				Errs: []*common.AppError{
+				Errs: []*engine.AppError{
 					nil,
 					{Code: 123}, // The valid response should be cached
 				},
@@ -145,14 +145,14 @@ func TestHandler(t *testing.T) {
 
 // The zero value of testVerifier allows signing
 type testVerifier struct {
-	Errs []*common.AppError
+	Errs []*engine.AppError
 }
 
 func (t *testVerifier) Verify(
 	context.Context,
 	*warp.UnsignedMessage,
 	[]byte,
-) *common.AppError {
+) *engine.AppError {
 	if len(t.Errs) == 0 {
 		return nil
 	}

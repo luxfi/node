@@ -15,16 +15,16 @@ import (
 var _ Atomic = (*atomic)(nil)
 
 type Atomic interface {
-	common.AppHandler
+	engine.AppHandler
 
-	Set(common.AppHandler)
+	Set(engine.AppHandler)
 }
 
 type atomic struct {
-	handler utils.Atomic[common.AppHandler]
+	handler utils.Atomic[engine.AppHandler]
 }
 
-func NewAtomic(h common.AppHandler) Atomic {
+func NewAtomic(h engine.AppHandler) Atomic {
 	a := &atomic{}
 	a.handler.Set(h)
 	return a
@@ -51,7 +51,7 @@ func (a *atomic) AppRequestFailed(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
-	appErr *common.AppError,
+	appErr *engine.AppError,
 ) error {
 	h := a.handler.Get()
 	return h.AppRequestFailed(
@@ -90,6 +90,6 @@ func (a *atomic) AppGossip(
 	)
 }
 
-func (a *atomic) Set(h common.AppHandler) {
+func (a *atomic) Set(h engine.AppHandler) {
 	a.handler.Set(h)
 }

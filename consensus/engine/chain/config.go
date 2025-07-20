@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	sampling "github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
-	common "github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
@@ -15,11 +15,11 @@ import (
 
 // Config wraps all the parameters needed for a snowman engine
 type Config struct {
-	common.AllGetsServer
+	engine.AllGetsServer
 
 	Ctx                 *consensus.Context
 	VM                  block.ChainVM
-	Sender              common.Sender
+	Sender              engine.Sender
 	Validators          validators.Manager
 	ConnectedValidators tracker.Peers
 	Params              sampling.Parameters

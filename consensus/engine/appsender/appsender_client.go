@@ -13,7 +13,7 @@ import (
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
 
-var _ common.AppSender = (*Client)(nil)
+var _ engine.AppSender = (*Client)(nil)
 
 type Client struct {
 	client appsenderpb.AppSenderClient
@@ -69,7 +69,7 @@ func (c *Client) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID 
 
 func (c *Client) SendAppGossip(
 	ctx context.Context,
-	config common.SendConfig,
+	config engine.SendConfig,
 	msg []byte,
 ) error {
 	nodeIDs := make([][]byte, config.NodeIDs.Len())

@@ -46,7 +46,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
-	appSender common.AppSender,
+	appSender engine.AppSender,
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,

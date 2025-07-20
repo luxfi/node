@@ -16,14 +16,14 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var _ common.Sender = (*tracedSender)(nil)
+var _ engine.Sender = (*tracedSender)(nil)
 
 type tracedSender struct {
-	sender common.Sender
+	sender engine.Sender
 	tracer trace.Tracer
 }
 
-func Trace(sender common.Sender, tracer trace.Tracer) common.Sender {
+func Trace(sender engine.Sender, tracer trace.Tracer) engine.Sender {
 	return &tracedSender{
 		sender: sender,
 		tracer: tracer,
@@ -227,7 +227,7 @@ func (s *tracedSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requ
 
 func (s *tracedSender) SendAppGossip(
 	ctx context.Context,
-	config common.SendConfig,
+	config engine.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	_, span := s.tracer.Start(ctx, "tracedSender.SendAppGossip", oteltrace.WithAttributes(

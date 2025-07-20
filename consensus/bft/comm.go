@@ -88,7 +88,7 @@ func (c *Comm) Send(msg *simplex.Message, destination simplex.NodeID) {
 		return
 	}
 
-	c.sender.Send(outboundMsg, common.SendConfig{NodeIDs: set.Of(dest)}, c.subnetID, subnets.NoOpAllower)
+	c.sender.Send(outboundMsg, engine.SendConfig{NodeIDs: set.Of(dest)}, c.subnetID, subnets.NoOpAllower)
 }
 
 func (c *Comm) Broadcast(msg *simplex.Message) {
@@ -98,7 +98,7 @@ func (c *Comm) Broadcast(msg *simplex.Message) {
 		return
 	}
 
-	c.sender.Send(outboundMsg, common.SendConfig{NodeIDs: c.broadcastNodes}, c.subnetID, subnets.NoOpAllower)
+	c.sender.Send(outboundMsg, engine.SendConfig{NodeIDs: c.broadcastNodes}, c.subnetID, subnets.NoOpAllower)
 }
 
 func (c *Comm) simplexMessageToOutboundMessage(msg *simplex.Message) (message.OutboundMessage, error) {

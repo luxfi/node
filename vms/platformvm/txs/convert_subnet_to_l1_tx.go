@@ -46,7 +46,7 @@ type ConvertSubnetToL1Tx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

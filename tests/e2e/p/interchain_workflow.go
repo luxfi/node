@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainLabel), func() {
@@ -98,7 +98,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		}
 		// Ensure the change is returned to the pre-funded key
 		// TODO(marun) Remove when the wallet does this automatically
-		changeOwner := common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		changeOwner := primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{
 				keychain.Keys[0].Address(),
@@ -202,7 +202,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		})
 
 		tc.By("checking that the recipient address has received imported funds on the X-Chain", func() {
-			balances, err := xWallet.Builder().GetFTBalance(common.WithCustomAddresses(set.Of(
+			balances, err := xWallet.Builder().GetFTBalance(primary.WithCustomAddresses(set.Of(
 				recipientKey.Address(),
 			)))
 			require.NoError(err)

@@ -44,9 +44,9 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 
 	// load innerVM expectations
-	innerVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*engine.Fx, engine.AppSender,
 	) error {
 		return nil
 	}
@@ -86,7 +86,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		nil,
 		nil,
 	))
-	require.NoError(vm.SetState(context.Background(), snow.StateSyncing))
+	require.NoError(vm.SetState(context.Background(), consensus.StateSyncing))
 
 	return innerVM, vm
 }
@@ -587,7 +587,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	require.Equal(block.StateSyncStatic, status)
 	require.True(calledInnerAccept)
 
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 	require.Equal(summary.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())
 	require.NoError(err)
@@ -719,7 +719,7 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 	require.True(calledInnerAccept)
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 
 	require.Equal(innerBlk2.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())

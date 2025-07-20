@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 
 	timerpkg "github.com/luxfi/node/utils/timer"
 	xtxs "github.com/luxfi/node/vms/xvm/txs"
@@ -667,8 +667,8 @@ func (w *workload) makeOwner() secp256k1fx.OutputOwners {
 func (w *workload) confirmXChainTx(ctx context.Context, tx *xtxs.Tx) error {
 	txID := tx.ID()
 	for _, uri := range w.uris {
-		client := avm.NewClient(uri, "X")
-		if err := avm.AwaitTxAccepted(client, ctx, txID, 100*time.Millisecond); err != nil {
+		client := xvm.NewClient(uri, "X")
+		if err := xvm.AwaitTxAccepted(client, ctx, txID, 100*time.Millisecond); err != nil {
 			return fmt.Errorf("failed to confirm X-chain transaction %s on %s: %w", txID, uri, err)
 		}
 		w.log.Info("confirmed X-chain transaction",
@@ -704,9 +704,9 @@ func (w *workload) verifyXChainTxConsumedUTXOs(ctx context.Context, tx *xtxs.Tx)
 	txID := tx.ID()
 	chainID := w.wallet.X().Builder().Context().BlockchainID
 	for _, uri := range w.uris {
-		client := avm.NewClient(uri, "X")
+		client := xvm.NewClient(uri, "X")
 
-		utxos := common.NewUTXOs()
+		utxos := walletcommon.NewUTXOs()
 		err := primary.AddAllUTXOs(
 			ctx,
 			utxos,
@@ -759,7 +759,7 @@ func (w *workload) verifyPChainTxConsumedUTXOs(ctx context.Context, tx *ptxs.Tx)
 	for _, uri := range w.uris {
 		client := platformvm.NewClient(uri)
 
-		utxos := common.NewUTXOs()
+		utxos := walletcommon.NewUTXOs()
 		err := primary.AddAllUTXOs(
 			ctx,
 			utxos,

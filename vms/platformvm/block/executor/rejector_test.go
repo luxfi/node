@@ -129,7 +129,7 @@ func TestRejectBlock(t *testing.T) {
 			}
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &snow.Context{
+					ctx: &consensus.Context{
 						Log: logging.NoLog{},
 					},
 					blkIDToState: blkIDToState,

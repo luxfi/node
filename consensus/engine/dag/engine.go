@@ -8,49 +8,49 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/consensus"
-	common "github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine"
 )
 
 var (
-	_ common.Engine = (*Engine)(nil)
+	_ engine.Engine = (*Engine)(nil)
 
 	errUnexpectedStart = errors.New("unexpectedly started engine")
 )
 
 type Engine struct {
-	common.AllGetsServer
+	engine.AllGetsServer
 
 	// list of NoOpsHandler for messages dropped by engine
-	common.StateSummaryFrontierHandler
-	common.AcceptedStateSummaryHandler
-	common.AcceptedFrontierHandler
-	common.AcceptedHandler
-	common.AncestorsHandler
-	common.PutHandler
-	common.QueryHandler
-	common.ChitsHandler
-	common.AppHandler
-	common.InternalHandler
+	engine.StateSummaryFrontierHandler
+	engine.AcceptedStateSummaryHandler
+	engine.AcceptedFrontierHandler
+	engine.AcceptedHandler
+	engine.AncestorsHandler
+	engine.PutHandler
+	engine.QueryHandler
+	engine.ChitsHandler
+	engine.AppHandler
+	engine.InternalHandler
 
 	ctx *consensus.Context
 }
 
 func New(
 	ctx *consensus.Context,
-	gets common.AllGetsServer,
-) common.Engine {
+	gets engine.AllGetsServer,
+) engine.Engine {
 	return &Engine{
 		AllGetsServer:               gets,
-		StateSummaryFrontierHandler: common.NewNoOpStateSummaryFrontierHandler(ctx.Log),
-		AcceptedStateSummaryHandler: common.NewNoOpAcceptedStateSummaryHandler(ctx.Log),
-		AcceptedFrontierHandler:     common.NewNoOpAcceptedFrontierHandler(ctx.Log),
-		AcceptedHandler:             common.NewNoOpAcceptedHandler(ctx.Log),
-		AncestorsHandler:            common.NewNoOpAncestorsHandler(ctx.Log),
-		PutHandler:                  common.NewNoOpPutHandler(ctx.Log),
-		QueryHandler:                common.NewNoOpQueryHandler(ctx.Log),
-		ChitsHandler:                common.NewNoOpChitsHandler(ctx.Log),
-		AppHandler:                  common.NewNoOpAppHandler(ctx.Log),
-		InternalHandler:             common.NewNoOpInternalHandler(ctx.Log),
+		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(ctx.Log),
+		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(ctx.Log),
+		AcceptedFrontierHandler:     engine.NewNoOpAcceptedFrontierHandler(ctx.Log),
+		AcceptedHandler:             engine.NewNoOpAcceptedHandler(ctx.Log),
+		AncestorsHandler:            engine.NewNoOpAncestorsHandler(ctx.Log),
+		PutHandler:                  engine.NewNoOpPutHandler(ctx.Log),
+		QueryHandler:                engine.NewNoOpQueryHandler(ctx.Log),
+		ChitsHandler:                engine.NewNoOpChitsHandler(ctx.Log),
+		AppHandler:                  engine.NewNoOpAppHandler(ctx.Log),
+		InternalHandler:             engine.NewNoOpInternalHandler(ctx.Log),
 		ctx:                         ctx,
 	}
 }

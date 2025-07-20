@@ -72,7 +72,7 @@ type VM struct {
 	uptimeManager uptime.Manager
 
 	// The context of this vm
-	ctx *snow.Context
+	ctx *consensus.Context
 	db  database.Database
 
 	state state.State
@@ -95,13 +95,13 @@ type VM struct {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	_ []*common.Fx,
-	appSender common.AppSender,
+	_ []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	chainCtx.Log.Verbo("initializing platform chain")
 
@@ -368,14 +368,14 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return vm.state.Commit()
 }
 
-func (vm *VM) SetState(_ context.Context, state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	switch state {
-	case snow.Bootstrapping:
+	case consensus.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case snow.NormalOp:
+	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return snow.ErrUnknownState
+		return consensus.ErrUnknownState
 	}
 }
 

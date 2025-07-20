@@ -86,7 +86,7 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return 0, err
@@ -102,7 +102,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 		if duration <= 0 {
 			b.txExecutorBackend.Ctx.Log.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
-			return common.PendingTxs, nil
+			return engine.PendingTxs, nil
 		}
 
 		b.txExecutorBackend.Ctx.Log.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
@@ -618,7 +618,7 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx *snow.Context, txID ids.ID) (*txs.Tx, error) {
+func NewRewardValidatorTx(ctx *consensus.Context, txID ids.ID) (*txs.Tx, error) {
 	utx := &txs.RewardValidatorTx{TxID: txID}
 	tx, err := txs.NewSigned(utx, txs.Codec, nil)
 	if err != nil {

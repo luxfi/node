@@ -21,14 +21,14 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/luxfi/geth/common"
 )
 
 const (
@@ -63,7 +63,7 @@ type LUXState struct {
 	XCTX    *xbuilder.Context
 	CClient client.Client
 	CCTX    *c.Context
-	UTXOs   walletcommon.UTXOs
+	UTXOs   wallet.UTXOs
 }
 
 func FetchState(
@@ -94,7 +94,7 @@ func FetchState(
 		return nil, err
 	}
 
-	utxos := walletcommon.NewUTXOs()
+	utxos := wallet.NewUTXOs()
 	addrList := addrs.List()
 	chains := []struct {
 		id     ids.ID
@@ -151,7 +151,7 @@ func FetchPState(
 ) (
 	*platformvm.Client,
 	*pbuilder.Context,
-	walletcommon.UTXOs,
+	wallet.UTXOs,
 	error,
 ) {
 	infoClient := info.NewClient(uri)
@@ -162,7 +162,7 @@ func FetchPState(
 		return nil, nil, nil, err
 	}
 
-	utxos := walletcommon.NewUTXOs()
+	utxos := wallet.NewUTXOs()
 	addrList := addrs.List()
 	err = AddAllUTXOs(
 		ctx,
@@ -223,7 +223,7 @@ func FetchEthState(
 // expires, then the returned error will be immediately reported.
 func AddAllUTXOs(
 	ctx context.Context,
-	utxos walletcommon.UTXOs,
+	utxos wallet.UTXOs,
 	client UTXOClient,
 	codec codec.Manager,
 	sourceChainID ids.ID,

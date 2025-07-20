@@ -8,20 +8,19 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
-	ethereum "github.com/luxfi/geth"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/interfaces"
 )
 
 type NewHeadSubscriber interface {
-	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (ethereum.Subscription, error)
+	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (interfaces.Subscription, error)
 }
 
 type headNotifier struct {
 	client       NewHeadSubscriber
 	listenStop   chan<- struct{}
 	listenDone   <-chan struct{}
-	subscription ethereum.Subscription
+	subscription interfaces.Subscription
 
 	stopMutex sync.Mutex
 	stopped   bool

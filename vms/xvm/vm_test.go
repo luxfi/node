@@ -68,7 +68,7 @@ func TestInvalidFx(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*common.Fx{ // fxs
+		[]*engine.Fx{ // fxs
 			nil,
 		},
 		nil,
@@ -95,7 +95,7 @@ func TestFxInitializationFailure(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*common.Fx{{ // fxs
+		[]*engine.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -199,7 +199,7 @@ func TestIssueProperty(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},

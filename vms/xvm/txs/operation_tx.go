@@ -23,7 +23,7 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *snow.Context) {
+func (t *OperationTx) InitCtx(ctx *consensus.Context) {
 	for _, op := range t.Ops {
 		op.Op.InitCtx(ctx)
 	}

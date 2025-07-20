@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func TestApricotProposalBlockTimeVerification(t *testing.T) {
@@ -769,7 +769,7 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
+		walletengine.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{ids.ShortEmpty},
 		}),

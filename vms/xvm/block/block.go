@@ -14,7 +14,7 @@ import (
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	snow.ContextInitializable
+	consensus.ContextInitializable
 
 	ID() ids.ID
 	Parent() ids.ID

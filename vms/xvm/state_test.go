@@ -25,7 +25,7 @@ func TestSetsAndGets(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -85,7 +85,7 @@ func TestSetsAndGets(t *testing.T) {
 func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -115,7 +115,7 @@ func TestFundingAddresses(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet"
 )
 
 var (
@@ -44,7 +44,7 @@ type Builder interface {
 	// GetFTBalance calculates the amount of each fungible asset that this
 	// builder has control over.
 	GetFTBalance(
-		options ...common.Option,
+		options ...wallet.Option,
 	) (map[ids.ID]uint64, error)
 
 	// GetImportableBalance calculates the amount of each fungible asset that
@@ -53,7 +53,7 @@ type Builder interface {
 	// - [chainID] specifies the chain the funds are from.
 	GetImportableBalance(
 		chainID ids.ID,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (map[ids.ID]uint64, error)
 
 	// NewBaseTx creates a new simple value transfer.
@@ -62,7 +62,7 @@ type Builder interface {
 	//   from this transaction.
 	NewBaseTx(
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.BaseTx, error)
 
 	// NewCreateAssetTx creates a new asset.
@@ -79,7 +79,7 @@ type Builder interface {
 		symbol string,
 		denomination byte,
 		initialState map[uint32][]verify.State,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.CreateAssetTx, error)
 
 	// NewOperationTx performs state changes on the UTXO set. These state
@@ -88,7 +88,7 @@ type Builder interface {
 	// - [operations] specifies the state changes to perform.
 	NewOperationTx(
 		operations []*txs.Operation,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.OperationTx, error)
 
 	// NewOperationTxMintFT performs a set of state changes that mint new tokens
@@ -98,7 +98,7 @@ type Builder interface {
 	//   asset.
 	NewOperationTxMintFT(
 		outputs map[ids.ID]*secp256k1fx.TransferOutput,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.OperationTx, error)
 
 	// NewOperationTxMintNFT performs a state change that mints new NFTs for the
@@ -111,7 +111,7 @@ type Builder interface {
 		assetID ids.ID,
 		payload []byte,
 		owners []*secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.OperationTx, error)
 
 	// NewOperationTxMintProperty performs a state change that mints a new
@@ -122,7 +122,7 @@ type Builder interface {
 	NewOperationTxMintProperty(
 		assetID ids.ID,
 		owner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.OperationTx, error)
 
 	// NewOperationTxBurnProperty performs state changes that burns all the
@@ -131,7 +131,7 @@ type Builder interface {
 	// - [assetID] specifies the asset to burn the property of.
 	NewOperationTxBurnProperty(
 		assetID ids.ID,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.OperationTx, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
@@ -142,7 +142,7 @@ type Builder interface {
 	NewImportTx(
 		chainID ids.ID,
 		to *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.ImportTx, error)
 
 	// NewExportTx creates an export transaction that attempts to send all the
@@ -153,7 +153,7 @@ type Builder interface {
 	NewExportTx(
 		chainID ids.ID,
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.ExportTx, error)
 }
 
@@ -190,23 +190,23 @@ func (b *builder) Context() *Context {
 }
 
 func (b *builder) GetFTBalance(
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	return b.getBalance(b.context.BlockchainID, ops)
 }
 
 func (b *builder) GetImportableBalance(
 	chainID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	return b.getBalance(chainID, ops)
 }
 
 func (b *builder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.BaseTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.LUXAssetID: b.context.BaseTxFee,
@@ -220,7 +220,7 @@ func (b *builder) NewBaseTx(
 		toBurn[assetID] = amountToBurn
 	}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, changeOutputs, err := b.spend(toBurn, ops)
 	if err != nil {
 		return nil, err
@@ -243,12 +243,12 @@ func (b *builder) NewCreateAssetTx(
 	symbol string,
 	denomination byte,
 	initialState map[uint32][]verify.State,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.CreateAssetTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.LUXAssetID: b.context.CreateAssetTxFee,
 	}
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, outputs, err := b.spend(toBurn, ops)
 	if err != nil {
 		return nil, err
@@ -285,12 +285,12 @@ func (b *builder) NewCreateAssetTx(
 
 func (b *builder) NewOperationTx(
 	operations []*txs.Operation,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.OperationTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.LUXAssetID: b.context.BaseTxFee,
 	}
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, outputs, err := b.spend(toBurn, ops)
 	if err != nil {
 		return nil, err
@@ -312,9 +312,9 @@ func (b *builder) NewOperationTx(
 
 func (b *builder) NewOperationTxMintFT(
 	outputs map[ids.ID]*secp256k1fx.TransferOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.OperationTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	operations, err := b.mintFTs(outputs, ops)
 	if err != nil {
 		return nil, err
@@ -326,9 +326,9 @@ func (b *builder) NewOperationTxMintNFT(
 	assetID ids.ID,
 	payload []byte,
 	owners []*secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.OperationTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	operations, err := b.mintNFTs(assetID, payload, owners, ops)
 	if err != nil {
 		return nil, err
@@ -339,9 +339,9 @@ func (b *builder) NewOperationTxMintNFT(
 func (b *builder) NewOperationTxMintProperty(
 	assetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.OperationTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	operations, err := b.mintProperty(assetID, owner, ops)
 	if err != nil {
 		return nil, err
@@ -351,9 +351,9 @@ func (b *builder) NewOperationTxMintProperty(
 
 func (b *builder) NewOperationTxBurnProperty(
 	assetID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.OperationTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	operations, err := b.burnProperty(assetID, ops)
 	if err != nil {
 		return nil, err
@@ -364,9 +364,9 @@ func (b *builder) NewOperationTxBurnProperty(
 func (b *builder) NewImportTx(
 	chainID ids.ID,
 	to *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ImportTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	utxos, err := b.backend.UTXOs(ops.Context(), chainID)
 	if err != nil {
 		return nil, err
@@ -389,7 +389,7 @@ func (b *builder) NewImportTx(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -473,7 +473,7 @@ func (b *builder) NewImportTx(
 func (b *builder) NewExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ExportTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.LUXAssetID: b.context.BaseTxFee,
@@ -487,7 +487,7 @@ func (b *builder) NewExportTx(
 		toBurn[assetID] = amountToBurn
 	}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, changeOutputs, err := b.spend(toBurn, ops)
 	if err != nil {
 		return nil, err
@@ -510,7 +510,7 @@ func (b *builder) NewExportTx(
 
 func (b *builder) getBalance(
 	chainID ids.ID,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	balance map[ids.ID]uint64,
 	err error,
@@ -533,7 +533,7 @@ func (b *builder) getBalance(
 			continue
 		}
 
-		_, ok = common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		_, ok = wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -550,7 +550,7 @@ func (b *builder) getBalance(
 
 func (b *builder) spend(
 	amountsToBurn map[ids.ID]uint64,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	inputs []*lux.TransferableInput,
 	outputs []*lux.TransferableOutput,
@@ -591,7 +591,7 @@ func (b *builder) spend(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -646,7 +646,7 @@ func (b *builder) spend(
 
 func (b *builder) mintFTs(
 	outputs map[ids.ID]*secp256k1fx.TransferOutput,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	operations []*txs.Operation,
 	err error,
@@ -671,7 +671,7 @@ func (b *builder) mintFTs(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			continue
 		}
@@ -709,7 +709,7 @@ func (b *builder) mintNFTs(
 	assetID ids.ID,
 	payload []byte,
 	owners []*secp256k1fx.OutputOwners,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	operations []*txs.Operation,
 	err error,
@@ -733,7 +733,7 @@ func (b *builder) mintNFTs(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			continue
 		}
@@ -766,7 +766,7 @@ func (b *builder) mintNFTs(
 func (b *builder) mintProperty(
 	assetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	operations []*txs.Operation,
 	err error,
@@ -790,7 +790,7 @@ func (b *builder) mintProperty(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			continue
 		}
@@ -823,7 +823,7 @@ func (b *builder) mintProperty(
 
 func (b *builder) burnProperty(
 	assetID ids.ID,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	operations []*txs.Operation,
 	err error,
@@ -847,7 +847,7 @@ func (b *builder) burnProperty(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			continue
 		}

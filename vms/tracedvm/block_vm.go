@@ -96,13 +96,13 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	ctx, span := vm.tracer.Start(ctx, vm.initializeTag)
 	defer span.End()

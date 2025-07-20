@@ -65,7 +65,7 @@ type VM struct {
 	utxo.Spender
 
 	// Contains information of where this VM is executing
-	ctx *snow.Context
+	ctx *consensus.Context
 
 	// Used to check local time
 	clock mockable.Clock
@@ -76,7 +76,7 @@ type VM struct {
 
 	parser block.Parser
 
-	appSender common.AppSender
+	appSender engine.AppSender
 
 	// State management
 	state state.State
@@ -135,15 +135,15 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
-	noopMessageHandler := common.NewNoOpAppHandler(ctx.Log)
+	noopMessageHandler := engine.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	avmConfig, err := ParseConfig(configBytes)
@@ -261,14 +261,14 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	switch state {
-	case snow.Bootstrapping:
+	case consensus.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case snow.NormalOp:
+	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return snow.ErrUnknownState
+		return consensus.ErrUnknownState
 	}
 }
 
@@ -298,8 +298,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	rpcServer.RegisterCodec(codec, "application/json;charset=UTF-8")
 	rpcServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
 	rpcServer.RegisterAfterFunc(vm.metrics.AfterRequest)
-	// name this service "avm"
-	if err := rpcServer.RegisterService(&Service{vm: vm}, "avm"); err != nil {
+	// name this service "xvm"
+	if err := rpcServer.RegisterService(&Service{vm: vm}, "xvm"); err != nil {
 		return nil, err
 	}
 

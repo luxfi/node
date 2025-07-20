@@ -29,12 +29,12 @@ var _ Builder = (*builder)(nil)
 type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
-	WaitForEvent(ctx context.Context) (common.Message, error)
+	WaitForEvent(ctx context.Context) (engine.Message, error)
 	BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error)
 }
 
 type builder struct {
-	chainContext *snow.Context
+	chainContext *consensus.Context
 	chain        chain.Chain
 
 	preference ids.ID
@@ -43,7 +43,7 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *snow.Context, chain chain.Chain) Builder {
+func New(chainContext *consensus.Context, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,
@@ -72,7 +72,7 @@ func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
 	return nil
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	b.pendingTxsCond.L.Lock()
 	defer b.pendingTxsCond.L.Unlock()
 
@@ -82,7 +82,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 		}
 	}
 
-	return common.PendingTxs, nil
+	return engine.PendingTxs, nil
 }
 
 func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {

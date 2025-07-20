@@ -90,10 +90,10 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 
 	peerTracker.Connected(peer, version.CurrentApp)
 
-	var halter common.Halter
+	var halter engine.Halter
 
 	return Config{
-		Haltable:                       &common.Halter{},
+		Haltable:                       &engine.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
@@ -143,7 +143,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	require.NoError(err)
 
 	cfg := Config{
-		Haltable:                       &common.Halter{},
+		Haltable:                       &engine.Halter{},
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,
@@ -685,7 +685,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peerTracker.Connected(peer, version.CurrentApp)
 
 	config := Config{
-		Haltable:                       &common.Halter{},
+		Haltable:                       &engine.Halter{},
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,

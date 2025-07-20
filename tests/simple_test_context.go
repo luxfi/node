@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	primary "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"
@@ -104,7 +104,7 @@ func (tc *SimpleTestContext) DefaultContext() context.Context {
 }
 
 // Helper simplifying use via an option of a timed context configured with the default timeout.
-func (tc *SimpleTestContext) WithDefaultContext() common.Option {
+func (tc *SimpleTestContext) WithDefaultContext() primary.Option {
 	return WithDefaultContext(tc)
 }
 

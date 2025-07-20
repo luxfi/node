@@ -4,7 +4,6 @@
 package chain
 
 import (
-	"github.com/luxfi/node/consensus/factories"
 	"bytes"
 	"context"
 	"errors"
@@ -21,6 +20,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
@@ -131,10 +131,10 @@ func TestEngineDropsAttemptToIssueBlockAfterFailedRequest(t *testing.T) {
 	parent := chaintest.BuildChild(chaintest.Genesis)
 	child := chaintest.BuildChild(parent)
 
-	var request *common.Request
+	var request *engine.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(request)
-		request = &common.Request{
+		request = &engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -201,10 +201,10 @@ func TestEngineQuery(t *testing.T) {
 		}
 	}
 
-	var getRequest *common.Request
+	var getRequest *engine.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &common.Request{
+		getRequest = &engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -222,11 +222,11 @@ func TestEngineQuery(t *testing.T) {
 	require.True(getBlockCalled)
 	require.NotNil(getRequest)
 
-	var queryRequest *common.Request
+	var queryRequest *engine.Request
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blockID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &common.Request{
+		queryRequest = &engine.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -257,7 +257,7 @@ func TestEngineQuery(t *testing.T) {
 	getRequest = nil
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &common.Request{
+		getRequest = &engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -273,7 +273,7 @@ func TestEngineQuery(t *testing.T) {
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blockID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &common.Request{
+		queryRequest = &engine.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -608,7 +608,7 @@ func TestEngineBuildBlock(t *testing.T) {
 	vm.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return blk, nil
 	}
-	require.NoError(te.Notify(context.Background(), common.PendingTxs))
+	require.NoError(te.Notify(context.Background(), engine.PendingTxs))
 
 	require.True(*pushSent)
 }
@@ -1034,10 +1034,10 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		}
 	}
 
-	var getRequest *common.Request
+	var getRequest *engine.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &common.Request{
+		getRequest = &engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -1053,11 +1053,11 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		blockingBlk.Bytes(),
 	))
 
-	var queryRequest *common.Request
+	var queryRequest *engine.Request
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blkID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &common.Request{
+		queryRequest = &engine.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -1095,7 +1095,7 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blkID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &common.Request{
+		queryRequest = &engine.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -1642,12 +1642,12 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 		blkToReturn++
 		return blk, nil
 	}
-	require.NoError(te.Notify(context.Background(), common.PendingTxs))
+	require.NoError(te.Notify(context.Background(), engine.PendingTxs))
 
 	require.True(queried)
 
 	queried = false
-	require.NoError(te.Notify(context.Background(), common.PendingTxs))
+	require.NoError(te.Notify(context.Background(), engine.PendingTxs))
 
 	require.False(queried)
 
@@ -2142,7 +2142,7 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	}
 
 	// Should issue a new block and send a query for it.
-	require.NoError(te.Notify(context.Background(), common.PendingTxs))
+	require.NoError(te.Notify(context.Background(), engine.PendingTxs))
 	require.True(*sentQuery)
 }
 
@@ -2420,8 +2420,8 @@ func TestEngineVoteStallRegression(t *testing.T) {
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*common.Fx,
-				common.AppSender,
+				[]*engine.Fx,
+				engine.AppSender,
 			) error {
 				return nil
 			},
@@ -2511,11 +2511,11 @@ func TestEngineVoteStallRegression(t *testing.T) {
 
 	// Attempt to apply votes in poll 0 for block 3. This will send a Get
 	// request for block 3 and register the chits as a dependency on block 3.
-	var getBlock3Request *common.Request
+	var getBlock3Request *engine.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getBlock3Request)
 		require.Equal(nodeID2, nodeID)
-		getBlock3Request = &common.Request{
+		getBlock3Request = &engine.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -2644,8 +2644,8 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*common.Fx,
-				common.AppSender,
+				[]*engine.Fx,
+				engine.AppSender,
 			) error {
 				return nil
 			},
@@ -2794,8 +2794,8 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*common.Fx,
-				common.AppSender,
+				[]*engine.Fx,
+				engine.AppSender,
 			) error {
 				return nil
 			},

@@ -22,7 +22,7 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx *snow.Context) {
+func (t *CreateAssetTx) InitCtx(ctx *consensus.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}

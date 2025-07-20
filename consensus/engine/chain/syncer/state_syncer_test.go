@@ -1299,6 +1299,6 @@ func TestStateSyncIsDoneOnceVMNotifies(t *testing.T) {
 	}
 
 	// Any Put response before StateSyncDone is received from VM is dropped
-	require.NoError(syncer.Notify(context.Background(), common.StateSyncDone))
+	require.NoError(syncer.Notify(context.Background(), engine.StateSyncDone))
 	require.True(stateSyncFullyDone)
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/geth/plugin/evm/upgrade/acp176"
 	"github.com/luxfi/geth/plugin/evm/upgrade/cortina"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/luxfi/geth"
+	"github.com/luxfi/geth/accounts/abi"
+	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/params"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
@@ -115,12 +115,12 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 			zap.Uint64("gasLimit", gasLimit),
 		)
 
-		var contractAddress common.Address
+		var contractAddress geth.Address
 		tc.By("deploying an expensive contract", func() {
 			// Create transaction
 			nonce, err := ethClient.AcceptedNonceAt(tc.DefaultContext(), ethAddress)
 			require.NoError(err)
-			compiledContract := common.Hex2Bytes(consumeGasCompiledContract)
+			compiledContract := geth.Hex2Bytes(consumeGasCompiledContract)
 			tx := types.NewTx(&types.DynamicFeeTx{
 				ChainID:   cChainID,
 				Nonce:     nonce,

@@ -28,7 +28,7 @@ import (
 // outstanding when broadcasting.
 const maxOutstandingBroadcastRequests = 50
 
-var _ common.StateSyncer = (*stateSyncer)(nil)
+var _ engine.StateSyncer = (*stateSyncer)(nil)
 
 // summary content as received from network, along with accumulated weight.
 type weightedSummary struct {
@@ -40,13 +40,13 @@ type stateSyncer struct {
 	Config
 
 	// list of NoOpsHandler for messages dropped by state syncer
-	common.AcceptedFrontierHandler
-	common.AcceptedHandler
-	common.AncestorsHandler
-	common.PutHandler
-	common.QueryHandler
-	common.ChitsHandler
-	common.AppHandler
+	engine.AcceptedFrontierHandler
+	engine.AcceptedHandler
+	engine.AncestorsHandler
+	engine.PutHandler
+	engine.QueryHandler
+	engine.ChitsHandler
+	engine.AppHandler
 
 	started bool
 
@@ -93,16 +93,16 @@ type stateSyncer struct {
 func New(
 	cfg Config,
 	onDoneStateSyncing func(ctx context.Context, lastReqID uint32) error,
-) common.StateSyncer {
+) engine.StateSyncer {
 	ssVM, _ := cfg.VM.(block.StateSyncableVM)
 	return &stateSyncer{
 		Config:                  cfg,
-		AcceptedFrontierHandler: common.NewNoOpAcceptedFrontierHandler(cfg.Ctx.Log),
-		AcceptedHandler:         common.NewNoOpAcceptedHandler(cfg.Ctx.Log),
-		AncestorsHandler:        common.NewNoOpAncestorsHandler(cfg.Ctx.Log),
-		PutHandler:              common.NewNoOpPutHandler(cfg.Ctx.Log),
-		QueryHandler:            common.NewNoOpQueryHandler(cfg.Ctx.Log),
-		ChitsHandler:            common.NewNoOpChitsHandler(cfg.Ctx.Log),
+		AcceptedFrontierHandler: engine.NewNoOpAcceptedFrontierHandler(cfg.Ctx.Log),
+		AcceptedHandler:         engine.NewNoOpAcceptedHandler(cfg.Ctx.Log),
+		AncestorsHandler:        engine.NewNoOpAncestorsHandler(cfg.Ctx.Log),
+		PutHandler:              engine.NewNoOpPutHandler(cfg.Ctx.Log),
+		QueryHandler:            engine.NewNoOpQueryHandler(cfg.Ctx.Log),
+		ChitsHandler:            engine.NewNoOpChitsHandler(cfg.Ctx.Log),
 		AppHandler:              cfg.VM,
 		stateSyncVM:             ssVM,
 		onDoneStateSyncing:      onDoneStateSyncing,
@@ -539,7 +539,7 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 	return nil
 }
 
-// Ask up to [common.MaxOutstandingBroadcastRequests] state sync validators at a time
+// Ask up to [engine.MaxOutstandingBroadcastRequests] state sync validators at a time
 // to send their accepted state summary. It is called again until there are
 // no more seeders to be reached in the pending set
 func (ss *stateSyncer) sendGetStateSummaryFrontiers(ctx context.Context) {
@@ -555,7 +555,7 @@ func (ss *stateSyncer) sendGetStateSummaryFrontiers(ctx context.Context) {
 	}
 }
 
-// Ask up to [common.MaxOutstandingStateSyncRequests] syncers validators to send
+// Ask up to [engine.MaxOutstandingStateSyncRequests] syncers validators to send
 // their filtered accepted frontier. It is called again until there are
 // no more voters to be reached in the pending set.
 func (ss *stateSyncer) sendGetAcceptedStateSummaries(ctx context.Context) {
@@ -575,8 +575,8 @@ func (ss *stateSyncer) sendGetAcceptedStateSummaries(ctx context.Context) {
 	}
 }
 
-func (ss *stateSyncer) Notify(ctx context.Context, msg common.Message) error {
-	if msg != common.StateSyncDone {
+func (ss *stateSyncer) Notify(ctx context.Context, msg engine.Message) error {
+	if msg != engine.StateSyncDone {
 		ss.Ctx.Log.Info("received an unexpected message from the VM",
 			zap.Stringer("msg", msg),
 		)

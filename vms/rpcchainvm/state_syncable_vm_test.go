@@ -307,7 +307,7 @@ func TestStateSyncEnabled(t *testing.T) {
 
 	// test state sync not implemented
 	// Note that enabled == false is returned rather than
-	// common.ErrStateSyncableVMNotImplemented
+	// engine.ErrStateSyncableVMNotImplemented
 	enabled, err := vm.StateSyncEnabled(context.Background())
 	require.NoError(err)
 	require.False(enabled)
@@ -501,7 +501,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 
 	blkID, err = vm.LastAccepted(context.Background())
 	require.NoError(err)

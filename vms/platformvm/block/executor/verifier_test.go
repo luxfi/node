@@ -55,7 +55,7 @@ import (
 type testVerifierConfig struct {
 	DB                 database.Database
 	Upgrades           upgrade.Config
-	Context            *snow.Context
+	Context            *consensus.Context
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -475,7 +475,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -549,7 +549,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -611,7 +611,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -684,7 +684,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &snow.Context{
+				ctx: &consensus.Context{
 					Log: logging.NoLog{},
 				},
 			}
@@ -785,7 +785,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &snow.Context{
+				ctx: &consensus.Context{
 					Log: logging.NoLog{},
 				},
 			}
@@ -863,7 +863,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -921,7 +921,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -976,7 +976,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -1020,7 +1020,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -1063,7 +1063,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -1107,7 +1107,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},

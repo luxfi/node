@@ -7,7 +7,7 @@ import "github.com/luxfi/node/ids"
 
 const (
 	PlatformVMName = "platformvm"
-	AVMName        = "avm"
+	AVMName        = "xvm"
 	EVMName        = "evm"
 	SubnetEVMName  = "subnetevm"
 	XSVMName       = "xsvm"

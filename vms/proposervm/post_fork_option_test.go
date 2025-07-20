@@ -539,13 +539,13 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*snow.Context,
+		*consensus.Context,
 		database.Database,
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*common.Fx,
-		common.AppSender,
+		[]*engine.Fx,
+		engine.AppSender,
 	) error {
 		return nil
 	}

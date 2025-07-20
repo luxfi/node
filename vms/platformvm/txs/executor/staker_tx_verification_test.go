@@ -571,7 +571,7 @@ func TestGetValidatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &snow.Context{
+				Ctx: &consensus.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},
@@ -688,7 +688,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &snow.Context{
+				Ctx: &consensus.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},

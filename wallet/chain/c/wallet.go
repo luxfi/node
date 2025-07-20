@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 )
 
 var _ Wallet = (*wallet)(nil)
@@ -36,8 +36,8 @@ type Wallet interface {
 	// - [to] specifies where to send the imported funds to.
 	IssueImportTx(
 		chainID ids.ID,
-		to ethcommon.Address,
-		options ...common.Option,
+		to geth.Address,
+		options ...walletutil.Option,
 	) (*atomic.Tx, error)
 
 	// IssueExportTx creates, signs, and issues an export transaction that
@@ -48,19 +48,19 @@ type Wallet interface {
 	IssueExportTx(
 		chainID ids.ID,
 		outputs []*secp256k1fx.TransferOutput,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*atomic.Tx, error)
 
 	// IssueUnsignedAtomicTx signs and issues the unsigned tx.
 	IssueUnsignedAtomicTx(
 		utx atomic.UnsignedAtomicTx,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*atomic.Tx, error)
 
 	// IssueAtomicTx issues the signed tx.
 	IssueAtomicTx(
 		tx *atomic.Tx,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) error
 }
 
@@ -98,8 +98,8 @@ func (w *wallet) Signer() Signer {
 
 func (w *wallet) IssueImportTx(
 	chainID ids.ID,
-	to ethcommon.Address,
-	options ...common.Option,
+	to geth.Address,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	baseFee, err := w.baseFee(options)
 	if err != nil {
@@ -116,7 +116,7 @@ func (w *wallet) IssueImportTx(
 func (w *wallet) IssueExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	baseFee, err := w.baseFee(options)
 	if err != nil {
@@ -132,9 +132,9 @@ func (w *wallet) IssueExportTx(
 
 func (w *wallet) IssueUnsignedAtomicTx(
 	utx atomic.UnsignedAtomicTx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	ctx := ops.Context()
 	tx, err := SignUnsignedAtomic(ctx, w.signer, utx)
 	if err != nil {
@@ -146,9 +146,9 @@ func (w *wallet) IssueUnsignedAtomicTx(
 
 func (w *wallet) IssueAtomicTx(
 	tx *atomic.Tx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) error {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	ctx := ops.Context()
 	startTime := time.Now()
 	txID, err := w.luxClient.IssueTx(ctx, tx.SignedBytes())
@@ -158,7 +158,7 @@ func (w *wallet) IssueAtomicTx(
 
 	issuanceDuration := time.Since(startTime)
 	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
+		f(walletutil.IssuanceReceipt{
 			ChainAlias: Alias,
 			TxID:       txID,
 			Duration:   issuanceDuration,
@@ -177,7 +177,7 @@ func (w *wallet) IssueAtomicTx(
 		totalDuration := time.Since(startTime)
 		confirmationDuration := totalDuration - issuanceDuration
 
-		f(common.ConfirmationReceipt{
+		f(walletutil.ConfirmationReceipt{
 			ChainAlias:           Alias,
 			TxID:                 txID,
 			TotalDuration:        totalDuration,
@@ -188,8 +188,8 @@ func (w *wallet) IssueAtomicTx(
 	return w.Backend.AcceptAtomicTx(ctx, tx)
 }
 
-func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
-	ops := common.NewOptions(options)
+func (w *wallet) baseFee(options []walletutil.Option) (*big.Int, error) {
+	ops := walletutil.NewOptions(options)
 	baseFee := ops.BaseFee(nil)
 	if baseFee != nil {
 		return baseFee, nil

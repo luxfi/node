@@ -27,7 +27,7 @@ type External struct {
 
 	CantSend bool
 
-	SendF func(msg message.OutboundMessage, config common.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID]
+	SendF func(msg message.OutboundMessage, config engine.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID]
 }
 
 // Default set the default callable value to [cant]
@@ -37,7 +37,7 @@ func (s *External) Default(cant bool) {
 
 func (s *External) Send(
 	msg message.OutboundMessage,
-	config common.SendConfig,
+	config engine.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {

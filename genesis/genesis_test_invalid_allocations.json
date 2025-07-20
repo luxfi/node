@@ -1,0 +1,18 @@
+{
+  "networkID": 9999,
+  "allocations": [
+    {
+      "luxAddr": "X-invalid-address",
+      "ethAddr": "0xinvalid",
+      "initialAmount": -100,
+      "unlockSchedule": []
+    }
+  ],
+  "startTime": 1000000,
+  "initialStakeDuration": 31536000,
+  "initialStakeDurationOffset": 5400,
+  "initialStakedFunds": [],
+  "initialStakers": [],
+  "cChainGenesis": "{}",
+  "message": "invalid allocations test"
+}

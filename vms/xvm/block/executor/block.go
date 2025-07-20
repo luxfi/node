@@ -33,7 +33,7 @@ var (
 	ErrBlockNotFound               = errors.New("block not found")
 )
 
-// Exported for testing in avm package.
+// Exported for testing in xvm package.
 type Block struct {
 	block.Block
 	manager *manager

@@ -56,16 +56,16 @@ func (s signatureRequestVerifier) Verify(
 	_ context.Context,
 	unsignedMessage *warp.UnsignedMessage,
 	justification []byte,
-) *common.AppError {
+) *engine.AppError {
 	msg, err := payload.ParseAddressedCall(unsignedMessage.Payload)
 	if err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseWarpAddressedCall,
 			Message: "failed to parse warp addressed call: " + err.Error(),
 		}
 	}
 	if len(msg.SourceAddress) != 0 {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrWarpAddressedCallHasSourceAddress,
 			Message: "source address should be empty",
 		}
@@ -73,7 +73,7 @@ func (s signatureRequestVerifier) Verify(
 
 	payloadIntf, err := message.Parse(msg.Payload)
 	if err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseWarpAddressedCallPayload,
 			Message: "failed to parse warp addressed call payload: " + err.Error(),
 		}
@@ -87,7 +87,7 @@ func (s signatureRequestVerifier) Verify(
 	case *message.L1ValidatorWeight:
 		return s.verifyL1ValidatorWeight(payload)
 	default:
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrUnsupportedWarpAddressedCallPayloadType,
 			Message: fmt.Sprintf("unsupported warp addressed call payload type: %T", payloadIntf),
 		}
@@ -97,10 +97,10 @@ func (s signatureRequestVerifier) Verify(
 func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	msg *message.SubnetToL1Conversion,
 	justification []byte,
-) *common.AppError {
+) *engine.AppError {
 	subnetID, err := ids.ToID(justification)
 	if err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -111,20 +111,20 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 
 	conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
 
 	if msg.ID != conversion.ConversionID {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrMismatchedConversionID,
 			Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
 		}
@@ -136,14 +136,14 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	msg *message.L1ValidatorRegistration,
 	justificationBytes []byte,
-) *common.AppError {
+) *engine.AppError {
 	if msg.Registered {
 		return s.verifyL1ValidatorRegistered(msg.ValidationID)
 	}
 
 	var justification platformvm.L1ValidatorRegistrationJustification
 	if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -155,7 +155,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 		return s.verifySubnetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	default:
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrInvalidJustificationType,
 			Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
 		}
@@ -166,21 +166,21 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 // validator.
 func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	validationID ids.ID,
-) *common.AppError {
+) *engine.AppError {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
 	// Verify that the validator exists
 	_, err := s.state.GetL1Validator(validationID)
 	if err == database.ErrNotFound {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", validationID),
 		}
 	}
 	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	}
@@ -193,10 +193,10 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
 	justification *platformvm.SubnetIDIndex,
-) *common.AppError {
+) *engine.AppError {
 	subnetID, err := ids.ToID(justification.GetSubnetId())
 	if err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseSubnetID,
 			Message: "failed to parse subnetID: " + err.Error(),
 		}
@@ -204,7 +204,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 
 	justificationID := subnetID.Append(justification.GetIndex())
 	if validationID != justificationID {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -216,14 +216,14 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	// Verify that the provided subnetID has been converted.
 	_, err = s.state.GetSubnetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
@@ -231,14 +231,14 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	// Verify that the validator is not in the current state
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
 	}
@@ -253,10 +253,10 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 	validationID ids.ID,
 	justificationBytes []byte,
-) *common.AppError {
+) *engine.AppError {
 	justification, err := message.ParseRegisterL1Validator(justificationBytes)
 	if err != nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrFailedToParseRegisterL1Validator,
 			Message: "failed to parse RegisterL1Validator justification: " + err.Error(),
 		}
@@ -264,7 +264,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 
 	justificationID := justification.ValidationID()
 	if validationID != justificationID {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -276,14 +276,14 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 	// Verify that the validator does not currently exist
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
 	}
@@ -300,13 +300,13 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 		ValidationID: validationID,
 	})
 	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to lookup expiry: " + err.Error(),
 		}
 	}
 	if !hasExpiry {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrValidationCouldBeRegistered,
 			Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
 		}
@@ -317,9 +317,9 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 
 func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 	msg *message.L1ValidatorWeight,
-) *common.AppError {
+) *engine.AppError {
 	if msg.Nonce == math.MaxUint64 {
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrImpossibleNonce,
 			Message: "impossible nonce",
 		}
@@ -334,22 +334,22 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 		// If the peer is attempting to verify that the weight of the validator
 		// is 0, they should be requesting a [message.L1ValidatorRegistration]
 		// with Registered set to false.
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", msg.ValidationID),
 		}
 	case err != nil:
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+		return &engine.AppError{
+			Code:    engine.ErrUndefined.Code,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	case msg.Nonce+1 != l1Validator.MinNonce:
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrWrongNonce,
 			Message: fmt.Sprintf("provided nonce %d != expected nonce (%d - 1)", msg.Nonce, l1Validator.MinNonce),
 		}
 	case msg.Weight != l1Validator.Weight:
-		return &common.AppError{
+		return &engine.AppError{
 			Code:    ErrWrongWeight,
 			Message: fmt.Sprintf("provided weight %d != expected weight %d", msg.Weight, l1Validator.Weight),
 		}

@@ -85,8 +85,8 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) binaryvote.Parameters {
-	p := binaryvote.Parameters{
+func getConsensusConfig(v *viper.Viper) sampling.Parameters {
+	p := sampling.Parameters{
 		K:                     v.GetInt(SnowSampleSizeKey),
 		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
@@ -416,7 +416,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters binaryvote.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters sampling.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.

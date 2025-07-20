@@ -16,7 +16,7 @@ var _ txs.Visitor = (*txInit)(nil)
 // txInit initializes FxID where required
 type txInit struct {
 	tx            *txs.Tx
-	ctx           *snow.Context
+	ctx           *consensus.Context
 	typeToFxIndex map[reflect.Type]int
 	fxs           []*fxs.ParsedFx
 }

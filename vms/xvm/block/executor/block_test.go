@@ -940,7 +940,7 @@ func TestBlockReject(t *testing.T) {
 func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *executor.Backend {
 	return &executor.Backend{
 		Bootstrapped: bootstrapped,
-		Ctx: &snow.Context{
+		Ctx: &consensus.Context{
 			SharedMemory: sharedMemory,
 			Log:          logging.NoLog{},
 		},

@@ -45,7 +45,7 @@ import (
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const (
@@ -635,7 +635,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	defer ctx.Lock.Unlock()
 	appSender := &enginetest.Sender{}
 	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	appSender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
 		return nil
 	}
 
@@ -658,7 +658,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	err = vm.SetState(context.Background(), snow.NormalOp)
+	err = vm.SetState(context.Background(), consensus.NormalOp)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
@@ -673,7 +673,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	}
 	testSubnet1, err = wallet.IssueCreateSubnetTx(
 		owner,
-		walletcommon.WithChangeOwner(owner),
+		walletengine.WithChangeOwner(owner),
 	)
 	if err != nil {
 		return nil, ids.Empty, err

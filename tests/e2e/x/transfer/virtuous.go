@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (
@@ -145,7 +144,7 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 
 					wallets[i] = primary.NewWalletWithOptions(
 						baseWallet,
-						common.WithCustomAddresses(set.Of(
+						primary.WithCustomAddresses(set.Of(
 							testKeys[i].PublicKey().Address(),
 						)),
 					)
@@ -272,13 +271,13 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 
 				txID := tx.ID()
 				for _, u := range rpcEps {
-					xc := avm.NewClient(u, "X")
-					require.NoError(avm.AwaitTxAccepted(xc, tc.DefaultContext(), txID, 2*time.Second))
+					xc := xvm.NewClient(u, "X")
+					require.NoError(xvm.AwaitTxAccepted(xc, tc.DefaultContext(), txID, 2*time.Second))
 				}
 
 				for _, u := range rpcEps {
-					xc := avm.NewClient(u, "X")
-					require.NoError(avm.AwaitTxAccepted(xc, tc.DefaultContext(), txID, 2*time.Second))
+					xc := xvm.NewClient(u, "X")
+					require.NoError(xvm.AwaitTxAccepted(xc, tc.DefaultContext(), txID, 2*time.Second))
 
 					mm, err := tests.GetNodeMetrics(tc.DefaultContext(), u)
 					require.NoError(err)

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package common
+package wallet
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond
@@ -50,7 +50,7 @@ type Options struct {
 	customAddresses    set.Set[ids.ShortID]
 
 	customEthAddressesSet bool
-	customEthAddresses    set.Set[ethcommon.Address]
+	customEthAddresses    set.Set[geth.Address]
 
 	baseFee *big.Int
 
@@ -106,7 +106,7 @@ func (o *Options) Addresses(defaultAddresses set.Set[ids.ShortID]) set.Set[ids.S
 	return defaultAddresses
 }
 
-func (o *Options) EthAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
+func (o *Options) EthAddresses(defaultAddresses set.Set[geth.Address]) set.Set[geth.Address] {
 	if o.customEthAddressesSet {
 		return o.customEthAddresses
 	}
@@ -174,7 +174,7 @@ func WithCustomAddresses(addrs set.Set[ids.ShortID]) Option {
 	}
 }
 
-func WithCustomEthAddresses(addrs set.Set[ethcommon.Address]) Option {
+func WithCustomEthAddresses(addrs set.Set[geth.Address]) Option {
 	return func(o *Options) {
 		o.customEthAddressesSet = true
 		o.customEthAddresses = addrs

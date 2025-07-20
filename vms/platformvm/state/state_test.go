@@ -63,7 +63,7 @@ func newTestState(t testing.TB, db database.Database) *state {
 		validators.NewManager(),
 		upgradetest.GetConfig(upgradetest.Latest),
 		&config.Default,
-		&snow.Context{
+		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
 			Log:       logging.NoLog{},

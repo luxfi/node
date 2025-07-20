@@ -69,7 +69,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -100,7 +100,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -141,7 +141,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -183,7 +183,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -226,7 +226,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -315,7 +315,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -385,7 +385,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -457,7 +457,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &snow.Context{
+						Ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -505,7 +505,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx: &snow.Context{
+		Ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 		Codec: parser.Codec(),

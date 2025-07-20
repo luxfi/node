@@ -127,7 +127,7 @@ func (tx *Tx) InputIDs() set.Set[ids.ID] {
 	return tx.Unsigned.InputIDs()
 }
 
-func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *Tx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx

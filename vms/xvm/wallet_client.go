@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/utils/rpc"
 )
 
-// WalletClient for interacting with avm managed wallet.
+// WalletClient for interacting with xvm managed wallet.
 //
 // Deprecated: Transactions should be issued using the
 // `luxd/wallet/chain/x.Wallet` utility.
@@ -22,7 +22,7 @@ type WalletClient struct {
 	Requester rpc.EndpointRequester
 }
 
-// NewWalletClient returns an AVM wallet client for interacting with avm managed
+// NewWalletClient returns an AVM wallet client for interacting with xvm managed
 // wallet
 //
 // Deprecated: Transactions should be issued using the

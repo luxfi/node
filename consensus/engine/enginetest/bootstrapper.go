@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	_ common.BootstrapableEngine = (*Bootstrapper)(nil)
+	_ engine.BootstrapableEngine = (*Bootstrapper)(nil)
 
 	errClear = errors.New("unexpectedly called Clear")
 )

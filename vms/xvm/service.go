@@ -53,7 +53,7 @@ type Service struct{ vm *VM }
 // GetBlock returns the requested block.
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.GetBlockResponse) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getBlock"),
 		zap.Stringer("blkID", args.BlockID),
 		zap.Stringer("encoding", args.Encoding),
@@ -100,7 +100,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, reply *api.GetBlockResponse) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getBlockByHeight"),
 		zap.Uint64("height", uint64(args.Height)),
 	)
@@ -155,7 +155,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 // GetHeight returns the height of the last accepted block.
 func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getHeight"),
 	)
 
@@ -183,7 +183,7 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 // IssueTx attempts to issue a transaction into consensus
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "issueTx"),
 		logging.UserString("tx", args.Tx),
 	)
@@ -216,7 +216,7 @@ type GetTxStatusReply struct {
 // used instead to determine if the tx was accepted.
 func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
 	s.vm.ctx.Log.Debug("deprecated API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getTxStatus"),
 		zap.Stringer("txID", args.TxID),
 	)
@@ -243,7 +243,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 // GetTx returns the specified transaction
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getTx"),
 		zap.Stringer("txID", args.TxID),
 	)
@@ -284,7 +284,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 // GetUTXOs gets all utxos for passed in addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getUTXOs"),
 		logging.UserStrings("addresses", args.Addresses),
 	)
@@ -402,7 +402,7 @@ type GetAssetDescriptionReply struct {
 // GetAssetDescription creates an empty account with the name passed in
 func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescriptionArgs, reply *GetAssetDescriptionReply) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getAssetDescription"),
 		logging.UserString("assetID", args.AssetID),
 	)
@@ -452,7 +452,7 @@ type GetBalanceReply struct {
 // address, and includes balances with locktime in the future.
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
 	s.vm.ctx.Log.Debug("deprecated API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getBalance"),
 		logging.UserString("address", args.Address),
 		logging.UserString("assetID", args.AssetID),
@@ -529,7 +529,7 @@ type GetAllBalancesReply struct {
 // address, and includes balances with locktime in the future.
 func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
 	s.vm.ctx.Log.Debug("deprecated API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getAllBalances"),
 		logging.UserString("address", args.Address),
 	)
@@ -593,7 +593,7 @@ type GetTxFeeReply struct {
 
 func (s *Service) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeReply) error {
 	s.vm.ctx.Log.Debug("API called",
-		zap.String("service", "avm"),
+		zap.String("service", "xvm"),
 		zap.String("method", "getTxFee"),
 	)
 

@@ -82,7 +82,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
@@ -392,7 +392,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 			Registerer:        prometheus.NewRegistry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},

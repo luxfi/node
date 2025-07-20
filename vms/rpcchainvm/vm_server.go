@@ -77,7 +77,7 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    *snow.Context
+	ctx    *consensus.Context
 	closed chan struct{}
 }
 
@@ -217,7 +217,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.closed = make(chan struct{})
 
-	vm.ctx = &snow.Context{
+	vm.ctx = &consensus.Context{
 		NetworkID:       req.NetworkId,
 		SubnetID:        subnetID,
 		ChainID:         chainID,
@@ -281,7 +281,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 }
 
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
-	err := vm.vm.SetState(ctx, snow.State(stateReq.State))
+	err := vm.vm.SetState(ctx, consensus.State(stateReq.State))
 	if err != nil {
 		return nil, err
 	}
@@ -554,7 +554,7 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		return nil, err
 	}
 
-	appErr := &common.AppError{
+	appErr := &engine.AppError{
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}

@@ -66,7 +66,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *snow.Context
+	ctx            *consensus.Context
 	msm            *mutableSharedMemory
 	state          state.State
 	states         map[ids.ID]state.Chain

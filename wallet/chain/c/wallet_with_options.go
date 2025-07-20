@@ -8,16 +8,16 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 )
 
 var _ Wallet = (*walletWithOptions)(nil)
 
 func NewWalletWithOptions(
 	wallet Wallet,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) Wallet {
 	return &walletWithOptions{
 		Wallet:  wallet,
@@ -27,7 +27,7 @@ func NewWalletWithOptions(
 
 type walletWithOptions struct {
 	Wallet
-	options []common.Option
+	options []walletutil.Option
 }
 
 func (w *walletWithOptions) Builder() Builder {
@@ -39,44 +39,44 @@ func (w *walletWithOptions) Builder() Builder {
 
 func (w *walletWithOptions) IssueImportTx(
 	chainID ids.ID,
-	to ethcommon.Address,
-	options ...common.Option,
+	to geth.Address,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	return w.Wallet.IssueImportTx(
 		chainID,
 		to,
-		common.UnionOptions(w.options, options)...,
+		walletutil.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *walletWithOptions) IssueExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	return w.Wallet.IssueExportTx(
 		chainID,
 		outputs,
-		common.UnionOptions(w.options, options)...,
+		walletutil.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *walletWithOptions) IssueUnsignedAtomicTx(
 	utx atomic.UnsignedAtomicTx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	return w.Wallet.IssueUnsignedAtomicTx(
 		utx,
-		common.UnionOptions(w.options, options)...,
+		walletutil.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *walletWithOptions) IssueAtomicTx(
 	tx *atomic.Tx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) error {
 	return w.Wallet.IssueAtomicTx(
 		tx,
-		common.UnionOptions(w.options, options)...,
+		walletutil.UnionOptions(w.options, options)...,
 	)
 }

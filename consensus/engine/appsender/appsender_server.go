@@ -19,11 +19,11 @@ var _ appsenderpb.AppSenderServer = (*Server)(nil)
 
 type Server struct {
 	appsenderpb.UnsafeAppSenderServer
-	appSender common.AppSender
+	appSender engine.AppSender
 }
 
 // NewServer returns a messenger connected to a remote channel
-func NewServer(appSender common.AppSender) *Server {
+func NewServer(appSender engine.AppSender) *Server {
 	return &Server{appSender: appSender}
 }
 
@@ -70,7 +70,7 @@ func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGoss
 	}
 	err := s.appSender.SendAppGossip(
 		ctx,
-		common.SendConfig{
+		engine.SendConfig{
 			NodeIDs:       nodeIDs,
 			Validators:    int(req.Validators),
 			NonValidators: int(req.NonValidators),

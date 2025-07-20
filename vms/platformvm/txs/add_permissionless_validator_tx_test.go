@@ -138,7 +138,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&snow.Context{
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -437,7 +437,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(&snow.Context{
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -824,7 +824,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(&snow.Context{
+	require.NoError(simpleAddSubnetTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1124,7 +1124,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddSubnetTx.SyntacticVerify(&snow.Context{
+	require.NoError(complexAddSubnetTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1381,7 +1381,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &snow.Context{
+	ctx := &consensus.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

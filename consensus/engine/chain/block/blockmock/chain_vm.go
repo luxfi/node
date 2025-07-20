@@ -19,7 +19,7 @@ import (
 	ids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	chain "github.com/luxfi/node/consensus/chain"
-	common "github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -77,7 +77,7 @@ func (mr *ChainVMMockRecorder) AppRequest(ctx, nodeID, requestID, deadline, requ
 }
 
 // AppRequestFailed mocks base method.
-func (m *ChainVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (m *ChainVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AppRequestFailed", ctx, nodeID, requestID, appErr)
 	ret0, _ := ret[0].(error)
@@ -208,7 +208,7 @@ func (mr *ChainVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *ChainVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error {
+func (m *ChainVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*engine.Fx, appSender engine.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)
@@ -324,10 +324,10 @@ func (mr *ChainVMMockRecorder) Version(arg0 any) *gomock.Call {
 }
 
 // WaitForEvent mocks base method.
-func (m *ChainVM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (m *ChainVM) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForEvent", ctx)
-	ret0, _ := ret[0].(common.Message)
+	ret0, _ := ret[0].(engine.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

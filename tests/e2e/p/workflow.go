@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations
@@ -67,7 +67,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			// Ensure the change is returned to the pre-funded key
 			// TODO(marun) Remove when the wallet does this automatically
-			changeOwner = common.WithChangeOwner(&secp256k1fx.OutputOwners{
+			changeOwner = primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs: []ids.ShortID{
 					keychain.Keys[0].Address(),

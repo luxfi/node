@@ -28,7 +28,6 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/state"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
@@ -71,6 +70,7 @@ import (
 	smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
 	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/factories"
 )
 
 const (
@@ -86,8 +86,10 @@ const (
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
 	chainNamespace        = constants.PlatformName + metric.NamespaceSeparator + "chain"
+	snowmanNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
+
 
 var (
 	// Commonly shared VM DB prefix
@@ -169,8 +171,8 @@ type ChainParameters struct {
 
 type chain struct {
 	Name    string
-	Context *snow.ConsensusContext
-	VM      common.VM
+	Context *consensus.Context
+	VM      engine.VM
 	Handler handler.Handler
 }
 
@@ -193,9 +195,9 @@ type ManagerConfig struct {
 	Log                       logging.Logger
 	LogFactory                logging.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
-	BlockAcceptorGroup        snow.AcceptorGroup
-	TxAcceptorGroup           snow.AcceptorGroup
-	VertexAcceptorGroup       snow.AcceptorGroup
+	BlockAcceptorGroup        consensus.AcceptorGroup
+	TxAcceptorGroup           consensus.AcceptorGroup
+	VertexAcceptorGroup       consensus.AcceptorGroup
 	DB                        database.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
 	Router                    router.Router              // Routes incoming messages to the appropriate chain
@@ -316,6 +318,11 @@ func New(config *ManagerConfig) (Manager, error) {
 
 	chainGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(chainNamespace, chainGatherer); err != nil {
+		return nil, err
+	}
+
+	snowmanGatherer := metrics.NewLabelGatherer(ChainLabel)
+	if err := config.Metrics.Register(snowmanNamespace, snowmanGatherer); err != nil {
 		return nil, err
 	}
 
@@ -490,29 +497,27 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, fmt.Errorf("error while creating chain's log %w", err)
 	}
 
-	ctx := &snow.ConsensusContext{
-		Context: &snow.Context{
-			NetworkID:       m.NetworkID,
-			SubnetID:        chainParams.SubnetID,
-			ChainID:         chainParams.ID,
-			NodeID:          m.NodeID,
-			PublicKey:       m.StakingBLSKey.PublicKey(),
-			NetworkUpgrades: m.Upgrades,
+	ctx := &consensus.Context{
+		NetworkID:       m.NetworkID,
+		SubnetID:        chainParams.SubnetID,
+		ChainID:         chainParams.ID,
+		NodeID:          m.NodeID,
+		PublicKey:       m.StakingBLSKey.PublicKey(),
+		NetworkUpgrades: m.Upgrades,
 
-			XChainID:    m.XChainID,
-			CChainID:    m.CChainID,
-			LUXAssetID: m.LUXAssetID,
+		XChainID:    m.XChainID,
+		CChainID:    m.CChainID,
+		LUXAssetID: m.LUXAssetID,
 
-			Log:          chainLog,
-			SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
-			BCLookup:     m,
-			Metrics:      metrics.NewPrefixGatherer(),
+		Log:          chainLog,
+		SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
+		BCLookup:     m,
+		Metrics:      metrics.NewPrefixGatherer(),
 
-			WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
+		WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
 
-			ValidatorState: m.validatorState,
-			ChainDataDir:   chainDataDir,
-		},
+		ValidatorState: m.validatorState,
+		ChainDataDir:   chainDataDir,
 		PrimaryAlias:   primaryAlias,
 		Registerer:     prometheus.NewRegistry(),
 		BlockAcceptor:  m.BlockAcceptorGroup,
@@ -533,14 +538,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 	// TODO: Shutdown VM if an error occurs
 
-	chainFxs := make([]*common.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*engine.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &common.Fx{
+		chainFxs[i] = &engine.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -604,19 +609,19 @@ func (m *manager) AddRegistrant(r Registrant) {
 
 // Create a DAG-based blockchain that uses Lux
 func (m *manager) createLuxChain(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*common.Fx,
+	fxs []*engine.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
-		State: snow.Initializing,
+		State: consensus.Initializing,
 	})
 
 	primaryAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
@@ -683,7 +688,7 @@ func (m *manager) createLuxChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		sb,
 		ctx.Registerer,
 	)
@@ -733,7 +738,7 @@ func (m *manager) createLuxChain(
 	// snowmanMessageSender here.
 	err = dagVM.Initialize(
 		context.TODO(),
-		ctx.Context,
+		ctx,
 		vmDB,
 		genesisData,
 		chainConfig.Upgrade,
@@ -820,7 +825,7 @@ func (m *manager) createLuxChain(
 		vmToInitialize:   vmWrappingProposerVM,
 		vmToLinearize:    untracedVMWrappedInsideProposerVM,
 
-		ctx:          ctx.Context,
+		ctx:          ctx,
 		db:           vmDB,
 		genesisBytes: genesisData,
 		upgradeBytes: chainConfig.Upgrade,
@@ -881,7 +886,7 @@ func (m *manager) createLuxChain(
 		return nil, err
 	}
 
-	var halter common.Halter
+	var halter engine.Halter
 
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
@@ -918,7 +923,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: binaryvote.SnowflakeFactory}
+	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
 	if m.TracingEnabled {
 		snowmanConsensus = smcon.Trace(snowmanConsensus, m.Tracer)
 	}
@@ -935,14 +940,14 @@ func (m *manager) createLuxChain(
 		Params:              consensusParams,
 		Consensus:           snowmanConsensus,
 	}
-	var snowmanEngine common.Engine
+	var snowmanEngine engine.Engine
 	snowmanEngine, err = smeng.New(snowmanEngineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		snowmanEngine = common.TraceEngine(snowmanEngine, m.Tracer)
+		snowmanEngine = engine.TraceEngine(snowmanEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -961,7 +966,7 @@ func (m *manager) createLuxChain(
 		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
 	}
-	var snowmanBootstrapper common.BootstrapableEngine
+	var snowmanBootstrapper engine.BootstrapableEngine
 	snowmanBootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
 		snowmanEngine.Start,
@@ -971,7 +976,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		snowmanBootstrapper = common.TraceBootstrapableEngine(snowmanBootstrapper, m.Tracer)
+		snowmanBootstrapper = engine.TraceBootstrapableEngine(snowmanBootstrapper, m.Tracer)
 	}
 
 	avaGetHandler, err := avagetter.New(
@@ -989,7 +994,7 @@ func (m *manager) createLuxChain(
 	// create engine gear
 	luxEngine := aveng.New(ctx, avaGetHandler)
 	if m.TracingEnabled {
-		luxEngine = common.TraceEngine(luxEngine, m.Tracer)
+		luxEngine = engine.TraceEngine(luxEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1010,7 +1015,7 @@ func (m *manager) createLuxChain(
 		luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
 	}
 
-	var luxBootstrapper common.BootstrapableEngine
+	var luxBootstrapper engine.BootstrapableEngine
 	luxBootstrapper, err = avbootstrap.New(
 		luxBootstrapperConfig,
 		snowmanBootstrapper.Start,
@@ -1021,16 +1026,16 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		luxBootstrapper = common.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
+		luxBootstrapper = engine.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: &handler.Engine{
+		Dag: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: luxBootstrapper,
 			Consensus:    luxEngine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: snowmanBootstrapper,
 			Consensus:    snowmanEngine,
@@ -1052,20 +1057,20 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Snowman consensus engine
 func (m *manager) createSnowmanChain(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
-	fxs []*common.Fx,
+	fxs []*engine.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Initializing,
+	ctx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: consensus.Initializing,
 	})
 
 	primaryAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
@@ -1093,7 +1098,7 @@ func (m *manager) createSnowmanChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		sb,
 		ctx.Registerer,
 	)
@@ -1211,7 +1216,7 @@ func (m *manager) createSnowmanChain(
 
 	if err := vm.Initialize(
 		context.TODO(),
-		ctx.Context,
+		ctx,
 		vmDB,
 		genesisData,
 		chainConfig.Upgrade,
@@ -1274,7 +1279,7 @@ func (m *manager) createSnowmanChain(
 		return nil, err
 	}
 
-	var halter common.Halter
+	var halter engine.Halter
 
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
@@ -1311,7 +1316,7 @@ func (m *manager) createSnowmanChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{Factory: binaryvote.SnowflakeFactory}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}
@@ -1329,14 +1334,14 @@ func (m *manager) createSnowmanChain(
 		Consensus:           consensus,
 		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
 	}
-	var engine common.Engine
-	engine, err = smeng.New(engineConfig)
+	var snowmanEngine engine.Engine
+	snowmanEngine, err = smeng.New(engineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		engine = common.TraceEngine(engine, m.Tracer)
+		snowmanEngine = engine.TraceEngine(snowmanEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1356,17 +1361,17 @@ func (m *manager) createSnowmanChain(
 		VM:                             vm,
 		Bootstrapped:                   bootstrapFunc,
 	}
-	var bootstrapper common.BootstrapableEngine
+	var bootstrapper engine.BootstrapableEngine
 	bootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
-		engine.Start,
+		snowmanEngine.Start,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing snowman bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
-		bootstrapper = common.TraceBootstrapableEngine(bootstrapper, m.Tracer)
+		bootstrapper = engine.TraceBootstrapableEngine(bootstrapper, m.Tracer)
 	}
 
 	// create state sync gear
@@ -1390,15 +1395,15 @@ func (m *manager) createSnowmanChain(
 	)
 
 	if m.TracingEnabled {
-		stateSyncer = common.TraceStateSyncer(stateSyncer, m.Tracer)
+		stateSyncer = engine.TraceStateSyncer(stateSyncer, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: nil,
-		Snowman: &handler.Engine{
+		Dag: nil,
+		Chain: &handler.Engine{
 			StateSyncer:  stateSyncer,
 			Bootstrapper: bootstrapper,
-			Consensus:    engine,
+			Consensus:    snowmanEngine,
 		},
 	})
 
@@ -1423,7 +1428,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	return chain.Context().State.Get().State == snow.NormalOp
+	return chain.Context().State.Get().State == consensus.NormalOp
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {
@@ -1525,7 +1530,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm common.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensus.Context, vm engine.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

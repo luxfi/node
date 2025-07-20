@@ -88,7 +88,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *snow.Context
+	ctx            *consensus.Context
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState

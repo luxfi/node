@@ -24,16 +24,16 @@ import (
 )
 
 // Get requests are always served, regardless node state (bootstrapping or normal operations).
-var _ common.AllGetsServer = (*getter)(nil)
+var _ engine.AllGetsServer = (*getter)(nil)
 
 func New(
 	storage vertex.Storage,
-	sender common.Sender,
+	sender engine.Sender,
 	log logging.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
 	reg prometheus.Registerer,
-) (common.AllGetsServer, error) {
+) (engine.AllGetsServer, error) {
 	gh := &getter{
 		storage:                   storage,
 		sender:                    sender,
@@ -53,7 +53,7 @@ func New(
 
 type getter struct {
 	storage                   vertex.Storage
-	sender                    common.Sender
+	sender                    engine.Sender
 	log                       logging.Logger
 	maxTimeGetAncestors       time.Duration
 	maxContainersGetAncestors int

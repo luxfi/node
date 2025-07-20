@@ -322,6 +322,6 @@ func TestWaitForEventWithTx(t *testing.T) {
 
 	msg, err := m.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(common.PendingTxs, msg)
+	require.Equal(engine.PendingTxs, msg)
 	require.NoError(<-errs)
 }

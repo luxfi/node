@@ -214,7 +214,7 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.GetAncestorsFailedF = failed
 	bootstrapper.GetFailedF = failed
 	bootstrapper.QueryFailedF = failed
-	bootstrapper.AppRequestFailedF = func(ctx context.Context, nodeID ids.NodeID, _ uint32, _ *common.AppError) error {
+	bootstrapper.AppRequestFailedF = func(ctx context.Context, nodeID ids.NodeID, _ uint32, _ *engine.AppError) error {
 		require.NoError(ctx.Err())
 
 		failedLock.Lock()
@@ -292,13 +292,13 @@ func TestTimeout(t *testing.T) {
 	}
 
 	// Send messages to disconnected peers
-	externalSender.SendF = func(message.OutboundMessage, common.SendConfig, ids.ID, subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(message.OutboundMessage, engine.SendConfig, ids.ID, subnets.Allower) set.Set[ids.NodeID] {
 		return nil
 	}
 	sendAll()
 
 	// Send messages to connected peers
-	externalSender.SendF = func(_ message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(_ message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		return config.NodeIDs
 	}
 	sendAll()
@@ -649,7 +649,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender)
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
+		sendF                   func(require *require.Assertions, sender engine.Sender, nodeIDs set.Set[ids.NodeID])
 	}
 
 	tests := []test{
@@ -680,7 +680,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -688,7 +688,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetStateSummaryFrontier(
 					context.Background(),
 					nodeIDs,
@@ -725,7 +725,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -733,7 +733,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, heights)
 			},
 		},
@@ -764,7 +764,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -772,7 +772,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
 			},
 		},
@@ -804,7 +804,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -812,7 +812,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAccepted(context.Background(), nodeIDs, requestID, containerIDs)
 			},
 		},
@@ -902,7 +902,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender)
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
+		sendF                   func(require *require.Assertions, sender engine.Sender, nodeID ids.NodeID)
 	}
 
 	tests := []test{
@@ -925,14 +925,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendStateSummaryFrontier(context.Background(), nodeID, requestID, summary)
 			},
 		},
@@ -957,14 +957,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendAcceptedStateSummary(context.Background(), nodeID, requestID, summaryIDs)
 			},
 		},
@@ -987,14 +987,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendAcceptedFrontier(context.Background(), nodeID, requestID, summaryIDs[0])
 			},
 		},
@@ -1019,14 +1019,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendAccepted(context.Background(), nodeID, requestID, summaryIDs)
 			},
 		},
@@ -1102,7 +1102,7 @@ func TestSender_Single_Request(t *testing.T) {
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID])
-		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
+		sendF                   func(require *require.Assertions, sender engine.Sender, nodeID ids.NodeID)
 		expectedEngineType      p2ppb.EngineType
 	}
 
@@ -1138,14 +1138,14 @@ func TestSender_Single_Request(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID,
 					gomock.Any(),
 				).Return(sentTo)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendGetAncestors(context.Background(), nodeID, requestID, containerID)
 			},
 			expectedEngineType: engineType,
@@ -1178,14 +1178,14 @@ func TestSender_Single_Request(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					common.SendConfig{
+					engine.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID,
 					gomock.Any(),
 				).Return(sentTo)
 			},
-			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender engine.Sender, nodeID ids.NodeID) {
 				sender.SendGet(context.Background(), nodeID, requestID, containerID)
 			},
 		},
@@ -1313,7 +1313,7 @@ func TestSender_Single_Request(t *testing.T) {
 	}
 }
 
-func noopSubscription(ctx context.Context) (common.Message, error) {
+func noopSubscription(ctx context.Context) (engine.Message, error) {
 	<-ctx.Done()
-	return common.Message(0), ctx.Err()
+	return engine.Message(0), ctx.Err()
 }

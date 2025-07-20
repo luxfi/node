@@ -17,7 +17,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
-	toEngine        chan<- common.Message
+	toEngine        chan<- engine.Message
 	addTxsToMempool bool
 }
 
@@ -89,7 +89,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- common.PendingTxs:
+	case r.toEngine <- engine.PendingTxs:
 	default:
 	}
 

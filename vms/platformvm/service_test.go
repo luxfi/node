@@ -50,7 +50,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 
 	avajson "github.com/luxfi/node/utils/json"
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
@@ -97,7 +97,7 @@ func TestGetProposedHeight(t *testing.T) {
 		constants.AVMID,
 		[]ids.ID{},
 		"chain name",
-		common.WithMemo([]byte{}),
+		engine.WithMemo([]byte{}),
 	)
 	require.NoError(err)
 
@@ -251,7 +251,7 @@ func TestGetTx(t *testing.T) {
 					constants.AVMID,
 					[]ids.ID{},
 					"chain name",
-					common.WithMemo([]byte{}),
+					engine.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -286,7 +286,7 @@ func TestGetTx(t *testing.T) {
 					rewardsOwner,
 					rewardsOwner,
 					0,
-					common.WithMemo([]byte{}),
+					engine.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -310,7 +310,7 @@ func TestGetTx(t *testing.T) {
 							},
 						},
 					}},
-					common.WithMemo([]byte{}),
+					engine.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -523,7 +523,7 @@ func TestGetStake(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
-	withChangeOwner := common.WithChangeOwner(&secp256k1fx.OutputOwners{
+	withChangeOwner := engine.WithChangeOwner(&secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	})
@@ -686,7 +686,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			Threshold: 1,
 			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		engine.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 		}),
@@ -820,7 +820,7 @@ func TestGetValidatorsAt(t *testing.T) {
 		rewardsOwner,
 		rewardsOwner,
 		0,
-		common.WithMemo([]byte{}),
+		engine.WithMemo([]byte{}),
 	)
 
 	require.NoError(err)
@@ -960,7 +960,7 @@ func TestGetBlock(t *testing.T) {
 				constants.AVMID,
 				[]ids.ID{},
 				"chain name",
-				common.WithMemo([]byte{}),
+				engine.WithMemo([]byte{}),
 			)
 			require.NoError(err)
 
@@ -1067,7 +1067,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1088,7 +1088,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1112,7 +1112,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1140,7 +1140,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1168,7 +1168,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1196,7 +1196,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},

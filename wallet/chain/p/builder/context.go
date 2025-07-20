@@ -20,9 +20,9 @@ type Context struct {
 	GasPrice          gas.Price
 }
 
-func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*snow.Context, error) {
+func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
+	return &consensus.Context{
 		NetworkID:   networkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     constants.PlatformChainID,

@@ -304,17 +304,17 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(BootstrapAncestorsMaxContainersReceivedKey, 2000, "This node reads at most this many containers from an incoming Ancestors message")
 
 	// Consensus
-	fs.Int(SnowSampleSizeKey, binaryvote.DefaultParameters.K, "Number of nodes to query for each network poll")
-	fs.Int(SnowQuorumSizeKey, binaryvote.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
-	fs.Int(SnowPreferenceQuorumSizeKey, binaryvote.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
-	fs.Int(SnowConfidenceQuorumSizeKey, binaryvote.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
+	fs.Int(SnowSampleSizeKey, sampling.DefaultParameters.K, "Number of nodes to query for each network poll")
+	fs.Int(SnowQuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+	fs.Int(SnowPreferenceQuorumSizeKey, sampling.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
+	fs.Int(SnowConfidenceQuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
 
-	fs.Int(SnowCommitThresholdKey, binaryvote.DefaultParameters.Beta, "Beta value to use for consensus")
+	fs.Int(SnowCommitThresholdKey, sampling.DefaultParameters.Beta, "Beta value to use for consensus")
 
-	fs.Int(SnowConcurrentRepollsKey, binaryvote.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
-	fs.Int(SnowOptimalProcessingKey, binaryvote.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
-	fs.Int(SnowMaxProcessingKey, binaryvote.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
-	fs.Duration(SnowMaxTimeProcessingKey, binaryvote.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+	fs.Int(SnowConcurrentRepollsKey, sampling.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
+	fs.Int(SnowOptimalProcessingKey, sampling.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
+	fs.Int(SnowMaxProcessingKey, sampling.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
+	fs.Duration(SnowMaxTimeProcessingKey, sampling.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")

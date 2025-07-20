@@ -24,9 +24,9 @@ func NewSnowContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (*snow.Context, error) {
+) (*consensus.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
+	return &consensus.Context{
 		NetworkID:   networkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     blockchainID,

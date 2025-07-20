@@ -76,7 +76,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *snow.Context
+	ctx            *consensus.Context
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
@@ -136,7 +136,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 	registerer := prometheus.NewRegistry()
 	res.sender = &enginetest.Sender{T: t}
-	res.sender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	res.sender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
 		return nil
 	}
 

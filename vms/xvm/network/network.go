@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	_ common.AppHandler    = (*Network)(nil)
+	_ engine.AppHandler    = (*Network)(nil)
 	_ validators.Connector = (*Network)(nil)
 )
 
@@ -44,7 +44,7 @@ func New(
 	parser txs.Parser,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
-	appSender common.AppSender,
+	appSender engine.AppSender,
 	registerer prometheus.Registerer,
 	config Config,
 ) (*Network, error) {

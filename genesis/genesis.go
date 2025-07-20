@@ -335,7 +335,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	avmGenesisBytes, err := avmGenesis.Bytes()
 	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("couldn't serialize avm genesis: %w", err)
+		return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 	}
 
 	luxAssetID, err := LUXAssetID(avmGenesisBytes)

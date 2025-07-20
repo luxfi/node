@@ -61,7 +61,7 @@ type AddPermissionlessValidatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [AddPermissionlessValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *snow.Context) {
+func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *consensus.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
@@ -118,7 +118,7 @@ func (tx *AddPermissionlessValidatorTx) Shares() uint32 {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

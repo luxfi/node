@@ -64,7 +64,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM)
+	RegisterChain(chainName string, ctx *consensus.Context, vm engine.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -149,7 +149,7 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm engine.VM) {
 	ctx.Lock.Lock()
 	pathRouteHandlers, err := vm.CreateHandlers(context.TODO())
 	ctx.Lock.Unlock()
@@ -210,7 +210,7 @@ func (s *server) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm 
 	}
 }
 
-func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *snow.ConsensusContext, base, endpoint string) error {
+func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *consensus.Context, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
 		zap.String("url", url),
@@ -220,7 +220,7 @@ func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *snow
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
-func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *snow.ConsensusContext) http.Handler {
+func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *consensus.Context) http.Handler {
 	if s.tracingEnabled {
 		handler = api.TraceHandler(handler, chainName, s.tracer)
 	}
@@ -256,9 +256,9 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
-func rejectMiddleware(handler http.Handler, ctx *snow.ConsensusContext) http.Handler {
+func rejectMiddleware(handler http.Handler, ctx *consensus.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.State.Get().State != snow.NormalOp {
+		if ctx.State.Get().State != consensus.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)

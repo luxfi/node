@@ -34,7 +34,7 @@ var (
 	errAppRequestFailed = errors.New("unexpectedly called AppRequestFailed")
 	errAppGossip        = errors.New("unexpectedly called AppGossip")
 
-	_ common.VM = (*VM)(nil)
+	_ engine.VM = (*VM)(nil)
 )
 
 // VM is a test vm
@@ -46,7 +46,7 @@ type VM struct {
 	CantHealthCheck, CantConnected, CantDisconnected, CantVersion,
 	CantAppRequest, CantAppResponse, CantAppGossip, CantAppRequestFailed bool
 
-	InitializeF       func(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*common.Fx, appSender common.AppSender) error
+	InitializeF       func(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*engine.Fx, appSender engine.AppSender) error
 	SetStateF         func(ctx context.Context, state consensus.State) error
 	ShutdownF         func(context.Context) error
 	CreateHandlersF   func(context.Context) (map[string]http.Handler, error)
@@ -57,12 +57,12 @@ type VM struct {
 	AppRequestF       func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
 	AppResponseF      func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error
 	AppGossipF        func(ctx context.Context, nodeID ids.NodeID, msg []byte) error
-	AppRequestFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error
+	AppRequestFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error
 	VersionF          func(context.Context) (string, error)
-	WaitForEventF     common.Subscription
+	WaitForEventF     engine.Subscription
 }
 
-func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	if vm.WaitForEventF != nil {
 		return vm.WaitForEventF(ctx)
 	}
@@ -93,8 +93,8 @@ func (vm *VM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	if vm.InitializeF != nil {
 		return vm.InitializeF(
@@ -183,7 +183,7 @@ func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint3
 	return errAppRequest
 }
 
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
 	if vm.AppRequestFailedF != nil {
 		return vm.AppRequestFailedF(ctx, nodeID, requestID, appErr)
 	}

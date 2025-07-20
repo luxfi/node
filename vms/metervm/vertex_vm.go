@@ -40,13 +40,13 @@ type vertexVM struct {
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	if err := vm.vertexMetrics.Initialize(vm.registry); err != nil {
 		return err

@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 )
 
 var (
@@ -28,7 +28,7 @@ var (
 
 // Backend defines the full interface required to support a C-chain wallet.
 type Backend interface {
-	common.ChainUTXOs
+	walletutil.ChainUTXOs
 	BuilderBackend
 	SignerBackend
 
@@ -36,10 +36,10 @@ type Backend interface {
 }
 
 type backend struct {
-	common.ChainUTXOs
+	walletutil.ChainUTXOs
 
 	accountsLock sync.RWMutex
-	accounts     map[ethcommon.Address]*Account
+	accounts     map[geth.Address]*Account
 }
 
 type Account struct {
@@ -48,8 +48,8 @@ type Account struct {
 }
 
 func NewBackend(
-	utxos common.ChainUTXOs,
-	accounts map[ethcommon.Address]*Account,
+	utxos walletutil.ChainUTXOs,
+	accounts map[geth.Address]*Account,
 ) Backend {
 	return &backend{
 		ChainUTXOs: utxos,
@@ -128,7 +128,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 	return nil
 }
 
-func (b *backend) Balance(_ context.Context, addr ethcommon.Address) (*big.Int, error) {
+func (b *backend) Balance(_ context.Context, addr geth.Address) (*big.Int, error) {
 	b.accountsLock.RLock()
 	defer b.accountsLock.RUnlock()
 
@@ -139,7 +139,7 @@ func (b *backend) Balance(_ context.Context, addr ethcommon.Address) (*big.Int, 
 	return account.Balance, nil
 }
 
-func (b *backend) Nonce(_ context.Context, addr ethcommon.Address) (uint64, error) {
+func (b *backend) Nonce(_ context.Context, addr geth.Address) (uint64, error) {
 	b.accountsLock.RLock()
 	defer b.accountsLock.RUnlock()
 

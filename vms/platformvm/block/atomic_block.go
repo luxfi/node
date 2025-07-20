@@ -28,7 +28,7 @@ func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotAtomicBlock) InitCtx(ctx *snow.Context) {
+func (b *ApricotAtomicBlock) InitCtx(ctx *consensus.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 
