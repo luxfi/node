@@ -53,13 +53,13 @@ func NewBlockVM(
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	err := vm.blockMetrics.Initialize(
 		vm.buildBlockVM != nil,

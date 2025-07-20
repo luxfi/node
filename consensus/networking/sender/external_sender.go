@@ -16,7 +16,7 @@ import (
 type ExternalSender interface {
 	Send(
 		msg message.OutboundMessage,
-		config common.SendConfig,
+		config engine.SendConfig,
 		subnetID ids.ID,
 		allower subnets.Allower,
 	) set.Set[ids.NodeID]

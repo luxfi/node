@@ -34,7 +34,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, common.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, engine.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
 	<-appGossipChan
 }
 
@@ -54,7 +54,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequest - error",
-			appErr: &common.AppError{
+			appErr: &engine.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -71,7 +71,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequestAny - error",
-			appErr: &common.AppError{
+			appErr: &engine.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -88,9 +88,9 @@ func TestClient_AppRequest(t *testing.T) {
 
 			appRequestChan := make(chan struct{})
 			testHandler := p2p.TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *common.AppError) {
+				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *engine.AppError) {
 					if tt.appErr != nil {
-						return nil, &common.AppError{
+						return nil, &engine.AppError{
 							Code:    123,
 							Message: tt.appErr.Error(),
 						}

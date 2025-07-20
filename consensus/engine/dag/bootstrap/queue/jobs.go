@@ -112,7 +112,7 @@ func (j *Jobs) Push(ctx context.Context, job Job) (bool, error) {
 func (j *Jobs) ExecuteAll(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	halter common.Haltable,
+	halter engine.Haltable,
 	restarted bool,
 	acceptors ...consensus.Acceptor,
 ) (int, error) {

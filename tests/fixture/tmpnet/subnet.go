@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (
@@ -107,7 +106,7 @@ func (s *Subnet) Create(ctx context.Context, uri string) error {
 				s.OwningKey.Address(),
 			},
 		},
-		common.WithContext(ctx),
+		primary.WithContext(ctx),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create subnet %s: %w", s.Name, err)
@@ -135,7 +134,7 @@ func (s *Subnet) CreateChains(ctx context.Context, log logging.Logger, uri strin
 			chain.VMID,
 			nil,
 			"",
-			common.WithContext(ctx),
+			primary.WithContext(ctx),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create chain: %w", err)
@@ -187,7 +186,7 @@ func (s *Subnet) AddValidators(ctx context.Context, log logging.Logger, apiURI s
 				},
 				Subnet: s.SubnetID,
 			},
-			common.WithContext(ctx),
+			primary.WithContext(ctx),
 		)
 		if err != nil {
 			return err

@@ -14,7 +14,7 @@ import (
 )
 
 type Backend struct {
-	Ctx           *snow.Context
+	Ctx           *consensus.Context
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int

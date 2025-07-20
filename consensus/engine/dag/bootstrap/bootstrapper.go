@@ -43,7 +43,7 @@ const (
 	epsilon = 1e-6 // small amount to add to time to avoid division by 0
 )
 
-var _ common.BootstrapableEngine = (*Bootstrapper)(nil)
+var _ engine.BootstrapableEngine = (*Bootstrapper)(nil)
 
 func New(
 	config Config,
@@ -53,17 +53,17 @@ func New(
 	b := &Bootstrapper{
 		Config: config,
 
-		StateSummaryFrontierHandler: common.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
-		AcceptedStateSummaryHandler: common.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
-		AcceptedFrontierHandler:     common.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
-		AcceptedHandler:             common.NewNoOpAcceptedHandler(config.Ctx.Log),
-		PutHandler:                  common.NewNoOpPutHandler(config.Ctx.Log),
-		QueryHandler:                common.NewNoOpQueryHandler(config.Ctx.Log),
-		ChitsHandler:                common.NewNoOpChitsHandler(config.Ctx.Log),
+		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
+		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
+		AcceptedFrontierHandler:     engine.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
+		AcceptedHandler:             engine.NewNoOpAcceptedHandler(config.Ctx.Log),
+		PutHandler:                  engine.NewNoOpPutHandler(config.Ctx.Log),
+		QueryHandler:                engine.NewNoOpQueryHandler(config.Ctx.Log),
+		ChitsHandler:                engine.NewNoOpChitsHandler(config.Ctx.Log),
 		AppHandler:                  config.VM,
 
-		outstandingRequests:     bimap.New[common.Request, ids.ID](),
-		outstandingRequestTimes: make(map[common.Request]time.Time),
+		outstandingRequests:     bimap.New[engine.Request, ids.ID](),
+		outstandingRequestTimes: make(map[engine.Request]time.Time),
 
 		processedCache: lru.NewCache[ids.ID, struct{}](cacheSize),
 		onFinished:     onFinished,
@@ -77,20 +77,20 @@ type Bootstrapper struct {
 	Config
 
 	// list of NoOpsHandler for messages dropped by Bootstrapper
-	common.StateSummaryFrontierHandler
-	common.AcceptedStateSummaryHandler
-	common.AcceptedFrontierHandler
-	common.AcceptedHandler
-	common.PutHandler
-	common.QueryHandler
-	common.ChitsHandler
-	common.AppHandler
+	engine.StateSummaryFrontierHandler
+	engine.AcceptedStateSummaryHandler
+	engine.AcceptedFrontierHandler
+	engine.AcceptedHandler
+	engine.PutHandler
+	engine.QueryHandler
+	engine.ChitsHandler
+	engine.AppHandler
 
 	metrics
 
 	// tracks which validators were asked for which containers in which requests
-	outstandingRequests     *bimap.BiMap[common.Request, ids.ID]
-	outstandingRequestTimes map[common.Request]time.Time
+	outstandingRequests     *bimap.BiMap[engine.Request, ids.ID]
+	outstandingRequestTimes map[engine.Request]time.Time
 
 	// IDs of vertices that we will send a GetAncestors request for once we are
 	// not at the max number of outstanding requests
@@ -130,7 +130,7 @@ func (b *Bootstrapper) Clear(context.Context) error {
 // response to a GetAncestors message to [nodeID] with request ID [requestID].
 // Expects vtxs[0] to be the vertex requested in the corresponding GetAncestors.
 func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, vtxs [][]byte) error {
-	request := common.Request{
+	request := engine.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -254,7 +254,7 @@ func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 }
 
 func (b *Bootstrapper) GetAncestorsFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	request := common.Request{
+	request := engine.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -312,7 +312,7 @@ func (b *Bootstrapper) Shutdown(ctx context.Context) error {
 	return b.VM.Shutdown(ctx)
 }
 
-func (*Bootstrapper) Notify(context.Context, common.Message) error {
+func (*Bootstrapper) Notify(context.Context, engine.Message) error {
 	return nil
 }
 
@@ -429,7 +429,7 @@ func (b *Bootstrapper) fetch(ctx context.Context, vtxIDs ...ids.ID) error {
 		b.PeerTracker.RegisterRequest(nodeID)
 
 		b.requestID++
-		request := common.Request{
+		request := engine.Request{
 			NodeID:    nodeID,
 			RequestID: b.requestID,
 		}

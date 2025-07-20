@@ -34,7 +34,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext *snow.Context
+	ChainContext *consensus.Context
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool

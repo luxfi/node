@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	enginepkg "github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
@@ -82,8 +82,8 @@ type handler struct {
 
 	metrics *metrics
 
-	nf           *common.NotificationForwarder
-	subscription common.Subscription
+	nf           *enginepkg.NotificationForwarder
+	subscription enginepkg.Subscription
 	cn           *block.ChangeNotifier
 
 	// Useful for faking time in tests
@@ -94,7 +94,7 @@ type handler struct {
 	// since peerTracker is already tracking validators
 	validators validators.Manager
 	// Receives messages from the VM
-	msgFromVMChan   chan common.Message
+	msgFromVMChan   chan enginepkg.Message
 	gossipFrequency time.Duration
 
 	engineManager *EngineManager
@@ -135,7 +135,7 @@ type handler struct {
 func New(
 	ctx *consensus.Context,
 	cn *block.ChangeNotifier,
-	subscription common.Subscription,
+	subscription enginepkg.Subscription,
 	validators validators.Manager,
 	gossipFrequency time.Duration,
 	threadPoolSize int,
@@ -149,7 +149,7 @@ func New(
 	h := &handler{
 		subscription:      subscription,
 		cn:                cn,
-		msgFromVMChan:     make(chan common.Message),
+		msgFromVMChan:     make(chan enginepkg.Message),
 		haltBootstrapping: haltBootstrapping,
 		ctx:               ctx,
 		validators:        validators,
@@ -216,7 +216,7 @@ func (h *handler) SetOnStopped(onStopped func()) {
 	h.onStopped = onStopped
 }
 
-func (h *handler) selectStartingGear(ctx context.Context) (common.Engine, error) {
+func (h *handler) selectStartingGear(ctx context.Context) (enginepkg.Engine, error) {
 	state := h.ctx.State.Get()
 	engines := h.engineManager.Get(state.Type)
 	if engines == nil {
@@ -249,7 +249,7 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
-	h.nf = common.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
+	h.nf = enginepkg.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
 	h.cn.OnChange = h.nf.CheckForEvent
 
 	h.ctx.Lock.Lock()
@@ -290,7 +290,7 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 	}
 }
 
-func (h *handler) Notify(ctx context.Context, msg common.Message) error {
+func (h *handler) Notify(ctx context.Context, msg enginepkg.Message) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -846,7 +846,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		return engine.AppResponse(ctx, nodeID, m.RequestId, m.AppBytes)
 
 	case *p2ppb.AppError:
-		err := &common.AppError{
+		err := &enginepkg.AppError{
 			Code:    m.ErrorCode,
 			Message: m.ErrorMessage,
 		}
@@ -933,7 +933,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 
 	switch msg := body.(type) {
 	case *message.VMMessage:
-		return engine.Notify(context.TODO(), common.Message(msg.Notification))
+		return engine.Notify(context.TODO(), enginepkg.Message(msg.Notification))
 
 	case *message.GossipRequest:
 		return engine.Gossip(context.TODO())

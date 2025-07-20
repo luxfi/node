@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 func main() {
@@ -38,7 +37,7 @@ func main() {
 
 	xChainID := state.XCTX.BlockchainID
 
-	xUTXOs := common.NewChainUTXOs(xChainID, state.UTXOs)
+	xUTXOs := primary.NewChainUTXOs(xChainID, state.UTXOs)
 	xBackend := x.NewBackend(state.XCTX, xUTXOs)
 	xBuilder := builder.New(addresses, state.XCTX, xBackend)
 

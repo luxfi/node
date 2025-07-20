@@ -34,7 +34,7 @@ var (
 type Builder interface {
 	// WaitForEvent waits until there is at least one tx available to the
 	// builder.
-	WaitForEvent(ctx context.Context) (common.Message, error)
+	WaitForEvent(ctx context.Context) (engine.Message, error)
 	// BuildBlock can be called to attempt to create a new block
 	BuildBlock(context.Context) (chain.Block, error)
 }
@@ -63,7 +63,7 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 

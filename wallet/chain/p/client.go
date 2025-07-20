@@ -8,16 +8,16 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	wallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	pwallet "github.com/luxfi/node/wallet/chain/p/wallet"
 )
 
-var _ wallet.Client = (*Client)(nil)
+var _ pwallet.Client = (*Client)(nil)
 
 func NewClient(
 	c *platformvm.Client,
-	b wallet.Backend,
+	b pwallet.Backend,
 ) *Client {
 	return &Client{
 		client:  c,
@@ -27,14 +27,14 @@ func NewClient(
 
 type Client struct {
 	client  *platformvm.Client
-	backend wallet.Backend
+	backend pwallet.Backend
 }
 
 func (c *Client) IssueTx(
 	tx *txs.Tx,
-	options ...common.Option,
+	options ...wallet.Option,
 ) error {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	ctx := ops.Context()
 	startTime := time.Now()
 	txID, err := c.client.IssueTx(ctx, tx.Bytes())
@@ -44,7 +44,7 @@ func (c *Client) IssueTx(
 
 	issuanceDuration := time.Since(startTime)
 	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
+		f(wallet.IssuanceReceipt{
 			ChainAlias: builder.Alias,
 			TxID:       txID,
 			Duration:   issuanceDuration,
@@ -63,7 +63,7 @@ func (c *Client) IssueTx(
 		totalDuration := time.Since(startTime)
 		confirmationDuration := totalDuration - issuanceDuration
 
-		f(common.ConfirmationReceipt{
+		f(wallet.ConfirmationReceipt{
 			ChainAlias:           builder.Alias,
 			TxID:                 txID,
 			TotalDuration:        totalDuration,

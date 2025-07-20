@@ -177,8 +177,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	var cn block.ChangeNotifier
-	subscription := func(context.Context) (common.Message, error) {
-		return common.PendingTxs, nil
+	subscription := func(context.Context) (engine.Message, error) {
+		return engine.PendingTxs, nil
 	}
 
 	handlerIntf, err := New(
@@ -379,7 +379,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	subscription, messages := createSubscriber()
-	notified := make(chan common.Message)
+	notified := make(chan engine.Message)
 
 	handler, err := New(
 		ctx,
@@ -410,7 +410,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return ctx
 	}
 
-	engine.NotifyF = func(ctx context.Context, msg common.Message) error {
+	engine.NotifyF = func(ctx context.Context, msg engine.Message) error {
 		select {
 		case notified <- msg:
 			notified <- msg
@@ -437,10 +437,10 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	}
 
 	handler.Start(context.Background(), false)
-	messages <- common.PendingTxs
+	messages <- engine.PendingTxs
 	select {
 	case msg := <-notified:
-		require.Equal(common.PendingTxs, msg)
+		require.Equal(engine.PendingTxs, msg)
 	case <-time.After(time.Minute):
 		require.FailNow("Handler did not dispatch expected message")
 	}
@@ -454,15 +454,15 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		requestedEngineType p2ppb.EngineType
 		setup               func(
 			h Handler,
-			b common.BootstrapableEngine,
-			e common.Engine,
+			b engine.BootstrapableEngine,
+			e engine.Engine,
 		)
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
+			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -477,7 +477,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - lux, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
+			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -492,7 +492,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - snowman, requested - unspecified",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
+			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
 				h.SetEngineManager(&EngineManager{
 					DAG: nil,
 					Chain: &Engine{
@@ -507,7 +507,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - snowman, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
+			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -526,7 +526,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - snowman, requested - snowman",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
+			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
 				h.SetEngineManager(&EngineManager{
 					DAG: nil,
 					Chain: &Engine{
@@ -683,15 +683,15 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 }
 
-func createSubscriber() (common.Subscription, chan<- common.Message) {
-	messages := make(chan common.Message, 1)
+func createSubscriber() (engine.Subscription, chan<- engine.Message) {
+	messages := make(chan engine.Message, 1)
 
-	subscription := func(ctx context.Context) (common.Message, error) {
+	subscription := func(ctx context.Context) (engine.Message, error) {
 		select {
 		case msg := <-messages:
 			return msg, nil
 		case <-ctx.Done():
-			return common.Message(0), ctx.Err()
+			return engine.Message(0), ctx.Err()
 		}
 	}
 

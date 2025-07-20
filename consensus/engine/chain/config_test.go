@@ -4,9 +4,9 @@
 package chain
 
 import (
-	"github.com/luxfi/node/consensus/factories"
 	"testing"
 
+	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/engine/tracker"

@@ -4,7 +4,6 @@
 package sampling
 
 import (
-	"github.com/luxfi/node/consensus/factories"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +20,8 @@ func TestFlat(t *testing.T) {
 		AlphaConfidence: 3,
 		Beta:            2,
 	}
-	f := NewFlat(factories.SnowballFactory, params, Red)
+	factory := snowballTestFactory{}
+	f := NewFlat(factory, params, Red)
 	f.Add(Green)
 	f.Add(Blue)
 

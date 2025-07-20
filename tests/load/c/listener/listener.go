@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
 
 	"github.com/luxfi/node/tests/load"
@@ -18,7 +18,7 @@ import (
 // Listener listens for transaction confirmations from a node.
 type Listener struct {
 	// Injected parameters
-	client  *ethclient.Client
+	client  ethclient.Client
 	tracker *load.Tracker[common.Hash]
 	address common.Address
 
@@ -30,7 +30,7 @@ type Listener struct {
 }
 
 func New(
-	client *ethclient.Client,
+	client ethclient.Client,
 	tracker *load.Tracker[common.Hash],
 	address common.Address,
 	nonce uint64,

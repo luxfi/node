@@ -52,7 +52,7 @@ type Fx interface {
 
 type FxOperation interface {
 	verify.Verifiable
-	snow.ContextInitializable
+	consensus.ContextInitializable
 	lux.Coster
 
 	Outs() []verify.State

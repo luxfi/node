@@ -113,7 +113,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 		TxBlocked:                      txBlocker,
 		Manager:                        manager,
 		VM:                             vm,
-		Haltable:                       &common.Halter{},
+		Haltable:                       &engine.Halter{},
 	}, peer, sender, manager, vm
 }
 

@@ -15,7 +15,7 @@ import (
 
 	codec "github.com/luxfi/node/codec"
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -87,7 +87,7 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockBlock) InitCtx(ctx *snow.Context) {
+func (m *MockBlock) InitCtx(ctx *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }

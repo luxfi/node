@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 )
 
 const luxConversionRateInt = 1_000_000_000
@@ -48,7 +48,7 @@ type Builder interface {
 	// GetBalance calculates the amount of LUX that this builder has control
 	// over.
 	GetBalance(
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*big.Int, error)
 
 	// GetImportableBalance calculates the amount of LUX that this builder
@@ -57,7 +57,7 @@ type Builder interface {
 	// - [chainID] specifies the chain the funds are from.
 	GetImportableBalance(
 		chainID ids.ID,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (uint64, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
@@ -68,9 +68,9 @@ type Builder interface {
 	// - [baseFee] specifies the fee price willing to be paid by this tx.
 	NewImportTx(
 		chainID ids.ID,
-		to ethcommon.Address,
+		to geth.Address,
 		baseFee *big.Int,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*atomic.UnsignedImportTx, error)
 
 	// NewExportTx creates an export transaction that attempts to send all the
@@ -83,7 +83,7 @@ type Builder interface {
 		chainID ids.ID,
 		outputs []*secp256k1fx.TransferOutput,
 		baseFee *big.Int,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*atomic.UnsignedExportTx, error)
 }
 
@@ -91,13 +91,13 @@ type Builder interface {
 // C-chain transactions.
 type BuilderBackend interface {
 	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	Balance(ctx context.Context, addr ethcommon.Address) (*big.Int, error)
-	Nonce(ctx context.Context, addr ethcommon.Address) (uint64, error)
+	Balance(ctx context.Context, addr geth.Address) (*big.Int, error)
+	Nonce(ctx context.Context, addr geth.Address) (uint64, error)
 }
 
 type builder struct {
 	luxAddrs set.Set[ids.ShortID]
-	ethAddrs  set.Set[ethcommon.Address]
+	ethAddrs  set.Set[geth.Address]
 	context   *Context
 	backend   BuilderBackend
 }
@@ -112,7 +112,7 @@ type builder struct {
 //     to build out the transactions.
 func NewBuilder(
 	luxAddrs set.Set[ids.ShortID],
-	ethAddrs set.Set[ethcommon.Address],
+	ethAddrs set.Set[geth.Address],
 	context *Context,
 	backend BuilderBackend,
 ) Builder {
@@ -129,10 +129,10 @@ func (b *builder) Context() *Context {
 }
 
 func (b *builder) GetBalance(
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*big.Int, error) {
 	var (
-		ops          = common.NewOptions(options)
+		ops          = walletutil.NewOptions(options)
 		ctx          = ops.Context()
 		addrs        = ops.EthAddresses(b.ethAddrs)
 		totalBalance = new(big.Int)
@@ -150,9 +150,9 @@ func (b *builder) GetBalance(
 
 func (b *builder) GetImportableBalance(
 	chainID ids.ID,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (uint64, error) {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	utxos, err := b.backend.UTXOs(ops.Context(), chainID)
 	if err != nil {
 		return 0, err
@@ -182,11 +182,11 @@ func (b *builder) GetImportableBalance(
 
 func (b *builder) NewImportTx(
 	chainID ids.ID,
-	to ethcommon.Address,
+	to geth.Address,
 	baseFee *big.Int,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.UnsignedImportTx, error) {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	utxos, err := b.backend.UTXOs(ops.Context(), chainID)
 	if err != nil {
 		return nil, err
@@ -266,7 +266,7 @@ func (b *builder) NewExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
 	baseFee *big.Int,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*atomic.UnsignedExportTx, error) {
 	var (
 		luxAssetID     = b.context.LUXAssetID
@@ -317,7 +317,7 @@ func (b *builder) NewExportTx(
 	}
 
 	var (
-		ops    = common.NewOptions(options)
+		ops    = walletutil.NewOptions(options)
 		ctx    = ops.Context()
 		addrs  = ops.EthAddresses(b.ethAddrs)
 		inputs = make([]atomic.EVMInput, 0, addrs.Len())
@@ -414,6 +414,6 @@ func getSpendableAmount(
 		return 0, nil, false
 	}
 
-	inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+	inputSigIndices, ok := walletutil.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 	return out.Amt, inputSigIndices, ok
 }

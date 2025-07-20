@@ -33,7 +33,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*snow.Context) {}
+func (*RewardValidatorTx) InitCtx(*consensus.Context) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -47,7 +47,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(*consensus.Context) error {
 	return nil
 }
 

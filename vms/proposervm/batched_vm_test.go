@@ -599,7 +599,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	chainID := ids.GenerateTestID()
 
 	vm := VM{
-		ctx: &snow.Context{ChainID: chainID},
+		ctx: &consensus.Context{ChainID: chainID},
 		ChainVM: &blocktest.VM{
 			ParseBlockF: func(_ context.Context, rawBlock []byte) (chain.Block, error) {
 				return &chaintest.Block{BytesV: rawBlock}, nil
@@ -933,13 +933,13 @@ func initTestRemoteProposerVM(
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*snow.Context,
+		*consensus.Context,
 		database.Database,
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*common.Fx,
-		common.AppSender,
+		[]*engine.Fx,
+		engine.AppSender,
 	) error {
 		return nil
 	}
@@ -1033,7 +1033,7 @@ func initTestRemoteProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 	return coreVM, proVM
 }

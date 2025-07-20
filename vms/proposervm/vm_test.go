@@ -105,9 +105,9 @@ func initTestProposerVM(
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*engine.Fx, engine.AppSender,
 	) error {
 		return nil
 	}
@@ -203,7 +203,7 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	proVM.Set(chaintest.GenesisTimestamp)
@@ -809,8 +809,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		}
 	}
 
-	events := make(chan common.Message, 1)
-	coreVM.WaitForEventF = func(ctx context.Context) (common.Message, error) {
+	events := make(chan engine.Message, 1)
+	coreVM.WaitForEventF = func(ctx context.Context) (engine.Message, error) {
 		select {
 		case <-ctx.Done():
 			return 0, nil
@@ -856,13 +856,13 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		_ context.Context,
-		_ *snow.Context,
+		_ *consensus.Context,
 		_ database.Database,
 		_ []byte,
 		_ []byte,
 		_ []byte,
-		_ []*common.Fx,
-		_ common.AppSender,
+		_ []*engine.Fx,
+		_ engine.AppSender,
 	) error {
 		return nil
 	}
@@ -885,15 +885,15 @@ func TestExpiredBuildBlock(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	// Notify the proposer VM of a new block on the inner block side
-	events <- common.PendingTxs
+	events <- engine.PendingTxs
 	// The first notification will be read from the consensus engine
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(common.PendingTxs, msg)
+	require.Equal(engine.PendingTxs, msg)
 
 	// Before calling BuildBlock, verify a remote block and set it as the
 	// preferred block.
@@ -1083,13 +1083,13 @@ func TestInnerVMRollback(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*snow.Context,
+				*consensus.Context,
 				database.Database,
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*common.Fx,
-				common.AppSender,
+				[]*engine.Fx,
+				engine.AppSender,
 			) error {
 				return nil
 			},
@@ -1144,7 +1144,7 @@ func TestInnerVMRollback(t *testing.T) {
 		nil,
 	))
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	coreBlk := chaintest.BuildChild(chaintest.Genesis)
@@ -1557,9 +1557,9 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*engine.Fx, engine.AppSender,
 	) error {
 		return nil
 	}
@@ -1652,7 +1652,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
@@ -1725,9 +1725,9 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*engine.Fx, engine.AppSender,
 	) error {
 		return nil
 	}
@@ -1820,7 +1820,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
@@ -1895,7 +1895,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		},
 	)
 
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(common.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(engine.PendingTxs, nil).AnyTimes()
 
 	innerVM.EXPECT().Initialize(
 		gomock.Any(),
@@ -1991,7 +1991,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	// Create a VM
 	innerVM := blockmock.NewChainVM(ctrl)
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(common.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(engine.PendingTxs, nil).AnyTimes()
 
 	vm := New(
 		innerVM,
@@ -2142,7 +2142,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *snow.Context, database.Database, []byte, []byte, []byte, []*common.Fx, common.AppSender) error {
+			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*engine.Fx, engine.AppSender) error {
 				return nil
 			},
 		},
@@ -2217,7 +2217,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2306,7 +2306,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2351,7 +2351,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2441,8 +2441,8 @@ func TestLocalParse(t *testing.T) {
 		},
 	}
 
-	innerVM.VM.WaitForEventF = func(_ context.Context) (common.Message, error) {
-		return common.PendingTxs, nil
+	innerVM.VM.WaitForEventF = func(_ context.Context) (engine.Message, error) {
+		return engine.PendingTxs, nil
 	}
 
 	chainID := ids.GenerateTestID()
@@ -2486,7 +2486,7 @@ func TestLocalParse(t *testing.T) {
 
 	db := prefixdb.New([]byte{}, memdb.New())
 
-	_ = vm.Initialize(context.Background(), &snow.Context{
+	_ = vm.Initialize(context.Background(), &consensus.Context{
 		Log:     logging.NoLog{},
 		ChainID: chainID,
 	}, db, nil, nil, nil, nil, nil)
@@ -2670,7 +2670,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *snow.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*common.Fx, _ common.AppSender) error {
+			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*engine.Fx, _ engine.AppSender) error {
 				return nil
 			},
 		},
@@ -2765,7 +2765,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(proVM.SetState(context.Background(), consensus.Bootstrapping))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
@@ -2811,7 +2811,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	// If the inner VM requests building a block, the proposervm passes that
 	// message to the consensus engine. This is really the source of the issue,
@@ -2819,7 +2819,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(common.PendingTxs, msg)
+	require.Equal(engine.PendingTxs, msg)
 
 	innerBlock3 := chaintest.BuildChild(innerBlock2)
 	innerVMBlks = append(innerVMBlks, innerBlock3)

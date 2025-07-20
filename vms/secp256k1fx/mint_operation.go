@@ -18,7 +18,7 @@ type MintOperation struct {
 	TransferOutput TransferOutput `serialize:"true" json:"transferOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *snow.Context) {
+func (op *MintOperation) InitCtx(ctx *consensus.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
 }

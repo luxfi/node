@@ -56,9 +56,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  logging.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -97,9 +97,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 logging.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:     snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup: snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -136,9 +136,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -404,9 +404,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -486,9 +486,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -500,7 +500,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := snowtest.ConsensusContext(&snow.Context{
+	chain1Ctx := snowtest.ConsensusContext(&consensus.Context{
 		ChainID:  ids.GenerateTestID(),
 		SubnetID: ids.GenerateTestID(),
 	})

@@ -94,7 +94,7 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&snow.Context{
+	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -262,7 +262,7 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&snow.Context{
+	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -423,7 +423,7 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexRemoveValidatorTx.InitCtx(&snow.Context{
+	unsignedComplexRemoveValidatorTx.InitCtx(&consensus.Context{
 		NetworkID:   1,
 		ChainID:     constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -526,7 +526,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &snow.Context{
+	ctx := &consensus.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

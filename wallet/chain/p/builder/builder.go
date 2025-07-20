@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet"
 )
 
 var (
@@ -47,7 +47,7 @@ type Builder interface {
 	// GetBalance calculates the amount of each asset that this builder has
 	// control over.
 	GetBalance(
-		options ...common.Option,
+		options ...wallet.Option,
 	) (map[ids.ID]uint64, error)
 
 	// GetImportableBalance calculates the amount of each asset that this
@@ -56,7 +56,7 @@ type Builder interface {
 	// - [chainID] specifies the chain the funds are from.
 	GetImportableBalance(
 		chainID ids.ID,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (map[ids.ID]uint64, error)
 
 	// NewBaseTx creates a new simple value transfer.
@@ -65,7 +65,7 @@ type Builder interface {
 	//   from this transaction.
 	NewBaseTx(
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.BaseTx, error)
 
 	// NewAddValidatorTx creates a new validator of the primary network.
@@ -81,7 +81,7 @@ type Builder interface {
 		vdr *txs.Validator,
 		rewardsOwner *secp256k1fx.OutputOwners,
 		shares uint32,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.AddValidatorTx, error)
 
 	// NewAddSubnetValidatorTx creates a new validator of a subnet.
@@ -90,7 +90,7 @@ type Builder interface {
 	//   startTime, endTime, sampling weight, nodeID, and subnetID.
 	NewAddSubnetValidatorTx(
 		vdr *txs.SubnetValidator,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.AddSubnetValidatorTx, error)
 
 	// NewRemoveSubnetValidatorTx removes [nodeID] from the validator
@@ -98,7 +98,7 @@ type Builder interface {
 	NewRemoveSubnetValidatorTx(
 		nodeID ids.NodeID,
 		subnetID ids.ID,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.RemoveSubnetValidatorTx, error)
 
 	// NewAddDelegatorTx creates a new delegator to a validator on the primary
@@ -111,7 +111,7 @@ type Builder interface {
 	NewAddDelegatorTx(
 		vdr *txs.Validator,
 		rewardsOwner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.AddDelegatorTx, error)
 
 	// NewCreateChainTx creates a new chain in the named subnet.
@@ -128,7 +128,7 @@ type Builder interface {
 		vmID ids.ID,
 		fxIDs []ids.ID,
 		chainName string,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.CreateChainTx, error)
 
 	// NewCreateSubnetTx creates a new subnet with the specified owner.
@@ -137,7 +137,7 @@ type Builder interface {
 	//   validators to the subnet.
 	NewCreateSubnetTx(
 		owner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.CreateSubnetTx, error)
 
 	// NewTransferSubnetOwnershipTx changes the owner of the named subnet.
@@ -148,7 +148,7 @@ type Builder interface {
 	NewTransferSubnetOwnershipTx(
 		subnetID ids.ID,
 		owner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.TransferSubnetOwnershipTx, error)
 
 	// NewConvertSubnetToL1Tx converts the subnet to a Permissionless L1.
@@ -162,7 +162,7 @@ type Builder interface {
 		chainID ids.ID,
 		address []byte,
 		validators []*txs.ConvertSubnetToL1Validator,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.ConvertSubnetToL1Tx, error)
 
 	// NewRegisterL1ValidatorTx adds a validator to an L1.
@@ -176,7 +176,7 @@ type Builder interface {
 		balance uint64,
 		proofOfPossession [bls.SignatureLen]byte,
 		message []byte,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.RegisterL1ValidatorTx, error)
 
 	// NewSetL1ValidatorWeightTx sets the weight of a validator on an L1.
@@ -185,7 +185,7 @@ type Builder interface {
 	//   to be changed
 	NewSetL1ValidatorWeightTx(
 		message []byte,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.SetL1ValidatorWeightTx, error)
 
 	// NewIncreaseL1ValidatorBalanceTx increases the balance of a validator on
@@ -197,7 +197,7 @@ type Builder interface {
 	NewIncreaseL1ValidatorBalanceTx(
 		validationID ids.ID,
 		balance uint64,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.IncreaseL1ValidatorBalanceTx, error)
 
 	// NewDisableL1ValidatorTx disables an L1 validator and returns the
@@ -207,7 +207,7 @@ type Builder interface {
 	// - [validationID] of the validator to disable
 	NewDisableL1ValidatorTx(
 		validationID ids.ID,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.DisableL1ValidatorTx, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
@@ -218,7 +218,7 @@ type Builder interface {
 	NewImportTx(
 		chainID ids.ID,
 		to *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.ImportTx, error)
 
 	// NewExportTx creates an export transaction that attempts to send all the
@@ -229,7 +229,7 @@ type Builder interface {
 	NewExportTx(
 		chainID ids.ID,
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.ExportTx, error)
 
 	// NewTransformSubnetTx creates a transform subnet transaction that attempts
@@ -277,7 +277,7 @@ type Builder interface {
 		minDelegatorStake uint64,
 		maxValidatorWeightFactor byte,
 		uptimeRequirement uint32,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.TransformSubnetTx, error)
 
 	// NewAddPermissionlessValidatorTx creates a new validator of the specified
@@ -302,7 +302,7 @@ type Builder interface {
 		validationRewardsOwner *secp256k1fx.OutputOwners,
 		delegationRewardsOwner *secp256k1fx.OutputOwners,
 		shares uint32,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.AddPermissionlessValidatorTx, error)
 
 	// NewAddPermissionlessDelegatorTx creates a new delegator of the specified
@@ -317,7 +317,7 @@ type Builder interface {
 		vdr *txs.SubnetValidator,
 		assetID ids.ID,
 		rewardsOwner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...wallet.Option,
 	) (*txs.AddPermissionlessDelegatorTx, error)
 }
 
@@ -355,23 +355,23 @@ func (b *builder) Context() *Context {
 }
 
 func (b *builder) GetBalance(
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	return b.getBalance(constants.PlatformChainID, ops)
 }
 
 func (b *builder) GetImportableBalance(
 	chainID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	return b.getBalance(chainID, ops)
 }
 
 func (b *builder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.BaseTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	for _, out := range outputs {
@@ -384,7 +384,7 @@ func (b *builder) NewBaseTx(
 	}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -429,14 +429,14 @@ func (b *builder) NewAddValidatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddValidatorTx, error) {
 	luxAssetID := b.context.LUXAssetID
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		luxAssetID: vdr.Wght,
 	}
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(
 		toBurn,
 		toStake,
@@ -468,12 +468,12 @@ func (b *builder) NewAddValidatorTx(
 
 func (b *builder) NewAddSubnetValidatorTx(
 	vdr *txs.SubnetValidator,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddSubnetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	subnetAuth, err := b.authorize(vdr.Subnet, ops)
 	if err != nil {
 		return nil, err
@@ -524,12 +524,12 @@ func (b *builder) NewAddSubnetValidatorTx(
 func (b *builder) NewRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.RemoveSubnetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
@@ -581,14 +581,14 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 func (b *builder) NewAddDelegatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddDelegatorTx, error) {
 	luxAssetID := b.context.LUXAssetID
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		luxAssetID: vdr.Wght,
 	}
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(
 		toBurn,
 		toStake,
@@ -623,12 +623,12 @@ func (b *builder) NewCreateChainTx(
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.CreateChainTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
@@ -699,12 +699,12 @@ func (b *builder) NewCreateChainTx(
 
 func (b *builder) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -750,12 +750,12 @@ func (b *builder) NewCreateSubnetTx(
 func (b *builder) NewTransferSubnetOwnershipTx(
 	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.TransferSubnetOwnershipTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
@@ -815,7 +815,7 @@ func (b *builder) NewConvertSubnetToL1Tx(
 	chainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertSubnetToL1Validator,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ConvertSubnetToL1Tx, error) {
 	var luxToBurn uint64
 	for _, vdr := range validators {
@@ -831,7 +831,7 @@ func (b *builder) NewConvertSubnetToL1Tx(
 			b.context.LUXAssetID: luxToBurn,
 		}
 		toStake = map[ids.ID]uint64{}
-		ops     = common.NewOptions(options)
+		ops     = wallet.NewOptions(options)
 	)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
@@ -897,7 +897,7 @@ func (b *builder) NewRegisterL1ValidatorTx(
 	balance uint64,
 	proofOfPossession [bls.SignatureLen]byte,
 	message []byte,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.RegisterL1ValidatorTx, error) {
 	var (
 		toBurn = map[ids.ID]uint64{
@@ -905,7 +905,7 @@ func (b *builder) NewRegisterL1ValidatorTx(
 		}
 		toStake = map[ids.ID]uint64{}
 
-		ops            = common.NewOptions(options)
+		ops            = wallet.NewOptions(options)
 		memo           = ops.Memo()
 		memoComplexity = gas.Dimensions{
 			gas.Bandwidth: uint64(len(memo)),
@@ -952,12 +952,12 @@ func (b *builder) NewRegisterL1ValidatorTx(
 
 func (b *builder) NewSetL1ValidatorWeightTx(
 	message []byte,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.SetL1ValidatorWeightTx, error) {
 	var (
 		toBurn         = map[ids.ID]uint64{}
 		toStake        = map[ids.ID]uint64{}
-		ops            = common.NewOptions(options)
+		ops            = wallet.NewOptions(options)
 		memo           = ops.Memo()
 		memoComplexity = gas.Dimensions{
 			gas.Bandwidth: uint64(len(memo)),
@@ -1003,14 +1003,14 @@ func (b *builder) NewSetL1ValidatorWeightTx(
 func (b *builder) NewIncreaseL1ValidatorBalanceTx(
 	validationID ids.ID,
 	balance uint64,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.IncreaseL1ValidatorBalanceTx, error) {
 	var (
 		toBurn = map[ids.ID]uint64{
 			b.context.LUXAssetID: balance,
 		}
 		toStake        = map[ids.ID]uint64{}
-		ops            = common.NewOptions(options)
+		ops            = wallet.NewOptions(options)
 		memo           = ops.Memo()
 		memoComplexity = gas.Dimensions{
 			gas.Bandwidth: uint64(len(memo)),
@@ -1051,12 +1051,12 @@ func (b *builder) NewIncreaseL1ValidatorBalanceTx(
 
 func (b *builder) NewDisableL1ValidatorTx(
 	validationID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.DisableL1ValidatorTx, error) {
 	var (
 		toBurn  = map[ids.ID]uint64{}
 		toStake = map[ids.ID]uint64{}
-		ops     = common.NewOptions(options)
+		ops     = wallet.NewOptions(options)
 	)
 	disableAuth, err := b.authorize(validationID, ops)
 	if err != nil {
@@ -1109,9 +1109,9 @@ func (b *builder) NewDisableL1ValidatorTx(
 func (b *builder) NewImportTx(
 	sourceChainID ids.ID,
 	to *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ImportTx, error) {
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	utxos, err := b.backend.UTXOs(ops.Context(), sourceChainID)
 	if err != nil {
 		return nil, err
@@ -1132,7 +1132,7 @@ func (b *builder) NewImportTx(
 			continue
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -1238,7 +1238,7 @@ func (b *builder) NewImportTx(
 func (b *builder) NewExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ExportTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	for _, out := range outputs {
@@ -1251,7 +1251,7 @@ func (b *builder) NewExportTx(
 	}
 
 	toStake := map[ids.ID]uint64{}
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -1310,14 +1310,14 @@ func (b *builder) NewTransformSubnetTx(
 	minDelegatorStake uint64,
 	maxValidatorWeightFactor byte,
 	uptimeRequirement uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.TransformSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
 		assetID: maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
@@ -1369,14 +1369,14 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	validationRewardsOwner *secp256k1fx.OutputOwners,
 	delegationRewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
 	}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -1440,14 +1440,14 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
 	}
 
-	ops := common.NewOptions(options)
+	ops := wallet.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -1495,7 +1495,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 
 func (b *builder) getBalance(
 	chainID ids.ID,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	balance map[ids.ID]uint64,
 	err error,
@@ -1526,7 +1526,7 @@ func (b *builder) getBalance(
 			return nil, ErrUnknownOutputType
 		}
 
-		_, ok = common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		_, ok = wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -1565,7 +1565,7 @@ func (b *builder) spend(
 	excessLUX uint64,
 	complexity gas.Dimensions,
 	ownerOverride *secp256k1fx.OutputOwners,
-	options *common.Options,
+	options *wallet.Options,
 ) (
 	inputs []*lux.TransferableInput,
 	changeOutputs []*lux.TransferableOutput,
@@ -1620,7 +1620,7 @@ func (b *builder) spend(
 			return nil, nil, nil, err
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -1711,7 +1711,7 @@ func (b *builder) spend(
 			return nil, nil, nil, err
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -1767,7 +1767,7 @@ func (b *builder) spend(
 			return nil, nil, nil, err
 		}
 
-		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		inputSigIndices, ok := wallet.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
 		if !ok {
 			// We couldn't spend this UTXO, so we skip to the next one
 			continue
@@ -1845,7 +1845,7 @@ func (b *builder) spend(
 	return s.inputs, s.changeOutputs, s.stakeOutputs, nil
 }
 
-func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
+func (b *builder) authorize(ownerID ids.ID, options *wallet.Options) (*secp256k1fx.Input, error) {
 	ownerIntf, err := b.backend.GetOwner(options.Context(), ownerID)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -1861,7 +1861,7 @@ func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1
 
 	addrs := options.Addresses(b.addrs)
 	minIssuanceTime := options.MinIssuanceTime()
-	inputSigIndices, ok := common.MatchOwners(owner, addrs, minIssuanceTime)
+	inputSigIndices, ok := wallet.MatchOwners(owner, addrs, minIssuanceTime)
 	if !ok {
 		// We can't authorize the subnet
 		return nil, ErrInsufficientAuthorization

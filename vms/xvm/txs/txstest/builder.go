@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	primary "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 type Builder struct {
@@ -28,7 +28,7 @@ type Builder struct {
 
 func New(
 	codec codec.Manager,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 	state state.State,
@@ -54,7 +54,7 @@ func (b *Builder) CreateAssetTx(
 		symbol,
 		denomination,
 		initialStates,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -76,11 +76,11 @@ func (b *Builder) BaseTx(
 
 	utx, err := xBuilder.NewBaseTx(
 		outs,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
-		common.WithMemo(memo),
+		primary.WithMemo(memo),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed building base tx: %w", err)
@@ -102,7 +102,7 @@ func (b *Builder) MintNFT(
 		assetID,
 		payload,
 		owners,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -123,7 +123,7 @@ func (b *Builder) MintFTs(
 
 	utx, err := xBuilder.NewOperationTxMintFT(
 		outputs,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -144,7 +144,7 @@ func (b *Builder) Operation(
 
 	utx, err := xBuilder.NewOperationTx(
 		ops,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -205,7 +205,7 @@ func (b *Builder) ExportTx(
 	utx, err := xBuilder.NewExportTx(
 		destinationChain,
 		outputs,
-		common.WithChangeOwner(&secp256k1fx.OutputOwners{
+		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),

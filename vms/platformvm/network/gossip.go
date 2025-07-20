@@ -51,7 +51,7 @@ func (t txGossipHandler) AppRequest(
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, *common.AppError) {
+) ([]byte, *engine.AppError) {
 	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }
 

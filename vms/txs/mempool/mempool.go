@@ -70,7 +70,7 @@ type Mempool[T Tx] interface {
 	Len() int
 
 	// WaitForEvent waits until there is at least one tx in the mempool.
-	WaitForEvent(ctx context.Context) (common.Message, error)
+	WaitForEvent(ctx context.Context) (engine.Message, error)
 }
 
 type mempool[T Tx] struct {
@@ -227,7 +227,7 @@ func (m *mempool[_]) Len() int {
 	return m.unissuedTxs.Len()
 }
 
-func (m *mempool[_]) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (m *mempool[_]) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -236,5 +236,5 @@ func (m *mempool[_]) WaitForEvent(ctx context.Context) (common.Message, error) {
 			return 0, err
 		}
 	}
-	return common.PendingTxs, nil
+	return engine.PendingTxs, nil
 }

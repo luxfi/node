@@ -603,7 +603,7 @@ func TestRouterTimeout(t *testing.T) {
 		calledQueryFailed = true
 		return nil
 	}
-	bootstrapper.AppRequestFailedF = func(context.Context, ids.NodeID, uint32, *common.AppError) error {
+	bootstrapper.AppRequestFailedF = func(context.Context, ids.NodeID, uint32, *engine.AppError) error {
 		defer wg.Done()
 		calledAppRequestFailed = true
 		return nil
@@ -773,8 +773,8 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
-				common.ErrTimeout.Code,
-				common.ErrTimeout.Message,
+				engine.ErrTimeout.Code,
+				engine.ErrTimeout.Message,
 			),
 			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
@@ -1351,7 +1351,7 @@ func TestAppRequest(t *testing.T) {
 	wantRequestID := uint32(123)
 	wantResponse := []byte("response")
 
-	errFoo := common.AppError{
+	errFoo := engine.AppError{
 		Code:    456,
 		Message: "foo",
 	}
@@ -1390,7 +1390,7 @@ func TestAppRequest(t *testing.T) {
 
 			wg.Add(1)
 			if tt.inboundMsg == nil || tt.inboundMsg.Op() == message.AppErrorOp {
-				engine.AppRequestFailedF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+				engine.AppRequestFailedF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
 					defer wg.Done()
 					chainRouter.lock.Lock()
 					require.Zero(chainRouter.timedRequests.Len())
@@ -1612,7 +1612,7 @@ func TestHandleSimplexMessage(t *testing.T) {
 	require.True(t, receivedMsg)
 }
 
-func noopSubscription(ctx context.Context) (common.Message, error) {
+func noopSubscription(ctx context.Context) (engine.Message, error) {
 	<-ctx.Done()
-	return common.Message(0), ctx.Err()
+	return engine.Message(0), ctx.Err()
 }

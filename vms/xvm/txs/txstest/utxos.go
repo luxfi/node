@@ -27,7 +27,7 @@ var (
 )
 
 func newUTXOs(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	state state.State,
 	sharedMemory atomic.SharedMemory,
 	codec codec.Manager,

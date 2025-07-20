@@ -26,7 +26,7 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx *snow.Context) {
+func (t *ExportTx) InitCtx(ctx *consensus.Context) {
 	for _, out := range t.ExportedOuts {
 		out.InitCtx(ctx)
 	}

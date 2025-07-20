@@ -671,7 +671,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -864,7 +864,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1006,7 +1006,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1187,7 +1187,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1330,7 +1330,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Durango,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1517,7 +1517,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1652,7 +1652,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*engine.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -2316,7 +2316,7 @@ func TestServiceGetBlock(t *testing.T) {
 			serviceAndExpectedBlockFunc: func(*testing.T, *gomock.Controller) (*Service, interface{}) {
 				return &Service{
 					vm: &VM{
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2333,7 +2333,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2354,7 +2354,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2378,7 +2378,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2402,7 +2402,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2426,7 +2426,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2482,7 +2482,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			serviceAndExpectedBlockFunc: func(*testing.T, *gomock.Controller) (*Service, interface{}) {
 				return &Service{
 					vm: &VM{
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2502,7 +2502,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2523,7 +2523,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2548,7 +2548,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2576,7 +2576,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2604,7 +2604,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2632,7 +2632,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2687,7 +2687,7 @@ func TestServiceGetHeight(t *testing.T) {
 			serviceFunc: func(*gomock.Controller) *Service {
 				return &Service{
 					vm: &VM{
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2707,7 +2707,7 @@ func TestServiceGetHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -2730,7 +2730,7 @@ func TestServiceGetHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	primary "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 type TestContext interface {
@@ -29,7 +29,7 @@ type TestContext interface {
 	// Context helpers requiring cleanup with DeferCleanup
 	ContextWithTimeout(duration time.Duration) context.Context
 	DefaultContext() context.Context
-	WithDefaultContext() common.Option
+	WithDefaultContext() primary.Option
 
 	// Ensures compatibility with require.Eventually
 	Eventually(condition func() bool, waitFor time.Duration, tick time.Duration, msg string)

@@ -23,7 +23,7 @@ import (
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ common.AppHandler    = (*Network)(nil)
+	_ engine.AppHandler    = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
@@ -58,7 +58,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log logging.Logger,
-	sender common.AppSender,
+	sender engine.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -103,7 +103,7 @@ type Network struct {
 	Peers *Peers
 
 	log    logging.Logger
-	sender common.AppSender
+	sender engine.AppSender
 
 	router *router
 }
@@ -116,7 +116,7 @@ func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 	return n.router.AppResponse(ctx, nodeID, requestID, response)
 }
 
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
 	return n.router.AppRequestFailed(ctx, nodeID, requestID, appErr)
 }
 

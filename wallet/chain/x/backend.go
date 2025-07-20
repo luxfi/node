@@ -9,14 +9,14 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 )
 
 var _ Backend = (*backend)(nil)
 
 // Backend defines the full interface required to support an X-chain wallet.
 type Backend interface {
-	common.ChainUTXOs
+	walletutil.ChainUTXOs
 	builder.Backend
 	signer.Backend
 
@@ -24,12 +24,12 @@ type Backend interface {
 }
 
 type backend struct {
-	common.ChainUTXOs
+	walletutil.ChainUTXOs
 
 	context *builder.Context
 }
 
-func NewBackend(context *builder.Context, utxos common.ChainUTXOs) Backend {
+func NewBackend(context *builder.Context, utxos walletutil.ChainUTXOs) Backend {
 	return &backend{
 		ChainUTXOs: utxos,
 		context:    context,

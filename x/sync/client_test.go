@@ -46,7 +46,7 @@ func newFlakyRangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
 			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
 				return nil, appErr
@@ -65,7 +65,7 @@ func newFlakyRangeProofHandler(
 
 			responseBytes, err := proto.Marshal(proof.ToProto())
 			if err != nil {
-				return nil, &common.AppError{Code: 123, Message: err.Error()}
+				return nil, &engine.AppError{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -82,7 +82,7 @@ func newFlakyChangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
 			var err error
 			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
@@ -107,7 +107,7 @@ func newFlakyChangeProofHandler(
 				},
 			})
 			if err != nil {
-				return nil, &common.AppError{Code: 123, Message: err.Error()}
+				return nil, &engine.AppError{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -120,9 +120,9 @@ type flakyHandler struct {
 	c *counter
 }
 
-func (f *flakyHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+func (f *flakyHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
 	if f.c.Inc() == 0 {
-		return nil, &common.AppError{Code: 123, Message: "flake error"}
+		return nil, &engine.AppError{Code: 123, Message: "flake error"}
 	}
 
 	return f.Handler.AppRequest(ctx, nodeID, deadline, requestBytes)
@@ -151,7 +151,7 @@ type waitingHandler struct {
 	updatedRootChan chan struct{}
 }
 
-func (w *waitingHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+func (w *waitingHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
 	<-w.updatedRootChan
 	return w.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }

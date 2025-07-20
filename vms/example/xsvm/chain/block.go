@@ -148,7 +148,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == snow.Bootstrapping,
+		b.chain.chainState == consensus.Bootstrapping,
 		blockContext,
 		b.Stateless,
 	)

@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 func Command() *cobra.Command {
@@ -74,7 +73,7 @@ func createFunc(c *cobra.Command, args []string) error {
 		constants.XSVMID,
 		nil,
 		config.Name,
-		common.WithContext(ctx),
+		primary.WithContext(ctx),
 	)
 	if err != nil {
 		return err

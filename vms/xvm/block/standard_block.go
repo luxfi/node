@@ -41,7 +41,7 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx *snow.Context) {
+func (b *StandardBlock) InitCtx(ctx *consensus.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}

@@ -122,13 +122,13 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
@@ -317,7 +317,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
+func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(state),
 	})
@@ -406,13 +406,13 @@ func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return ghttp.NewClient(httppb.NewHTTPClient(clientConn)), nil
 }
 
-func (vm *VMClient) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VMClient) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	resp, err := vm.client.WaitForEvent(ctx, &emptypb.Empty{})
 	if err != nil {
 		vm.logger.Debug("failed to subscribe to events", zap.Error(err))
 		return 0, err
 	}
-	return common.Message(resp.Message), nil
+	return engine.Message(resp.Message), nil
 }
 
 func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
@@ -565,7 +565,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,

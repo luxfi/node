@@ -45,7 +45,7 @@ const (
 )
 
 var (
-	_ common.BootstrapableEngine = (*Bootstrapper)(nil)
+	_ engine.BootstrapableEngine = (*Bootstrapper)(nil)
 
 	errUnexpectedTimeout = errors.New("unexpected timeout fired")
 )
@@ -70,14 +70,14 @@ type Bootstrapper struct {
 	Config
 
 	*metrics
-	TimeoutRegistrar common.TimeoutRegistrar
+	TimeoutRegistrar engine.TimeoutRegistrar
 	// list of NoOpsHandler for messages dropped by bootstrapper
-	common.StateSummaryFrontierHandler
-	common.AcceptedStateSummaryHandler
-	common.PutHandler
-	common.QueryHandler
-	common.ChitsHandler
-	common.AppHandler
+	engine.StateSummaryFrontierHandler
+	engine.AcceptedStateSummaryHandler
+	engine.PutHandler
+	engine.QueryHandler
+	engine.ChitsHandler
+	engine.AppHandler
 
 	requestID uint32 // Tracks the last requestID that was used in a request
 
@@ -97,8 +97,8 @@ type Bootstrapper struct {
 	startTime time.Time
 
 	// tracks which validators were asked for which containers in which requests
-	outstandingRequests     *bimap.BiMap[common.Request, ids.ID]
-	outstandingRequestTimes map[common.Request]time.Time
+	outstandingRequests     *bimap.BiMap[engine.Request, ids.ID]
+	outstandingRequestTimes map[engine.Request]time.Time
 
 	// number of state transitions executed
 	executedStateTransitions uint64
@@ -123,18 +123,18 @@ func New(config Config, onFinished func(ctx context.Context, lastReqID uint32) e
 		nonVerifyingParser:          config.NonVerifyingParse,
 		Config:                      config,
 		metrics:                     metrics,
-		StateSummaryFrontierHandler: common.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
-		AcceptedStateSummaryHandler: common.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
-		PutHandler:                  common.NewNoOpPutHandler(config.Ctx.Log),
-		QueryHandler:                common.NewNoOpQueryHandler(config.Ctx.Log),
-		ChitsHandler:                common.NewNoOpChitsHandler(config.Ctx.Log),
+		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
+		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
+		PutHandler:                  engine.NewNoOpPutHandler(config.Ctx.Log),
+		QueryHandler:                engine.NewNoOpQueryHandler(config.Ctx.Log),
+		ChitsHandler:                engine.NewNoOpChitsHandler(config.Ctx.Log),
 		AppHandler:                  config.VM,
 
 		minority: bootstrapper.Noop,
 		majority: bootstrapper.Noop,
 
-		outstandingRequests:     bimap.New[common.Request, ids.ID](),
-		outstandingRequestTimes: make(map[common.Request]time.Time),
+		outstandingRequests:     bimap.New[engine.Request, ids.ID](),
+		outstandingRequestTimes: make(map[engine.Request]time.Time),
 
 		executedStateTransitions: math.MaxInt,
 		onFinished:               onFinished,
@@ -148,7 +148,7 @@ func New(config Config, onFinished func(ctx context.Context, lastReqID uint32) e
 			bs.Config.Ctx.Log.Warn("Encountered error during bootstrapping: %w", zap.Error(err))
 		}
 	}
-	bs.TimeoutRegistrar = common.NewTimeoutScheduler(timeout, config.BootstrapTracker.AllBootstrapped())
+	bs.TimeoutRegistrar = engine.NewTimeoutScheduler(timeout, config.BootstrapTracker.AllBootstrapped())
 
 	return bs, err
 }
@@ -436,7 +436,7 @@ func (b *Bootstrapper) fetch(ctx context.Context, blkID ids.ID) error {
 	b.PeerTracker.RegisterRequest(nodeID)
 
 	b.requestID++
-	request := common.Request{
+	request := engine.Request{
 		NodeID:    nodeID,
 		RequestID: b.requestID,
 	}
@@ -450,7 +450,7 @@ func (b *Bootstrapper) fetch(ctx context.Context, blkID ids.ID) error {
 // response to a GetAncestors message to [nodeID] with request ID [requestID]
 func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, blks [][]byte) error {
 	// Make sure this is in response to a request we made
-	request := common.Request{
+	request := engine.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -542,7 +542,7 @@ func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 }
 
 func (b *Bootstrapper) GetAncestorsFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	request := common.Request{
+	request := engine.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -748,13 +748,13 @@ func (b *Bootstrapper) Timeout() error {
 func (b *Bootstrapper) restartBootstrapping(ctx context.Context) error {
 	b.Ctx.Log.Debug("Checking for new frontiers")
 	b.restarted = true
-	b.outstandingRequests = bimap.New[common.Request, ids.ID]()
-	b.outstandingRequestTimes = make(map[common.Request]time.Time)
+	b.outstandingRequests = bimap.New[engine.Request, ids.ID]()
+	b.outstandingRequestTimes = make(map[engine.Request]time.Time)
 	return b.startBootstrapping(ctx)
 }
 
-func (b *Bootstrapper) Notify(_ context.Context, msg common.Message) error {
-	if msg != common.StateSyncDone {
+func (b *Bootstrapper) Notify(_ context.Context, msg engine.Message) error {
+	if msg != engine.StateSyncDone {
 		b.Ctx.Log.Info("received an unexpected message from the VM",
 			zap.Stringer("msg", msg),
 		)

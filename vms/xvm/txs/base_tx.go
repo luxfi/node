@@ -23,7 +23,7 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *snow.Context) {
+func (t *BaseTx) InitCtx(ctx *consensus.Context) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}

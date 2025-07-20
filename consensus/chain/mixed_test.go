@@ -11,7 +11,7 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/node/consensus/factories"
-	sampling "github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 func TestConvergenceSnowFlakeSnowBall(t *testing.T) {

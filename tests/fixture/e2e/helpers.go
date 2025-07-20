@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/luxfi/geth/core/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -26,9 +26,8 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethereum "github.com/luxfi/geth"
+	"github.com/luxfi/geth"
 )
 
 const (
@@ -74,14 +73,14 @@ func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmp
 	require.NoError(tc, err)
 	wallet := primary.NewWalletWithOptions(
 		baseWallet,
-		common.WithIssuanceHandler(func(r common.IssuanceReceipt) {
+		primary.WithIssuanceHandler(func(r primary.IssuanceReceipt) {
 			log.Info("issued transaction",
 				zap.String("chainAlias", r.ChainAlias),
 				zap.Stringer("txID", r.TxID),
 				zap.Duration("duration", r.Duration),
 			)
 		}),
-		common.WithConfirmationHandler(func(r common.ConfirmationReceipt) {
+		primary.WithConfirmationHandler(func(r primary.ConfirmationReceipt) {
 			log.Info("confirmed transaction",
 				zap.String("chainAlias", r.ChainAlias),
 				zap.Stringer("txID", r.TxID),
@@ -90,7 +89,7 @@ func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmp
 			)
 		}),
 		// Reducing the default from 100ms speeds up detection of tx acceptance
-		common.WithPollFrequency(10*time.Millisecond),
+		primary.WithPollFrequency(10*time.Millisecond),
 	)
 	OutputWalletBalances(tc, wallet)
 	return wallet
@@ -128,7 +127,7 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 }
 
 // Create a new eth client targeting the specified node URI.
-func NewEthClient(tc tests.TestContext, nodeURI tmpnet.NodeURI) *ethclient.Client {
+func NewEthClient(tc tests.TestContext, nodeURI tmpnet.NodeURI) ethclient.Client {
 	tc.Log().Info("initializing a new eth client",
 		zap.Stringer("nodeID", nodeURI.NodeID),
 		zap.String("URI", nodeURI.URI),
@@ -167,7 +166,7 @@ func WaitForHealthy(t require.TestingT, node *tmpnet.Node) {
 
 // Sends an eth transaction and waits for the transaction receipt from the
 // execution of the transaction.
-func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signedTx *types.Transaction) *types.Receipt {
+func SendEthTransaction(tc tests.TestContext, ethClient ethclient.Client, signedTx *types.Transaction) *types.Receipt {
 	require := require.New(tc)
 
 	txID := signedTx.Hash()
@@ -182,7 +181,7 @@ func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signe
 	tc.Eventually(func() bool {
 		var err error
 		receipt, err = ethClient.TransactionReceipt(tc.DefaultContext(), txID)
-		if errors.Is(err, ethereum.NotFound) {
+		if errors.Is(err, geth.NotFound) {
 			return false // Transaction is still pending
 		}
 		require.NoError(err)
@@ -200,7 +199,7 @@ func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signe
 
 // Determines the suggested gas price for the configured client that will
 // maximize the chances of transaction acceptance.
-func SuggestGasPrice(tc tests.TestContext, ethClient *ethclient.Client) *big.Int {
+func SuggestGasPrice(tc tests.TestContext, ethClient ethclient.Client) *big.Int {
 	gasPrice, err := ethClient.SuggestGasPrice(tc.DefaultContext())
 	require.NoError(tc, err)
 
@@ -216,9 +215,9 @@ func SuggestGasPrice(tc tests.TestContext, ethClient *ethclient.Client) *big.Int
 }
 
 // Helper simplifying use via an option of a gas price appropriate for testing.
-func WithSuggestedGasPrice(tc tests.TestContext, ethClient *ethclient.Client) common.Option {
+func WithSuggestedGasPrice(tc tests.TestContext, ethClient ethclient.Client) primary.Option {
 	baseFee := SuggestGasPrice(tc, ethClient)
-	return common.WithBaseFee(baseFee)
+	return primary.WithBaseFee(baseFee)
 }
 
 // Verify that a new node can bootstrap into the network. If the check wasn't skipped,

@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/commonmock"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -63,7 +62,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name          string
 		mempool       *pmempool.Mempool
 		txVerifier    testTxVerifier
-		appSenderFunc func(*gomock.Controller) common.AppSender
+		appSenderFunc func(*gomock.Controller) engine.AppSender
 		tx            *txs.Tx
 		expectedErr   error
 	}
@@ -77,8 +76,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: &txs.BaseTx{}}))
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				return commonmock.NewSender(ctrl)
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
+				return engine.NewSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: mempool.ErrDuplicateTx,
@@ -91,9 +90,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				mempool.MarkDropped(ids.Empty, errTest)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
 				// Shouldn't gossip the tx
-				return commonmock.NewSender(ctrl)
+				return engine.NewSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -106,9 +105,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			}(),
 			txVerifier: testTxVerifier{err: errTest},
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
 				// Shouldn't gossip the tx
-				return commonmock.NewSender(ctrl)
+				return engine.NewSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -120,9 +119,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
 				// Shouldn't gossip the tx
-				return commonmock.NewSender(ctrl)
+				return engine.NewSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
@@ -153,9 +152,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, mempool.Add(tx))
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
 				// Shouldn't gossip the tx
-				return commonmock.NewSender(ctrl)
+				return engine.NewSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{
@@ -190,9 +189,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 
 				return m
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
 				// Shouldn't gossip the tx
-				return commonmock.NewSender(ctrl)
+				return engine.NewSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{}}}
@@ -208,8 +207,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := commonmock.NewSender(ctrl)
+			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
+				appSender := engine.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},

@@ -32,7 +32,7 @@ var (
 	errNumToFetchInvalid   = fmt.Errorf("numToFetch must be in [1,%d]", MaxFetchedByRange)
 	errNoContainerAtIndex  = errors.New("no container at index")
 
-	_ snow.Acceptor = (*index)(nil)
+	_ consensus.Acceptor = (*index)(nil)
 )
 
 // index indexes containers in their order of acceptance
@@ -108,7 +108,7 @@ func (i *index) Close() error {
 // Index that the given transaction is accepted
 // Returned error should be treated as fatal; the VM should not commit [containerID]
 // or any new containers as accepted.
-func (i *index) Accept(ctx *snow.ConsensusContext, containerID ids.ID, containerBytes []byte) error {
+func (i *index) Accept(ctx *consensus.Context, containerID ids.ID, containerBytes []byte) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

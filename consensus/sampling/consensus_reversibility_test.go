@@ -4,7 +4,6 @@
 package sampling
 
 import (
-	"github.com/luxfi/node/consensus/factories"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,7 +23,8 @@ func TestSnowballGovernance(t *testing.T) {
 		source              = prng.NewMT19937()
 	)
 
-	nBitwise := NewNetwork(factories.SnowballFactory, params, numColors, source)
+	factory := snowballTestFactory{}
+	nBitwise := NewNetwork(factory, params, numColors, source)
 
 	source.Seed(seed)
 	for i := 0; i < numRed; i++ {

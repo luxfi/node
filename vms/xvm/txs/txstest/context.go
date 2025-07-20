@@ -11,7 +11,7 @@ import (
 )
 
 func newContext(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 ) *builder.Context {

@@ -1,5 +1,8 @@
 # Makefile for Lux Node
 
+# Ensure Go bin is in PATH for Make
+export PATH := $(HOME)/go/bin:$(PATH)
+
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -81,18 +84,10 @@ mocks:
 # Generate protobuf files
 protobuf:
 	@echo "Generating protobuf files..."
-	@if ! command -v buf &> /dev/null; then \
-		echo "buf not found, installing..."; \
-		go install github.com/bufbuild/buf/cmd/buf@v1.52.1; \
-	fi
-	@if ! command -v protoc-gen-go &> /dev/null; then \
-		echo "protoc-gen-go not found, installing..."; \
-		go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6; \
-	fi
-	@if ! command -v protoc-gen-go-grpc &> /dev/null; then \
-		echo "protoc-gen-go-grpc not found, installing..."; \
-		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1; \
-	fi
+	@which buf >/dev/null 2>&1 || (echo "buf not found, installing..." && go install github.com/bufbuild/buf/cmd/buf@v1.52.1)
+	@which protoc-gen-go >/dev/null 2>&1 || (echo "protoc-gen-go not found, installing..." && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6)
+	@which protoc-gen-go-grpc >/dev/null 2>&1 || (echo "protoc-gen-go-grpc not found, installing..." && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1)
+	@which protoc-gen-connect-go >/dev/null 2>&1 || (echo "protoc-gen-connect-go not found, installing..." && go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest)
 	./scripts/protobuf_codegen.sh
 
 # Generate all code (mocks + protobuf)

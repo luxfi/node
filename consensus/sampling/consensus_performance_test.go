@@ -4,13 +4,112 @@
 package sampling
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"
 
-	"github.com/luxfi/node/consensus/factories"
+	"github.com/luxfi/node/ids"
 )
+
+// testNnary is a stub implementation for testing
+type testNnary struct {
+	params     Parameters
+	choice     ids.ID
+	preference ids.ID
+	finalized  bool
+}
+
+func (t *testNnary) Add(newChoice ids.ID) {
+	if t.preference == ids.Empty {
+		t.preference = newChoice
+	}
+}
+
+func (t *testNnary) Preference() ids.ID {
+	if t.preference == ids.Empty {
+		return t.choice
+	}
+	return t.preference
+}
+
+func (t *testNnary) RecordPoll(count int, choice ids.ID) {
+	if count >= t.params.AlphaPreference {
+		t.preference = choice
+	}
+}
+
+func (t *testNnary) RecordUnsuccessfulPoll() {}
+
+func (t *testNnary) Finalized() bool {
+	return t.finalized
+}
+
+func (t *testNnary) String() string {
+	return fmt.Sprintf("testNnary{preference: %s, finalized: %v}", t.preference, t.finalized)
+}
+
+// testUnary is a stub implementation for testing
+type testUnary struct {
+	params    Parameters
+	finalized bool
+}
+
+func (t *testUnary) RecordPoll(count int) {}
+
+func (t *testUnary) RecordUnsuccessfulPoll() {}
+
+func (t *testUnary) Finalized() bool {
+	return t.finalized
+}
+
+func (t *testUnary) Extend(originalPreference int) Binary {
+	return &testBinary{}
+}
+
+func (t *testUnary) Clone() Unary {
+	return &testUnary{params: t.params, finalized: t.finalized}
+}
+
+func (t *testUnary) String() string {
+	return fmt.Sprintf("testUnary{finalized: %v}", t.finalized)
+}
+
+// testBinary is a stub implementation for testing
+type testBinary struct {
+	preference int
+	finalized  bool
+}
+
+func (t *testBinary) Preference() int {
+	return t.preference
+}
+
+func (t *testBinary) RecordPoll(count, choice int) {
+	t.preference = choice
+}
+
+func (t *testBinary) RecordUnsuccessfulPoll() {}
+
+func (t *testBinary) Finalized() bool {
+	return t.finalized
+}
+
+func (t *testBinary) String() string {
+	return fmt.Sprintf("testBinary{preference: %d, finalized: %v}", t.preference, t.finalized)
+}
+
+// snowballTestFactory is a test factory for snowball consensus
+type snowballTestFactory struct{}
+
+func (snowballTestFactory) NewNnary(params Parameters, choice ids.ID) Nnary {
+	return &testNnary{params: params, choice: choice, preference: choice}
+}
+
+func (snowballTestFactory) NewUnary(params Parameters) Unary {
+	return &testUnary{params: params}
+}
 
 // Test that a network running the lower AlphaPreference converges faster than a
 // network running equal Alpha values.
@@ -28,12 +127,13 @@ func TestDualAlphaOptimization(t *testing.T) {
 		}
 		seed   uint64 = 0
 		source        = prng.NewMT19937()
+		factory       = snowballTestFactory{}
 	)
 
-	singleAlphaNetwork := NewNetwork(factories.SnowballFactory, params, numColors, source)
+	singleAlphaNetwork := NewNetwork(factory, params, numColors, source)
 
 	params.AlphaPreference = params.K/2 + 1
-	dualAlphaNetwork := NewNetwork(factories.SnowballFactory, params, numColors, source)
+	dualAlphaNetwork := NewNetwork(factory, params, numColors, source)
 
 	source.Seed(seed)
 	for i := 0; i < numNodes; i++ {
@@ -63,8 +163,9 @@ func TestTreeConvergenceOptimization(t *testing.T) {
 		source           = prng.NewMT19937()
 	)
 
-	treeNetwork := NewNetwork(factories.SnowballFactory, params, numColors, source)
-	flatNetwork := NewNetwork(factories.SnowballFactory, params, numColors, source)
+	factory := snowballTestFactory{}
+	treeNetwork := NewNetwork(factory, params, numColors, source)
+	flatNetwork := NewNetwork(factory, params, numColors, source)
 
 	source.Seed(seed)
 	for i := 0; i < numNodes; i++ {

@@ -43,7 +43,7 @@ var (
 type VM struct {
 	*p2p.Network
 
-	chainContext *snow.Context
+	chainContext *consensus.Context
 	db           database.Database
 	genesis      *genesis.Genesis
 
@@ -53,13 +53,13 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *snow.Context,
+	chainContext *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
-	_ []*common.Fx,
-	appSender common.AppSender,
+	_ []*engine.Fx,
+	appSender engine.AppSender,
 ) error {
 	chainContext.Log.Info("initializing xsvm",
 		zap.Stringer("version", Version),
@@ -121,7 +121,7 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	vm.chain.SetChainState(state)
 	return nil
 }
@@ -172,11 +172,11 @@ func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensuschain.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -184,11 +184,11 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (consensuschain.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -201,7 +201,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 

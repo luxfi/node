@@ -41,7 +41,7 @@ func main() {
 		avmBlockBytes := proposerVMBlock.Block()
 		avmBlock, err := builder.Parser.ParseBlock(avmBlockBytes)
 		if err != nil {
-			log.Fatalf("failed to parse avm block: %s\n", err)
+			log.Fatalf("failed to parse xvm block: %s\n", err)
 		}
 
 		acceptedTxs := avmBlock.Txs()

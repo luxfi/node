@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"
 
-	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/bag"
 )
@@ -27,7 +26,7 @@ func TestSnowballSingleton(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 
 	require.False(tree.Finalized())
 
@@ -67,7 +66,7 @@ func TestSnowballRecordUnsuccessfulPoll(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            3,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 
 	require.False(tree.Finalized())
 
@@ -96,7 +95,7 @@ func TestSnowballBinary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 	tree.Add(Blue)
 
 	require.Equal(Red, tree.Preference())
@@ -138,7 +137,7 @@ func TestSnowballLastBinary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(one)
 
 	// Should do nothing
@@ -179,7 +178,7 @@ func TestSnowballFirstBinary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(one)
 
 	expected := `SB(Preference = 0, PreferenceStrength[0] = 0, PreferenceStrength[1] = 0, SF(Confidence = [0], Finalized = false, SL(Preference = 0))) Bit = 0
@@ -221,7 +220,7 @@ func TestSnowballAddDecidedFirstBit(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(c1000)
 	tree.Add(c1100)
 
@@ -274,7 +273,7 @@ func TestSnowballAddPreviouslyRejected(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(two)
 
 	{
@@ -336,7 +335,7 @@ func TestSnowballNewUnary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            3,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(one)
 
 	{
@@ -385,7 +384,7 @@ func TestSnowballTransitiveReset(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, zero)
+	tree := NewTree(snowballTestFactory{}, params, zero)
 	tree.Add(two)
 	tree.Add(eight)
 
@@ -468,7 +467,7 @@ func TestSnowballTrinary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Green)
+	tree := NewTree(snowballTestFactory{}, params, Green)
 	tree.Add(Red)
 	tree.Add(Blue)
 
@@ -521,7 +520,7 @@ func TestSnowballCloseTrinary(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, yellow)
+	tree := NewTree(snowballTestFactory{}, params, yellow)
 	tree.Add(cyan)
 	tree.Add(magenta)
 
@@ -568,7 +567,7 @@ func TestSnowballResetChild(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, c0000)
+	tree := NewTree(snowballTestFactory{}, params, c0000)
 	tree.Add(c0100)
 	tree.Add(c1000)
 
@@ -630,7 +629,7 @@ func TestSnowballResetSibling(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, c0000)
+	tree := NewTree(snowballTestFactory{}, params, c0000)
 	tree.Add(c0100)
 	tree.Add(c1000)
 
@@ -695,14 +694,14 @@ func TestSnowball5Colors(t *testing.T) {
 		colors = append(colors, ids.Empty.Prefix(uint64(i)))
 	}
 
-	tree0 := NewTree(factories.SnowballFactory, params, colors[4])
+	tree0 := NewTree(snowballTestFactory{}, params, colors[4])
 
 	tree0.Add(colors[0])
 	tree0.Add(colors[1])
 	tree0.Add(colors[2])
 	tree0.Add(colors[3])
 
-	tree1 := NewTree(factories.SnowballFactory, params, colors[3])
+	tree1 := NewTree(snowballTestFactory{}, params, colors[3])
 
 	tree1.Add(colors[0])
 	tree1.Add(colors[1])
@@ -728,7 +727,7 @@ func TestSnowballFineGrained(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, c0000)
+	tree := NewTree(snowballTestFactory{}, params, c0000)
 
 	require.Equal(initialUnaryDescription, tree.String())
 	require.Equal(c0000, tree.Preference())
@@ -821,7 +820,7 @@ func TestSnowballDoubleAdd(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            3,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 	tree.Add(Red)
 
 	require.Equal(initialUnaryDescription, tree.String())
@@ -845,7 +844,7 @@ func TestSnowballConsistent(t *testing.T) {
 		source        = prng.NewMT19937()
 	)
 
-	n := NewNetwork(factories.SnowballFactory, params, numColors, source)
+	n := NewNetwork(snowballTestFactory{}, params, numColors, source)
 
 	source.Seed(seed)
 	for i := 0; i < numNodes; i++ {
@@ -873,7 +872,7 @@ func TestSnowballFilterBinaryChildren(t *testing.T) {
 		AlphaConfidence: 1,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, c0000)
+	tree := NewTree(snowballTestFactory{}, params, c0000)
 
 	require.Equal(initialUnaryDescription, tree.String())
 	require.Equal(c0000, tree.Preference())
@@ -958,7 +957,7 @@ func TestSnowballRecordPreferencePollBinary(t *testing.T) {
 		AlphaConfidence: 3,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 	tree.Add(Blue)
 	require.Equal(Red, tree.Preference())
 	require.False(tree.Finalized())
@@ -992,7 +991,7 @@ func TestSnowballRecordPreferencePollUnary(t *testing.T) {
 		AlphaConfidence: 3,
 		Beta:            2,
 	}
-	tree := NewTree(factories.SnowballFactory, params, Red)
+	tree := NewTree(snowballTestFactory{}, params, Red)
 	require.Equal(Red, tree.Preference())
 	require.False(tree.Finalized())
 

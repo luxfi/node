@@ -26,7 +26,7 @@ import (
 // The VM can attempt to issue a new number, of larger value, at any time.
 // Consensus will ensure the network agrees on the number at every block height.
 type ChainVM interface {
-	common.VM
+	engine.VM
 
 	Getter
 	Parser

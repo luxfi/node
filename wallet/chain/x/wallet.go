@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	walletutil "github.com/luxfi/node/wallet"
 )
 
 var _ Wallet = (*wallet)(nil)
@@ -32,7 +32,7 @@ type Wallet interface {
 	//   from this transaction.
 	IssueBaseTx(
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueCreateAssetTx creates, signs, and issues a new asset.
@@ -49,7 +49,7 @@ type Wallet interface {
 		symbol string,
 		denomination byte,
 		initialState map[uint32][]verify.State,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueOperationTx creates, signs, and issues state changes on the UTXO
@@ -58,7 +58,7 @@ type Wallet interface {
 	// - [operations] specifies the state changes to perform.
 	IssueOperationTx(
 		operations []*txs.Operation,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueOperationTxMintFT creates, signs, and issues a set of state changes
@@ -68,7 +68,7 @@ type Wallet interface {
 	//   asset.
 	IssueOperationTxMintFT(
 		outputs map[ids.ID]*secp256k1fx.TransferOutput,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueOperationTxMintNFT creates, signs, and issues a state change that
@@ -81,7 +81,7 @@ type Wallet interface {
 		assetID ids.ID,
 		payload []byte,
 		owners []*secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueOperationTxMintProperty creates, signs, and issues a state change
@@ -92,7 +92,7 @@ type Wallet interface {
 	IssueOperationTxMintProperty(
 		assetID ids.ID,
 		owner *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueOperationTxBurnProperty creates, signs, and issues state changes
@@ -101,7 +101,7 @@ type Wallet interface {
 	// - [assetID] specifies the asset to burn the property of.
 	IssueOperationTxBurnProperty(
 		assetID ids.ID,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueImportTx creates, signs, and issues an import transaction that
@@ -112,7 +112,7 @@ type Wallet interface {
 	IssueImportTx(
 		chainID ids.ID,
 		to *secp256k1fx.OutputOwners,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueExportTx creates, signs, and issues an export transaction that
@@ -123,19 +123,19 @@ type Wallet interface {
 	IssueExportTx(
 		chainID ids.ID,
 		outputs []*lux.TransferableOutput,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueUnsignedTx signs and issues the unsigned tx.
 	IssueUnsignedTx(
 		utx txs.UnsignedTx,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) (*txs.Tx, error)
 
 	// IssueTx issues the signed tx.
 	IssueTx(
 		tx *txs.Tx,
-		options ...common.Option,
+		options ...walletutil.Option,
 	) error
 }
 
@@ -170,7 +170,7 @@ func (w *wallet) Signer() signer.Signer {
 
 func (w *wallet) IssueBaseTx(
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewBaseTx(outputs, options...)
 	if err != nil {
@@ -184,7 +184,7 @@ func (w *wallet) IssueCreateAssetTx(
 	symbol string,
 	denomination byte,
 	initialState map[uint32][]verify.State,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewCreateAssetTx(name, symbol, denomination, initialState, options...)
 	if err != nil {
@@ -195,7 +195,7 @@ func (w *wallet) IssueCreateAssetTx(
 
 func (w *wallet) IssueOperationTx(
 	operations []*txs.Operation,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewOperationTx(operations, options...)
 	if err != nil {
@@ -206,7 +206,7 @@ func (w *wallet) IssueOperationTx(
 
 func (w *wallet) IssueOperationTxMintFT(
 	outputs map[ids.ID]*secp256k1fx.TransferOutput,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewOperationTxMintFT(outputs, options...)
 	if err != nil {
@@ -219,7 +219,7 @@ func (w *wallet) IssueOperationTxMintNFT(
 	assetID ids.ID,
 	payload []byte,
 	owners []*secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewOperationTxMintNFT(assetID, payload, owners, options...)
 	if err != nil {
@@ -231,7 +231,7 @@ func (w *wallet) IssueOperationTxMintNFT(
 func (w *wallet) IssueOperationTxMintProperty(
 	assetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewOperationTxMintProperty(assetID, owner, options...)
 	if err != nil {
@@ -242,7 +242,7 @@ func (w *wallet) IssueOperationTxMintProperty(
 
 func (w *wallet) IssueOperationTxBurnProperty(
 	assetID ids.ID,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewOperationTxBurnProperty(assetID, options...)
 	if err != nil {
@@ -254,7 +254,7 @@ func (w *wallet) IssueOperationTxBurnProperty(
 func (w *wallet) IssueImportTx(
 	chainID ids.ID,
 	to *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewImportTx(chainID, to, options...)
 	if err != nil {
@@ -266,7 +266,7 @@ func (w *wallet) IssueImportTx(
 func (w *wallet) IssueExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
 	utx, err := w.builder.NewExportTx(chainID, outputs, options...)
 	if err != nil {
@@ -277,9 +277,9 @@ func (w *wallet) IssueExportTx(
 
 func (w *wallet) IssueUnsignedTx(
 	utx txs.UnsignedTx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) (*txs.Tx, error) {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	ctx := ops.Context()
 	tx, err := signer.SignUnsigned(ctx, w.signer, utx)
 	if err != nil {
@@ -291,9 +291,9 @@ func (w *wallet) IssueUnsignedTx(
 
 func (w *wallet) IssueTx(
 	tx *txs.Tx,
-	options ...common.Option,
+	options ...walletutil.Option,
 ) error {
-	ops := common.NewOptions(options)
+	ops := walletutil.NewOptions(options)
 	ctx := ops.Context()
 	startTime := time.Now()
 	txID, err := w.client.IssueTx(ctx, tx.Bytes())
@@ -303,7 +303,7 @@ func (w *wallet) IssueTx(
 
 	issuanceDuration := time.Since(startTime)
 	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
+		f(walletutil.IssuanceReceipt{
 			ChainAlias: builder.Alias,
 			TxID:       txID,
 			Duration:   issuanceDuration,
@@ -322,7 +322,7 @@ func (w *wallet) IssueTx(
 		totalDuration := time.Since(startTime)
 		confirmationDuration := totalDuration - issuanceDuration
 
-		f(common.ConfirmationReceipt{
+		f(walletutil.ConfirmationReceipt{
 			ChainAlias:           builder.Alias,
 			TxID:                 txID,
 			TotalDuration:        totalDuration,

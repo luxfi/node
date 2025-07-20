@@ -55,7 +55,7 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotCommitBlock) InitCtx(*snow.Context) {}
+func (*ApricotCommitBlock) InitCtx(*consensus.Context) {}
 
 func (*ApricotCommitBlock) Txs() []*txs.Tx {
 	return nil

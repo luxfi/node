@@ -26,21 +26,21 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.DAGVM
-	vmToInitialize common.VM
+	vmToInitialize engine.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *snow.Context
+	ctx              *consensus.Context
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*common.Fx
-	appSender        common.AppSender
+	fxs              []*engine.Fx
+	appSender        engine.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
 }
 
-func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	select {
 	case <-vm.waitForLinearize:
 		return vm.vmToInitialize.WaitForEvent(ctx)
@@ -82,13 +82,13 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOn
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *snow.Context,
+	_ *consensus.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*common.Fx,
-	_ common.AppSender,
+	_ []*engine.Fx,
+	_ engine.AppSender,
 ) error {
 	return vm.Linearize(ctx, vm.stopVertexID)
 }

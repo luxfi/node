@@ -60,7 +60,7 @@ func TestCommSendMessage(t *testing.T) {
 
 	outboundMsg, err := mc.SimplexMessage(newVote(config.Ctx.ChainID, testSimplexMessage.VoteMessage))
 	require.NoError(t, err)
-	expectedSendConfig := common.SendConfig{
+	expectedSendConfig := engine.SendConfig{
 		NodeIDs: set.Of(destinationNodeID),
 	}
 	sender.EXPECT().Send(outboundMsg, expectedSendConfig, comm.subnetID, gomock.Any())
@@ -97,7 +97,7 @@ func TestCommBroadcast(t *testing.T) {
 		nodes = append(nodes, ids.NodeID(node))
 	}
 
-	expectedSendConfig := common.SendConfig{
+	expectedSendConfig := engine.SendConfig{
 		NodeIDs: set.Of(nodes...),
 	}
 

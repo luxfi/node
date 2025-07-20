@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
@@ -27,12 +27,12 @@ var (
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex  map[common.Address]int
+	ethAddrToKeyIndex  map[geth.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
 	Addrs    set.Set[ids.ShortID]
-	EthAddrs set.Set[common.Address]
+	EthAddrs set.Set[geth.Address]
 	Keys     []*secp256k1.PrivateKey
 }
 
@@ -40,7 +40,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex:  make(map[common.Address]int),
+		ethAddrToKeyIndex:  make(map[geth.Address]int),
 	}
 	for _, key := range keys {
 		kc.Add(key)
@@ -68,7 +68,7 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Get a key from the keychain and return whether the key existed.
-func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
+func (kc Keychain) GetEth(addr geth.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return kc.Keys[i], true
 	}
@@ -81,7 +81,7 @@ func (kc Keychain) Addresses() set.Set[ids.ShortID] {
 }
 
 // EthAddresses returns a list of addresses this keychain manages
-func (kc Keychain) EthAddresses() set.Set[common.Address] {
+func (kc Keychain) EthAddresses() set.Set[geth.Address] {
 	return kc.EthAddrs
 }
 

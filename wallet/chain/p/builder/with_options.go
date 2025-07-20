@@ -12,14 +12,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet"
 )
 
 var _ Builder = (*withOptions)(nil)
 
 type withOptions struct {
 	builder Builder
-	options []common.Option
+	options []wallet.Option
 }
 
 // WithOptions returns a new builder that will use the given options by default.
@@ -28,7 +28,7 @@ type withOptions struct {
 //     operations.
 //   - [options] will be provided to the builder in addition to the options
 //     provided in the method calls.
-func WithOptions(builder Builder, options ...common.Option) Builder {
+func WithOptions(builder Builder, options ...wallet.Option) Builder {
 	return &withOptions{
 		builder: builder,
 		options: options,
@@ -40,30 +40,30 @@ func (w *withOptions) Context() *Context {
 }
 
 func (w *withOptions) GetBalance(
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
 	return w.builder.GetBalance(
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) GetImportableBalance(
 	chainID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (map[ids.ID]uint64, error) {
 	return w.builder.GetImportableBalance(
 		chainID,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewBaseTx(
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.BaseTx, error) {
 	return w.builder.NewBaseTx(
 		outputs,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -71,47 +71,47 @@ func (w *withOptions) NewAddValidatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddValidatorTx, error) {
 	return w.builder.NewAddValidatorTx(
 		vdr,
 		rewardsOwner,
 		shares,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewAddSubnetValidatorTx(
 	vdr *txs.SubnetValidator,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddSubnetValidatorTx, error) {
 	return w.builder.NewAddSubnetValidatorTx(
 		vdr,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.RemoveSubnetValidatorTx, error) {
 	return w.builder.NewRemoveSubnetValidatorTx(
 		nodeID,
 		subnetID,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewAddDelegatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddDelegatorTx, error) {
 	return w.builder.NewAddDelegatorTx(
 		vdr,
 		rewardsOwner,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -121,7 +121,7 @@ func (w *withOptions) NewCreateChainTx(
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.CreateChainTx, error) {
 	return w.builder.NewCreateChainTx(
 		subnetID,
@@ -129,29 +129,29 @@ func (w *withOptions) NewCreateChainTx(
 		vmID,
 		fxIDs,
 		chainName,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.CreateSubnetTx, error) {
 	return w.builder.NewCreateSubnetTx(
 		owner,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewTransferSubnetOwnershipTx(
 	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.TransferSubnetOwnershipTx, error) {
 	return w.builder.NewTransferSubnetOwnershipTx(
 		subnetID,
 		owner,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -160,14 +160,14 @@ func (w *withOptions) NewConvertSubnetToL1Tx(
 	chainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertSubnetToL1Validator,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ConvertSubnetToL1Tx, error) {
 	return w.builder.NewConvertSubnetToL1Tx(
 		subnetID,
 		chainID,
 		address,
 		validators,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -175,69 +175,69 @@ func (w *withOptions) NewRegisterL1ValidatorTx(
 	balance uint64,
 	proofOfPossession [bls.SignatureLen]byte,
 	message []byte,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.RegisterL1ValidatorTx, error) {
 	return w.builder.NewRegisterL1ValidatorTx(
 		balance,
 		proofOfPossession,
 		message,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewSetL1ValidatorWeightTx(
 	message []byte,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.SetL1ValidatorWeightTx, error) {
 	return w.builder.NewSetL1ValidatorWeightTx(
 		message,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewIncreaseL1ValidatorBalanceTx(
 	validationID ids.ID,
 	balance uint64,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.IncreaseL1ValidatorBalanceTx, error) {
 	return w.builder.NewIncreaseL1ValidatorBalanceTx(
 		validationID,
 		balance,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewDisableL1ValidatorTx(
 	validationID ids.ID,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.DisableL1ValidatorTx, error) {
 	return w.builder.NewDisableL1ValidatorTx(
 		validationID,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewImportTx(
 	sourceChainID ids.ID,
 	to *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ImportTx, error) {
 	return w.builder.NewImportTx(
 		sourceChainID,
 		to,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.ExportTx, error) {
 	return w.builder.NewExportTx(
 		chainID,
 		outputs,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -256,7 +256,7 @@ func (w *withOptions) NewTransformSubnetTx(
 	minDelegatorStake uint64,
 	maxValidatorWeightFactor byte,
 	uptimeRequirement uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.TransformSubnetTx, error) {
 	return w.builder.NewTransformSubnetTx(
 		subnetID,
@@ -273,7 +273,7 @@ func (w *withOptions) NewTransformSubnetTx(
 		minDelegatorStake,
 		maxValidatorWeightFactor,
 		uptimeRequirement,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -284,7 +284,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 	validationRewardsOwner *secp256k1fx.OutputOwners,
 	delegationRewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
 	return w.builder.NewAddPermissionlessValidatorTx(
 		vdr,
@@ -293,7 +293,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 		validationRewardsOwner,
 		delegationRewardsOwner,
 		shares,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }
 
@@ -301,12 +301,12 @@ func (w *withOptions) NewAddPermissionlessDelegatorTx(
 	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
-	options ...common.Option,
+	options ...wallet.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
 	return w.builder.NewAddPermissionlessDelegatorTx(
 		vdr,
 		assetID,
 		rewardsOwner,
-		common.UnionOptions(w.options, options)...,
+		wallet.UnionOptions(w.options, options)...,
 	)
 }

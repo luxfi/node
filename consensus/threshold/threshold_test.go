@@ -25,17 +25,41 @@ type snowflakeTestConstructor[T comparable] func(t *testing.T, alphaPreference i
 
 func getErrorDrivenSnowflakeSingleChoiceSuite[T comparable]() []testCase[T] {
 	return []testCase[T]{
-		{name: "ConfidenceCorrectness", f: ErrorDrivenSnowflakeSingleChoiceConfidenceCorrectnessTest[T]},
-		{name: "Unanimity", f: ErrorDrivenSnowflakeSingleChoiceUnanimityTest[T]},
-		{name: "Finalization", f: ErrorDrivenSnowflakeSingleChoiceFinalizationTest[T]},
+		{name: "ConfidenceCorrectness", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) > 0 {
+				ErrorDrivenSnowflakeSingleChoiceConfidenceCorrectnessTest(t, constructor, choices[0])
+			}
+		}},
+		{name: "Unanimity", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) > 0 {
+				ErrorDrivenSnowflakeSingleChoiceUnanimityTest(t, constructor, choices[0])
+			}
+		}},
+		{name: "Finalization", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) > 0 {
+				ErrorDrivenSnowflakeSingleChoiceFinalizationTest(t, constructor, choices[0])
+			}
+		}},
 	}
 }
 
 func getErrorDrivenSnowflakeMultiChoiceSuite[T comparable]() []testCase[T] {
 	return []testCase[T]{
-		{name: "ConfidenceCorrectness", f: ErrorDrivenSnowflakeMultiChoiceConfidenceCorrectnessTest[T]},
-		{name: "NoFEvidenceNoProgress", f: ErrorDrivenSnowflakeMultiChoiceNoFEvidenceNoProgressTest[T]},
-		{name: "ProgressWithFEvidence", f: ErrorDrivenSnowflakeMultiChoiceProgressWithFEvidenceTest[T]},
+		{name: "ConfidenceCorrectness", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) >= 2 {
+				ErrorDrivenSnowflakeMultiChoiceConfidenceCorrectnessTest(t, constructor, choices[0], choices[1])
+			}
+		}},
+		{name: "NoFEvidenceNoProgress", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) >= 2 {
+				ErrorDrivenSnowflakeMultiChoiceNoFEvidenceNoProgressTest(t, constructor, choices[0], choices[1])
+			}
+		}},
+		{name: "ProgressWithFEvidence", f: func(t *testing.T, constructor snowflakeTestConstructor[T], choices ...T) {
+			if len(choices) >= 2 {
+				ErrorDrivenSnowflakeMultiChoiceProgressWithFEvidenceTest(t, constructor, choices[0], choices[1])
+			}
+		}},
 	}
 }
 

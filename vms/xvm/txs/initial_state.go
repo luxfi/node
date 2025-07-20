@@ -31,7 +31,7 @@ type InitialState struct {
 	Outs    []verify.State `serialize:"true"  json:"outputs"`
 }
 
-func (is *InitialState) InitCtx(ctx *snow.Context) {
+func (is *InitialState) InitCtx(ctx *consensus.Context) {
 	for _, out := range is.Outs {
 		out.InitCtx(ctx)
 	}

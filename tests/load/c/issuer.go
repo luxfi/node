@@ -11,15 +11,13 @@ import (
 	"math/big"
 	"math/rand/v2"
 
+	"github.com/luxfi/geth"
 	"github.com/luxfi/geth/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/tests/load/c/contracts"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -41,7 +39,7 @@ type Issuer struct {
 
 func NewIssuer(
 	ctx context.Context,
-	client *ethclient.Client,
+	client ethclient.Client,
 	nonce uint64,
 	key *ecdsa.PrivateKey,
 ) (*Issuer, error) {
@@ -72,15 +70,15 @@ func NewIssuer(
 	}, nil
 }
 
-func (i *Issuer) GenerateAndIssueTx(ctx context.Context) (common.Hash, error) {
+func (i *Issuer) GenerateAndIssueTx(ctx context.Context) (geth.Hash, error) {
 	txType, err := pickWeightedRandom(i.txTypes)
 	if err != nil {
-		return common.Hash{}, err
+		return geth.Hash{}, err
 	}
 
 	tx, err := txType.generateAndIssueTx(ctx, txType.maxFeeCap, i.nonce)
 	if err != nil {
-		return common.Hash{}, fmt.Errorf("generating and issuing transaction of type %s: %w", txType.name, err)
+		return geth.Hash{}, fmt.Errorf("generating and issuing transaction of type %s: %w", txType.name, err)
 	}
 
 	i.nonce++
@@ -92,9 +90,9 @@ func makeTxTypes(
 	contractInstance *contracts.EVMLoadSimulator,
 	senderKey *ecdsa.PrivateKey,
 	chainID *big.Int,
-	client *ethclient.Client,
+	client ethclient.Client,
 ) []txType {
-	senderAddress := ethcrypto.PubkeyToAddress(senderKey.PublicKey)
+	senderAddress := geth.PubkeyToAddress(senderKey.PublicKey)
 	signer := types.LatestSignerForChainID(chainID)
 	return []txType{
 		{
@@ -113,7 +111,7 @@ func makeTxTypes(
 					Gas:       params.TxGas,
 					To:        &senderAddress,
 					Data:      nil,
-					Value:     common.Big0,
+					Value:     geth.Big0,
 				})
 				if err != nil {
 					return nil, fmt.Errorf("signing transaction: %w", err)
@@ -327,7 +325,7 @@ func newTxOpts(
 	}
 	txOpts.Nonce = new(big.Int).SetUint64(nonce)
 	txOpts.GasFeeCap = maxFeeCap
-	txOpts.GasTipCap = common.Big1
+	txOpts.GasTipCap = geth.Big1
 	txOpts.Context = ctx
 	return txOpts, nil
 }

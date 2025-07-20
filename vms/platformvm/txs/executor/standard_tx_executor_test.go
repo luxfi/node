@@ -47,7 +47,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 
 	safemath "github.com/luxfi/node/utils/math"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -1236,7 +1236,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Subnet: subnetID,
 					},
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1261,7 +1261,7 @@ func TestDurangoMemoField(t *testing.T) {
 					ids.GenerateTestID(),
 					[]ids.ID{},
 					"aaa",
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1278,7 +1278,7 @@ func TestDurangoMemoField(t *testing.T) {
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueCreateSubnetTx(
 					owners,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1317,7 +1317,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueImportTx(
 					sourceChain,
 					owners,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1341,7 +1341,7 @@ func TestDurangoMemoField(t *testing.T) {
 							OutputOwners: *owners,
 						},
 					}},
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1402,7 +1402,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueRemoveSubnetValidatorTx(
 					primaryValidator.NodeID,
 					subnetID,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 				return tx, onAcceptState
@@ -1433,7 +1433,7 @@ func TestDurangoMemoField(t *testing.T) {
 					10,                        // min delegator stake
 					1,                         // max validator weight factor
 					80,                        // uptime requirement
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1472,7 +1472,7 @@ func TestDurangoMemoField(t *testing.T) {
 					owners,
 					owners,
 					reward.PercentDenominator,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1512,7 +1512,7 @@ func TestDurangoMemoField(t *testing.T) {
 					},
 					env.ctx.LUXAssetID,
 					owners,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1534,7 +1534,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueTransferSubnetOwnershipTx(
 					subnetID,
 					owners,
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1562,7 +1562,7 @@ func TestDurangoMemoField(t *testing.T) {
 							},
 						},
 					},
-					common.WithMemo(memoField),
+					engine.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1775,7 +1775,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1804,7 +1804,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1833,7 +1833,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1865,7 +1865,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1894,7 +1894,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1926,7 +1926,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1957,7 +1957,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1991,7 +1991,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2145,7 +2145,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2173,7 +2173,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2206,7 +2206,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2246,7 +2246,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2287,7 +2287,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2332,7 +2332,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2422,7 +2422,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	)
 	tests := []struct {
 		name           string
-		builderOptions []common.Option
+		builderOptions []engine.Option
 		updateExecutor func(executor *standardTxExecutor) error
 		expectedErr    error
 	}{
@@ -2446,8 +2446,8 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []common.Option{
-				common.WithMemo([]byte("memo!")),
+			builderOptions: []engine.Option{
+				engine.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -2841,7 +2841,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		name           string
 		balance        uint64
 		message        []byte
-		builderOptions []common.Option
+		builderOptions []engine.Option
 		updateTx       func(*txs.RegisterL1ValidatorTx)
 		updateExecutor func(*standardTxExecutor) error
 		expectedErr    error
@@ -2866,8 +2866,8 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []common.Option{
-				common.WithMemo([]byte("memo!")),
+			builderOptions: []engine.Option{
+				engine.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3377,7 +3377,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	tests := []struct {
 		name                       string
 		message                    []byte
-		builderOptions             []common.Option
+		builderOptions             []engine.Option
 		updateExecutor             func(*standardTxExecutor) error
 		expectedNonce              uint64
 		expectedWeight             uint64
@@ -3404,8 +3404,8 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []common.Option{
-				common.WithMemo([]byte("memo!")),
+			builderOptions: []engine.Option{
+				engine.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3822,7 +3822,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	tests := []struct {
 		name            string
 		validationID    ids.ID
-		builderOptions  []common.Option
+		builderOptions  []engine.Option
 		updateTx        func(*txs.IncreaseL1ValidatorBalanceTx)
 		updateExecutor  func(*standardTxExecutor) error
 		expectedBalance uint64
@@ -3848,8 +3848,8 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []common.Option{
-				common.WithMemo([]byte("memo!")),
+			builderOptions: []engine.Option{
+				engine.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -4115,7 +4115,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	tests := []struct {
 		name            string
 		validationID    ids.ID
-		builderOptions  []common.Option
+		builderOptions  []engine.Option
 		updateTx        func(*txs.DisableL1ValidatorTx)
 		updateExecutor  func(*standardTxExecutor) error
 		expectedBalance uint64
@@ -4141,8 +4141,8 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []common.Option{
-				common.WithMemo([]byte("memo!")),
+			builderOptions: []engine.Option{
+				engine.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},

@@ -35,7 +35,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetRangeProofRequest
-		expectedErr              *common.AppError
+		expectedErr              *engine.AppError
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID
@@ -208,7 +208,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetChangeProofRequest
-		expectedErr              *common.AppError
+		expectedErr              *engine.AppError
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID

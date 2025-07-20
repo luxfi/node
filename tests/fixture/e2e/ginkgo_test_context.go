@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 type ginkgoWriteCloser struct{}
@@ -111,7 +111,7 @@ func (tc *GinkgoTestContext) DefaultContext() context.Context {
 }
 
 // Helper simplifying use via an option of a timed context configured with the default timeout.
-func (tc *GinkgoTestContext) WithDefaultContext() common.Option {
+func (tc *GinkgoTestContext) WithDefaultContext() primary.Option {
 	return tests.WithDefaultContext(tc)
 }
 

@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus"
 	set "github.com/luxfi/node/utils/set"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"
@@ -59,7 +59,7 @@ func (mr *UnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *UnsignedTx) InitCtx(ctx *snow.Context) {
+func (m *UnsignedTx) InitCtx(ctx *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }

@@ -23,12 +23,12 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func NewWallet(
 	t testing.TB,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,
@@ -39,7 +39,7 @@ func NewWallet(
 	var (
 		require = require.New(t)
 		addrs   = kc.Addresses()
-		utxos   = common.NewUTXOs()
+		utxos   = primary.NewUTXOs()
 	)
 
 	pChainUTXOs, err := lux.GetAllUTXOs(state, addrs)
@@ -96,7 +96,7 @@ func NewWallet(
 	}
 
 	backend := wallet.NewBackend(
-		common.NewChainUTXOs(constants.PlatformChainID, utxos),
+		primary.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
 	builderContext := newContext(ctx, config, state)
@@ -122,17 +122,17 @@ type client struct {
 
 func (c *client) IssueTx(
 	tx *txs.Tx,
-	options ...common.Option,
+	options ...primary.Option,
 ) error {
-	ops := common.NewOptions(options)
+	ops := primary.NewOptions(options)
 	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
+		f(primary.IssuanceReceipt{
 			ChainAlias: builder.Alias,
 			TxID:       tx.ID(),
 		})
 	}
 	if f := ops.ConfirmationHandler(); f != nil {
-		f(common.ConfirmationReceipt{
+		f(primary.ConfirmationReceipt{
 			ChainAlias: builder.Alias,
 			TxID:       tx.ID(),
 		})

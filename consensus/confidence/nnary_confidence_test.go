@@ -132,10 +132,10 @@ func TestNarySnowballDifferentSnowflakeColor(t *testing.T) {
 
 	sb.RecordPoll(alphaConfidence, Blue)
 
-	require.Equal(Blue, sb.nnarySnowflake.Preference())
+	require.Equal(Blue, sb.nnaryThreshold.Preference())
 
 	sb.RecordPoll(alphaConfidence, Red)
 
 	require.Equal(Blue, sb.Preference())
-	require.Equal(Red, sb.nnarySnowflake.Preference())
+	require.Equal(Red, sb.nnaryThreshold.Preference())
 }

@@ -386,7 +386,7 @@ func TestSend(t *testing.T) {
 	toSend := set.Of(nodeIDs[1])
 	sentTo := net0.Send(
 		outboundGetMsg,
-		common.SendConfig{
+		engine.SendConfig{
 			NodeIDs: toSend,
 		},
 		constants.PrimaryNetworkID,
@@ -432,7 +432,7 @@ func TestSendWithFilter(t *testing.T) {
 	validNodeID := nodeIDs[1]
 	sentTo := net0.Send(
 		outboundGetMsg,
-		common.SendConfig{
+		engine.SendConfig{
 			NodeIDs: toSend,
 		},
 		constants.PrimaryNetworkID,

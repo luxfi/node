@@ -47,7 +47,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
@@ -385,7 +385,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	wallet := newWallet(t, vm, walletConfig{})
 	addSubnetTx0, err := wallet.IssueCreateSubnetTx(
 		owners0,
-		walletcommon.WithCustomAddresses(set.Of(
+		walletengine.WithCustomAddresses(set.Of(
 			addr0,
 		)),
 	)
@@ -393,7 +393,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 
 	addSubnetTx1, err := wallet.IssueCreateSubnetTx(
 		owners1,
-		walletcommon.WithCustomAddresses(set.Of(
+		walletengine.WithCustomAddresses(set.Of(
 			addr1,
 		)),
 	)
@@ -403,7 +403,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	wallet = newWallet(t, vm, walletConfig{})
 	addSubnetTx2, err := wallet.IssueCreateSubnetTx(
 		owners1,
-		walletcommon.WithCustomAddresses(set.Of(
+		walletengine.WithCustomAddresses(set.Of(
 			addr0,
 		)),
 	)

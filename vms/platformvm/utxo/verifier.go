@@ -74,7 +74,7 @@ type Verifier interface {
 }
 
 func NewVerifier(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	clk *mockable.Clock,
 	fx fx.Fx,
 ) Verifier {
@@ -86,7 +86,7 @@ func NewVerifier(
 }
 
 type verifier struct {
-	ctx *snow.Context
+	ctx *consensus.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

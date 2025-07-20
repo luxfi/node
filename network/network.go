@@ -319,7 +319,7 @@ func NewNetwork(
 
 func (n *network) Send(
 	msg message.OutboundMessage,
-	config common.SendConfig,
+	config engine.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {
@@ -785,7 +785,7 @@ func (n *network) getPeers(
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
 func (n *network) samplePeers(
-	config common.SendConfig,
+	config engine.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) []peer.Peer {
@@ -1253,7 +1253,7 @@ func (n *network) runTimers() {
 // pullGossipPeerLists requests validators from peers in the network
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
-		common.SendConfig{
+		engine.SendConfig{
 			Validators: 1,
 		},
 		constants.PrimaryNetworkID,

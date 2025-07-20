@@ -23,7 +23,7 @@ type Test interface {
 type Worker struct {
 	PrivKey *ecdsa.PrivateKey
 	Nonce   uint64
-	Client  *ethclient.Client
+	Client  ethclient.Client
 }
 
 type LoadGenerator struct {

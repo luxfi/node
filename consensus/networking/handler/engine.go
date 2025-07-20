@@ -7,19 +7,19 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
 	
-	common "github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine"
 )
 
 // Engine is a wrapper around a consensus engine's components.
 type Engine struct {
-	StateSyncer  common.StateSyncer
-	Bootstrapper common.BootstrapableEngine
-	Consensus    common.Engine
+	StateSyncer  engine.StateSyncer
+	Bootstrapper engine.BootstrapableEngine
+	Consensus    engine.Engine
 }
 
 // Get returns the engine corresponding to the provided state,
 // and whether its corresponding engine is initialized (not nil).
-func (e *Engine) Get(state consensus.State) (common.Engine, bool) {
+func (e *Engine) Get(state consensus.State) (engine.Engine, bool) {
 	if e == nil {
 		return nil, false
 	}
