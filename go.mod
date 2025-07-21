@@ -9,6 +9,8 @@ module github.com/luxfi/node
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
 go 1.24.5
 
+replace github.com/luxfi/geth => ../geth
+
 require (
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/grpcreflect v1.3.0
