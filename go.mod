@@ -9,8 +9,6 @@ module github.com/luxfi/node
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
 go 1.24.5
 
-replace github.com/luxfi/geth => ../geth
-
 require (
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/grpcreflect v1.3.0
@@ -32,7 +30,7 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/geth v0.15.11-0.20250720081740-e4957f0711d5
+	github.com/luxfi/geth v0.15.40
 	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53
 	github.com/mitchellh/mapstructure v1.5.0
