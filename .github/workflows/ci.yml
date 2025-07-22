@@ -204,24 +204,6 @@ jobs:
       - name: Check image build
         shell: bash
         run: ./scripts/run_task.sh test-build-image
-  test_build_antithesis_avalanchego_images:
-    name: Build Antithesis avalanchego images
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-go-for-project
-      - name: Check image build for avalanchego test setup
-        shell: bash
-        run: ./scripts/run_task.sh test-build-antithesis-images-avalanchego
-  test_build_antithesis_xsvm_images:
-    name: Build Antithesis xsvm images
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-go-for-project
-      - name: Check image build for xsvm test setup
-        shell: bash
-        run: ./scripts/run_task.sh test-build-antithesis-images-xsvm
   e2e_bootstrap_monitor:
     name: Run bootstrap monitor e2e tests
     runs-on: ubuntu-latest

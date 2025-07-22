@@ -19,7 +19,7 @@ var _ job.Job[ids.ID] = (*issuer)(nil)
 type issuer struct {
 	e            *Engine
 	nodeID       ids.NodeID // nodeID of the peer that provided this block
-	blk          chain.Block
+	blk          linear.Block
 	push         bool
 	issuedMetric prometheus.Counter
 }

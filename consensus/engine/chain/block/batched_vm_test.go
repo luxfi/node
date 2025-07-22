@@ -27,7 +27,7 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(someID, id)
 		return nil, database.ErrNotFound
 	}
@@ -43,7 +43,7 @@ func TestGetAncestorsPropagatesErrors(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	someID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(someID, id)
 		return nil, errTest
 	}

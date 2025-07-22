@@ -390,7 +390,7 @@ func (b *Bootstrapper) startSyncing(ctx context.Context, acceptedBlockIDs []ids.
 		zap.Int("numMissingBlocks", numMissingBlockIDs),
 	)
 
-	toProcess := make([]chain.Block, 0, numMissingBlockIDs)
+	toProcess := make([]linear.Block, 0, numMissingBlockIDs)
 	for blkID := range b.missingBlockIDs {
 		// TODO: if `GetBlock` returns an error other than
 		// `database.ErrNotFound`, then the error should be propagated.
@@ -519,7 +519,7 @@ func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 
 	var (
 		numBytes  = len(requestedBlock.Bytes())
-		ancestors = make(map[ids.ID]chain.Block, len(blocks))
+		ancestors = make(map[ids.ID]linear.Block, len(blocks))
 	)
 	for _, block := range blocks[1:] {
 		numBytes += len(block.Bytes())
@@ -572,8 +572,8 @@ func (b *Bootstrapper) GetAncestorsFailed(ctx context.Context, nodeID ids.NodeID
 //     relying on the VM to have stored blocks during `ParseBlock`.
 func (b *Bootstrapper) process(
 	ctx context.Context,
-	blk chain.Block,
-	ancestors map[ids.ID]chain.Block,
+	blk linear.Block,
+	ancestors map[ids.ID]linear.Block,
 ) error {
 	lastAccepted, err := b.getLastAccepted(ctx)
 	if err != nil {
@@ -721,7 +721,7 @@ func (b *Bootstrapper) tryStartExecuting(ctx context.Context) error {
 	return b.onFinished(ctx, b.requestID)
 }
 
-func (b *Bootstrapper) getLastAccepted(ctx context.Context) (chain.Block, error) {
+func (b *Bootstrapper) getLastAccepted(ctx context.Context) (linear.Block, error) {
 	lastAcceptedID, err := b.VM.LastAccepted(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get last accepted ID: %w", err)

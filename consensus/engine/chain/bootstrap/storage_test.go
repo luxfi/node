@@ -31,7 +31,7 @@ func TestGetMissingBlockIDs(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		blocks             []chain.Block
+		blocks             []linear.Block
 		lastAcceptedHeight uint64
 		expected           set.Set[ids.ID]
 	}{
@@ -43,37 +43,37 @@ func TestGetMissingBlockIDs(t *testing.T) {
 		},
 		{
 			name:               "wants one block",
-			blocks:             []chain.Block{blocks[4]},
+			blocks:             []linear.Block{blocks[4]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[3].ID()),
 		},
 		{
 			name:               "wants multiple blocks",
-			blocks:             []chain.Block{blocks[2], blocks[4]},
+			blocks:             []linear.Block{blocks[2], blocks[4]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[1].ID(), blocks[3].ID()),
 		},
 		{
 			name:               "doesn't want last accepted block",
-			blocks:             []chain.Block{blocks[1]},
+			blocks:             []linear.Block{blocks[1]},
 			lastAcceptedHeight: 0,
 			expected:           nil,
 		},
 		{
 			name:               "doesn't want known block",
-			blocks:             []chain.Block{blocks[2], blocks[3]},
+			blocks:             []linear.Block{blocks[2], blocks[3]},
 			lastAcceptedHeight: 0,
 			expected:           set.Of(blocks[1].ID()),
 		},
 		{
 			name:               "doesn't want already accepted block",
-			blocks:             []chain.Block{blocks[1]},
+			blocks:             []linear.Block{blocks[1]},
 			lastAcceptedHeight: 4,
 			expected:           nil,
 		},
 		{
 			name:               "doesn't underflow",
-			blocks:             []chain.Block{blocks[0]},
+			blocks:             []linear.Block{blocks[0]},
 			lastAcceptedHeight: 0,
 			expected:           nil,
 		},
@@ -108,11 +108,11 @@ func TestProcess(t *testing.T) {
 
 	tests := []struct {
 		name                        string
-		initialBlocks               []chain.Block
+		initialBlocks               []linear.Block
 		lastAcceptedHeight          uint64
 		missingBlockIDs             set.Set[ids.ID]
-		blk                         chain.Block
-		ancestors                   map[ids.ID]chain.Block
+		blk                         linear.Block
+		ancestors                   map[ids.ID]linear.Block
 		expectedParentID            ids.ID
 		expectedShouldFetchParentID bool
 		expectedMissingBlockIDs     set.Set[ids.ID]
@@ -136,7 +136,7 @@ func TestProcess(t *testing.T) {
 			lastAcceptedHeight: 0,
 			missingBlockIDs:    set.Of(blocks[5].ID()),
 			blk:                blocks[5],
-			ancestors: map[ids.ID]chain.Block{
+			ancestors: map[ids.ID]linear.Block{
 				blocks[4].ID(): blocks[4],
 			},
 			expectedParentID:            blocks[3].ID(),
@@ -150,7 +150,7 @@ func TestProcess(t *testing.T) {
 			lastAcceptedHeight: 0,
 			missingBlockIDs:    set.Of(blocks[3].ID(), blocks[5].ID()),
 			blk:                blocks[5],
-			ancestors: map[ids.ID]chain.Block{
+			ancestors: map[ids.ID]linear.Block{
 				blocks[3].ID(): blocks[3],
 			},
 			expectedParentID:            blocks[4].ID(),
@@ -172,7 +172,7 @@ func TestProcess(t *testing.T) {
 		},
 		{
 			name:                        "do not request already known block",
-			initialBlocks:               []chain.Block{blocks[2]},
+			initialBlocks:               []linear.Block{blocks[2]},
 			lastAcceptedHeight:          0,
 			missingBlockIDs:             set.Of(blocks[1].ID(), blocks[3].ID()),
 			blk:                         blocks[3],
@@ -294,14 +294,14 @@ func TestExecute(t *testing.T) {
 	}
 }
 
-type testParser func(context.Context, []byte) (chain.Block, error)
+type testParser func(context.Context, []byte) (linear.Block, error)
 
-func (f testParser) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
+func (f testParser) ParseBlock(ctx context.Context, bytes []byte) (linear.Block, error) {
 	return f(ctx, bytes)
 }
 
 func makeParser(blocks []*chaintest.Block) block.Parser {
-	return testParser(func(_ context.Context, b []byte) (chain.Block, error) {
+	return testParser(func(_ context.Context, b []byte) (linear.Block, error) {
 		for _, block := range blocks {
 			if bytes.Equal(b, block.Bytes()) {
 				return block, nil

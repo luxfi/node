@@ -6,8 +6,6 @@ package tests
 import (
 	"context"
 	"time"
-
-	primary "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 // A long default timeout used to timeout failed operations but unlikely to induce
@@ -26,7 +24,3 @@ func DefaultContext(tc TestContext) context.Context {
 	return ContextWithTimeout(tc, DefaultTimeout)
 }
 
-// Helper simplifying use via an option of a timed context configured with the default timeout.
-func WithDefaultContext(tc TestContext) primary.Option {
-	return primary.WithContext(DefaultContext(tc))
-}

@@ -41,7 +41,7 @@ type BatchedVM struct {
 	BatchedParseBlockF func(
 		ctx context.Context,
 		blks [][]byte,
-	) ([]chain.Block, error)
+	) ([]linear.Block, error)
 }
 
 func (vm *BatchedVM) Default(cant bool) {
@@ -74,7 +74,7 @@ func (vm *BatchedVM) GetAncestors(
 func (vm *BatchedVM) BatchedParseBlock(
 	ctx context.Context,
 	blks [][]byte,
-) ([]chain.Block, error) {
+) ([]linear.Block, error) {
 	if vm.BatchedParseBlockF != nil {
 		return vm.BatchedParseBlockF(ctx, blks)
 	}

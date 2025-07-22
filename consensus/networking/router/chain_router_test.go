@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/handler/handlermock"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/consensustest"
+	snowtest "github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/tests"

@@ -161,7 +161,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -606,7 +606,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 	bs.TimeoutRegistrar = &enginetest.Timer{}
 
 	getBlockF := vm.GetBlockF
-	vm.GetBlockF = func(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(ctx context.Context, blkID ids.ID) (linear.Block, error) {
 		halt()
 		return getBlockF(ctx, blkID)
 	}
@@ -660,7 +660,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 
 	blk1 := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -793,7 +793,7 @@ func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*chaintest.Block) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		blocks,
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blk := range blocks {
 			if blk.Status == snowtest.Accepted && blk.ID() == blkID {
 				return blk, nil
@@ -801,7 +801,7 @@ func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*chaintest.Block) {
 		}
 		return nil, database.ErrNotFound
 	}
-	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (linear.Block, error) {
 		for _, blk := range blocks {
 			if bytes.Equal(blk.Bytes(), blkBytes) {
 				return blk, nil

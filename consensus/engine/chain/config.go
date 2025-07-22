@@ -23,6 +23,6 @@ type Config struct {
 	Validators          validators.Manager
 	ConnectedValidators tracker.Peers
 	Params              sampling.Parameters
-	Consensus           chain.Consensus
+	Consensus           linear.Consensus
 	PartialSync         bool
 }

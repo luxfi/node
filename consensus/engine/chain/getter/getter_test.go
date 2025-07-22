@@ -92,7 +92,7 @@ func TestFilterAccepted(t *testing.T) {
 
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(allBlocks)
 	vm.GetBlockIDAtHeightF = chaintest.MakeGetBlockIDAtHeightF(allBlocks)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blk := range allBlocks {
 			if blk.ID() == blkID {
 				return blk, nil
