@@ -2,13 +2,13 @@
 
 ## Setup
 
-To start developing on Lux, you'll need a few things installed.
+To start developing on Lux Node, you'll need a few things installed.
 
 - Golang version >= 1.23.9
 - gcc
 - g++
 
-On MacOS, a modern version of bash is required (e.g. via [homebrew](https://brew.sh/) with `brew install bash`). The version installed by default is not compatible with Lux's [shell scripts](scripts).
+On MacOS, a modern version of bash is required (e.g. via [homebrew](https://brew.sh/) with `brew install bash`). The version installed by default is not compatible with Lux Node's [shell scripts](scripts).
 
 ## Running tasks
 
@@ -22,11 +22,11 @@ This repo uses the [Task](https://taskfile.dev/) task runner to simplify usage a
 
 ### Security
 
-- Do not open up a GitHub issue if it relates to a security vulnerability in Lux, and instead refer to our [security policy](./SECURITY.md).
+- Do not open up a GitHub issue if it relates to a security vulnerability in Lux Node, and instead refer to our [security policy](./SECURITY.md).
 
 ### Did you fix whitespace, format code, or make a purely cosmetic patch?
 
-- Changes from the community that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of `luxd` will generally not be accepted.
+- Changes from the community that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of `node` will generally not be accepted.
 
 ### Making an Issue
 
@@ -36,7 +36,7 @@ This repo uses the [Task](https://taskfile.dev/) task runner to simplify usage a
 ## Features
 
 - If you want to start a discussion about the development of a new feature or the modification of an existing one, start a thread under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/ideas).
-- Post a thread about your idea and why it should be added to Lux.
+- Post a thread about your idea and why it should be added to Lux Node.
 - Don't start working on a pull request until you've received positive feedback from the maintainers.
 
 ## Pull Request Guidelines
@@ -74,7 +74,7 @@ Mocks are auto-generated using [mockgen](https://pkg.go.dev/go.uber.org/mock/moc
   - if the file `mocks_generate_test.go` does not exist in the package where the interface is located, create it with content (adapt as needed):
 
     ```go
-    // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+    // Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
     // See the file LICENSE for licensing terms.
 
     package mypackage
@@ -95,7 +95,7 @@ Mocks are auto-generated using [mockgen](https://pkg.go.dev/go.uber.org/mock/moc
 
 #### Local
 
-- Build the luxd binary
+- Build the node binary
 
 ```sh
 ./scripts/run_task.sh build
@@ -121,8 +121,8 @@ Mocks are auto-generated using [mockgen](https://pkg.go.dev/go.uber.org/mock/moc
 
 ### Do you have questions about the source code?
 
-- Ask any question about Lux under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
+- Ask any question about Lux Node under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
 
 ### Do you want to contribute to the Lux documentation?
 
-- Please check out the `lux-docs` repository [here](https://github.com/luxfi/lux-docs).
+- Please check out the `avalanche-docs` repository [here](https://github.com/luxfi/avalanche-docs).

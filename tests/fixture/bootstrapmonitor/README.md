@@ -7,7 +7,7 @@ networks.
 ## Bootstrap testing
 
 Bootstrapping an luxd node on a persistent network like
-`mainnet` or `fuji` requires that the version of luxd that the
+`mainnet` or `testnet` requires that the version of luxd that the
 node is running be compatible with the historical data of that
 network. Bootstrapping regularly is a good way of insuring against
 regressions in compatibility.

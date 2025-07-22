@@ -45,7 +45,7 @@
             "host": "node11.lux.network:443"
         }
     ],
-    "fuji": [
+    "testnet": [
         {
             "id": "NodeID-Mp8JrhoLmrGznZoYsszM19W6dTdcR35NF",
             "host": "node1.lux-test.network:443"

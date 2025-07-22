@@ -17,38 +17,38 @@ import (
 )
 
 const (
-	fujiURI    = "http://localhost:9650"
+	testnetURI    = "http://localhost:9650"
 	mainnetURI = "http://localhost:9660"
 
 	maxNumCheckpoints = 100
 )
 
 var (
-	fujiXChainID    = ids.FromStringOrPanic("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
-	fujiCChainID    = ids.FromStringOrPanic("yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp")
+	testnetXChainID    = ids.FromStringOrPanic("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
+	testnetCChainID    = ids.FromStringOrPanic("yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp")
 	mainnetXChainID = ids.FromStringOrPanic("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
 	mainnetCChainID = ids.FromStringOrPanic("2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5")
 )
 
 // This fetches IDs of blocks periodically accepted on the P-chain, X-chain, and
-// C-chain on both Fuji and Mainnet.
+// C-chain on both Testnet and Mainnet.
 //
-// This expects to be able to communicate with a Fuji node at [fujiURI] and a
+// This expects to be able to communicate with a Testnet node at [testnetURI] and a
 // Mainnet node at [mainnetURI]. Both nodes must have the index API enabled.
 func main() {
 	ctx := context.Background()
 
-	fujiPChainCheckpoints, err := getCheckpoints(ctx, fujiURI, "P")
+	testnetPChainCheckpoints, err := getCheckpoints(ctx, testnetURI, "P")
 	if err != nil {
-		log.Fatalf("failed to fetch Fuji P-chain checkpoints: %v", err)
+		log.Fatalf("failed to fetch Testnet P-chain checkpoints: %v", err)
 	}
-	fujiXChainCheckpoints, err := getCheckpoints(ctx, fujiURI, "X")
+	testnetXChainCheckpoints, err := getCheckpoints(ctx, testnetURI, "X")
 	if err != nil {
-		log.Fatalf("failed to fetch Fuji X-chain checkpoints: %v", err)
+		log.Fatalf("failed to fetch Testnet X-chain checkpoints: %v", err)
 	}
-	fujiCChainCheckpoints, err := getCheckpoints(ctx, fujiURI, "C")
+	testnetCChainCheckpoints, err := getCheckpoints(ctx, testnetURI, "C")
 	if err != nil {
-		log.Fatalf("failed to fetch Fuji C-chain checkpoints: %v", err)
+		log.Fatalf("failed to fetch Testnet C-chain checkpoints: %v", err)
 	}
 
 	mainnetPChainCheckpoints, err := getCheckpoints(ctx, mainnetURI, "P")
@@ -65,10 +65,10 @@ func main() {
 	}
 
 	checkpoints := map[string]map[ids.ID]set.Set[ids.ID]{
-		constants.FujiName: {
-			constants.PlatformChainID: fujiPChainCheckpoints,
-			fujiXChainID:              fujiXChainCheckpoints,
-			fujiCChainID:              fujiCChainCheckpoints,
+		constants.TestnetName: {
+			constants.PlatformChainID: testnetPChainCheckpoints,
+			testnetXChainID:              testnetXChainCheckpoints,
+			testnetCChainID:              testnetCChainCheckpoints,
 		},
 		constants.MainnetName: {
 			constants.PlatformChainID: mainnetPChainCheckpoints,

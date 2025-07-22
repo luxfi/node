@@ -45,7 +45,7 @@ var (
 		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
 		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
 	}
-	fujiGetTxFeeResponse = GetTxFeeResponse{
+	testnetGetTxFeeResponse = GetTxFeeResponse{
 		CreateSubnetTxFee:             json.Uint64(100 * units.MilliLux),
 		TransformSubnetTxFee:          json.Uint64(1 * units.Lux),
 		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
@@ -440,8 +440,8 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 	switch i.NetworkID {
 	case constants.MainnetID:
 		*reply = mainnetGetTxFeeResponse
-	case constants.FujiID:
-		*reply = fujiGetTxFeeResponse
+	case constants.TestnetID:
+		*reply = testnetGetTxFeeResponse
 	default:
 		*reply = defaultGetTxFeeResponse
 	}

@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/evm/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 

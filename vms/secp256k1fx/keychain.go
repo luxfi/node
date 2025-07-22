@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/geth"
+	"github.com/luxfi/evm"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"

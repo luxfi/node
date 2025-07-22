@@ -8,16 +8,16 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/plugin/evm/atomic"
-	"github.com/luxfi/geth/plugin/evm/client"
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/plugin/evm/client"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	walletutil "github.com/luxfi/node/wallet"
 
-	"github.com/luxfi/geth"
+	"github.com/luxfi/evm"
 )
 
 var _ Wallet = (*wallet)(nil)

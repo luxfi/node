@@ -219,7 +219,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 1)
+	blks := lineartest.BuildLinear(1)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -248,7 +248,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
+	blks := lineartest.BuildLinear(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -294,7 +294,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 4)
+	blks := lineartest.BuildLinear(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -345,7 +345,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
+	blks := lineartest.BuildLinear(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -394,7 +394,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 4)
+	blks := lineartest.BuildLinear(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -440,7 +440,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 3)
+	blks := lineartest.BuildLinear(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -483,7 +483,7 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 5)
+	blks := lineartest.BuildLinear(5)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -545,7 +545,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
+	blks := lineartest.BuildLinear(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[0].Status = consensustest.Undecided
@@ -589,7 +589,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 
 	config, _, _, vm, halt := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
+	blks := lineartest.BuildLinear(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -717,7 +717,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 3)
+	blks := lineartest.BuildLinear(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -761,7 +761,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
+	blks := lineartest.BuildLinear(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[1].Status = consensustest.Accepted

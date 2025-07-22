@@ -21,7 +21,7 @@ const (
 var (
 	_ utils.Sortable[*Block] = (*Block)(nil)
 
-	GenesisID        = ids.GenerateTestID()
+	GenesisID        = ids.Empty
 	GenesisTimestamp = time.Unix(GenesisUnixTimestamp, 0)
 	GenesisBytes     = GenesisID[:]
 	Genesis          = BuildLinear(1)[0]

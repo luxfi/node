@@ -16,8 +16,8 @@ import (
 // Configuration for different networks
 var networks = map[string]uint32{
 	"mainnet": 1,     // MainnetID from constants
-	"testnet": 5,     // FujiID/TestnetID from constants
-	"fuji":    5,     // FujiID from constants
+	"testnet": 5,     // TestnetID/TestnetID from constants
+	"testnet":    5,     // TestnetID from constants
 	"local":   12345, // LocalID from constants
 }
 
@@ -172,8 +172,8 @@ func ethToLuxAddress(ethAddrHex string, chain string, networkID uint32) (string,
 	switch networkID {
 	case 1: // MainnetID
 		hrp = "lux"
-	case 5: // FujiID
-		hrp = "fuji"
+	case 5: // TestnetID
+		hrp = "testnet"
 	case 12345: // LocalID
 		hrp = "local"
 	default:
@@ -248,7 +248,7 @@ func generateGenesis(networkName string) error {
 	switch networkID {
 	case 1: // MainnetID
 		chainID = 1990 // Lux mainnet C-Chain ID
-	case 5: // FujiID/TestnetID
+	case 5: // TestnetID/TestnetID
 		chainID = 1991 // Lux testnet C-Chain ID
 	case 12345: // LocalID
 		chainID = 1337 // Standard Ethereum dev chain ID for compatibility

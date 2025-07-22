@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/geth/plugin/evm/atomic"
-	"github.com/luxfi/geth/common"
+	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/common"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"

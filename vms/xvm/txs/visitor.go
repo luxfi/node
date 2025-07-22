@@ -14,6 +14,9 @@ type Visitor interface {
 	OperationTx(*OperationTx) error
 	ImportTx(*ImportTx) error
 	ExportTx(*ExportTx) error
+	BurnTx(*BurnTx) error
+	MintTx(*MintTx) error
+	NFTTransferTx(*NFTTransferTx) error
 }
 
 // utxoGetter returns the UTXOs transaction is producing.
@@ -89,4 +92,21 @@ func (u *utxoGetter) OperationTx(t *OperationTx) error {
 		}
 	}
 	return nil
+}
+
+func (u *utxoGetter) BurnTx(tx *BurnTx) error {
+	// Burn transactions don't produce UTXOs for the burned assets
+	// Only handle any change outputs from the base transaction
+	return u.BaseTx(&tx.BaseTx)
+}
+
+func (u *utxoGetter) MintTx(tx *MintTx) error {
+	// Mint transactions produce UTXOs for the minted assets
+	return u.BaseTx(&tx.BaseTx)
+}
+
+func (u *utxoGetter) NFTTransferTx(tx *NFTTransferTx) error {
+	// NFT transfer transactions don't produce UTXOs on X-Chain
+	// The NFT is burned on X-Chain and minted on destination chain
+	return u.BaseTx(&tx.BaseTx)
 }

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -208,7 +208,7 @@ func SuggestGasPrice(tc tests.TestContext, ethClient ethclient.Client) *big.Int 
 
 	// Double the suggested gas price to maximize the chances of
 	// acceptance. Maybe this can be revisited pending resolution of
-	// https://github.com/luxfi/geth/issues/314.
+	// https://github.com/luxfi/evm/issues/314.
 	gasPrice.Add(gasPrice, gasPrice)
 	return gasPrice
 }

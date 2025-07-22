@@ -3,13 +3,13 @@
 	"allocations": [
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-fuji1k0vzkym86d3daxdttxn9s9j6lafqe02deat7rk",
+			"luxAddr": "X-testnet1k0vzkym86d3daxdttxn9s9j6lafqe02deat7rk",
 			"initialAmount": 7446744073709551615,
 			"unlockSchedule": []
 		},
 		{
 			"ethAddr": "0x1B475A4C983DfE4f32bbA4dE8DA8fd2c37f3A2A6",
-			"luxAddr": "X-fuji1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
+			"luxAddr": "X-testnet1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -416,7 +416,7 @@
 		},
 		{
 			"ethAddr": "0xEAbCC110fAcBfebabC66Ad6f9E7B67288e720B59",
-			"luxAddr": "X-fuji1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
+			"luxAddr": "X-testnet1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -823,7 +823,7 @@
 		},
 		{
 			"ethAddr": "0x8d5081153aE1cfb41f5c932fe0b6Beb7E159cF84",
-			"luxAddr": "X-fuji134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
+			"luxAddr": "X-testnet134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -1230,7 +1230,7 @@
 		},
 		{
 			"ethAddr": "0xf8f12D0592e6d1bFe92ee16CaBCC4a6F26dAAe23",
-			"luxAddr": "X-fuji1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
+			"luxAddr": "X-testnet1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -1637,7 +1637,7 @@
 		},
 		{
 			"ethAddr": "0xFb66808f708e1d4D7D43a8c75596e84f94e06806",
-			"luxAddr": "X-fuji1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
+			"luxAddr": "X-testnet1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -2044,7 +2044,7 @@
 		},
 		{
 			"ethAddr": "0x313CF291c069C58D6bd61B0D672673462B8951bD",
-			"luxAddr": "X-fuji1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
+			"luxAddr": "X-testnet1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -2451,7 +2451,7 @@
 		},
 		{
 			"ethAddr": "0xf7f52257a6143cE6BbD12A98eF2B0a3d0C648079",
-			"luxAddr": "X-fuji17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
+			"luxAddr": "X-testnet17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -2858,7 +2858,7 @@
 		},
 		{
 			"ethAddr": "0xCA92ad0C91bd8DE640B9dAFfEB338ac908725142",
-			"luxAddr": "X-fuji1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
+			"luxAddr": "X-testnet1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -3265,7 +3265,7 @@
 		},
 		{
 			"ethAddr": "0xB5B325df519eB58B7223d85aaeac8b56aB05f3d6",
-			"luxAddr": "X-fuji1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
+			"luxAddr": "X-testnet1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -3672,7 +3672,7 @@
 		},
 		{
 			"ethAddr": "0xcf5288bEe8d8F63511C389D5015185FDEDe30e54",
-			"luxAddr": "X-fuji1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
+			"luxAddr": "X-testnet1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -4079,7 +4079,7 @@
 		},
 		{
 			"ethAddr": "0x16204223fe4470f4B1F1dA19A368dC815736a3d7",
-			"luxAddr": "X-fuji1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q",
+			"luxAddr": "X-testnet1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -4489,22 +4489,22 @@
 	"initialStakeDuration": 31536000,
 	"initialStakeDurationOffset": 5400,
 	"initialStakedFunds": [
-		"X-fuji1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
-		"X-fuji1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
-		"X-fuji134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
-		"X-fuji1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
-		"X-fuji1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
-		"X-fuji1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
-		"X-fuji17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
-		"X-fuji1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
-		"X-fuji1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
-		"X-fuji1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
-		"X-fuji1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q"
+		"X-testnet1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
+		"X-testnet1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
+		"X-testnet134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
+		"X-testnet1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
+		"X-testnet1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
+		"X-testnet1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
+		"X-testnet17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
+		"X-testnet1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
+		"X-testnet1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
+		"X-testnet1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
+		"X-testnet1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q"
 	],
 	"initialStakers": [
 		{
 			"nodeID": "NodeID-Mp8JrhoLmrGznZoYsszM19W6dTdcR35NF",
-			"rewardAddress": "P-fuji1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
+			"rewardAddress": "P-testnet1rdr45nyc8hly7v4m5n0gm28a9sml8g4x5v5gvj",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4514,7 +4514,7 @@
 		},
 		{
 			"nodeID": "NodeID-Nf5M5YoDN5CfR1wEmCPsf5zt2ojTZZj6j",
-			"rewardAddress": "P-fuji1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
+			"rewardAddress": "P-testnet1a27vzy86e0lt40rx44heu7m89z88yz6ej4pft4",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4524,7 +4524,7 @@
 		},
 		{
 			"nodeID": "NodeID-JCBCEeyRZdeDxEhwoztS55fsWx9SwJDVL",
-			"rewardAddress": "P-fuji134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
+			"rewardAddress": "P-testnet134ggz9f6u88mg86ujvh7pd47kls4nnuy8u6smd",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4534,7 +4534,7 @@
 		},
 		{
 			"nodeID": "NodeID-JQvVo8DpzgyjhEDZKgqsFLVUPmN6JP3ig",
-			"rewardAddress": "P-fuji1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
+			"rewardAddress": "P-testnet1lrcj6pvjumgml6fwu9k2hnz2dund4t3rhmwees",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4544,7 +4544,7 @@
 		},
 		{
 			"nodeID": "NodeID-PKTUGFE6jnQbnskSDM3zvmQjnHKV3fxy4",
-			"rewardAddress": "P-fuji1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
+			"rewardAddress": "P-testnet1ldngprms3cw56l2r4rr4t9hgf72wq6qxelzfjx",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4554,7 +4554,7 @@
 		},
 		{
 			"nodeID": "NodeID-LtBrcgdgPW9Nj9JoU1AwGeCgi29R9JoQC",
-			"rewardAddress": "P-fuji1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
+			"rewardAddress": "P-testnet1xy709ywqd8zc667krvxkwfnngc4cj5dajurytr",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4564,7 +4564,7 @@
 		},
 		{
 			"nodeID": "NodeID-962omv3YgJsqbcPvVR4yDHU8RPtaKCLt",
-			"rewardAddress": "P-fuji17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
+			"rewardAddress": "P-testnet17l6jy4axzs7wdw7392vw72c285xxfqreuzwet6",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4574,7 +4574,7 @@
 		},
 		{
 			"nodeID": "NodeID-LPznW4BxjJaFYP5KEuJUenwVGTkH48XDe",
-			"rewardAddress": "P-fuji1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
+			"rewardAddress": "P-testnet1e2f26ry3hkx7vs9emtl7kvu2eyy8y52zejs5t0",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4584,7 +4584,7 @@
 		},
 		{
 			"nodeID": "NodeID-4nDStCMacNr5aadavMZxAxk9m9bfFf69F",
-			"rewardAddress": "P-fuji1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
+			"rewardAddress": "P-testnet1kkejth63n66cku3rmpd2atyt264stu7kyq3d4p",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4594,7 +4594,7 @@
 		},
 		{
 			"nodeID": "NodeID-GGpbeWwfsZBaasex25ZPMkJFN713BXx7u",
-			"rewardAddress": "P-fuji1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
+			"rewardAddress": "P-testnet1eafg30hgmrmr2ywr382sz5v9lhk7xrj5xp9f67",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
@@ -4604,7 +4604,7 @@
 		},
 		{
 			"nodeID": "NodeID-Fh7dFdzt1QYQDTKJfZTVBLMyPipP99AmH",
-			"rewardAddress": "P-fuji1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q",
+			"rewardAddress": "P-testnet1zcsyygl7g3c0fv03mgv6x6xus9tndg7hfq3j9q",
 			"delegationFee": 20000,
 			"weight": 1000000000000000000,
 			"signer": {
