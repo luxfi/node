@@ -3,7 +3,7 @@
 // 	canoto v0.17.1
 // source: block.go
 
-package simplex
+package bft
 
 import (
 	"io"
