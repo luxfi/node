@@ -293,7 +293,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				// Assert created block has one tx, tx1,
 				// and other fields are set correctly.
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) chain.Block {
+					func(block *block.StandardBlock) linear.Block {
 						require.Len(t, block.Transactions, 1)
 						require.Equal(t, tx1, block.Transactions[0])
 						require.Equal(t, preferredHeight+1, block.Height())
@@ -352,7 +352,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) chain.Block {
+					func(block *block.StandardBlock) linear.Block {
 						require.Equal(t, preferredTimestamp.Unix(), block.Timestamp().Unix())
 						return nil
 					},
@@ -424,7 +424,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) chain.Block {
+					func(block *block.StandardBlock) linear.Block {
 						require.Equal(t, now.Unix(), block.Timestamp().Unix())
 						return nil
 					},

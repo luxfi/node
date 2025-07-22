@@ -124,10 +124,10 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	proVM.Set(parentTime)
 
 	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
@@ -137,7 +137,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
@@ -174,7 +174,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	}
 
 	coreChildBlk := chaintest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -254,10 +254,10 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	proVM.Set(parentTime)
 
 	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
@@ -267,7 +267,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
@@ -306,7 +306,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	}
 
 	coreChildBlk := chaintest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
 

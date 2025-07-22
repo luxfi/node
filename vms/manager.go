@@ -113,7 +113,7 @@ func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Fact
 		return err
 	}
 
-	commonVM, ok := vm.(engine.VM)
+	commonVM, ok := vm.(core.VM)
 	if !ok {
 		return nil
 	}

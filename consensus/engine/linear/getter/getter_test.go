@@ -31,7 +31,7 @@ type StateSyncEnabledMock struct {
 	*blockmock.StateSyncableVM
 }
 
-func newTest(t *testing.T) (engine.AllGetsServer, StateSyncEnabledMock, *enginetest.Sender) {
+func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetest.Sender) {
 	ctrl := gomock.NewController(t)
 
 	vm := StateSyncEnabledMock{

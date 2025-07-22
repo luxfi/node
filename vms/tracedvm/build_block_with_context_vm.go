@@ -14,7 +14,7 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {
+func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
 	if vm.buildBlockVM == nil {
 		return vm.BuildBlock(ctx)
 	}

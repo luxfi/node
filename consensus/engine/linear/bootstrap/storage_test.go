@@ -219,13 +219,13 @@ func TestProcess(t *testing.T) {
 func TestExecute(t *testing.T) {
 	const numBlocks = 7
 
-	unhalted := &engine.Halter{}
-	halted := &engine.Halter{}
+	unhalted := &core.Halter{}
+	halted := &core.Halter{}
 	halted.Halt()
 
 	tests := []struct {
 		name                      string
-		haltable                  engine.Haltable
+		haltable                  core.Haltable
 		lastAcceptedHeight        uint64
 		expectedProcessingHeights []uint64
 		expectedAcceptedHeights   []uint64

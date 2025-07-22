@@ -78,7 +78,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 
 	// Build some prefork blocks....
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -86,7 +86,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreBlk1.ID():
 			return coreBlk1, nil
@@ -96,7 +96,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -104,7 +104,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreBlk2.ID():
 			return coreBlk2, nil
@@ -114,7 +114,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}
 
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
@@ -201,7 +201,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 
 	// Build some post-Fork blocks....
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -213,7 +213,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -225,7 +225,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, 0))
 
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
@@ -257,7 +257,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 		}
 	}
 
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil
@@ -339,7 +339,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	proRemoteVM.Set(preForkTime)
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
 	coreBlk1.TimestampV = preForkTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -348,7 +348,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch {
 		case blkID == coreBlk1.ID():
 			return coreBlk1, nil
@@ -359,7 +359,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -368,7 +368,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
 			return coreBlk2, nil
@@ -380,7 +380,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
@@ -393,7 +393,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
 	coreBlk4 := chaintest.BuildChild(coreBlk3)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk4, nil
 	}
 	builtBlk4, err := proRemoteVM.BuildBlock(context.Background())
@@ -507,7 +507,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 
 	// Build some prefork blocks....
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -515,7 +515,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreBlk1.ID():
 			return coreBlk1, nil
@@ -525,7 +525,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -533,7 +533,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
 			return coreBlk2, nil
@@ -543,13 +543,13 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}
 
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
 	require.NoError(err)
 
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
@@ -562,8 +562,8 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]chain.Block, error) {
-		res := make([]chain.Block, 0, len(blks))
+	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]linear.Block, error) {
+		res := make([]linear.Block, 0, len(blks))
 		for _, blkBytes := range blks {
 			switch {
 			case bytes.Equal(blkBytes, coreBlk1.Bytes()):
@@ -601,7 +601,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	vm := VM{
 		ctx: &consensus.Context{ChainID: chainID},
 		ChainVM: &blocktest.VM{
-			ParseBlockF: func(_ context.Context, rawBlock []byte) (chain.Block, error) {
+			ParseBlockF: func(_ context.Context, rawBlock []byte) (linear.Block, error) {
 				return &chaintest.Block{BytesV: rawBlock}, nil
 			},
 		},
@@ -701,7 +701,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 
 	// Build some post-Fork blocks....
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -713,7 +713,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -725,13 +725,13 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, builtBlk2.(*postForkBlock).PChainHeight()))
 
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
 	require.NoError(err)
 
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
@@ -744,8 +744,8 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 		}
 	}
 
-	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]chain.Block, error) {
-		res := make([]chain.Block, 0, len(blks))
+	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]linear.Block, error) {
+		res := make([]linear.Block, 0, len(blks))
 		for _, blkBytes := range blks {
 			switch {
 			case bytes.Equal(blkBytes, coreBlk1.Bytes()):
@@ -796,7 +796,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	proRemoteVM.Set(preForkTime)
 	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
 	coreBlk1.TimestampV = preForkTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	builtBlk1, err := proRemoteVM.BuildBlock(context.Background())
@@ -805,7 +805,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch {
 		case blkID == coreBlk1.ID():
 			return coreBlk1, nil
@@ -816,7 +816,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	coreBlk2 := chaintest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
 	builtBlk2, err := proRemoteVM.BuildBlock(context.Background())
@@ -825,7 +825,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	// prepare build of next block
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
 			return coreBlk2, nil
@@ -837,7 +837,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
 	coreBlk3 := chaintest.BuildChild(coreBlk2)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
 	builtBlk3, err := proRemoteVM.BuildBlock(context.Background())
@@ -850,7 +850,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
 	coreBlk4 := chaintest.BuildChild(coreBlk3)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk4, nil
 	}
 	builtBlk4, err := proRemoteVM.BuildBlock(context.Background())
@@ -858,7 +858,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require.IsType(&postForkBlock{}, builtBlk4)
 	require.NoError(builtBlk4.Verify(context.Background()))
 
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
@@ -873,8 +873,8 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		}
 	}
 
-	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]chain.Block, error) {
-		res := make([]chain.Block, 0, len(blks))
+	coreVM.BatchedParseBlockF = func(_ context.Context, blks [][]byte) ([]linear.Block, error) {
+		res := make([]linear.Block, 0, len(blks))
 		for _, blkBytes := range blks {
 			switch {
 			case bytes.Equal(blkBytes, coreBlk1.Bytes()):
@@ -946,7 +946,7 @@ func initTestRemoteProposerVM(
 	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -954,7 +954,7 @@ func initTestRemoteProposerVM(
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil

@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	_ chain.Block             = (*Block)(nil)
-	_ chain.OracleBlock       = (*Block)(nil)
+	_ linear.Block             = (*Block)(nil)
+	_ linear.OracleBlock       = (*Block)(nil)
 	_ smblock.WithVerifyContext = (*Block)(nil)
 )
 
@@ -86,7 +86,7 @@ func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())
 }
 
-func (b *Block) Options(context.Context) ([2]chain.Block, error) {
+func (b *Block) Options(context.Context) ([2]linear.Block, error) {
 	options := options{
 		log:                     b.manager.ctx.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
@@ -94,10 +94,10 @@ func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 		state:                   b.manager.backend.state,
 	}
 	if err := b.Block.Visit(&options); err != nil {
-		return [2]chain.Block{}, err
+		return [2]linear.Block{}, err
 	}
 
-	return [2]chain.Block{
+	return [2]linear.Block{
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil

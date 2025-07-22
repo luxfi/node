@@ -14,12 +14,12 @@ import (
 )
 
 type Config struct {
-	engine.AllGetsServer
+	core.AllGetsServer
 
 	Ctx *consensus.Context
 
 	StartupTracker tracker.Startup
-	Sender         engine.Sender
+	Sender         core.Sender
 
 	// PeerTracker manages the set of nodes that we fetch the next block from.
 	PeerTracker *p2p.PeerTracker
@@ -41,5 +41,5 @@ type Config struct {
 	StopVertexID ids.ID
 
 	// Haltable signals when the engine is stopped
-	engine.Haltable
+	core.Haltable
 }

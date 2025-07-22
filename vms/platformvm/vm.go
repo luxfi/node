@@ -404,7 +404,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (linear.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -414,7 +414,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	return vm.manager.NewBlock(statelessBlk), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 

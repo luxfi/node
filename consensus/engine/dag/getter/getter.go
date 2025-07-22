@@ -53,7 +53,7 @@ func New(
 
 type getter struct {
 	storage                   vertex.Storage
-	sender                    engine.Sender
+	sender                    core.Sender
 	log                       logging.Logger
 	maxTimeGetAncestors       time.Duration
 	maxContainersGetAncestors int

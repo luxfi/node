@@ -12,14 +12,14 @@ import (
 
 // Engine is a wrapper around a consensus engine's components.
 type Engine struct {
-	StateSyncer  engine.StateSyncer
-	Bootstrapper engine.BootstrapableEngine
-	Consensus    engine.Engine
+	StateSyncer  core.StateSyncer
+	Bootstrapper core.BootstrapableEngine
+	Consensus    core.Engine
 }
 
 // Get returns the engine corresponding to the provided state,
 // and whether its corresponding engine is initialized (not nil).
-func (e *Engine) Get(state consensus.State) (engine.Engine, bool) {
+func (e *Engine) Get(state consensus.State) (core.Engine, bool) {
 	if e == nil {
 		return nil, false
 	}
