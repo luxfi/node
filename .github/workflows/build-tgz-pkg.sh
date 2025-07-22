@@ -1,22 +1,19 @@
-PKG_ROOT=/tmp
-VERSION=$TAG
-LUX_ROOT=$PKG_ROOT/node-$VERSION
+#!/usr/bin/env bash
 
-mkdir -p $LUX_ROOT
+set -euo pipefail
 
-OK=`cp ./build/luxd $LUX_ROOT`
+LUX_ROOT=$PKG_ROOT/luxd-$TAG
+
+mkdir -p "$LUX_ROOT"
+
+OK=$(cp ./build/luxd "$LUX_ROOT")
 if [[ $OK -ne 0 ]]; then
-  exit $OK;
-fi
-OK=`cp -r ./build/plugins $LUX_ROOT`
-if [[ $OK -ne 0 ]]; then
-  exit $OK;
+  exit "$OK";
 fi
 
 
 echo "Build tgz package..."
-cd $PKG_ROOT
-echo "Version: $VERSION"
-tar -czvf "node-linux-$ARCH-$VERSION.tar.gz" node-$VERSION
-aws s3 cp node-linux-$ARCH-$VERSION.tar.gz s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/
-rm -rf $PKG_ROOT/node*
+cd "$PKG_ROOT"
+echo "Tag: $TAG"
+tar -czvf "luxd-linux-$ARCH-$TAG.tar.gz" "luxd-$TAG"
+aws s3 cp "luxd-linux-$ARCH-$TAG.tar.gz" "s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/"
