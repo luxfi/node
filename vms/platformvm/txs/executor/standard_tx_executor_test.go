@@ -47,7 +47,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary"
 
 	safemath "github.com/luxfi/node/utils/math"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"

@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
@@ -59,6 +60,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	pwallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
@@ -71,7 +73,6 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	walletbuilder "github.com/luxfi/node/wallet/chain/p/builder"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const (
@@ -1331,7 +1332,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		Sender:              bootstrapConfig.Sender,
 		Validators:          beacons,
 		ConnectedValidators: peers,
-		Params: binaryvote.Parameters{
+		Params: sampling.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -1341,24 +1342,23 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &smcon.Topological{Factory: binaryvote.SnowflakeFactory},
+		Consensus: &smcon.Topological{Factory: factories.SnowflakeFactory},
 	}
-	engine, err := smeng.New(engineConfig)
+	consensusEngine, err := smeng.New(engineConfig)
 	require.NoError(err)
 
 	bootstrapper, err := bootstrap.New(
 		bootstrapConfig,
-		engine.Start,
+		consensusEngine.Start,
 	)
 	require.NoError(err)
 	bootstrapper.TimeoutRegistrar = &enginetest.Timer{}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: nil,
-		Linear: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
-			Consensus:    engine,
+			Consensus:    consensusEngine,
 		},
 	})
 
@@ -2104,7 +2104,7 @@ func TestPruneMempool(t *testing.T) {
 				},
 			},
 		},
-		walletengine.WithCustomAddresses(set.Of(
+		pwallet.WithCustomAddresses(set.Of(
 			genesistest.DefaultFundedKeys[0].Address(),
 		)),
 	)
@@ -2149,7 +2149,7 @@ func TestPruneMempool(t *testing.T) {
 		rewardsOwner,
 		rewardsOwner,
 		20000,
-		walletengine.WithCustomAddresses(set.Of(
+		pwallet.WithCustomAddresses(set.Of(
 			genesistest.DefaultFundedKeys[1].Address(),
 		)),
 	)

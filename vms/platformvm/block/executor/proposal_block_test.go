@@ -33,8 +33,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 func TestApricotProposalBlockTimeVerification(t *testing.T) {

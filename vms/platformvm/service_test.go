@@ -50,7 +50,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	pwallet "github.com/luxfi/node/wallet"
 
 	avajson "github.com/luxfi/node/utils/json"
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
@@ -97,7 +97,7 @@ func TestGetProposedHeight(t *testing.T) {
 		constants.XVMID,
 		[]ids.ID{},
 		"chain name",
-		engine.WithMemo([]byte{}),
+		pwallet.WithMemo([]byte{}),
 	)
 	require.NoError(err)
 
@@ -251,7 +251,7 @@ func TestGetTx(t *testing.T) {
 					constants.XVMID,
 					[]ids.ID{},
 					"chain name",
-					engine.WithMemo([]byte{}),
+					pwallet.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -286,7 +286,7 @@ func TestGetTx(t *testing.T) {
 					rewardsOwner,
 					rewardsOwner,
 					0,
-					engine.WithMemo([]byte{}),
+					pwallet.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -310,7 +310,7 @@ func TestGetTx(t *testing.T) {
 							},
 						},
 					}},
-					engine.WithMemo([]byte{}),
+					pwallet.WithMemo([]byte{}),
 				)
 				require.NoError(t, err)
 				return tx
@@ -523,7 +523,7 @@ func TestGetStake(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
-	withChangeOwner := engine.WithChangeOwner(&secp256k1fx.OutputOwners{
+	withChangeOwner := pwallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	})
@@ -686,7 +686,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			Threshold: 1,
 			Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 		},
-		engine.WithChangeOwner(&secp256k1fx.OutputOwners{
+		pwallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 		}),
@@ -820,7 +820,7 @@ func TestGetValidatorsAt(t *testing.T) {
 		rewardsOwner,
 		rewardsOwner,
 		0,
-		engine.WithMemo([]byte{}),
+		pwallet.WithMemo([]byte{}),
 	)
 
 	require.NoError(err)
@@ -960,7 +960,7 @@ func TestGetBlock(t *testing.T) {
 				constants.XVMID,
 				[]ids.ID{},
 				"chain name",
-				engine.WithMemo([]byte{}),
+				pwallet.WithMemo([]byte{}),
 			)
 			require.NoError(err)
 
