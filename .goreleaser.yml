@@ -1,4 +1,9 @@
 version: 2
+
+# Ignore these directories/files when checking git state
+git:
+  ignore:
+    - osxcross
 # ref. https://goreleaser.com/customization/build/
 builds:
   - id: luxd
