@@ -49,7 +49,7 @@ func TestUnaryConfidence(t *testing.T) {
 
 	binaryConfidence := sbClone.Extend(0)
 
-	expected := "SB(Preference = 0, PreferenceStrength[0] = 4, PreferenceStrength[1] = 0, SF(Confidence = [1], Finalized = false, SL(Preference = 0)))"
+	expected := "SB(Preference = 0, PreferenceStrength[0] = 4, PreferenceStrength[1] = 0, BT(Confidence = [1], Finalized = false, SL(Preference = 0)))"
 	require.Equal(expected, binaryConfidence.String())
 
 	binaryConfidence.RecordUnsuccessfulPoll()
@@ -71,6 +71,6 @@ func TestUnaryConfidence(t *testing.T) {
 	require.Equal(1, binaryConfidence.Preference())
 	require.True(binaryConfidence.Finalized())
 
-	expected = "SB(PreferenceStrength = 4, SF(Confidence = [1], Finalized = false))"
+	expected = "SB(PreferenceStrength = 4, UT(Confidence = [1], Finalized = false))"
 	require.Equal(expected, sb.String())
 }

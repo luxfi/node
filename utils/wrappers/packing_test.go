@@ -199,7 +199,7 @@ func TestPackerPackBytes(t *testing.T) {
 	p.PackBytes([]byte("Lux"))
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal([]byte("\x00\x00\x00\x04Lux"), p.Bytes)
+	require.Equal([]byte("\x00\x00\x00\x03Lux"), p.Bytes)
 
 	p.PackBytes([]byte("Lux"))
 	require.True(p.Errored())
@@ -248,7 +248,7 @@ func TestPackerString(t *testing.T) {
 	p.PackStr("Lux")
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal([]byte{0x00, 0x04, 0x41, 0x76, 0x61, 0x78}, p.Bytes)
+	require.Equal([]byte{0x00, 0x03, 0x4c, 0x75, 0x78}, p.Bytes)
 }
 
 func TestPackerUnpackString(t *testing.T) {

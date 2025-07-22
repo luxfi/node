@@ -74,7 +74,7 @@ func TestBinaryConfidenceRecordPollPreference(t *testing.T) {
 	require.Equal(red, sb.Preference())
 	require.True(sb.Finalized())
 
-	expected := "SB(Preference = 0, PreferenceStrength[0] = 4, PreferenceStrength[1] = 1, SF(Confidence = [2], Finalized = true, SL(Preference = 0)))"
+	expected := "SB(Preference = 0, PreferenceStrength[0] = 4, PreferenceStrength[1] = 1, BT(Confidence = [2], Finalized = true, SL(Preference = 0)))"
 	require.Equal(expected, sb.String())
 }
 
@@ -106,7 +106,7 @@ func TestBinaryConfidenceRecordUnsuccessfulPoll(t *testing.T) {
 	require.Equal(blue, sb.Preference())
 	require.True(sb.Finalized())
 
-	expected := "SB(Preference = 1, PreferenceStrength[0] = 0, PreferenceStrength[1] = 3, SF(Confidence = [2], Finalized = true, SL(Preference = 1)))"
+	expected := "SB(Preference = 1, PreferenceStrength[0] = 0, PreferenceStrength[1] = 3, BT(Confidence = [2], Finalized = true, SL(Preference = 1)))"
 	require.Equal(expected, sb.String())
 }
 
@@ -148,7 +148,7 @@ func TestBinaryConfidenceAcceptWeirdColor(t *testing.T) {
 	require.Equal(blue, sb.Preference())
 	require.True(sb.Finalized())
 
-	expected := "SB(Preference = 1, PreferenceStrength[0] = 2, PreferenceStrength[1] = 2, SF(Confidence = [2], Finalized = true, SL(Preference = 0)))"
+	expected := "SB(Preference = 1, PreferenceStrength[0] = 2, PreferenceStrength[1] = 2, BT(Confidence = [2], Finalized = true, SL(Preference = 0)))"
 	require.Equal(expected, sb.String())
 }
 
@@ -180,6 +180,6 @@ func TestBinaryConfidenceLockColor(t *testing.T) {
 	require.Equal(red, sb.Preference())
 	require.True(sb.Finalized())
 
-	expected := "SB(Preference = 1, PreferenceStrength[0] = 1, PreferenceStrength[1] = 3, SF(Confidence = [1], Finalized = true, SL(Preference = 0)))"
+	expected := "SB(Preference = 1, PreferenceStrength[0] = 1, PreferenceStrength[1] = 3, BT(Confidence = [1], Finalized = true, SL(Preference = 0)))"
 	require.Equal(expected, sb.String())
 }
