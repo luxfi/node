@@ -80,7 +80,7 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	geth "github.com/luxfi/geth/plugin/evm"
+	geth "github.com/luxfi/evm/plugin/evm"
 	databasefactory "github.com/luxfi/node/database/factory"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"

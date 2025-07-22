@@ -19,8 +19,8 @@ func TestMustNotImport(t *testing.T) {
 		// Importing these packages configures geth globally. This must not be
 		// done to support both geth and subnet-evm.
 		"tests/...": {
-			"github.com/luxfi/geth/params",
-			"github.com/luxfi/geth/plugin/evm/customtypes",
+			"github.com/luxfi/evm/params",
+			"github.com/luxfi/evm/plugin/evm/customtypes",
 		},
 	}
 	for packageName, forbiddenImports := range mustNotImport {

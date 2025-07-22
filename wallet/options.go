@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	"github.com/luxfi/geth"
+	"github.com/luxfi/evm"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond

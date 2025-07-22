@@ -740,14 +740,14 @@ curl -X POST --data '{
           "locktime": "0",
           "threshold": "1",
           "addresses": [
-            "P-fuji1ywzvrftfqexh5g6qa9zyrytj6pqdfetza2hqln"
+            "P-testnet1ywzvrftfqexh5g6qa9zyrytj6pqdfetza2hqln"
           ]
         },
         "deactivationOwner": {
           "locktime": "0",
           "threshold": "1",
           "addresses": [
-            "P-fuji1ywzvrftfqexh5g6qa9zyrytj6pqdfetza2hqln"
+            "P-testnet1ywzvrftfqexh5g6qa9zyrytj6pqdfetza2hqln"
           ]
         },
         "startTime": "1734034648",
@@ -1286,8 +1286,8 @@ curl -X POST --data '{
   "result": {
     "isPermissioned": true,
     "controlKeys": [
-      "P-fuji1ztvstx6naeg6aarfd047fzppdt8v4gsah88e0c",
-      "P-fuji193kvt4grqewv6ce2x59wnhydr88xwdgfcedyr3"
+      "P-testnet1ztvstx6naeg6aarfd047fzppdt8v4gsah88e0c",
+      "P-testnet193kvt4grqewv6ce2x59wnhydr88xwdgfcedyr3"
     ],
     "threshold": "1",
     "locktime": "0",
