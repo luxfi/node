@@ -77,8 +77,6 @@ func (sf *binaryThresholdTest) AssertEqual(expectedConfidences []int, expectedFi
 	sf.require.Equal(expectedFinalized, sf.Finalized())
 }
 
-// TODO: Fix these tests after refactoring is complete
-/*
 func TestBinarySnowflakeErrorDrivenSingleChoice(t *testing.T) {
 	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[int]() {
 		t.Run(test.name, func(t *testing.T) {
@@ -94,4 +92,3 @@ func TestBinarySnowflakeErrorDrivenMultiChoice(t *testing.T) {
 		})
 	}
 }
-*/

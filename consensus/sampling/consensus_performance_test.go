@@ -13,123 +13,163 @@ import (
 	"github.com/luxfi/node/ids"
 )
 
-// testNnary is a stub implementation for testing
-type testNnary struct {
-	params           Parameters
-	choice           ids.ID
-	preference       ids.ID
-	finalized        bool
-	preferenceCount  int
-	consecutivePolls int
-}
-
-func (t *testNnary) Add(newChoice ids.ID) {
-	if t.preference == ids.Empty {
-		t.preference = newChoice
-	}
-}
-
-func (t *testNnary) Preference() ids.ID {
-	if t.preference == ids.Empty {
-		return t.choice
-	}
-	return t.preference
-}
-
-func (t *testNnary) RecordPoll(count int, choice ids.ID) {
-	if count >= t.params.AlphaPreference {
-		if choice == t.preference {
-			t.consecutivePolls++
-			if t.consecutivePolls >= t.params.Beta {
-				t.finalized = true
-			}
-		} else {
-			t.preference = choice
-			t.consecutivePolls = 1
-		}
-	} else {
-		// Not enough votes - unsuccessful poll
-		t.RecordUnsuccessfulPoll()
-	}
-}
-
-func (t *testNnary) RecordUnsuccessfulPoll() {
-	t.consecutivePolls = 0
-}
-
-func (t *testNnary) Finalized() bool {
-	return t.finalized
-}
-
-func (t *testNnary) String() string {
-	return fmt.Sprintf("testNnary{preference: %s, finalized: %v}", t.preference, t.finalized)
-}
-
-// testUnary is a stub implementation for testing
-type testUnary struct {
-	params    Parameters
-	finalized bool
-}
-
-func (t *testUnary) RecordPoll(count int) {}
-
-func (t *testUnary) RecordUnsuccessfulPoll() {}
-
-func (t *testUnary) Finalized() bool {
-	return t.finalized
-}
-
-func (t *testUnary) Extend(originalPreference int) Binary {
-	return &testBinary{}
-}
-
-func (t *testUnary) Clone() Unary {
-	return &testUnary{params: t.params, finalized: t.finalized}
-}
-
-func (t *testUnary) String() string {
-	return fmt.Sprintf("testUnary{finalized: %v}", t.finalized)
-}
-
-// testBinary is a stub implementation for testing
-type testBinary struct {
-	preference int
-	finalized  bool
-}
-
-func (t *testBinary) Preference() int {
-	return t.preference
-}
-
-func (t *testBinary) RecordPoll(count, choice int) {
-	t.preference = choice
-}
-
-func (t *testBinary) RecordUnsuccessfulPoll() {}
-
-func (t *testBinary) Finalized() bool {
-	return t.finalized
-}
-
-func (t *testBinary) String() string {
-	return fmt.Sprintf("testBinary{preference: %d, finalized: %v}", t.preference, t.finalized)
-}
 
 // confidenceTestFactory is a test factory for confidence consensus
 type confidenceTestFactory struct{}
 
 func (confidenceTestFactory) NewNnary(params Parameters, choice ids.ID) Nnary {
-	return &testNnary{params: params, choice: choice, preference: choice}
+	return &nnaryConfidence{
+		params:           params,
+		preference:       choice,
+		confidence:       make([]int, 1<<params.K),
+		preferenceCount:  make([]int, 1<<params.K),
+		consecutivePolls: 0,
+	}
 }
 
 func (confidenceTestFactory) NewUnary(params Parameters) Unary {
-	return &testUnary{params: params}
+	return &unaryConfidence{
+		params: params,
+	}
+}
+
+// nnaryConfidence implements a simplified confidence algorithm for testing
+type nnaryConfidence struct {
+	params           Parameters
+	preference       ids.ID
+	confidence       []int
+	preferenceCount  []int
+	consecutivePolls int
+	finalized        bool
+}
+
+func (n *nnaryConfidence) Add(choice ids.ID) {
+	// No-op in confidence
+}
+
+func (n *nnaryConfidence) Preference() ids.ID {
+	return n.preference
+}
+
+func (n *nnaryConfidence) RecordPoll(count int, choice ids.ID) {
+	if count >= n.params.AlphaPreference {
+		if choice == n.preference {
+			n.consecutivePolls++
+			if n.consecutivePolls >= n.params.Beta {
+				n.finalized = true
+			}
+		} else {
+			n.preference = choice
+			n.consecutivePolls = 1
+		}
+	} else {
+		n.consecutivePolls = 0
+	}
+}
+
+func (n *nnaryConfidence) RecordUnsuccessfulPoll() {
+	n.consecutivePolls = 0
+}
+
+func (n *nnaryConfidence) Finalized() bool {
+	return n.finalized
+}
+
+func (n *nnaryConfidence) String() string {
+	return fmt.Sprintf("NnaryConfidence{preference: %s, consecutive: %d, finalized: %v}", 
+		n.preference, n.consecutivePolls, n.finalized)
+}
+
+// unaryConfidence implements a simplified unary confidence for testing
+type unaryConfidence struct {
+	params           Parameters
+	consecutivePolls int
+	finalized        bool
+}
+
+func (u *unaryConfidence) RecordPoll(count int) {
+	if count >= u.params.AlphaConfidence {
+		u.consecutivePolls++
+		if u.consecutivePolls >= u.params.Beta {
+			u.finalized = true
+		}
+	} else {
+		u.consecutivePolls = 0
+	}
+}
+
+func (u *unaryConfidence) RecordUnsuccessfulPoll() {
+	u.consecutivePolls = 0
+}
+
+func (u *unaryConfidence) Finalized() bool {
+	return u.finalized
+}
+
+func (u *unaryConfidence) Extend(choice int) Binary {
+	return &binaryConfidence{
+		params:     u.params,
+		preference: choice,
+	}
+}
+
+func (u *unaryConfidence) Clone() Unary {
+	return &unaryConfidence{
+		params:           u.params,
+		consecutivePolls: u.consecutivePolls,
+		finalized:        u.finalized,
+	}
+}
+
+func (u *unaryConfidence) String() string {
+	return fmt.Sprintf("UnaryConfidence{consecutive: %d, finalized: %v}", 
+		u.consecutivePolls, u.finalized)
+}
+
+// binaryConfidence implements a simplified binary confidence for testing
+type binaryConfidence struct {
+	params           Parameters
+	preference       int
+	consecutivePolls int
+	finalized        bool
+}
+
+func (b *binaryConfidence) Preference() int {
+	return b.preference
+}
+
+func (b *binaryConfidence) RecordPoll(count, choice int) {
+	if count >= b.params.AlphaPreference {
+		if choice == b.preference {
+			b.consecutivePolls++
+			if b.consecutivePolls >= b.params.Beta {
+				b.finalized = true
+			}
+		} else {
+			b.preference = choice
+			b.consecutivePolls = 1
+		}
+	} else {
+		b.consecutivePolls = 0
+	}
+}
+
+func (b *binaryConfidence) RecordUnsuccessfulPoll() {
+	b.consecutivePolls = 0
+}
+
+func (b *binaryConfidence) Finalized() bool {
+	return b.finalized
+}
+
+func (b *binaryConfidence) String() string {
+	return fmt.Sprintf("BinaryConfidence{preference: %d, consecutive: %d, finalized: %v}", 
+		b.preference, b.consecutivePolls, b.finalized)
 }
 
 // Test that a network running the lower AlphaPreference converges faster than a
 // network running equal Alpha values.
 func TestDualAlphaOptimization(t *testing.T) {
-	t.Skip("Skipping performance test that requires real consensus factory")
 	require := require.New(t)
 
 	var (
@@ -169,7 +209,6 @@ func TestDualAlphaOptimization(t *testing.T) {
 // Test that a network running the confidence tree converges faster than a network
 // running the flat confidence protocol.
 func TestTreeConvergenceOptimization(t *testing.T) {
-	t.Skip("Skipping performance test that requires real consensus factory")
 	require := require.New(t)
 
 	var (

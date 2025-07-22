@@ -92,7 +92,6 @@ func (sf *unaryThresholdTest) Preference() struct{} {
 }
 
 // TODO: Fix these tests after refactoring is complete
-/*
 func TestUnarySnowflakeErrorDriven(t *testing.T) {
 	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[struct{}]() {
 		t.Run(test.name, func(t *testing.T) {
@@ -100,4 +99,3 @@ func TestUnarySnowflakeErrorDriven(t *testing.T) {
 		})
 	}
 }
-*/
