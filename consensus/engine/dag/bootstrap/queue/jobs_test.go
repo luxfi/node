@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils/set"
 )

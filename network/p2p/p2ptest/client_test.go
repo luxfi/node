@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -34,7 +34,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, engine.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
 	<-appGossipChan
 }
 
@@ -54,7 +54,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequest - error",
-			appErr: &engine.AppError{
+			appErr: &core.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -71,7 +71,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequestAny - error",
-			appErr: &engine.AppError{
+			appErr: &core.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -88,9 +88,9 @@ func TestClient_AppRequest(t *testing.T) {
 
 			appRequestChan := make(chan struct{})
 			testHandler := p2p.TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *engine.AppError) {
+				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
 					if tt.appErr != nil {
-						return nil, &engine.AppError{
+						return nil, &core.AppError{
 							Code:    123,
 							Message: tt.appErr.Error(),
 						}

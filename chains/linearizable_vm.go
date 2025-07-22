@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.DAGVM
-	vmToInitialize engine.VM
+	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
 	ctx              *consensus.Context
@@ -34,13 +34,13 @@ type initializeOnLinearizeVM struct {
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*engine.Fx
-	appSender        engine.AppSender
+	fxs              []*core.Fx
+	appSender        core.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
 }
 
-func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	select {
 	case <-vm.waitForLinearize:
 		return vm.vmToInitialize.WaitForEvent(ctx)
@@ -87,8 +87,8 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*engine.Fx,
-	_ engine.AppSender,
+	_ []*core.Fx,
+	_ core.AppSender,
 ) error {
 	return vm.Linearize(ctx, vm.stopVertexID)
 }

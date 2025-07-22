@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
@@ -88,7 +88,7 @@ func (c *Comm) Send(msg *simplex.Message, destination simplex.NodeID) {
 		return
 	}
 
-	c.sender.Send(outboundMsg, engine.SendConfig{NodeIDs: set.Of(dest)}, c.subnetID, subnets.NoOpAllower)
+	c.sender.Send(outboundMsg, core.SendConfig{NodeIDs: set.Of(dest)}, c.subnetID, subnets.NoOpAllower)
 }
 
 func (c *Comm) Broadcast(msg *simplex.Message) {
@@ -98,7 +98,7 @@ func (c *Comm) Broadcast(msg *simplex.Message) {
 		return
 	}
 
-	c.sender.Send(outboundMsg, engine.SendConfig{NodeIDs: c.broadcastNodes}, c.subnetID, subnets.NoOpAllower)
+	c.sender.Send(outboundMsg, core.SendConfig{NodeIDs: c.broadcastNodes}, c.subnetID, subnets.NoOpAllower)
 }
 
 func (c *Comm) simplexMessageToOutboundMessage(msg *simplex.Message) (message.OutboundMessage, error) {

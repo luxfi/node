@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/vms/platformvm/block"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 var (

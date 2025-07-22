@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 )
 
@@ -51,7 +51,7 @@ func (a *atomic) AppRequestFailed(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
-	appErr *engine.AppError,
+	appErr *core.AppError,
 ) error {
 	h := a.handler.Get()
 	return h.AppRequestFailed(

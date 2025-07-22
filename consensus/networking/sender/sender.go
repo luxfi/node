@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/subnets"
@@ -24,7 +24,7 @@ import (
 const opLabel = "op"
 
 var (
-	_ engine.Sender = (*sender)(nil)
+	_ core.Sender = (*sender)(nil)
 
 	opLabels = []string{opLabel}
 )
@@ -58,7 +58,7 @@ func New(
 	engineType p2p.EngineType,
 	subnet subnets.Subnet,
 	reg prometheus.Registerer,
-) (engine.Sender, error) {
+) (core.Sender, error) {
 	s := &sender{
 		ctx:        ctx,
 		msgCreator: msgCreator,
@@ -132,7 +132,7 @@ func (s *sender) SendGetStateSummaryFrontier(ctx context.Context, nodeIDs set.Se
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -196,7 +196,7 @@ func (s *sender) SendStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -278,7 +278,7 @@ func (s *sender) SendGetAcceptedStateSummary(ctx context.Context, nodeIDs set.Se
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -342,7 +342,7 @@ func (s *sender) SendAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -413,7 +413,7 @@ func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[id
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -477,7 +477,7 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -550,7 +550,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -610,7 +610,7 @@ func (s *sender) SendAccepted(ctx context.Context, nodeID ids.NodeID, requestID 
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -694,7 +694,7 @@ func (s *sender) SendGetAncestors(ctx context.Context, nodeID ids.NodeID, reques
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -732,7 +732,7 @@ func (s *sender) SendAncestors(_ context.Context, nodeID ids.NodeID, requestID u
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -803,7 +803,7 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 		nodeIDs := set.Of(nodeID)
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -852,7 +852,7 @@ func (s *sender) SendPut(_ context.Context, nodeID ids.NodeID, requestID uint32,
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -965,7 +965,7 @@ func (s *sender) SendPushQuery(
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -1100,7 +1100,7 @@ func (s *sender) SendPullQuery(
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -1186,7 +1186,7 @@ func (s *sender) SendChits(
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -1218,8 +1218,8 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 			nodeID,
 			s.ctx.ChainID,
 			requestID,
-			engine.ErrTimeout.Code,
-			engine.ErrTimeout.Message,
+			core.ErrTimeout.Code,
+			core.ErrTimeout.Message,
 		)
 		s.router.RegisterRequest(
 			ctx,
@@ -1267,8 +1267,8 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
-				engine.ErrTimeout.Code,
-				engine.ErrTimeout.Message,
+				core.ErrTimeout.Code,
+				core.ErrTimeout.Message,
 			)
 			s.router.HandleInternal(ctx, inMsg)
 		}
@@ -1288,7 +1288,7 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 	if err == nil {
 		sentTo = s.sender.Send(
 			outMsg,
-			engine.SendConfig{
+			core.SendConfig{
 				NodeIDs: nodeIDs,
 			},
 			s.ctx.SubnetID,
@@ -1329,8 +1329,8 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
-				engine.ErrTimeout.Code,
-				engine.ErrTimeout.Message,
+				core.ErrTimeout.Code,
+				core.ErrTimeout.Message,
 			)
 			s.router.HandleInternal(ctx, inMsg)
 		}
@@ -1373,7 +1373,7 @@ func (s *sender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, request
 	nodeIDs := set.Of(nodeID)
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: nodeIDs,
 		},
 		s.ctx.SubnetID,
@@ -1438,7 +1438,7 @@ func (s *sender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID 
 	// Send the message over the network.
 	sentTo := s.sender.Send(
 		outMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: set.Of(nodeID),
 		},
 		s.ctx.SubnetID,
@@ -1470,7 +1470,7 @@ func (s *sender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID 
 
 func (s *sender) SendAppGossip(
 	_ context.Context,
-	config engine.SendConfig,
+	config core.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	// Create the outbound message.

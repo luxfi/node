@@ -31,10 +31,10 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/state"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/tracker"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/syncer"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/linear/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
@@ -66,9 +66,9 @@ import (
 	aveng "github.com/luxfi/node/consensus/engine/dag"
 	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
 	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
-	smeng "github.com/luxfi/node/consensus/engine/chain"
-	smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
-	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"
+	smeng "github.com/luxfi/node/consensus/engine/linear"
+	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
+	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/factories"
 )
@@ -172,7 +172,7 @@ type ChainParameters struct {
 type chain struct {
 	Name    string
 	Context *consensus.Context
-	VM      engine.VM
+	VM      core.VM
 	Handler handler.Handler
 }
 
@@ -538,14 +538,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 	// TODO: Shutdown VM if an error occurs
 
-	chainFxs := make([]*engine.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*core.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &engine.Fx{
+		chainFxs[i] = &core.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -613,7 +613,7 @@ func (m *manager) createLuxChain(
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*engine.Fx,
+	fxs []*core.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -886,7 +886,7 @@ func (m *manager) createLuxChain(
 		return nil, err
 	}
 
-	var halter engine.Halter
+	var halter core.Halter
 
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
@@ -940,14 +940,14 @@ func (m *manager) createLuxChain(
 		Params:              consensusParams,
 		Consensus:           linearConsensus,
 	}
-	var linearEngine engine.Engine
+	var linearEngine core.Engine
 	linearEngine, err = smeng.New(linearEngineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		linearEngine = engine.TraceEngine(linearEngine, m.Tracer)
+		linearEngine = core.TraceEngine(linearEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -966,7 +966,7 @@ func (m *manager) createLuxChain(
 		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
 	}
-	var linearBootstrapper engine.BootstrapableEngine
+	var linearBootstrapper core.BootstrapableEngine
 	linearBootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
 		linearEngine.Start,
@@ -976,7 +976,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		linearBootstrapper = engine.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
+		linearBootstrapper = core.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
 	}
 
 	avaGetHandler, err := avagetter.New(
@@ -994,7 +994,7 @@ func (m *manager) createLuxChain(
 	// create engine gear
 	luxEngine := aveng.New(ctx, avaGetHandler)
 	if m.TracingEnabled {
-		luxEngine = engine.TraceEngine(luxEngine, m.Tracer)
+		luxEngine = core.TraceEngine(luxEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1015,7 +1015,7 @@ func (m *manager) createLuxChain(
 		luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
 	}
 
-	var luxBootstrapper engine.BootstrapableEngine
+	var luxBootstrapper core.BootstrapableEngine
 	luxBootstrapper, err = avbootstrap.New(
 		luxBootstrapperConfig,
 		linearBootstrapper.Start,
@@ -1026,7 +1026,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		luxBootstrapper = engine.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
+		luxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
@@ -1062,7 +1062,7 @@ func (m *manager) createLinearChain(
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
-	fxs []*engine.Fx,
+	fxs []*core.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -1279,7 +1279,7 @@ func (m *manager) createLinearChain(
 		return nil, err
 	}
 
-	var halter engine.Halter
+	var halter core.Halter
 
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
@@ -1334,14 +1334,14 @@ func (m *manager) createLinearChain(
 		Consensus:           consensus,
 		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
 	}
-	var linearEngine engine.Engine
+	var linearEngine core.Engine
 	linearEngine, err = smeng.New(engineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		linearEngine = engine.TraceEngine(linearEngine, m.Tracer)
+		linearEngine = core.TraceEngine(linearEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1361,7 +1361,7 @@ func (m *manager) createLinearChain(
 		VM:                             vm,
 		Bootstrapped:                   bootstrapFunc,
 	}
-	var bootstrapper engine.BootstrapableEngine
+	var bootstrapper core.BootstrapableEngine
 	bootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
 		linearEngine.Start,
@@ -1371,7 +1371,7 @@ func (m *manager) createLinearChain(
 	}
 
 	if m.TracingEnabled {
-		bootstrapper = engine.TraceBootstrapableEngine(bootstrapper, m.Tracer)
+		bootstrapper = core.TraceBootstrapableEngine(bootstrapper, m.Tracer)
 	}
 
 	// create state sync gear
@@ -1395,7 +1395,7 @@ func (m *manager) createLinearChain(
 	)
 
 	if m.TracingEnabled {
-		stateSyncer = engine.TraceStateSyncer(stateSyncer, m.Tracer)
+		stateSyncer = core.TraceStateSyncer(stateSyncer, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
@@ -1530,7 +1530,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *consensus.Context, vm engine.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensus.Context, vm core.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

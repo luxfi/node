@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/uptime"
@@ -386,7 +386,7 @@ func TestSend(t *testing.T) {
 	toSend := set.Of(nodeIDs[1])
 	sentTo := net0.Send(
 		outboundGetMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: toSend,
 		},
 		constants.PrimaryNetworkID,
@@ -432,7 +432,7 @@ func TestSendWithFilter(t *testing.T) {
 	validNodeID := nodeIDs[1]
 	sentTo := net0.Send(
 		outboundGetMsg,
-		engine.SendConfig{
+		core.SendConfig{
 			NodeIDs: toSend,
 		},
 		constants.PrimaryNetworkID,

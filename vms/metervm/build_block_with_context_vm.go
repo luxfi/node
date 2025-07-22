@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {

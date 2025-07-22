@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/uptime"
@@ -136,7 +136,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 	registerer := prometheus.NewRegistry()
 	res.sender = &enginetest.Sender{T: t}
-	res.sender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
+	res.sender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
 		return nil
 	}
 

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -58,8 +58,8 @@ func (vm *blockVM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*engine.Fx,
-	appSender engine.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	err := vm.blockMetrics.Initialize(
 		vm.buildBlockVM != nil,

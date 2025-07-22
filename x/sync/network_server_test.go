@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
@@ -35,7 +35,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetRangeProofRequest
-		expectedErr              *engine.AppError
+		expectedErr              *core.AppError
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID
@@ -208,7 +208,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetChangeProofRequest
-		expectedErr              *engine.AppError
+		expectedErr              *core.AppError
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID

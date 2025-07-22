@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
@@ -68,7 +68,7 @@ func TestInvalidFx(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*engine.Fx{ // fxs
+		[]*core.Fx{ // fxs
 			nil,
 		},
 		nil,
@@ -95,7 +95,7 @@ func TestFxInitializationFailure(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*engine.Fx{{ // fxs
+		[]*core.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -199,7 +199,7 @@ func TestIssueProperty(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},

@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/node/ids"
 	message "github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	subnets "github.com/luxfi/node/subnets"
 	set "github.com/luxfi/node/utils/set"
 	gomock "go.uber.org/mock/gomock"
@@ -45,7 +45,7 @@ func (m *ExternalSender) EXPECT() *ExternalSenderMockRecorder {
 }
 
 // Send mocks base method.
-func (m *ExternalSender) Send(msg message.OutboundMessage, config engine.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID] {
+func (m *ExternalSender) Send(msg message.OutboundMessage, config core.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID] {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", msg, config, subnetID, allower)
 	ret0, _ := ret[0].(set.Set[ids.NodeID])

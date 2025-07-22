@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 )
 
 var (

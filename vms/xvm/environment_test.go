@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -59,7 +59,7 @@ type envConfig struct {
 	isCustomFeeAsset bool
 	vmStaticConfig   *config.Config
 	vmDynamicConfig  *Config
-	additionalFxs    []*engine.Fx
+	additionalFxs    []*core.Fx
 	notLinearized    bool
 	notBootstrapped  bool
 }
@@ -131,7 +131,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		configBytes,
 		nil,
 		append(
-			[]*engine.Fx{
+			[]*core.Fx{
 				{
 					ID: secp256k1fx.ID,
 					Fx: &secp256k1fx.Fx{},
@@ -423,7 +423,7 @@ func buildAndAccept(
 ) {
 	msg, err := vm.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(engine.PendingTxs, msg)
+	require.Equal(core.PendingTxs, msg)
 
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()

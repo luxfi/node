@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/handler/handlermock"
@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 )
 
 const (
@@ -603,7 +603,7 @@ func TestRouterTimeout(t *testing.T) {
 		calledQueryFailed = true
 		return nil
 	}
-	bootstrapper.AppRequestFailedF = func(context.Context, ids.NodeID, uint32, *engine.AppError) error {
+	bootstrapper.AppRequestFailedF = func(context.Context, ids.NodeID, uint32, *core.AppError) error {
 		defer wg.Done()
 		calledAppRequestFailed = true
 		return nil
@@ -1351,7 +1351,7 @@ func TestAppRequest(t *testing.T) {
 	wantRequestID := uint32(123)
 	wantResponse := []byte("response")
 
-	errFoo := engine.AppError{
+	errFoo := core.AppError{
 		Code:    456,
 		Message: "foo",
 	}
@@ -1390,7 +1390,7 @@ func TestAppRequest(t *testing.T) {
 
 			wg.Add(1)
 			if tt.inboundMsg == nil || tt.inboundMsg.Op() == message.AppErrorOp {
-				engine.AppRequestFailedF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
+				engine.AppRequestFailedF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 					defer wg.Done()
 					chainRouter.lock.Lock()
 					require.Zero(chainRouter.timedRequests.Len())
@@ -1612,7 +1612,7 @@ func TestHandleSimplexMessage(t *testing.T) {
 	require.True(t, receivedMsg)
 }
 
-func noopSubscription(ctx context.Context) (engine.Message, error) {
+func noopSubscription(ctx context.Context) (core.Message, error) {
 	<-ctx.Done()
-	return engine.Message(0), ctx.Err()
+	return core.Message(0), ctx.Err()
 }

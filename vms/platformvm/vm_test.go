@@ -23,10 +23,10 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/factories"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/tracker"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/bootstrap"
+	"github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/router"
@@ -65,9 +65,9 @@ import (
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	smcon "github.com/luxfi/node/consensus/linear"
-	smeng "github.com/luxfi/node/consensus/engine/chain"
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
-	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"
+	smeng "github.com/luxfi/node/consensus/engine/linear"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
@@ -164,7 +164,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	defer ctx.Lock.Unlock()
 	appSender := &enginetest.Sender{}
 	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
+	appSender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
 		return nil
 	}
 	appSender.SendAppErrorF = func(context.Context, ids.NodeID, uint32, int32, string) error {
@@ -1148,11 +1148,11 @@ func TestRestartFullyAccepted(t *testing.T) {
 }
 
 // Test that after bootstrapping a node to an oracle block, the preference of
-// the child block is correctly initialized by the engine.
+// the child block is correctly initialized by the core.
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require := require.New(t)
 
-	// Initialize the VM so that we can pass it into the bootstrapping engine.
+	// Initialize the VM so that we can pass it into the bootstrapping core.
 	baseDB := memdb.New()
 	vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
 	bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
@@ -1250,7 +1250,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	}
 
-	// Create a validator manager for the bootstrapping engine.
+	// Create a validator manager for the bootstrapping core.
 	vdrID := ids.GenerateTestNodeID()
 	beacons := validators.NewManager()
 	require.NoError(beacons.AddStaker(ctx.SubnetID, vdrID, nil, ids.Empty, 1))
@@ -1280,7 +1280,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	bootstrapConfig := bootstrap.Config{
-		Haltable:                       &engine.Halter{},
+		Haltable:                       &core.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            consensusCtx,
@@ -1304,9 +1304,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
-	noopSubscription := func(ctx context.Context) (engine.Message, error) {
+	noopSubscription := func(ctx context.Context) (core.Message, error) {
 		<-ctx.Done()
-		return engine.Message(0), ctx.Err()
+		return core.Message(0), ctx.Err()
 	}
 
 	h, err := handler.New(
@@ -1377,7 +1377,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Mark the validator as connected. We should request the accepted frontier.
 	var reqID uint32
-	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1418,7 +1418,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Report the validator removal as the last accepted block with the accepted
 	// frontier. We should request a confirmation that this block is accepted.
-	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -1432,7 +1432,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Report the validator removal as accepted. We should request the validator
 	// removal block and any ancestors of it.
-	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
@@ -1451,7 +1451,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Provide the validator removal block. We should process this block and
 	// then do another round of bootstrapping.
-	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1467,7 +1467,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// We should again report the validator removal block as the last accepted
 	// block.
-	externalSender.SendF = func(msg message.OutboundMessage, config engine.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())

@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -76,7 +76,7 @@ type VM struct {
 
 	parser block.Parser
 
-	appSender engine.AppSender
+	appSender core.AppSender
 
 	// State management
 	state state.State
@@ -140,10 +140,10 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*engine.Fx,
-	appSender engine.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
-	noopMessageHandler := engine.NewNoOpAppHandler(ctx.Log)
+	noopMessageHandler := core.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)

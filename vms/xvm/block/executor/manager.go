@@ -35,9 +35,9 @@ type Manager interface {
 	SetPreference(blkID ids.ID)
 	Preferred() ids.ID
 
-	GetBlock(blkID ids.ID) (chain.Block, error)
+	GetBlock(blkID ids.ID) (linear.Block, error)
 	GetStatelessBlock(blkID ids.ID) (block.Block, error)
-	NewBlock(block.Block) chain.Block
+	NewBlock(block.Block) linear.Block
 
 	// VerifyTx verifies that the transaction can be issued based on the currently
 	// preferred state. This should *not* be used to verify transactions in a block.
@@ -117,7 +117,7 @@ func (m *manager) Preferred() ids.ID {
 	return m.preferred
 }
 
-func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {
+func (m *manager) GetBlock(blkID ids.ID) (linear.Block, error) {
 	blk, err := m.GetStatelessBlock(blkID)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (m *manager) GetStatelessBlock(blkID ids.ID) (block.Block, error) {
 	return m.state.GetBlock(blkID)
 }
 
-func (m *manager) NewBlock(blk block.Block) chain.Block {
+func (m *manager) NewBlock(blk block.Block) linear.Block {
 	return &Block{
 		Block:   blk,
 		manager: m,

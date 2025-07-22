@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	_ engine.AppHandler    = (*Network)(nil)
+	_ core.AppHandler    = (*Network)(nil)
 	_ validators.Connector = (*Network)(nil)
 )
 
@@ -44,7 +44,7 @@ func New(
 	parser txs.Parser,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
-	appSender engine.AppSender,
+	appSender core.AppSender,
 	registerer prometheus.Registerer,
 	config Config,
 ) (*Network, error) {

@@ -9,8 +9,8 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/tracker"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 )
 
 type Config struct {

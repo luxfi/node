@@ -15,9 +15,9 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/chaintest"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/consensustest"
 )
 

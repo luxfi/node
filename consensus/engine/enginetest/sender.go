@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
 
 var (
-	_ engine.Sender    = (*Sender)(nil)
-	_ engine.AppSender = (*SenderStub)(nil)
+	_ core.Sender    = (*Sender)(nil)
+	_ core.AppSender = (*SenderStub)(nil)
 
 	errSendAppRequest  = errors.New("unexpectedly called SendAppRequest")
 	errSendAppResponse = errors.New("unexpectedly called SendAppResponse")
@@ -56,7 +56,7 @@ type Sender struct {
 	SendAppRequestF              func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendAppResponseF             func(context.Context, ids.NodeID, uint32, []byte) error
 	SendAppErrorF                func(context.Context, ids.NodeID, uint32, int32, string) error
-	SendAppGossipF               func(context.Context, engine.SendConfig, []byte) error
+	SendAppGossipF               func(context.Context, core.SendConfig, []byte) error
 }
 
 // Default set the default callable value to [cant]
@@ -290,7 +290,7 @@ func (s *Sender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID 
 // initialized, then testing will fail.
 func (s *Sender) SendAppGossip(
 	ctx context.Context,
-	config engine.SendConfig,
+	config core.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	switch {
@@ -307,7 +307,7 @@ type SenderStub struct {
 	SentAppRequest, SentAppResponse,
 	SentAppGossip chan []byte
 
-	SentAppError chan *engine.AppError
+	SentAppError chan *core.AppError
 }
 
 func (f SenderStub) SendAppRequest(_ context.Context, _ set.Set[ids.NodeID], _ uint32, bytes []byte) error {
@@ -333,14 +333,14 @@ func (f SenderStub) SendAppError(_ context.Context, _ ids.NodeID, _ uint32, erro
 		return nil
 	}
 
-	f.SentAppError <- &engine.AppError{
+	f.SentAppError <- &core.AppError{
 		Code:    errorCode,
 		Message: errorMessage,
 	}
 	return nil
 }
 
-func (f SenderStub) SendAppGossip(_ context.Context, _ engine.SendConfig, bytes []byte) error {
+func (f SenderStub) SendAppGossip(_ context.Context, _ core.SendConfig, bytes []byte) error {
 	if f.SentAppGossip == nil {
 		return nil
 	}

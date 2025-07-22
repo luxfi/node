@@ -129,8 +129,6 @@ func (sf *multiThresholdTest) AssertEqual(expectedConfidences []int, expectedFin
 	sf.require.Equal(expectedFinalized, sf.Finalized())
 }
 
-// TODO: Fix these tests after refactoring is complete
-/*
 func TestNnarySnowflakeErrorDrivenSingleChoice(t *testing.T) {
 	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[ids.ID]() {
 		t.Run(test.name, func(t *testing.T) {
@@ -146,4 +144,3 @@ func TestNnarySnowflakeErrorDrivenMultiChoice(t *testing.T) {
 		})
 	}
 }
-*/

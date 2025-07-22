@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/network/p2p/acp118"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -16,6 +16,6 @@ var _ acp118.Verifier = (*acp118Verifier)(nil)
 // acp118Verifier allows signing all warp messages
 type acp118Verifier struct{}
 
-func (acp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *engine.AppError {
+func (acp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *core.AppError {
 	return nil
 }

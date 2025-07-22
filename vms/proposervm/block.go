@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 const (

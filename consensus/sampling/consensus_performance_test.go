@@ -19,11 +19,12 @@ type confidenceTestFactory struct{}
 
 func (confidenceTestFactory) NewNnary(params Parameters, choice ids.ID) Nnary {
 	return &nnaryConfidence{
-		params:           params,
-		preference:       choice,
-		confidence:       make([]int, 1<<params.K),
-		preferenceCount:  make([]int, 1<<params.K),
-		consecutivePolls: 0,
+		params:             params,
+		preference:         choice,
+		confidence:         make([]int, 1<<params.K),
+		preferenceCount:    make([]int, 1<<params.K),
+		consecutivePolls:   0,
+		preferenceStrength: make(map[ids.ID]int),
 	}
 }
 
@@ -35,12 +36,14 @@ func (confidenceTestFactory) NewUnary(params Parameters) Unary {
 
 // nnaryConfidence implements a simplified confidence algorithm for testing
 type nnaryConfidence struct {
-	params           Parameters
-	preference       ids.ID
-	confidence       []int
-	preferenceCount  []int
-	consecutivePolls int
-	finalized        bool
+	params             Parameters
+	preference         ids.ID
+	confidence         []int
+	preferenceCount    []int
+	consecutivePolls   int
+	finalized          bool
+	preferenceStrength map[ids.ID]int
+	maxPrefStrength    int
 }
 
 func (n *nnaryConfidence) Add(choice ids.ID) {
@@ -52,14 +55,23 @@ func (n *nnaryConfidence) Preference() ids.ID {
 }
 
 func (n *nnaryConfidence) RecordPoll(count int, choice ids.ID) {
+	// Always update preference strength for successful polls
 	if count >= n.params.AlphaPreference {
+		n.preferenceStrength[choice]++
+		if n.preferenceStrength[choice] > n.maxPrefStrength {
+			n.preference = choice
+			n.maxPrefStrength = n.preferenceStrength[choice]
+		}
+	}
+	
+	// Update confidence for finalization
+	if count >= n.params.AlphaConfidence {
 		if choice == n.preference {
 			n.consecutivePolls++
 			if n.consecutivePolls >= n.params.Beta {
 				n.finalized = true
 			}
 		} else {
-			n.preference = choice
 			n.consecutivePolls = 1
 		}
 	} else {
@@ -76,18 +88,28 @@ func (n *nnaryConfidence) Finalized() bool {
 }
 
 func (n *nnaryConfidence) String() string {
-	return fmt.Sprintf("NnaryConfidence{preference: %s, consecutive: %d, finalized: %v}", 
-		n.preference, n.consecutivePolls, n.finalized)
+	// Mimic the real confidence output format
+	confidenceStr := fmt.Sprintf("[%d]", n.consecutivePolls)
+	innerStr := fmt.Sprintf("SF(Confidence = %s, Finalized = %v, SL(Preference = %s))", 
+		confidenceStr, n.finalized, n.preference)
+	
+	return fmt.Sprintf("SB(Preference = %s, PreferenceStrength = %d, %s)", 
+		n.preference, n.maxPrefStrength, innerStr)
 }
 
 // unaryConfidence implements a simplified unary confidence for testing
 type unaryConfidence struct {
-	params           Parameters
-	consecutivePolls int
-	finalized        bool
+	params             Parameters
+	consecutivePolls   int
+	finalized          bool
+	preferenceStrength int
 }
 
 func (u *unaryConfidence) RecordPoll(count int) {
+	if count >= u.params.AlphaPreference {
+		u.preferenceStrength++
+	}
+	
 	if count >= u.params.AlphaConfidence {
 		u.consecutivePolls++
 		if u.consecutivePolls >= u.params.Beta {
@@ -108,30 +130,42 @@ func (u *unaryConfidence) Finalized() bool {
 
 func (u *unaryConfidence) Extend(choice int) Binary {
 	return &binaryConfidence{
-		params:     u.params,
-		preference: choice,
+		params:             u.params,
+		preference:         choice,
+		preferenceStrength: map[int]int{choice: u.preferenceStrength},
+		consecutivePolls:   u.consecutivePolls,
+		finalized:          u.finalized,
+		innerPreference:    choice,  // Inner preference starts as the extended choice
 	}
 }
 
 func (u *unaryConfidence) Clone() Unary {
 	return &unaryConfidence{
-		params:           u.params,
-		consecutivePolls: u.consecutivePolls,
-		finalized:        u.finalized,
+		params:             u.params,
+		consecutivePolls:   u.consecutivePolls,
+		finalized:          u.finalized,
+		preferenceStrength: u.preferenceStrength,
 	}
 }
 
 func (u *unaryConfidence) String() string {
-	return fmt.Sprintf("UnaryConfidence{consecutive: %d, finalized: %v}", 
-		u.consecutivePolls, u.finalized)
+	// Mimic the real unary confidence output format
+	confidenceStr := fmt.Sprintf("[%d]", u.consecutivePolls)
+	innerStr := fmt.Sprintf("SF(Confidence = %s, Finalized = %v)", 
+		confidenceStr, u.finalized)
+	
+	return fmt.Sprintf("SB(PreferenceStrength = %d, %s)", 
+		u.preferenceStrength, innerStr)
 }
 
 // binaryConfidence implements a simplified binary confidence for testing
 type binaryConfidence struct {
-	params           Parameters
-	preference       int
-	consecutivePolls int
-	finalized        bool
+	params             Parameters
+	preference         int  // Confidence preference (based on preference strength)
+	consecutivePolls   int
+	finalized          bool
+	preferenceStrength map[int]int
+	innerPreference    int  // Inner sampler preference (updated on every successful poll)
 }
 
 func (b *binaryConfidence) Preference() int {
@@ -139,15 +173,45 @@ func (b *binaryConfidence) Preference() int {
 }
 
 func (b *binaryConfidence) RecordPoll(count, choice int) {
+	// Check if we're changing the inner preference
+	changingPreference := false
 	if count >= b.params.AlphaPreference {
-		if choice == b.preference {
-			b.consecutivePolls++
+		if b.preferenceStrength == nil {
+			b.preferenceStrength = make(map[int]int)
+		}
+		
+		// Check if inner preference will change
+		if choice != b.innerPreference {
+			changingPreference = true
+		}
+		
+		b.preferenceStrength[choice]++
+		
+		// Update inner sampler preference on every successful poll
+		b.innerPreference = choice
+		
+		// Update confidence preference only if the new choice has strictly greater strength
+		if b.preferenceStrength[choice] > b.preferenceStrength[1-choice] {
+			b.preference = choice
+		}
+	}
+	
+	// If we're changing preference, clear confidence before proceeding
+	if changingPreference && !b.finalized {
+		b.consecutivePolls = 0
+	}
+	
+	if count >= b.params.AlphaConfidence {
+		if choice == b.innerPreference {
+			if !changingPreference {
+				b.consecutivePolls++
+			} else {
+				// Starting fresh with new preference
+				b.consecutivePolls = 1
+			}
 			if b.consecutivePolls >= b.params.Beta {
 				b.finalized = true
 			}
-		} else {
-			b.preference = choice
-			b.consecutivePolls = 1
 		}
 	} else {
 		b.consecutivePolls = 0
@@ -163,8 +227,26 @@ func (b *binaryConfidence) Finalized() bool {
 }
 
 func (b *binaryConfidence) String() string {
-	return fmt.Sprintf("BinaryConfidence{preference: %d, consecutive: %d, finalized: %v}", 
-		b.preference, b.consecutivePolls, b.finalized)
+	// Mimic the real binary confidence output format
+	confidenceStr := fmt.Sprintf("[%d]", b.consecutivePolls)
+	// Use inner preference for SL output
+	innerStr := fmt.Sprintf("SF(Confidence = %s, Finalized = %v, SL(Preference = %d))", 
+		confidenceStr, b.finalized, b.innerPreference)
+	
+	// Build preference strength string
+	if b.preferenceStrength == nil {
+		b.preferenceStrength = make(map[int]int)
+	}
+	strengthStr := ""
+	for i := 0; i <= 1; i++ {
+		if i > 0 {
+			strengthStr += ", "
+		}
+		strengthStr += fmt.Sprintf("PreferenceStrength[%d] = %d", i, b.preferenceStrength[i])
+	}
+	
+	return fmt.Sprintf("SB(Preference = %d, %s, %s)", 
+		b.preference, strengthStr, innerStr)
 }
 
 // Test that a network running the lower AlphaPreference converges faster than a

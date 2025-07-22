@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
@@ -27,7 +27,7 @@ type External struct {
 
 	CantSend bool
 
-	SendF func(msg message.OutboundMessage, config engine.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID]
+	SendF func(msg message.OutboundMessage, config core.SendConfig, subnetID ids.ID, allower subnets.Allower) set.Set[ids.NodeID]
 }
 
 // Default set the default callable value to [cant]
@@ -37,7 +37,7 @@ func (s *External) Default(cant bool) {
 
 func (s *External) Send(
 	msg message.OutboundMessage,
-	config engine.SendConfig,
+	config core.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {

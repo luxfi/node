@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/set"
@@ -36,12 +36,12 @@ func TestHandler(t *testing.T) {
 			name:   "signature fails verification",
 			cacher: &cache.Empty[ids.ID, []byte]{},
 			verifier: &testVerifier{
-				Errs: []*engine.AppError{
+				Errs: []*core.AppError{
 					{Code: 123},
 				},
 			},
 			expectedErrs: []error{
-				&engine.AppError{Code: 123},
+				&core.AppError{Code: 123},
 			},
 		},
 		{
@@ -56,7 +56,7 @@ func TestHandler(t *testing.T) {
 			name:   "signature is cached",
 			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
-				Errs: []*engine.AppError{
+				Errs: []*core.AppError{
 					nil,
 					{Code: 123}, // The valid response should be cached
 				},
@@ -145,14 +145,14 @@ func TestHandler(t *testing.T) {
 
 // The zero value of testVerifier allows signing
 type testVerifier struct {
-	Errs []*engine.AppError
+	Errs []*core.AppError
 }
 
 func (t *testVerifier) Verify(
 	context.Context,
 	*warp.UnsignedMessage,
 	[]byte,
-) *engine.AppError {
+) *core.AppError {
 	if len(t.Errs) == 0 {
 		return nil
 	}

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -45,7 +45,7 @@ type Handler interface {
 		nodeID ids.NodeID,
 		deadline time.Time,
 		requestBytes []byte,
-	) ([]byte, *engine.AppError)
+	) ([]byte, *core.AppError)
 }
 
 // NoOpHandler drops all messages
@@ -53,7 +53,7 @@ type NoOpHandler struct{}
 
 func (NoOpHandler) AppGossip(context.Context, ids.NodeID, []byte) {}
 
-func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *engine.AppError) {
+func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
 	return nil, nil
 }
 
@@ -88,7 +88,7 @@ func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, goss
 	v.handler.AppGossip(ctx, nodeID, gossipBytes)
 }
 
-func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
+func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	if !v.validatorSet.Has(ctx, nodeID) {
 		return nil, ErrNotValidator
 	}
@@ -101,7 +101,7 @@ type responder struct {
 	Handler
 	handlerID uint64
 	log       logging.Logger
-	sender    engine.AppSender
+	sender    core.AppSender
 }
 
 // AppRequest calls the underlying handler and sends back the response to nodeID
@@ -125,7 +125,7 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 
 type TestHandler struct {
 	AppGossipF  func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
-	AppRequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError)
+	AppRequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError)
 }
 
 func (t TestHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -136,7 +136,7 @@ func (t TestHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipByt
 	t.AppGossipF(ctx, nodeID, gossipBytes)
 }
 
-func (t TestHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
+func (t TestHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	if t.AppRequestF == nil {
 		return nil, nil
 	}

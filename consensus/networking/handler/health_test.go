@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	commontracker "github.com/luxfi/node/consensus/engine/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 )
 
 func TestHealthCheckSubnet(t *testing.T) {

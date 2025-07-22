@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	chain "github.com/luxfi/node/consensus/linear"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -78,7 +78,7 @@ func (mr *LinearizableVMMockRecorder) AppRequest(ctx, nodeID, requestID, deadlin
 }
 
 // AppRequestFailed mocks base method.
-func (m *LinearizableVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
+func (m *LinearizableVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AppRequestFailed", ctx, nodeID, requestID, appErr)
 	ret0, _ := ret[0].(error)
@@ -209,7 +209,7 @@ func (mr *LinearizableVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *LinearizableVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*engine.Fx, appSender engine.AppSender) error {
+func (m *LinearizableVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)
@@ -354,10 +354,10 @@ func (mr *LinearizableVMMockRecorder) Version(arg0 any) *gomock.Call {
 }
 
 // WaitForEvent mocks base method.
-func (m *LinearizableVM) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (m *LinearizableVM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForEvent", ctx)
-	ret0, _ := ret[0].(engine.Message)
+	ret0, _ := ret[0].(core.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

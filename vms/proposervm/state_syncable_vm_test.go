@@ -17,11 +17,11 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/chaintest"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
@@ -46,7 +46,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	// load innerVM expectations
 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*engine.Fx, engine.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}

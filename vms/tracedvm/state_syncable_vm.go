@@ -8,7 +8,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )

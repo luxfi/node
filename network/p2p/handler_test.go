@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -80,7 +80,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     *engine.AppError
+		expected     *core.AppError
 	}{
 		{
 			name:         "message dropped",

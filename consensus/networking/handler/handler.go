@@ -19,8 +19,8 @@ import (
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/consensus"
-	enginepkg "github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	enginepkg "github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/ids"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 
-	commontracker "github.com/luxfi/node/consensus/engine/tracker"
+	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -42,7 +42,7 @@ func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, goss
 	t.handler.AppGossip(ctx, nodeID, gossipBytes)
 }
 
-func (t ThrottlerHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
+func (t ThrottlerHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	if !t.throttler.Handle(nodeID) {
 		return nil, ErrThrottled
 	}

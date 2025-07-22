@@ -24,9 +24,9 @@ import (
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/appsender"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
@@ -554,7 +554,7 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		return nil, err
 	}
 
-	appErr := &engine.AppError{
+	appErr := &core.AppError{
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}

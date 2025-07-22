@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	linearblock "github.com/luxfi/node/consensus/engine/chain/block"
+	linearblock "github.com/luxfi/node/consensus/engine/linear/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -100,8 +100,8 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	_ []*engine.Fx,
-	appSender engine.AppSender,
+	_ []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	chainCtx.Log.Verbo("initializing platform chain")
 

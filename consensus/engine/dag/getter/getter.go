@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"

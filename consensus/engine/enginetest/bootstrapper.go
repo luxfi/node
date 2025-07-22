@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 )
 
 var (
-	_ engine.BootstrapableEngine = (*Bootstrapper)(nil)
+	_ core.BootstrapableEngine = (*Bootstrapper)(nil)
 
 	errClear = errors.New("unexpectedly called Clear")
 )
