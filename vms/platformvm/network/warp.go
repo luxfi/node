@@ -118,7 +118,7 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	}
 	if err != nil {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
@@ -180,7 +180,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	}
 	if err != nil {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	}
@@ -223,7 +223,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	}
 	if err != nil {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
@@ -238,7 +238,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	}
 	if err != database.ErrNotFound {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
 	}
@@ -283,7 +283,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 	}
 	if err != database.ErrNotFound {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
 	}
@@ -301,7 +301,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 	})
 	if err != nil {
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to lookup expiry: " + err.Error(),
 		}
 	}
@@ -340,7 +340,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 		}
 	case err != nil:
 		return &core.AppError{
-			Code:    engine.ErrUndefined.Code,
+			Code:    core.ErrUndefined.Code,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	case msg.Nonce+1 != l1Validator.MinNonce:
