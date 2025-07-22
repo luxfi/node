@@ -5,7 +5,7 @@ on:
     tags:
       - "*"
     branches:
-      - master
+      - main
       - dev
   pull_request:
   merge_group:
