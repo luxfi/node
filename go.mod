@@ -7,7 +7,7 @@ module github.com/luxfi/node
 //
 // - If updating between minor versions (e.g. 1.23.x -> 1.24.x):
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
-go 1.24.5
+go 1.23.4
 
 require (
 	connectrpc.com/connect v1.18.1
