@@ -11,7 +11,7 @@ import (
 )
 
 // unaryThreshold is the implementation of a unary threshold instance
-// that can be embedded by snowball
+// that can be embedded by confidence
 type unaryThreshold struct {
 	// alphaPreference is the threshold required to update the preference
 	alphaPreference int

@@ -11,18 +11,18 @@ import (
 )
 
 var (
-	SnowballFactory  sampling.Factory = snowballFactory{}
+	ConfidenceFactory  sampling.Factory = confidenceFactory{}
 	SnowflakeFactory sampling.Factory = snowflakeFactory{}
 )
 
-type snowballFactory struct{}
+type confidenceFactory struct{}
 
-func (snowballFactory) NewNnary(params sampling.Parameters, choice ids.ID) sampling.Nnary {
-	return confidence.NewNnarySnowball(params.AlphaPreference, params.AlphaConfidence, params.Beta, choice)
+func (confidenceFactory) NewNnary(params sampling.Parameters, choice ids.ID) sampling.Nnary {
+	return confidence.NewNnaryConfidence(params.AlphaPreference, params.AlphaConfidence, params.Beta, choice)
 }
 
-func (snowballFactory) NewUnary(params sampling.Parameters) sampling.Unary {
-	return confidence.NewUnarySnowball(params.AlphaPreference, params.AlphaConfidence, params.Beta)
+func (confidenceFactory) NewUnary(params sampling.Parameters) sampling.Unary {
+	return confidence.NewUnaryConfidence(params.AlphaPreference, params.AlphaConfidence, params.Beta)
 }
 
 type snowflakeFactory struct{}

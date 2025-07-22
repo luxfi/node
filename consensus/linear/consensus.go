@@ -19,7 +19,7 @@ import (
 type Consensus interface {
 	health.Checker
 
-	// Takes in the context, snowball parameters, and the last accepted block.
+	// Takes in the context, confidence parameters, and the last accepted block.
 	Initialize(
 		ctx *consensus.Context,
 		params sampling.Parameters,

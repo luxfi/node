@@ -105,7 +105,7 @@ type Unary interface {
 	// Return whether a choice has been finalized
 	Finalized() bool
 
-	// Returns a new binary snowball instance with the original choice.
+	// Returns a new binary confidence instance with the original choice.
 	Extend(originalPreference int) Binary
 
 	// Returns a new unary snowflake instance with the same state

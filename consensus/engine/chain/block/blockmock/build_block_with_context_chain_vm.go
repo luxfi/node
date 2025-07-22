@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	chain "github.com/luxfi/node/consensus/chain"
+	chain "github.com/luxfi/node/consensus/linear"
 	block "github.com/luxfi/node/consensus/engine/chain/block"
 	gomock "go.uber.org/mock/gomock"
 )

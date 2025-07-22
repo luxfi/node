@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/node/consensus/linear/chaintest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils/bag"
 )
@@ -888,10 +888,10 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	votes0 := bag.Of(block0.ID())
 	require.NoError(sm.RecordPoll(context.Background(), votes0))
 
-	// Although we are adding in [block2] here - the underlying snowball
+	// Although we are adding in [block2] here - the underlying confidence
 	// instance has already decided it is rejected. Linear doesn't actually
 	// know that though, because that is an implementation detail of the
-	// Snowball trie that is used.
+	// Confidence trie that is used.
 	require.NoError(sm.Add(block2))
 
 	// Because [block2] is effectively rejected, [block3] is also effectively

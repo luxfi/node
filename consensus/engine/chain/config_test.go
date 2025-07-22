@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"

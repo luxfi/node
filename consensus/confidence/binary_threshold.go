@@ -10,7 +10,7 @@ import (
 )
 
 // binaryThreshold is the implementation of a binary threshold instance
-// that can be embedded by snowball
+// that can be embedded by confidence
 type binaryThreshold struct {
 	// wrap the binary sampler logic
 	sampling.BinarySampler

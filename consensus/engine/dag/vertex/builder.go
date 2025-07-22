@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/dag"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/hashing"
 )

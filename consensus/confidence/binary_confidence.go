@@ -9,17 +9,17 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 )
 
-var _ sampling.Binary = (*binarySnowball)(nil)
+var _ sampling.Binary = (*binaryConfidence)(nil)
 
-func newBinarySnowball(alphaPreference int, terminationConditions []terminationCondition, choice int) binarySnowball {
-	return binarySnowball{
+func newBinaryConfidence(alphaPreference int, terminationConditions []terminationCondition, choice int) binaryConfidence {
+	return binaryConfidence{
 		binaryThreshold: newBinaryThreshold(alphaPreference, terminationConditions, choice),
 		preference:      choice,
 	}
 }
 
-// binarySnowball is the implementation of a binary snowball instance
-type binarySnowball struct {
+// binaryConfidence is the implementation of a binary confidence instance
+type binaryConfidence struct {
 	// wrap the binary threshold logic
 	binaryThreshold
 
@@ -32,9 +32,9 @@ type binarySnowball struct {
 	preferenceStrength [2]int
 }
 
-func (sb *binarySnowball) Preference() int {
+func (sb *binaryConfidence) Preference() int {
 	// It is possible, with low probability, that the threshold preference is
-	// not equal to the snowball preference when threshold finalizes. However,
+	// not equal to the confidence preference when threshold finalizes. However,
 	// this case is handled for completion. Therefore, if threshold is
 	// finalized, then our finalized threshold choice should be preferred.
 	if sb.Finalized() {
@@ -43,7 +43,7 @@ func (sb *binarySnowball) Preference() int {
 	return sb.preference
 }
 
-func (sb *binarySnowball) RecordPoll(count, choice int) {
+func (sb *binaryConfidence) RecordPoll(count, choice int) {
 	if count >= sb.alphaPreference {
 		sb.preferenceStrength[choice]++
 		if sb.preferenceStrength[choice] > sb.preferenceStrength[1-choice] {
@@ -53,7 +53,7 @@ func (sb *binarySnowball) RecordPoll(count, choice int) {
 	sb.binaryThreshold.RecordPoll(count, choice)
 }
 
-func (sb *binarySnowball) String() string {
+func (sb *binaryConfidence) String() string {
 	return fmt.Sprintf(
 		"SB(Preference = %d, PreferenceStrength[0] = %d, PreferenceStrength[1] = %d, %s)",
 		sb.preference,

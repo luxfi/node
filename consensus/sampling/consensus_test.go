@@ -22,7 +22,7 @@ func NewByzantine(_ Factory, _ Parameters, choice ids.ID) Consensus {
 	}
 }
 
-// Byzantine is a naive implementation of a multi-choice snowball instance
+// Byzantine is a naive implementation of a multi-choice confidence instance
 type Byzantine struct {
 	// Hardcode the preference
 	preference ids.ID

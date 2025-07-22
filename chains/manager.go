@@ -62,7 +62,7 @@ import (
 	"github.com/luxfi/node/vms/tracedvm"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/chain"
+	smcon "github.com/luxfi/node/consensus/linear"
 	aveng "github.com/luxfi/node/consensus/engine/dag"
 	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
 	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"

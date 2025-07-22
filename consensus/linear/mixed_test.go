@@ -38,7 +38,7 @@ func TestConvergenceSnowFlakeSnowBall(t *testing.T) {
 				if i%2 == 0 {
 					sbFactory = factories.SnowflakeFactory
 				} else {
-					sbFactory = factories.SnowballFactory
+					sbFactory = factories.ConfidenceFactory
 				}
 
 				factory := TopologicalFactory{factory: sbFactory}

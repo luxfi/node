@@ -62,7 +62,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/chain"
+	smcon "github.com/luxfi/node/consensus/linear"
 	smeng "github.com/luxfi/node/consensus/engine/chain"
 	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	snowgetter "github.com/luxfi/node/consensus/engine/chain/getter"

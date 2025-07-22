@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine"
 )
 

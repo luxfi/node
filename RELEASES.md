@@ -433,7 +433,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Add F Upgrade Scaffolding. Post-Etna Cleanup by @michaelkaplan13 in https://github.com/luxfi/node/pull/3672
 - [testing] Fix instructions for triggering antithesis test runs by @marun in https://github.com/luxfi/node/pull/3664
 - [testing] Ensure run_prometheus.sh uses a writeable storage path by @marun in https://github.com/luxfi/node/pull/3662
-- Make linear use snowflake directly instead of snowball by @yacovm in https://github.com/luxfi/node/pull/3403
+- Make linear use snowflake directly instead of confidence by @yacovm in https://github.com/luxfi/node/pull/3403
 - chore: fix some typos by @chuangjinglu in https://github.com/luxfi/node/pull/3670
 - Bump antithesishq/antithesis-trigger-action from 0.6 to 0.7 by @dependabot in https://github.com/luxfi/node/pull/3667
 - [ci] Use go env {GOOS,GOARCH} for os and arch detection by @marun in https://github.com/luxfi/node/pull/3661
@@ -1534,7 +1534,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - Provide pgo file during compilation by @StephenButtolph in https://github.com/luxfi/node/pull/2724
 - P-chain - Tx builder cleanup by @abi87 in https://github.com/luxfi/node/pull/2718
 - Refactor chain manager subnets by @joshua-kim in https://github.com/luxfi/node/pull/2711
-- Replace snowball/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
+- Replace confidence/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
 - Remove duplicate IP length constant by @StephenButtolph in https://github.com/luxfi/node/pull/2733
 - Add `platform.getSubnet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
 - Provide BLS signature in Handshake message by @StephenButtolph in https://github.com/luxfi/node/pull/2730
@@ -2213,8 +2213,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Add preference lookups by height to the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2092
 - Remove duplicate pullQuery method by @StephenButtolph in https://github.com/luxfi/node/pull/2103
 - Add additional validator set metrics by @aaronbuchwald in https://github.com/luxfi/node/pull/2051
-- Remove `snowball.Initialize` and `snowball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
-- Remove initialize functions from the snowball package by @danlaine in https://github.com/luxfi/node/pull/2105
+- Remove `confidence.Initialize` and `confidence.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
+- Remove initialize functions from the confidence package by @danlaine in https://github.com/luxfi/node/pull/2105
 - Remove `genesis.State` by @joshua-kim in https://github.com/luxfi/node/pull/2112
 - add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
 - Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxfi/node/pull/2100

@@ -8,11 +8,11 @@ The Lux consensus framework provides a family of consensus protocols for buildin
 
 ```
 consensus/
-├── binaryvote/      # Binary voting consensus primitive (formerly snowball)
-├── chain/           # Linear chain consensus for blockchains (formerly linear)
+├── binaryvote/      # Binary voting consensus primitive
+├── linear/          # Linear chain consensus for blockchains
 │   ├── poll/        # Voting and poll management
 │   └── bootstrap/   # Chain bootstrapping logic
-├── dag/             # DAG consensus for UTXO transactions (formerly snowstorm)
+├── graph/           # DAG consensus for UTXO transactions
 └── common/          # Shared interfaces and utilities
     └── choices/     # Decision states (Unknown, Processing, Accepted, Rejected)
 ```
@@ -25,14 +25,14 @@ The fundamental building block of Lux consensus. It implements binary decision-m
 - **Metastability**: The protocol amplifies small preferences into strong consensus
 - **Confidence counters**: Tracks consecutive rounds of agreement to build confidence
 
-### Chain Consensus (`chain`)
+### Linear Consensus (`linear`)
 Extends binary voting for linear blockchain consensus. Used by all chains in the Lux network (X-Chain, C-Chain, P-Chain). Key features:
 - **Linear ordering**: Ensures blocks form a single chain
 - **Block finality**: Irreversible acceptance once consensus is reached
 - **Efficient bootstrapping**: Quickly syncs new nodes to the current state
 
-### DAG Consensus (`dag`)
-Implements consensus for directed acyclic graph structures, previously used for UTXO transactions on the X-Chain before the Cortina upgrade. Key features:
+### Graph Consensus (`graph`)
+Implements consensus for directed acyclic graph structures, used for UTXO transactions on the X-Chain. Key features:
 - **Parallel transactions**: Multiple transactions can be accepted simultaneously
 - **Conflict resolution**: Handles double-spend attempts through voting
 - **Vertex-based structure**: Transactions organized in a DAG of vertices
@@ -46,13 +46,13 @@ Defines the possible states for any consensus decision:
 - `Accepted`: Irreversibly accepted by the network
 - `Rejected`: Irreversibly rejected by the network
 
-### Poll Management (`chain/poll`)
+### Poll Management (`linear/poll`)
 Handles the voting process:
 - Tracks votes from validators
 - Implements early termination when outcome is certain
 - Manages vote aggregation and result calculation
 
-### Bootstrap (`chain/bootstrap`)
+### Bootstrap (`linear/bootstrap`)
 Manages node synchronization:
 - Fetches historical blocks from other nodes
 - Verifies block validity during sync
@@ -62,17 +62,17 @@ Manages node synchronization:
 
 The consensus protocols are used by the Lux Virtual Machines (VMs) to achieve agreement on state transitions. Each blockchain selects the appropriate consensus protocol:
 
-- **Chain consensus**: Used by X-Chain, C-Chain, and P-Chain for block acceptance
-- **DAG consensus**: Legacy support for pre-Cortina X-Chain transactions
+- **Linear consensus**: Used by X-Chain, C-Chain, and P-Chain for block acceptance
+- **DAG consensus**: Fast massively parallelizable consensus X-Chain transactions
 - **Binary vote**: Core primitive used internally by other protocols
 
 ## Migration from Snow Terminology
 
 For developers familiar with the previous "Snow" naming:
-- `snowball` → `binaryvote`
-- `linear` → `chain`
-- `snowstorm` → `dag`
-- `avalanche` → `dag` (vertex definitions merged)
+- `confidence` → `binaryvote`
+- `snowman` → `linear`
+- `snowstorm` → `graph`
+- `avalanche` → `graph` (vertex definitions merged)
 - `snow/choices` → `consensus/common/choices`
 
 This restructuring provides clearer semantics while maintaining full compatibility with the existing consensus algorithms.

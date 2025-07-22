@@ -6,7 +6,7 @@ package chain
 import (
 	"github.com/luxfi/node/consensus"
 	sampling "github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
