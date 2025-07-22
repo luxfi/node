@@ -97,8 +97,8 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	require.Equal(blkID1, blks[0].ID())
 	require.Equal(blkID2, blks[1].ID())
 
-	require.IsType(&linear.BlockWrapper{}, blks[0])
-	require.IsType(&linear.BlockWrapper{}, blks[1])
+	require.IsType(&chain.BlockWrapper{}, blks[0])
+	require.IsType(&chain.BlockWrapper{}, blks[1])
 
 	// Call should be fully cached and not result in a grpc call
 	blks, err = vm.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})
@@ -107,6 +107,6 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	require.Equal(blkID1, blks[0].ID())
 	require.Equal(blkID2, blks[1].ID())
 
-	require.IsType(&linear.BlockWrapper{}, blks[0])
-	require.IsType(&linear.BlockWrapper{}, blks[1])
+	require.IsType(&chain.BlockWrapper{}, blks[0])
+	require.IsType(&chain.BlockWrapper{}, blks[1])
 }

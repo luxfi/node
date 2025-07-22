@@ -7,7 +7,7 @@
 //
 
 // Package linearmock is a generated GoMock package.
-package chainmock
+package linearmock
 
 import (
 	context "context"

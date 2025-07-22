@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			tree, err := interval.NewTree(db)
 			require.NoError(err)
 
-			blocks := lineartest.BuildChain(numBlocks)
+			blocks := lineartest.BuildDescendants(lineartest.Genesis, numBlocks)
 			parser := makeParser(blocks)
 			for _, blk := range blocks {
 				_, err := interval.Add(db, tree, 0, blk.Height(), blk.Bytes())
