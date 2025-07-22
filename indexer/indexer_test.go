@@ -152,8 +152,8 @@ func TestIndexer(t *testing.T) {
 	idxr.clock.Set(now)
 
 	// Assert state is right
-	snow1Ctx := snowtest.Context(t, snowtest.CChainID)
-	chain1Ctx := snowtest.ConsensusContext(snow1Ctx)
+	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -257,8 +257,8 @@ func TestIndexer(t *testing.T) {
 	require.Contains(server.endpoints, "/block")
 
 	// Register a DAG chain
-	snow2Ctx := snowtest.Context(t, snowtest.XChainID)
-	chain2Ctx := snowtest.ConsensusContext(snow2Ctx)
+	snow2Ctx := consensustest.Context(t, consensustest.XChainID)
+	chain2Ctx := consensustest.ConsensusContext(snow2Ctx)
 	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -417,8 +417,8 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(idxr.indexingEnabled)
 
 	// Register a chain
-	snow1Ctx := snowtest.Context(t, snowtest.CChainID)
-	chain1Ctx := snowtest.ConsensusContext(snow1Ctx)
+	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -500,7 +500,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := snowtest.ConsensusContext(&consensus.Context{
+	chain1Ctx := consensustest.ConsensusContext(&consensus.Context{
 		ChainID:  ids.GenerateTestID(),
 		SubnetID: ids.GenerateTestID(),
 	})

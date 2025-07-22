@@ -54,8 +54,8 @@ const testThreadPoolSize = 2
 func TestTimeout(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -112,7 +112,7 @@ func TestTimeout(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx2 := snowtest.ConsensusContext(snowCtx)
+	ctx2 := consensustest.ConsensusContext(snowCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -312,8 +312,8 @@ func TestTimeout(t *testing.T) {
 func TestReliableMessages(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.BuildTestNodeID([]byte{1}), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -371,7 +371,7 @@ func TestReliableMessages(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx2 := snowtest.ConsensusContext(snowCtx)
+	ctx2 := consensustest.ConsensusContext(snowCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -472,8 +472,8 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require := require.New(t)
 
 			benchlist := benchlist.NewNoBenchlist()
-			snowCtx := snowtest.Context(t, snowtest.CChainID)
-			ctx := snowtest.ConsensusContext(snowCtx)
+			snowCtx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(snowCtx)
 			vdrs := validators.NewManager()
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 			tm, err := timeout.NewManager(
@@ -533,7 +533,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			)
 			require.NoError(err)
 
-			ctx2 := snowtest.ConsensusContext(snowCtx)
+			ctx2 := consensustest.ConsensusContext(snowCtx)
 			resourceTracker, err := tracker.NewResourceTracker(
 				prometheus.NewRegistry(),
 				resource.NoUsage,
@@ -639,8 +639,8 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		heights       = []uint64{1, 2, 3}
 		containerIDs  = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 	)
-	snowCtx := snowtest.Context(t, snowtest.PChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string
@@ -894,8 +894,8 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
 	)
-	snowCtx := snowtest.Context(t, snowtest.PChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string
@@ -1091,8 +1091,8 @@ func TestSender_Single_Request(t *testing.T) {
 		containerID       = ids.GenerateTestID()
 		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
 	)
-	snowCtx := snowtest.Context(t, snowtest.PChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string

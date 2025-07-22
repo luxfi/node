@@ -30,7 +30,7 @@ func newAdvanceTimeTx(t testing.TB, timestamp time.Time) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(snowtest.Context(t, snowtest.PChainID))
+	return tx, tx.SyntacticVerify(consensustest.Context(t, consensustest.PChainID))
 }
 
 // Ensure semantic verification updates the current and pending staker set

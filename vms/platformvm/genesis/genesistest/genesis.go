@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
+	LUXAsset = lux.Asset{ID: consensustest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +102,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        snowtest.LUXAssetID,
+				TxID:        consensustest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,

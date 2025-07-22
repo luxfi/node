@@ -15,6 +15,7 @@ import (
 
 	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/core/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -26,8 +27,6 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/subnet/primary"
-
-	"github.com/luxfi/geth"
 )
 
 const (
@@ -181,7 +180,7 @@ func SendEthTransaction(tc tests.TestContext, ethClient ethclient.Client, signed
 	tc.Eventually(func() bool {
 		var err error
 		receipt, err = ethClient.TransactionReceipt(tc.DefaultContext(), txID)
-		if errors.Is(err, geth.NotFound) {
+		if errors.Is(err, ethereum.NotFound) {
 			return false // Transaction is still pending
 		}
 		require.NoError(err)

@@ -112,7 +112,7 @@ func (tc *GinkgoTestContext) DefaultContext() context.Context {
 
 // Helper simplifying use via an option of a timed context configured with the default timeout.
 func (tc *GinkgoTestContext) WithDefaultContext() primary.Option {
-	return tests.WithDefaultContext(tc)
+	return primary.WithContext(tests.DefaultContext(tc))
 }
 
 // Re-implementation of testify/require.Eventually that is compatible with ginkgo. testify's

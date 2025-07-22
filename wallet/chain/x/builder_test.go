@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/utxotest"
+	"github.com/luxfi/node/wallet/test/utxotest"
 )
 
 var (

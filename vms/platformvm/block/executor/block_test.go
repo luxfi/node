@@ -43,7 +43,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -70,7 +70,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -106,7 +106,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -144,7 +144,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -185,7 +185,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -236,7 +236,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -292,7 +292,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -348,7 +348,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -410,7 +410,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
@@ -472,7 +472,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   snowtest.Context(t, snowtest.PChainID),
+						ctx:   consensustest.Context(t, consensustest.PChainID),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{

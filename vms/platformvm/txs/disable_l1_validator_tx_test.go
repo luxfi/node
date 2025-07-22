@@ -309,7 +309,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, constants.PlatformChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -319,7 +319,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 
 func TestDisableL1ValidatorTxSyntacticVerify(t *testing.T) {
 	var (
-		ctx         = snowtest.Context(t, ids.GenerateTestID())
+		ctx         = consensustest.Context(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    ctx.NetworkID,

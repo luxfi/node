@@ -35,6 +35,14 @@ func (tob TestOptionsBlock) Options(context.Context) ([2]linear.Block, error) {
 	return [2]linear.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
 }
 
+func (tob TestOptionsBlock) Bytes() []byte {
+	return tob.Block.Bytes()
+}
+
+func (tob TestOptionsBlock) ID() ids.ID {
+	return tob.Block.ID()
+}
+
 // ProposerBlock.Verify tests section
 func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	require := require.New(t)
@@ -351,7 +359,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 
 	// reject oracle block
 	require.NoError(builtBlk.Reject(context.Background()))
-	require.NotEqual(snowtest.Rejected, oracleCoreBlk.Status)
+	require.NotEqual(consensustest.Rejected, oracleCoreBlk.Status)
 
 	// reject an option
 	require.IsType(&postForkBlock{}, builtBlk)
@@ -360,7 +368,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(opts[0].Reject(context.Background()))
-	require.NotEqual(snowtest.Rejected, oracleCoreBlk.opts[0].Status)
+	require.NotEqual(consensustest.Rejected, oracleCoreBlk.opts[0].Status)
 }
 
 func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {

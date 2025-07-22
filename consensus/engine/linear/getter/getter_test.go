@@ -79,19 +79,19 @@ func TestFilterAccepted(t *testing.T) {
 	require := require.New(t)
 	bs, vm, sender := newTest(t)
 
-	acceptedBlk := chaintest.BuildChild(chaintest.Genesis)
+	acceptedBlk := lineartest.BuildChild(lineartest.Genesis)
 	require.NoError(acceptedBlk.Accept(context.Background()))
 
 	var (
-		allBlocks = []*chaintest.Block{
-			chaintest.Genesis,
+		allBlocks = []*lineartest.Block{
+			lineartest.Genesis,
 			acceptedBlk,
 		}
 		unknownBlkID = ids.GenerateTestID()
 	)
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(allBlocks)
-	vm.GetBlockIDAtHeightF = chaintest.MakeGetBlockIDAtHeightF(allBlocks)
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(allBlocks)
+	vm.GetBlockIDAtHeightF = lineartest.MakeGetBlockIDAtHeightF(allBlocks)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blk := range allBlocks {
 			if blk.ID() == blkID {
@@ -108,11 +108,11 @@ func TestFilterAccepted(t *testing.T) {
 		accepted = frontier
 	}
 
-	blkIDs := set.Of(chaintest.GenesisID, acceptedBlk.ID(), unknownBlkID)
+	blkIDs := set.Of(lineartest.GenesisID, acceptedBlk.ID(), unknownBlkID)
 	require.NoError(bs.GetAccepted(context.Background(), ids.EmptyNodeID, 0, blkIDs))
 
 	require.Len(accepted, 2)
-	require.Contains(accepted, chaintest.GenesisID)
+	require.Contains(accepted, lineartest.GenesisID)
 	require.Contains(accepted, acceptedBlk.ID())
 	require.NotContains(accepted, unknownBlkID)
 }

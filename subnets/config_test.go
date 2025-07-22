@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 )
 
-var validParameters = binaryvote.Parameters{
+var validParameters = sampling.Parameters{
 	K:                     1,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,
@@ -33,12 +33,12 @@ func TestValid(t *testing.T) {
 		{
 			name: "invalid consensus parameters",
 			s: Config{
-				ConsensusParameters: binaryvote.Parameters{
+				ConsensusParameters: sampling.Parameters{
 					K:               2,
 					AlphaPreference: 1,
 				},
 			},
-			expectedErr: binaryvote.ErrParametersInvalid,
+			expectedErr: sampling.ErrParametersInvalid,
 		},
 		{
 			name: "invalid allowed node IDs",

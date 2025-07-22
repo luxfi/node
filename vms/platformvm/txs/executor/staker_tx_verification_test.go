@@ -28,7 +28,7 @@ import (
 )
 
 func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	type test struct {
 		name        string

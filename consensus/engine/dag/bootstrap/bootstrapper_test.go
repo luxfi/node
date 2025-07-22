@@ -59,8 +59,8 @@ func (t *testTx) Accept(ctx context.Context) error {
 func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextest.Manager, *vertextest.VM) {
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 
 	vdrs := validators.NewManager()
 	db := memdb.New()
@@ -113,7 +113,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 		TxBlocked:                      txBlocker,
 		Manager:                        manager,
 		VM:                             vm,
-		Haltable:                       &engine.Halter{},
+		Haltable:                       &core.Halter{},
 	}, peer, sender, manager, vm
 }
 

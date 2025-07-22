@@ -293,7 +293,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, constants.PlatformChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -302,7 +302,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 }
 
 func TestSetL1ValidatorWeightTxSyntacticVerify(t *testing.T) {
-	ctx := snowtest.Context(t, ids.GenerateTestID())
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	tests := []struct {
 		name        string
 		tx          *SetL1ValidatorWeightTx

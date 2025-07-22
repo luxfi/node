@@ -112,7 +112,7 @@ func makeTxTypes(
 					Gas:       params.TxGas,
 					To:        &senderAddress,
 					Data:      nil,
-					Value:     geth.Big0,
+					Value:     big.NewInt(0),
 				})
 				if err != nil {
 					return nil, fmt.Errorf("signing transaction: %w", err)
@@ -326,7 +326,7 @@ func newTxOpts(
 	}
 	txOpts.Nonce = new(big.Int).SetUint64(nonce)
 	txOpts.GasFeeCap = maxFeeCap
-	txOpts.GasTipCap = geth.Big1
+	txOpts.GasTipCap = big.NewInt(1)
 	txOpts.Context = ctx
 	return txOpts, nil
 }

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package primary
+package utxotest
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet"
 )
 
 func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*lux.UTXO) *DeterministicChainUTXOs {
-	globalUTXOs := walletcommon.NewUTXOs()
+	globalUTXOs := wallet.NewUTXOs()
 	for subnetID, utxos := range utxoSets {
 		for _, utxo := range utxos {
 			require.NoError(
@@ -26,12 +26,12 @@ func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*lux.UTXO) *
 		}
 	}
 	return &DeterministicChainUTXOs{
-		ChainUTXOs: walletcommon.NewChainUTXOs(constants.PlatformChainID, globalUTXOs),
+		ChainUTXOs: wallet.NewChainUTXOs(constants.PlatformChainID, globalUTXOs),
 	}
 }
 
 type DeterministicChainUTXOs struct {
-	walletcommon.ChainUTXOs
+	wallet.ChainUTXOs
 }
 
 func (c *DeterministicChainUTXOs) UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error) {

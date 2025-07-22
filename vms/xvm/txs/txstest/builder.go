@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	primary "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 type Builder struct {
@@ -54,7 +54,7 @@ func (b *Builder) CreateAssetTx(
 		symbol,
 		denomination,
 		initialStates,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -76,11 +76,11 @@ func (b *Builder) BaseTx(
 
 	utx, err := xBuilder.NewBaseTx(
 		outs,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
-		primary.WithMemo(memo),
+		wallet.WithMemo(memo),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed building base tx: %w", err)
@@ -102,7 +102,7 @@ func (b *Builder) MintNFT(
 		assetID,
 		payload,
 		owners,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -123,7 +123,7 @@ func (b *Builder) MintFTs(
 
 	utx, err := xBuilder.NewOperationTxMintFT(
 		outputs,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -144,7 +144,7 @@ func (b *Builder) Operation(
 
 	utx, err := xBuilder.NewOperationTx(
 		ops,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),
@@ -205,7 +205,7 @@ func (b *Builder) ExportTx(
 	utx, err := xBuilder.NewExportTx(
 		destinationChain,
 		outputs,
-		primary.WithChangeOwner(&secp256k1fx.OutputOwners{
+		wallet.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{changeAddr},
 		}),

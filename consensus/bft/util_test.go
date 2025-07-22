@@ -27,7 +27,7 @@ type newBlockConfig struct {
 func newBlock(t *testing.T, config newBlockConfig) *Block {
 	if config.prev == nil {
 		block := &Block{
-			vmBlock: chaintest.Genesis,
+			vmBlock: lineartest.Genesis,
 			metadata: simplex.ProtocolMetadata{
 				Version: 1,
 				Epoch:   1,
@@ -48,7 +48,7 @@ func newBlock(t *testing.T, config newBlockConfig) *Block {
 		config.round = config.prev.metadata.Round + 1
 	}
 
-	vmBlock := chaintest.BuildChild(config.prev.vmBlock.(*chaintest.Block))
+	vmBlock := lineartest.BuildChild(config.prev.vmBlock.(*lineartest.Block))
 	block := &Block{
 		vmBlock:      vmBlock,
 		blockTracker: config.prev.blockTracker,

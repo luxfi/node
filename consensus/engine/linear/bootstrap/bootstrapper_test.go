@@ -39,8 +39,8 @@ var errUnknownBlock = errors.New("unknown block")
 func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest.VM, func()) {
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 
 	vdrs := validators.NewManager()
 
@@ -119,8 +119,8 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	sender.Default(true)
 	vm.Default(true)
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	// create boostrapper configuration
 	peers := validators.NewManager()
 	sampleK := 2
@@ -158,12 +158,12 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	}
 
 	vm.CantLastAccepted = false
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	// create bootstrapper
@@ -219,7 +219,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(1)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 1)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -248,7 +248,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -282,7 +282,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2])))
 
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[1:2])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
@@ -294,7 +294,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(4)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -332,7 +332,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks[1:2]))) // respond with blk1
 
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
@@ -345,7 +345,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -385,7 +385,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), requestedNodeID, requestID, blocksToBytes(blks[1:2])))
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 }
 
 // There are multiple needed blocks and Ancestors returns all at once
@@ -394,7 +394,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(4)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -429,7 +429,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, requestID, blocksToBytes(blks))) // respond with all the blocks
 
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[3:4])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
@@ -440,7 +440,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(3)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -472,7 +472,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
 
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[2:3])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
@@ -483,7 +483,7 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(5)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 5)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -529,12 +529,12 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk1RequestID, blocksToBytes(blks[1:2])))
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	require.Equal(snowtest.Accepted, blks[0].Status)
-	chaintest.RequireStatusIs(require, snowtest.Undecided, blks[1:]...)
+	require.Equal(consensustest.Accepted, blks[0].Status)
+	lineartest.RequireStatusIs(require, consensustest.Undecided, blks[1:]...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, blk4RequestID, blocksToBytes(blks[4:5])))
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.startSyncing(context.Background(), blocksToIDs(blks[4:5])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
@@ -545,10 +545,10 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	initializeVMWithBlockchain(vm, blks)
 
-	blks[0].Status = snowtest.Undecided
+	blks[0].Status = consensustest.Undecided
 	require.NoError(blks[1].Accept(context.Background()))
 
 	bs, err := New(
@@ -580,8 +580,8 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqID, blocksToBytes(blks[0:1])))
 	require.Equal(consensus.NormalOp, config.Ctx.State.Get().State)
-	require.Equal(snowtest.Undecided, blks[0].Status)
-	require.Equal(snowtest.Accepted, blks[1].Status)
+	require.Equal(consensustest.Undecided, blks[0].Status)
+	require.Equal(consensustest.Accepted, blks[1].Status)
 }
 
 func TestBootstrapContinueAfterHalt(t *testing.T) {
@@ -589,7 +589,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 
 	config, _, _, vm, halt := newConfig(t)
 
-	blks := chaintest.BuildChain(2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -620,8 +620,8 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 func TestBootstrapNoParseOnNew(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	peers := validators.NewManager()
 
 	sender := &enginetest.Sender{}
@@ -658,11 +658,11 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
-	blk1 := chaintest.BuildChild(chaintest.Genesis)
+	blk1 := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	intervalDB := memdb.New()
@@ -717,7 +717,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(3)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
@@ -750,7 +750,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk2, blocksToBytes(blks[1:3])))
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
-	chaintest.RequireStatusIs(require, snowtest.Accepted, blks...)
+	lineartest.RequireStatusIs(require, consensustest.Accepted, blks...)
 
 	require.NoError(bs.Ancestors(context.Background(), peerID, reqIDBlk1, blocksToBytes(blks[1:2])))
 	require.Equal(consensus.Bootstrapping, config.Ctx.State.Get().State)
@@ -761,10 +761,10 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildChain(2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	initializeVMWithBlockchain(vm, blks)
 
-	blks[1].Status = snowtest.Accepted
+	blks[1].Status = consensustest.Accepted
 
 	bs, err := New(
 		config,
@@ -780,7 +780,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 	require.NoError(err)
 
 	vm.SetStateF = func(context.Context, consensus.State) error {
-		blks[1].Status = snowtest.Undecided
+		blks[1].Status = consensustest.Undecided
 		return nil
 	}
 
@@ -788,14 +788,14 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 	require.Equal(blks[0].HeightV, bs.startingHeight)
 }
 
-func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*chaintest.Block) {
+func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*lineartest.Block) {
 	vm.CantSetState = false
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
 		blocks,
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blk := range blocks {
-			if blk.Status == snowtest.Accepted && blk.ID() == blkID {
+			if blk.Status == consensustest.Accepted && blk.ID() == blkID {
 				return blk, nil
 			}
 		}
@@ -811,7 +811,7 @@ func initializeVMWithBlockchain(vm *blocktest.VM, blocks []*chaintest.Block) {
 	}
 }
 
-func blocksToIDs(blocks []*chaintest.Block) []ids.ID {
+func blocksToIDs(blocks []*lineartest.Block) []ids.ID {
 	blkIDs := make([]ids.ID, len(blocks))
 	for i, blk := range blocks {
 		blkIDs[i] = blk.ID()
@@ -819,7 +819,7 @@ func blocksToIDs(blocks []*chaintest.Block) []ids.ID {
 	return blkIDs
 }
 
-func blocksToBytes(blocks []*chaintest.Block) [][]byte {
+func blocksToBytes(blocks []*lineartest.Block) [][]byte {
 	numBlocks := len(blocks)
 	blkBytes := make([][]byte, numBlocks)
 	for i, blk := range blocks {

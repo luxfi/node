@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package chaintest
+package lineartest
 
 import (
 	"github.com/stretchr/testify/require"
@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/consensus/consensustest"
 )
 
-func RequireStatusIs(require *require.Assertions, status snowtest.Status, blks ...*Block) {
+func RequireStatusIs(require *require.Assertions, status consensustest.Status, blks ...*Block) {
 	for i, blk := range blks {
 		require.Equal(status, blk.Status, i)
 	}
