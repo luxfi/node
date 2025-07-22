@@ -42,7 +42,7 @@ type ContextEnabledVMMock struct {
 }
 
 type ContextEnabledBlockMock struct {
-	*snowmanmock.Block
+	*linearmock.Block
 	*blockmock.WithVerifyContext
 }
 
@@ -58,7 +58,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			Block:             snowmanmock.NewBlock(ctrl),
+			Block:             linearmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

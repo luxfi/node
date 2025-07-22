@@ -20,7 +20,7 @@ check_old_imports() {
     
     OLD_PATTERNS=(
         "snow/consensus/snowball"
-        "snow/consensus/snowman"
+        "snow/consensus/linear"
         "snow/consensus/snowstorm"
         "snow/consensus/lux"
         "snow/choices"
@@ -148,7 +148,7 @@ main() {
         echo "2. Run integration tests"
         echo "3. Test with actual node operation"
         echo "4. Once verified, remove old directories:"
-        echo "   rm -rf snow/consensus/snowball snow/consensus/snowman snow/consensus/snowstorm snow/consensus/lux snow/choices"
+        echo "   rm -rf snow/consensus/snowball snow/consensus/linear snow/consensus/snowstorm snow/consensus/lux snow/choices"
     else
         echo -e "${RED}✗ Found $total_errors issues${NC}"
         echo -e "${RED}Please fix the issues before proceeding.${NC}"

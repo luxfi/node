@@ -489,7 +489,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - snowman, requested - unspecified",
+			name:                "current - linear, requested - unspecified",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
@@ -504,7 +504,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - snowman, requested - lux",
+			name:                "current - linear, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
 			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
@@ -523,7 +523,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - snowman, requested - snowman",
+			name:                "current - linear, requested - linear",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {

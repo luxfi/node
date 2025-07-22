@@ -8,7 +8,7 @@ One of the P-chain's main responsibilities is to record staking periods of any s
 
 The P-chain tracks a network agreed timestamp called `ChainTime` that allows nodes to reach agreement about when a staker starts and stops staking. These start/stop times are basic inputs to determine whether the staker should be rewarded based on what percentage of `ChainTime` it was perceived as active from other validators.
 
-Note that this `ChainTime` has nothing to do with the `Snowman++` timestamp. `Snowman++` timestamps are local times used to reduce network congestion and have no role in rewarding of any staker.
+Note that this `ChainTime` has nothing to do with the `Linear++` timestamp. `Linear++` timestamps are local times used to reduce network congestion and have no role in rewarding of any staker.
 
 ## Pre Banff fork context
 

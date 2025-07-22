@@ -1,18 +1,18 @@
-# Snowman++: congestion control for Snowman VMs
+# Linear++: congestion control for Linear VMs
 
-Snowman++ is a congestion control mechanism available for snowman VMs. Snowman++ can be activated on any snowman VM with no modifications to the VM internals. It is sufficient to wrap the target VM with a wrapper VM called `proposerVM` and to specify an activation time for the congestion-control mechanism. In this document we describe the high level features of Snowman++ and the implementation details of the `proposerVM`.
+Linear++ is a congestion control mechanism available for linear VMs. Linear++ can be activated on any linear VM with no modifications to the VM internals. It is sufficient to wrap the target VM with a wrapper VM called `proposerVM` and to specify an activation time for the congestion-control mechanism. In this document we describe the high level features of Linear++ and the implementation details of the `proposerVM`.
 
 ## Congestion control mechanism description
 
-Snowman++ introduces a **_soft proposer mechanism_** which attempts to select a single proposer with the power to issue a block, but opens up block production to every validator if sufficient time has passed without blocks being generated.
+Linear++ introduces a **_soft proposer mechanism_** which attempts to select a single proposer with the power to issue a block, but opens up block production to every validator if sufficient time has passed without blocks being generated.
 
-At a high level, Snowman++ works as follows: for each block a small list of validators is randomly sampled, which will act as "proposers" for the next block. Each proposer is assigned a submission window: a proposer cannot submit its block before its submission window starts (the block would be deemed invalid), but it can submit its block after its submission window expires, competing with next proposers. If no block is produced by the proposers in their submission windows, any validator will be free to propose a block, as happens for ordinary snowman VMs.
+At a high level, Linear++ works as follows: for each block a small list of validators is randomly sampled, which will act as "proposers" for the next block. Each proposer is assigned a submission window: a proposer cannot submit its block before its submission window starts (the block would be deemed invalid), but it can submit its block after its submission window expires, competing with next proposers. If no block is produced by the proposers in their submission windows, any validator will be free to propose a block, as happens for ordinary linear VMs.
 
-In the following we detail the block extensions, the proposers selection, and the validations introduced for Snowman++.
+In the following we detail the block extensions, the proposers selection, and the validations introduced for Linear++.
 
-### Snowman++ block extension
+### Linear++ block extension
 
-Snowman++ does not modify the blocks produced by the VM it is applied to. It extends these blocks with a header carrying the information needed to control block congestion.
+Linear++ does not modify the blocks produced by the VM it is applied to. It extends these blocks with a header carrying the information needed to control block congestion.
 
 A standard block header contains the following fields:
 
@@ -28,9 +28,9 @@ An Option block header contains the field:
 
 Option blocks are not signed, as they are deterministically generated from their Oracle block.
 
-### Snowman++ proposers selection mechanism
+### Linear++ proposers selection mechanism
 
-For a given block, Snowman++ randomly selects a list of proposers. Block proposers are selected from the subnet's validators. Snowman++ extracts the list of a given subnet's validators from the P-Chain. Let a block have a height `H` and P-Chain height `P` recorded in its header. The proposers list for next block is generated independently but reproducibly by each node as follows:
+For a given block, Linear++ randomly selects a list of proposers. Block proposers are selected from the subnet's validators. Linear++ extracts the list of a given subnet's validators from the P-Chain. Let a block have a height `H` and P-Chain height `P` recorded in its header. The proposers list for next block is generated independently but reproducibly by each node as follows:
 
 - Subnet validators active at block `P` are retrieved from P-chain.
 - Validators are canonically sorted by their `nodeID`.
@@ -42,7 +42,7 @@ For a given block, Snowman++ randomly selects a list of proposers. Block propose
 Each proposer gets assigned a submission window of length `WindowDuration`. currently set at `5 seconds`.
 A proposer in position `i` in the proposers list has its submission windows starting `i × WindowDuration` after the parent block's timestamp. Any node can issue a block `maxWindows × WindowDuration` after the parent block's timestamp.
 
-### Snowman++ validations
+### Linear++ validations
 
 The following validation rules are enforced:
 
@@ -62,7 +62,7 @@ A `proposervm.Block` violating any of these rules will be marked as invalid. Not
 
 ## ProposerVM Implementation Details
 
-Snowman++ must have an activation time, following which the congestion control mechanism will be enforced.
+Linear++ must have an activation time, following which the congestion control mechanism will be enforced.
 
 ### Block Structure
 

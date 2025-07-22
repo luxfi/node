@@ -525,7 +525,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	engine, ok := h.engineManager.Get(engineType).Get(currentState.State)
 	if !ok {
 		// This should only happen if the peer is not following the protocol.
-		// This can happen if the chain only has a Snowman engine and the peer
+		// This can happen if the chain only has a Linear engine and the peer
 		// requested an Lux engine handle the message.
 		h.ctx.Log.Debug("dropping sync message",
 			zap.String("reason", "uninitialized engine state"),
@@ -542,7 +542,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	//            should be invoked with a failure message if parsing of the
 	//            response fails.
 	switch msg := body.(type) {
-	// State messages should always be sent to the snowman engine
+	// State messages should always be sent to the linear engine
 	case *p2ppb.GetStateSummaryFrontier:
 		return engine.GetStateSummaryFrontier(ctx, nodeID, msg.RequestId)
 
@@ -578,7 +578,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	case *message.GetAcceptedStateSummaryFailed:
 		return engine.GetAcceptedStateSummaryFailed(ctx, nodeID, msg.RequestID)
 
-	// Bootstrapping messages may be forwarded to either lux or snowman
+	// Bootstrapping messages may be forwarded to either lux or linear
 	// engines, depending on the EngineType field
 	case *p2ppb.GetAcceptedFrontier:
 		return engine.GetAcceptedFrontier(ctx, nodeID, msg.RequestId)

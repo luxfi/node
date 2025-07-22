@@ -200,7 +200,7 @@ func (p *earlyTermPoll) Finished() bool {
 	//   /   \
 	//  u     w
 	// If two competing blocks 'u', 'w' are potential successors to a block 'v',
-	// snowman would instantiate a unary snowflake instance on the prefix of 'u' and 'w'.
+	// linear would instantiate a unary snowflake instance on the prefix of 'u' and 'w'.
 	// The prefix inherits the votes for the IDs of 'u' and 'w'.
 	// We therefore compute the transitive votes for all prefixes of IDs
 	// for each bifurcation in the transitive vote graph.

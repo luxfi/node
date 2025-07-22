@@ -19,7 +19,7 @@ var (
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
-// BlockWrapper wraps a snowman Block while adding a smart caching layer to improve
+// BlockWrapper wraps a linear Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
 	chain.Block

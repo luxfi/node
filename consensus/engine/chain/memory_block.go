@@ -12,7 +12,7 @@ import (
 
 var _ chain.Block = (*memoryBlock)(nil)
 
-// memoryBlock wraps a snowman Block to manage non-verified blocks
+// memoryBlock wraps a linear Block to manage non-verified blocks
 type memoryBlock struct {
 	chain.Block
 

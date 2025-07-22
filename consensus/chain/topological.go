@@ -37,7 +37,7 @@ func (tf TopologicalFactory) New() Consensus {
 	return &Topological{Factory: tf.factory}
 }
 
-// Topological implements the Snowman interface by using a tree tracking the
+// Topological implements the Linear interface by using a tree tracking the
 // strongly preferred branch. This tree structure amortizes network polls to
 // vote on more than just the next block.
 type Topological struct {
@@ -48,7 +48,7 @@ type Topological struct {
 	// pollNumber is the number of times RecordPolls has been called
 	pollNumber uint64
 
-	// ctx is the context this snowman instance is executing in
+	// ctx is the context this linear instance is executing in
 	ctx *consensus.Context
 
 	// params are the parameters that should be used to initialize snowball
@@ -573,7 +573,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 	return newPreferred, nil
 }
 
-// Accepts the preferred child of the provided snowman block. By accepting the
+// Accepts the preferred child of the provided linear block. By accepting the
 // preferred child, all other children will be rejected. When these children are
 // rejected, all their descendants will be rejected.
 //

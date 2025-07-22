@@ -1910,7 +1910,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	innerVM.EXPECT().Shutdown(gomock.Any()).Return(nil)
 
 	{
-		innerBlk := snowmanmock.NewBlock(ctrl)
+		innerBlk := linearmock.NewBlock(ctrl)
 		innerBlkID := ids.GenerateTestID()
 		innerVM.EXPECT().LastAccepted(gomock.Any()).Return(innerBlkID, nil)
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
@@ -1947,7 +1947,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	require.NoError(err)
 
 	// We will ask the inner VM to parse.
-	mockInnerBlkNearTip := snowmanmock.NewBlock(ctrl)
+	mockInnerBlkNearTip := linearmock.NewBlock(ctrl)
 	mockInnerBlkNearTip.EXPECT().Height().Return(uint64(1)).Times(2)
 	mockInnerBlkNearTip.EXPECT().Bytes().Return(blkNearTipInnerBytes).Times(1)
 
@@ -1978,7 +1978,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 }
 
 type blockWithVerifyContext struct {
-	*snowmanmock.Block
+	*linearmock.Block
 	*blockmock.WithVerifyContext
 }
 
@@ -2021,7 +2021,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	innerVM.EXPECT().Shutdown(gomock.Any()).Return(nil)
 
 	{
-		innerBlk := snowmanmock.NewBlock(ctrl)
+		innerBlk := linearmock.NewBlock(ctrl)
 		innerBlkID := ids.GenerateTestID()
 		innerVM.EXPECT().LastAccepted(gomock.Any()).Return(innerBlkID, nil)
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
@@ -2047,7 +2047,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	{
 		pChainHeight := uint64(0)
 		innerBlk := blockWithVerifyContext{
-			Block:             snowmanmock.NewBlock(ctrl),
+			Block:             linearmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(true, nil).Times(2)
@@ -2095,7 +2095,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		// Ensure we call Verify on a block that returns
 		// false for ShouldVerifyWithContext
 		innerBlk := blockWithVerifyContext{
-			Block:             snowmanmock.NewBlock(ctrl),
+			Block:             linearmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(false, nil)
@@ -2118,7 +2118,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	{
 		// Ensure we call Verify on a block that doesn't have a valid context
 		innerBlk := blockWithVerifyContext{
-			Block:             snowmanmock.NewBlock(ctrl),
+			Block:             linearmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.Block.EXPECT().Verify(gomock.Any()).Return(nil)

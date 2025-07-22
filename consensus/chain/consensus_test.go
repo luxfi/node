@@ -889,7 +889,7 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	require.NoError(sm.RecordPoll(context.Background(), votes0))
 
 	// Although we are adding in [block2] here - the underlying snowball
-	// instance has already decided it is rejected. Snowman doesn't actually
+	// instance has already decided it is rejected. Linear doesn't actually
 	// know that though, because that is an implementation detail of the
 	// Snowball trie that is used.
 	require.NoError(sm.Add(block2))

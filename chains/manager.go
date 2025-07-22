@@ -86,7 +86,7 @@ const (
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
 	chainNamespace        = constants.PlatformName + metric.NamespaceSeparator + "chain"
-	snowmanNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
+	linearNamespace      = constants.PlatformName + metric.NamespaceSeparator + "linear"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
 
@@ -279,7 +279,7 @@ type manager struct {
 	meterDAGVMGatherer   metrics.MultiGatherer            // chainID
 	proposervmGatherer   metrics.MultiGatherer            // chainID
 	p2pGatherer          metrics.MultiGatherer            // chainID
-	snowmanGatherer      metrics.MultiGatherer            // chainID
+	linearGatherer      metrics.MultiGatherer            // chainID
 	stakeGatherer        metrics.MultiGatherer            // chainID
 	vmGatherer           map[ids.ID]metrics.MultiGatherer // vmID -> chainID
 }
@@ -321,8 +321,8 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	snowmanGatherer := metrics.NewLabelGatherer(ChainLabel)
-	if err := config.Metrics.Register(snowmanNamespace, snowmanGatherer); err != nil {
+	linearGatherer := metrics.NewLabelGatherer(ChainLabel)
+	if err := config.Metrics.Register(linearNamespace, linearGatherer); err != nil {
 		return nil, err
 	}
 
@@ -345,7 +345,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		meterDAGVMGatherer:   meterDAGVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
-		snowmanGatherer:      snowmanGatherer,
+		linearGatherer:      linearGatherer,
 		stakeGatherer:        stakeGatherer,
 		vmGatherer:           make(map[ids.ID]metrics.MultiGatherer),
 	}, nil
@@ -571,7 +571,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			beacons = chainParams.CustomBeacons
 		}
 
-		chain, err = m.createSnowmanChain(
+		chain, err = m.createLinearChain(
 			ctx,
 			chainParams.GenesisData,
 			m.Validators,
@@ -581,7 +581,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			sb,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error while creating new snowman vm %w", err)
+			return nil, fmt.Errorf("error while creating new linear vm %w", err)
 		}
 	default:
 		return nil, errUnknownVMType
@@ -598,7 +598,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 
 	return chain, errors.Join(
-		m.snowmanGatherer.Register(primaryAlias, ctx.Registerer),
+		m.linearGatherer.Register(primaryAlias, ctx.Registerer),
 		vmGatherer.Register(primaryAlias, ctx.Metrics),
 	)
 }
@@ -681,8 +681,8 @@ func (m *manager) createLuxChain(
 		luxMessageSender = sender.Trace(luxMessageSender, m.Tracer)
 	}
 
-	// Passes messages from the snowman engines to the network
-	snowmanMessageSender, err := sender.New(
+	// Passes messages from the linear engines to the network
+	linearMessageSender, err := sender.New(
 		ctx,
 		m.MsgCreator,
 		m.Net,
@@ -697,7 +697,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		snowmanMessageSender = sender.Trace(snowmanMessageSender, m.Tracer)
+		linearMessageSender = sender.Trace(linearMessageSender, m.Tracer)
 	}
 
 	chainConfig, err := m.getChainConfig(ctx.ChainID)
@@ -733,9 +733,9 @@ func (m *manager) createLuxChain(
 	)
 
 	// The only difference between using luxMessageSender and
-	// snowmanMessageSender here is where the metrics will be placed. Because we
+	// linearMessageSender here is where the metrics will be placed. Because we
 	// end up using this sender after the linearization, we pass in
-	// snowmanMessageSender here.
+	// linearMessageSender here.
 	err = dagVM.Initialize(
 		context.TODO(),
 		ctx,
@@ -744,7 +744,7 @@ func (m *manager) createLuxChain(
 		chainConfig.Upgrade,
 		chainConfig.Config,
 		fxs,
-		snowmanMessageSender,
+		linearMessageSender,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error during vm's Initialize: %w", err)
@@ -792,7 +792,7 @@ func (m *manager) createLuxChain(
 		},
 	)
 
-	// Note: vmWrappingProposerVM is the VM that the Snowman engines should be
+	// Note: vmWrappingProposerVM is the VM that the Linear engines should be
 	// using.
 	var vmWrappingProposerVM block.ChainVM = proposerVM
 
@@ -831,7 +831,7 @@ func (m *manager) createLuxChain(
 		upgradeBytes: chainConfig.Upgrade,
 		configBytes:  chainConfig.Config,
 		fxs:          fxs,
-		appSender:    snowmanMessageSender,
+		appSender:    linearMessageSender,
 	}
 
 	bootstrapWeight, err := vdrs.TotalWeight(ctx.SubnetID)
@@ -913,7 +913,7 @@ func (m *manager) createLuxChain(
 
 	snowGetHandler, err := snowgetter.New(
 		vmWrappingProposerVM,
-		snowmanMessageSender,
+		linearMessageSender,
 		ctx.Log,
 		m.BootstrapMaxTimeGetAncestors,
 		m.BootstrapAncestorsMaxContainersSent,
@@ -923,31 +923,31 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
+	var linearConsensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
 	if m.TracingEnabled {
-		snowmanConsensus = smcon.Trace(snowmanConsensus, m.Tracer)
+		linearConsensus = smcon.Trace(linearConsensus, m.Tracer)
 	}
 
 	// Create engine, bootstrapper and state-syncer in this order,
 	// to make sure start callbacks are duly initialized
-	snowmanEngineConfig := smeng.Config{
+	linearEngineConfig := smeng.Config{
 		Ctx:                 ctx,
 		AllGetsServer:       snowGetHandler,
 		VM:                  vmWrappingProposerVM,
-		Sender:              snowmanMessageSender,
+		Sender:              linearMessageSender,
 		Validators:          vdrs,
 		ConnectedValidators: connectedValidators,
 		Params:              consensusParams,
-		Consensus:           snowmanConsensus,
+		Consensus:           linearConsensus,
 	}
-	var snowmanEngine engine.Engine
-	snowmanEngine, err = smeng.New(snowmanEngineConfig)
+	var linearEngine engine.Engine
+	linearEngine, err = smeng.New(linearEngineConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
+		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		snowmanEngine = engine.TraceEngine(snowmanEngine, m.Tracer)
+		linearEngine = engine.TraceEngine(linearEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -959,24 +959,24 @@ func (m *manager) createLuxChain(
 		Beacons:                        vdrs,
 		SampleK:                        sampleK,
 		StartupTracker:                 startupTracker,
-		Sender:                         snowmanMessageSender,
+		Sender:                         linearMessageSender,
 		BootstrapTracker:               sb,
 		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
 	}
-	var snowmanBootstrapper engine.BootstrapableEngine
-	snowmanBootstrapper, err = smbootstrap.New(
+	var linearBootstrapper engine.BootstrapableEngine
+	linearBootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
-		snowmanEngine.Start,
+		linearEngine.Start,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
-		snowmanBootstrapper = engine.TraceBootstrapableEngine(snowmanBootstrapper, m.Tracer)
+		linearBootstrapper = engine.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
 	}
 
 	avaGetHandler, err := avagetter.New(
@@ -1018,7 +1018,7 @@ func (m *manager) createLuxChain(
 	var luxBootstrapper engine.BootstrapableEngine
 	luxBootstrapper, err = avbootstrap.New(
 		luxBootstrapperConfig,
-		snowmanBootstrapper.Start,
+		linearBootstrapper.Start,
 		luxMetrics,
 	)
 	if err != nil {
@@ -1037,8 +1037,8 @@ func (m *manager) createLuxChain(
 		},
 		Chain: &handler.Engine{
 			StateSyncer:  nil,
-			Bootstrapper: snowmanBootstrapper,
-			Consensus:    snowmanEngine,
+			Bootstrapper: linearBootstrapper,
+			Consensus:    linearEngine,
 		},
 	})
 
@@ -1055,8 +1055,8 @@ func (m *manager) createLuxChain(
 	}, nil
 }
 
-// Create a linear chain using the Snowman consensus engine
-func (m *manager) createSnowmanChain(
+// Create a linear chain using the Linear consensus engine
+func (m *manager) createLinearChain(
 	ctx *consensus.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
@@ -1142,7 +1142,7 @@ func (m *manager) createSnowmanChain(
 
 		// Set this func only for platform
 		//
-		// The snowman bootstrapper ensures this function is only executed once, so
+		// The linear bootstrapper ensures this function is only executed once, so
 		// we don't need to be concerned about closing this channel multiple times.
 		bootstrapFunc = func() {
 			close(m.unblockChainCreatorCh)
@@ -1334,14 +1334,14 @@ func (m *manager) createSnowmanChain(
 		Consensus:           consensus,
 		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
 	}
-	var snowmanEngine engine.Engine
-	snowmanEngine, err = smeng.New(engineConfig)
+	var linearEngine engine.Engine
+	linearEngine, err = smeng.New(engineConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
+		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		snowmanEngine = engine.TraceEngine(snowmanEngine, m.Tracer)
+		linearEngine = engine.TraceEngine(linearEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1364,10 +1364,10 @@ func (m *manager) createSnowmanChain(
 	var bootstrapper engine.BootstrapableEngine
 	bootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
-		snowmanEngine.Start,
+		linearEngine.Start,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -1403,7 +1403,7 @@ func (m *manager) createSnowmanChain(
 		Chain: &handler.Engine{
 			StateSyncer:  stateSyncer,
 			Bootstrapper: bootstrapper,
-			Consensus:    snowmanEngine,
+			Consensus:    linearEngine,
 		},
 	})
 
