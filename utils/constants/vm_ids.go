@@ -7,7 +7,7 @@ import "github.com/luxfi/node/ids"
 
 const (
 	PlatformVMName = "platformvm"
-	AVMName        = "xvm"
+	XVMName        = "xvm"
 	EVMName        = "evm"
 	SubnetEVMName  = "subnetevm"
 	XSVMName       = "xsvm"
@@ -15,7 +15,7 @@ const (
 
 var (
 	PlatformVMID = ids.ID{'p', 'l', 'a', 't', 'f', 'o', 'r', 'm', 'v', 'm'}
-	AVMID        = ids.ID{'a', 'v', 'm'}
+	XVMID        = ids.ID{'a', 'v', 'm'}
 	EVMID        = ids.ID{'e', 'v', 'm'}
 	SubnetEVMID  = ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'e', 'v', 'm'}
 	XSVMID       = ids.ID{'x', 's', 'v', 'm'}
@@ -27,8 +27,8 @@ func VMName(vmID ids.ID) string {
 	switch vmID {
 	case PlatformVMID:
 		return PlatformVMName
-	case AVMID:
-		return AVMName
+	case XVMID:
+		return XVMName
 	case EVMID:
 		return EVMName
 	case SubnetEVMID:

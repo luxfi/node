@@ -294,7 +294,7 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
-	// Specify the genesis state of the AVM
+	// Specify the genesis state of the XVM
 	lux := xvm.AssetDefinition{
 		Name:         "Lux",
 		Symbol:       "LUX",
@@ -324,21 +324,21 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	lux.Memo = memoBytes
 
-	avmGenesis, err := xvm.NewGenesis(
+	xvmGenesis, err := xvm.NewGenesis(
 		config.NetworkID,
 		map[string]xvm.AssetDefinition{
-			"LUX": lux, // The AVM starts out with one asset: LUX
+			"LUX": lux, // The XVM starts out with one asset: LUX
 		},
 	)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
-	avmGenesisBytes, err := avmGenesis.Bytes()
+	xvmGenesisBytes, err := xvmGenesis.Bytes()
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 	}
 
-	luxAssetID, err := LUXAssetID(avmGenesisBytes)
+	luxAssetID, err := LUXAssetID(xvmGenesisBytes)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
@@ -428,9 +428,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	chains := []genesis.Chain{
 		{
-			GenesisData: avmGenesisBytes,
+			GenesisData: xvmGenesisBytes,
 			SubnetID:    constants.PrimaryNetworkID,
-			VMID:        constants.AVMID,
+			VMID:        constants.XVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
 				nftfx.ID,
@@ -542,7 +542,7 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 	return nil, fmt.Errorf("couldn't find blockchain with VM ID %s", vmID)
 }
 
-func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
+func LUXAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
 	parser, err := xchaintxs.NewParser(
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
@@ -554,7 +554,7 @@ func LUXAssetID(avmGenesisBytes []byte) (ids.ID, error) {
 
 	genesisCodec := parser.GenesisCodec()
 	genesis := xvm.Genesis{}
-	if _, err := genesisCodec.Unmarshal(avmGenesisBytes, &genesis); err != nil {
+	if _, err := genesisCodec.Unmarshal(xvmGenesisBytes, &genesis); err != nil {
 		return ids.Empty, err
 	}
 

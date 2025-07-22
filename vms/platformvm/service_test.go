@@ -94,7 +94,7 @@ func TestGetProposedHeight(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		[]byte{},
-		constants.AVMID,
+		constants.XVMID,
 		[]ids.ID{},
 		"chain name",
 		engine.WithMemo([]byte{}),
@@ -248,7 +248,7 @@ func TestGetTx(t *testing.T) {
 				tx, err := wallet.IssueCreateChainTx(
 					subnetID,
 					[]byte{},
-					constants.AVMID,
+					constants.XVMID,
 					[]ids.ID{},
 					"chain name",
 					engine.WithMemo([]byte{}),
@@ -957,7 +957,7 @@ func TestGetBlock(t *testing.T) {
 			tx, err := wallet.IssueCreateChainTx(
 				subnetID,
 				[]byte{},
-				constants.AVMID,
+				constants.XVMID,
 				[]ids.ID{},
 				"chain name",
 				engine.WithMemo([]byte{}),

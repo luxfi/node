@@ -15,7 +15,7 @@
 /snow/engine/linear/syncer/ @zeekay
 /snow/uptime/ @zeekay
 /utils/logging/ @zeekay
-/vms/avm/ @zeekay
+/vms/xvm/ @zeekay
 /vms/platformvm/ @zeekay
 /vms/proposervm/ @zeekay
 /vms/rpcchainvm/ @zeekay

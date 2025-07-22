@@ -5,7 +5,7 @@ package config
 
 import "github.com/luxfi/node/upgrade"
 
-// Struct collecting all the foundational parameters of the AVM
+// Struct collecting all the foundational parameters of the XVM
 type Config struct {
 	Upgrades upgrade.Config
 

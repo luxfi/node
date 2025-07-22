@@ -47,7 +47,7 @@ func TestBuildBlockBasic(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -259,7 +259,7 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -423,7 +423,7 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)

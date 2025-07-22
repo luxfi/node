@@ -25,7 +25,7 @@ type ParsedFx struct {
 	Fx Fx
 }
 
-// Fx is the interface a feature extension must implement to support the AVM.
+// Fx is the interface a feature extension must implement to support the XVM.
 type Fx interface {
 	// Initialize this feature extension to be running under this VM. Should
 	// return an error if the VM is incompatible.

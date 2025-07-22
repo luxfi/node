@@ -162,7 +162,7 @@ func NewGenesis(
 	return g, nil
 }
 
-// Bytes serializes the Genesis to bytes using the AVM genesis codec
+// Bytes serializes the Genesis to bytes using the XVM genesis codec
 func (g *Genesis) Bytes() ([]byte, error) {
 	codec, err := newGenesisCodec()
 	if err != nil {

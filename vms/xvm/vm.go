@@ -40,7 +40,7 @@ import (
 	blockbuilder "github.com/luxfi/node/vms/xvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	extensions "github.com/luxfi/node/vms/xvm/fxs"
-	avmmetrics "github.com/luxfi/node/vms/xvm/metrics"
+	xvmmetrics "github.com/luxfi/node/vms/xvm/metrics"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
 	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
 )
@@ -58,7 +58,7 @@ type VM struct {
 
 	config.Config
 
-	metrics avmmetrics.Metrics
+	metrics xvmmetrics.Metrics
 
 	lux.AddressManager
 	ids.Aliaser
@@ -146,12 +146,12 @@ func (vm *VM) Initialize(
 	noopMessageHandler := engine.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
-	avmConfig, err := ParseConfig(configBytes)
+	xvmConfig, err := ParseConfig(configBytes)
 	if err != nil {
 		return err
 	}
 	ctx.Log.Info("VM config initialized",
-		zap.Reflect("config", avmConfig),
+		zap.Reflect("config", xvmConfig),
 	)
 
 	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
@@ -162,7 +162,7 @@ func (vm *VM) Initialize(
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = avmmetrics.New(vm.registerer)
+	vm.metrics, err = xvmmetrics.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
@@ -210,7 +210,7 @@ func (vm *VM) Initialize(
 		vm.db,
 		vm.parser,
 		vm.registerer,
-		avmConfig.ChecksumsEnabled,
+		xvmConfig.ChecksumsEnabled,
 	)
 	if err != nil {
 		return err
@@ -236,7 +236,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
-	vm.networkConfig = avmConfig.Network
+	vm.networkConfig = xvmConfig.Network
 	return vm.state.Commit()
 }
 
