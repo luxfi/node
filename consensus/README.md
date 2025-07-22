@@ -9,7 +9,7 @@ The Lux consensus framework provides a family of consensus protocols for buildin
 ```
 consensus/
 ├── binaryvote/      # Binary voting consensus primitive (formerly snowball)
-├── chain/           # Linear chain consensus for blockchains (formerly snowman)
+├── chain/           # Linear chain consensus for blockchains (formerly linear)
 │   ├── poll/        # Voting and poll management
 │   └── bootstrap/   # Chain bootstrapping logic
 ├── dag/             # DAG consensus for UTXO transactions (formerly snowstorm)
@@ -70,7 +70,7 @@ The consensus protocols are used by the Lux Virtual Machines (VMs) to achieve ag
 
 For developers familiar with the previous "Snow" naming:
 - `snowball` → `binaryvote`
-- `snowman` → `chain`
+- `linear` → `chain`
 - `snowstorm` → `dag`
 - `avalanche` → `dag` (vertex definitions merged)
 - `snow/choices` → `consensus/common/choices`

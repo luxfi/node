@@ -71,7 +71,7 @@ func New(
 	return b, b.metrics.Initialize(reg)
 }
 
-// Note: To align with the Snowman invariant, it should be guaranteed the VM is
+// Note: To align with the Linear invariant, it should be guaranteed the VM is
 // not used until after the Bootstrapper has been Started.
 type Bootstrapper struct {
 	Config

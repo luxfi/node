@@ -11,9 +11,9 @@ import (
 	"github.com/luxfi/node/consensus/engine"
 )
 
-// ChainVM defines the required functionality of a Snowman VM.
+// ChainVM defines the required functionality of a Linear VM.
 //
-// A Snowman VM is responsible for defining the representation of state,
+// A Linear VM is responsible for defining the representation of state,
 // the representation of operations on that state, the application of operations
 // on that state, and the creation of the operations. Consensus will decide on
 // if the operation is executed and the order operations are executed in.

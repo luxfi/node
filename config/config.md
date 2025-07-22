@@ -943,7 +943,7 @@ Have the ProposerVM always report the last accepted P-chain block height. Defaul
 
 ### `--proposervm-min-block-delay` (duration)
 
-The minimum delay to enforce when building a snowman++ block for the primary network
+The minimum delay to enforce when building a linear++ block for the primary network
 chains and the default minimum delay for subnets. Defaults to `1s`. A non-default
 value is only suggested for non-production nodes.
 

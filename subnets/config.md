@@ -77,9 +77,9 @@ same values used for the Primary Network, which are given [CLI Snow Parameters](
 
 #### `proposerMinBlockDelay` (duration)
 
-The minimum delay performed when building snowman++ blocks. Default is set to 1 second.
+The minimum delay performed when building linear++ blocks. Default is set to 1 second.
 
-As one of the ways to control network congestion, Snowman++ will only build a
+As one of the ways to control network congestion, Linear++ will only build a
 block `proposerMinBlockDelay` after the parent block's timestamp. Some
 high-performance custom VM may find this too strict. This flag allows tuning the
 frequency at which blocks are built.

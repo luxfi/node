@@ -69,11 +69,11 @@ func (v *voter) Execute(ctx context.Context, _ []ids.ID, _ []ids.ID) error {
 	}
 
 	if v.e.Consensus.NumProcessing() == 0 {
-		v.e.Ctx.Log.Debug("Snowman engine can quiesce")
+		v.e.Ctx.Log.Debug("Linear engine can quiesce")
 		return nil
 	}
 
-	v.e.Ctx.Log.Debug("Snowman engine can't quiesce")
+	v.e.Ctx.Log.Debug("Linear engine can't quiesce")
 	v.e.repoll(ctx)
 	return nil
 }

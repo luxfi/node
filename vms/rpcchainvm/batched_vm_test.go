@@ -40,8 +40,8 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 	vm := blockmock.NewChainVM(ctrl)
 
 	if loadExpectations {
-		blk1 := snowmanmock.NewBlock(ctrl)
-		blk2 := snowmanmock.NewBlock(ctrl)
+		blk1 := linearmock.NewBlock(ctrl)
+		blk2 := linearmock.NewBlock(ctrl)
 		gomock.InOrder(
 			// Initialize
 			vm.EXPECT().Initialize(

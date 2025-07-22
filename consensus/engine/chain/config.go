@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 )
 
-// Config wraps all the parameters needed for a snowman engine
+// Config wraps all the parameters needed for a linear engine
 type Config struct {
 	engine.AllGetsServer
 

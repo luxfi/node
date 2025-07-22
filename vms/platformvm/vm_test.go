@@ -1355,7 +1355,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	h.SetEngineManager(&handler.EngineManager{
 		Lux: nil,
-		Snowman: &handler.Engine{
+		Linear: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,

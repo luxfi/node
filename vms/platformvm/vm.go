@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	snowmanblock "github.com/luxfi/node/consensus/engine/chain/block"
+	linearblock "github.com/luxfi/node/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -52,8 +52,8 @@ import (
 )
 
 var (
-	_ snowmanblock.ChainVM                      = (*VM)(nil)
-	_ snowmanblock.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ linearblock.ChainVM                      = (*VM)(nil)
+	_ linearblock.BuildBlockWithContextChainVM = (*VM)(nil)
 	_ secp256k1fx.VM                            = (*VM)(nil)
 	_ validators.State                          = (*VM)(nil)
 )

@@ -12,7 +12,7 @@
 /proto/ @zeekay
 /snow/ @zeekay
 /snow/consensus/ @zeekay
-/snow/engine/snowman/syncer/ @zeekay
+/snow/engine/linear/syncer/ @zeekay
 /snow/uptime/ @zeekay
 /utils/logging/ @zeekay
 /vms/avm/ @zeekay
