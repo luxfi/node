@@ -42,10 +42,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	pwallet "github.com/luxfi/node/wallet"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary"
 )
 
 const (
@@ -673,7 +673,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	}
 	testSubnet1, err = wallet.IssueCreateSubnetTx(
 		owner,
-		walletengine.WithChangeOwner(owner),
+		pwallet.WithChangeOwner(owner),
 	)
 	if err != nil {
 		return nil, ids.Empty, err

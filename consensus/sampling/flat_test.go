@@ -25,16 +25,22 @@ func TestFlat(t *testing.T) {
 	f.Add(Green)
 	f.Add(Blue)
 
+	pref := f.Preference()
+	t.Logf("Initial preference: %x (Red: %x)", pref[:], Red[:])
 	require.Equal(Red, f.Preference())
 	require.False(f.Finalized())
 
 	threeBlue := bag.Of(Blue, Blue, Blue)
 	require.True(f.RecordPoll(threeBlue))
+	pref = f.Preference()
+	t.Logf("After threeBlue poll - Preference: %x (Blue: %x)", pref[:], Blue[:])
 	require.Equal(Blue, f.Preference())
 	require.False(f.Finalized())
 
 	twoGreen := bag.Of(Green, Green)
 	require.True(f.RecordPoll(twoGreen))
+	pref = f.Preference()
+	t.Logf("After twoGreen poll - Preference: %x, Expected: %x (Blue)", pref[:], Blue[:])
 	require.Equal(Blue, f.Preference())
 	require.False(f.Finalized())
 
