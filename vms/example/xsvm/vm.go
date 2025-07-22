@@ -14,14 +14,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/acp118"
-	"github.com/luxfi/node/consensus"
-	consensuschain "github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -172,11 +172,11 @@ func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensuschain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (consensuschain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -201,7 +201,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (linear.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 

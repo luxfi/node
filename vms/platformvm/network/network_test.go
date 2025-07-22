@@ -77,7 +77,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: mempool.ErrDuplicateTx,
@@ -92,7 +92,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -107,7 +107,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			txVerifier: testTxVerifier{err: errTest},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -121,7 +121,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
@@ -154,7 +154,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{
@@ -191,7 +191,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{}}}

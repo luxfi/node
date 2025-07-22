@@ -8,11 +8,11 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	consensuschain "github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
@@ -34,7 +34,7 @@ var (
 )
 
 type Block interface {
-	consensuschain.Block
+	linear.Block
 	smblock.WithVerifyContext
 
 	// State intends to return the new chain state following this block's

@@ -404,6 +404,10 @@ github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzW
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
 github.com/luxfi/geth v0.15.43 h1:Vgpk7iiIingXJIy0nSu85XbQYdh/BdxfbIXcKbHwjbQ=
 github.com/luxfi/geth v0.15.43/go.mod h1:A1degr56Dg0lPTK8hDLQDZ6GKZ6NZq5G8Q1ko0mqOwQ=
+github.com/luxfi/geth v0.15.44 h1:TFoBotNJ2UPZqPvBjBHIJjmiB9b6GwGNWTyjGRRXxvY=
+github.com/luxfi/geth v0.15.44/go.mod h1:A1degr56Dg0lPTK8hDLQDZ6GKZ6NZq5G8Q1ko0mqOwQ=
+github.com/luxfi/geth v0.15.45 h1:O7zSsHxsnw9N5tmC8oH24K/ou9JL9DVgmj0sF9BT/HE=
+github.com/luxfi/geth v0.15.45/go.mod h1:A1degr56Dg0lPTK8hDLQDZ6GKZ6NZq5G8Q1ko0mqOwQ=
 github.com/luxfi/ledger-lux-go v0.0.2 h1:2kHESEXdndkdyrTgimVxNJiBeP+wyPLEF7QRXSAT6UE=
 github.com/luxfi/ledger-lux-go v0.0.2/go.mod h1:BbL5bOv9OgEtzE+dQ180SmNRRc5APi/YksT20qt5TsQ=
 github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53 h1:m5kxUfW4/5edyFAKDPhSCXrfvSYps7zEbXzWpqwY4Yc=

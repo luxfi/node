@@ -47,6 +47,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet"
 
 	safemath "github.com/luxfi/node/utils/math"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -1235,7 +1236,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Subnet: subnetID,
 					},
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1260,7 +1261,7 @@ func TestDurangoMemoField(t *testing.T) {
 					ids.GenerateTestID(),
 					[]ids.ID{},
 					"aaa",
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1277,7 +1278,7 @@ func TestDurangoMemoField(t *testing.T) {
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueCreateSubnetTx(
 					owners,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1316,7 +1317,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueImportTx(
 					sourceChain,
 					owners,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1340,7 +1341,7 @@ func TestDurangoMemoField(t *testing.T) {
 							OutputOwners: *owners,
 						},
 					}},
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1401,7 +1402,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueRemoveSubnetValidatorTx(
 					primaryValidator.NodeID,
 					subnetID,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 				return tx, onAcceptState
@@ -1432,7 +1433,7 @@ func TestDurangoMemoField(t *testing.T) {
 					10,                        // min delegator stake
 					1,                         // max validator weight factor
 					80,                        // uptime requirement
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1471,7 +1472,7 @@ func TestDurangoMemoField(t *testing.T) {
 					owners,
 					owners,
 					reward.PercentDenominator,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1511,7 +1512,7 @@ func TestDurangoMemoField(t *testing.T) {
 					},
 					env.ctx.LUXAssetID,
 					owners,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1533,7 +1534,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueTransferSubnetOwnershipTx(
 					subnetID,
 					owners,
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1561,7 +1562,7 @@ func TestDurangoMemoField(t *testing.T) {
 							},
 						},
 					},
-					engine.WithMemo(memoField),
+					wallet.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -2446,7 +2447,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 		{
 			name: "invalid memo length",
 			builderOptions: []engine.Option{
-				engine.WithMemo([]byte("memo!")),
+				wallet.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -2866,7 +2867,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		{
 			name: "invalid memo length",
 			builderOptions: []engine.Option{
-				engine.WithMemo([]byte("memo!")),
+				wallet.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3404,7 +3405,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		{
 			name: "invalid memo length",
 			builderOptions: []engine.Option{
-				engine.WithMemo([]byte("memo!")),
+				wallet.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3848,7 +3849,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		{
 			name: "invalid memo length",
 			builderOptions: []engine.Option{
-				engine.WithMemo([]byte("memo!")),
+				wallet.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -4141,7 +4142,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		{
 			name: "invalid memo length",
 			builderOptions: []engine.Option{
-				engine.WithMemo([]byte("memo!")),
+				wallet.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
