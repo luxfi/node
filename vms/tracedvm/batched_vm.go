@@ -44,7 +44,7 @@ func (vm *blockVM) GetAncestors(
 	)
 }
 
-func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
+func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -59,7 +59,7 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chai
 		return nil, err
 	}
 
-	wrappedBlocks := make([]chain.Block, len(blocks))
+	wrappedBlocks := make([]linear.Block, len(blocks))
 	for i, block := range blocks {
 		wrappedBlocks[i] = &tracedBlock{
 			Block: block,

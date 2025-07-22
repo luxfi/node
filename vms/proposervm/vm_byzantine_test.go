@@ -42,7 +42,7 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 	}()
 
 	xBlock := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
 
@@ -55,7 +55,7 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 	require.NoError(aBlock.Accept(context.Background()))
 
 	yBlock := chaintest.BuildChild(xBlock)
-	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (linear.Block, error) {
 		if !bytes.Equal(blockBytes, yBlock.Bytes()) {
 			return nil, errUnknownBlock
 		}
@@ -104,10 +104,10 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -121,7 +121,7 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil
@@ -179,12 +179,12 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 	}()
 
 	xBlock := chaintest.BuildChild(chaintest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
 
 	yBlock := chaintest.BuildChild(xBlock)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -196,7 +196,7 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(blockBytes, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil
@@ -254,10 +254,10 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -271,7 +271,7 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil
@@ -379,7 +379,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	require.ErrorIs(err, errUnexpectedBlockType)
 
 	// generate A from X and O2
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
 	aBlock, err := proVM.BuildBlock(context.Background())
@@ -414,7 +414,7 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return zBlock, nil
 	}
 	cBlock, err := proVM.BuildBlock(context.Background())
@@ -468,7 +468,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	// Create valid core blocks to build our chain on.
 	coreBlk0 := chaintest.BuildChild(chaintest.Genesis)
 	coreBlk1 := chaintest.BuildChild(coreBlk0)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -480,7 +480,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, chaintest.GenesisBytes):
 			return chaintest.Genesis, nil
@@ -494,7 +494,7 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	}
 
 	// Build the first proposal block
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk0, nil
 	}
 

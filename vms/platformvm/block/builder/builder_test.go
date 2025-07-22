@@ -185,7 +185,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.Equal([]*txs.Tx{expectedTx}, blk.(*blockexecutor.Block).Block.Txs())
 
 		// Commit the [ProposalBlock] with a [CommitBlock]
-		proposalBlk, ok := blk.(chain.OracleBlock)
+		proposalBlk, ok := blk.(linear.OracleBlock)
 		require.True(ok)
 		options, err := proposalBlk.Options(context.Background())
 		require.NoError(err)

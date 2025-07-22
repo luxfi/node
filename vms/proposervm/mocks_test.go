@@ -200,10 +200,10 @@ func (mr *MockPostForkBlockMockRecorder) buildChild(arg0 any) *gomock.Call {
 }
 
 // getInnerBlk mocks base method.
-func (m *MockPostForkBlock) getInnerBlk() chain.Block {
+func (m *MockPostForkBlock) getInnerBlk() linear.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInnerBlk")
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(linear.Block)
 	return ret0
 }
 
@@ -243,7 +243,7 @@ func (mr *MockPostForkBlockMockRecorder) pChainHeight(arg0 any) *gomock.Call {
 }
 
 // setInnerBlk mocks base method.
-func (m *MockPostForkBlock) setInnerBlk(arg0 chain.Block) {
+func (m *MockPostForkBlock) setInnerBlk(arg0 linear.Block) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "setInnerBlk", arg0)
 }

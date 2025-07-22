@@ -95,7 +95,7 @@ func (b *backend) getTimestamp(blkID ids.ID) time.Time {
 	}
 
 	// The block isn't processing.
-	// According to the chain.Block interface, the last accepted
+	// According to the linear.Block interface, the last accepted
 	// block is the only accepted block that must return a correct timestamp,
 	// so we just return the chain time.
 	return b.state.GetTimestamp()

@@ -15,12 +15,12 @@ import (
 )
 
 type Config struct {
-	engine.AllGetsServer
+	core.AllGetsServer
 
 	Ctx *consensus.Context
 
 	StartupTracker tracker.Startup
-	Sender         engine.Sender
+	Sender         core.Sender
 
 	// SampleK determines the number of nodes to attempt to fetch the latest
 	// state sync summary from. In order for a round of voting to succeed, there
@@ -39,10 +39,10 @@ type Config struct {
 }
 
 func NewConfig(
-	snowGetHandler engine.AllGetsServer,
+	snowGetHandler core.AllGetsServer,
 	ctx *consensus.Context,
 	startupTracker tracker.Startup,
-	sender engine.Sender,
+	sender core.Sender,
 	beacons validators.Manager,
 	sampleK int,
 	alpha uint64,

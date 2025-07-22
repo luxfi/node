@@ -24,7 +24,7 @@ var (
 	_ block.ChainVM                      = ContextEnabledVMMock{}
 	_ block.BuildBlockWithContextChainVM = ContextEnabledVMMock{}
 
-	_ chain.Block           = ContextEnabledBlockMock{}
+	_ linear.Block           = ContextEnabledBlockMock{}
 	_ block.WithVerifyContext = ContextEnabledBlockMock{}
 
 	blockContext = &block.Context{

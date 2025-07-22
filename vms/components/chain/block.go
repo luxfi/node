@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	_ chain.Block           = (*BlockWrapper)(nil)
+	_ linear.Block           = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -22,7 +22,7 @@ var (
 // BlockWrapper wraps a linear Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
-	chain.Block
+	linear.Block
 
 	state *State
 }

@@ -619,7 +619,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	require.NoError(advanceTimeStandardBlk.Verify(context.Background()))
 
 	// Accept all the blocks
-	allBlocks := []chain.Block{
+	allBlocks := []linear.Block{
 		addValidatorStandardBlk,
 		importBlk,
 		advanceTimeStandardBlk,
@@ -909,7 +909,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	}
 
 	// Accept all the blocks
-	allBlocks := []chain.Block{
+	allBlocks := []linear.Block{
 		addValidatorStandardBlk0,
 		advanceTimeStandardBlk0,
 		importBlk,
@@ -1563,7 +1563,7 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(t, err)
 
@@ -1732,7 +1732,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -1903,7 +1903,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2090,7 +2090,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 

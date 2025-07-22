@@ -64,8 +64,8 @@ func NewTestBlocks(numBlocks uint64) []*chaintest.Block {
 }
 
 func createInternalBlockFuncs(blks []*chaintest.Block) (
-	func(ctx context.Context, blkID ids.ID) (chain.Block, error),
-	func(ctx context.Context, b []byte) (chain.Block, error),
+	func(ctx context.Context, blkID ids.ID) (linear.Block, error),
+	func(ctx context.Context, b []byte) (linear.Block, error),
 ) {
 	blkMap := make(map[ids.ID]*chaintest.Block)
 	blkBytesMap := make(map[string]*chaintest.Block)
@@ -75,7 +75,7 @@ func createInternalBlockFuncs(blks []*chaintest.Block) (
 		blkBytesMap[string(blkBytes)] = blk
 	}
 
-	getBlock := func(_ context.Context, id ids.ID) (chain.Block, error) {
+	getBlock := func(_ context.Context, id ids.ID) (linear.Block, error) {
 		blk, ok := blkMap[id]
 		if !ok || blk.Status == Unknown {
 			return nil, database.ErrNotFound
@@ -84,7 +84,7 @@ func createInternalBlockFuncs(blks []*chaintest.Block) (
 		return blk, nil
 	}
 
-	parseBlk := func(_ context.Context, b []byte) (chain.Block, error) {
+	parseBlk := func(_ context.Context, b []byte) (linear.Block, error) {
 		blk, ok := blkBytesMap[string(b)]
 		if !ok {
 			return nil, fmt.Errorf("%w: %x", errUnexpectedBlockBytes, b)
@@ -100,13 +100,13 @@ func createInternalBlockFuncs(blks []*chaintest.Block) (
 	return getBlock, parseBlk
 }
 
-func cantBuildBlock(context.Context) (chain.Block, error) {
+func cantBuildBlock(context.Context) (linear.Block, error) {
 	return nil, errCantBuildBlock
 }
 
 // checkProcessingBlock checks that [blk] is of the correct type and is
 // correctly uniquified when calling GetBlock and ParseBlock.
-func checkProcessingBlock(t *testing.T, s *State, blk chain.Block) {
+func checkProcessingBlock(t *testing.T, s *State, blk linear.Block) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -125,7 +125,7 @@ func checkProcessingBlock(t *testing.T, s *State, blk chain.Block) {
 // checkDecidedBlock asserts that [blk] is returned with the correct status by ParseBlock
 // and GetBlock.
 // expectedStatus should be either Accepted or Rejected.
-func checkDecidedBlock(t *testing.T, s *State, blk chain.Block, cached bool) {
+func checkDecidedBlock(t *testing.T, s *State, blk linear.Block, cached bool) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -250,7 +250,7 @@ func TestBuildBlock(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (chain.Block, error) {
+	buildBlock := func(context.Context) (linear.Block, error) {
 		// Once the block is built, mark it as processing
 		blk1.Status = snowtest.Undecided
 		return blk1, nil
@@ -417,7 +417,7 @@ func TestGetBlockError(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	wrappedGetBlock := func(ctx context.Context, id ids.ID) (chain.Block, error) {
+	wrappedGetBlock := func(ctx context.Context, id ids.ID) (linear.Block, error) {
 		blk, err := getBlock(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("wrapping error to prevent caching miss: %w", err)
@@ -526,7 +526,7 @@ func TestStateBytesToIDCache(t *testing.T) {
 	blk2 := testBlks[2]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (chain.Block, error) {
+	buildBlock := func(context.Context) (linear.Block, error) {
 		require.FailNow("shouldn't have been called")
 		return nil, nil
 	}
@@ -628,7 +628,7 @@ func TestSetLastAcceptedBlockWithProcessingBlocksErrors(t *testing.T) {
 	resetBlk := testBlks[4]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (chain.Block, error) {
+	buildBlock := func(context.Context) (linear.Block, error) {
 		// Once the block is built, mark it as undecided
 		genesisBlock.Status = snowtest.Undecided
 		return blk1, nil

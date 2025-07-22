@@ -17,15 +17,15 @@ import (
 )
 
 var (
-	_ chain.Block           = (*tracedBlock)(nil)
-	_ chain.OracleBlock     = (*tracedBlock)(nil)
+	_ linear.Block           = (*tracedBlock)(nil)
+	_ linear.OracleBlock     = (*tracedBlock)(nil)
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type tracedBlock struct {
-	chain.Block
+	linear.Block
 
 	vm *blockVM
 }
@@ -60,10 +60,10 @@ func (b *tracedBlock) Reject(ctx context.Context) error {
 	return b.Block.Reject(ctx)
 }
 
-func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	oracleBlock, ok := b.Block.(chain.OracleBlock)
+func (b *tracedBlock) Options(ctx context.Context) ([2]linear.Block, error) {
+	oracleBlock, ok := b.Block.(linear.OracleBlock)
 	if !ok {
-		return [2]chain.Block{}, chain.ErrNotOracle
+		return [2]linear.Block{}, linear.ErrNotOracle
 	}
 
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.optionsTag, oteltrace.WithAttributes(
@@ -74,9 +74,9 @@ func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 
 	blks, err := oracleBlock.Options(ctx)
 	if err != nil {
-		return [2]chain.Block{}, err
+		return [2]linear.Block{}, err
 	}
-	return [2]chain.Block{
+	return [2]linear.Block{
 		&tracedBlock{
 			Block: blks[0],
 			vm:    b.vm,

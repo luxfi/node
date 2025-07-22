@@ -408,7 +408,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
 	var (
-		blk chain.Block
+		blk linear.Block
 		err error
 	)
 	if vm.bVM == nil || req.PChainHeight == nil {

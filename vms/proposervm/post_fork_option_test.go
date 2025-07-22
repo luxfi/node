@@ -23,16 +23,16 @@ import (
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
-var _ chain.OracleBlock = (*TestOptionsBlock)(nil)
+var _ linear.OracleBlock = (*TestOptionsBlock)(nil)
 
 type TestOptionsBlock struct {
-	chaintest.Block
-	opts    [2]*chaintest.Block
+	lineartest.Block
+	opts    [2]*lineartest.Block
 	optsErr error
 }
 
-func (tob TestOptionsBlock) Options(context.Context) ([2]chain.Block, error) {
-	return [2]chain.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
+func (tob TestOptionsBlock) Options(context.Context) ([2]linear.Block, error) {
+	return [2]linear.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
 }
 
 // ProposerBlock.Verify tests section
@@ -49,23 +49,23 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
-	preferredBlk := chaintest.BuildChild(coreTestBlk)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
+	preferredBlk := lineartest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*chaintest.Block{
+		opts: [2]*lineartest.Block{
 			preferredBlk,
-			chaintest.BuildChild(coreTestBlk),
+			lineartest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -76,10 +76,10 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -111,8 +111,8 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	// show we can build on options
 	require.NoError(proVM.SetPreference(context.Background(), opts[0].ID()))
 
-	childCoreBlk := chaintest.BuildChild(preferredBlk)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	childCoreBlk := lineartest.BuildChild(preferredBlk)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return childCoreBlk, nil
 	}
 	require.NoError(waitForProposerWindow(proVM, opts[0], postForkOracleBlk.PChainHeight()))
@@ -138,24 +138,24 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
-	coreOpt0 := chaintest.BuildChild(coreTestBlk)
-	coreOpt1 := chaintest.BuildChild(coreTestBlk)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreOpt0 := lineartest.BuildChild(coreTestBlk)
+	coreOpt1 := lineartest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*chaintest.Block{
+		opts: [2]*lineartest.Block{
 			coreOpt0,
 			coreOpt1,
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -166,10 +166,10 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -220,22 +220,22 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*chaintest.Block{
-			chaintest.BuildChild(coreTestBlk),
-			chaintest.BuildChild(coreTestBlk),
+		opts: [2]*lineartest.Block{
+			lineartest.BuildChild(coreTestBlk),
+			lineartest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -246,10 +246,10 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -267,9 +267,9 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	// accept oracle block
 	require.NoError(parentBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{
-			chaintest.Genesis,
+	coreVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{
+			lineartest.Genesis,
 			&oracleCoreBlk.Block,
 		},
 		oracleCoreBlk.opts[:],
@@ -305,22 +305,22 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*chaintest.Block{
-			chaintest.BuildChild(coreTestBlk),
-			chaintest.BuildChild(coreTestBlk),
+		opts: [2]*lineartest.Block{
+			lineartest.BuildChild(coreTestBlk),
+			lineartest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -331,10 +331,10 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -376,21 +376,21 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
 	coreBlk := &TestOptionsBlock{
 		Block:   *coreTestBlk,
-		optsErr: chain.ErrNotOracle,
+		optsErr: linear.ErrNotOracle,
 	}
 
-	coreChildBlk := chaintest.BuildChild(coreTestBlk)
+	coreChildBlk := lineartest.BuildChild(coreTestBlk)
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		case coreChildBlk.ID():
@@ -399,10 +399,10 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		case bytes.Equal(b, coreChildBlk.Bytes()):
@@ -418,7 +418,7 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 	require.IsType(&postForkBlock{}, parentBlk)
 	postForkBlk := parentBlk.(*postForkBlock)
 	_, err = postForkBlk.Options(context.Background())
-	require.Equal(chain.ErrNotOracle, err)
+	require.Equal(linear.ErrNotOracle, err)
 
 	// Build the child
 	statelessChild, err := block.BuildOption(
@@ -446,28 +446,28 @@ func TestOptionTimestampValidity(t *testing.T) {
 	)
 	coreVM, _, proVM, db := initTestProposerVM(t, activationTime, durangoTime, 0)
 
-	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
 	coreOracleBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*chaintest.Block{
-			chaintest.BuildChild(coreTestBlk),
-			chaintest.BuildChild(coreTestBlk),
+		opts: [2]*lineartest.Block{
+			lineartest.BuildChild(coreTestBlk),
+			lineartest.BuildChild(coreTestBlk),
 		},
 	}
 
 	oracleBlkTime := proVM.Time().Truncate(time.Second)
 	statelessBlock, err := block.BuildUnsigned(
-		chaintest.GenesisID,
+		lineartest.GenesisID,
 		oracleBlkTime,
 		0,
 		coreOracleBlk.Bytes(),
 	)
 	require.NoError(err)
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreOracleBlk.ID():
 			return coreOracleBlk, nil
 		case coreOracleBlk.opts[0].ID():
@@ -478,10 +478,10 @@ func TestOptionTimestampValidity(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreOracleBlk.Bytes()):
 			return coreOracleBlk, nil
 		case bytes.Equal(b, coreOracleBlk.opts[0].Bytes()):
@@ -498,7 +498,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.NoError(statefulBlock.Verify(context.Background()))
 
-	statefulOracleBlock, ok := statefulBlock.(chain.OracleBlock)
+	statefulOracleBlock, ok := statefulBlock.(linear.OracleBlock)
 	require.True(ok)
 
 	options, err := statefulOracleBlock.Options(context.Background())
@@ -509,11 +509,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.NoError(statefulBlock.Accept(context.Background()))
 
-	coreVM.GetBlockF = func(context.Context, ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(context.Context, ids.ID) (linear.Block, error) {
 		require.FailNow("called GetBlock when unable to handle the error")
 		return nil, nil
 	}
-	coreVM.ParseBlockF = func(context.Context, []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(context.Context, []byte) (linear.Block, error) {
 		require.FailNow("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}
@@ -553,10 +553,10 @@ func TestOptionTimestampValidity(t *testing.T) {
 		return coreOracleBlk.opts[0].ID(), nil
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreOracleBlk.ID():
 			return coreOracleBlk, nil
 		case coreOracleBlk.opts[0].ID():
@@ -567,10 +567,10 @@ func TestOptionTimestampValidity(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreOracleBlk.Bytes()):
 			return coreOracleBlk, nil
 		case bytes.Equal(b, coreOracleBlk.opts[0].Bytes()):
@@ -601,11 +601,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.LessOrEqual(statefulOptionBlock.Height(), proVM.lastAcceptedHeight)
 
-	coreVM.GetBlockF = func(context.Context, ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(context.Context, ids.ID) (linear.Block, error) {
 		require.FailNow("called GetBlock when unable to handle the error")
 		return nil, nil
 	}
-	coreVM.ParseBlockF = func(context.Context, []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(context.Context, []byte) (linear.Block, error) {
 		require.FailNow("called ParseBlock when unable to handle the error")
 		return nil, nil
 	}

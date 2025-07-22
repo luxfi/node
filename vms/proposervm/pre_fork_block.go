@@ -23,7 +23,7 @@ var (
 )
 
 type preForkBlock struct {
-	chain.Block
+	linear.Block
 	vm *VM
 }
 
@@ -50,18 +50,18 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	oracleBlk, ok := b.Block.(chain.OracleBlock)
+func (b *preForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
+	oracleBlk, ok := b.Block.(linear.OracleBlock)
 	if !ok {
-		return [2]chain.Block{}, chain.ErrNotOracle
+		return [2]linear.Block{}, linear.ErrNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
 	if err != nil {
-		return [2]chain.Block{}, err
+		return [2]linear.Block{}, err
 	}
 	// A pre-fork block's child options are always pre-fork blocks
-	return [2]chain.Block{
+	return [2]linear.Block{
 		&preForkBlock{
 			Block: options[0],
 			vm:    b.vm,
@@ -73,7 +73,7 @@ func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() chain.Block {
+func (b *preForkBlock) getInnerBlk() linear.Block {
 	return b.Block
 }
 

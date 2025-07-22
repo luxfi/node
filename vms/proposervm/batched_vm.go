@@ -80,14 +80,14 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
 	type partialData struct {
 		index int
 		block statelessblock.Block
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]chain.Block, len(blks))
+		blocks      = make([]linear.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))

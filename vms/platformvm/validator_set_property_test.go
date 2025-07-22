@@ -370,7 +370,7 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed retrieving options: %w", err)

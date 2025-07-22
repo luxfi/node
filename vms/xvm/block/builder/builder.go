@@ -36,7 +36,7 @@ type Builder interface {
 	// builder.
 	WaitForEvent(ctx context.Context) (core.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chain.Block, error)
+	BuildBlock(context.Context) (linear.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -68,7 +68,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 }
 
 // BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
+func (b *builder) BuildBlock(context.Context) (linear.Block, error) {
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")
 

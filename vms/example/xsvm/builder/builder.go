@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
+	consensuschain "github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
@@ -30,7 +31,7 @@ type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
 	WaitForEvent(ctx context.Context) (core.Message, error)
-	BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error)
+	BuildBlock(ctx context.Context, blockContext *smblock.Context) (linear.Block, error)
 }
 
 type builder struct {
@@ -85,7 +86,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return core.PendingTxs, nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (linear.Block, error) {
 	preferredBlk, err := b.chain.GetBlock(b.preference)
 	if err != nil {
 		return nil, err

@@ -43,7 +43,7 @@ const (
 	epsilon = 1e-6 // small amount to add to time to avoid division by 0
 )
 
-var _ engine.BootstrapableEngine = (*Bootstrapper)(nil)
+var _ core.BootstrapableEngine = (*Bootstrapper)(nil)
 
 func New(
 	config Config,
@@ -53,17 +53,17 @@ func New(
 	b := &Bootstrapper{
 		Config: config,
 
-		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
-		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
-		AcceptedFrontierHandler:     engine.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
-		AcceptedHandler:             engine.NewNoOpAcceptedHandler(config.Ctx.Log),
-		PutHandler:                  engine.NewNoOpPutHandler(config.Ctx.Log),
-		QueryHandler:                engine.NewNoOpQueryHandler(config.Ctx.Log),
-		ChitsHandler:                engine.NewNoOpChitsHandler(config.Ctx.Log),
+		StateSummaryFrontierHandler: core.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
+		AcceptedStateSummaryHandler: core.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
+		AcceptedFrontierHandler:     core.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
+		AcceptedHandler:             core.NewNoOpAcceptedHandler(config.Ctx.Log),
+		PutHandler:                  core.NewNoOpPutHandler(config.Ctx.Log),
+		QueryHandler:                core.NewNoOpQueryHandler(config.Ctx.Log),
+		ChitsHandler:                core.NewNoOpChitsHandler(config.Ctx.Log),
 		AppHandler:                  config.VM,
 
-		outstandingRequests:     bimap.New[engine.Request, ids.ID](),
-		outstandingRequestTimes: make(map[engine.Request]time.Time),
+		outstandingRequests:     bimap.New[core.Request, ids.ID](),
+		outstandingRequestTimes: make(map[core.Request]time.Time),
 
 		processedCache: lru.NewCache[ids.ID, struct{}](cacheSize),
 		onFinished:     onFinished,
@@ -77,20 +77,20 @@ type Bootstrapper struct {
 	Config
 
 	// list of NoOpsHandler for messages dropped by Bootstrapper
-	engine.StateSummaryFrontierHandler
-	engine.AcceptedStateSummaryHandler
-	engine.AcceptedFrontierHandler
-	engine.AcceptedHandler
-	engine.PutHandler
-	engine.QueryHandler
-	engine.ChitsHandler
-	engine.AppHandler
+	core.StateSummaryFrontierHandler
+	core.AcceptedStateSummaryHandler
+	core.AcceptedFrontierHandler
+	core.AcceptedHandler
+	core.PutHandler
+	core.QueryHandler
+	core.ChitsHandler
+	core.AppHandler
 
 	metrics
 
 	// tracks which validators were asked for which containers in which requests
-	outstandingRequests     *bimap.BiMap[engine.Request, ids.ID]
-	outstandingRequestTimes map[engine.Request]time.Time
+	outstandingRequests     *bimap.BiMap[core.Request, ids.ID]
+	outstandingRequestTimes map[core.Request]time.Time
 
 	// IDs of vertices that we will send a GetAncestors request for once we are
 	// not at the max number of outstanding requests
@@ -130,7 +130,7 @@ func (b *Bootstrapper) Clear(context.Context) error {
 // response to a GetAncestors message to [nodeID] with request ID [requestID].
 // Expects vtxs[0] to be the vertex requested in the corresponding GetAncestors.
 func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, vtxs [][]byte) error {
-	request := engine.Request{
+	request := core.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -254,7 +254,7 @@ func (b *Bootstrapper) Ancestors(ctx context.Context, nodeID ids.NodeID, request
 }
 
 func (b *Bootstrapper) GetAncestorsFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	request := engine.Request{
+	request := core.Request{
 		NodeID:    nodeID,
 		RequestID: requestID,
 	}
@@ -429,7 +429,7 @@ func (b *Bootstrapper) fetch(ctx context.Context, vtxIDs ...ids.ID) error {
 		b.PeerTracker.RegisterRequest(nodeID)
 
 		b.requestID++
-		request := engine.Request{
+		request := core.Request{
 			NodeID:    nodeID,
 			RequestID: b.requestID,
 		}

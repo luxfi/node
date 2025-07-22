@@ -41,9 +41,9 @@ var (
 )
 
 type Block interface {
-	chain.Block
+	linear.Block
 
-	getInnerBlk() chain.Block
+	getInnerBlk() linear.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -65,13 +65,13 @@ type PostForkBlock interface {
 	Block
 
 	getStatelessBlk() block.Block
-	setInnerBlk(chain.Block)
+	setInnerBlk(linear.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk chain.Block
+	innerBlk linear.Block
 }
 
 // Return the inner block's height
@@ -232,7 +232,7 @@ func (p *postForkCommonComponents) buildChild(
 		contextPChainHeight = parentPChainHeight
 	}
 
-	var innerBlock chain.Block
+	var innerBlock linear.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: contextPChainHeight,
@@ -293,19 +293,19 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() chain.Block {
+func (p *postForkCommonComponents) getInnerBlk() linear.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk chain.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk linear.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
-	oracle, ok := b.(chain.OracleBlock)
+func verifyIsOracleBlock(ctx context.Context, b linear.Block) error {
+	oracle, ok := b.(linear.OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a chain.OracleBlock but it's a %T",
+			"%w: expected block %s to be a linear.OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -313,8 +313,8 @@ func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
-	oracle, ok := b.(chain.OracleBlock)
+func verifyIsNotOracleBlock(ctx context.Context, b linear.Block) error {
+	oracle, ok := b.(linear.OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -325,7 +325,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case chain.ErrNotOracle:
+	case linear.ErrNotOracle:
 		return nil
 	default:
 		return err

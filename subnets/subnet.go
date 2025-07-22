@@ -22,7 +22,7 @@ type Allower interface {
 // chains in the subnet are currently bootstrapping, the subnet is considered
 // bootstrapped.
 type Subnet interface {
-	engine.BootstrapTracker
+	core.BootstrapTracker
 
 	// AddChain adds a chain to this Subnet
 	AddChain(chainID ids.ID) bool
@@ -39,7 +39,7 @@ type subnet struct {
 	bootstrapped    set.Set[ids.ID]
 	config          Config
 	myNodeID        ids.NodeID
-	bootstrapSignal engine.PreemptionSignal
+	bootstrapSignal core.PreemptionSignal
 }
 
 func New(myNodeID ids.NodeID, config Config) Subnet {

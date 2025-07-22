@@ -327,11 +327,11 @@ func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err

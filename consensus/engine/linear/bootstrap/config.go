@@ -14,15 +14,15 @@ import (
 )
 
 type Config struct {
-	engine.AllGetsServer
+	core.AllGetsServer
 
 	Ctx     *consensus.Context
 	Beacons validators.Manager
 
 	SampleK          int
 	StartupTracker   tracker.Startup
-	Sender           engine.Sender
-	BootstrapTracker engine.BootstrapTracker
+	Sender           core.Sender
+	BootstrapTracker core.BootstrapTracker
 
 	// PeerTracker manages the set of nodes that we fetch the next block from.
 	PeerTracker *p2p.PeerTracker
@@ -42,5 +42,5 @@ type Config struct {
 
 	Bootstrapped func()
 
-	engine.Haltable
+	core.Haltable
 }

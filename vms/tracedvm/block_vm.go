@@ -119,7 +119,7 @@ func (vm *blockVM) Initialize(
 	)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.buildBlockTag)
 	defer span.End()
 
@@ -130,7 +130,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	}, err
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (chain.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (linear.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.parseBlockTag, oteltrace.WithAttributes(
 		attribute.Int("blockLen", len(block)),
 	))
@@ -143,7 +143,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (chain.Block, e
 	}, err
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.getBlockTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", blkID),
 	))

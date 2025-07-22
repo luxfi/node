@@ -11,9 +11,10 @@ import (
 	"math/big"
 	"math/rand/v2"
 
-	"github.com/luxfi/geth"
 	"github.com/luxfi/geth/accounts/abi/bind"
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/params"
 
@@ -70,15 +71,15 @@ func NewIssuer(
 	}, nil
 }
 
-func (i *Issuer) GenerateAndIssueTx(ctx context.Context) (geth.Hash, error) {
+func (i *Issuer) GenerateAndIssueTx(ctx context.Context) (common.Hash, error) {
 	txType, err := pickWeightedRandom(i.txTypes)
 	if err != nil {
-		return geth.Hash{}, err
+		return common.Hash{}, err
 	}
 
 	tx, err := txType.generateAndIssueTx(ctx, txType.maxFeeCap, i.nonce)
 	if err != nil {
-		return geth.Hash{}, fmt.Errorf("generating and issuing transaction of type %s: %w", txType.name, err)
+		return common.Hash{}, fmt.Errorf("generating and issuing transaction of type %s: %w", txType.name, err)
 	}
 
 	i.nonce++
@@ -92,7 +93,7 @@ func makeTxTypes(
 	chainID *big.Int,
 	client ethclient.Client,
 ) []txType {
-	senderAddress := geth.PubkeyToAddress(senderKey.PublicKey)
+	senderAddress := crypto.PubkeyToAddress(senderKey.PublicKey)
 	signer := types.LatestSignerForChainID(chainID)
 	return []txType{
 		{
