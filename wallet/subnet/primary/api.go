@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/plugin/evm/atomic"
-	"github.com/luxfi/geth/plugin/evm/client"
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
@@ -28,12 +28,12 @@ import (
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-	ethcommon "github.com/luxfi/geth/common"
+	ethcommon "github.com/luxfi/evm/common"
 )
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
-	FujiAPIURI    = "https://api.lux-test.network"
+	TestnetAPIURI    = "https://api.lux-test.network"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
