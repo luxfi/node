@@ -12,45 +12,45 @@ import (
 )
 
 var (
-	_ engine.Engine = (*Engine)(nil)
+	_ core.Engine = (*Engine)(nil)
 
 	errUnexpectedStart = errors.New("unexpectedly started engine")
 )
 
 type Engine struct {
-	engine.AllGetsServer
+	core.AllGetsServer
 
 	// list of NoOpsHandler for messages dropped by engine
-	engine.StateSummaryFrontierHandler
-	engine.AcceptedStateSummaryHandler
-	engine.AcceptedFrontierHandler
-	engine.AcceptedHandler
-	engine.AncestorsHandler
-	engine.PutHandler
-	engine.QueryHandler
-	engine.ChitsHandler
-	engine.AppHandler
-	engine.InternalHandler
+	core.StateSummaryFrontierHandler
+	core.AcceptedStateSummaryHandler
+	core.AcceptedFrontierHandler
+	core.AcceptedHandler
+	core.AncestorsHandler
+	core.PutHandler
+	core.QueryHandler
+	core.ChitsHandler
+	core.AppHandler
+	core.InternalHandler
 
 	ctx *consensus.Context
 }
 
 func New(
 	ctx *consensus.Context,
-	gets engine.AllGetsServer,
-) engine.Engine {
+	gets core.AllGetsServer,
+) core.Engine {
 	return &Engine{
 		AllGetsServer:               gets,
-		StateSummaryFrontierHandler: engine.NewNoOpStateSummaryFrontierHandler(ctx.Log),
-		AcceptedStateSummaryHandler: engine.NewNoOpAcceptedStateSummaryHandler(ctx.Log),
-		AcceptedFrontierHandler:     engine.NewNoOpAcceptedFrontierHandler(ctx.Log),
-		AcceptedHandler:             engine.NewNoOpAcceptedHandler(ctx.Log),
-		AncestorsHandler:            engine.NewNoOpAncestorsHandler(ctx.Log),
-		PutHandler:                  engine.NewNoOpPutHandler(ctx.Log),
-		QueryHandler:                engine.NewNoOpQueryHandler(ctx.Log),
-		ChitsHandler:                engine.NewNoOpChitsHandler(ctx.Log),
-		AppHandler:                  engine.NewNoOpAppHandler(ctx.Log),
-		InternalHandler:             engine.NewNoOpInternalHandler(ctx.Log),
+		StateSummaryFrontierHandler: core.NewNoOpStateSummaryFrontierHandler(ctx.Log),
+		AcceptedStateSummaryHandler: core.NewNoOpAcceptedStateSummaryHandler(ctx.Log),
+		AcceptedFrontierHandler:     core.NewNoOpAcceptedFrontierHandler(ctx.Log),
+		AcceptedHandler:             core.NewNoOpAcceptedHandler(ctx.Log),
+		AncestorsHandler:            core.NewNoOpAncestorsHandler(ctx.Log),
+		PutHandler:                  core.NewNoOpPutHandler(ctx.Log),
+		QueryHandler:                core.NewNoOpQueryHandler(ctx.Log),
+		ChitsHandler:                core.NewNoOpChitsHandler(ctx.Log),
+		AppHandler:                  core.NewNoOpAppHandler(ctx.Log),
+		InternalHandler:             core.NewNoOpInternalHandler(ctx.Log),
 		ctx:                         ctx,
 	}
 }
