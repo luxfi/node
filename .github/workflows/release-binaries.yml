@@ -1,0 +1,122 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Lux Node ${{ github.ref }}
+          draft: false
+          prerelease: false
+          
+  release-linux-amd64:
+    needs: create-release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Build
+        run: ./scripts/build.sh
+      - name: Create tarball
+        run: |
+          mkdir -p luxd-linux-amd64
+          cp build/luxd luxd-linux-amd64/
+          tar -czf luxd-linux-amd64-${{ github.ref_name }}.tar.gz luxd-linux-amd64/
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./luxd-linux-amd64-${{ github.ref_name }}.tar.gz
+          asset_name: luxd-linux-amd64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+  release-linux-arm64:
+    needs: create-release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build ARM64
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          CC=aarch64-linux-gnu-gcc GOARCH=arm64 ./scripts/build.sh
+      - name: Create tarball
+        run: |
+          mkdir -p luxd-linux-arm64
+          cp build/luxd luxd-linux-arm64/
+          tar -czf luxd-linux-arm64-${{ github.ref_name }}.tar.gz luxd-linux-arm64/
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./luxd-linux-arm64-${{ github.ref_name }}.tar.gz
+          asset_name: luxd-linux-arm64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+  release-darwin-amd64:
+    needs: create-release
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Build
+        run: ./scripts/build.sh
+      - name: Create tarball
+        run: |
+          mkdir -p luxd-darwin-amd64
+          cp build/luxd luxd-darwin-amd64/
+          tar -czf luxd-darwin-amd64-${{ github.ref_name }}.tar.gz luxd-darwin-amd64/
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./luxd-darwin-amd64-${{ github.ref_name }}.tar.gz
+          asset_name: luxd-darwin-amd64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+  release-darwin-arm64:
+    needs: create-release
+    runs-on: macos-14  # M1 runners
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Build
+        run: ./scripts/build.sh
+      - name: Create tarball
+        run: |
+          mkdir -p luxd-darwin-arm64
+          cp build/luxd luxd-darwin-arm64/
+          tar -czf luxd-darwin-arm64-${{ github.ref_name }}.tar.gz luxd-darwin-arm64/
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./luxd-darwin-arm64-${{ github.ref_name }}.tar.gz
+          asset_name: luxd-darwin-arm64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
