@@ -82,7 +82,7 @@ import (
 
 	geth "github.com/luxfi/geth/plugin/evm"
 	databasefactory "github.com/luxfi/node/database/factory"
-	avmconfig "github.com/luxfi/node/vms/xvm/config"
+	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
 
@@ -1027,14 +1027,14 @@ func (n *Node) addDefaultVMAliases() error {
 }
 
 // Create the chainManager and register the following VMs:
-// AVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
+// XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
 func (n *Node) initChainManager(luxAssetID ids.ID) error {
-	createAVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.AVMID)
+	createXVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
 	if err != nil {
 		return err
 	}
-	xChainID := createAVMTx.ID()
+	xChainID := createXVMTx.ID()
 
 	createEVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.EVMID)
 	if err != nil {
@@ -1201,8 +1201,8 @@ func (n *Node) initVMs() error {
 				UseCurrentHeight:          n.Config.UseCurrentHeight,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &xvm.Factory{
-			Config: avmconfig.Config{
+		n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
+			Config: xvmconfig.Config{
 				Upgrades:         n.Config.UpgradeConfig,
 				TxFee:            n.Config.TxFee,
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,

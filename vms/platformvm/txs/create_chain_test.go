@@ -36,7 +36,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "tx is nil",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(*CreateChainTx) *CreateChainTx {
@@ -48,7 +48,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "vm ID is empty",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
@@ -61,7 +61,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "subnet ID is platform chain's ID",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
@@ -74,7 +74,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "chain name is too long",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
@@ -87,7 +87,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "chain name has invalid character",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
@@ -100,7 +100,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			description: "genesis data is too long",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
-			vmID:        constants.AVMID,
+			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {

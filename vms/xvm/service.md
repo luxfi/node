@@ -1,7 +1,7 @@
 The [X-Chain](https://build.lux.network/docs/quick-start/primary-network#x-chain),
 Lux's native platform for creating and trading assets, is an instance of the Lux Virtual
-Machine (AVM). This API allows clients to create and trade assets on the X-Chain and other instances
-of the AVM.
+Machine (XVM). This API allows clients to create and trade assets on the X-Chain and other instances
+of the XVM.
 
 ## Format
 
@@ -12,12 +12,12 @@ This API uses the `json 2.0` RPC format. For more information on making JSON RPC
 
 `/ext/bc/X` to interact with the X-Chain.
 
-`/ext/bc/blockchainID` to interact with other AVM instances, where `blockchainID` is the ID of a
-blockchain running the AVM.
+`/ext/bc/blockchainID` to interact with other XVM instances, where `blockchainID` is the ID of a
+blockchain running the XVM.
 
 ## Methods
 
-### `avm.getAllBalances`
+### `xvm.getAllBalances`
 
 <Callout type="warn">
 Deprecated as of [**v1.9.12**](https://github.com/luxfi/node/releases/tag/v1.9.12).
@@ -28,7 +28,7 @@ Get the balances of all assets controlled by a given address.
 **Signature:**
 
 ```sh
-avm.getAllBalances({address:string}) -> {
+xvm.getAllBalances({address:string}) -> {
     balances: []{
         asset: string,
         balance: int
@@ -42,7 +42,7 @@ avm.getAllBalances({address:string}) -> {
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     : 1,
-    "method" :"avm.getAllBalances",
+    "method" :"xvm.getAllBalances",
     "params" :{
         "address":"X-lux1c79e0dd0susp7dc8udq34jgk2yvve7hapvdyht"
     }
@@ -70,14 +70,14 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getAssetDescription`
+### `xvm.getAssetDescription`
 
 Get information about an asset.
 
 **Signature:**
 
 ```sh
-avm.getAssetDescription({assetID: string}) -> {
+xvm.getAssetDescription({assetID: string}) -> {
     assetId: string,
     name: string,
     symbol: string,
@@ -101,7 +101,7 @@ Mainnet: FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z
 Testnet: U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK
 
 For finding the `assetID` of other assets, this [info] might be useful.
-Also, `avm.getUTXOs` returns the `assetID` in its output.
+Also, `xvm.getUTXOs` returns the `assetID` in its output.
 </Callout>
 
 **Example Call:**
@@ -110,7 +110,7 @@ Also, `avm.getUTXOs` returns the `assetID` in its output.
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getAssetDescription",
+    "method" :"xvm.getAssetDescription",
     "params" :{
         "assetID" :"FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z"
     }
@@ -132,7 +132,7 @@ curl -X POST --data '{
 }`
 ```
 
-### `avm.getBalance`
+### `xvm.getBalance`
 
 <Callout type="warn">
 Deprecated as of [**v1.9.12**](https://github.com/luxfi/node/releases/tag/v1.9.12).
@@ -143,7 +143,7 @@ Get the balance of an asset controlled by a given address.
 **Signature:**
 
 ```sh
-avm.getBalance({
+xvm.getBalance({
     address: string,
     assetID: string
 }) -> {balance: int}
@@ -158,7 +158,7 @@ avm.getBalance({
 curl -X POST --data '{
   "jsonrpc":"2.0",
   "id"     : 1,
-  "method" :"avm.getBalance",
+  "method" :"xvm.getBalance",
   "params" :{
       "address":"X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5",
       "assetID": "2pYGetDWyKdHxpFxh2LHeoLNCH6H5vxxCxHQtFnnFaYxLsqtHC"
@@ -184,14 +184,14 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getBlock`
+### `xvm.getBlock`
 
 Returns the block with the given id.
 
 **Signature:**
 
 ```sh
-avm.getBlock({
+xvm.getBlock({
     blockID: string
     encoding: string // optional
 }) -> {
@@ -217,7 +217,7 @@ avm.getBlock({
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "avm.getBlock",
+    "method": "xvm.getBlock",
     "params": {
         "blockID": "tXJ4xwmR8soHE6DzRNMQPtiwQvuYsHn6eLLBzo2moDqBquqy6",
         "encoding": "hex"
@@ -239,14 +239,14 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getBlockByHeight`
+### `xvm.getBlockByHeight`
 
 Returns block at the given height.
 
 **Signature:**
 
 ```sh
-avm.getBlockByHeight({
+xvm.getBlockByHeight({
     height: string
     encoding: string // optional
 }) -> {
@@ -272,7 +272,7 @@ avm.getBlockByHeight({
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "avm.getBlockByHeight",
+    "method": "xvm.getBlockByHeight",
     "params": {
         "height": "275686313486",
         "encoding": "hex"
@@ -294,14 +294,14 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getHeight`
+### `xvm.getHeight`
 
 Returns the height of the last accepted block.
 
 **Signature:**
 
 ```sh
-avm.getHeight() ->
+xvm.getHeight() ->
 {
     height: uint64,
 }
@@ -312,7 +312,7 @@ avm.getHeight() ->
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "avm.getHeight",
+    "method": "xvm.getHeight",
     "params": {},
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
@@ -330,7 +330,7 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getTx`
+### `xvm.getTx`
 
 Returns the specified transaction. The `encoding` parameter sets the format of the returned
 transaction. Can be either `"hex"` or `"json"`. Defaults to `"hex"`.
@@ -338,7 +338,7 @@ transaction. Can be either `"hex"` or `"json"`. Defaults to `"hex"`.
 **Signature:**
 
 ```sh
-avm.getTx({
+xvm.getTx({
     txID: string,
     encoding: string, //optional
 }) -> {
@@ -353,7 +353,7 @@ avm.getTx({
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getTx",
+    "method" :"xvm.getTx",
     "params" :{
         "txID":"2oJCbb8pfdxEHAf9A8CdN4Afj9VSR3xzyzNkf8tDv7aM1sfNFL",
         "encoding": "json"
@@ -460,14 +460,14 @@ Most outputs use the secp256k1 FX, look like this:
 The above output can be consumed after Unix time `locktime` by a transaction that has signatures
 from `threshold` of the addresses in `addresses`.
 
-### `avm.getTxFee`
+### `xvm.getTxFee`
 
 Get the fees of the network.
 
 **Signature**:
 
 ```
-avm.getTxFee() ->
+xvm.getTxFee() ->
 {
   txFee: uint64,
   createAssetTxFee: uint64,
@@ -485,7 +485,7 @@ All fees are denominated in nLUX.
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     : 1,
-    "method" :"avm.getTxFee",
+    "method" :"xvm.getTxFee",
 }' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
 ```
 
@@ -501,7 +501,7 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getTxStatus`
+### `xvm.getTxStatus`
 
 <Callout type="warn">
 Deprecated as of **v1.10.0**.
@@ -512,7 +512,7 @@ Get the status of a transaction sent to the network.
 **Signature:**
 
 ```sh
-avm.getTxStatus({txID: string}) -> {status: string}
+xvm.getTxStatus({txID: string}) -> {status: string}
 ```
 
 `status` is one of:
@@ -528,7 +528,7 @@ avm.getTxStatus({txID: string}) -> {status: string}
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getTxStatus",
+    "method" :"xvm.getTxStatus",
     "params" :{
         "txID":"2QouvFWUbjuySRxeX5xMbNCuAaKWfbk5FeEa2JmoF85RKLk2dD"
     }
@@ -547,7 +547,7 @@ curl -X POST --data '{
 }
 ```
 
-### `avm.getUTXOs`
+### `xvm.getUTXOs`
 
 Gets the UTXOs that reference a given address. If `sourceChain` is specified, then it will retrieve
 the atomic UTXOs exported from that chain to the X Chain.
@@ -555,7 +555,7 @@ the atomic UTXOs exported from that chain to the X Chain.
 **Signature:**
 
 ```sh
-avm.getUTXOs({
+xvm.getUTXOs({
     addresses: []string,
     limit: int, //optional
     startIndex: { //optional
@@ -597,7 +597,7 @@ Suppose we want all UTXOs that reference at least one of
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getUTXOs",
+    "method" :"xvm.getUTXOs",
     "params" :{
         "addresses":["X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5", "X-lux1d09qn852zcy03sfc9hay2llmn9hsgnw4tp3dv6"],
         "limit":5,
@@ -637,7 +637,7 @@ fetched. We call the method again, this time with `startIndex`:
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :2,
-    "method" :"avm.getUTXOs",
+    "method" :"xvm.getUTXOs",
     "params" :{
         "addresses":["X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5"],
         "limit":5,
@@ -684,7 +684,7 @@ atomic UTXOs:
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getUTXOs",
+    "method" :"xvm.getUTXOs",
     "params" :{
         "addresses":["X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5", "X-lux1d09qn852zcy03sfc9hay2llmn9hsgnw4tp3dv6"],
         "limit":5,
@@ -714,7 +714,7 @@ This gives response:
 }
 ```
 
-### `avm.issueTx`
+### `xvm.issueTx`
 
 Send a signed transaction to the network. `encoding` specifies the format of the signed transaction.
 Can only be `hex` when a value is provided.
@@ -722,7 +722,7 @@ Can only be `hex` when a value is provided.
 **Signature:**
 
 ```sh
-avm.issueTx({
+xvm.issueTx({
     tx: string,
     encoding: string, //optional
 }) -> {
@@ -736,7 +736,7 @@ avm.issueTx({
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     : 1,
-    "method" :"avm.issueTx",
+    "method" :"xvm.issueTx",
     "params" :{
         "tx":"0x00000009de31b4d8b22991d51aa6aa1fc733f23a851a8c9400000000000186a0000000005f041280000000005f9ca900000030390000000000000001fceda8f90fcb5d30614b99d79fc4baa29307762668f16eb0259a57c2d3b78c875c86ec2045792d4df2d926c40f829196e0bb97ee697af71f5b0a966dabff749634c8b729855e937715b0e44303fd1014daedc752006011b730",
         "encoding": "hex"

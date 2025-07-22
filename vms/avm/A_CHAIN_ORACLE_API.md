@@ -1,7 +1,7 @@
-# A-Chain Oracle API Documentation
+# Attestation Chain (A-Chain) API Documentation
 
 ## Overview
-A-Chain serves as the oracle chain for the Lux Network ecosystem, providing secure and reliable price feeds, GPU compute market data, and other oracle services. It leverages Trusted Execution Environment (TEE) technology for attestation and data integrity, ensuring that all oracle data is tamper-proof and verifiable.
+The Lux Attestation Chian (A-Chain) serves as the oracle chain for the Lux Network ecosystem, providing secure and reliable price feeds, GPU compute market data, and other oracle services. It leverages Trusted Execution Environment (TEE) technology for attestation and data integrity, ensuring that all oracle data is tamper-proof and verifiable.
 
 ## Table of Contents
 1. [Core Oracle Services](#1-core-oracle-services)
@@ -650,7 +650,7 @@ interface IAChainOracle {
 
 contract DEXPriceConsumer {
     IAChainOracle public oracle;
-    
+
     function getMarkPrice(string memory asset) public view returns (uint256) {
         (uint256 price, uint256 timestamp) = oracle.getPrice(asset);
         require(block.timestamp - timestamp < 60, "Price too old");
@@ -669,18 +669,18 @@ func verifyPriceFeed(attestation []byte, expectedPrice *big.Int) error {
     if err != nil {
         return err
     }
-    
+
     // Check enclave measurement
     if !isApprovedEnclave(proof.Mrenclave) {
         return errors.New("untrusted enclave")
     }
-    
+
     // Verify price data
     priceData := proof.GetUserData()
     if !bytes.Equal(priceData.Price, expectedPrice.Bytes()) {
         return errors.New("price mismatch")
     }
-    
+
     return nil
 }
 ```
@@ -696,21 +696,21 @@ async function getSecurePrice(asset) {
         sources: ["oracle1", "oracle2", "oracle3"],
         includeMetadata: true
     });
-    
+
     // Verify at least 3 sources
     if (response.sources.length < 3) {
         throw new Error("Insufficient oracle sources");
     }
-    
+
     // Check price deviation
     const prices = response.sources.map(s => parseFloat(s.price));
     const avgPrice = prices.reduce((a, b) => a + b) / prices.length;
     const maxDeviation = Math.max(...prices.map(p => Math.abs(p - avgPrice) / avgPrice));
-    
+
     if (maxDeviation > 0.02) { // 2% max deviation
         throw new Error("Price deviation too high");
     }
-    
+
     return {
         price: response.price,
         confidence: response.metadata.confidence,

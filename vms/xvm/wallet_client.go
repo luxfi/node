@@ -22,7 +22,7 @@ type WalletClient struct {
 	Requester rpc.EndpointRequester
 }
 
-// NewWalletClient returns an AVM wallet client for interacting with xvm managed
+// NewWalletClient returns an XVM wallet client for interacting with xvm managed
 // wallet
 //
 // Deprecated: Transactions should be issued using the

@@ -161,7 +161,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		}},
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,
-		VMID:       constants.AVMID,
+		VMID:       constants.XVMID,
 		SubnetAuth: &secp256k1fx.Input{},
 	}
 	chainTx := &txs.Tx{Unsigned: chain}

@@ -423,7 +423,7 @@ curl --location --request POST 'localhost:9650/ext/index/X/tx' \
 
 Here is an example of how to iterate through all transactions on the X-Chain.
 
-You can use the Index API to get the ID of every transaction that has been accepted on the X-Chain, and use the X-Chain API method `avm.getTx` to get a human-readable representation of the transaction.
+You can use the Index API to get the ID of every transaction that has been accepted on the X-Chain, and use the X-Chain API method `xvm.getTx` to get a human-readable representation of the transaction.
 
 To get an X-Chain transaction by its index (the order it was accepted in), use Index API method [index.getlastaccepted](#indexgetlastaccepted).
 
@@ -463,13 +463,13 @@ The above API call gives the response below:
 
 The ID of this transaction is `ZGYTSU8w3zUP6VFseGC798vA2Vnxnfj6fz1QPfA9N93bhjJvo`.
 
-To get the transaction by its ID, use API method `avm.getTx`:
+To get the transaction by its ID, use API method `xvm.getTx`:
 
 ```sh
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"avm.getTx",
+    "method" :"xvm.getTx",
     "params" :{
         "txID":"ZGYTSU8w3zUP6VFseGC798vA2Vnxnfj6fz1QPfA9N93bhjJvo",
         "encoding": "json"

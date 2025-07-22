@@ -37,7 +37,7 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -74,7 +74,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -118,7 +118,7 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -157,7 +157,7 @@ func TestCreateChainTxValid(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -261,7 +261,7 @@ func TestEtnaCreateChainTxInvalidWithManagedSubnet(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
