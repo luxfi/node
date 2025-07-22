@@ -43,14 +43,14 @@ func TestBlockSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		parseFunc     func(context.Context, []byte) (chain.Block, error)
+		parseFunc     func(context.Context, []byte) (linear.Block, error)
 		expectedError error
 		blockBytes    []byte
 	}{
 		{
 			name:       "block serialization",
 			blockBytes: blockBytes,
-			parseFunc: func(_ context.Context, b []byte) (chain.Block, error) {
+			parseFunc: func(_ context.Context, b []byte) (linear.Block, error) {
 				if !bytes.Equal(testBlock.BytesV, b) {
 					return nil, unexpectedBlockBytes
 				}
@@ -62,7 +62,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "block deserialization error",
 			blockBytes:    blockBytes,
 			expectedError: unexpectedBlockBytes,
-			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (linear.Block, error) {
 				return nil, unexpectedBlockBytes
 			},
 		},
@@ -70,7 +70,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "corrupted block data",
 			blockBytes:    []byte("corrupted data"),
 			expectedError: canoto.ErrInvalidWireType,
-			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (linear.Block, error) {
 				return nil, nil
 			},
 		},

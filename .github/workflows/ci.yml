@@ -52,7 +52,7 @@ jobs:
         with:
           run: ./scripts/run_task.sh test-e2e-ci
           artifact_prefix: e2e
-          filter_by_owner: avalanchego-e2e
+          filter_by_owner: luxd-e2e
           prometheus_username: ${{ secrets.PROMETHEUS_ID || '' }}
           prometheus_password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
           loki_username: ${{ secrets.LOKI_ID || '' }}
@@ -67,7 +67,7 @@ jobs:
         with:
           run: ./scripts/run_task.sh test-e2e-ci -- --activate-granite
           artifact_prefix: e2e-post-granite
-          filter_by_owner: avalanchego-e2e
+          filter_by_owner: luxd-e2e
           prometheus_username: ${{ secrets.PROMETHEUS_ID || '' }}
           prometheus_password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
           loki_username: ${{ secrets.LOKI_ID || '' }}
@@ -82,7 +82,7 @@ jobs:
           run: ./scripts/run_task.sh test-e2e-kube-ci
           runtime: kube
           artifact_prefix: e2e-kube
-          filter_by_owner: avalanchego-e2e
+          filter_by_owner: luxd-e2e
           prometheus_username: ${{ secrets.PROMETHEUS_ID || '' }}
           prometheus_password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
           loki_username: ${{ secrets.LOKI_ID || '' }}

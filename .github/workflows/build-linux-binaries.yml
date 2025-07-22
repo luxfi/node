@@ -124,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: arm64
-          path: /tmp/avalanchego/avalanchego-linux-arm64-${{ env.TAG }}.tar.gz
+          path: /tmp/luxd/luxd-linux-arm64-${{ env.TAG }}.tar.gz
 
       - name: Cleanup
         run: |
