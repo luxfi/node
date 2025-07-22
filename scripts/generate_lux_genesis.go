@@ -15,10 +15,10 @@ import (
 
 // Configuration for different networks
 var networks = map[string]uint32{
-	"mainnet": 1,      // MainnetID from constants
-	"testnet": 5,      // FujiID/TestnetID from constants  
-	"fuji":    5,      // FujiID from constants
-	"local":   12345,  // LocalID from constants
+	"mainnet": 1,     // MainnetID from constants
+	"testnet": 5,     // FujiID/TestnetID from constants
+	"fuji":    5,     // FujiID from constants
+	"local":   12345, // LocalID from constants
 }
 
 // Genesis address that gets majority of LUX supply
@@ -44,10 +44,10 @@ var validatorETHAddrs = []string{
 // Note: Go's uint64 max is 18,446,744,073,709,551,615
 // 2T LUX with 9 decimals = 2,000,000,000,000,000,000,000 which overflows uint64
 // We'll use max uint64 for simplicity
-var totalSupplyXChain = uint64(18_446_744_073_709_551_615) // Max uint64 (about 18.4 quintillion units)
+var totalSupplyXChain = uint64(18_446_744_073_709_551_615)   // Max uint64 (about 18.4 quintillion units)
 var validatorStakeAmount = uint64(1_000_000_000_000_000_000) // 1B LUX stake per validator on P-chain
 
-// Local network development addresses (from avalanchego local stakers)
+// Local network development addresses (from local stakers)
 var localValidatorETHAddrs = []string{
 	"0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc",
 	"0x44294e59d0a7f1aae6ed405efd7a7b2ebadfd63f",
@@ -138,7 +138,7 @@ var validators = []ValidatorInfo{
 func createUnlockSchedule(totalAmount uint64, startDate time.Time) []LockedAmount {
 	schedule := make([]LockedAmount, 100)
 	annualAmount := totalAmount / 100 // 1% per year
-	
+
 	for i := 0; i < 100; i++ {
 		unlockTime := startDate.AddDate(i+1, 0, 0) // Add i+1 years to start date
 		schedule[i] = LockedAmount{
@@ -146,7 +146,7 @@ func createUnlockSchedule(totalAmount uint64, startDate time.Time) []LockedAmoun
 			Locktime: uint64(unlockTime.Unix()),
 		}
 	}
-	
+
 	return schedule
 }
 
@@ -154,19 +154,19 @@ func createUnlockSchedule(totalAmount uint64, startDate time.Time) []LockedAmoun
 func ethToLuxAddress(ethAddrHex string, chain string, networkID uint32) (string, error) {
 	// Remove 0x prefix if present
 	ethAddrHex = strings.TrimPrefix(ethAddrHex, "0x")
-	
+
 	// Decode hex to bytes
 	ethAddrBytes, err := hex.DecodeString(ethAddrHex)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Convert to ShortID
 	ethAddr, err := ids.ToShortID(ethAddrBytes)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Determine HRP based on network ID
 	var hrp string
 	switch networkID {
@@ -179,13 +179,13 @@ func ethToLuxAddress(ethAddrHex string, chain string, networkID uint32) (string,
 	default:
 		hrp = "custom"
 	}
-	
+
 	// Format as Lux address (X-chain or P-chain)
 	luxAddr, err := address.Format(chain, hrp, ethAddr.Bytes())
 	if err != nil {
 		return "", err
 	}
-	
+
 	return luxAddr, nil
 }
 
@@ -202,11 +202,11 @@ type LockedAmount struct {
 }
 
 type Staker struct {
-	NodeID         string      `json:"nodeID"`
-	RewardAddress  string      `json:"rewardAddress"`
-	DelegationFee  uint32      `json:"delegationFee"`
-	Weight         uint64      `json:"weight,omitempty"`
-	Signer         *SignerInfo `json:"signer,omitempty"`
+	NodeID        string      `json:"nodeID"`
+	RewardAddress string      `json:"rewardAddress"`
+	DelegationFee uint32      `json:"delegationFee"`
+	Weight        uint64      `json:"weight,omitempty"`
+	Signer        *SignerInfo `json:"signer,omitempty"`
 }
 
 type SignerInfo struct {
@@ -231,17 +231,17 @@ func generateGenesis(networkName string) error {
 	if !ok {
 		return fmt.Errorf("unknown network: %s", networkName)
 	}
-	
+
 	// Convert genesis ETH address to Lux X-chain address
 	genesisLuxAddr, err := ethToLuxAddress(genesisETHAddr, "X", networkID)
 	if err != nil {
 		return fmt.Errorf("failed to convert genesis address: %v", err)
 	}
-	
+
 	fmt.Printf("\nNetwork: %s (ID: %d)\n", networkName, networkID)
 	fmt.Printf("Genesis ETH address: %s\n", genesisETHAddr)
 	fmt.Printf("Genesis LUX X-chain address: %s\n", genesisLuxAddr)
-	
+
 	// Create minimal C-Chain genesis for mainnet launch
 	// We'll import the actual state from the existing subnet later
 	var chainID uint64
@@ -255,24 +255,24 @@ func generateGenesis(networkName string) error {
 	default:
 		chainID = 1993 // Default
 	}
-	
+
 	// Minimal C-Chain genesis with empty allocations
 	cChainGenesisObj := map[string]interface{}{
 		"config": map[string]interface{}{
-			"chainId":                chainID,
-			"homesteadBlock":        0,
-			"eip150Block":           0,
-			"eip150Hash":            "0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0",
-			"eip155Block":           0,
-			"eip158Block":           0,
-			"byzantiumBlock":        0,
-			"constantinopleBlock":   0,
-			"petersburgBlock":       0,
-			"istanbulBlock":         0,
-			"muirGlacierBlock":      0,
-			"subnetEVMTimestamp":    0,
+			"chainId":             chainID,
+			"homesteadBlock":      0,
+			"eip150Block":         0,
+			"eip150Hash":          "0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0",
+			"eip155Block":         0,
+			"eip158Block":         0,
+			"byzantiumBlock":      0,
+			"constantinopleBlock": 0,
+			"petersburgBlock":     0,
+			"istanbulBlock":       0,
+			"muirGlacierBlock":    0,
+			"subnetEVMTimestamp":  0,
 			"feeConfig": map[string]interface{}{
-				"gasLimit":                  8000000,
+				"gasLimit":                 8000000,
 				"minBaseFee":               25000000000,
 				"targetGas":                15000000,
 				"baseFeeChangeDenominator": 36,
@@ -283,36 +283,36 @@ func generateGenesis(networkName string) error {
 			},
 			"allowFeeRecipients": false,
 		},
-		"alloc": make(map[string]interface{}), // Empty initial allocation
-		"nonce": "0x0",
-		"timestamp": "0x0",
-		"extraData": "0x00",
-		"gasLimit": "0x7A1200",
+		"alloc":      make(map[string]interface{}), // Empty initial allocation
+		"nonce":      "0x0",
+		"timestamp":  "0x0",
+		"extraData":  "0x00",
+		"gasLimit":   "0x7A1200",
 		"difficulty": "0x0",
-		"mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-		"coinbase": "0x0000000000000000000000000000000000000000",
-		"number": "0x0",
-		"gasUsed": "0x0",
+		"mixHash":    "0x0000000000000000000000000000000000000000000000000000000000000000",
+		"coinbase":   "0x0000000000000000000000000000000000000000",
+		"number":     "0x0",
+		"gasUsed":    "0x0",
 		"parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
 	}
-	
+
 	cChainGenesisBytes, err := json.Marshal(cChainGenesisObj)
 	if err != nil {
 		return fmt.Errorf("failed to marshal C-chain genesis: %v", err)
 	}
 	cChainGenesis := string(cChainGenesisBytes)
-	
+
 	// Choose validator addresses based on network
 	validatorAddrs := validatorETHAddrs
 	if networkName == "local" {
 		validatorAddrs = localValidatorETHAddrs
 	}
-	
+
 	// Calculate allocations
 	// Reserve 1B LUX per validator for staking (11B total)
 	stakingReserve := validatorStakeAmount * 11 // 11B LUX with 9 decimals
 	genesisAmount := totalSupplyXChain - stakingReserve
-	
+
 	// Create allocations
 	allocations := []Allocation{
 		{
@@ -322,12 +322,12 @@ func generateGenesis(networkName string) error {
 			UnlockSchedule: []LockedAmount{},
 		},
 	}
-	
+
 	// Convert validator addresses and add allocations
 	validatorLuxAddrsX := make([]string, len(validatorAddrs))
 	validatorLuxAddrsP := make([]string, len(validatorAddrs))
 	stakedFunds := []string{} // X-chain addresses that have staked funds
-	
+
 	for i, ethAddr := range validatorAddrs {
 		// Get both X-chain and P-chain addresses
 		luxAddrX, err := ethToLuxAddress(ethAddr, "X", networkID)
@@ -338,51 +338,51 @@ func generateGenesis(networkName string) error {
 		if err != nil {
 			return fmt.Errorf("failed to convert validator P address %s: %v", ethAddr, err)
 		}
-		
+
 		validatorLuxAddrsX[i] = luxAddrX
 		validatorLuxAddrsP[i] = luxAddrP
-		
+
 		// Add allocation for validator on X-chain with 100-year unlock schedule
 		// Create unlock schedule starting from Jan 1, 2020
 		startDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 		unlockSchedule := createUnlockSchedule(validatorStakeAmount, startDate)
-		
+
 		allocations = append(allocations, Allocation{
 			ETHAddr:        ethAddr,
 			LUXAddr:        luxAddrX,
 			InitialAmount:  0, // Initial amount is 0 because funds are locked
 			UnlockSchedule: unlockSchedule,
 		})
-		
+
 		// Add X-chain address to staked funds (not P-chain)
 		stakedFunds = append(stakedFunds, luxAddrX)
-		
+
 		fmt.Printf("Validator %d:\n", i+1)
 		fmt.Printf("  ETH: %s\n", ethAddr)
 		fmt.Printf("  X-chain: %s (has staked funds)\n", luxAddrX)
 		fmt.Printf("  P-chain: %s (receives rewards)\n", luxAddrP)
 	}
-	
+
 	// Create genesis structure
 	genesis := Genesis{
 		NetworkID:                  networkID,
 		Allocations:                allocations,
 		StartTime:                  1737388800, // Monday Jan 20, 2025 UTC (launch date)
-		InitialStakeDuration:       31536000,  // 365 days
+		InitialStakeDuration:       31536000,   // 365 days
 		InitialStakeDurationOffset: 5400,       // 90 minutes
 		InitialStakedFunds:         stakedFunds,
 		InitialStakers:             []Staker{},
 		CChainGenesis:              cChainGenesis,
 		Message:                    "Lux Network Genesis - Monday Launch",
 	}
-	
+
 	// Add initial stakers (validators)
 	numValidators := len(validatorAddrs)
 	for i := 0; i < numValidators && i < len(validators); i++ {
 		genesis.InitialStakers = append(genesis.InitialStakers, Staker{
 			NodeID:        validators[i].NodeID,
 			RewardAddress: validatorLuxAddrsP[i], // Use P-chain address for rewards
-			DelegationFee: 20000, // 2%
+			DelegationFee: 20000,                 // 2%
 			Weight:        validators[i].Weight,
 			Signer: &SignerInfo{
 				PublicKey:         validators[i].PublicKey,
@@ -390,24 +390,24 @@ func generateGenesis(networkName string) error {
 			},
 		})
 	}
-	
+
 	// Marshal to JSON
 	output, err := json.MarshalIndent(genesis, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to marshal genesis: %v", err)
 	}
-	
-	// Write to file  
+
+	// Write to file
 	filename := fmt.Sprintf("genesis/genesis_%s.json", networkName)
 	if err := ioutil.WriteFile(filename, output, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
-	
+
 	fmt.Printf("Generated %s\n", filename)
 	fmt.Printf("Total supply: %.0f LUX\n", float64(totalSupplyXChain)/1e9)
-	fmt.Printf("Genesis allocation: %.0f LUX\n", float64(genesisAmount)/1e9) 
+	fmt.Printf("Genesis allocation: %.0f LUX\n", float64(genesisAmount)/1e9)
 	fmt.Printf("Validator allocations: %.0f LUX (1B each, 100-year unlock)\n", float64(stakingReserve)/1e9)
-	
+
 	return nil
 }
 

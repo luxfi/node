@@ -36,7 +36,7 @@ type Block struct {
 	metadata simplex.ProtocolMetadata
 
 	// the parsed block
-	vmBlock chain.Block
+	vmBlock linear.Block
 
 	blockTracker *blockTracker
 }
