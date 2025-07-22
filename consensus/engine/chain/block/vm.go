@@ -35,7 +35,7 @@ type ChainVM interface {
 	//
 	// If the VM doesn't want to issue a new block, an error should be
 	// returned.
-	BuildBlock(context.Context) (chain.Block, error)
+	BuildBlock(context.Context) (linear.Block, error)
 
 	// Notify the VM of the currently preferred block.
 	//
@@ -70,7 +70,7 @@ type Getter interface {
 	// accepted by the consensus engine should be able to be fetched. It is not
 	// required for blocks that have been rejected by the consensus engine to be
 	// able to be fetched.
-	GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error)
+	GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error)
 }
 
 // Parser defines the functionality for fetching a block by its bytes.
@@ -81,13 +81,13 @@ type Parser interface {
 	// bytes.
 	//
 	// It is expected for all historical blocks to be parseable.
-	ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error)
+	ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error)
 }
 
 // ParseFunc defines a function that parses raw bytes into a block.
-type ParseFunc func(context.Context, []byte) (chain.Block, error)
+type ParseFunc func(context.Context, []byte) (linear.Block, error)
 
 // ParseBlock wraps a ParseFunc into a ParseBlock function, to be used by a Parser interface
-func (f ParseFunc) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
+func (f ParseFunc) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error) {
 	return f(ctx, blockBytes)
 }

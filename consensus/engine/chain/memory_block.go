@@ -10,11 +10,11 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
 )
 
-var _ chain.Block = (*memoryBlock)(nil)
+var _ linear.Block = (*memoryBlock)(nil)
 
 // memoryBlock wraps a linear Block to manage non-verified blocks
 type memoryBlock struct {
-	chain.Block
+	linear.Block
 
 	tree    ancestor.Tree
 	metrics *metrics

@@ -12,15 +12,15 @@ import (
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
+	snowtest "github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 )
 
 func DefaultConfig(t testing.TB) Config {
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	ctx := snowtest.Context(t, snowtest.PChainID)
 
 	return Config{
-		Ctx:                 consensustest.ConsensusContext(ctx),
+		Ctx:                 snowtest.ConsensusContext(ctx),
 		VM:                  &blocktest.VM{},
 		Sender:              &enginetest.Sender{},
 		Validators:          validators.NewManager(),

@@ -160,7 +160,7 @@ func TestTimeout(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		DAG: &handler.Engine{
+		Dag: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -429,7 +429,7 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.CantGossip = false
 	h.SetEngineManager(&handler.EngineManager{
-		DAG: &handler.Engine{
+		Dag: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -590,7 +590,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				return nil
 			}
 			h.SetEngineManager(&handler.EngineManager{
-				DAG: &handler.Engine{
+				Dag: &handler.Engine{
 					StateSyncer:  nil,
 					Bootstrapper: bootstrapper,
 					Consensus:    nil,

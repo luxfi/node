@@ -36,7 +36,7 @@ type BuildBlockWithContextChainVM interface {
 	//
 	// This method will be called if and only if the proposervm is activated.
 	// Otherwise [BuildBlock] will be called.
-	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (chain.Block, error)
+	BuildBlockWithContext(ctx context.Context, blockCtx *Context) (linear.Block, error)
 }
 
 // WithVerifyContext defines the interface a Block can optionally implement to

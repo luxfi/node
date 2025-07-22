@@ -128,7 +128,7 @@ func TestChangeNotifierBatchedChainVM(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fullVM := blockmock.NewFullVM(ctrl)
 	fullVM.EXPECT().GetAncestors(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([][]byte{}, nil)
-	fullVM.EXPECT().BatchedParseBlock(gomock.Any(), gomock.Any()).Return([]chain.Block{}, nil)
+	fullVM.EXPECT().BatchedParseBlock(gomock.Any(), gomock.Any()).Return([]linear.Block{}, nil)
 
 	vm := &blockmock.ChainVM{}
 

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	enginepkg "github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
@@ -177,8 +177,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	var cn block.ChangeNotifier
-	subscription := func(context.Context) (engine.Message, error) {
-		return engine.PendingTxs, nil
+	subscription := func(context.Context) (enginepkg.Message, error) {
+		return enginepkg.PendingTxs, nil
 	}
 
 	handlerIntf, err := New(
@@ -379,7 +379,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	subscription, messages := createSubscriber()
-	notified := make(chan engine.Message)
+	notified := make(chan enginepkg.Message)
 
 	handler, err := New(
 		ctx,
@@ -410,7 +410,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		return ctx
 	}
 
-	engine.NotifyF = func(ctx context.Context, msg engine.Message) error {
+	engine.NotifyF = func(ctx context.Context, msg enginepkg.Message) error {
 		select {
 		case notified <- msg:
 			notified <- msg
@@ -437,10 +437,10 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	}
 
 	handler.Start(context.Background(), false)
-	messages <- engine.PendingTxs
+	messages <- enginepkg.PendingTxs
 	select {
 	case msg := <-notified:
-		require.Equal(engine.PendingTxs, msg)
+		require.Equal(enginepkg.PendingTxs, msg)
 	case <-time.After(time.Minute):
 		require.FailNow("Handler did not dispatch expected message")
 	}
@@ -454,15 +454,15 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		requestedEngineType p2ppb.EngineType
 		setup               func(
 			h Handler,
-			b engine.BootstrapableEngine,
-			e engine.Engine,
+			b enginepkg.BootstrapableEngine,
+			e enginepkg.Engine,
 		)
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
+			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -477,7 +477,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - lux, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
+			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -492,9 +492,9 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - linear, requested - unspecified",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
+			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
-					DAG: nil,
+					Dag: nil,
 					Chain: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
@@ -507,7 +507,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - linear, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
+			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
 						StateSyncer:  nil,
@@ -526,9 +526,9 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			name:                "current - linear, requested - linear",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			setup: func(h Handler, b engine.BootstrapableEngine, e engine.Engine) {
+			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
-					DAG: nil,
+					Dag: nil,
 					Chain: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
@@ -683,15 +683,15 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 }
 
-func createSubscriber() (engine.Subscription, chan<- engine.Message) {
-	messages := make(chan engine.Message, 1)
+func createSubscriber() (enginepkg.Subscription, chan<- enginepkg.Message) {
+	messages := make(chan enginepkg.Message, 1)
 
-	subscription := func(ctx context.Context) (engine.Message, error) {
+	subscription := func(ctx context.Context) (enginepkg.Message, error) {
 		select {
 		case msg := <-messages:
 			return msg, nil
 		case <-ctx.Done():
-			return engine.Message(0), ctx.Err()
+			return enginepkg.Message(0), ctx.Err()
 		}
 	}
 

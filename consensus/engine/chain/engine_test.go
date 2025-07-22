@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/chaintest"
-	"github.com/luxfi/node/consensus/engine"
+	enginepkg "github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
@@ -44,8 +44,8 @@ var (
 	errTest         = errors.New("non-nil test")
 )
 
-func MakeGetBlockF(blks ...[]*chaintest.Block) func(context.Context, ids.ID) (chain.Block, error) {
-	return func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func MakeGetBlockF(blks ...[]*chaintest.Block) func(context.Context, ids.ID) (linear.Block, error) {
+	return func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blkSet := range blks {
 			for _, blk := range blkSet {
 				if blkID == blk.ID() {
@@ -57,8 +57,8 @@ func MakeGetBlockF(blks ...[]*chaintest.Block) func(context.Context, ids.ID) (ch
 	}
 }
 
-func MakeParseBlockF(blks ...[]*chaintest.Block) func(context.Context, []byte) (chain.Block, error) {
-	return func(_ context.Context, blkBytes []byte) (chain.Block, error) {
+func MakeParseBlockF(blks ...[]*chaintest.Block) func(context.Context, []byte) (linear.Block, error) {
+	return func(_ context.Context, blkBytes []byte) (linear.Block, error) {
 		for _, blkSet := range blks {
 			for _, blk := range blkSet {
 				if bytes.Equal(blkBytes, blk.Bytes()) {
@@ -104,7 +104,7 @@ func setup(t *testing.T, config Config) (ids.NodeID, validators.Manager, *engine
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -131,20 +131,20 @@ func TestEngineDropsAttemptToIssueBlockAfterFailedRequest(t *testing.T) {
 	parent := chaintest.BuildChild(chaintest.Genesis)
 	child := chaintest.BuildChild(parent)
 
-	var request *engine.Request
+	var request *enginepkg.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(request)
-		request = &engine.Request{
+		request = &enginepkg.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
 		require.Equal(parent.ID(), blkID)
 	}
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(child.Bytes(), b)
 		return child, nil
 	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -160,7 +160,7 @@ func TestEngineDropsAttemptToIssueBlockAfterFailedRequest(t *testing.T) {
 	require.NotNil(request)
 	require.Equal(1, engine.blocked.NumDependencies())
 
-	vm.ParseBlockF = func(context.Context, []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(context.Context, []byte) (linear.Block, error) {
 		return nil, errUnknownBytes
 	}
 
@@ -190,7 +190,7 @@ func TestEngineQuery(t *testing.T) {
 	}
 
 	var getBlockCalled bool
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		getBlockCalled = true
 
 		switch blkID {
@@ -201,10 +201,10 @@ func TestEngineQuery(t *testing.T) {
 		}
 	}
 
-	var getRequest *engine.Request
+	var getRequest *enginepkg.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &engine.Request{
+		getRequest = &enginepkg.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -222,11 +222,11 @@ func TestEngineQuery(t *testing.T) {
 	require.True(getBlockCalled)
 	require.NotNil(getRequest)
 
-	var queryRequest *engine.Request
+	var queryRequest *enginepkg.Request
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blockID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &engine.Request{
+		queryRequest = &enginepkg.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -234,7 +234,7 @@ func TestEngineQuery(t *testing.T) {
 		require.Equal(uint64(1), requestedHeight)
 	}
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(parent.Bytes(), b)
 		return parent, nil
 	}
@@ -244,7 +244,7 @@ func TestEngineQuery(t *testing.T) {
 	require.NoError(engine.Put(context.Background(), getRequest.NodeID, getRequest.RequestID, parent.Bytes()))
 	require.NotNil(queryRequest)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case parent.ID(), child.ID():
 			return nil, errUnknownBlock
@@ -257,7 +257,7 @@ func TestEngineQuery(t *testing.T) {
 	getRequest = nil
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &engine.Request{
+		getRequest = &enginepkg.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -273,7 +273,7 @@ func TestEngineQuery(t *testing.T) {
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blockID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &engine.Request{
+		queryRequest = &enginepkg.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -281,10 +281,10 @@ func TestEngineQuery(t *testing.T) {
 		require.Equal(uint64(1), requestedHeight)
 	}
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(child.Bytes(), b)
 
-		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 			switch blkID {
 			case parent.ID():
 				return parent, nil
@@ -348,7 +348,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -376,7 +376,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 		require.Equal(uint64(1), requestedHeight)
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -393,7 +393,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 		te.metrics.issued.WithLabelValues(unknownSource),
 	))
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -418,8 +418,8 @@ func TestEngineMultipleQuery(t *testing.T) {
 	require.NoError(te.Chits(context.Background(), vdr0, *queryRequestID, blk1.ID(), blk1.ID(), blk1.ID(), blk1.Height()))
 	require.NoError(te.Chits(context.Background(), vdr1, *queryRequestID, blk1.ID(), blk1.ID(), blk1.ID(), blk1.Height()))
 
-	vm.ParseBlockF = func(context.Context, []byte) (chain.Block, error) {
-		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.ParseBlockF = func(context.Context, []byte) (linear.Block, error) {
+		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 			switch {
 			case blkID == blk0.ID():
 				return blk0, nil
@@ -464,7 +464,7 @@ func TestEngineBlockedIssue(t *testing.T) {
 	blk1 := chaintest.BuildChild(blk0)
 
 	sender.SendGetF = func(context.Context, ids.NodeID, uint32, ids.ID) {}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -501,7 +501,7 @@ func TestEngineRespondsToGetRequest(t *testing.T) {
 
 	sender.Default(false)
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, id)
 		return chaintest.Genesis, nil
 	}
@@ -529,14 +529,14 @@ func TestEnginePushQuery(t *testing.T) {
 
 	blk := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, blk.Bytes()) {
 			return blk, nil
 		}
 		return nil, errUnknownBytes
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -584,7 +584,7 @@ func TestEngineBuildBlock(t *testing.T) {
 
 	blk := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -605,7 +605,7 @@ func TestEngineBuildBlock(t *testing.T) {
 		require.Equal(vdrSet, inVdrs)
 	}
 
-	vm.BuildBlockF = func(context.Context) (chain.Block, error) {
+	vm.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return blk, nil
 	}
 	require.NoError(te.Notify(context.Background(), engine.PendingTxs))
@@ -673,7 +673,7 @@ func TestVoteCanceling(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, id)
 		return chaintest.Genesis, nil
 	}
@@ -737,7 +737,7 @@ func TestEngineNoQuery(t *testing.T) {
 		[]*chaintest.Block{chaintest.Genesis},
 	)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		if blkID == chaintest.GenesisID {
 			return chaintest.Genesis, nil
 		}
@@ -777,7 +777,7 @@ func TestEngineNoRepollQuery(t *testing.T) {
 		[]*chaintest.Block{chaintest.Genesis},
 	)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		if blkID == chaintest.GenesisID {
 			return chaintest.Genesis, nil
 		}
@@ -803,7 +803,7 @@ func TestEngineAbandonQuery(t *testing.T) {
 
 	blkID := ids.GenerateTestID()
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(blkID, id)
 		return nil, errUnknownBlock
 	}
@@ -833,7 +833,7 @@ func TestEngineAbandonChit(t *testing.T) {
 
 	blk := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -858,7 +858,7 @@ func TestEngineAbandonChit(t *testing.T) {
 	))
 
 	fakeBlkID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(fakeBlkID, id)
 		return nil, errUnknownBlock
 	}
@@ -886,7 +886,7 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 
 	blk := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -911,7 +911,7 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 	))
 
 	fakeBlkID := ids.GenerateTestID()
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(fakeBlkID, id)
 		return nil, errUnknownBlock
 	}
@@ -926,7 +926,7 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 
 	sender.CantSendPullQuery = false
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(chaintest.GenesisBytes, b)
 		return chaintest.Genesis, nil
 	}
@@ -948,7 +948,7 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 	parentBlk := chaintest.BuildChild(missingBlk)
 	blockingBlk := chaintest.BuildChild(parentBlk)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -961,7 +961,7 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 
 	sender.SendGetF = func(context.Context, ids.NodeID, uint32, ids.ID) {}
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(blockingBlk.Bytes(), b)
 		return blockingBlk, nil
 	}
@@ -1007,7 +1007,7 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	missingBlk := chaintest.BuildChild(chaintest.Genesis)
 	blockingBlk := chaintest.BuildChild(missingBlk)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1019,7 +1019,7 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(chaintest.GenesisBytes, blkBytes):
 			return chaintest.Genesis, nil
@@ -1034,10 +1034,10 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		}
 	}
 
-	var getRequest *engine.Request
+	var getRequest *enginepkg.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getRequest)
-		getRequest = &engine.Request{
+		getRequest = &enginepkg.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -1053,11 +1053,11 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		blockingBlk.Bytes(),
 	))
 
-	var queryRequest *engine.Request
+	var queryRequest *enginepkg.Request
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blkID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &engine.Request{
+		queryRequest = &enginepkg.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -1095,7 +1095,7 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	sender.SendPullQueryF = func(_ context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, blkID ids.ID, requestedHeight uint64) {
 		require.Nil(queryRequest)
 		require.Equal(set.Of(peerID), nodeIDs)
-		queryRequest = &engine.Request{
+		queryRequest = &enginepkg.Request{
 			NodeID:    peerID,
 			RequestID: requestID,
 		}
@@ -1103,7 +1103,7 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		require.Equal(uint64(1), requestedHeight)
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1188,7 +1188,7 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		*reqID = requestID
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1228,7 +1228,7 @@ func TestEngineGossip(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -1258,7 +1258,7 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 	pendingBlk := chaintest.BuildChild(missingBlk)
 
 	parsed := new(bool)
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, pendingBlk.Bytes()) {
 			*parsed = true
 			return pendingBlk, nil
@@ -1266,7 +1266,7 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1293,14 +1293,14 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 	require.NoError(te.Put(context.Background(), secondVdr, *reqID, []byte{3}))
 
 	*parsed = false
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, missingBlk.Bytes()) {
 			*parsed = true
 			return missingBlk, nil
 		}
 		return nil, errUnknownBlock
 	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1331,7 +1331,7 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 	pendingBlk := chaintest.BuildChild(missingBlk)
 
 	parsed := new(bool)
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, pendingBlk.Bytes()) {
 			*parsed = true
 			return pendingBlk, nil
@@ -1339,7 +1339,7 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1369,14 +1369,14 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 	require.NoError(te.PushQuery(context.Background(), vdr, *reqID, []byte{3}, 0))
 
 	*parsed = false
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, missingBlk.Bytes()) {
 			*parsed = true
 			return missingBlk, nil
 		}
 		return nil, errUnknownBlock
 	}
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1424,7 +1424,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -1440,7 +1440,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	pendingBlk := chaintest.BuildChild(chaintest.Genesis)
 
 	parsed := new(bool)
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, pendingBlk.Bytes()) {
 			*parsed = true
 			return pendingBlk, nil
@@ -1448,7 +1448,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1512,7 +1512,7 @@ func TestEngineDoubleChit(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, id)
 		return chaintest.Genesis, nil
 	}
@@ -1545,7 +1545,7 @@ func TestEngineDoubleChit(t *testing.T) {
 		te.metrics.issued.WithLabelValues(unknownSource),
 	))
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1598,7 +1598,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, blkID)
 		return chaintest.Genesis, nil
 	}
@@ -1626,7 +1626,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 		require.Equal(vdrSet, inVdrs)
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1636,7 +1636,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	}
 
 	blkToReturn := 0
-	vm.BuildBlockF = func(context.Context) (chain.Block, error) {
+	vm.BuildBlockF = func(context.Context) (linear.Block, error) {
 		require.Less(blkToReturn, len(blks))
 		blk := blks[blkToReturn]
 		blkToReturn++
@@ -1651,7 +1651,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 
 	require.False(queried)
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1721,7 +1721,7 @@ func TestEngineNonPreferredAmplification(t *testing.T) {
 	preferredBlk := chaintest.BuildChild(chaintest.Genesis)
 	nonPreferredBlk := chaintest.BuildChild(chaintest.Genesis)
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, preferredBlk.Bytes()):
 			return preferredBlk, nil
@@ -1733,7 +1733,7 @@ func TestEngineNonPreferredAmplification(t *testing.T) {
 		}
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1779,7 +1779,7 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	blk2.VerifyV = errInvalid
 
 	// The VM should be able to parse [blk1] and [blk2]
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, blk1.Bytes()):
 			return blk1, nil
@@ -1794,7 +1794,7 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	// for now, this VM should only be able to retrieve [Genesis] from storage
 	// this "GetBlockF" will be updated after blocks are verified/accepted
 	// in the following tests
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1843,7 +1843,7 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	require.True(*queried, "Didn't query the newly issued blk1")
 
 	// now [blk1] is verified, vm can return it
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1879,7 +1879,7 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 
 	// Now that [blk1] has been marked as Accepted, [blk2] can pass verification.
 	blk2.VerifyV = nil
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -1937,7 +1937,7 @@ func TestEngineBubbleVotesThroughInvalidChain(t *testing.T) {
 	blk3 := chaintest.BuildChild(blk2)
 
 	// The VM should be able to parse [blk1], [blk2], and [blk3]
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
 		case bytes.Equal(b, blk1.Bytes()):
 			return blk1, nil
@@ -1952,7 +1952,7 @@ func TestEngineBubbleVotesThroughInvalidChain(t *testing.T) {
 	}
 
 	// The VM should be able to retrieve [Genesis] and [blk1] from storage
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -2054,12 +2054,12 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	// Child of [parentBlkA]/[parentBlkB]
 	childBlk := chaintest.BuildChild(parentBlkA)
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(grandParentBlk.BytesV, b)
 		return grandParentBlk, nil
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -2080,7 +2080,7 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	// Give the engine the grandparent
 	require.NoError(te.Put(context.Background(), vdr, 0, grandParentBlk.BytesV))
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(parentBlkA.BytesV, b)
 		return parentBlkA, nil
 	}
@@ -2090,12 +2090,12 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	// [parentBlkA] fails verification and gets put into [te.nonVerifiedCache].
 	require.NoError(te.Put(context.Background(), vdr, 0, parentBlkA.BytesV))
 
-	vm.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(parentBlkB.BytesV, b)
 		return &parentBlkB, nil
 	}
 
-	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -2132,7 +2132,7 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	require.Equal(snowtest.Undecided, parentBlkA.Status)
 	require.Equal(snowtest.Accepted, parentBlkB.Status)
 
-	vm.BuildBlockF = func(context.Context) (chain.Block, error) {
+	vm.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return childBlk, nil
 	}
 
@@ -2183,7 +2183,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, id)
 		return chaintest.Genesis, nil
 	}
@@ -2212,7 +2212,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 		te.metrics.issued.WithLabelValues(unknownSource),
 	))
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -2277,7 +2277,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
 		[]*chaintest.Block{chaintest.Genesis},
 	)
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		require.Equal(chaintest.GenesisID, id)
 		return chaintest.Genesis, nil
 	}
@@ -2324,7 +2324,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 	require.NoError(te.Gossip(context.Background()))
 	require.True(queried)
 
-	vm.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
 		case chaintest.GenesisID:
 			return chaintest.Genesis, nil
@@ -2511,11 +2511,11 @@ func TestEngineVoteStallRegression(t *testing.T) {
 
 	// Attempt to apply votes in poll 0 for block 3. This will send a Get
 	// request for block 3 and register the chits as a dependency on block 3.
-	var getBlock3Request *engine.Request
+	var getBlock3Request *enginepkg.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
 		require.Nil(getBlock3Request)
 		require.Equal(nodeID2, nodeID)
-		getBlock3Request = &engine.Request{
+		getBlock3Request = &enginepkg.Request{
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
@@ -2952,9 +2952,9 @@ func TestGetProcessingAncestor(t *testing.T) {
 		emptyNonVerifiedTree             = ancestor.NewTree()
 		nonVerifiedTreeWithUnissuedBlock = ancestor.NewTree()
 
-		emptyNonVerifiedCache             = &cache.Empty[ids.ID, chain.Block]{}
-		nonVerifiedCacheWithUnissuedBlock = lru.NewCache[ids.ID, chain.Block](1)
-		nonVerifiedCacheWithDecidedBlock  = lru.NewCache[ids.ID, chain.Block](1)
+		emptyNonVerifiedCache             = &cache.Empty[ids.ID, linear.Block]{}
+		nonVerifiedCacheWithUnissuedBlock = lru.NewCache[ids.ID, linear.Block](1)
+		nonVerifiedCacheWithDecidedBlock  = lru.NewCache[ids.ID, linear.Block](1)
 	)
 	nonVerifiedTreeWithUnissuedBlock.Add(unissuedBlock.ID(), unissuedBlock.Parent())
 	nonVerifiedCacheWithUnissuedBlock.Put(unissuedBlock.ID(), unissuedBlock)
@@ -2963,7 +2963,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 	tests := []struct {
 		name             string
 		nonVerifieds     ancestor.Tree
-		nonVerifiedCache cache.Cacher[ids.ID, chain.Block]
+		nonVerifiedCache cache.Cacher[ids.ID, linear.Block]
 		initialVote      ids.ID
 		expectedAncestor ids.ID
 		expectedFound    bool
@@ -3113,7 +3113,7 @@ func TestShouldIssueBlock(t *testing.T) {
 		Config: Config{
 			Consensus: c,
 		},
-		pending: map[ids.ID]chain.Block{
+		pending: map[ids.ID]linear.Block{
 			blocks[5].ID(): blocks[5],
 			blocks[9].ID(): blocks[9],
 		},
@@ -3121,7 +3121,7 @@ func TestShouldIssueBlock(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		block               chain.Block
+		block               linear.Block
 		expectedShouldIssue bool
 	}{
 		{
@@ -3269,7 +3269,7 @@ func TestEngineAcceptedHeight(t *testing.T) {
 		return blk1.ID(), nil
 	}
 
-	vm.GetBlockF = func(context.Context, ids.ID) (chain.Block, error) {
+	vm.GetBlockF = func(context.Context, ids.ID) (linear.Block, error) {
 		return blk1, nil
 	}
 

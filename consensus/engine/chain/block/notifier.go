@@ -43,7 +43,7 @@ func (cn *ChangeNotifier) GetAncestors(ctx context.Context, blkID ids.ID, maxBlo
 	return nil, ErrRemoteVMNotImplemented
 }
 
-func (cn *ChangeNotifier) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
+func (cn *ChangeNotifier) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
 	if batchedVM, ok := cn.ChainVM.(BatchedChainVM); ok {
 		return batchedVM.BatchedParseBlock(ctx, blks)
 	}
@@ -101,7 +101,7 @@ func (cn *ChangeNotifier) SetState(ctx context.Context, state consensus.State) e
 	return cn.ChainVM.SetState(ctx, state)
 }
 
-func (cn *ChangeNotifier) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (cn *ChangeNotifier) BuildBlock(ctx context.Context) (linear.Block, error) {
 	defer cn.OnChange()
 	return cn.ChainVM.BuildBlock(ctx)
 }

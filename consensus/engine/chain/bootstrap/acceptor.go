@@ -15,7 +15,7 @@ import (
 
 var (
 	_ block.Parser  = (*parseAcceptor)(nil)
-	_ chain.Block = (*blockAcceptor)(nil)
+	_ linear.Block = (*blockAcceptor)(nil)
 )
 
 type parseAcceptor struct {
@@ -24,7 +24,7 @@ type parseAcceptor struct {
 	numAccepted prometheus.Counter
 }
 
-func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
+func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (linear.Block, error) {
 	blk, err := p.parser.ParseBlock(ctx, bytes)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (p *parseAcceptor) ParseBlock(ctx context.Context, bytes []byte) (chain.Blo
 }
 
 type blockAcceptor struct {
-	chain.Block
+	linear.Block
 
 	ctx         *consensus.Context
 	numAccepted prometheus.Counter

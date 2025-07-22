@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package chain
+package linear
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/linear/chaintest"
-	// "github.com/luxfi/node/consensus/consensustest"
+	snowtest "github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/sampler"
@@ -27,9 +27,9 @@ func NewNetwork(params sampling.Parameters, numColors int, rngSource sampler.Sou
 	n := &Network{
 		params: params,
 		colors: []*chaintest.Block{{
-			Decidable: consensustest.Decidable{
+			Decidable: snowtest.Decidable{
 				IDV:    ids.Empty.Prefix(rngSource.Uint64()),
-				Status: consensustest.Undecided,
+				Status: snowtest.Undecided,
 			},
 			ParentV: chaintest.GenesisID,
 			HeightV: chaintest.GenesisHeight + 1,
@@ -43,9 +43,9 @@ func NewNetwork(params sampling.Parameters, numColors int, rngSource sampler.Sou
 		dependencyInd, _ := s.Next()
 		dependency := n.colors[dependencyInd]
 		n.colors = append(n.colors, &chaintest.Block{
-			Decidable: consensustest.Decidable{
+			Decidable: snowtest.Decidable{
 				IDV:    ids.Empty.Prefix(rngSource.Uint64()),
-				Status: consensustest.Undecided,
+				Status: snowtest.Undecided,
 			},
 			ParentV: dependency.IDV,
 			HeightV: dependency.HeightV + 1,
@@ -67,8 +67,8 @@ func (n *Network) shuffleColors() {
 }
 
 func (n *Network) AddNode(t testing.TB, sm Consensus) error {
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	if err := sm.Initialize(ctx, n.params, chaintest.GenesisID, chaintest.GenesisHeight, chaintest.GenesisTimestamp); err != nil {
 		return err
 	}

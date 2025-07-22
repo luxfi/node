@@ -82,8 +82,8 @@ func process(
 	tree *interval.Tree,
 	missingBlockIDs set.Set[ids.ID],
 	lastAcceptedHeight uint64,
-	blk chain.Block,
-	ancestors map[ids.ID]chain.Block,
+	blk linear.Block,
+	ancestors map[ids.ID]linear.Block,
 ) (ids.ID, bool, error) {
 	for {
 		// It's possible that missingBlockIDs contain values contained inside of
