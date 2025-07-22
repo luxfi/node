@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -45,8 +45,8 @@ func (vm *vertexVM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*engine.Fx,
-	appSender engine.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	if err := vm.vertexMetrics.Initialize(vm.registry); err != nil {
 		return err

@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
@@ -319,7 +319,7 @@ func NewNetwork(
 
 func (n *network) Send(
 	msg message.OutboundMessage,
-	config engine.SendConfig,
+	config core.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {
@@ -785,7 +785,7 @@ func (n *network) getPeers(
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
 func (n *network) samplePeers(
-	config engine.SendConfig,
+	config core.SendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) []peer.Peer {
@@ -1253,7 +1253,7 @@ func (n *network) runTimers() {
 // pullGossipPeerLists requests validators from peers in the network
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
-		engine.SendConfig{
+		core.SendConfig{
 			Validators: 1,
 		},
 		constants.PrimaryNetworkID,

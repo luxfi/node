@@ -12,7 +12,6 @@ import (
 )
 
 func TestFlat(t *testing.T) {
-	t.Skip("Skipping test that requires real confidence factory")
 	require := require.New(t)
 
 	params := Parameters{
@@ -21,8 +20,7 @@ func TestFlat(t *testing.T) {
 		AlphaConfidence: 3,
 		Beta:            2,
 	}
-	factory := confidenceTestFactory{}
-	f := NewFlat(factory, params, Red)
+	f := NewFlat(confidenceTestFactory{}, params, Red)
 	f.Add(Green)
 	f.Add(Blue)
 
@@ -36,7 +34,7 @@ func TestFlat(t *testing.T) {
 
 	twoGreen := bag.Of(Green, Green)
 	require.True(f.RecordPoll(twoGreen))
-	require.Equal(Green, f.Preference())  // With test factory, preference changes immediately
+	require.Equal(Blue, f.Preference())  // Preference stays Blue (2 < AlphaConfidence)
 	require.False(f.Finalized())
 
 	threeGreen := bag.Of(Green, Green, Green)

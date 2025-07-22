@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/uptime"
@@ -635,7 +635,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	defer ctx.Lock.Unlock()
 	appSender := &enginetest.Sender{}
 	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, engine.SendConfig, []byte) error {
+	appSender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
 		return nil
 	}
 

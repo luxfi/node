@@ -22,7 +22,7 @@ import (
 const SyncBound = 10 * time.Second
 
 var (
-	_ chain.Block = (*Block)(nil)
+	_ linear.Block = (*Block)(nil)
 
 	ErrUnexpectedMerkleRoot        = errors.New("unexpected merkle root")
 	ErrTimestampBeyondSyncBound    = errors.New("proposed timestamp is too far in the future relative to local time")

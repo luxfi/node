@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -34,7 +34,7 @@ type Verifier interface {
 		ctx context.Context,
 		message *warp.UnsignedMessage,
 		justification []byte,
-	) *engine.AppError
+	) *core.AppError
 }
 
 // NewHandler returns an instance of Handler
@@ -74,10 +74,10 @@ func (h *Handler) AppRequest(
 	_ ids.NodeID,
 	_ time.Time,
 	requestBytes []byte,
-) ([]byte, *engine.AppError) {
+) ([]byte, *core.AppError) {
 	request := &sdk.SignatureRequest{}
 	if err := proto.Unmarshal(requestBytes, request); err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
 		}
@@ -85,7 +85,7 @@ func (h *Handler) AppRequest(
 
 	msg, err := warp.ParseUnsignedMessage(request.Message)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to parse warp unsigned message: %s", err),
 		}
@@ -105,7 +105,7 @@ func (h *Handler) AppRequest(
 	// populated with the expected values.
 	signature, err := h.signer.Sign(msg)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to sign message: %s", err),
 		}
@@ -115,14 +115,14 @@ func (h *Handler) AppRequest(
 	return signatureToResponse(signature)
 }
 
-func signatureToResponse(signature []byte) ([]byte, *engine.AppError) {
+func signatureToResponse(signature []byte) ([]byte, *core.AppError) {
 	response := &sdk.SignatureResponse{
 		Signature: signature,
 	}
 
 	responseBytes, err := proto.Marshal(response)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to marshal response: %s", err),
 		}

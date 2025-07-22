@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/consensus"
 	consensuschain "github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -58,8 +58,8 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
-	_ []*engine.Fx,
-	appSender engine.AppSender,
+	_ []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	chainContext.Log.Info("initializing xsvm",
 		zap.Stringer("version", Version),
@@ -184,7 +184,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Blo
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 

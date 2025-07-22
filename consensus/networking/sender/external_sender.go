@@ -6,7 +6,7 @@ package sender
 import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
 )
@@ -16,7 +16,7 @@ import (
 type ExternalSender interface {
 	Send(
 		msg message.OutboundMessage,
-		config engine.SendConfig,
+		config core.SendConfig,
 		subnetID ids.ID,
 		allower subnets.Allower,
 	) set.Set[ids.NodeID]

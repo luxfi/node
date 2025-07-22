@@ -6,7 +6,7 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -17,7 +17,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
-	toEngine        chan<- engine.Message
+	toEngine        chan<- core.Message
 	addTxsToMempool bool
 }
 
@@ -89,7 +89,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- engine.PendingTxs:
+	case r.toEngine <- core.PendingTxs:
 	default:
 	}
 

@@ -9,21 +9,21 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/set"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var _ engine.Sender = (*tracedSender)(nil)
+var _ core.Sender = (*tracedSender)(nil)
 
 type tracedSender struct {
-	sender engine.Sender
+	sender core.Sender
 	tracer trace.Tracer
 }
 
-func Trace(sender engine.Sender, tracer trace.Tracer) engine.Sender {
+func Trace(sender core.Sender, tracer trace.Tracer) core.Sender {
 	return &tracedSender{
 		sender: sender,
 		tracer: tracer,
@@ -227,7 +227,7 @@ func (s *tracedSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requ
 
 func (s *tracedSender) SendAppGossip(
 	ctx context.Context,
-	config engine.SendConfig,
+	config core.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	_, span := s.tracer.Start(ctx, "tracedSender.SendAppGossip", oteltrace.WithAttributes(

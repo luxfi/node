@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
@@ -62,7 +62,7 @@ type Builder interface {
 	// valid block of infinite size. The returned txs are all verified against
 	// the preferred state.
 	//
-	// Note: This function does not call the consensus engine.
+	// Note: This function does not call the consensus core.
 	PackAllBlockTxs() ([]*txs.Tx, error)
 }
 
@@ -86,7 +86,7 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return 0, err
@@ -102,7 +102,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 		if duration <= 0 {
 			b.txExecutorBackend.Ctx.Log.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
-			return engine.PendingTxs, nil
+			return core.PendingTxs, nil
 		}
 
 		b.txExecutorBackend.Ctx.Log.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))

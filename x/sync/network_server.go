@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
@@ -71,17 +71,17 @@ type GetChangeProofHandler struct {
 
 func (*GetChangeProofHandler) AppGossip(context.Context, ids.NodeID, []byte) {}
 
-func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
+func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	req := &pb.SyncGetChangeProofRequest{}
 	if err := proto.Unmarshal(requestBytes, req); err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
 		}
 	}
 
 	if err := validateChangeProofRequest(req); err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("invalid request: %s", err),
 		}
@@ -97,7 +97,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 
 	startRoot, err := ids.ToID(req.StartRootHash)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to parse start root hash: %s", err),
 		}
@@ -105,7 +105,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 
 	endRoot, err := ids.ToID(req.EndRootHash)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to parse end root hash: %s", err),
 		}
@@ -118,7 +118,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 				// We should only fail to get a change proof if we have insufficient history.
 				// Other errors are unexpected.
 				// TODO define custom errors
-				return nil, &engine.AppError{
+				return nil, &core.AppError{
 					Code:    p2p.ErrUnexpected.Code,
 					Message: fmt.Sprintf("failed to get change proof: %s", err),
 				}
@@ -126,7 +126,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 			if errors.Is(err, merkledb.ErrNoEndRoot) {
 				// [s.db] doesn't have [endRoot] in its history.
 				// We can't generate a change/range proof. Drop this request.
-				return nil, &engine.AppError{
+				return nil, &core.AppError{
 					Code:    p2p.ErrUnexpected.Code,
 					Message: fmt.Sprintf("failed to get change proof: %s", err),
 				}
@@ -153,7 +153,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 				},
 			)
 			if err != nil {
-				return nil, &engine.AppError{
+				return nil, &core.AppError{
 					Code:    p2p.ErrUnexpected.Code,
 					Message: fmt.Sprintf("failed to get range proof: %s", err),
 				}
@@ -169,7 +169,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 			},
 		})
 		if err != nil {
-			return nil, &engine.AppError{
+			return nil, &core.AppError{
 				Code:    p2p.ErrUnexpected.Code,
 				Message: fmt.Sprintf("failed to marshal change proof: %s", err),
 			}
@@ -183,7 +183,7 @@ func (g *GetChangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ 
 		keyLimit = uint32(len(changeProof.KeyChanges)) / 2
 	}
 
-	return nil, &engine.AppError{
+	return nil, &core.AppError{
 		Code:    p2p.ErrUnexpected.Code,
 		Message: fmt.Sprintf("failed to generate proof: %s", ErrMinProofSizeIsTooLarge),
 	}
@@ -201,17 +201,17 @@ type GetRangeProofHandler struct {
 
 func (*GetRangeProofHandler) AppGossip(context.Context, ids.NodeID, []byte) {}
 
-func (g *GetRangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *engine.AppError) {
+func (g *GetRangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	req := &pb.SyncGetRangeProofRequest{}
 	if err := proto.Unmarshal(requestBytes, req); err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
 		}
 	}
 
 	if err := validateRangeProofRequest(req); err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("invalid range proof request: %s", err),
 		}
@@ -230,7 +230,7 @@ func (g *GetRangeProofHandler) AppRequest(ctx context.Context, _ ids.NodeID, _ t
 		},
 	)
 	if err != nil {
-		return nil, &engine.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to get range proof: %s", err),
 		}

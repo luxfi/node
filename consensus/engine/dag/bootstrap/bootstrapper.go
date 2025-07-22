@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/set"
@@ -312,7 +312,7 @@ func (b *Bootstrapper) Shutdown(ctx context.Context) error {
 	return b.VM.Shutdown(ctx)
 }
 
-func (*Bootstrapper) Notify(context.Context, engine.Message) error {
+func (*Bootstrapper) Notify(context.Context, core.Message) error {
 	return nil
 }
 

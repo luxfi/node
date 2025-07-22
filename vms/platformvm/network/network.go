@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -46,7 +46,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
-	appSender engine.AppSender,
+	appSender core.AppSender,
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,

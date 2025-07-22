@@ -23,13 +23,13 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/chainmock"
-	"github.com/luxfi/node/consensus/linear/chaintest"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/linear/linearmock"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
@@ -107,7 +107,7 @@ func initTestProposerVM(
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*engine.Fx, engine.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -809,8 +809,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		}
 	}
 
-	events := make(chan engine.Message, 1)
-	coreVM.WaitForEventF = func(ctx context.Context) (engine.Message, error) {
+	events := make(chan core.Message, 1)
+	coreVM.WaitForEventF = func(ctx context.Context) (core.Message, error) {
 		select {
 		case <-ctx.Done():
 			return 0, nil
@@ -861,8 +861,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		_ []byte,
 		_ []byte,
 		_ []byte,
-		_ []*engine.Fx,
-		_ engine.AppSender,
+		_ []*core.Fx,
+		_ core.AppSender,
 	) error {
 		return nil
 	}
@@ -889,11 +889,11 @@ func TestExpiredBuildBlock(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	// Notify the proposer VM of a new block on the inner block side
-	events <- engine.PendingTxs
+	events <- core.PendingTxs
 	// The first notification will be read from the consensus engine
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(engine.PendingTxs, msg)
+	require.Equal(core.PendingTxs, msg)
 
 	// Before calling BuildBlock, verify a remote block and set it as the
 	// preferred block.
@@ -1088,8 +1088,8 @@ func TestInnerVMRollback(t *testing.T) {
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*engine.Fx,
-				engine.AppSender,
+				[]*core.Fx,
+				core.AppSender,
 			) error {
 				return nil
 			},
@@ -1559,7 +1559,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*engine.Fx, engine.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -1727,7 +1727,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*engine.Fx, engine.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -1895,7 +1895,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		},
 	)
 
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(engine.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(core.PendingTxs, nil).AnyTimes()
 
 	innerVM.EXPECT().Initialize(
 		gomock.Any(),
@@ -1991,7 +1991,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	// Create a VM
 	innerVM := blockmock.NewChainVM(ctrl)
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(engine.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(core.PendingTxs, nil).AnyTimes()
 
 	vm := New(
 		innerVM,
@@ -2142,7 +2142,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*engine.Fx, engine.AppSender) error {
+			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},
@@ -2441,8 +2441,8 @@ func TestLocalParse(t *testing.T) {
 		},
 	}
 
-	innerVM.VM.WaitForEventF = func(_ context.Context) (engine.Message, error) {
-		return engine.PendingTxs, nil
+	innerVM.VM.WaitForEventF = func(_ context.Context) (core.Message, error) {
+		return core.PendingTxs, nil
 	}
 
 	chainID := ids.GenerateTestID()
@@ -2670,7 +2670,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*engine.Fx, _ engine.AppSender) error {
+			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
 				return nil
 			},
 		},
@@ -2814,12 +2814,12 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	// If the inner VM requests building a block, the proposervm passes that
-	// message to the consensus engine. This is really the source of the issue,
+	// message to the consensus core. This is really the source of the issue,
 	// as the proposervm is not currently in a state where it can correctly
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(engine.PendingTxs, msg)
+	require.Equal(core.PendingTxs, msg)
 
 	innerBlock3 := chaintest.BuildChild(innerBlock2)
 	innerVMBlks = append(innerVMBlks, innerBlock3)

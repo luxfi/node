@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -25,7 +25,7 @@ var (
 	ErrExistingAppProtocol = errors.New("existing app protocol")
 	ErrUnrequestedResponse = errors.New("unrequested response")
 
-	_ engine.AppHandler = (*router)(nil)
+	_ core.AppHandler = (*router)(nil)
 )
 
 type pendingAppRequest struct {
@@ -59,7 +59,7 @@ func (m *metrics) observe(labels prometheus.Labels, start time.Time) error {
 // corresponding Client.
 type router struct {
 	log     logging.Logger
-	sender  engine.AppSender
+	sender  core.AppSender
 	metrics metrics
 
 	lock               sync.RWMutex
@@ -71,7 +71,7 @@ type router struct {
 // newRouter returns a new instance of Router
 func newRouter(
 	log logging.Logger,
-	sender engine.AppSender,
+	sender core.AppSender,
 	metrics metrics,
 ) *router {
 	return &router{
@@ -145,7 +145,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 //
 // Any error condition propagated outside Handler application logic is
 // considered fatal
-func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
+func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	start := time.Now()
 	pending, ok := r.clearAppRequest(requestID)
 	if !ok {

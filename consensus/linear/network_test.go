@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/linear/chaintest"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	snowtest "github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bag"

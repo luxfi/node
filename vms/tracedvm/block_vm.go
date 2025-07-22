@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -101,8 +101,8 @@ func (vm *blockVM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*engine.Fx,
-	appSender engine.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	ctx, span := vm.tracer.Start(ctx, vm.initializeTag)
 	defer span.End()

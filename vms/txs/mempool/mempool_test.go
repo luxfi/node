@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -322,6 +322,6 @@ func TestWaitForEventWithTx(t *testing.T) {
 
 	msg, err := m.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(engine.PendingTxs, msg)
+	require.Equal(core.PendingTxs, msg)
 	require.NoError(<-errs)
 }

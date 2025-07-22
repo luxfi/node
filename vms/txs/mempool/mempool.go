@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/utils/set"
@@ -70,7 +70,7 @@ type Mempool[T Tx] interface {
 	Len() int
 
 	// WaitForEvent waits until there is at least one tx in the mempool.
-	WaitForEvent(ctx context.Context) (engine.Message, error)
+	WaitForEvent(ctx context.Context) (core.Message, error)
 }
 
 type mempool[T Tx] struct {
@@ -227,7 +227,7 @@ func (m *mempool[_]) Len() int {
 	return m.unissuedTxs.Len()
 }
 
-func (m *mempool[_]) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (m *mempool[_]) WaitForEvent(ctx context.Context) (core.Message, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -236,5 +236,5 @@ func (m *mempool[_]) WaitForEvent(ctx context.Context) (engine.Message, error) {
 			return 0, err
 		}
 	}
-	return engine.PendingTxs, nil
+	return core.PendingTxs, nil
 }

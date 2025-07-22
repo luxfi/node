@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/utils/logging"
@@ -58,7 +58,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name           string
 		mempool        mempool.Mempool[*txs.Tx]
 		txVerifierFunc func(*gomock.Controller) TxVerifier
-		appSenderFunc  func(*gomock.Controller) engine.AppSender
+		appSenderFunc  func(*gomock.Controller) core.AppSender
 		tx             *txs.Tx
 		expectedErr    error
 	}
@@ -189,8 +189,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
-			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
-				appSender := engine.NewSender(ctrl)
+			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
+				appSender := core.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -220,8 +220,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
-			appSenderFunc := func(ctrl *gomock.Controller) engine.AppSender {
-				return engine.NewSender(ctrl)
+			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
+				return core.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -259,7 +259,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 	type test struct {
 		name          string
 		mempool       mempool.Mempool[*txs.Tx]
-		appSenderFunc func(*gomock.Controller) engine.AppSender
+		appSenderFunc func(*gomock.Controller) core.AppSender
 		expectedErr   error
 	}
 
@@ -271,8 +271,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) engine.AppSender {
-				appSender := engine.NewSender(ctrl)
+			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
+				appSender := core.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -294,8 +294,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			)
 			require.NoError(err)
 
-			appSenderFunc := func(ctrl *gomock.Controller) engine.AppSender {
-				return engine.NewSender(ctrl)
+			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
+				return core.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/linear/chaintest"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/consensustest"
 )
 

@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 var (

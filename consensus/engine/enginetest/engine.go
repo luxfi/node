@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -45,7 +45,7 @@ var (
 	errChits                         = errors.New("unexpectedly called Chits")
 	errStart                         = errors.New("unexpectedly called Start")
 
-	_ engine.Engine = (*Engine)(nil)
+	_ core.Engine = (*Engine)(nil)
 )
 
 // Engine is a test engine
@@ -109,7 +109,7 @@ type Engine struct {
 	ContextF                     func() *consensus.Context
 	HaltF                        func(context.Context)
 	TimeoutF, GossipF, ShutdownF func(context.Context) error
-	NotifyF                      func(context.Context, engine.Message) error
+	NotifyF                      func(context.Context, core.Message) error
 	GetF, GetAncestorsF          func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error
 	PullQueryF                   func(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID, requestedHeight uint64) error
 	PutF                         func(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error
@@ -121,14 +121,14 @@ type Engine struct {
 	GetStateSummaryFrontierF, GetStateSummaryFrontierFailedF, GetAcceptedStateSummaryFailedF,
 	GetAcceptedFrontierF, GetFailedF, GetAncestorsFailedF,
 	QueryFailedF, GetAcceptedFrontierFailedF, GetAcceptedFailedF func(ctx context.Context, nodeID ids.NodeID, requestID uint32) error
-	AppRequestFailedF        func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error
+	AppRequestFailedF        func(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error
 	StateSummaryFrontierF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error
 	GetAcceptedStateSummaryF func(ctx context.Context, nodeID ids.NodeID, requestID uint32, keys set.Set[uint64]) error
 	AcceptedStateSummaryF    func(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs set.Set[ids.ID]) error
 	ConnectedF               func(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error
 	DisconnectedF            func(ctx context.Context, nodeID ids.NodeID) error
 	HealthF                  func(context.Context) (interface{}, error)
-	GetVMF                   func() engine.VM
+	GetVMF                   func() core.VM
 	AppRequestF              func(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error
 	AppResponseF             func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error
 	AppGossipF               func(ctx context.Context, nodeID ids.NodeID, msg []byte) error
@@ -214,7 +214,7 @@ func (e *Engine) Shutdown(ctx context.Context) error {
 	return errShutdown
 }
 
-func (e *Engine) Notify(ctx context.Context, msg engine.Message) error {
+func (e *Engine) Notify(ctx context.Context, msg core.Message) error {
 	if e.NotifyF != nil {
 		return e.NotifyF(ctx, msg)
 	}
@@ -526,7 +526,7 @@ func (e *Engine) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 	return errAppResponse
 }
 
-func (e *Engine) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
+func (e *Engine) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	if e.AppRequestFailedF != nil {
 		return e.AppRequestFailedF(ctx, nodeID, requestID, appErr)
 	}

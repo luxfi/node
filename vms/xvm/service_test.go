@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -671,7 +671,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -864,7 +864,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1006,7 +1006,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1187,7 +1187,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1330,7 +1330,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Durango,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1517,7 +1517,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1652,7 +1652,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.Latest,
-		additionalFxs: []*engine.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},

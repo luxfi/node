@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/sender/sendermock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
@@ -60,7 +60,7 @@ func TestCommSendMessage(t *testing.T) {
 
 	outboundMsg, err := mc.SimplexMessage(newVote(config.Ctx.ChainID, testSimplexMessage.VoteMessage))
 	require.NoError(t, err)
-	expectedSendConfig := engine.SendConfig{
+	expectedSendConfig := core.SendConfig{
 		NodeIDs: set.Of(destinationNodeID),
 	}
 	sender.EXPECT().Send(outboundMsg, expectedSendConfig, comm.subnetID, gomock.Any())
@@ -97,7 +97,7 @@ func TestCommBroadcast(t *testing.T) {
 		nodes = append(nodes, ids.NodeID(node))
 	}
 
-	expectedSendConfig := engine.SendConfig{
+	expectedSendConfig := core.SendConfig{
 		NodeIDs: set.Of(nodes...),
 	}
 

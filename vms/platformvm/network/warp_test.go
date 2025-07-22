@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/consensus/engine"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -34,12 +34,12 @@ func TestSignatureRequestVerify(t *testing.T) {
 	tests := []struct {
 		name        string
 		payload     []byte
-		expectedErr *engine.AppError
+		expectedErr *core.AppError
 	}{
 		{
 			name:    "failed to parse warp addressed call",
 			payload: nil,
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseWarpAddressedCall,
 				Message: "failed to parse warp addressed call: couldn't unpack codec version",
 			},
@@ -50,7 +50,7 @@ func TestSignatureRequestVerify(t *testing.T) {
 				[]byte{1},
 				nil,
 			)).Bytes(),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrWarpAddressedCallHasSourceAddress,
 				Message: "source address should be empty",
 			},
@@ -61,7 +61,7 @@ func TestSignatureRequestVerify(t *testing.T) {
 				nil,
 				nil,
 			)).Bytes(),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseWarpAddressedCallPayload,
 				Message: "failed to parse warp addressed call payload: couldn't unpack codec version",
 			},
@@ -80,7 +80,7 @@ func TestSignatureRequestVerify(t *testing.T) {
 					rand.Uint64(),
 				)).Bytes(),
 			)).Bytes(),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrUnsupportedWarpAddressedCallPayloadType,
 				Message: "unsupported warp addressed call payload type: *message.RegisterL1Validator",
 			},
@@ -124,12 +124,12 @@ func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
 		name         string
 		subnetID     []byte
 		conversionID ids.ID
-		expectedErr  *engine.AppError
+		expectedErr  *core.AppError
 	}{
 		{
 			name:     "failed to parse justification",
 			subnetID: nil,
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseJustification,
 				Message: "failed to parse justification: invalid hash length: expected 32 bytes but got 0",
 			},
@@ -137,7 +137,7 @@ func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
 		{
 			name:     "conversion does not exist",
 			subnetID: ids.Empty[:],
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrConversionDoesNotExist,
 				Message: `subnet "11111111111111111111111111111111LpoYY" has not been converted`,
 			},
@@ -145,7 +145,7 @@ func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
 		{
 			name:     "mismatched conversionID",
 			subnetID: subnetID[:],
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrMismatchedConversionID,
 				Message: `provided conversionID "11111111111111111111111111111111LpoYY" != expected conversionID "SkB92YpWm4Jdy1AQvv4wMsUNbcoYBVZRqKkdz5yByq1bfdik"`,
 			},
@@ -201,11 +201,11 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationRegistered(t *testing.T) {
 	tests := []struct {
 		name         string
 		validationID ids.ID
-		expectedErr  *engine.AppError
+		expectedErr  *core.AppError
 	}{
 		{
 			name: "validation does not exist",
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrValidationDoesNotExist,
 				Message: `validation "11111111111111111111111111111111LpoYY" does not exist`,
 			},
@@ -339,12 +339,12 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		name          string
 		validationID  ids.ID
 		justification []byte
-		expectedErr   *engine.AppError
+		expectedErr   *core.AppError
 	}{
 		{
 			name:          "failed to parse justification",
 			justification: []byte("invalid"),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseJustification,
 				Message: "failed to parse justification: proto: cannot parse invalid wire-format data",
 			},
@@ -356,7 +356,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseSubnetID,
 				Message: "failed to parse subnetID: invalid hash length: expected 32 bytes but got 0",
 			},
@@ -374,7 +374,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrMismatchedValidationID,
 				Message: `validationID "2SZuDErFdUGmrQNHuTaFobL6DewfJr4tEKrdcgPNVc7PXYejGD" != justificationID "8XSRE5pasJjRvghBXQyBzDPF91ywXm8AZWZ6jo4522tbVuynN"`,
 			},
@@ -392,7 +392,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrValidationExists,
 				Message: `validation "8XSRE5pasJjRvghBXQyBzDPF91ywXm8AZWZ6jo4522tbVuynN" exists`,
 			},
@@ -410,7 +410,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrConversionDoesNotExist,
 				Message: `subnet "45oj4CqFViNHUtBxJ55TZfqaVAXFwMRMj2XkHVqUYjJYoTaEM" has not been converted`,
 			},
@@ -436,7 +436,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage{},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrFailedToParseRegisterL1Validator,
 				Message: "failed to parse RegisterL1Validator justification: couldn't unpack codec version",
 			},
@@ -451,7 +451,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrMismatchedValidationID,
 				Message: `validationID "2UB8nmhSCDbhBBzXkpvjZYAu37nC7spNGQAbkVSeWVvbT8RNqS" != justificationID "2SZuDErFdUGmrQNHuTaFobL6DewfJr4tEKrdcgPNVc7PXYejGD"`,
 			},
@@ -466,7 +466,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrValidationExists,
 				Message: `validation "2UB8nmhSCDbhBBzXkpvjZYAu37nC7spNGQAbkVSeWVvbT8RNqS" exists`,
 			},
@@ -492,7 +492,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 					},
 				},
 			)),
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrValidationCouldBeRegistered,
 				Message: `validation "2SZuDErFdUGmrQNHuTaFobL6DewfJr4tEKrdcgPNVc7PXYejGD" can be registered until 1607144401`,
 			},
@@ -510,7 +510,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		},
 		{
 			name: "invalid justification type",
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrInvalidJustificationType,
 				Message: "invalid justification type: <nil>",
 			},
@@ -576,19 +576,19 @@ func TestSignatureRequestVerifyL1ValidatorWeight(t *testing.T) {
 		validationID ids.ID
 		nonce        uint64
 		weight       uint64
-		expectedErr  *engine.AppError
+		expectedErr  *core.AppError
 	}{
 		{
 			name:  "impossible nonce",
 			nonce: math.MaxUint64,
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrImpossibleNonce,
 				Message: "impossible nonce",
 			},
 		},
 		{
 			name: "validation does not exist",
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrValidationDoesNotExist,
 				Message: `validation "11111111111111111111111111111111LpoYY" does not exist`,
 			},
@@ -596,7 +596,7 @@ func TestSignatureRequestVerifyL1ValidatorWeight(t *testing.T) {
 		{
 			name:         "wrong nonce",
 			validationID: l1Validator.ValidationID,
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrWrongNonce,
 				Message: "provided nonce 0 != expected nonce (11 - 1)",
 			},
@@ -605,7 +605,7 @@ func TestSignatureRequestVerifyL1ValidatorWeight(t *testing.T) {
 			name:         "wrong weight",
 			validationID: l1Validator.ValidationID,
 			nonce:        nonce,
-			expectedErr: &engine.AppError{
+			expectedErr: &core.AppError{
 				Code:    ErrWrongWeight,
 				Message: "provided weight 0 != expected weight 100",
 			},

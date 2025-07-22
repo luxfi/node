@@ -25,9 +25,9 @@ import (
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/consensus"
 	consensuschain "github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine"
-	"github.com/luxfi/node/consensus/engine/appsender"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
@@ -127,8 +127,8 @@ func (vm *VMClient) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*engine.Fx,
-	appSender engine.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
@@ -406,13 +406,13 @@ func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return ghttp.NewClient(httppb.NewHTTPClient(clientConn)), nil
 }
 
-func (vm *VMClient) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
 	resp, err := vm.client.WaitForEvent(ctx, &emptypb.Empty{})
 	if err != nil {
 		vm.logger.Debug("failed to subscribe to events", zap.Error(err))
 		return 0, err
 	}
-	return engine.Message(resp.Message), nil
+	return core.Message(resp.Message), nil
 }
 
 func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
@@ -565,7 +565,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *engine.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,
