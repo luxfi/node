@@ -11,7 +11,7 @@ import (
 )
 
 // nnaryThreshold is the implementation of an n-nary threshold instance
-// that can be embedded by snowball
+// that can be embedded by confidence
 type nnaryThreshold struct {
 	// wrap the n-nary sampler logic
 	sampling.MultiSampler

@@ -18,21 +18,21 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	enginepkg "github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/consensus/engine/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 const (
@@ -514,7 +514,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		engineType = msg.EngineType
 	default:
 		// Note: [msg.EngineType] may have been provided by the peer as an
-		// invalid option. I.E. not one of LUX, SNOWMAN, or UNSPECIFIED.
+		// invalid option. I.E. not one of LINEAR, GRAPH, or UNSPECIFIED.
 		// In this case, we treat the value the same way as UNSPECIFIED.
 		//
 		// If the peer didn't request a specific engine type, we default to the

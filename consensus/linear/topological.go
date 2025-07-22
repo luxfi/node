@@ -51,7 +51,7 @@ type Topological struct {
 	// ctx is the context this linear instance is executing in
 	ctx *consensus.Context
 
-	// params are the parameters that should be used to initialize snowball
+	// params are the parameters that should be used to initialize confidence
 	// instances
 	params sampling.Parameters
 
@@ -299,7 +299,7 @@ func (ts *Topological) RecordPoll(ctx context.Context, voteBag bag.Bag[ids.ID]) 
 		ts.preference = block.sb.Preference()
 		ts.preferredIDs.Add(ts.preference)
 		block = ts.blocks[ts.preference]
-		// Invariant: Because the prior block had an initialized snowball
+		// Invariant: Because the prior block had an initialized confidence
 		// instance, it must have a processing child. This guarantees that
 		// block.blk is non-nil here.
 		ts.preferredHeights[block.blk.Height()] = ts.preference
@@ -362,7 +362,7 @@ func (ts *Topological) calculateInDegree(votes bag.Bag[ids.ID]) {
 			continue
 		}
 
-		// The parent contains the snowball instance of its children
+		// The parent contains the confidence instance of its children
 		parentID := votedBlock.blk.Parent()
 
 		// Add the votes for this block to the parent's set of responses
@@ -401,7 +401,7 @@ func (ts *Topological) calculateInDegree(votes bag.Bag[ids.ID]) {
 	}
 }
 
-// convert the tree into a branch of snowball instances with at least alpha
+// convert the tree into a branch of confidence instances with at least alpha
 // votes
 func (ts *Topological) pushVotes() []votes {
 	voteStack := make([]votes, 0, len(ts.kahnNodes))
@@ -416,7 +416,7 @@ func (ts *Topological) pushVotes() []votes {
 		block := ts.blocks[leafID]
 
 		// If there are at least Alpha votes, then this block needs to record
-		// the poll on the snowball instance
+		// the poll on the confidence instance
 		if kahnNode.votes.Len() >= ts.params.AlphaPreference {
 			voteStack = append(voteStack, votes{
 				parentID: leafID,
@@ -499,7 +499,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 			parentBlock.shouldFalter = false
 		}
 
-		// apply the votes for this snowball instance
+		// apply the votes for this confidence instance
 		pollSuccessful = parentBlock.sb.RecordPoll(vote.votes) || pollSuccessful
 
 		// Only accept when you are finalized and a child of the last accepted
@@ -532,7 +532,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 		}
 
 		// If we are on the preferred branch and the nextID is the preference of
-		// the snowball instance, then we are following the preferred branch.
+		// the confidence instance, then we are following the preferred branch.
 		onPreferredBranch = onPreferredBranch && nextID == parentPreference
 
 		// If there wasn't an alpha threshold on the branch (either on this vote
@@ -577,7 +577,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 // preferred child, all other children will be rejected. When these children are
 // rejected, all their descendants will be rejected.
 //
-// We accept a block once its parent's snowball instance has finalized
+// We accept a block once its parent's confidence instance has finalized
 // with it as the preference.
 func (ts *Topological) acceptPreferredChild(ctx context.Context, n *chainBlock) error {
 	// We are finalizing the block's child, so we need to get the preference

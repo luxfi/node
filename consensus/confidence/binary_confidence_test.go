@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBinarySnowball(t *testing.T) {
+func TestBinaryConfidence(t *testing.T) {
 	require := require.New(t)
 
 	red := 0
@@ -19,7 +19,7 @@ func TestBinarySnowball(t *testing.T) {
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newBinarySnowball(alphaPreference, terminationConditions, red)
+	sb := newBinaryConfidence(alphaPreference, terminationConditions, red)
 	require.Equal(red, sb.Preference())
 	require.False(sb.Finalized())
 
@@ -40,7 +40,7 @@ func TestBinarySnowball(t *testing.T) {
 	require.True(sb.Finalized())
 }
 
-func TestBinarySnowballRecordPollPreference(t *testing.T) {
+func TestBinaryConfidenceRecordPollPreference(t *testing.T) {
 	require := require.New(t)
 
 	red := 0
@@ -50,7 +50,7 @@ func TestBinarySnowballRecordPollPreference(t *testing.T) {
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newBinarySnowball(alphaPreference, terminationConditions, red)
+	sb := newBinaryConfidence(alphaPreference, terminationConditions, red)
 	require.Equal(red, sb.Preference())
 	require.False(sb.Finalized())
 
@@ -78,7 +78,7 @@ func TestBinarySnowballRecordPollPreference(t *testing.T) {
 	require.Equal(expected, sb.String())
 }
 
-func TestBinarySnowballRecordUnsuccessfulPoll(t *testing.T) {
+func TestBinaryConfidenceRecordUnsuccessfulPoll(t *testing.T) {
 	require := require.New(t)
 
 	red := 0
@@ -88,7 +88,7 @@ func TestBinarySnowballRecordUnsuccessfulPoll(t *testing.T) {
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newBinarySnowball(alphaPreference, terminationConditions, red)
+	sb := newBinaryConfidence(alphaPreference, terminationConditions, red)
 	require.Equal(red, sb.Preference())
 	require.False(sb.Finalized())
 
@@ -110,7 +110,7 @@ func TestBinarySnowballRecordUnsuccessfulPoll(t *testing.T) {
 	require.Equal(expected, sb.String())
 }
 
-func TestBinarySnowballAcceptWeirdColor(t *testing.T) {
+func TestBinaryConfidenceAcceptWeirdColor(t *testing.T) {
 	require := require.New(t)
 
 	blue := 0
@@ -120,7 +120,7 @@ func TestBinarySnowballAcceptWeirdColor(t *testing.T) {
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newBinarySnowball(alphaPreference, terminationConditions, red)
+	sb := newBinaryConfidence(alphaPreference, terminationConditions, red)
 
 	require.Equal(red, sb.Preference())
 	require.False(sb.Finalized())
@@ -152,7 +152,7 @@ func TestBinarySnowballAcceptWeirdColor(t *testing.T) {
 	require.Equal(expected, sb.String())
 }
 
-func TestBinarySnowballLockColor(t *testing.T) {
+func TestBinaryConfidenceLockColor(t *testing.T) {
 	require := require.New(t)
 
 	red := 0
@@ -162,7 +162,7 @@ func TestBinarySnowballLockColor(t *testing.T) {
 	beta := 1
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newBinarySnowball(alphaPreference, terminationConditions, red)
+	sb := newBinaryConfidence(alphaPreference, terminationConditions, red)
 
 	sb.RecordPoll(alphaConfidence, red)
 

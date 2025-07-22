@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/consensus"
-	consensuschain "github.com/luxfi/node/consensus/chain"
+	consensuschain "github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"

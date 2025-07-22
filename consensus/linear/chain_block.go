@@ -19,7 +19,7 @@ type chainBlock struct {
 	// less than Alpha votes
 	shouldFalter bool
 
-	// sb is the snowball instance used to decide which child is the canonical
+	// sb is the confidence instance used to decide which child is the canonical
 	// child of this block. If this node has not had a child issued under it,
 	// this value will be nil
 	sb sampling.Consensus
@@ -33,7 +33,7 @@ type chainBlock struct {
 func (n *chainBlock) AddChild(child Block) {
 	childID := child.ID()
 
-	// if the snowball instance is nil, this is the first child. So the instance
+	// if the confidence instance is nil, this is the first child. So the instance
 	// should be initialized.
 	if n.sb == nil {
 		n.sb = sampling.NewTree(n.t.Factory, n.t.params, childID)

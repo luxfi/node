@@ -9,16 +9,16 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 )
 
-var _ sampling.Unary = (*unarySnowball)(nil)
+var _ sampling.Unary = (*unaryConfidence)(nil)
 
-func newUnarySnowball(alphaPreference int, terminationConditions []terminationCondition) unarySnowball {
-	return unarySnowball{
+func newUnaryConfidence(alphaPreference int, terminationConditions []terminationCondition) unaryConfidence {
+	return unaryConfidence{
 		unaryThreshold: newUnaryThreshold(alphaPreference, terminationConditions),
 	}
 }
 
-// unarySnowball is the implementation of a unary snowball instance
-type unarySnowball struct {
+// unaryConfidence is the implementation of a unary confidence instance
+type unaryConfidence struct {
 	// wrap the unary threshold logic
 	unaryThreshold
 
@@ -26,15 +26,15 @@ type unarySnowball struct {
 	preferenceStrength int
 }
 
-func (sb *unarySnowball) RecordPoll(count int) {
+func (sb *unaryConfidence) RecordPoll(count int) {
 	if count >= sb.alphaPreference {
 		sb.preferenceStrength++
 	}
 	sb.unaryThreshold.RecordPoll(count)
 }
 
-func (sb *unarySnowball) Extend(choice int) sampling.Binary {
-	bs := &binarySnowball{
+func (sb *unaryConfidence) Extend(choice int) sampling.Binary {
+	bs := &binaryConfidence{
 		binaryThreshold: sb.unaryThreshold.Extend(choice),
 		preference:      choice,
 	}
@@ -42,13 +42,13 @@ func (sb *unarySnowball) Extend(choice int) sampling.Binary {
 	return bs
 }
 
-func (sb *unarySnowball) Clone() sampling.Unary {
-	newSnowball := *sb
-	newSnowball.unaryThreshold = sb.unaryThreshold.Clone()
-	return &newSnowball
+func (sb *unaryConfidence) Clone() sampling.Unary {
+	newConfidence := *sb
+	newConfidence.unaryThreshold = sb.unaryThreshold.Clone()
+	return &newConfidence
 }
 
-func (sb *unarySnowball) String() string {
+func (sb *unaryConfidence) String() string {
 	return fmt.Sprintf("SB(PreferenceStrength = %d, %s)",
 		sb.preferenceStrength,
 		&sb.unaryThreshold)

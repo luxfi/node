@@ -10,7 +10,7 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 )
 
-func TestSnowballGovernance(t *testing.T) {
+func TestConfidenceGovernance(t *testing.T) {
 	require := require.New(t)
 
 	var (
@@ -23,7 +23,7 @@ func TestSnowballGovernance(t *testing.T) {
 		source              = prng.NewMT19937()
 	)
 
-	factory := snowballTestFactory{}
+	factory := confidenceTestFactory{}
 	nBitwise := NewNetwork(factory, params, numColors, source)
 
 	source.Seed(seed)

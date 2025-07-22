@@ -10,18 +10,18 @@ import (
 	"github.com/luxfi/node/ids"
 )
 
-var _ sampling.Nnary = (*nnarySnowball)(nil)
+var _ sampling.Nnary = (*nnaryConfidence)(nil)
 
-func newNnarySnowball(alphaPreference int, terminationConditions []terminationCondition, choice ids.ID) nnarySnowball {
-	return nnarySnowball{
+func newNnaryConfidence(alphaPreference int, terminationConditions []terminationCondition, choice ids.ID) nnaryConfidence {
+	return nnaryConfidence{
 		nnaryThreshold:     newNnaryThreshold(alphaPreference, terminationConditions, choice),
 		preference:         choice,
 		preferenceStrength: make(map[ids.ID]int),
 	}
 }
 
-// nnarySnowball is a naive implementation of a multi-color snowball instance
-type nnarySnowball struct {
+// nnaryConfidence is a naive implementation of a multi-color confidence instance
+type nnaryConfidence struct {
 	// wrap the n-nary threshold logic
 	nnaryThreshold
 
@@ -37,9 +37,9 @@ type nnarySnowball struct {
 	preferenceStrength map[ids.ID]int
 }
 
-func (sb *nnarySnowball) Preference() ids.ID {
+func (sb *nnaryConfidence) Preference() ids.ID {
 	// It is possible, with low probability, that the threshold preference is
-	// not equal to the snowball preference when threshold finalizes. However,
+	// not equal to the confidence preference when threshold finalizes. However,
 	// this case is handled for completion. Therefore, if threshold is
 	// finalized, then our finalized threshold choice should be preferred.
 	if sb.Finalized() {
@@ -48,7 +48,7 @@ func (sb *nnarySnowball) Preference() ids.ID {
 	return sb.preference
 }
 
-func (sb *nnarySnowball) RecordPoll(count int, choice ids.ID) {
+func (sb *nnaryConfidence) RecordPoll(count int, choice ids.ID) {
 	if count >= sb.alphaPreference {
 		preferenceStrength := sb.preferenceStrength[choice] + 1
 		sb.preferenceStrength[choice] = preferenceStrength
@@ -61,7 +61,7 @@ func (sb *nnarySnowball) RecordPoll(count int, choice ids.ID) {
 	sb.nnaryThreshold.RecordPoll(count, choice)
 }
 
-func (sb *nnarySnowball) String() string {
+func (sb *nnaryConfidence) String() string {
 	return fmt.Sprintf("SB(Preference = %s, PreferenceStrength = %d, %s)",
 		sb.preference, sb.maxPreferenceStrength, &sb.nnaryThreshold)
 }

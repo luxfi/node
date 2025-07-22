@@ -100,14 +100,14 @@ func (t *testBinary) String() string {
 	return fmt.Sprintf("testBinary{preference: %d, finalized: %v}", t.preference, t.finalized)
 }
 
-// snowballTestFactory is a test factory for snowball consensus
-type snowballTestFactory struct{}
+// confidenceTestFactory is a test factory for confidence consensus
+type confidenceTestFactory struct{}
 
-func (snowballTestFactory) NewNnary(params Parameters, choice ids.ID) Nnary {
+func (confidenceTestFactory) NewNnary(params Parameters, choice ids.ID) Nnary {
 	return &testNnary{params: params, choice: choice, preference: choice}
 }
 
-func (snowballTestFactory) NewUnary(params Parameters) Unary {
+func (confidenceTestFactory) NewUnary(params Parameters) Unary {
 	return &testUnary{params: params}
 }
 
@@ -127,7 +127,7 @@ func TestDualAlphaOptimization(t *testing.T) {
 		}
 		seed   uint64 = 0
 		source        = prng.NewMT19937()
-		factory       = snowballTestFactory{}
+		factory       = confidenceTestFactory{}
 	)
 
 	singleAlphaNetwork := NewNetwork(factory, params, numColors, source)
@@ -150,8 +150,8 @@ func TestDualAlphaOptimization(t *testing.T) {
 	runNetworksInLockstep(require, seed, source, dualAlphaNetwork, singleAlphaNetwork)
 }
 
-// Test that a network running the snowball tree converges faster than a network
-// running the flat snowball protocol.
+// Test that a network running the confidence tree converges faster than a network
+// running the flat confidence protocol.
 func TestTreeConvergenceOptimization(t *testing.T) {
 	require := require.New(t)
 
@@ -163,7 +163,7 @@ func TestTreeConvergenceOptimization(t *testing.T) {
 		source           = prng.NewMT19937()
 	)
 
-	factory := snowballTestFactory{}
+	factory := confidenceTestFactory{}
 	treeNetwork := NewNetwork(factory, params, numColors, source)
 	flatNetwork := NewNetwork(factory, params, numColors, source)
 

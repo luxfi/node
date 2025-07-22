@@ -8,14 +8,14 @@ import (
 	"github.com/luxfi/node/ids"
 )
 
-// NewNnarySnowball returns a new nnary snowball instance
-func NewNnarySnowball(alphaPreference, alphaConfidence, beta int, choice ids.ID) sampling.Nnary {
-	sb := newNnarySnowball(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
+// NewNnaryConfidence returns a new nnary confidence instance
+func NewNnaryConfidence(alphaPreference, alphaConfidence, beta int, choice ids.ID) sampling.Nnary {
+	sb := newNnaryConfidence(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
 	return &sb
 }
 
-// NewUnarySnowball returns a new unary snowball instance
-func NewUnarySnowball(alphaPreference, alphaConfidence, beta int) sampling.Unary {
-	sb := newUnarySnowball(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
+// NewUnaryConfidence returns a new unary confidence instance
+func NewUnaryConfidence(alphaPreference, alphaConfidence, beta int) sampling.Unary {
+	sb := newUnaryConfidence(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
 	return &sb
 }

@@ -179,8 +179,8 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 // This is by far the most complicated function in this algorithm.
 // The intuition is that this instance represents a series of consecutive unary
-// snowball instances, and this function's purpose is convert one of these unary
-// snowball instances into a binary snowball instance.
+// confidence instances, and this function's purpose is convert one of these unary
+// confidence instances into a binary confidence instance.
 // There are 5 possible cases.
 //
 //  1. None of these instances should be split, we should attempt to split a

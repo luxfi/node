@@ -8,7 +8,7 @@ package block
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 // Context defines the block context that will be optionally provided by the

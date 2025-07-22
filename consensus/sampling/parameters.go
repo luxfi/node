@@ -49,7 +49,7 @@ var (
 	ErrParametersInvalid = errors.New("parameters invalid")
 )
 
-// Parameters required for snowball consensus
+// Parameters required for confidence consensus
 type Parameters struct {
 	// K is the number of nodes to query and sample in a round.
 	K int `json:"k" yaml:"k"`
