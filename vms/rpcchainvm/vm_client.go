@@ -19,16 +19,16 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/consensus"
-	consensuschain "github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/resource"
@@ -41,6 +41,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
@@ -49,7 +50,6 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	dto "github.com/prometheus/client_model/go"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -72,7 +72,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ consensuschain.Block           = (*blockClient)(nil)
+	_ linear.Block            = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -210,7 +210,7 @@ func (vm *VMClient) Initialize(
 		NetworkUpgrades: networkUpgrades,
 		XChainId:        chainCtx.XChainID[:],
 		CChainId:        chainCtx.CChainID[:],
-		LuxAssetId:     chainCtx.LUXAssetID[:],
+		LuxAssetId:      chainCtx.LUXAssetID[:],
 		ChainDataDir:    chainCtx.ChainDataDir,
 		GenesisBytes:    genesisBytes,
 		UpgradeBytes:    upgradeBytes,
@@ -435,7 +435,7 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
-func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
+func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
@@ -445,7 +445,7 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) buildBlock(ctx context.Context) (consensuschain.Block, error) {
+func (vm *VMClient) buildBlock(ctx context.Context) (linear.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
 		return nil, err
@@ -453,7 +453,7 @@ func (vm *VMClient) buildBlock(ctx context.Context) (consensuschain.Block, error
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
+func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (linear.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
 	})
@@ -486,7 +486,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (consensuschai
 	}, nil
 }
 
-func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
+func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
 	resp, err := vm.client.GetBlock(ctx, &vmpb.GetBlockRequest{
 		Id: blkID[:],
 	})
@@ -615,7 +615,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
+func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]linear.Block, error) {
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -626,7 +626,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		return nil, errBatchedParseBlockWrongNumberOfBlocks
 	}
 
-	res := make([]consensuschain.Block, 0, len(blksBytes))
+	res := make([]linear.Block, 0, len(blksBytes))
 	for idx, blkResp := range resp.Response {
 		id, err := ids.ToID(blkResp.Id)
 		if err != nil {

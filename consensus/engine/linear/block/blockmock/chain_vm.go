@@ -105,10 +105,10 @@ func (mr *ChainVMMockRecorder) AppResponse(ctx, nodeID, requestID, response any)
 }
 
 // BuildBlock mocks base method.
-func (m *ChainVM) BuildBlock(arg0 context.Context) (chain.Block, error) {
+func (m *ChainVM) BuildBlock(arg0 context.Context) (linear.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildBlock", arg0)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(linear.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,10 +163,10 @@ func (mr *ChainVMMockRecorder) Disconnected(ctx, nodeID any) *gomock.Call {
 }
 
 // GetBlock mocks base method.
-func (m *ChainVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (m *ChainVM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", ctx, blkID)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(linear.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -252,10 +252,10 @@ func (mr *ChainVMMockRecorder) NewHTTPHandler(ctx any) *gomock.Call {
 }
 
 // ParseBlock mocks base method.
-func (m *ChainVM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
+func (m *ChainVM) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseBlock", ctx, blockBytes)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(linear.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
