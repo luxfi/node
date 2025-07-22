@@ -47,7 +47,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet"
+	walletopts "github.com/luxfi/node/wallet"
 
 	safemath "github.com/luxfi/node/utils/math"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -1236,7 +1236,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Subnet: subnetID,
 					},
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1261,7 +1261,7 @@ func TestDurangoMemoField(t *testing.T) {
 					ids.GenerateTestID(),
 					[]ids.ID{},
 					"aaa",
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1278,7 +1278,7 @@ func TestDurangoMemoField(t *testing.T) {
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueCreateSubnetTx(
 					owners,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1317,7 +1317,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueImportTx(
 					sourceChain,
 					owners,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1341,7 +1341,7 @@ func TestDurangoMemoField(t *testing.T) {
 							OutputOwners: *owners,
 						},
 					}},
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1402,7 +1402,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueRemoveSubnetValidatorTx(
 					primaryValidator.NodeID,
 					subnetID,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 				return tx, onAcceptState
@@ -1433,7 +1433,7 @@ func TestDurangoMemoField(t *testing.T) {
 					10,                        // min delegator stake
 					1,                         // max validator weight factor
 					80,                        // uptime requirement
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1472,7 +1472,7 @@ func TestDurangoMemoField(t *testing.T) {
 					owners,
 					owners,
 					reward.PercentDenominator,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1512,7 +1512,7 @@ func TestDurangoMemoField(t *testing.T) {
 					},
 					env.ctx.LUXAssetID,
 					owners,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1534,7 +1534,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueTransferSubnetOwnershipTx(
 					subnetID,
 					owners,
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -1562,7 +1562,7 @@ func TestDurangoMemoField(t *testing.T) {
 							},
 						},
 					},
-					wallet.WithMemo(memoField),
+					walletopts.WithMemo(memoField),
 				)
 				require.NoError(err)
 
@@ -2365,7 +2365,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -2422,7 +2422,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	)
 	tests := []struct {
 		name           string
-		builderOptions []engine.Option
+		builderOptions []walletopts.Option
 		updateExecutor func(executor *standardTxExecutor) error
 		expectedErr    error
 	}{
@@ -2439,15 +2439,15 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []engine.Option{
-				wallet.WithMemo([]byte("memo!")),
+			builderOptions: []walletopts.Option{
+				walletopts.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -2683,7 +2683,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -2841,7 +2841,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		name           string
 		balance        uint64
 		message        []byte
-		builderOptions []engine.Option
+		builderOptions []walletopts.Option
 		updateTx       func(*txs.RegisterL1ValidatorTx)
 		updateExecutor func(*standardTxExecutor) error
 		expectedErr    error
@@ -2859,15 +2859,15 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []engine.Option{
-				wallet.WithMemo([]byte("memo!")),
+			builderOptions: []walletopts.Option{
+				walletopts.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3207,7 +3207,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -3377,7 +3377,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	tests := []struct {
 		name                       string
 		message                    []byte
-		builderOptions             []engine.Option
+		builderOptions             []walletopts.Option
 		updateExecutor             func(*standardTxExecutor) error
 		expectedNonce              uint64
 		expectedWeight             uint64
@@ -3397,15 +3397,15 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []engine.Option{
-				wallet.WithMemo([]byte("memo!")),
+			builderOptions: []walletopts.Option{
+				walletopts.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3706,7 +3706,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -3822,7 +3822,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	tests := []struct {
 		name            string
 		validationID    ids.ID
-		builderOptions  []engine.Option
+		builderOptions  []walletopts.Option
 		updateTx        func(*txs.IncreaseL1ValidatorBalanceTx)
 		updateExecutor  func(*standardTxExecutor) error
 		expectedBalance uint64
@@ -3841,15 +3841,15 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []engine.Option{
-				wallet.WithMemo([]byte("memo!")),
+			builderOptions: []walletopts.Option{
+				walletopts.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},
@@ -3996,7 +3996,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.Bootstrapped())
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -4115,7 +4115,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	tests := []struct {
 		name            string
 		validationID    ids.ID
-		builderOptions  []engine.Option
+		builderOptions  []walletopts.Option
 		updateTx        func(*txs.DisableL1ValidatorTx)
 		updateExecutor  func(*standardTxExecutor) error
 		expectedBalance uint64
@@ -4134,15 +4134,15 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
 		},
 		{
 			name: "invalid memo length",
-			builderOptions: []engine.Option{
-				wallet.WithMemo([]byte("memo!")),
+			builderOptions: []walletopts.Option{
+				walletopts.WithMemo([]byte("memo!")),
 			},
 			expectedErr: lux.ErrMemoTooLarge,
 		},

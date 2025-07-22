@@ -26,7 +26,7 @@ import (
 var _ block.Parser = testParser(nil)
 
 func TestGetMissingBlockIDs(t *testing.T) {
-	blocks := chaintest.BuildChain(7)
+	blocks := lineartest.BuildDescendants(lineartest.Genesis, 7)
 	parser := makeParser(blocks)
 
 	tests := []struct {
@@ -104,7 +104,7 @@ func TestGetMissingBlockIDs(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	blocks := chaintest.BuildChain(7)
+	blocks := lineartest.BuildDescendants(lineartest.Genesis, 7)
 
 	tests := []struct {
 		name                        string
@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			tree, err := interval.NewTree(db)
 			require.NoError(err)
 
-			blocks := chaintest.BuildChain(numBlocks)
+			blocks := lineartest.BuildChain(numBlocks)
 			parser := makeParser(blocks)
 			for _, blk := range blocks {
 				_, err := interval.Add(db, tree, 0, blk.Height(), blk.Bytes())
@@ -277,10 +277,10 @@ func TestExecute(t *testing.T) {
 				test.lastAcceptedHeight,
 			))
 			for _, height := range test.expectedProcessingHeights {
-				require.Equal(snowtest.Undecided, blocks[height].Status)
+				require.Equal(consensustest.Undecided, blocks[height].Status)
 			}
 			for _, height := range test.expectedAcceptedHeights {
-				require.Equal(snowtest.Accepted, blocks[height].Status)
+				require.Equal(consensustest.Accepted, blocks[height].Status)
 			}
 
 			if test.haltable.Halted() {
@@ -300,7 +300,7 @@ func (f testParser) ParseBlock(ctx context.Context, bytes []byte) (linear.Block,
 	return f(ctx, bytes)
 }
 
-func makeParser(blocks []*chaintest.Block) block.Parser {
+func makeParser(blocks []*lineartest.Block) block.Parser {
 	return testParser(func(_ context.Context, b []byte) (linear.Block, error) {
 		for _, block := range blocks {
 			if bytes.Equal(b, block.Bytes()) {

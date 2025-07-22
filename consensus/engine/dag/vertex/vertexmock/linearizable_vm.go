@@ -18,7 +18,7 @@ import (
 	database "github.com/luxfi/node/database"
 	ids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	chain "github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear"
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/core"
 	version "github.com/luxfi/node/version"

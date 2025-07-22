@@ -44,7 +44,7 @@ var (
 	errTest         = errors.New("non-nil test")
 )
 
-func MakeGetBlockF(blks ...[]*chaintest.Block) func(context.Context, ids.ID) (linear.Block, error) {
+func MakeGetBlockF(blks ...[]*lineartest.Block) func(context.Context, ids.ID) (linear.Block, error) {
 	return func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		for _, blkSet := range blks {
 			for _, blk := range blkSet {
@@ -57,7 +57,7 @@ func MakeGetBlockF(blks ...[]*chaintest.Block) func(context.Context, ids.ID) (li
 	}
 }
 
-func MakeParseBlockF(blks ...[]*chaintest.Block) func(context.Context, []byte) (linear.Block, error) {
+func MakeParseBlockF(blks ...[]*lineartest.Block) func(context.Context, []byte) (linear.Block, error) {
 	return func(_ context.Context, blkBytes []byte) (linear.Block, error) {
 		for _, blkSet := range blks {
 			for _, blk := range blkSet {
@@ -101,13 +101,13 @@ func setup(t *testing.T, config Config) (ids.NodeID, validators.Manager, *engine
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -128,8 +128,8 @@ func TestEngineDropsAttemptToIssueBlockAfterFailedRequest(t *testing.T) {
 
 	peerID, _, sender, vm, engine := setup(t, DefaultConfig(t))
 
-	parent := chaintest.BuildChild(chaintest.Genesis)
-	child := chaintest.BuildChild(parent)
+	parent := lineartest.BuildChild(lineartest.Genesis)
+	child := lineartest.BuildChild(parent)
 
 	var request *core.Request
 	sender.SendGetF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID) {
@@ -146,8 +146,8 @@ func TestEngineDropsAttemptToIssueBlockAfterFailedRequest(t *testing.T) {
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -175,17 +175,17 @@ func TestEngineQuery(t *testing.T) {
 
 	peerID, _, sender, vm, engine := setup(t, DefaultConfig(t))
 
-	parent := chaintest.BuildChild(chaintest.Genesis)
-	child := chaintest.BuildChild(parent)
+	parent := lineartest.BuildChild(lineartest.Genesis)
+	child := lineartest.BuildChild(parent)
 
 	var sendChitsCalled bool
 	sender.SendChitsF = func(_ context.Context, _ ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDByHeight ids.ID, accepted ids.ID, acceptedHeight uint64) {
 		require.False(sendChitsCalled)
 		sendChitsCalled = true
 		require.Equal(uint32(15), requestID)
-		require.Equal(chaintest.GenesisID, preferredID)
-		require.Equal(chaintest.GenesisID, preferredIDByHeight)
-		require.Equal(chaintest.GenesisID, accepted)
+		require.Equal(lineartest.GenesisID, preferredID)
+		require.Equal(lineartest.GenesisID, preferredIDByHeight)
+		require.Equal(lineartest.GenesisID, accepted)
 		require.Equal(uint64(0), acceptedHeight)
 	}
 
@@ -194,8 +194,8 @@ func TestEngineQuery(t *testing.T) {
 		getBlockCalled = true
 
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -211,7 +211,7 @@ func TestEngineQuery(t *testing.T) {
 		require.Equal(peerID, nodeID)
 		require.Contains([]ids.ID{
 			parent.ID(),
-			chaintest.GenesisID,
+			lineartest.GenesisID,
 		}, blkID)
 	}
 
@@ -302,8 +302,8 @@ func TestEngineQuery(t *testing.T) {
 	// apply the votes received during the poll for [parent]. Applying the votes
 	// should cause both [parent] and [child] to be accepted.
 	require.NoError(engine.Put(context.Background(), getRequest.NodeID, getRequest.RequestID, child.Bytes()))
-	require.Equal(snowtest.Accepted, parent.Status)
-	require.Equal(snowtest.Accepted, child.Status)
+	require.Equal(consensustest.Accepted, parent.Status)
+	require.Equal(consensustest.Accepted, child.Status)
 	require.Zero(engine.blocked.NumDependencies())
 }
 
@@ -345,12 +345,12 @@ func TestEngineMultipleQuery(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -361,8 +361,8 @@ func TestEngineMultipleQuery(t *testing.T) {
 	vm.GetBlockF = nil
 	vm.LastAcceptedF = nil
 
-	blk0 := chaintest.BuildChild(chaintest.Genesis)
-	blk1 := chaintest.BuildChild(blk0)
+	blk0 := lineartest.BuildChild(lineartest.Genesis)
+	blk1 := lineartest.BuildChild(blk0)
 
 	queried := new(bool)
 	queryRequestID := new(uint32)
@@ -378,8 +378,8 @@ func TestEngineMultipleQuery(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -395,8 +395,8 @@ func TestEngineMultipleQuery(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk0.ID():
 			return blk0, nil
 		case blk1.ID():
@@ -449,7 +449,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 	// Should be dropped because the query was already filled
 	require.NoError(te.Chits(context.Background(), vdr2, *queryRequestID, blk0.ID(), blk0.ID(), blk0.ID(), blk0.Height()))
 
-	require.Equal(snowtest.Accepted, blk1.Status)
+	require.Equal(consensustest.Accepted, blk1.Status)
 	require.Zero(te.blocked.NumDependencies())
 }
 
@@ -460,14 +460,14 @@ func TestEngineBlockedIssue(t *testing.T) {
 
 	sender.Default(false)
 
-	blk0 := chaintest.BuildChild(chaintest.Genesis)
-	blk1 := chaintest.BuildChild(blk0)
+	blk0 := lineartest.BuildChild(lineartest.Genesis)
+	blk1 := lineartest.BuildChild(blk0)
 
 	sender.SendGetF = func(context.Context, ids.NodeID, uint32, ids.ID) {}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk0.ID():
 			return blk0, nil
 		default:
@@ -502,8 +502,8 @@ func TestEngineRespondsToGetRequest(t *testing.T) {
 	sender.Default(false)
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, id)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, id)
+		return lineartest.Genesis, nil
 	}
 
 	var sentPut bool
@@ -513,10 +513,10 @@ func TestEngineRespondsToGetRequest(t *testing.T) {
 
 		require.Equal(vdr, nodeID)
 		require.Equal(uint32(123), requestID)
-		require.Equal(chaintest.GenesisBytes, blk)
+		require.Equal(lineartest.GenesisBytes, blk)
 	}
 
-	require.NoError(te.Get(context.Background(), vdr, 123, chaintest.GenesisID))
+	require.NoError(te.Get(context.Background(), vdr, 123, lineartest.GenesisID))
 	require.True(sentPut)
 }
 
@@ -527,7 +527,7 @@ func TestEnginePushQuery(t *testing.T) {
 
 	sender.Default(true)
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		if bytes.Equal(b, blk.Bytes()) {
@@ -538,8 +538,8 @@ func TestEnginePushQuery(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return blk, nil
 		default:
@@ -553,9 +553,9 @@ func TestEnginePushQuery(t *testing.T) {
 		*chitted = true
 		require.Equal(vdr, inVdr)
 		require.Equal(uint32(20), requestID)
-		require.Equal(chaintest.GenesisID, preferredID)
-		require.Equal(chaintest.GenesisID, preferredIDByHeight)
-		require.Equal(chaintest.GenesisID, acceptedID)
+		require.Equal(lineartest.GenesisID, preferredID)
+		require.Equal(lineartest.GenesisID, preferredIDByHeight)
+		require.Equal(lineartest.GenesisID, acceptedID)
 		require.Equal(uint64(0), acceptedHeight)
 	}
 
@@ -582,12 +582,12 @@ func TestEngineBuildBlock(t *testing.T) {
 
 	sender.Default(true)
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -670,12 +670,12 @@ func TestVoteCanceling(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, id)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, id)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -685,7 +685,7 @@ func TestVoteCanceling(t *testing.T) {
 
 	vm.LastAcceptedF = nil
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	queried := new(bool)
 	queryRequestID := new(uint32)
@@ -733,13 +733,13 @@ func TestEngineNoQuery(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	vm.T = t
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		if blkID == chaintest.GenesisID {
-			return chaintest.Genesis, nil
+		if blkID == lineartest.GenesisID {
+			return lineartest.Genesis, nil
 		}
 		return nil, errUnknownBlock
 	}
@@ -751,7 +751,7 @@ func TestEngineNoQuery(t *testing.T) {
 
 	require.NoError(te.Start(context.Background(), 0))
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	require.NoError(te.issue(
 		context.Background(),
@@ -773,13 +773,13 @@ func TestEngineNoRepollQuery(t *testing.T) {
 
 	vm := &blocktest.VM{}
 	vm.T = t
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		if blkID == chaintest.GenesisID {
-			return chaintest.Genesis, nil
+		if blkID == lineartest.GenesisID {
+			return lineartest.Genesis, nil
 		}
 		return nil, errUnknownBlock
 	}
@@ -831,12 +831,12 @@ func TestEngineAbandonChit(t *testing.T) {
 
 	sender.Default(true)
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return nil, errUnknownBlock
 		}
@@ -884,12 +884,12 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 
 	sender.Default(true)
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return nil, errUnknownBlock
 		}
@@ -927,13 +927,13 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 	sender.CantSendPullQuery = false
 
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
-		require.Equal(chaintest.GenesisBytes, b)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisBytes, b)
+		return lineartest.Genesis, nil
 	}
 
 	// Respond with an unexpected block and verify that the request is correctly
 	// cleared.
-	require.NoError(te.Put(context.Background(), vdr, reqID, chaintest.GenesisBytes))
+	require.NoError(te.Put(context.Background(), vdr, reqID, lineartest.GenesisBytes))
 	require.Zero(te.blocked.NumDependencies())
 }
 
@@ -944,14 +944,14 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 
 	sender.Default(true)
 
-	missingBlk := chaintest.BuildChild(chaintest.Genesis)
-	parentBlk := chaintest.BuildChild(missingBlk)
-	blockingBlk := chaintest.BuildChild(parentBlk)
+	missingBlk := lineartest.BuildChild(lineartest.Genesis)
+	parentBlk := lineartest.BuildChild(missingBlk)
+	blockingBlk := lineartest.BuildChild(parentBlk)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blockingBlk.ID():
 			return blockingBlk, nil
 		default:
@@ -1002,15 +1002,15 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 
 	sender.Default(true)
 
-	issuedBlk := chaintest.BuildChild(chaintest.Genesis)
+	issuedBlk := lineartest.BuildChild(lineartest.Genesis)
 
-	missingBlk := chaintest.BuildChild(chaintest.Genesis)
-	blockingBlk := chaintest.BuildChild(missingBlk)
+	missingBlk := lineartest.BuildChild(lineartest.Genesis)
+	blockingBlk := lineartest.BuildChild(missingBlk)
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case issuedBlk.ID():
 			return issuedBlk, nil
 		case blockingBlk.ID():
@@ -1021,8 +1021,8 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 	}
 	vm.ParseBlockF = func(_ context.Context, blkBytes []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(chaintest.GenesisBytes, blkBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(lineartest.GenesisBytes, blkBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(issuedBlk.Bytes(), blkBytes):
 			return issuedBlk, nil
 		case bytes.Equal(missingBlk.Bytes(), blkBytes):
@@ -1105,8 +1105,8 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case issuedBlk.ID():
 			return issuedBlk, nil
 		case missingBlk.ID():
@@ -1126,9 +1126,9 @@ func TestEngineBlockingChitResponse(t *testing.T) {
 		getRequest.RequestID,
 		missingBlk.Bytes(),
 	))
-	require.Equal(snowtest.Accepted, missingBlk.Status)
-	require.Equal(snowtest.Accepted, blockingBlk.Status)
-	require.Equal(snowtest.Rejected, issuedBlk.Status)
+	require.Equal(consensustest.Accepted, missingBlk.Status)
+	require.Equal(consensustest.Accepted, blockingBlk.Status)
+	require.Equal(consensustest.Rejected, issuedBlk.Status)
 }
 
 func TestEngineRetryFetch(t *testing.T) {
@@ -1138,7 +1138,7 @@ func TestEngineRetryFetch(t *testing.T) {
 
 	sender.Default(true)
 
-	missingBlk := chaintest.BuildChild(chaintest.Genesis)
+	missingBlk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.CantGetBlock = false
 
@@ -1177,8 +1177,8 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 
 	sender.Default(true)
 
-	validBlk := chaintest.BuildChild(chaintest.Genesis)
-	invalidBlk := chaintest.BuildChild(validBlk)
+	validBlk := lineartest.BuildChild(lineartest.Genesis)
+	invalidBlk := lineartest.BuildChild(validBlk)
 	invalidBlk.VerifyV = errTest
 
 	invalidBlkID := invalidBlk.ID()
@@ -1190,8 +1190,8 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case validBlk.ID():
 			return validBlk, nil
 		case invalidBlk.ID():
@@ -1217,7 +1217,7 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 	))
 	require.NoError(te.Chits(context.Background(), vdr, *reqID, invalidBlkID, invalidBlkID, invalidBlkID, invalidBlk.Height()))
 
-	require.Equal(snowtest.Accepted, validBlk.Status)
+	require.Equal(consensustest.Accepted, validBlk.Status)
 }
 
 func TestEngineGossip(t *testing.T) {
@@ -1225,12 +1225,12 @@ func TestEngineGossip(t *testing.T) {
 
 	nodeID, _, sender, vm, te := setup(t, DefaultConfig(t))
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	var calledSendPullQuery bool
@@ -1254,8 +1254,8 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 
 	sender.Default(true)
 
-	missingBlk := chaintest.BuildChild(chaintest.Genesis)
-	pendingBlk := chaintest.BuildChild(missingBlk)
+	missingBlk := lineartest.BuildChild(lineartest.Genesis)
+	pendingBlk := lineartest.BuildChild(missingBlk)
 
 	parsed := new(bool)
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
@@ -1268,8 +1268,8 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case pendingBlk.ID():
 			if !*parsed {
 				return nil, errUnknownBlock
@@ -1302,8 +1302,8 @@ func TestEngineInvalidBlockIgnoredFromUnexpectedPeer(t *testing.T) {
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case missingBlk.ID():
 			if !*parsed {
 				return nil, errUnknownBlock
@@ -1327,8 +1327,8 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 
 	sender.Default(true)
 
-	missingBlk := chaintest.BuildChild(chaintest.Genesis)
-	pendingBlk := chaintest.BuildChild(missingBlk)
+	missingBlk := lineartest.BuildChild(lineartest.Genesis)
+	pendingBlk := lineartest.BuildChild(missingBlk)
 
 	parsed := new(bool)
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
@@ -1341,8 +1341,8 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case pendingBlk.ID():
 			if !*parsed {
 				return nil, errUnknownBlock
@@ -1378,8 +1378,8 @@ func TestEnginePushQueryRequestIDConflict(t *testing.T) {
 	}
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case missingBlk.ID():
 			if !*parsed {
 				return nil, errUnknownBlock
@@ -1421,12 +1421,12 @@ func TestEngineAggressivePolling(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -1437,7 +1437,7 @@ func TestEngineAggressivePolling(t *testing.T) {
 	vm.GetBlockF = nil
 	vm.LastAcceptedF = nil
 
-	pendingBlk := chaintest.BuildChild(chaintest.Genesis)
+	pendingBlk := lineartest.BuildChild(lineartest.Genesis)
 
 	parsed := new(bool)
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
@@ -1450,8 +1450,8 @@ func TestEngineAggressivePolling(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case pendingBlk.ID():
 			if !*parsed {
 				return nil, errUnknownBlock
@@ -1509,12 +1509,12 @@ func TestEngineDoubleChit(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, id)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, id)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -1524,7 +1524,7 @@ func TestEngineDoubleChit(t *testing.T) {
 
 	vm.LastAcceptedF = nil
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	queried := new(bool)
 	queryRequestID := new(uint32)
@@ -1547,8 +1547,8 @@ func TestEngineDoubleChit(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return blk, nil
 		}
@@ -1556,16 +1556,16 @@ func TestEngineDoubleChit(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	require.Equal(snowtest.Undecided, blk.Status)
+	require.Equal(consensustest.Undecided, blk.Status)
 
 	require.NoError(te.Chits(context.Background(), vdr0, *queryRequestID, blk.ID(), blk.ID(), blk.ID(), blk.Height()))
-	require.Equal(snowtest.Undecided, blk.Status)
+	require.Equal(consensustest.Undecided, blk.Status)
 
 	require.NoError(te.Chits(context.Background(), vdr0, *queryRequestID, blk.ID(), blk.ID(), blk.ID(), blk.Height()))
-	require.Equal(snowtest.Undecided, blk.Status)
+	require.Equal(consensustest.Undecided, blk.Status)
 
 	require.NoError(te.Chits(context.Background(), vdr1, *queryRequestID, blk.ID(), blk.ID(), blk.ID(), blk.Height()))
-	require.Equal(snowtest.Accepted, blk.Status)
+	require.Equal(consensustest.Accepted, blk.Status)
 }
 
 func TestEngineBuildBlockLimit(t *testing.T) {
@@ -1595,12 +1595,12 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, blkID)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, blkID)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -1611,7 +1611,7 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 	vm.GetBlockF = nil
 	vm.LastAcceptedF = nil
 
-	blks := chaintest.BuildDescendants(chaintest.Genesis, 2)
+	blks := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	blk0 := blks[0]
 
 	var (
@@ -1628,8 +1628,8 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -1653,8 +1653,8 @@ func TestEngineBuildBlockLimit(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk0.ID():
 			return blk0, nil
 		default:
@@ -1675,17 +1675,17 @@ func TestEngineDropRejectedBlockOnReceipt(t *testing.T) {
 	// Ignore outbound chits
 	sender.SendChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID, uint64) {}
 
-	acceptedBlk := chaintest.BuildChild(chaintest.Genesis)
-	rejectedChain := chaintest.BuildDescendants(chaintest.Genesis, 2)
+	acceptedBlk := lineartest.BuildChild(lineartest.Genesis)
+	rejectedChain := lineartest.BuildDescendants(lineartest.Genesis, 2)
 	vm.ParseBlockF = MakeParseBlockF(
-		[]*chaintest.Block{
-			chaintest.Genesis,
+		[]*lineartest.Block{
+			lineartest.Genesis,
 			acceptedBlk,
 		},
 		rejectedChain,
 	)
-	vm.GetBlockF = MakeGetBlockF([]*chaintest.Block{
-		chaintest.Genesis,
+	vm.GetBlockF = MakeGetBlockF([]*lineartest.Block{
+		lineartest.Genesis,
 		acceptedBlk,
 	})
 
@@ -1703,7 +1703,7 @@ func TestEngineDropRejectedBlockOnReceipt(t *testing.T) {
 	// Vote for [acceptedBlk] and cause it to be accepted.
 	require.NoError(te.Chits(context.Background(), nodeID, queryRequestIDs[0], acceptedBlk.ID(), acceptedBlk.ID(), acceptedBlk.ID(), acceptedBlk.Height()))
 	require.Len(queryRequestIDs, 1) // Shouldn't have caused another query
-	require.Equal(snowtest.Accepted, acceptedBlk.Status)
+	require.Equal(consensustest.Accepted, acceptedBlk.Status)
 
 	// Attempt to issue rejectedChain[1] to the core. This should be dropped
 	// because the engine knows it has rejected it's parent rejectedChain[0].
@@ -1718,8 +1718,8 @@ func TestEngineNonPreferredAmplification(t *testing.T) {
 
 	vdr, _, sender, vm, te := setup(t, DefaultConfig(t))
 
-	preferredBlk := chaintest.BuildChild(chaintest.Genesis)
-	nonPreferredBlk := chaintest.BuildChild(chaintest.Genesis)
+	preferredBlk := lineartest.BuildChild(lineartest.Genesis)
+	nonPreferredBlk := lineartest.BuildChild(lineartest.Genesis)
 
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
@@ -1735,8 +1735,8 @@ func TestEngineNonPreferredAmplification(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -1773,9 +1773,9 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	vdr, _, sender, vm, te := setup(t, DefaultConfig(t))
 	expectedVdrSet := set.Of(vdr)
 
-	blk1 := chaintest.BuildChild(chaintest.Genesis)
+	blk1 := lineartest.BuildChild(lineartest.Genesis)
 	// blk2 cannot pass verification until [blk1] has been marked as accepted.
-	blk2 := chaintest.BuildChild(blk1)
+	blk2 := lineartest.BuildChild(blk1)
 	blk2.VerifyV = errInvalid
 
 	// The VM should be able to parse [blk1] and [blk2]
@@ -1796,8 +1796,8 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	// in the following tests
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -1845,8 +1845,8 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	// now [blk1] is verified, vm can return it
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk1.ID():
 			return blk1, nil
 		default:
@@ -1874,15 +1874,15 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 	require.NoError(te.Put(context.Background(), *reqVdr, *sendReqID, blk2.Bytes()))
 
 	// The vote should be bubbled through [blk2], such that [blk1] gets marked as Accepted.
-	require.Equal(snowtest.Accepted, blk1.Status)
-	require.Equal(snowtest.Undecided, blk2.Status)
+	require.Equal(consensustest.Accepted, blk1.Status)
+	require.Equal(consensustest.Undecided, blk2.Status)
 
 	// Now that [blk1] has been marked as Accepted, [blk2] can pass verification.
 	blk2.VerifyV = nil
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk1.ID():
 			return blk1, nil
 		case blk2.ID():
@@ -1908,7 +1908,7 @@ func TestEngineBubbleVotesThroughInvalidBlock(t *testing.T) {
 
 	// After a single vote for [blk2], it should be marked as accepted.
 	require.NoError(te.Chits(context.Background(), vdr, *queryRequestID, blk2.ID(), blk1.ID(), blk2.ID(), blk2.Height()))
-	require.Equal(snowtest.Accepted, blk2.Status)
+	require.Equal(consensustest.Accepted, blk2.Status)
 }
 
 // Test that in the following scenario, if block B fails verification, votes
@@ -1930,11 +1930,11 @@ func TestEngineBubbleVotesThroughInvalidChain(t *testing.T) {
 	vdr, _, sender, vm, te := setup(t, DefaultConfig(t))
 	expectedVdrSet := set.Of(vdr)
 
-	blk1 := chaintest.BuildChild(chaintest.Genesis)
+	blk1 := lineartest.BuildChild(lineartest.Genesis)
 	// blk2 cannot pass verification until [blk1] has been marked as accepted.
-	blk2 := chaintest.BuildChild(blk1)
+	blk2 := lineartest.BuildChild(blk1)
 	blk2.VerifyV = errInvalid
-	blk3 := chaintest.BuildChild(blk2)
+	blk3 := lineartest.BuildChild(blk2)
 
 	// The VM should be able to parse [blk1], [blk2], and [blk3]
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
@@ -1954,8 +1954,8 @@ func TestEngineBubbleVotesThroughInvalidChain(t *testing.T) {
 	// The VM should be able to retrieve [Genesis] and [blk1] from storage
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk1.ID():
 			return blk1, nil
 		default:
@@ -2031,7 +2031,7 @@ func TestEngineBubbleVotesThroughInvalidChain(t *testing.T) {
 
 	// The vote should be bubbled through [blk3] and [blk2] such that [blk1]
 	// gets marked as Accepted.
-	require.Equal(snowtest.Accepted, blk1.Status)
+	require.Equal(consensustest.Accepted, blk1.Status)
 }
 
 func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
@@ -2041,9 +2041,9 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 
 	sender.Default(true)
 
-	grandParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	grandParentBlk := lineartest.BuildChild(lineartest.Genesis)
 
-	parentBlkA := chaintest.BuildChild(grandParentBlk)
+	parentBlkA := lineartest.BuildChild(grandParentBlk)
 	parentBlkA.VerifyV = errInvalid
 
 	// Note that [parentBlkB] has the same [ID()] as [parentBlkA];
@@ -2052,7 +2052,7 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 	parentBlkB.VerifyV = nil
 
 	// Child of [parentBlkA]/[parentBlkB]
-	childBlk := chaintest.BuildChild(parentBlkA)
+	childBlk := lineartest.BuildChild(parentBlkA)
 
 	vm.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(grandParentBlk.BytesV, b)
@@ -2061,8 +2061,8 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case grandParentBlk.IDV:
 			return grandParentBlk, nil
 		default:
@@ -2097,8 +2097,8 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case grandParentBlk.IDV:
 			return grandParentBlk, nil
 		case parentBlkB.IDV:
@@ -2129,8 +2129,8 @@ func TestEngineBuildBlockWithCachedNonVerifiedParent(t *testing.T) {
 
 	// Assert that the blocks' statuses are correct.
 	// The evicted [parentBlkA] shouldn't be changed.
-	require.Equal(snowtest.Undecided, parentBlkA.Status)
-	require.Equal(snowtest.Accepted, parentBlkB.Status)
+	require.Equal(consensustest.Undecided, parentBlkA.Status)
+	require.Equal(consensustest.Accepted, parentBlkB.Status)
 
 	vm.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return childBlk, nil
@@ -2180,12 +2180,12 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, id)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, id)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -2194,7 +2194,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 
 	vm.LastAcceptedF = nil
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	queryRequestID := new(uint32)
 	sender.SendPushQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, blkBytes []byte, requestedHeight uint64) {
@@ -2214,8 +2214,8 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return blk, nil
 		}
@@ -2223,7 +2223,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 		return nil, errUnknownBlock
 	}
 
-	require.Equal(snowtest.Undecided, blk.Status)
+	require.Equal(consensustest.Undecided, blk.Status)
 
 	sender.SendPullQueryF = func(_ context.Context, inVdrs set.Set[ids.NodeID], requestID uint32, blkID ids.ID, requestedHeight uint64) {
 		*queryRequestID = requestID
@@ -2234,11 +2234,11 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 
 	require.NoError(te.Chits(context.Background(), vdr, *queryRequestID, blk.ID(), blk.ID(), blk.ID(), blk.Height()))
 
-	require.Equal(snowtest.Undecided, blk.Status)
+	require.Equal(consensustest.Undecided, blk.Status)
 
 	require.NoError(te.QueryFailed(context.Background(), vdr, *queryRequestID))
 
-	require.Equal(snowtest.Accepted, blk.Status)
+	require.Equal(consensustest.Accepted, blk.Status)
 }
 
 func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
@@ -2274,12 +2274,12 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 	vm.CantSetState = false
 	vm.CantSetPreference = false
 
-	vm.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	vm.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
-		require.Equal(chaintest.GenesisID, id)
-		return chaintest.Genesis, nil
+		require.Equal(lineartest.GenesisID, id)
+		return lineartest.Genesis, nil
 	}
 
 	te, err := New(engCfg)
@@ -2288,7 +2288,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 
 	vm.LastAcceptedF = nil
 
-	blk := chaintest.BuildChild(chaintest.Genesis)
+	blk := lineartest.BuildChild(lineartest.Genesis)
 
 	// Issue the block. This shouldn't call the sender, because creating the
 	// poll should fail.
@@ -2326,8 +2326,8 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
 		switch id {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case blk.ID():
 			return blk, nil
 		}
@@ -2338,7 +2338,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 	// Voting for the block that was issued during the period when the validator
 	// set was misconfigured should result in it being accepted successfully.
 	require.NoError(te.Chits(context.Background(), vdr, queryRequestID, blk.ID(), blk.ID(), blk.ID(), blk.Height()))
-	require.Equal(snowtest.Accepted, blk.Status)
+	require.Equal(consensustest.Accepted, blk.Status)
 }
 
 // Full blockchain structure:
@@ -2407,8 +2407,8 @@ func TestEngineVoteStallRegression(t *testing.T) {
 	sender.Default(true)
 	config.Sender = sender
 
-	acceptedChain := chaintest.BuildDescendants(chaintest.Genesis, 3)
-	rejectedChain := chaintest.BuildDescendants(chaintest.Genesis, 2)
+	acceptedChain := lineartest.BuildDescendants(lineartest.Genesis, 3)
+	rejectedChain := lineartest.BuildDescendants(lineartest.Genesis, 2)
 
 	vm := &blocktest.VM{
 		VM: enginetest.VM{
@@ -2430,19 +2430,19 @@ func TestEngineVoteStallRegression(t *testing.T) {
 			},
 		},
 		ParseBlockF: MakeParseBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 			acceptedChain,
 			rejectedChain,
 		),
 		GetBlockF: MakeGetBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 			acceptedChain,
 		),
 		SetPreferenceF: func(context.Context, ids.ID) error {
 			return nil
 		},
-		LastAcceptedF: chaintest.MakeLastAcceptedBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+		LastAcceptedF: lineartest.MakeLastAcceptedBlockF(
+			[]*lineartest.Block{lineartest.Genesis},
 			acceptedChain,
 		),
 	}
@@ -2580,7 +2580,7 @@ func TestEngineVoteStallRegression(t *testing.T) {
 	// accepted, block 4 will be dropped.
 	// Then poll 1 should terminate because block 4 was dropped.
 	vm.GetBlockF = MakeGetBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+		[]*lineartest.Block{lineartest.Genesis},
 		acceptedChain,
 		rejectedChain,
 	)
@@ -2591,10 +2591,10 @@ func TestEngineVoteStallRegression(t *testing.T) {
 		getBlock3Request.RequestID,
 		rejectedChain[0].Bytes(),
 	))
-	require.Equal(snowtest.Accepted, acceptedChain[0].Status)
-	require.Equal(snowtest.Accepted, acceptedChain[1].Status)
-	require.Equal(snowtest.Undecided, acceptedChain[2].Status)
-	require.Equal(snowtest.Rejected, rejectedChain[0].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[0].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[1].Status)
+	require.Equal(consensustest.Undecided, acceptedChain[2].Status)
+	require.Equal(consensustest.Rejected, rejectedChain[0].Status)
 
 	// Then engine should issue as many queries as needed to confirm block 2.
 	for i := 2; i < len(pollRequestIDs); i++ {
@@ -2610,10 +2610,10 @@ func TestEngineVoteStallRegression(t *testing.T) {
 			))
 		}
 	}
-	require.Equal(snowtest.Accepted, acceptedChain[0].Status)
-	require.Equal(snowtest.Accepted, acceptedChain[1].Status)
-	require.Equal(snowtest.Accepted, acceptedChain[2].Status)
-	require.Equal(snowtest.Rejected, rejectedChain[0].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[0].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[1].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[2].Status)
+	require.Equal(consensustest.Rejected, rejectedChain[0].Status)
 }
 
 // When a voter is registered with multiple dependencies, the engine must not
@@ -2633,7 +2633,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 	sender.Default(true)
 	config.Sender = sender
 
-	chain := chaintest.BuildDescendants(chaintest.Genesis, 3)
+	chain := lineartest.BuildDescendants(lineartest.Genesis, 3)
 	vm := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
@@ -2654,17 +2654,17 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 			},
 		},
 		ParseBlockF: MakeParseBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 			chain,
 		),
 		GetBlockF: MakeGetBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 		),
 		SetPreferenceF: func(context.Context, ids.ID) error {
 			return nil
 		},
-		LastAcceptedF: chaintest.MakeLastAcceptedBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+		LastAcceptedF: lineartest.MakeLastAcceptedBlockF(
+			[]*lineartest.Block{lineartest.Genesis},
 			chain,
 		),
 	}
@@ -2701,7 +2701,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 	// Update GetBlock to return, the newly issued, block 0. This is needed to
 	// enable the issuance of block 1.
 	vm.GetBlockF = MakeGetBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+		[]*lineartest.Block{lineartest.Genesis},
 		chain[:1],
 	)
 
@@ -2713,7 +2713,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 		pollRequestIDs[0],
 		chain[2].ID(),
 		chain[1].ID(),
-		chaintest.GenesisID,
+		lineartest.GenesisID,
 		0,
 	))
 	require.Len(pollRequestIDs, 1)
@@ -2740,10 +2740,10 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 	// Because Put added a new preferred block to the chain, a new poll will be
 	// created.
 	require.Len(pollRequestIDs, 2)
-	require.Equal(snowtest.Accepted, chain[0].Status)
-	require.Equal(snowtest.Accepted, chain[1].Status)
+	require.Equal(consensustest.Accepted, chain[0].Status)
+	require.Equal(consensustest.Accepted, chain[1].Status)
 	// Block 2 still hasn't been issued, so it's status should remain Undecided.
-	require.Equal(snowtest.Undecided, chain[2].Status)
+	require.Equal(consensustest.Undecided, chain[2].Status)
 }
 
 // Voting for an unissued cached block that fails verification should not
@@ -2779,8 +2779,8 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 	config.Sender = sender
 
 	var (
-		acceptedChain = chaintest.BuildDescendants(chaintest.Genesis, 2)
-		rejectedChain = chaintest.BuildDescendants(chaintest.Genesis, 2)
+		acceptedChain = lineartest.BuildDescendants(lineartest.Genesis, 2)
+		rejectedChain = lineartest.BuildDescendants(lineartest.Genesis, 2)
 	)
 	rejectedChain[1].VerifyV = errInvalid
 
@@ -2804,18 +2804,18 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 			},
 		},
 		ParseBlockF: MakeParseBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 			acceptedChain,
 			rejectedChain,
 		),
 		GetBlockF: MakeGetBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+			[]*lineartest.Block{lineartest.Genesis},
 		),
 		SetPreferenceF: func(context.Context, ids.ID) error {
 			return nil
 		},
-		LastAcceptedF: chaintest.MakeLastAcceptedBlockF(
-			[]*chaintest.Block{chaintest.Genesis},
+		LastAcceptedF: lineartest.MakeLastAcceptedBlockF(
+			[]*lineartest.Block{lineartest.Genesis},
 			acceptedChain,
 			rejectedChain,
 		),
@@ -2846,7 +2846,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 	// In order to attempt to issue rejectedChain[1], the engine expects the VM
 	// to be willing to provide rejectedChain[0].
 	vm.GetBlockF = MakeGetBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+		[]*lineartest.Block{lineartest.Genesis},
 		rejectedChain[:1],
 	)
 
@@ -2879,7 +2879,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 	// In order to vote for acceptedChain[0], the engine expects the VM to be
 	// willing to provide it.
 	vm.GetBlockF = MakeGetBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+		[]*lineartest.Block{lineartest.Genesis},
 		acceptedChain[:1],
 		rejectedChain[:1],
 	)
@@ -2891,13 +2891,13 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 		pollRequestIDs[0],
 		acceptedChain[0].ID(),
 		acceptedChain[0].ID(),
-		chaintest.GenesisID,
+		lineartest.GenesisID,
 		0,
 	))
 	// There are no processing blocks, so no new poll should be created.
 	require.Len(pollRequestIDs, 1)
-	require.Equal(snowtest.Accepted, acceptedChain[0].Status)
-	require.Equal(snowtest.Rejected, rejectedChain[0].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[0].Status)
+	require.Equal(consensustest.Rejected, rejectedChain[0].Status)
 
 	// Issue acceptedChain[1] to consensus.
 	require.NoError(engine.PushQuery(
@@ -2917,7 +2917,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 		pollRequestIDs[1],
 		rejectedChain[1].ID(),
 		rejectedChain[1].ID(),
-		chaintest.GenesisID,
+		lineartest.GenesisID,
 		0,
 	))
 	require.Len(pollRequestIDs, 3)
@@ -2925,7 +2925,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 	// In order to vote for acceptedChain[1], the engine expects the VM to be
 	// willing to provide it.
 	vm.GetBlockF = MakeGetBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+		[]*lineartest.Block{lineartest.Genesis},
 		acceptedChain,
 		rejectedChain[:1],
 	)
@@ -2937,17 +2937,17 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 		pollRequestIDs[2],
 		acceptedChain[1].ID(),
 		acceptedChain[1].ID(),
-		chaintest.GenesisID,
+		lineartest.GenesisID,
 		0,
 	))
 	require.Len(pollRequestIDs, 3)
-	require.Equal(snowtest.Accepted, acceptedChain[1].Status)
+	require.Equal(consensustest.Accepted, acceptedChain[1].Status)
 }
 
 func TestGetProcessingAncestor(t *testing.T) {
 	var (
-		issuedBlock   = chaintest.BuildChild(chaintest.Genesis)
-		unissuedBlock = chaintest.BuildChild(issuedBlock)
+		issuedBlock   = lineartest.BuildChild(lineartest.Genesis)
+		unissuedBlock = lineartest.BuildChild(issuedBlock)
 
 		emptyNonVerifiedTree             = ancestor.NewTree()
 		nonVerifiedTreeWithUnissuedBlock = ancestor.NewTree()
@@ -2958,7 +2958,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 	)
 	nonVerifiedTreeWithUnissuedBlock.Add(unissuedBlock.ID(), unissuedBlock.Parent())
 	nonVerifiedCacheWithUnissuedBlock.Put(unissuedBlock.ID(), unissuedBlock)
-	nonVerifiedCacheWithDecidedBlock.Put(chaintest.GenesisID, chaintest.Genesis)
+	nonVerifiedCacheWithDecidedBlock.Put(lineartest.GenesisID, lineartest.Genesis)
 
 	tests := []struct {
 		name             string
@@ -2972,7 +2972,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 			name:             "drop accepted blockID",
 			nonVerifieds:     emptyNonVerifiedTree,
 			nonVerifiedCache: emptyNonVerifiedCache,
-			initialVote:      chaintest.GenesisID,
+			initialVote:      lineartest.GenesisID,
 			expectedAncestor: ids.Empty,
 			expectedFound:    false,
 		},
@@ -2980,7 +2980,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 			name:             "drop cached and accepted blockID",
 			nonVerifieds:     emptyNonVerifiedTree,
 			nonVerifiedCache: nonVerifiedCacheWithDecidedBlock,
-			initialVote:      chaintest.GenesisID,
+			initialVote:      lineartest.GenesisID,
 			expectedAncestor: ids.Empty,
 			expectedFound:    false,
 		},
@@ -3022,15 +3022,15 @@ func TestGetProcessingAncestor(t *testing.T) {
 			require := require.New(t)
 
 			var (
-				ctx = snowtest.ConsensusContext(
-					snowtest.Context(t, snowtest.PChainID),
+				ctx = consensustest.ConsensusContext(
+					consensustest.Context(t, consensustest.PChainID),
 				)
 				consensus = &linear.Topological{Factory: factories.SnowflakeFactory}
 			)
 			require.NoError(consensus.Initialize(
 				ctx,
 				sampling.DefaultParameters,
-				chaintest.GenesisID,
+				lineartest.GenesisID,
 				0,
 				time.Now(),
 			))
@@ -3087,13 +3087,13 @@ func TestGetProcessingAncestor(t *testing.T) {
 //	    5     9
 func TestShouldIssueBlock(t *testing.T) {
 	var (
-		ctx = snowtest.ConsensusContext(
-			snowtest.Context(t, snowtest.PChainID),
+		ctx = consensustest.ConsensusContext(
+			consensustest.Context(t, consensustest.PChainID),
 		)
-		chain0Through3   = chaintest.BuildDescendants(chaintest.Genesis, 4)
-		chain4Through6   = chaintest.BuildDescendants(chain0Through3[0], 3)
-		chain7Through10  = chaintest.BuildDescendants(chaintest.Genesis, 4)
-		chain11Through11 = chaintest.BuildDescendants(chain7Through10[1], 1)
+		chain0Through3   = lineartest.BuildDescendants(lineartest.Genesis, 4)
+		chain4Through6   = lineartest.BuildDescendants(chain0Through3[0], 3)
+		chain7Through10  = lineartest.BuildDescendants(lineartest.Genesis, 4)
+		chain11Through11 = lineartest.BuildDescendants(chain7Through10[1], 1)
 		blocks           = slices.Concat(chain0Through3, chain4Through6, chain7Through10, chain11Through11)
 	)
 
@@ -3126,7 +3126,7 @@ func TestShouldIssueBlock(t *testing.T) {
 	}{
 		{
 			name:                "genesis",
-			block:               chaintest.Genesis,
+			block:               lineartest.Genesis,
 			expectedShouldIssue: false,
 		},
 		{
@@ -3261,7 +3261,7 @@ func TestEngineAcceptedHeight(t *testing.T) {
 	require.NoError(vals.AddStaker(engCfg.Ctx.SubnetID, vdr0, nil, ids.Empty, 1))
 	require.NoError(vals.AddStaker(engCfg.Ctx.SubnetID, vdr1, nil, ids.Empty, 1))
 
-	chain := chaintest.BuildDescendants(chaintest.Genesis, 2)
+	chain := lineartest.BuildDescendants(lineartest.Genesis, 2)
 
 	blk1, blk2 := chain[0], chain[1]
 
@@ -3273,8 +3273,8 @@ func TestEngineAcceptedHeight(t *testing.T) {
 		return blk1, nil
 	}
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,

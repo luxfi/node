@@ -183,7 +183,7 @@ func TestChangeNotifierNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	tvm := blockmock.NewFullVM(ctrl)
-	tvm.EXPECT().BuildBlock(gomock.Any()).Return(&chaintest.Block{}, nil)
+	tvm.EXPECT().BuildBlock(gomock.Any()).Return(&lineartest.Block{}, nil)
 	tvm.EXPECT().SetState(gomock.Any(), gomock.Any()).Return(nil)
 	tvm.EXPECT().SetPreference(gomock.Any(), gomock.Any()).Return(nil)
 

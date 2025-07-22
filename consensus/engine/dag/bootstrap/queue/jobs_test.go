@@ -115,8 +115,8 @@ func TestPushAndExecute(t *testing.T) {
 		return job, nil
 	}
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	count, err := jobs.ExecuteAll(context.Background(), snowtest.ConsensusContext(snowCtx), &engine.Halter{}, false)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	count, err := jobs.ExecuteAll(context.Background(), consensustest.ConsensusContext(snowCtx), &core.Halter{}, false)
 	require.NoError(err)
 	require.Equal(1, count)
 
@@ -182,8 +182,8 @@ func TestRemoveDependency(t *testing.T) {
 		}
 	}
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	count, err := jobs.ExecuteAll(context.Background(), snowtest.ConsensusContext(snowCtx), &engine.Halter{}, false)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	count, err := jobs.ExecuteAll(context.Background(), consensustest.ConsensusContext(snowCtx), &core.Halter{}, false)
 	require.NoError(err)
 	require.Equal(2, count)
 	require.True(executed0)
@@ -356,8 +356,8 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 		}
 	}
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	_, err = jobs.ExecuteAll(context.Background(), snowtest.ConsensusContext(snowCtx), &engine.Halter{}, false)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	_, err = jobs.ExecuteAll(context.Background(), consensustest.ConsensusContext(snowCtx), &core.Halter{}, false)
 	// Assert that the database closed error on job1 causes ExecuteAll
 	// to fail in the middle of execution.
 	require.ErrorIs(err, database.ErrClosed)
@@ -389,7 +389,7 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 	require.NoError(err)
 	require.True(hasNext)
 
-	count, err := jobs.ExecuteAll(context.Background(), snowtest.ConsensusContext(snowCtx), &engine.Halter{}, false)
+	count, err := jobs.ExecuteAll(context.Background(), consensustest.ConsensusContext(snowCtx), &core.Halter{}, false)
 	require.NoError(err)
 	require.Equal(2, count)
 	require.True(executed1)

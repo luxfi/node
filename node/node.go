@@ -1730,7 +1730,7 @@ type devModeRegistrant struct {
 	log       logging.Logger
 }
 
-func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Context, vm engine.VM) {
+func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {
 	// Check if this is the C-Chain
 	if chainName != "C" && !strings.Contains(strings.ToLower(chainName), "evm") {
 		return

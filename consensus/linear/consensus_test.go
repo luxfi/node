@@ -81,8 +81,8 @@ func InitializeTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -97,12 +97,12 @@ func InitializeTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	require.Equal(chaintest.GenesisID, sm.Preference())
+	require.Equal(lineartest.GenesisID, sm.Preference())
 	require.Zero(sm.NumProcessing())
 }
 
@@ -112,8 +112,8 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -127,12 +127,12 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 
 	require.Zero(sm.NumProcessing())
 
@@ -151,8 +151,8 @@ func AddToTailTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -166,12 +166,12 @@ func AddToTailTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 
 	// Adding to the previous preference will update the preference
 	require.NoError(sm.Add(block))
@@ -189,8 +189,8 @@ func AddToNonTailTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -204,13 +204,13 @@ func AddToNonTailTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	firstBlock := chaintest.BuildChild(chaintest.Genesis)
-	secondBlock := chaintest.BuildChild(chaintest.Genesis)
+	firstBlock := lineartest.BuildChild(lineartest.Genesis)
+	secondBlock := lineartest.BuildChild(lineartest.Genesis)
 
 	// Adding to the previous preference will update the preference
 	require.NoError(sm.Add(firstBlock))
@@ -229,8 +229,8 @@ func AddOnUnknownParentTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -244,18 +244,18 @@ func AddOnUnknownParentTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	block := &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.GenerateTestID(),
-			Status: snowtest.Undecided,
+			Status: consensustest.Undecided,
 		},
 		ParentV: ids.GenerateTestID(),
-		HeightV: chaintest.GenesisHeight + 2,
+		HeightV: lineartest.GenesisHeight + 2,
 	}
 
 	// Adding a block with an unknown parent should error.
@@ -268,8 +268,8 @@ func StatusOrProcessingPreviouslyAcceptedTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -283,18 +283,18 @@ func StatusOrProcessingPreviouslyAcceptedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	require.Equal(snowtest.Accepted, chaintest.Genesis.Status)
-	require.False(sm.Processing(chaintest.Genesis.ID()))
-	require.True(sm.IsPreferred(chaintest.Genesis.ID()))
+	require.Equal(consensustest.Accepted, lineartest.Genesis.Status)
+	require.False(sm.Processing(lineartest.Genesis.ID()))
+	require.True(sm.IsPreferred(lineartest.Genesis.ID()))
 
-	pref, ok := sm.PreferenceAtHeight(chaintest.Genesis.Height())
+	pref, ok := sm.PreferenceAtHeight(lineartest.Genesis.Height())
 	require.True(ok)
-	require.Equal(chaintest.Genesis.ID(), pref)
+	require.Equal(lineartest.Genesis.ID(), pref)
 }
 
 func StatusOrProcessingPreviouslyRejectedTest(t *testing.T, factory Factory) {
@@ -302,8 +302,8 @@ func StatusOrProcessingPreviouslyRejectedTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -317,15 +317,15 @@ func StatusOrProcessingPreviouslyRejectedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 	require.NoError(block.Reject(context.Background()))
 
-	require.Equal(snowtest.Rejected, block.Status)
+	require.Equal(consensustest.Rejected, block.Status)
 	require.False(sm.Processing(block.ID()))
 	require.False(sm.IsPreferred(block.ID()))
 
@@ -338,8 +338,8 @@ func StatusOrProcessingUnissuedTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -353,14 +353,14 @@ func StatusOrProcessingUnissuedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 
-	require.Equal(snowtest.Undecided, block.Status)
+	require.Equal(consensustest.Undecided, block.Status)
 	require.False(sm.Processing(block.ID()))
 	require.False(sm.IsPreferred(block.ID()))
 
@@ -373,8 +373,8 @@ func StatusOrProcessingIssuedTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -388,15 +388,15 @@ func StatusOrProcessingIssuedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 
 	require.NoError(sm.Add(block))
-	require.Equal(snowtest.Undecided, block.Status)
+	require.Equal(consensustest.Undecided, block.Status)
 	require.True(sm.Processing(block.ID()))
 	require.True(sm.IsPreferred(block.ID()))
 
@@ -410,8 +410,8 @@ func RecordPollAcceptSingleBlockTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -425,12 +425,12 @@ func RecordPollAcceptSingleBlockTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 
 	require.NoError(sm.Add(block))
 
@@ -438,12 +438,12 @@ func RecordPollAcceptSingleBlockTest(t *testing.T, factory Factory) {
 	require.NoError(sm.RecordPoll(context.Background(), votes))
 	require.Equal(block.ID(), sm.Preference())
 	require.Equal(1, sm.NumProcessing())
-	require.Equal(snowtest.Undecided, block.Status)
+	require.Equal(consensustest.Undecided, block.Status)
 
 	require.NoError(sm.RecordPoll(context.Background(), votes))
 	require.Equal(block.ID(), sm.Preference())
 	require.Zero(sm.NumProcessing())
-	require.Equal(snowtest.Accepted, block.Status)
+	require.Equal(consensustest.Accepted, block.Status)
 }
 
 func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
@@ -451,8 +451,8 @@ func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -466,13 +466,13 @@ func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	firstBlock := chaintest.BuildChild(chaintest.Genesis)
-	secondBlock := chaintest.BuildChild(chaintest.Genesis)
+	firstBlock := lineartest.BuildChild(lineartest.Genesis)
+	secondBlock := lineartest.BuildChild(lineartest.Genesis)
 
 	require.NoError(sm.Add(firstBlock))
 	require.NoError(sm.Add(secondBlock))
@@ -482,22 +482,22 @@ func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
 	require.NoError(sm.RecordPoll(context.Background(), votes))
 	require.Equal(firstBlock.ID(), sm.Preference())
 	require.Equal(2, sm.NumProcessing())
-	require.Equal(snowtest.Undecided, firstBlock.Status)
-	require.Equal(snowtest.Undecided, secondBlock.Status)
+	require.Equal(consensustest.Undecided, firstBlock.Status)
+	require.Equal(consensustest.Undecided, secondBlock.Status)
 
 	require.NoError(sm.RecordPoll(context.Background(), votes))
 	require.Equal(firstBlock.ID(), sm.Preference())
 	require.Zero(sm.NumProcessing())
-	require.Equal(snowtest.Accepted, firstBlock.Status)
-	require.Equal(snowtest.Rejected, secondBlock.Status)
+	require.Equal(consensustest.Accepted, firstBlock.Status)
+	require.Equal(consensustest.Rejected, secondBlock.Status)
 }
 
 func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 	require := require.New(t)
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	registerer := prometheus.NewRegistry()
 	ctx.Registerer = registerer
 
@@ -514,16 +514,16 @@ func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	firstBlock := chaintest.BuildChild(chaintest.Genesis)
-	secondBlock := chaintest.BuildChild(chaintest.Genesis)
+	firstBlock := lineartest.BuildChild(lineartest.Genesis)
+	secondBlock := lineartest.BuildChild(lineartest.Genesis)
 	// Ensure that the blocks have at least one bit as a common prefix
 	for firstBlock.IDV.Bit(0) != secondBlock.IDV.Bit(0) {
-		secondBlock = chaintest.BuildChild(chaintest.Genesis)
+		secondBlock = lineartest.BuildChild(lineartest.Genesis)
 	}
 
 	require.NoError(sm.Add(firstBlock))
@@ -555,8 +555,8 @@ func RecordPollWhenFinalizedTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -570,15 +570,15 @@ func RecordPollWhenFinalizedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	votes := bag.Of(chaintest.GenesisID)
+	votes := bag.Of(lineartest.GenesisID)
 	require.NoError(sm.RecordPoll(context.Background(), votes))
 	require.Zero(sm.NumProcessing())
-	require.Equal(chaintest.GenesisID, sm.Preference())
+	require.Equal(lineartest.GenesisID, sm.Preference())
 }
 
 func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
@@ -586,8 +586,8 @@ func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -601,14 +601,14 @@ func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(chaintest.Genesis)
-	block2 := chaintest.BuildChild(block1)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(lineartest.Genesis)
+	block2 := lineartest.BuildChild(block1)
 
 	require.NoError(sm.Add(block0))
 	require.NoError(sm.Add(block1))
@@ -631,9 +631,9 @@ func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
 
 	require.Zero(sm.NumProcessing())
 	require.Equal(block0.ID(), sm.Preference())
-	require.Equal(snowtest.Accepted, block0.Status)
-	require.Equal(snowtest.Rejected, block1.Status)
-	require.Equal(snowtest.Rejected, block2.Status)
+	require.Equal(consensustest.Accepted, block0.Status)
+	require.Equal(consensustest.Rejected, block1.Status)
+	require.Equal(consensustest.Rejected, block2.Status)
 }
 
 func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
@@ -641,8 +641,8 @@ func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -656,15 +656,15 @@ func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(chaintest.Genesis)
-	block2 := chaintest.BuildChild(block1)
-	block3 := chaintest.BuildChild(block1)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(lineartest.Genesis)
+	block2 := lineartest.BuildChild(block1)
+	block3 := lineartest.BuildChild(block1)
 
 	require.NoError(sm.Add(block0))
 	require.NoError(sm.Add(block1))
@@ -700,10 +700,10 @@ func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
 	require.NoError(sm.RecordPoll(context.Background(), votesFor3))
 	require.Zero(sm.NumProcessing())
 	require.Equal(block3.ID(), sm.Preference())
-	require.Equal(snowtest.Rejected, block0.Status)
-	require.Equal(snowtest.Accepted, block1.Status)
-	require.Equal(snowtest.Rejected, block2.Status)
-	require.Equal(snowtest.Accepted, block3.Status)
+	require.Equal(consensustest.Rejected, block0.Status)
+	require.Equal(consensustest.Accepted, block1.Status)
+	require.Equal(consensustest.Rejected, block2.Status)
+	require.Equal(consensustest.Accepted, block3.Status)
 }
 
 func RecordPollInvalidVoteTest(t *testing.T, factory Factory) {
@@ -711,8 +711,8 @@ func RecordPollInvalidVoteTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -726,12 +726,12 @@ func RecordPollInvalidVoteTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 	unknownBlockID := ids.GenerateTestID()
 
 	require.NoError(sm.Add(block))
@@ -751,8 +751,8 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       3,
@@ -766,16 +766,16 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(block0)
-	block2 := chaintest.BuildChild(block1)
-	block3 := chaintest.BuildChild(block0)
-	block4 := chaintest.BuildChild(block3)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(block0)
+	block2 := lineartest.BuildChild(block1)
+	block3 := lineartest.BuildChild(block0)
+	block4 := lineartest.BuildChild(block3)
 
 	require.NoError(sm.Add(block0))
 	require.NoError(sm.Add(block1))
@@ -806,11 +806,11 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 
 	require.Equal(4, sm.NumProcessing())
 	require.Equal(block2.ID(), sm.Preference())
-	require.Equal(snowtest.Accepted, block0.Status)
-	require.Equal(snowtest.Undecided, block1.Status)
-	require.Equal(snowtest.Undecided, block2.Status)
-	require.Equal(snowtest.Undecided, block3.Status)
-	require.Equal(snowtest.Undecided, block4.Status)
+	require.Equal(consensustest.Accepted, block0.Status)
+	require.Equal(consensustest.Undecided, block1.Status)
+	require.Equal(consensustest.Undecided, block2.Status)
+	require.Equal(consensustest.Undecided, block3.Status)
+	require.Equal(consensustest.Undecided, block4.Status)
 
 	dep2_2_2 := bag.Of(block2.ID(), block2.ID(), block2.ID())
 	require.NoError(sm.RecordPoll(context.Background(), dep2_2_2))
@@ -821,19 +821,19 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 
 	require.Zero(sm.NumProcessing())
 	require.Equal(block2.ID(), sm.Preference())
-	require.Equal(snowtest.Accepted, block0.Status)
-	require.Equal(snowtest.Accepted, block1.Status)
-	require.Equal(snowtest.Accepted, block2.Status)
-	require.Equal(snowtest.Rejected, block3.Status)
-	require.Equal(snowtest.Rejected, block4.Status)
+	require.Equal(consensustest.Accepted, block0.Status)
+	require.Equal(consensustest.Accepted, block1.Status)
+	require.Equal(consensustest.Accepted, block2.Status)
+	require.Equal(consensustest.Rejected, block3.Status)
+	require.Equal(consensustest.Rejected, block4.Status)
 }
 
 func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -847,36 +847,36 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	block0 := &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{0x06}, // 0110
-			Status: snowtest.Undecided,
+			Status: consensustest.Undecided,
 		},
-		ParentV: chaintest.GenesisID,
-		HeightV: chaintest.GenesisHeight + 1,
+		ParentV: lineartest.GenesisID,
+		HeightV: lineartest.GenesisHeight + 1,
 	}
-	block1 := &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	block1 := &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{0x08}, // 0001
-			Status: snowtest.Undecided,
+			Status: consensustest.Undecided,
 		},
-		ParentV: chaintest.GenesisID,
-		HeightV: chaintest.GenesisHeight + 1,
+		ParentV: lineartest.GenesisID,
+		HeightV: lineartest.GenesisHeight + 1,
 	}
-	block2 := &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	block2 := &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{0x01}, // 1000
-			Status: snowtest.Undecided,
+			Status: consensustest.Undecided,
 		},
-		ParentV: chaintest.GenesisID,
-		HeightV: chaintest.GenesisHeight + 1,
+		ParentV: lineartest.GenesisID,
+		HeightV: lineartest.GenesisHeight + 1,
 	}
-	block3 := chaintest.BuildChild(block2)
+	block3 := lineartest.BuildChild(block2)
 
 	require.NoError(sm.Add(block0))
 	require.NoError(sm.Add(block1))
@@ -899,10 +899,10 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	require.NoError(sm.Add(block3))
 
 	require.Equal(block0.ID(), sm.Preference())
-	require.Equal(snowtest.Undecided, block0.Status, "should not be decided yet")
-	require.Equal(snowtest.Undecided, block1.Status, "should not be decided yet")
-	require.Equal(snowtest.Undecided, block2.Status, "should not be decided yet")
-	require.Equal(snowtest.Undecided, block3.Status, "should not be decided yet")
+	require.Equal(consensustest.Undecided, block0.Status, "should not be decided yet")
+	require.Equal(consensustest.Undecided, block1.Status, "should not be decided yet")
+	require.Equal(consensustest.Undecided, block2.Status, "should not be decided yet")
+	require.Equal(consensustest.Undecided, block3.Status, "should not be decided yet")
 
 	// Current graph structure:
 	//       G
@@ -924,10 +924,10 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	require.NoError(sm.RecordPoll(context.Background(), votes3))
 
 	require.Equal(4, sm.NumProcessing())
-	require.Equal(snowtest.Undecided, block0.Status)
-	require.Equal(snowtest.Undecided, block1.Status)
-	require.Equal(snowtest.Undecided, block2.Status)
-	require.Equal(snowtest.Undecided, block3.Status)
+	require.Equal(consensustest.Undecided, block0.Status)
+	require.Equal(consensustest.Undecided, block1.Status)
+	require.Equal(consensustest.Undecided, block2.Status)
+	require.Equal(consensustest.Undecided, block3.Status)
 }
 
 func RecordPollChangePreferredChainTest(t *testing.T, factory Factory) {
@@ -935,8 +935,8 @@ func RecordPollChangePreferredChainTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -950,15 +950,15 @@ func RecordPollChangePreferredChainTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	a1Block := chaintest.BuildChild(chaintest.Genesis)
-	b1Block := chaintest.BuildChild(chaintest.Genesis)
-	a2Block := chaintest.BuildChild(a1Block)
-	b2Block := chaintest.BuildChild(b1Block)
+	a1Block := lineartest.BuildChild(lineartest.Genesis)
+	b1Block := lineartest.BuildChild(lineartest.Genesis)
+	a2Block := lineartest.BuildChild(a1Block)
+	b2Block := lineartest.BuildChild(b1Block)
 
 	require.NoError(sm.Add(a1Block))
 	require.NoError(sm.Add(a2Block))
@@ -1020,8 +1020,8 @@ func LastAcceptedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1035,19 +1035,19 @@ func LastAcceptedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(block0)
-	block2 := chaintest.BuildChild(block1)
-	block1Conflict := chaintest.BuildChild(block0)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(block0)
+	block2 := lineartest.BuildChild(block1)
+	block1Conflict := lineartest.BuildChild(block0)
 
 	lastAcceptedID, lastAcceptedHeight := sm.LastAccepted()
-	require.Equal(chaintest.GenesisID, lastAcceptedID)
-	require.Equal(chaintest.GenesisHeight, lastAcceptedHeight)
+	require.Equal(lineartest.GenesisID, lastAcceptedID)
+	require.Equal(lineartest.GenesisHeight, lastAcceptedHeight)
 
 	require.NoError(sm.Add(block0))
 	require.NoError(sm.Add(block1))
@@ -1055,14 +1055,14 @@ func LastAcceptedTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Add(block2))
 
 	lastAcceptedID, lastAcceptedHeight = sm.LastAccepted()
-	require.Equal(chaintest.GenesisID, lastAcceptedID)
-	require.Equal(chaintest.GenesisHeight, lastAcceptedHeight)
+	require.Equal(lineartest.GenesisID, lastAcceptedID)
+	require.Equal(lineartest.GenesisHeight, lastAcceptedHeight)
 
 	require.NoError(sm.RecordPoll(context.Background(), bag.Of(block0.IDV)))
 
 	lastAcceptedID, lastAcceptedHeight = sm.LastAccepted()
-	require.Equal(chaintest.GenesisID, lastAcceptedID)
-	require.Equal(chaintest.GenesisHeight, lastAcceptedHeight)
+	require.Equal(lineartest.GenesisID, lastAcceptedID)
+	require.Equal(lineartest.GenesisHeight, lastAcceptedHeight)
 
 	require.NoError(sm.RecordPoll(context.Background(), bag.Of(block1.IDV)))
 
@@ -1094,8 +1094,8 @@ func MetricsProcessingErrorTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1116,9 +1116,9 @@ func MetricsProcessingErrorTest(t *testing.T, factory Factory) {
 	err := sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	)
 	require.Error(err) //nolint:forbidigo // error is not exported https://github.com/prometheus/client_golang/blob/main/prometheus/registry.go#L315
 }
@@ -1128,8 +1128,8 @@ func MetricsAcceptedErrorTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1150,9 +1150,9 @@ func MetricsAcceptedErrorTest(t *testing.T, factory Factory) {
 	err := sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	)
 	require.Error(err) //nolint:forbidigo // error is not exported https://github.com/prometheus/client_golang/blob/main/prometheus/registry.go#L315
 }
@@ -1162,8 +1162,8 @@ func MetricsRejectedErrorTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1184,9 +1184,9 @@ func MetricsRejectedErrorTest(t *testing.T, factory Factory) {
 	err := sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	)
 	require.Error(err) //nolint:forbidigo // error is not exported https://github.com/prometheus/client_golang/blob/main/prometheus/registry.go#L315
 }
@@ -1196,8 +1196,8 @@ func ErrorOnAcceptTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1212,12 +1212,12 @@ func ErrorOnAcceptTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 	block.AcceptV = errTest
 
 	require.NoError(sm.Add(block))
@@ -1232,8 +1232,8 @@ func ErrorOnRejectSiblingTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1248,13 +1248,13 @@ func ErrorOnRejectSiblingTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(chaintest.Genesis)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(lineartest.Genesis)
 	block1.RejectV = errTest
 
 	require.NoError(sm.Add(block0))
@@ -1270,8 +1270,8 @@ func ErrorOnTransitiveRejectionTest(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1286,14 +1286,14 @@ func ErrorOnTransitiveRejectionTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	block0 := chaintest.BuildChild(chaintest.Genesis)
-	block1 := chaintest.BuildChild(chaintest.Genesis)
-	block2 := chaintest.BuildChild(block1)
+	block0 := lineartest.BuildChild(lineartest.Genesis)
+	block1 := lineartest.BuildChild(lineartest.Genesis)
+	block2 := lineartest.BuildChild(block1)
 	block2.RejectV = errTest
 
 	require.NoError(sm.Add(block0))
@@ -1344,8 +1344,8 @@ func ErrorOnAddDecidedBlockTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	require := require.New(t)
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,
@@ -1359,12 +1359,12 @@ func ErrorOnAddDecidedBlockTest(t *testing.T, factory Factory) {
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	err := sm.Add(chaintest.Genesis)
+	err := sm.Add(lineartest.Genesis)
 	require.ErrorIs(err, errUnknownParentBlock)
 }
 
@@ -1396,20 +1396,20 @@ func RecordPollWithDefaultParameters(t *testing.T, factory Factory) {
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.DefaultParameters
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
 	// "blk1" and "blk2" are in conflict
-	blk1 := chaintest.BuildChild(chaintest.Genesis)
-	blk2 := chaintest.BuildChild(chaintest.Genesis)
+	blk1 := lineartest.BuildChild(lineartest.Genesis)
+	blk2 := lineartest.BuildChild(lineartest.Genesis)
 
 	require.NoError(sm.Add(blk1))
 	require.NoError(sm.Add(blk2))
@@ -1433,8 +1433,8 @@ func RecordPollRegressionCalculateInDegreeIndegreeCalculation(t *testing.T, fact
 
 	sm := factory.New()
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	snowCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(snowCtx)
 	params := sampling.Parameters{
 		K:                     3,
 		AlphaPreference:       2,
@@ -1448,14 +1448,14 @@ func RecordPollRegressionCalculateInDegreeIndegreeCalculation(t *testing.T, fact
 	require.NoError(sm.Initialize(
 		ctx,
 		params,
-		chaintest.GenesisID,
-		chaintest.GenesisHeight,
-		chaintest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisHeight,
+		lineartest.GenesisTimestamp,
 	))
 
-	blk1 := chaintest.BuildChild(chaintest.Genesis)
-	blk2 := chaintest.BuildChild(blk1)
-	blk3 := chaintest.BuildChild(blk2)
+	blk1 := lineartest.BuildChild(lineartest.Genesis)
+	blk2 := lineartest.BuildChild(blk1)
+	blk3 := lineartest.BuildChild(blk2)
 
 	require.NoError(sm.Add(blk1))
 	require.NoError(sm.Add(blk2))
@@ -1465,7 +1465,7 @@ func RecordPollRegressionCalculateInDegreeIndegreeCalculation(t *testing.T, fact
 	votes.AddCount(blk2.ID(), 1)
 	votes.AddCount(blk3.ID(), 2)
 	require.NoError(sm.RecordPoll(context.Background(), votes))
-	require.Equal(snowtest.Accepted, blk1.Status)
-	require.Equal(snowtest.Accepted, blk2.Status)
-	require.Equal(snowtest.Accepted, blk3.Status)
+	require.Equal(consensustest.Accepted, blk1.Status)
+	require.Equal(consensustest.Accepted, blk2.Status)
+	require.Equal(consensustest.Accepted, blk3.Status)
 }

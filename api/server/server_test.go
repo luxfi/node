@@ -47,8 +47,8 @@ func TestRejectMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			snowCtx := snowtest.Context(t, snowtest.CChainID)
-			ctx := snowtest.ConsensusContext(snowCtx)
+			snowCtx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(snowCtx)
 			ctx.State.Set(consensus.EngineState{
 				State: tt.state,
 			})

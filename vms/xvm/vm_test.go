@@ -32,7 +32,7 @@ func TestInvalidGenesis(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
@@ -53,7 +53,7 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
@@ -80,7 +80,7 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))

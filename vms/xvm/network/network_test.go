@@ -190,7 +190,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewSender(ctrl)
+				appSender := core.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -221,7 +221,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -272,7 +272,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewSender(ctrl)
+				appSender := core.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -295,7 +295,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			require.NoError(err)
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewSender(ctrl)
+				return core.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc

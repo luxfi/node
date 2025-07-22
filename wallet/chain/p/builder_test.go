@@ -34,7 +34,7 @@ import (
 	wallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	pwallet "github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/utxotest"
+	"github.com/luxfi/node/wallet/test/utxotest"
 )
 
 var (

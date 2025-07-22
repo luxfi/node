@@ -31,7 +31,7 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(snowtest.Context(t, snowtest.PChainID))
+	return tx, tx.SyntacticVerify(consensustest.Context(t, consensustest.PChainID))
 }
 
 func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {

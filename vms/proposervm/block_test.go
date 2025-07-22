@@ -123,7 +123,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -131,8 +131,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -141,8 +141,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -173,7 +173,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreChildBlk := lineartest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -253,7 +253,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -261,8 +261,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -271,8 +271,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -305,7 +305,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreChildBlk := lineartest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -369,8 +369,8 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		parentTimestamp          = time.Now().Truncate(time.Second)
 	)
 
-	innerParentBlock := chaintest.Genesis
-	innerChildBlock := chaintest.BuildChild(innerParentBlock)
+	innerParentBlock := lineartest.Genesis
+	innerChildBlock := lineartest.BuildChild(innerParentBlock)
 
 	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
 	// Expect the that context passed in has parent's P-Chain height

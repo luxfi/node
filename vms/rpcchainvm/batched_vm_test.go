@@ -79,7 +79,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil))
 
@@ -88,7 +88,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	require.NoError(err)
 	require.Equal(blkID1, blk.ID())
 
-	require.IsType(&linear.BlockWrapper{}, blk)
+	require.IsType(&chain.BlockWrapper{}, blk)
 
 	// Call should cache the first block and parse the second block
 	blks, err := vm.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})

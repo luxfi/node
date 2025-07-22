@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package chaintest
+package lineartest
 
 import (
 	"cmp"
@@ -24,15 +24,15 @@ var (
 	GenesisID        = ids.GenerateTestID()
 	GenesisTimestamp = time.Unix(GenesisUnixTimestamp, 0)
 	GenesisBytes     = GenesisID[:]
-	Genesis          = BuildChain(1)[0]
+	Genesis          = BuildLinear(1)[0]
 )
 
 func BuildChild(parent *Block) *Block {
 	blkID := ids.GenerateTestID()
 	return &Block{
-		Decidable: snowtest.Decidable{
+		Decidable: consensustest.Decidable{
 			IDV:    blkID,
-			Status: snowtest.Undecided,
+			Status: consensustest.Undecided,
 		},
 		ParentV:    parent.ID(),
 		HeightV:    parent.Height() + 1,
@@ -41,15 +41,15 @@ func BuildChild(parent *Block) *Block {
 	}
 }
 
-func BuildChain(length int) []*Block {
+func BuildLinear(length int) []*Block {
 	if length == 0 {
 		return nil
 	}
 
 	genesis := &Block{
-		Decidable: snowtest.Decidable{
+		Decidable: consensustest.Decidable{
 			IDV:    GenesisID,
-			Status: snowtest.Accepted,
+			Status: consensustest.Accepted,
 		},
 		HeightV:    GenesisHeight,
 		TimestampV: GenesisTimestamp,
@@ -68,7 +68,7 @@ func BuildDescendants(parent *Block, length int) []*Block {
 }
 
 type Block struct {
-	snowtest.Decidable
+	consensustest.Decidable
 
 	ParentV    ids.ID
 	HeightV    uint64

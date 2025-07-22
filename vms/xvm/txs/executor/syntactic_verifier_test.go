@@ -35,7 +35,7 @@ var (
 )
 
 func TestSyntacticVerifierBaseTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -407,7 +407,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1016,7 +1016,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierOperationTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1505,7 +1505,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierImportTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1905,7 +1905,7 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierExportTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.XChainID)
+	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(

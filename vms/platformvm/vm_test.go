@@ -152,7 +152,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.clock.Set(latestForkTime)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
@@ -1038,7 +1038,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := snowtest.Context(t, snowtest.PChainID)
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
 
@@ -1121,7 +1121,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := snowtest.Context(t, snowtest.PChainID)
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.SharedMemory = firstCtx.SharedMemory
 	secondVM.clock.Set(initialClkTime)
 	secondCtx.Lock.Lock()
@@ -1170,7 +1170,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	// Advance the time so that the VM will want to remove the first validator.
 	vm.clock.Set(genesistest.DefaultValidatorEndTime)
 
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 
 	require.NoError(vm.Initialize(
@@ -1222,7 +1222,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
-	consensusCtx := snowtest.ConsensusContext(ctx)
+	consensusCtx := consensustest.ConsensusContext(ctx)
 	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 	subnet := subnets.New(ctx.NodeID, subnets.Config{})
@@ -1519,7 +1519,7 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.clock.Set(initialClkTime)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
@@ -1671,7 +1671,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := snowtest.Context(t, snowtest.PChainID)
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 	firstCtx.Lock.Lock()
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
@@ -1715,7 +1715,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := snowtest.Context(t, snowtest.PChainID)
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.Lock.Lock()
 	defer func() {
 		require.NoError(secondVM.Shutdown(context.Background()))
@@ -1810,7 +1810,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 
 	atomicDB := prefixdb.New([]byte{1}, db)

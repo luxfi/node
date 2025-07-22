@@ -208,7 +208,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewSender(ctrl)
+				appSender := core.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -222,7 +222,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 
-			snowCtx := snowtest.Context(t, ids.Empty)
+			snowCtx := consensustest.Context(t, ids.Empty)
 			n, err := New(
 				snowCtx.Log,
 				snowCtx.NodeID,

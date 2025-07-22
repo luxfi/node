@@ -43,19 +43,19 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	preSummaryBlk = &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
-			Status: snowtest.Accepted,
+			Status: consensustest.Accepted,
 		},
 		HeightV: preSummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	summaryBlk = &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
-			Status: snowtest.Accepted,
+			Status: consensustest.Accepted,
 		},
 		HeightV: SummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
@@ -471,7 +471,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	defer vm.runtime.Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil))
 

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package chaintest
+package lineartest
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, err
 		)
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status != snowtest.Accepted {
+				if blk.Status != consensustest.Accepted {
 					continue
 				}
 
@@ -37,7 +37,7 @@ func MakeGetBlockIDAtHeightF(blks ...[]*Block) func(context.Context, uint64) (id
 	return func(_ context.Context, height uint64) (ids.ID, error) {
 		for _, blkSlice := range blks {
 			for _, blk := range blkSlice {
-				if blk.Status != snowtest.Accepted {
+				if blk.Status != consensustest.Accepted {
 					continue
 				}
 

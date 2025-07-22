@@ -120,3 +120,28 @@ jobs:
           asset_path: ./luxd-darwin-arm64-${{ github.ref_name }}.tar.gz
           asset_name: luxd-darwin-arm64-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
+
+  release-windows-amd64:
+    needs: create-release
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Build
+        shell: bash
+        run: ./scripts/build.sh
+      - name: Create zip
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path luxd-windows-amd64
+          Copy-Item build/luxd luxd-windows-amd64/luxd.exe
+          Compress-Archive -Path luxd-windows-amd64 -DestinationPath luxd-windows-amd64-${{ github.ref_name }}.zip
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./luxd-windows-amd64-${{ github.ref_name }}.zip
+          asset_name: luxd-windows-amd64-${{ github.ref_name }}.zip
+          asset_content_type: application/zip

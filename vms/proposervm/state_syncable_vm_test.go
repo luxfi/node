@@ -50,14 +50,14 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	) error {
 		return nil
 	}
-	innerVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
-		[]*chaintest.Block{chaintest.Genesis},
+	innerVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
+		[]*lineartest.Block{lineartest.Genesis},
 	)
 	innerVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		if blkID != chaintest.Genesis.ID() {
+		if blkID != lineartest.Genesis.ID() {
 			return nil, database.ErrNotFound
 		}
-		return chaintest.Genesis, nil
+		return lineartest.Genesis, nil
 	}
 
 	// create the VM
@@ -73,14 +73,14 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		},
 	)
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
-		chaintest.GenesisBytes,
+		lineartest.GenesisBytes,
 		nil,
 		nil,
 		nil,
@@ -165,7 +165,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -248,7 +248,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -334,7 +334,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -405,7 +405,7 @@ func TestParseStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -462,7 +462,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -533,7 +533,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	vm.lastAcceptedHeight = innerSummary.Height() + 1
 
 	// store post fork block associated with summary
-	innerBlk := &chaintest.Block{
+	innerBlk := &lineartest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -608,15 +608,15 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 	}()
 
 	// store post fork block associated with summary
-	innerBlk1 := &chaintest.Block{
-		Decidable: snowtest.Decidable{
+	innerBlk1 := &lineartest.Block{
+		Decidable: consensustest.Decidable{
 			IDV: ids.GenerateTestID(),
 		},
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: 1969,
 	}
-	innerBlk2 := chaintest.BuildChild(innerBlk1)
+	innerBlk2 := lineartest.BuildChild(innerBlk1)
 
 	innerSummary1 := &blocktest.StateSummary{
 		IDV:     innerBlk1.ID(),
@@ -636,8 +636,8 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 
 	innerVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case innerBlk1.ID():
 			return innerBlk1, nil
 		case innerBlk2.ID():
