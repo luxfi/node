@@ -1,5 +1,5 @@
 {
-	"fuji": {
+	"testnet": {
 		"11111111111111111111111111111111LpoYY": [
 			"223opwBisPqPFJYMGbHvmvNaBb3EVjHqDbaCD2k4DWmBErychP",
 			"22QytoWHKDyqoSHzEg2jcnpy2K1ocGhfLVvV5eUL8M5WGQyDUo",
@@ -404,7 +404,7 @@
 			"xCxuBYyqHFHZ9inVnL8tX2zBQrSxPuMUQxcToxvVkR2G9ChmP",
 			"yhB33nzYvFjZUYPP15NzUKDAs9H1uND8wemo7nTF6G22hWhtu",
 			"yrBWj3sYEbmjJdZn8Q7SC24VCDbSSntwMhHdcMcVh5dhRGHnc",
-			"zat7FisFCmuXzwNjFujicAPjtsCFEQG31ptHD74HK2SEy4is8"
+			"zat7FisFCmuXzwNjTestnetcAPjtsCFEQG31ptHD74HK2SEy4is8"
 		],
 		"2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM": [
 			"1Kdri5W9vFJqB2dYBf5ZhYWAmZkkP4aHedVoV9pGYPQd8C77p",

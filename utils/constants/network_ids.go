@@ -19,28 +19,36 @@ const (
 	CascadeID uint32 = 2
 	DenaliID  uint32 = 3
 	EverestID uint32 = 4
-	FujiID    uint32 = 5
+	TestnetID    uint32 = 5
 
-	TestnetID  uint32 = FujiID
+	TestnetID  uint32 = TestnetID
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
+	
+	// Lux Network IDs
+	LuxMainnetID uint32 = 96369
+	LuxTestnetID uint32 = 96368
 
 	MainnetName  = "mainnet"
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
 	EverestName  = "everest"
-	FujiName     = "fuji"
+	TestnetName     = "testnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
+	LuxMainnetName = "lux-mainnet"
+	LuxTestnetName = "lux-testnet"
 
 	MainnetHRP  = "lux"
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	FujiHRP     = "fuji"
+	TestnetHRP     = "testnet"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
+	LuxMainnetHRP = "lux"
+	LuxTestnetHRP = "lux-test"
 	FallbackHRP = "custom"
 )
 
@@ -54,19 +62,23 @@ var (
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
 		EverestID:  EverestName,
-		FujiID:     FujiName,
+		TestnetID:     TestnetName,
 		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
+		LuxMainnetID: LuxMainnetName,
+		LuxTestnetID: LuxTestnetName,
 	}
 	NetworkNameToNetworkID = map[string]uint32{
 		MainnetName:  MainnetID,
 		CascadeName:  CascadeID,
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
-		FujiName:     FujiID,
+		TestnetName:     TestnetID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
+		LuxMainnetName: LuxMainnetID,
+		LuxTestnetName: LuxTestnetID,
 	}
 
 	NetworkIDToHRP = map[uint32]string{
@@ -74,20 +86,22 @@ var (
 		CascadeID:  CascadeHRP,
 		DenaliID:   DenaliHRP,
 		EverestID:  EverestHRP,
-		FujiID:     FujiHRP,
+		TestnetID:     TestnetHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
+		LuxMainnetID: LuxMainnetHRP,
+		LuxTestnetID: LuxTestnetHRP,
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
 		MainnetHRP:  MainnetID,
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		FujiHRP:     FujiID,
+		TestnetHRP:     TestnetID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, FujiID)
+	ProductionNetworkIDs = set.Of(MainnetID, TestnetID)
 
 	ValidNetworkPrefix = "network-"
 

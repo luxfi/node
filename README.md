@@ -122,12 +122,12 @@ You should see some pretty ASCII art and log messages.
 
 You can use `Ctrl+C` to kill the node.
 
-### Connecting to Fuji
+### Connecting to Testnet
 
-To connect to the Fuji Testnet, run:
+To connect to the Testnet Testnet, run:
 
 ```sh
-./build/luxd --network-id=fuji
+./build/luxd --network-id=testnet
 ```
 
 ### Creating a Local Testnet
@@ -172,7 +172,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}
      http://localhost:9630/ext/bc/C/rpc
 ```
 
-**Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Fuji).
+**Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Testnet).
 
 ## Bootstrapping
 
