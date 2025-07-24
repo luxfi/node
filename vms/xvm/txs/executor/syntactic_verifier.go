@@ -300,3 +300,90 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 
 	return nil
 }
+
+func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
+	if err := tx.SyntacticVerify(
+		v.Ctx,
+		v.Codec,
+		v.FeeAssetID,
+		v.Config.TxFee,
+		v.Config.CreateAssetTxFee,
+		len(v.Fxs),
+	); err != nil {
+		return err
+	}
+
+	for _, cred := range v.Tx.Creds {
+		if err := cred.Verify(); err != nil {
+			return err
+		}
+	}
+
+	numCreds := len(v.Tx.Creds)
+	numInputs := len(tx.Ins)
+	if numCreds != numInputs {
+		return fmt.Errorf("%w: %d != %d",
+			errWrongNumberOfCredentials,
+			numCreds,
+			numInputs,
+		)
+	}
+
+	return nil
+}
+
+func (v *SyntacticVerifier) MintTx(tx *txs.MintTx) error {
+	if err := tx.SyntacticVerify(
+		v.Ctx,
+		v.Codec,
+		v.FeeAssetID,
+		v.Config.TxFee,
+		v.Config.CreateAssetTxFee,
+		len(v.Fxs),
+	); err != nil {
+		return err
+	}
+
+	for _, cred := range v.Tx.Creds {
+		if err := cred.Verify(); err != nil {
+			return err
+		}
+	}
+
+	// Mint transactions don't require credentials for inputs
+	// since they're authorized by MPC signatures
+
+	return nil
+}
+
+func (v *SyntacticVerifier) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	if err := tx.SyntacticVerify(
+		v.Ctx,
+		v.Codec,
+		v.FeeAssetID,
+		v.Config.TxFee,
+		v.Config.CreateAssetTxFee,
+		len(v.Fxs),
+	); err != nil {
+		return err
+	}
+
+	for _, cred := range v.Tx.Creds {
+		if err := cred.Verify(); err != nil {
+			return err
+		}
+	}
+
+	// NFT transfers need credentials for the NFT inputs
+	numCreds := len(v.Tx.Creds)
+	numInputs := len(tx.Ins) + 1 // +1 for the NFT input
+	if numCreds != numInputs {
+		return fmt.Errorf("%w: %d != %d",
+			errWrongNumberOfCredentials,
+			numCreds,
+			numInputs,
+		)
+	}
+
+	return nil
+}

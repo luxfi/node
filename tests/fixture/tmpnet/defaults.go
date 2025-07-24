@@ -61,7 +61,7 @@ func DefaultChainConfigs() map[string]ConfigMap {
 	return map[string]ConfigMap{
 		// Supply only non-default configuration to ensure that default
 		// values will be used. Available C-Chain configuration options are
-		// defined in the `github.com/luxfi/geth/evm` package.
+		// defined in the `github.com/luxfi/evm/evm` package.
 		"C": {
 			"warp-api-enabled": true,
 			"log-level":        logging.Trace.String(),

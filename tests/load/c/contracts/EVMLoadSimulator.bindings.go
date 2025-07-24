@@ -8,12 +8,12 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/luxfi/geth/accounts/abi"
-	"github.com/luxfi/geth/accounts/abi/bind"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/event"
-	"github.com/luxfi/geth/interfaces"
+	"github.com/luxfi/evm/accounts/abi"
+	"github.com/luxfi/evm/accounts/abi/bind"
+	"github.com/luxfi/evm/common"
+	"github.com/luxfi/evm/core/types"
+	"github.com/luxfi/evm/event"
+	"github.com/luxfi/evm/interfaces"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

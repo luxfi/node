@@ -6,7 +6,7 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/core/types"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 

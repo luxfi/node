@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/geth/core"
+	"github.com/luxfi/evm/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"

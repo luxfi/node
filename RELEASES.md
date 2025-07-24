@@ -31,13 +31,13 @@ The plugin version is updated to `41` all plugins must update to be compatible.
 - Clarify field names for simplex p2p messages by @samliok in https://github.com/luxfi/node/pull/4002
 - Remove gzip middleware from API server by @mpignatelli12 in https://github.com/luxfi/node/pull/4005
 - fix: allow for load tests to run in-cluster by @RodrigoVillar in https://github.com/luxfi/node/pull/4003
-- chore: update geth version by @alarso16 in https://github.com/luxfi/node/pull/4006
+- chore: update libevm version by @alarso16 in https://github.com/luxfi/node/pull/4006
 - Add support for XSVM grpc server reflection by @joshua-kim in https://github.com/luxfi/node/pull/4010
 - fix: update log commands for stopping collectors by @RodrigoVillar in https://github.com/luxfi/node/pull/4011
 - [tmpnet] Enure node config is saved on restart for both runtimes by @maru-ava in https://github.com/luxfi/node/pull/4015
 - BLS Components for Simplex by @samliok in https://github.com/luxfi/node/pull/3993
 - Capitalize secrets references by @StephenButtolph in https://github.com/luxfi/node/pull/4018
-- build: update `geth` to `v1.13.14-0.3.0.rc.1` by @alarso16 in https://github.com/luxfi/node/pull/4023
+- build: update `libevm` to `v1.13.14-0.3.0.rc.1` by @alarso16 in https://github.com/luxfi/node/pull/4023
 - Allow internal messages from disallowed nodeIDs by @StephenButtolph in https://github.com/luxfi/node/pull/4024
 - optimize historical range by @rrazvan1 in https://github.com/luxfi/node/pull/3658
 
@@ -56,13 +56,13 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 
 ### APIs
 
-- Removed `xvm.getAddressTxs` api
+- Removed `avm.getAddressTxs` api
 - Added L1 validators to `platformvm.GetCurrentValidators` client implementation
 
 ### Configs
 
 - Removed `--tracing-enabled` and added `disabled` as an option to `--tracing-exporter-type`
-- Removed XVM indexer configs
+- Removed AVM indexer configs
   - `index-transactions`
   - `index-allow-incomplete`
 
@@ -75,7 +75,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - [tmpnet] Add collector log path to readiness check log output by @maru-ava in https://github.com/luxfi/node/pull/3823
 - Add context for errors in proposervm `repairAcceptedChainByHeight` by @joshua-kim in https://github.com/luxfi/node/pull/3818
 - [ci] Enable run-monitored-tmpnet-cmd to use a remote flake file by @maru-ava in https://github.com/luxfi/node/pull/3820
-- Add context to errors in `xvm` by @joshua-kim in https://github.com/luxfi/node/pull/3821
+- Add context to errors in `avm` by @joshua-kim in https://github.com/luxfi/node/pull/3821
 - Remove block reindexing after Etna by @StephenButtolph in https://github.com/luxfi/node/pull/3813
 - Update protobuf dependencies to the same version as nix packages by @maru-ava in https://github.com/luxfi/node/pull/3828
 - update: platformvm config doc by @ashucoder9 in https://github.com/luxfi/node/pull/3694
@@ -101,9 +101,9 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - [tmpnet] Fixed faulty error handling on bootstrap failure by @maru-ava in https://github.com/luxfi/node/pull/3873
 - Set `subnets.Config.ConsensusParameters` to serialize with omitempty by @maru-ava in https://github.com/luxfi/node/pull/3874
 - [tmpnet] Update rpc version check to tolerate usage of `go run` by @maru-ava in https://github.com/luxfi/node/pull/3869
-- Update geth to v0.15.1-rc.0 by @StephenButtolph in https://github.com/luxfi/node/pull/3875
+- Update coreth to v0.15.1-rc.0 by @StephenButtolph in https://github.com/luxfi/node/pull/3875
 - [tmpnet] Ensure Node has a reference to Network by @maru-ava in https://github.com/luxfi/node/pull/3870
-- [tooling] Simplify luxd build script by @maru-ava in https://github.com/luxfi/node/pull/3861
+- [tooling] Simplify node build script by @maru-ava in https://github.com/luxfi/node/pull/3861
 - Simplify P-Chain block has changes check by @StephenButtolph in https://github.com/luxfi/node/pull/3880
 - [tmpnet] Switch back to using maps for subnet config by @maru-ava in https://github.com/luxfi/node/pull/3877
 - [tmpnet] Refactor runtime configuration in preparation for kube by @maru-ava in https://github.com/luxfi/node/pull/3867
@@ -164,7 +164,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - [tmpnet] Enable runtime-specific restart behavior by @maru-ava in https://github.com/luxfi/node/pull/3882
 - [tooling] Misc direnv changes by @maru-ava in https://github.com/luxfi/node/pull/3944
 - Fully populate test context by @StephenButtolph in https://github.com/luxfi/node/pull/3943
-- Use geth instead of geth by @ceyonur in https://github.com/luxfi/node/pull/3918
+- Use libevm instead of coreth by @ceyonur in https://github.com/luxfi/node/pull/3918
 - [tmpnet] Define reusable flags for configuring kubernetes client access by @maru-ava in https://github.com/luxfi/node/pull/3945
 - Fix flaky bootstrapping test by @StephenButtolph in https://github.com/luxfi/node/pull/3955
 - [tmpnet] Separate start of prometheus and promtail collectors by @maru-ava in https://github.com/luxfi/node/pull/3947
@@ -173,7 +173,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - Update proposervm summary to roll forward only by @aaronbuchwald in https://github.com/luxfi/node/pull/3950
 - Remove dead code by @StephenButtolph in https://github.com/luxfi/node/pull/3966
 - Add Granite to the `upgrade.Config` by @StephenButtolph in https://github.com/luxfi/node/pull/3964
-- refactor genesis building logic in xvm and platformvm by @DracoLi in https://github.com/luxfi/node/pull/3949
+- refactor genesis building logic in avm and platformvm by @DracoLi in https://github.com/luxfi/node/pull/3949
 - [ci] Update dependabot to only propose security updates for github actions by @maru-ava in https://github.com/luxfi/node/pull/3969
 - Bump bufbuild/buf-action from 1.1.1 to 1.1.4 by @dependabot in https://github.com/luxfi/node/pull/3971
 - Bump github/codeql-action from 3.28.16 to 3.28.18 by @dependabot in https://github.com/luxfi/node/pull/3970
@@ -181,14 +181,14 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - adds config.json for C-Chain during antithesis - json logs by @aleksandarknezevic in https://github.com/luxfi/node/pull/3968
 - [tmpnet] Ensure GetNodeURIs returns locally-accessible URIs to ensure kube compatibility by @maru-ava in https://github.com/luxfi/node/pull/3973
 - refactor: use slices.Contains to simplify code by @pullmerge in https://github.com/luxfi/node/pull/3974
-- chore(deps): use geth with geth-aligned ethclient package by @qdm12 in https://github.com/luxfi/node/pull/3977
+- chore(deps): use coreth with geth-aligned ethclient package by @qdm12 in https://github.com/luxfi/node/pull/3977
 - Remove dead “Turtle’s Way HTTP/gRPC” link by @gap-editor in https://github.com/luxfi/node/pull/3978
 - Small cleanup in `App` and `Node` by @geoff-vball in https://github.com/luxfi/node/pull/3962
 - make GOPROXY overridable in constants.sh by @siphonelee in https://github.com/luxfi/node/pull/3979
 - Disallow slow sorting by @StephenButtolph in https://github.com/luxfi/node/pull/3981
 - [tmpnet] Enable deployment to kube by @marun in https://github.com/luxfi/node/pull/3615
 - [tmpnet] Enable monitoring of nodes running in kube by @maru-ava in https://github.com/luxfi/node/pull/3794
-- Bump geth to include fix for large tx handling by @aaronbuchwald in https://github.com/luxfi/node/pull/3984
+- Bump coreth to include fix for large tx handling by @aaronbuchwald in https://github.com/luxfi/node/pull/3984
 - Align minCompatibleTime settings across TestNetwork and Network by @michaelkaplan13 in https://github.com/luxfi/node/pull/3842
 - Remove dead “Turtle’s Way HTTP/gRPC” link by @gap-editor in https://github.com/luxfi/node/pull/3983
 
@@ -216,7 +216,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 ## [v1.13.0](https://github.com/luxfi/node/releases/tag/v1.13.0)
 
 This upgrade consists of the following Lux Community Proposal (ACP):
-- [ACP-176](https://github.com/lux-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
+- [ACP-176](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
 
 The ACP in this upgrade goes into effect at 11 AM ET (3 PM UTC) on Tuesday, April 8th, 2025 on Mainnet.
 
@@ -226,7 +226,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 
 ### APIs
 
-- Added ProposerVM block timestamp metrics: `lux_proposervm_last_accepted_timestamp`
+- Added ProposerVM block timestamp metrics: `avalanche_proposervm_last_accepted_timestamp`
 - Added network health check to alert if a primary network validator has no ingress connections. Runs a configurable time after startup or 10 minutes by default.
 
 ### Configs
@@ -252,7 +252,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - fix spelling issues  by @futreall in https://github.com/luxfi/node/pull/3700
 - fix: correct typos in parser.go and tmpnet documentation by @avorylli in https://github.com/luxfi/node/pull/3712
 - fix: typos in documentation files by @maximevtush in https://github.com/luxfi/node/pull/3710
-- Fail fast in tests if lux executable isn't an absolute path by @yacovm in https://github.com/luxfi/node/pull/3707
+- Fail fast in tests if avalancheGo executable isn't an absolute path by @yacovm in https://github.com/luxfi/node/pull/3707
 - [ci] Fix metrics link annotation emitted for e2e and upgrade jobs by @maru-ava in https://github.com/luxfi/node/pull/3713
 - Remove Mock Mempool by @joshua-kim in https://github.com/luxfi/node/pull/3687
 - cleanup(tmpnet): resolve chainconfig post-etna TODO by @darioush in https://github.com/luxfi/node/pull/3720
@@ -260,10 +260,10 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - docs: Fix grammatical errors and improve clarity in documentation and comments by @VolodymyrBg in https://github.com/luxfi/node/pull/3716
 - [testing] Replace script-based tool installation with nix by @maru-ava in https://github.com/luxfi/node/pull/3691
 - Remove unnecessary function by @richardpringle in https://github.com/luxfi/node/pull/3723
-- bump geth to master by @darioush in https://github.com/luxfi/node/pull/3724
+- bump coreth to master by @darioush in https://github.com/luxfi/node/pull/3724
 - Make `bls.Signer` api fallible by @richardpringle in https://github.com/luxfi/node/pull/3696
 - Add comment to seemingly dead code by @richardpringle in https://github.com/luxfi/node/pull/3721
-- Bump geth by @richardpringle in https://github.com/luxfi/node/pull/3728
+- Bump coreth by @richardpringle in https://github.com/luxfi/node/pull/3728
 - Comment on the need for `CGO_ENABLED=1` to support cross-compilation by @maru-ava in https://github.com/luxfi/node/pull/3735
 - [ci] Update to golangci-lint version compatible with go 1.23 by @maru-ava in https://github.com/luxfi/node/pull/3739
 - [testing] Provide more logging context for SynchronizedBeforeSuite by @maru-ava in https://github.com/luxfi/node/pull/3741
@@ -293,7 +293,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - Enable empty standard block check by @StephenButtolph in https://github.com/luxfi/node/pull/3776
 - Restrict ProposerVM P-chain height advancement by @StephenButtolph in https://github.com/luxfi/node/pull/3777
 - Add canoto serialization support to the block context by @aaronbuchwald in https://github.com/luxfi/node/pull/3709
-- Remove support for XVM tx checksums by @joshua-kim in https://github.com/luxfi/node/pull/3774
+- Remove support for AVM tx checksums by @joshua-kim in https://github.com/luxfi/node/pull/3774
 - [ci] Disable monitoring for jobs of PRs of fork branches by @maru-ava in https://github.com/luxfi/node/pull/3781
 - Update db_test.go by @sky-coderay in https://github.com/luxfi/node/pull/3765
 - chore: fix some function names in comment by @tcpdumppy in https://github.com/luxfi/node/pull/3773
@@ -317,7 +317,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - Fix ACP-118 Aggregator Test Flake by @joshua-kim in https://github.com/luxfi/node/pull/3801
 - Canoto v0.15.0 upgrade by @tsachiherman in https://github.com/luxfi/node/pull/3805
 - [tmpnet] Fix README example for tmpnetctl script by @maru-ava in https://github.com/luxfi/node/pull/3807
-- Update geth to v0.15.0-rc.0 by @darioush in https://github.com/luxfi/node/pull/3808
+- Update coreth to v0.15.0-rc.0 by @darioush in https://github.com/luxfi/node/pull/3808
 
 ### New Contributors
 
@@ -351,7 +351,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Deprecated:
   - `info.GetTxFee`
 - Added:
-  - `xvm.GetTxFee`
+  - `avm.GetTxFee`
   - `platform.getValidatorFeeConfig`
   - `platform.getValidatorFeeState`
   - `validationID` field to `platform.getL1Validator` results
@@ -363,20 +363,20 @@ The plugin version is updated to `39` all plugins must update to be compatible.
   - `keystore.listUsers`
   - `keystore.importUser`
   - `keystore.exportUser`
-  - `xvm.createAddress`
-  - `xvm.createFixedCapAsset`
-  - `xvm.createNFTAsset`
-  - `xvm.createVariableCapAsset`
-  - `xvm.export`
-  - `xvm.exportKey`
-  - `xvm.import`
-  - `xvm.importKey`
-  - `xvm.listAddresses`
-  - `xvm.mint`
-  - `xvm.mintNFT`
-  - `xvm.send`
-  - `xvm.sendMultiple`
-  - `xvm.sendNFT`
+  - `avm.createAddress`
+  - `avm.createFixedCapAsset`
+  - `avm.createNFTAsset`
+  - `avm.createVariableCapAsset`
+  - `avm.export`
+  - `avm.exportKey`
+  - `avm.import`
+  - `avm.importKey`
+  - `avm.listAddresses`
+  - `avm.mint`
+  - `avm.mintNFT`
+  - `avm.send`
+  - `avm.sendMultiple`
+  - `avm.sendNFT`
   - `wallet.send`
   - `wallet.sendMultiple`
   - `platform.exportKey`
@@ -408,14 +408,14 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - [testing] Update golangci-lint to latest version by @marun in https://github.com/luxfi/node/pull/3617
 - partial sync default info by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3602
 - Update stale comment on commitToDB by @aaronbuchwald in https://github.com/luxfi/node/pull/3627
-- geth atomic pkg dependency by @ceyonur in https://github.com/luxfi/node/pull/3588
+- coreth atomic pkg dependency by @ceyonur in https://github.com/luxfi/node/pull/3588
 - Mark Meag as the owner of README files by @StephenButtolph in https://github.com/luxfi/node/pull/3635
 - Update x/net to v0.33.0 by @StephenButtolph in https://github.com/luxfi/node/pull/3636
 - Fix codeowners to simplify PR review by @StephenButtolph in https://github.com/luxfi/node/pull/3637
 - Add BLS healthcheck to communicate incorrect BLS key configuration by @StephenButtolph in https://github.com/luxfi/node/pull/3638
 - chore(all): mocks generation improved by @qdm12 in https://github.com/luxfi/node/pull/3628
 - fix LRU sized cache: consistent size at element removal by @rrazvan1 in https://github.com/luxfi/node/pull/3634
-- Index API and Lux Configs Docs Fix by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3632
+- Index API and Lux Node Configs Docs Fix by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3632
 - [ci] Migrate from buf-*-action to buf-action by @marun in https://github.com/luxfi/node/pull/3639
 - chore(ci): define Github labels as code with a workflow by @qdm12 in https://github.com/luxfi/node/pull/3629
 - feat(github): add "needs Go upgrade" label by @qdm12 in https://github.com/luxfi/node/pull/3642
@@ -433,7 +433,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Add F Upgrade Scaffolding. Post-Etna Cleanup by @michaelkaplan13 in https://github.com/luxfi/node/pull/3672
 - [testing] Fix instructions for triggering antithesis test runs by @marun in https://github.com/luxfi/node/pull/3664
 - [testing] Ensure run_prometheus.sh uses a writeable storage path by @marun in https://github.com/luxfi/node/pull/3662
-- Make linear use snowflake directly instead of confidence by @yacovm in https://github.com/luxfi/node/pull/3403
+- Make snowman use snowflake directly instead of snowball by @yacovm in https://github.com/luxfi/node/pull/3403
 - chore: fix some typos by @chuangjinglu in https://github.com/luxfi/node/pull/3670
 - Bump antithesishq/antithesis-trigger-action from 0.6 to 0.7 by @dependabot in https://github.com/luxfi/node/pull/3667
 - [ci] Use go env {GOOS,GOARCH} for os and arch detection by @marun in https://github.com/luxfi/node/pull/3661
@@ -488,12 +488,12 @@ The plugin version is unchanged at `38` and is compatible with version `v1.12.0`
 ## [v1.12.0](https://github.com/luxfi/node/releases/tag/v1.12.0)
 
 This upgrade consists of the following Lux Community Proposals (ACPs):
-- [ACP-77](https://github.com/lux-foundation/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Subnets
-- [ACP-103](https://github.com/lux-foundation/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
-- [ACP-118](https://github.com/lux-foundation/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
-- [ACP-125](https://github.com/lux-foundation/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
-- [ACP-131](https://github.com/lux-foundation/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Subnet-EVM chains
-- [ACP-151](https://github.com/lux-foundation/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
+- [ACP-77](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Subnets
+- [ACP-103](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
+- [ACP-118](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
+- [ACP-125](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nAVAX to 1 nAVAX
+- [ACP-131](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Subnet-EVM chains
+- [ACP-151](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
 
 The changes in the upgrade go into effect at 12 AM ET (5 PM UTC) on Monday, December 16th, 2024 on Mainnet.
 
@@ -551,7 +551,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 
 - Fixed metrics initialization in the RPCChainVM. This could cause crashes during startup if metrics was requested during VM initialization.
 - Fixed compilations on macos 14.7 and higher
-- Fixed luxd wallet usage with ledger v0.8.4
+- Fixed node wallet usage with ledger v0.8.4
 - Fixed missing `NodeIDs` argument in the `info.peers` client implementation
 - Fixed `getSubnetID` state tracing
 
@@ -561,7 +561,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - [antithesis] Double the duration of sanity checks by @marun in https://github.com/luxfi/node/pull/3475
 - Properly initialize metrics in rpcchainVM by @yacovm in https://github.com/luxfi/node/pull/3477
 - Cleanup editorconfig by @dhrubabasu in https://github.com/luxfi/node/pull/3473
-- Update lux ledger go package by @sukantoraymond in https://github.com/luxfi/node/pull/3456
+- Update avalanche ledger go package by @sukantoraymond in https://github.com/luxfi/node/pull/3456
 - [testing] Enable config of log format for bootstrap monitor by @marun in https://github.com/luxfi/node/pull/3467
 - cache signatures only in acp118 handler by @ceyonur in https://github.com/luxfi/node/pull/3474
 - Introduce and use `database.WithDefault` by @StephenButtolph in https://github.com/luxfi/node/pull/3478
@@ -578,7 +578,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Add SoV Excess to P-chain state by @StephenButtolph in https://github.com/luxfi/node/pull/3482
 - Remove deprecated X-chain pubsub server by @StephenButtolph in https://github.com/luxfi/node/pull/3490
 - Update SoV struct to align with latest ACP-77 spec by @StephenButtolph in https://github.com/luxfi/node/pull/3492
-- Register VM and linear metrics after chain creation by @yacovm in https://github.com/luxfi/node/pull/3489
+- Register VM and snowman metrics after chain creation by @yacovm in https://github.com/luxfi/node/pull/3489
 - Skip Flaky Test by @joshua-kim in https://github.com/luxfi/node/pull/3495
 - Add request to update `releases.md` in PR template by @ceyonur in https://github.com/luxfi/node/pull/3476
 - ACP-77: Update P-chain state staker tests by @StephenButtolph in https://github.com/luxfi/node/pull/3494
@@ -662,11 +662,11 @@ The plugin version is updated to `37` all plugins must update to be compatible.
   - `info.uptimes` with non-primary network subnetIDs is deprecated
   - `info.peers` `observedSubnetUptimes` is deprecated
   - `platform.getCurrentValidators` `uptime` and `connected` are deprecated for non-primary network subnetIDs.
-  - `lux_network_node_subnet_uptime_weighted_average` metric is deprecated
-  - `lux_network_node_subnet_uptime_rewarding_stake` metric is deprecated
-- Added `lux_network_tracked_peers` metric
-- Added `lux_network_tracked_subnets` metric
-- Removed `lux_network_tracked_ips` metric
+  - `avalanche_network_node_subnet_uptime_weighted_average` metric is deprecated
+  - `avalanche_network_node_subnet_uptime_rewarding_stake` metric is deprecated
+- Added `avalanche_network_tracked_peers` metric
+- Added `avalanche_network_tracked_subnets` metric
+- Removed `avalanche_network_tracked_ips` metric
 - Added disconnected validators to the health check result
 
 
@@ -704,7 +704,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - ACP 118 reference implementation by @cam-schultz in https://github.com/luxfi/node/pull/3218
 - Storage OpenBSD/adJ by @vtamara in https://github.com/luxfi/node/pull/2809
 - Remove unused error from fee calculator creation by @StephenButtolph in https://github.com/luxfi/node/pull/3245
-- Rename Transitive linear to Engine linear by @yacovm in https://github.com/luxfi/node/pull/3244
+- Rename Transitive snowman to Engine snowman by @yacovm in https://github.com/luxfi/node/pull/3244
 - Simplify static fee calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3240
 - Remove targetBlockSize arg by @StephenButtolph in https://github.com/luxfi/node/pull/3249
 - Add dynamic fees config by @StephenButtolph in https://github.com/luxfi/node/pull/3250
@@ -742,7 +742,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Update write path of tmpnet subnet config by @aaronbuchwald in https://github.com/luxfi/node/pull/3290
 - add network upgrades to chain ctx by @ceyonur in https://github.com/luxfi/node/pull/3283
 - Implement dynamic fee builder by @StephenButtolph in https://github.com/luxfi/node/pull/3232
-- bump geth past upgrade schedule refactor by @darioush in https://github.com/luxfi/node/pull/3278
+- bump coreth past upgrade schedule refactor by @darioush in https://github.com/luxfi/node/pull/3278
 - Remove cross-chain requests by @darioush in https://github.com/luxfi/node/pull/3277
 - wallet: obtain subnet owners by using P-Chain's getSubnet API call by @felipemadero in https://github.com/luxfi/node/pull/3247
 - [antithesis] Add tmpnet support to workloads to simplify development by @marun in https://github.com/luxfi/node/pull/3215
@@ -812,8 +812,8 @@ The plugin version is updated to `36` all plugins must update to be compatible.
 
 ### APIs
 
-- Renamed `lux_{vmName}_plugin_.*` metrics to `lux_{vmName}_.*`
-- Renamed `lux_{vmName}_rpcchainvm_.*` metrics to `lux_rpcchainvm_.*`
+- Renamed `avalanche_{vmName}_plugin_.*` metrics to `avalanche_{vmName}_.*`
+- Renamed `avalanche_{vmName}_rpcchainvm_.*` metrics to `avalanche_rpcchainvm_.*`
 
 ### Fixes
 
@@ -828,7 +828,7 @@ The plugin version is updated to `36` all plugins must update to be compatible.
 - build(tests): require `//go:build test` tag if importing test packages outside of `_test.go` files by @ARR4N in https://github.com/luxfi/node/pull/3173
 - Include VM path in plugin version error by @StephenButtolph in https://github.com/luxfi/node/pull/3178
 - [ci] Simplify ci monitoring with custom actions by @marun in https://github.com/luxfi/node/pull/3161
-- [vms/xvm] Replace `strings.Replace` with `fmt.Sprintf` in tests by @dhrubabasu in https://github.com/luxfi/node/pull/3177
+- [vms/avm] Replace `strings.Replace` with `fmt.Sprintf` in tests by @dhrubabasu in https://github.com/luxfi/node/pull/3177
 - Changes to support teleporter e2e tests by @feuGeneA in https://github.com/luxfi/node/pull/3179
 - Reduce usage of `getBlock` in consensus by @StephenButtolph in https://github.com/luxfi/node/pull/3151
 - [ci] Enable run-monitored-tmpnet-cmd reuse by other repos by @marun in https://github.com/luxfi/node/pull/3186
@@ -895,7 +895,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 - Error driven snowflake multi counter by @aaronbuchwald in https://github.com/luxfi/node/pull/3092
 - [antithesis] Add ci jobs to trigger test runs by @marun in https://github.com/luxfi/node/pull/3076
-- bump ledger dependency to current main branch by @felipemadero in https://github.com/luxfi/node/pull/3115
+- bump ledger-avalanche dependency to current main branch by @felipemadero in https://github.com/luxfi/node/pull/3115
 - [antithesis] Fix image publication job by quoting default tag value by @marun in https://github.com/luxfi/node/pull/3112
 - [e2e] Fix excessively verbose output from virtuous test by @marun in https://github.com/luxfi/node/pull/3116
 - Remove .Status() from .IsPreferred() by @StephenButtolph in https://github.com/luxfi/node/pull/3111
@@ -940,7 +940,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### What's Changed
 
-- Remove lux metrics registerer from consensus context by @StephenButtolph in https://github.com/luxfi/node/pull/3087
+- Remove avalanche metrics registerer from consensus context by @StephenButtolph in https://github.com/luxfi/node/pull/3087
 - Remove rejection from `consensus.Add` by @StephenButtolph in https://github.com/luxfi/node/pull/3084
 - [vms/platformvm] Rename `txstest.Builder` to `txstest.WalletFactory` by @dhrubabasu in https://github.com/luxfi/node/pull/2890
 - Small metrics cleanup by @StephenButtolph in https://github.com/luxfi/node/pull/3088
@@ -1025,34 +1025,34 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
   - `*_db_{method}_size_count` were deleted
   - `*_db_{method}_size_sum` were replaced with `*_db_size` with a `method` label
 - Updated p2p message compression metrics:
-  - `lux_network_codec_{type}_{op}_{direction}_time_count` were replaced with `lux_network_codec_compressed_count` with `direction`, `op`, and `type` labels
+  - `avalanche_network_codec_{type}_{op}_{direction}_time_count` were replaced with `avalanche_network_codec_compressed_count` with `direction`, `op`, and `type` labels
 - Updated p2p message metrics:
-  - `lux_network_{op}_{io}` were replaced with `lux_network_msgs` with `compressed:"false"`, `io`, and `op` labels
-  - `lux_network_{op}_{io}_bytes` were replaced with `lux_network_msgs_bytes` with `io` and `op` labels
-  - `lux_network_{op}_compression_saved_{io}_bytes_sum` were replaced with `lux_network_msgs_bytes_saved` with `io` and `op` labels
-  - `lux_network_{op}_compression_saved_{io}_bytes_count` were replaced with `lux_network_msgs` with `compressed:"true"`, `io`, and `op` labels
-  - `lux_network_{op}_failed` were replaced with `lux_network_msgs_failed_to_send` with an `op` label
+  - `avalanche_network_{op}_{io}` were replaced with `avalanche_network_msgs` with `compressed:"false"`, `io`, and `op` labels
+  - `avalanche_network_{op}_{io}_bytes` were replaced with `avalanche_network_msgs_bytes` with `io` and `op` labels
+  - `avalanche_network_{op}_compression_saved_{io}_bytes_sum` were replaced with `avalanche_network_msgs_bytes_saved` with `io` and `op` labels
+  - `avalanche_network_{op}_compression_saved_{io}_bytes_count` were replaced with `avalanche_network_msgs` with `compressed:"true"`, `io`, and `op` labels
+  - `avalanche_network_{op}_failed` were replaced with `avalanche_network_msgs_failed_to_send` with an `op` label
 - Updated p2p sdk message metrics:
   - `*_p2p_{op}_count` were replaced with `*_p2p_msg_count` with an `op` label
   - `*_p2p_{op}_time` were replaced with `*_p2p_msg_time` with an `op` label
 - Updated consensus message queue metrics:
-  - `lux_{chainID}_handler_unprocessed_msgs_{op}` were replaced with `lux_{chainID}_handler_unprocessed_msgs_count` with an `op` label
-  - `lux_{chainID}_handler_async_unprocessed_msgs_{op}` were replaced with `lux_{chainID}_handler_unprocessed_msgs_count` with an `op` label
+  - `avalanche_{chainID}_handler_unprocessed_msgs_{op}` were replaced with `avalanche_{chainID}_handler_unprocessed_msgs_count` with an `op` label
+  - `avalanche_{chainID}_handler_async_unprocessed_msgs_{op}` were replaced with `avalanche_{chainID}_handler_unprocessed_msgs_count` with an `op` label
 - Updated consensus handler metrics:
-  - `lux_{chainID}_handler_{op}_count` were replaced with `lux_{chainID}_handler_messages` with an `op` label
-  - `lux_{chainID}_handler_{op}_msg_handling_count` was deleted
-  - `lux_{chainID}_handler_{op}_msg_handling_sum` were replaced with `lux_{chainID}_handler_message_handling_time` with an `op` label
-  - `lux_{chainID}_handler_{op}_sum` were replaced with `lux_{chainID}_handler_locking_time`
+  - `avalanche_{chainID}_handler_{op}_count` were replaced with `avalanche_{chainID}_handler_messages` with an `op` label
+  - `avalanche_{chainID}_handler_{op}_msg_handling_count` was deleted
+  - `avalanche_{chainID}_handler_{op}_msg_handling_sum` were replaced with `avalanche_{chainID}_handler_message_handling_time` with an `op` label
+  - `avalanche_{chainID}_handler_{op}_sum` were replaced with `avalanche_{chainID}_handler_locking_time`
 - Updated consensus sender metrics:
-  - `lux_{chainID}_{op}_failed_benched` were replaced with `lux_{chainID}_failed_benched` with an `op` label
+  - `avalanche_{chainID}_{op}_failed_benched` were replaced with `avalanche_{chainID}_failed_benched` with an `op` label
 - Updated consensus latency metrics:
-  - `lux_{chainID}_lat_{op}_count` were replaced with `lux_{chainID}_response_messages` with an `op` label
-  - `lux_{chainID}_lat_{op}_sum` were replaced with `lux_{chainID}_response_message_latencies` with an `op` label
+  - `avalanche_{chainID}_lat_{op}_count` were replaced with `avalanche_{chainID}_response_messages` with an `op` label
+  - `avalanche_{chainID}_lat_{op}_sum` were replaced with `avalanche_{chainID}_response_message_latencies` with an `op` label
 - Updated X-chain metrics:
-  - `lux_X_vm_lux_{tx}_txs_accepted` were replaced with `lux_X_vm_lux_txs_accepted` with a `tx` label
+  - `avalanche_X_vm_avalanche_{tx}_txs_accepted` were replaced with `avalanche_X_vm_avalanche_txs_accepted` with a `tx` label
 - Updated P-chain metrics:
-  - `lux_P_vm_{tx}_txs_accepted` were replaced with `lux_P_vm_txs_accepted` with a `tx` label
-  - `lux_P_vm_{blk}_blks_accepted` were replaced with `lux_P_vm_blks_accepted` with a `blk` label
+  - `avalanche_P_vm_{tx}_txs_accepted` were replaced with `avalanche_P_vm_txs_accepted` with a `tx` label
+  - `avalanche_P_vm_{blk}_blks_accepted` were replaced with `avalanche_P_vm_blks_accepted` with a `blk` label
 
 ### Fixes
 
@@ -1061,7 +1061,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - Fixed C-chain deadlock while executing blocks in bootstrapping after aborting state sync
 - Fixed negative ETA while fetching blocks after aborting state sync
 - Fixed C-chain snapshot initialization after state sync
-- Fixed panic when running luxd in environments with an incorrectly implemented monotonic clock
+- Fixed panic when running node in environments with an incorrectly implemented monotonic clock
 - Fixed memory corruption when accessing keys and values from released pebbledb iterators
 - Fixed prefixdb compaction when specifying a `nil` limit
 
@@ -1086,7 +1086,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - Remove unused `Metadata` struct by @dhrubabasu in https://github.com/luxfi/node/pull/3001
 - prefixdb: fix bug with Compact nil limit by @a1k0n in https://github.com/luxfi/node/pull/3000
 - Update go version to 1.21.10 by @marun in https://github.com/luxfi/node/pull/3004
-- vms/txs/mempool: unify xvm and platformvm mempool implementations by @lebdron in https://github.com/luxfi/node/pull/2994
+- vms/txs/mempool: unify avm and platformvm mempool implementations by @lebdron in https://github.com/luxfi/node/pull/2994
 - Use gauges for time metrics by @StephenButtolph in https://github.com/luxfi/node/pull/3009
 - Chore: fix typos. by @cocoyeal in https://github.com/luxfi/node/pull/3010
 - [antithesis] Refactor existing job to support xsvm test setup by @marun in https://github.com/luxfi/node/pull/2976
@@ -1098,7 +1098,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - Repackaged upgrades times into upgrade package by @abi87 in https://github.com/luxfi/node/pull/3019
 - Standardize peer logs by @StephenButtolph in https://github.com/luxfi/node/pull/3017
 - Fix pebbledb memory corruption by @StephenButtolph in https://github.com/luxfi/node/pull/3020
-- [vms/xvm] fix linter error in benchmark : Use of weak random number generator by @tsachiherman in https://github.com/luxfi/node/pull/3023
+- [vms/avm] fix linter error in benchmark : Use of weak random number generator by @tsachiherman in https://github.com/luxfi/node/pull/3023
 - Simplify sampler interface by @StephenButtolph in https://github.com/luxfi/node/pull/3026
 - [build] Update linter version by @tsachiherman in https://github.com/luxfi/node/pull/3024
 - fix broken link. by @cocoyeal in https://github.com/luxfi/node/pull/3028
@@ -1137,7 +1137,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### APIs
 
-- Renamed metric `lux_network_validator_ips` to `lux_network_tracked_ips`
+- Renamed metric `avalanche_network_validator_ips` to `avalanche_network_tracked_ips`
 
 ### Configs
 
@@ -1174,7 +1174,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - [tmpnet] Add network reuse to e2e fixture by @marun in https://github.com/luxfi/node/pull/2935
 - `e2e`: Add basic warp test with xsvm by @marun in https://github.com/luxfi/node/pull/2043
 - Improve bootstrapping peer selection by @StephenButtolph in https://github.com/luxfi/node/pull/2946
-- Cleanup lux bootstrapping fetching by @StephenButtolph in https://github.com/luxfi/node/pull/2947
+- Cleanup avalanche bootstrapping fetching by @StephenButtolph in https://github.com/luxfi/node/pull/2947
 - Add manager validator set callbacks by @StephenButtolph in https://github.com/luxfi/node/pull/2950
 - chore: fix function names in comment by @socialsister in https://github.com/luxfi/node/pull/2957
 - [ci] Fix conditional guarding monitoring configuration by @marun in https://github.com/luxfi/node/pull/2959
@@ -1201,16 +1201,16 @@ The plugin version is unchanged at `35` and is compatible with version `v1.11.3`
 ### APIs
 
 - Removed metrics for each chainID:
-  - `lux_{chainID}_bs_eta_fetching_complete`
-  - `lux_{chainID}_block_eta_execution_complete`
-  - `lux_{chainID}_block_jobs_cache_get_count`
-  - `lux_{chainID}_block_jobs_cache_get_sum`
-  - `lux_{chainID}_block_jobs_cache_hit`
-  - `lux_{chainID}_block_jobs_cache_len`
-  - `lux_{chainID}_block_jobs_cache_miss`
-  - `lux_{chainID}_block_jobs_cache_portion_filled`
-  - `lux_{chainID}_block_jobs_cache_put_count`
-  - `lux_{chainID}_block_jobs_cache_put_sum`
+  - `avalanche_{chainID}_bs_eta_fetching_complete`
+  - `avalanche_{chainID}_block_eta_execution_complete`
+  - `avalanche_{chainID}_block_jobs_cache_get_count`
+  - `avalanche_{chainID}_block_jobs_cache_get_sum`
+  - `avalanche_{chainID}_block_jobs_cache_hit`
+  - `avalanche_{chainID}_block_jobs_cache_len`
+  - `avalanche_{chainID}_block_jobs_cache_miss`
+  - `avalanche_{chainID}_block_jobs_cache_portion_filled`
+  - `avalanche_{chainID}_block_jobs_cache_put_count`
+  - `avalanche_{chainID}_block_jobs_cache_put_sum`
 - Added finer grained tracing of merkledb trie construction and hashing
   - renamed `MerkleDB.view.calculateNodeIDs` to `MerkleDB.view.applyValueChanges`
   - Added `MerkleDB.view.calculateNodeChanges`
@@ -1239,7 +1239,7 @@ The plugin version is unchanged at `35` and is compatible with version `v1.11.3`
 - [vms/platformvm] Declare `maxPageSize` in `service.go` by @dhrubabasu in https://github.com/luxfi/node/pull/2881
 - [vms/platformvm] Use `wallet` sdk in `txstest.Builder` by @abi87 in https://github.com/luxfi/node/pull/2751
 - Optimize encodeUint by @StephenButtolph in https://github.com/luxfi/node/pull/2882
-- [components/lux] Remove `AtomicUTXOManager` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2884
+- [components/avax] Remove `AtomicUTXOManager` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2884
 - Remove merkledb codec struct by @StephenButtolph in https://github.com/luxfi/node/pull/2883
 - [vms/platformvm] Minimize exported functions in `txstest` by @dhrubabasu in https://github.com/luxfi/node/pull/2888
 - `ci`: Skip monitoring if secrets are not present by @marun in https://github.com/luxfi/node/pull/2880
@@ -1290,7 +1290,7 @@ The plugin version is updated to `35` all plugins must update to be compatible.
 
 ### Configs
 
-- Removed luxd configs:
+- Removed node configs:
   - `network-peer-list-validator-gossip-size`
   - `network-peer-list-non-validator-gossip-size`
   - `network-peer-list-peers-gossip-size`
@@ -1329,8 +1329,8 @@ The plugin version is updated to `35` all plugins must update to be compatible.
 - [snow/networking] Enforce `PreferredIDAtHeight` in `Chits` messages by @dhrubabasu in https://github.com/luxfi/node/pull/2827
 - Combine AppGossip and AppGossipSpecific by @StephenButtolph in https://github.com/luxfi/node/pull/2836
 - [network/peer] Disconnect from peers who only send legacy version field by @dhrubabasu in https://github.com/luxfi/node/pull/2830
-- [vms/xvm] Cleanup `GetTx` + remove state pruning logic by @dhrubabasu in https://github.com/luxfi/node/pull/2826
-- [vms/xvm] Remove `snow.Context` from `Network` by @dhrubabasu in https://github.com/luxfi/node/pull/2834
+- [vms/avm] Cleanup `GetTx` + remove state pruning logic by @dhrubabasu in https://github.com/luxfi/node/pull/2826
+- [vms/avm] Remove `snow.Context` from `Network` by @dhrubabasu in https://github.com/luxfi/node/pull/2834
 - [vms/platformvm] Remove state pruning logic by @dhrubabasu in https://github.com/luxfi/node/pull/2825
 - Prevent zero length values in slices and maps in codec by @StephenButtolph in https://github.com/luxfi/node/pull/2819
 - [utils/compression] Remove gzip compressor by @dhrubabasu in https://github.com/luxfi/node/pull/2839
@@ -1382,24 +1382,24 @@ The plugin version is updated to `34` all plugins must update to be compatible.
   - `platform.addDelegator`
   - `platform.addSubnetValidator`
   - `platform.createSubnet`
-  - `platform.exportLUX`
-  - `platform.importLUX`
+  - `platform.exportAVAX`
+  - `platform.importAVAX`
   - `platform.createBlockchain`
 - Added push gossip metrics:
   - `gossip_tracking{type="sent"}`
   - `gossip_tracking{type="unsent"}`
   - `gossip_tracking_lifetime_average`
   to the following namespaces:
-  - `lux_P_vm_tx`
-  - `lux_X_vm_lux_tx`
-  - `lux_C_vm_sdk_atomic_tx_gossip`
-  - `lux_C_vm_sdk_eth_tx_gossip`
+  - `avalanche_P_vm_tx`
+  - `avalanche_X_vm_avalanche_tx`
+  - `avalanche_C_vm_sdk_atomic_tx_gossip`
+  - `avalanche_C_vm_sdk_eth_tx_gossip`
 - Removed metrics:
-  - `lux_C_vm_eth_gossip_atomic_sent`
-  - `lux_C_vm_eth_gossip_eth_txs_sent`
-  - `lux_C_vm_eth_regossip_eth_txs_queued_attempts`
-  - `lux_C_vm_eth_regossip_eth_txs_queued_local_tx_count`
-  - `lux_C_vm_eth_regossip_eth_txs_queued_remote_tx_count`
+  - `avalanche_C_vm_eth_gossip_atomic_sent`
+  - `avalanche_C_vm_eth_gossip_eth_txs_sent`
+  - `avalanche_C_vm_eth_regossip_eth_txs_queued_attempts`
+  - `avalanche_C_vm_eth_regossip_eth_txs_queued_local_tx_count`
+  - `avalanche_C_vm_eth_regossip_eth_txs_queued_remote_tx_count`
 
 ### Configs
 
@@ -1471,13 +1471,13 @@ The plugin version is updated to `34` all plugins must update to be compatible.
 
 This upgrade consists of the following Lux Community Proposals (ACPs):
 
-- [ACP-23](https://github.com/lux-foundation/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
-- [ACP-24](https://github.com/lux-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
-- [ACP-25](https://github.com/lux-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
-- [ACP-30](https://github.com/lux-foundation/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
-- [ACP-31](https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Subnet Ownership Transfer
-- [ACP-41](https://github.com/lux-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
-- [ACP-62](https://github.com/lux-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
+- [ACP-23](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
+- [ACP-24](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
+- [ACP-25](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
+- [ACP-30](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/30-avalanche-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
+- [ACP-31](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Subnet Ownership Transfer
+- [ACP-41](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
+- [ACP-62](https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
 
 The changes in the upgrade go into effect at 11 AM ET (4 PM UTC) on Wednesday, March 6th, 2024 on Mainnet.
 
@@ -1534,7 +1534,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - Provide pgo file during compilation by @StephenButtolph in https://github.com/luxfi/node/pull/2724
 - P-chain - Tx builder cleanup by @abi87 in https://github.com/luxfi/node/pull/2718
 - Refactor chain manager subnets by @joshua-kim in https://github.com/luxfi/node/pull/2711
-- Replace confidence/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
+- Replace snowball/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
 - Remove duplicate IP length constant by @StephenButtolph in https://github.com/luxfi/node/pull/2733
 - Add `platform.getSubnet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
 - Provide BLS signature in Handshake message by @StephenButtolph in https://github.com/luxfi/node/pull/2730
@@ -1569,10 +1569,10 @@ The plugin version is unchanged at `31` and is compatible with version `v1.10.18
   - `bloom_filter_max_count`
   - `bloom_filter_reset_count`
   to the following namespaces:
-  - `lux_X_vm_mempool`
-  - `lux_P_vm_mempool`
-  - `lux_C_vm_sdk_atomic_mempool`
-  - `lux_C_vm_sdk_eth_mempool`
+  - `avalanche_X_vm_mempool`
+  - `avalanche_P_vm_mempool`
+  - `avalanche_C_vm_sdk_atomic_mempool`
+  - `avalanche_C_vm_sdk_eth_mempool`
 
 ### Fixes
 
@@ -1625,13 +1625,13 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Added `supportedACPs` and `objectedACPs` for each peer returned by `info.peers`
 - Added `txs` field to `BanffProposalBlock`'s json format
 - Added metrics:
-  - `lux_network_validator_ips`
-  - `lux_network_gossipable_ips`
-  - `lux_network_ip_bloom_count`
-  - `lux_network_ip_bloom_entries`
-  - `lux_network_ip_bloom_hashes`
-  - `lux_network_ip_bloom_max_count`
-  - `lux_network_ip_bloom_reset_count`
+  - `avalanche_network_validator_ips`
+  - `avalanche_network_gossipable_ips`
+  - `avalanche_network_ip_bloom_count`
+  - `avalanche_network_ip_bloom_entries`
+  - `avalanche_network_ip_bloom_hashes`
+  - `avalanche_network_ip_bloom_max_count`
+  - `avalanche_network_ip_bloom_reset_count`
 - Added metrics related to `get_peer_list` message handling
 - Added p2p SDK metrics to  the P-chain and X-chain
 - Renamed metrics related to message handling:
@@ -1640,7 +1640,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
   - `crossChainAppRequestFailed` -> `crossChainAppError`
 - Removed `gzip` compression time metrics
 - Converted p2p SDK metrics to use vectors rather than independent metrics
-- Converted client name reported over the p2p network from `lux` to `luxd`
+- Converted client name reported over the p2p network from `avalanche` to `node`
 
 ### Configs
 
@@ -1714,12 +1714,12 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Drop Pending Stakers 2 - Replace txs.ScheduledStaker with txs.Staker by @abi87 in https://github.com/luxfi/node/pull/2305
 - `vms/platformvm`: Remove double block building logic by @dhrubabasu in https://github.com/luxfi/node/pull/2380
 - Remove usage of timer.Timer in benchlist by @StephenButtolph in https://github.com/luxfi/node/pull/2446
-- `vms/xvm`: Simplify `Peek` function in mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2449
+- `vms/avm`: Simplify `Peek` function in mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2449
 - `vms/platformvm`: Remove `standardBlockState` struct by @dhrubabasu in https://github.com/luxfi/node/pull/2450
 - Refactor sampler seeding by @StephenButtolph in https://github.com/luxfi/node/pull/2456
 - Update tmpnet fixture to include Proof-of-Possession for initial stakers by @marun in https://github.com/luxfi/node/pull/2391
 - `vms/platformvm`: Remove `EnableAdding` and `DisableAdding` from `Mempool` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2463
-- `vms/xvm`: Add `exists` bool to mempool `Peek` by @dhrubabasu in https://github.com/luxfi/node/pull/2465
+- `vms/avm`: Add `exists` bool to mempool `Peek` by @dhrubabasu in https://github.com/luxfi/node/pull/2465
 - `vms/platformvm`: Remove `PeekTxs` from `Mempool` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2378
 - `vms/platformvm`: Add `processStandardTxs` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2461
 - `vms/platformvm`: Process `atomicRequests` and `onAcceptFunc` in option blocks by @dhrubabasu in https://github.com/luxfi/node/pull/2459
@@ -1770,12 +1770,12 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Include chain creation error in health check by @marun in https://github.com/luxfi/node/pull/2519
 - Make X-chain mempool safe for concurrent use by @StephenButtolph in https://github.com/luxfi/node/pull/2520
 - Initialize transactions once by @StephenButtolph in https://github.com/luxfi/node/pull/2521
-- `vms/xvm`: Remove usage of `require.Contains` from service tests by @dhrubabasu in https://github.com/luxfi/node/pull/2517
+- `vms/avm`: Remove usage of `require.Contains` from service tests by @dhrubabasu in https://github.com/luxfi/node/pull/2517
 - Move context lock into issueTx by @StephenButtolph in https://github.com/luxfi/node/pull/2524
 - Rework X-chain locking in tests by @StephenButtolph in https://github.com/luxfi/node/pull/2526
-- `vms/xvm`: Simplify `mempool.Remove` signature by @dhrubabasu in https://github.com/luxfi/node/pull/2527
+- `vms/avm`: Simplify `mempool.Remove` signature by @dhrubabasu in https://github.com/luxfi/node/pull/2527
 - Remove unused mocks by @dhrubabasu in https://github.com/luxfi/node/pull/2528
-- Move `xvm.newContext` to `snowtest.Context` by @dhrubabasu in https://github.com/luxfi/node/pull/2513
+- Move `avm.newContext` to `snowtest.Context` by @dhrubabasu in https://github.com/luxfi/node/pull/2513
 - Do not fail-fast Tests / Unit by @StephenButtolph in https://github.com/luxfi/node/pull/2530
 - Make P-Chain Mempool thread-safe by @joshua-kim in https://github.com/luxfi/node/pull/2523
 - `vms/platformvm`: Use `snowtest.Context` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2515
@@ -1816,7 +1816,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Remove `len` tag parsing from the reflect codec by @StephenButtolph in https://github.com/luxfi/node/pull/2559
 - Use more specific type by @dhrubabasu in https://github.com/luxfi/node/pull/2567
 - Standardize `onShutdownCtx` by @dhrubabasu in https://github.com/luxfi/node/pull/2568
-- Verify xvm mempool txs against the last accepted state by @StephenButtolph in https://github.com/luxfi/node/pull/2569
+- Verify avm mempool txs against the last accepted state by @StephenButtolph in https://github.com/luxfi/node/pull/2569
 - Update `CODEOWNERS` by @dhrubabasu in https://github.com/luxfi/node/pull/2570
 - Remove license from mocks by @dhrubabasu in https://github.com/luxfi/node/pull/2574
 - Add missing import by @dhrubabasu in https://github.com/luxfi/node/pull/2573
@@ -1874,15 +1874,15 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 
 ### APIs
 
-- Added `lux_{chainID}_blks_build_accept_latency` metric
-- Added `lux_{chainID}_blks_issued{source}` metric with sources:
+- Added `avalanche_{chainID}_blks_build_accept_latency` metric
+- Added `avalanche_{chainID}_blks_issued{source}` metric with sources:
   -  `pull_gossip`
   -  `push_gossip`
   -  `put_gossip` which is deprecated
   -  `built`
   -  `unknown`
-- Added `lux_{chainID}_issuer_stake_sum` metric
-- Added `lux_{chainID}_issuer_stake_count` metric
+- Added `avalanche_{chainID}_issuer_stake_sum` metric
+- Added `avalanche_{chainID}_issuer_stake_count` metric
 
 ### Configs
 
@@ -1920,9 +1920,9 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 - `vms/platformvm`: Consolidate `state` pkg mocks by @dhrubabasu in https://github.com/luxfi/node/pull/2370
 - Remove common bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2297
 - `vms/platformvm`: Move `toEngine` channel to mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2333
-- `vms/xvm`: Rename `states` pkg to `state` by @dhrubabasu in https://github.com/luxfi/node/pull/2381
+- `vms/avm`: Rename `states` pkg to `state` by @dhrubabasu in https://github.com/luxfi/node/pull/2381
 - Implement generic bimap by @StephenButtolph in https://github.com/luxfi/node/pull/2383
-- Unexport RequestID from linear engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
+- Unexport RequestID from snowman engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
 - Add metric to track the stake weight of block providers by @StephenButtolph in https://github.com/luxfi/node/pull/2376
 - Add block source metrics to monitor gossip by @StephenButtolph in https://github.com/luxfi/node/pull/2386
 - Rename `D` to `Durango` by @dhrubabasu in https://github.com/luxfi/node/pull/2389
@@ -1949,7 +1949,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Added log level information to the result of `admin.setLoggerLevel`
 - Updated `info.peers` to return chain aliases for `benched` chains
 - Added support to sample validators of non-tracked subnets with `platform.sampleValidators`
-- Added `lux_{chainID}_max_verified_height` metric to track the highest verified block
+- Added `avalanche_{chainID}_max_verified_height` metric to track the highest verified block
 
 ### Configs
 
@@ -1984,7 +1984,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Add fuzz test for `NewIteratorWithStartAndPrefix` by @danlaine in https://github.com/luxfi/node/pull/1992
 - Return if element was deleted from `Hashmap` by @dhrubabasu in https://github.com/luxfi/node/pull/2271
 - `mempool.NewMempool` -> `mempool.New` by @dhrubabasu in https://github.com/luxfi/node/pull/2276
-- e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by geth by @marun in https://github.com/luxfi/node/pull/2265
+- e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by coreth by @marun in https://github.com/luxfi/node/pull/2265
 - Cleanup platformvm mempool errs by @dhrubabasu in https://github.com/luxfi/node/pull/2278
 - MerkleDB:Naming and comments cleanup by @dboehm-avalabs in https://github.com/luxfi/node/pull/2274
 - Move `DropExpiredStakerTxs` to platformvm mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2279
@@ -1997,9 +1997,9 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Simplify get server creation by @StephenButtolph in https://github.com/luxfi/node/pull/2285
 - Move management of platformvm preferred block to `executor.Manager` by @dhrubabasu in https://github.com/luxfi/node/pull/2292
 - Add `recentTxsLock` to platform `network` struct by @dhrubabasu in https://github.com/luxfi/node/pull/2294
-- e2e: More fixture refinement in support of geth integration testing  by @marun in https://github.com/luxfi/node/pull/2275
+- e2e: More fixture refinement in support of coreth integration testing  by @marun in https://github.com/luxfi/node/pull/2275
 - Add `VerifyTx` to `executor.Manager` by @dhrubabasu in https://github.com/luxfi/node/pull/2293
-- Simplify lux bootstrapping by @StephenButtolph in https://github.com/luxfi/node/pull/2286
+- Simplify avalanche bootstrapping by @StephenButtolph in https://github.com/luxfi/node/pull/2286
 - Replace unique slices with sets in the engine interface by @StephenButtolph in https://github.com/luxfi/node/pull/2317
 - Use zap.Stringer rather than zap.Any by @StephenButtolph in https://github.com/luxfi/node/pull/2320
 - Move `AddUnverifiedTx` logic to `network.IssueTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2310
@@ -2014,15 +2014,15 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Update zap dependency to v1.26.0 by @danlaine in https://github.com/luxfi/node/pull/2325
 - Remove useless anon functions by @StephenButtolph in https://github.com/luxfi/node/pull/2326
 - Move `network` implementation to separate package by @dhrubabasu in https://github.com/luxfi/node/pull/2296
-- Unexport lux constant from common package by @StephenButtolph in https://github.com/luxfi/node/pull/2327
+- Unexport avalanche constant from common package by @StephenButtolph in https://github.com/luxfi/node/pull/2327
 - Remove `common.Config` functions by @StephenButtolph in https://github.com/luxfi/node/pull/2328
 - Move engine startup into helper function by @StephenButtolph in https://github.com/luxfi/node/pull/2329
 - Remove bootstrapping retry config by @StephenButtolph in https://github.com/luxfi/node/pull/2301
-- Export linear bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
+- Export snowman bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
 - Remove common.Config from syncer.Config by @StephenButtolph in https://github.com/luxfi/node/pull/2330
 - `platformvm.VM` -- replace `Config` field with `validators.Manager` by @danlaine in https://github.com/luxfi/node/pull/2319
 - Improve height monitoring by @StephenButtolph in https://github.com/luxfi/node/pull/2347
-- Cleanup linear consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
+- Cleanup snowman consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
 - Expand consensus health check by @StephenButtolph in https://github.com/luxfi/node/pull/2354
 - Reduce the size of the OracleBlock interface by @StephenButtolph in https://github.com/luxfi/node/pull/2355
 - [vms/proposervm] Update Build Heuristic by @patrick-ogrady in https://github.com/luxfi/node/pull/2348
@@ -2139,8 +2139,8 @@ The plugin version is updated to `29` all plugins must update to be compatible.
 - Fix typo in block formation logic documentation by @kyoshisuki in https://github.com/luxfi/node/pull/2158
 - Marshal blocks and transactions inside API calls by @StephenButtolph in https://github.com/luxfi/node/pull/2153
 - Remove lock options from the info api by @StephenButtolph in https://github.com/luxfi/node/pull/2149
-- Remove write lock option from the xvm static API by @StephenButtolph in https://github.com/luxfi/node/pull/2154
-- Remove write lock option from the xvm wallet API by @StephenButtolph in https://github.com/luxfi/node/pull/2155
+- Remove write lock option from the avm static API by @StephenButtolph in https://github.com/luxfi/node/pull/2154
+- Remove write lock option from the avm wallet API by @StephenButtolph in https://github.com/luxfi/node/pull/2155
 - Fix json marshalling of Sets by @StephenButtolph in https://github.com/luxfi/node/pull/2161
 - Rename `removeSubnetValidatorValidation` to `verifyRemoveSubnetValidatorTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2162
 - Remove lock options from the IPCs api by @StephenButtolph in https://github.com/luxfi/node/pull/2151
@@ -2148,7 +2148,7 @@ The plugin version is updated to `29` all plugins must update to be compatible.
 - Remove lock options from the admin API by @StephenButtolph in https://github.com/luxfi/node/pull/2150
 - Remove aliasing of `math` standard lib by @dhrubabasu in https://github.com/luxfi/node/pull/2163
 - Remove write lock option from the platformvm API by @StephenButtolph in https://github.com/luxfi/node/pull/2157
-- Remove write lock option from the xvm rpc API by @StephenButtolph in https://github.com/luxfi/node/pull/2156
+- Remove write lock option from the avm rpc API by @StephenButtolph in https://github.com/luxfi/node/pull/2156
 - Remove context lock from API VM interface by @StephenButtolph in https://github.com/luxfi/node/pull/2165
 - Use set.Of rather than set.Add by @StephenButtolph in https://github.com/luxfi/node/pull/2164
 - Bump google.golang.org/grpc from 1.55.0 to 1.58.3 by @dependabot in https://github.com/luxfi/node/pull/2159
@@ -2171,15 +2171,15 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 
 ### APIs
 
-- Added `lux_{chainID}_total_weight` metric
-- Added `lux_{chainID}_num_validators` metric
-- Added `lux_{chainID}_num_processing_ancestor_fetches_failed` metric
-- Added `lux_{chainID}_num_processing_ancestor_fetches_dropped` metric
-- Added `lux_{chainID}_num_processing_ancestor_fetches_succeeded` metric
-- Added `lux_{chainID}_num_processing_ancestor_fetches_unneeded` metric
-- Added `lux_{chainID}_num_missing_accepted_blocks` metric
-- Added `lux_{chainID}_selected_vote_index_count` metric
-- Added `lux_{chainID}_selected_vote_index_sum` metric
+- Added `avalanche_{chainID}_total_weight` metric
+- Added `avalanche_{chainID}_num_validators` metric
+- Added `avalanche_{chainID}_num_processing_ancestor_fetches_failed` metric
+- Added `avalanche_{chainID}_num_processing_ancestor_fetches_dropped` metric
+- Added `avalanche_{chainID}_num_processing_ancestor_fetches_succeeded` metric
+- Added `avalanche_{chainID}_num_processing_ancestor_fetches_unneeded` metric
+- Added `avalanche_{chainID}_num_missing_accepted_blocks` metric
+- Added `avalanche_{chainID}_selected_vote_index_count` metric
+- Added `avalanche_{chainID}_selected_vote_index_sum` metric
 
 ### Configs
 
@@ -2197,13 +2197,13 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 
 ### What's Changed
 
-- Add last accepted height to the linear interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
+- Add last accepted height to the snowman interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
 - Delete kurtosis CI jobs by @marun in https://github.com/luxfi/node/pull/2068
 - e2e: Ensure all Issue* calls use the default context by @marun in https://github.com/luxfi/node/pull/2069
 - Remove Finalized from the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2093
 - Remove embedding of `verify.Verifiable` in `FxCredential` by @dhrubabasu in https://github.com/luxfi/node/pull/2089
 - Clarify decidable interface simple default parameter tests by @gyuho in https://github.com/luxfi/node/pull/2094
-- snow/consensus/linear/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
+- snow/consensus/snowman/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
 - Cleanup `.golangci.yml` by @dhrubabasu in https://github.com/luxfi/node/pull/2097
 - Refactor `ancestor.Tree` by @StephenButtolph in https://github.com/luxfi/node/pull/2099
 - Update AMI runner image and instance type by @charlie-ava in https://github.com/luxfi/node/pull/1939
@@ -2213,8 +2213,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Add preference lookups by height to the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2092
 - Remove duplicate pullQuery method by @StephenButtolph in https://github.com/luxfi/node/pull/2103
 - Add additional validator set metrics by @aaronbuchwald in https://github.com/luxfi/node/pull/2051
-- Remove `confidence.Initialize` and `confidence.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
-- Remove initialize functions from the confidence package by @danlaine in https://github.com/luxfi/node/pull/2105
+- Remove `snowball.Initialize` and `snowball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
+- Remove initialize functions from the snowball package by @danlaine in https://github.com/luxfi/node/pull/2105
 - Remove `genesis.State` by @joshua-kim in https://github.com/luxfi/node/pull/2112
 - add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
 - Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxfi/node/pull/2100
@@ -2360,7 +2360,7 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - Add function to initialize SampleableSet by @joshua-kim in https://github.com/luxfi/node/pull/2017
 - add `IsCortinaActivated` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2013
 - Fix P-chain Import by @StephenButtolph in https://github.com/luxfi/node/pull/2035
-- Rename xvm/blocks package to xvm/block by @joshua-kim in https://github.com/luxfi/node/pull/1970
+- Rename avm/blocks package to avm/block by @joshua-kim in https://github.com/luxfi/node/pull/1970
 - Merkledb Update rangeproof proto to be consistent with changeproof proto by @dboehm-avalabs in https://github.com/luxfi/node/pull/2040
 - `merkledb` -- encode lengths as uvarints by @danlaine in https://github.com/luxfi/node/pull/2039
 - MerkleDB Remove GetNodeFromParent by @dboehm-avalabs in https://github.com/luxfi/node/pull/2041
@@ -2569,7 +2569,7 @@ The plugin version is unchanged at `27` and compatible with versions `v1.10.5 - 
 - Remove context.TODO from tests by @StephenButtolph in https://github.com/luxfi/node/pull/1778
 - Replace linkeddb iterator with native DB range queries by @StephenButtolph in https://github.com/luxfi/node/pull/1752
 - Add support for measuring key size in caches by @StephenButtolph in https://github.com/luxfi/node/pull/1781
-- Bump geth to v0.12.5-rc.0 by @aaronbuchwald in https://github.com/luxfi/node/pull/1775
+- Bump coreth to v0.12.5-rc.0 by @aaronbuchwald in https://github.com/luxfi/node/pull/1775
 - Add metric for the number of elements in a cache by @StephenButtolph in https://github.com/luxfi/node/pull/1782
 - Evict blocks based on size by @StephenButtolph in https://github.com/luxfi/node/pull/1766
 - Add proposervm state metrics by @StephenButtolph in https://github.com/luxfi/node/pull/1785
@@ -2589,8 +2589,8 @@ The plugin version is updated to `27` all plugins must update to be compatible.
 
 ### APIs
 
-- Added `lux_network_clock_skew_sum` metric
-- Added `lux_network_clock_skew_count` metric
+- Added `avalanche_network_clock_skew_sum` metric
+- Added `avalanche_network_clock_skew_count` metric
 
 ### Configs
 
@@ -2606,7 +2606,7 @@ The plugin version is updated to `27` all plugins must update to be compatible.
 - stop persisting rejected blocks on P-chain by @dhrubabasu in https://github.com/luxfi/node/pull/1696
 - Ensure scripts/lint.sh failure when used with incompatible grep by @marun in https://github.com/luxfi/node/pull/1711
 - sum peers clock skew into metric by @najeal in https://github.com/luxfi/node/pull/1695
-- Make XVM implement `block.HeightIndexedChainVM` by @dhrubabasu in https://github.com/luxfi/node/pull/1699
+- Make AVM implement `block.HeightIndexedChainVM` by @dhrubabasu in https://github.com/luxfi/node/pull/1699
 - ProposerVM nits by @abi87 in https://github.com/luxfi/node/pull/1688
 - Sorting -- Remove old `IsSortedAndUnique`, rename `IsSortedAndUniqueSortable` to `IsSortedAndUnique` by @danlaine in https://github.com/luxfi/node/pull/1666
 - Update snow consensus doc post X-chain linearization by @exdx in https://github.com/luxfi/node/pull/1703
@@ -2640,12 +2640,12 @@ The plugin version is unchanged at `26` and compatible with versions `v1.10.1 - 
 
 ### APIs
 
-- Removed `lux_X_vm_lux_metervm_pending_txs_count` metric
-- Removed `lux_X_vm_lux_metervm_pending_txs_sum` metric
-- Removed `lux_X_vm_lux_metervm_get_tx_count` metric
-- Removed `lux_X_vm_lux_metervm_get_tx_sum` metric
-- Removed `lux_X_vm_lux_metervm_get_tx_err_count` metric
-- Removed `lux_X_vm_lux_metervm_get_tx_err_sum` metric
+- Removed `avalanche_X_vm_avalanche_metervm_pending_txs_count` metric
+- Removed `avalanche_X_vm_avalanche_metervm_pending_txs_sum` metric
+- Removed `avalanche_X_vm_avalanche_metervm_get_tx_count` metric
+- Removed `avalanche_X_vm_avalanche_metervm_get_tx_sum` metric
+- Removed `avalanche_X_vm_avalanche_metervm_get_tx_err_count` metric
+- Removed `avalanche_X_vm_avalanche_metervm_get_tx_err_sum` metric
 
 ### Configs
 
@@ -2675,17 +2675,17 @@ The plugin version is unchanged at `26` and compatible with versions `v1.10.1 - 
 - Remove MaxConnectionAge gRPC StreamID overflow mitigation by @hexfusion in https://github.com/luxfi/node/pull/1388
 - add fuzzing action by @danlaine in https://github.com/luxfi/node/pull/1635
 - Remove dagState and GetUTXOFromID by @StephenButtolph in https://github.com/luxfi/node/pull/1632
-- Update all XVM tests for post-linearization by @StephenButtolph in https://github.com/luxfi/node/pull/1631
+- Update all AVM tests for post-linearization by @StephenButtolph in https://github.com/luxfi/node/pull/1631
 - Remove PendingTxs from the DAGVM interface by @StephenButtolph in https://github.com/luxfi/node/pull/1641
 - Remove GetTx from the DAGVM interface by @StephenButtolph in https://github.com/luxfi/node/pull/1642
-- Bump geth v0.12.4 by @aaronbuchwald in https://github.com/luxfi/node/pull/1646
+- Bump coreth v0.12.4 by @aaronbuchwald in https://github.com/luxfi/node/pull/1646
 - [x/merkledb] Remove useless `err` check by @patrick-ogrady in https://github.com/luxfi/node/pull/1650
 - [x/merkledb] Trailing whitespace removal on README by @patrick-ogrady in https://github.com/luxfi/node/pull/1649
 - Remove unneeded functions from UniqueTx by @StephenButtolph in https://github.com/luxfi/node/pull/1643
 - Simplify tx verification by @StephenButtolph in https://github.com/luxfi/node/pull/1654
 - `merkledb` --  fix `findNextKey` by @danlaine in https://github.com/luxfi/node/pull/1653
 - Cleanup X-chain UniqueTx Dependencies by @StephenButtolph in https://github.com/luxfi/node/pull/1656
-- Prune X-chain State by @coffeelux in https://github.com/luxfi/node/pull/1427
+- Prune X-chain State by @coffeeavax in https://github.com/luxfi/node/pull/1427
 - Support building docker image on ARM64 by @dshiell in https://github.com/luxfi/node/pull/1103
 - remove goreleaser by @danlaine in https://github.com/luxfi/node/pull/1660
 - Fix Dockerfile on non amd64 platforms by @joshua-kim in https://github.com/luxfi/node/pull/1661
@@ -2727,15 +2727,15 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 ### APIs
 
 - Added health metrics based on tags
-  - `lux_health_checks_failing{tag="TAG"}`
-  - `lux_liveness_checks_failing{tag="TAG"}`
-  - `lux_readiness_checks_failing{tag="TAG"}`
+  - `avalanche_health_checks_failing{tag="TAG"}`
+  - `avalanche_liveness_checks_failing{tag="TAG"}`
+  - `avalanche_readiness_checks_failing{tag="TAG"}`
 - Removed P-chain VM percent connected metrics
-  - `lux_P_vm_percent_connected`
-  - `lux_P_vm_percent_connected_subnet{subnetID="SUBNETID"}`
+  - `avalanche_P_vm_percent_connected`
+  - `avalanche_P_vm_percent_connected_subnet{subnetID="SUBNETID"}`
 - Added percent connected metrics by chain
-  - `lux_{ChainID}_percent_connected`
-- Removed `lux_network_send_queue_portion_full` metric
+  - `avalanche_{ChainID}_percent_connected`
+- Removed `avalanche_network_send_queue_portion_full` metric
 
 ### Configs
 
@@ -2774,7 +2774,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Reduce number of test iterations by @danlaine in https://github.com/luxfi/node/pull/1568
 - Re-add upgrade tests by @StephenButtolph in https://github.com/luxfi/node/pull/1410
 - Remove lists from Chits messages by @StephenButtolph in https://github.com/luxfi/node/pull/1412
-- Add more X-chain tests by @coffeelux in https://github.com/luxfi/node/pull/1487
+- Add more X-chain tests by @coffeeavax in https://github.com/luxfi/node/pull/1487
 - fix typo by @meaghanfitzgerald in https://github.com/luxfi/node/pull/1570
 - Reduce the number of test health checks by @StephenButtolph in https://github.com/luxfi/node/pull/1571
 - Fix proposervm.GetAncestors test flake by @StephenButtolph in https://github.com/luxfi/node/pull/1572
@@ -2799,7 +2799,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Rename license header file to avoid unintended license indexing by @StephenButtolph in https://github.com/luxfi/node/pull/1608
 - `merkledb` and `sync` -- use time based rand seed by @danlaine in https://github.com/luxfi/node/pull/1607
 - add `local-prefixes` setting for `goimports` by @dhrubabasu in https://github.com/luxfi/node/pull/1612
-- snow/engine/linear: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
+- snow/engine/snowman: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
 - Update CodeQL to v2 by @StephenButtolph in https://github.com/luxfi/node/pull/1616
 - Remove old networking metric by @StephenButtolph in https://github.com/luxfi/node/pull/1619
 - Fix --http-host flag to support IPv6 by @StephenButtolph in https://github.com/luxfi/node/pull/1620
@@ -2822,11 +2822,11 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Significantly improved the performance of `platform.getStake`
 - Added `portion_filled` metric for all metered caches
 - Added resource metrics by process
-  - `lux_system_resources_num_cpu_cycles`
-  - `lux_system_resources_num_disk_read_bytes`
-  - `lux_system_resources_num_disk_reads`
-  - `lux_system_resources_num_disk_write_bytes`
-  - `lux_system_resources_num_disk_writes`
+  - `avalanche_system_resources_num_cpu_cycles`
+  - `avalanche_system_resources_num_disk_read_bytes`
+  - `avalanche_system_resources_num_disk_reads`
+  - `avalanche_system_resources_num_disk_write_bytes`
+  - `avalanche_system_resources_num_disk_writes`
 
 ### Configs
 
@@ -2873,7 +2873,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - ban usage of `require.Equal` when testing for length by @dhrubabasu in https://github.com/luxfi/node/pull/1497
 - ban usage of `nil` in require functions by @dhrubabasu in https://github.com/luxfi/node/pull/1498
 - Sized LRU cache by @abi87 in https://github.com/luxfi/node/pull/1517
-- engine/linear: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
+- engine/snowman: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
 - snow/networking/sender: add missing verbo check by @gyuho in https://github.com/luxfi/node/pull/1504
 - Delete duplicate test var definitions by @StephenButtolph in https://github.com/luxfi/node/pull/1518
 - utils/bag: print generic type for bag elements by @gyuho in https://github.com/luxfi/node/pull/1507
@@ -2883,7 +2883,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - rename enabled staking to sybil protection enabled by @ceyonur in https://github.com/luxfi/node/pull/1441
 - Fix network compression type flag usage by @StephenButtolph in https://github.com/luxfi/node/pull/1532
 - Deprecate uptimes in pong message by @ceyonur in https://github.com/luxfi/node/pull/1362
-- Add CPU cycles and number of disk read/write metrics by pid by @coffeelux in https://github.com/luxfi/node/pull/1334
+- Add CPU cycles and number of disk read/write metrics by pid by @coffeeavax in https://github.com/luxfi/node/pull/1334
 - Fetch process resource stats as best-effort by @StephenButtolph in https://github.com/luxfi/node/pull/1543
 - Add serialization tests for transactions added in Banff by @StephenButtolph in https://github.com/luxfi/node/pull/1513
 - Log chain shutdown duration by @StephenButtolph in https://github.com/luxfi/node/pull/1545
@@ -2892,7 +2892,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 ### New Contributors
 
 - @gyuho made their first contribution in https://github.com/luxfi/node/pull/1461
-- @coffeelux made their first contribution in https://github.com/luxfi/node/pull/1334
+- @coffeeavax made their first contribution in https://github.com/luxfi/node/pull/1334
 
 **Full Changelog**: https://github.com/luxfi/node/compare/v1.10.1...v1.10.2
 
@@ -2902,30 +2902,30 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 ### APIs
 
-- Enabled `xvm.getBlockByHeight` to take in `height` as a string
+- Enabled `avm.getBlockByHeight` to take in `height` as a string
 - Added IDs to json formats
   - `platform.getTx` now includes `id` in the `tx` response
   - `platform.getBlock` now includes `id` in the `block` response and in the internal `tx` fields
-  - `xvm.getTx` now includes `id` in the `tx` response
-  - `xvm.getBlock` now includes `id` in the `block` response and in the internal `tx` fields
-  - `xvm.getBlockByHeight` now includes `id` in the `block` response and in the internal `tx` fields
-- Removed `xvm.issueStopVertex`
+  - `avm.getTx` now includes `id` in the `tx` response
+  - `avm.getBlock` now includes `id` in the `block` response and in the internal `tx` fields
+  - `avm.getBlockByHeight` now includes `id` in the `block` response and in the internal `tx` fields
+- Removed `avm.issueStopVertex`
 - Fixed `wallet` methods to correctly allow issuance of dependent transactions after the X-chain linearization
 - Added `validatorOnly` flag in `platform.getStake`
-- Removed all lux consensus metrics
+- Removed all avalanche consensus metrics
 - Fixed `msgHandlingTime` metrics
 
 ### Configs
 
-- Removed `--snow-lux-num-parents`
-- Removed `--snow-lux-batch-size`
+- Removed `--snow-avalanche-num-parents`
+- Removed `--snow-avalanche-batch-size`
 
 ### Fixes
 
-- Fixed panic when restarting partially completed X-chain linear bootstrapping
+- Fixed panic when restarting partially completed X-chain snowman bootstrapping
 - Fixed `--network-allow-private-ips` handling to correctly prevent outbound connections to private IP ranges
 - Fixed UniformSampler to support sampling numbers between MaxInt64 and MaxUint64
-- Fixed data race in txID access during transaction gossip in the XVM
+- Fixed data race in txID access during transaction gossip in the AVM
 
 ### What's Changed
 
@@ -2934,7 +2934,11 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Update linkedhashmap to only Rlock when possible by @dboehm-avalabs in https://github.com/luxfi/node/pull/1329
 - Remove no-op changes from history results by @dboehm-avalabs in https://github.com/luxfi/node/pull/1335
 - Cleanup type assertions in the linkedHashmap by @StephenButtolph in https://github.com/luxfi/node/pull/1341
+<<<<<<< HEAD
 - Fix racy xvm tx access by @StephenButtolph in https://github.com/luxfi/node/pull/1349
+=======
+- Fix racy avm tx access by @StephenButtolph in https://github.com/luxfi/node/pull/1349
+>>>>>>> a8fe7515f (Update to add new integrated M-Chain)
 - Update Testnet beacon ips by @StephenButtolph in https://github.com/luxfi/node/pull/1354
 - Remove duplicate TLS verification by @StephenButtolph in https://github.com/luxfi/node/pull/1364
 - Adjust Merkledb Trie invalidation locking by @dboehm-avalabs in https://github.com/luxfi/node/pull/1355
@@ -2971,7 +2975,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Require `txID`s in PeerList messages by @StephenButtolph in https://github.com/luxfi/node/pull/1411
 - Allow dependent tx issuance over the wallet API by @StephenButtolph in https://github.com/luxfi/node/pull/1413
 - Add support for proto `message.Tx` decoding by @danlaine in https://github.com/luxfi/node/pull/1332
-- Remove lux bootstrapping -> lux consensus transition by @StephenButtolph in https://github.com/luxfi/node/pull/1345
+- Remove avalanche bootstrapping -> avalanche consensus transition by @StephenButtolph in https://github.com/luxfi/node/pull/1345
 - Benchmark get canonical validator set by @aaronbuchwald in https://github.com/luxfi/node/pull/1417
 - Simplify IP status calculation by @StephenButtolph in https://github.com/luxfi/node/pull/1421
 - Honor AllowPrivateIPs config by @StephenButtolph in https://github.com/luxfi/node/pull/1422
@@ -2981,8 +2985,8 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Fix msgHandlingTime by @StephenButtolph in https://github.com/luxfi/node/pull/1432
 - Change ChangeProofs to only have one list of key/value change instead of key/values and deleted by @dboehm-avalabs in https://github.com/luxfi/node/pull/1385
 - Update AMI generation workflow by @charlie-ava in https://github.com/luxfi/node/pull/1289
-- Support `height` as a string in `xvm.getBlockByHeight` by @StephenButtolph in https://github.com/luxfi/node/pull/1437
-- Defer Linear Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
+- Support `height` as a string in `avm.getBlockByHeight` by @StephenButtolph in https://github.com/luxfi/node/pull/1437
+- Defer Snowman Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
 - Cleanup proposervm ancestors packing @StephenButtolph in https://github.com/luxfi/node/pull/1446
 
 ### New Contributors
@@ -2993,7 +2997,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 ## [v1.10.0](https://github.com/luxfi/node/releases/tag/v1.10.0)
 
-[This upgrade](https://medium.com/luxlux/cortina-x-chain-linearization-a1d9305553f6) linearizes the X-chain, introduces delegation batching to the P-chain, and increases the maximum block size on the C-chain.
+[This upgrade](https://medium.com/avalancheavax/cortina-x-chain-linearization-a1d9305553f6) linearizes the X-chain, introduces delegation batching to the P-chain, and increases the maximum block size on the C-chain.
 
 The changes in the upgrade go into effect at 11 AM ET, April 25th 2023 on Mainnet.
 
@@ -3027,7 +3031,7 @@ The supported plugin version is `25`.
 - Add zip bomb tests by @StephenButtolph in https://github.com/luxfi/node/pull/1300
 - Gossip Lux frontier after the linearization by @StephenButtolph in https://github.com/luxfi/node/pull/1303
 - Add fine grained metrics+logging for handling, processing, and grab l… by @aaronbuchwald in https://github.com/luxfi/node/pull/1301
-- Persist stateless block in XVM state by @StephenButtolph in https://github.com/luxfi/node/pull/1305
+- Persist stateless block in AVM state by @StephenButtolph in https://github.com/luxfi/node/pull/1305
 - Initialize FxID fields in GetBlock and GetBlockByHeight by @StephenButtolph in https://github.com/luxfi/node/pull/1306
 - Filterable Health Tags by @ceyonur in https://github.com/luxfi/node/pull/1304
 - increase health await timeout by @ceyonur in https://github.com/luxfi/node/pull/1317
@@ -3065,7 +3069,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `24`.
 
 - Fixed `x/merkledb.ChangeProof#getLargestKey` to correctly handle no changes
-- Added test for `xvm/txs/executor.SemanticVerifier#verifyFxUsage` with multiple valid fxs
+- Added test for `avm/txs/executor.SemanticVerifier#verifyFxUsage` with multiple valid fxs
 - Fixed CPU + bandwidth performance regression during vertex processing
 - Added example usage of the `/ext/index/X/block` API
 - Reduced the default value of `--snow-optimal-processing` from `50` to `10`
@@ -3093,28 +3097,28 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Consensus
 
-- Added support to switch from `Lux` consensus to `Linear` consensus
-- Added support for routing consensus messages to either `Lux` or `Linear` consensus on the same chain
+- Added support to switch from `Lux` consensus to `Snowman` consensus
+- Added support for routing consensus messages to either `Lux` or `Snowman` consensus on the same chain
 - Removed usage of deferred evaluation of the `handler.Consensus` in the `Lux` `OnFinished` callback
-- Dropped inbound `Lux` consensus messages after switching to `Linear` consensus
-- Renamed the `Lux` VM metrics prefix from `lux_{chainID}_vm_` to `lux_{chainID}_vm_lux`
+- Dropped inbound `Lux` consensus messages after switching to `Snowman` consensus
+- Renamed the `Lux` VM metrics prefix from `avalanche_{chainID}_vm_` to `avalanche_{chainID}_vm_avalanche`
 - Replaced `consensus` and `decision` dispatchers with `block`, `tx`, and `vertex` dispatchers
-- Removed `Lux` bootstrapping restarts during the switch to `Linear` consensus
+- Removed `Lux` bootstrapping restarts during the switch to `Snowman` consensus
 
-### XVM
+### AVM
 
-- Added `xvm` block execution manager
-- Added `xvm` block builder
-- Refactored `xvm` transaction syntactic verification
-- Refactored `xvm` transaction semantic verification
-- Refactored `xvm` transaction execution
-- Added `xvm` mempool gossip
-- Removed block timer interface from `xvm` `mempool`
-- Moved `toEngine` channel into the `xvm` `mempool`
-- Added `GetUTXOFromID` to the `xvm` `state.Chain` interface
-- Added unpopulated `MerkleRoot` to `xvm` blocks
-- Added `xvm` transaction based metrics
-- Replaced error strings with error interfaces in the `xvm` mempool
+- Added `avm` block execution manager
+- Added `avm` block builder
+- Refactored `avm` transaction syntactic verification
+- Refactored `avm` transaction semantic verification
+- Refactored `avm` transaction execution
+- Added `avm` mempool gossip
+- Removed block timer interface from `avm` `mempool`
+- Moved `toEngine` channel into the `avm` `mempool`
+- Added `GetUTXOFromID` to the `avm` `state.Chain` interface
+- Added unpopulated `MerkleRoot` to `avm` blocks
+- Added `avm` transaction based metrics
+- Replaced error strings with error interfaces in the `avm` mempool
 
 ### PlatformVM
 
@@ -3141,7 +3145,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Exported various errors to use in testing
 - Removed the `vms/components/state` package
 - Replaced ad-hoc linked hashmaps with the standard data-structure
-- Removed `usr/local/lib/lux` from deb packages
+- Removed `usr/local/lib/avalanche` from deb packages
 - Standardized usage of `constants.UnitTestID`
 
 ### Examples
@@ -3159,11 +3163,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### APIs
 
-- Added `xvm` block APIs
-  - `xvm.getBlock`
-  - `xvm.getBlockByHeight`
-  - `xvm.getHeight`
-- Converted `xvm` APIs to only surface accepted state
+- Added `avm` block APIs
+  - `avm.getBlock`
+  - `avm.getBlockByHeight`
+  - `avm.getHeight`
+- Converted `avm` APIs to only surface accepted state
 - Deprecated all `ipcs` APIs
   - `ipcs.publishBlockchain`
   - `ipcs.unpublishBlockchain`
@@ -3174,27 +3178,27 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
   - `keystore.listUsers`
   - `keystore.importUser`
   - `keystore.exportUser`
-- Deprecated the `xvm/pubsub` API endpoint
-- Deprecated various `xvm` APIs
-  - `xvm.getAddressTxs`
-  - `xvm.getBalance`
-  - `xvm.getAllBalances`
-  - `xvm.createAsset`
-  - `xvm.createFixedCapAsset`
-  - `xvm.createVariableCapAsset`
-  - `xvm.createNFTAsset`
-  - `xvm.createAddress`
-  - `xvm.listAddresses`
-  - `xvm.exportKey`
-  - `xvm.importKey`
-  - `xvm.mint`
-  - `xvm.sendNFT`
-  - `xvm.mintNFT`
-  - `xvm.import`
-  - `xvm.export`
-  - `xvm.send`
-  - `xvm.sendMultiple`
-- Deprecated the `xvm/wallet` API endpoint
+- Deprecated the `avm/pubsub` API endpoint
+- Deprecated various `avm` APIs
+  - `avm.getAddressTxs`
+  - `avm.getBalance`
+  - `avm.getAllBalances`
+  - `avm.createAsset`
+  - `avm.createFixedCapAsset`
+  - `avm.createVariableCapAsset`
+  - `avm.createNFTAsset`
+  - `avm.createAddress`
+  - `avm.listAddresses`
+  - `avm.exportKey`
+  - `avm.importKey`
+  - `avm.mint`
+  - `avm.sendNFT`
+  - `avm.mintNFT`
+  - `avm.import`
+  - `avm.export`
+  - `avm.send`
+  - `avm.sendMultiple`
+- Deprecated the `avm/wallet` API endpoint
   - `wallet.issueTx`
   - `wallet.send`
   - `wallet.sendMultiple`
@@ -3209,8 +3213,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
   - `platform.addDelegator`
   - `platform.addSubnetValidator`
   - `platform.createSubnet`
-  - `platform.exportLUX`
-  - `platform.importLUX`
+  - `platform.exportAVAX`
+  - `platform.importAVAX`
   - `platform.createBlockchain`
   - `platform.getBlockchains`
   - `platform.getStake`
@@ -3249,11 +3253,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed error handling during `merkledb` intermediate node eviction
 - Replaced values larger than `32` bytes with a hash in the `merkledb` hash representation
 
-### XVM
+### AVM
 
-- Refactored `xvm` API tx creation into a standalone `Spender` implementation
-- Migrated UTXO interfaces from the `platformvm` into the `components` for use in the `xvm`
-- Refactored `xvm` `tx.SyntacticVerify` to expect the config rather than the fee fields
+- Refactored `avm` API tx creation into a standalone `Spender` implementation
+- Migrated UTXO interfaces from the `platformvm` into the `components` for use in the `avm`
+- Refactored `avm` `tx.SyntacticVerify` to expect the config rather than the fee fields
 
 ### Miscellaneous
 
@@ -3261,7 +3265,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed `rpcchainvm` signal handling to only shutdown upon receipt of `SIGTERM`
 - Added `warp.Signature#NumSigners` for better cost tracking support
 - Added `snow.Context#PublicKey` to provide access to the local node's BLS public key inside the VM execution environment
-- Renamed Lux consensus metric prefix to `lux_{chainID}_lux`
+- Renamed Lux consensus metric prefix to `avalanche_{chainID}_avalanche`
 - Specified an explicit TCP `Linger` timeout of `15` seconds
 - Updated the `secp256k1` library to `v4.1.0`
 
@@ -3269,7 +3273,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 - Removed support for the `--whitelisted-subnets` flag
 - Removed unnecessary abstractions from the `app` package
-- Removed `Factory` embedding from `platformvm.VM` and `xvm.VM`
+- Removed `Factory` embedding from `platformvm.VM` and `avm.VM`
 - Removed `validator` package from the `platformvm`
 - Removed `timer.TimeoutManager`
 - Replaced `snow.Context` in `Factory.New` with `logging.Logger`
@@ -3314,7 +3318,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed `--public-ip` and `--public-ip-resolution-service` CLI flag descriptions
 - Updated `README.md` to explicitly reference `SECURITY.md`
 
-### Geth
+### Coreth
 
 - Enabled state sync by default when syncing from an empty database
 - Increased block gas limit to 15M for `Cortina` Network Upgrade
@@ -3326,7 +3330,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `allowedNodes` to the subnet config for `validatorOnly` subnets
 - Removed the `hashicorp/go-plugin` dependency to improve plugin flexibility
 - Replaced specialized `bag` implementations with generic `bag` implementations
-- Added `mempool` package to the `xvm`
+- Added `mempool` package to the `avm`
 - Added `chain.State#IsProcessing` to simplify integration with `block.WithVerifyContext`
 - Added `StateSyncMinVersion` to `sync.ClientConfig`
 - Added validity checks for `InitialStakeDuration` in a custom network genesis
@@ -3389,7 +3393,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Miscellaneous
 
-- Added XVM `state.Chain` interface
+- Added AVM `state.Chain` interface
 - Added generic atomic value utility
 - Added test for the AMI builder during RCs
 - Converted cache implementations to use generics
@@ -3418,7 +3422,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 ### Configs
 
 - Added `--plugin-dir` flag. The default value is `[DATADIR]/plugins`
-- Removed `--build-dir` flag. The location of the luxd binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
+- Removed `--build-dir` flag. The location of the node binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
 - Changed the default value of `--api-keystore-enabled` to `false`
 - Added `--track-subnets` flag as a replacement of `--whitelisted-subnets`
 
@@ -3432,15 +3436,15 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 - Populated non-trivial logger in the `rpcchainvm` `Server`'s `snow.Context`
 - Updated `rpcchainvm` proto definitions to use enums
-- Added `Block` format and definition to the `XVM`
+- Added `Block` format and definition to the `AVM`
 - Removed `proposervm` height index reset
 
 ### Metrics
 
-- Added `lux_network_peer_connected_duration_average` metric
-- Added `lux_api_calls_processing` metric
-- Added `lux_api_calls` metric
-- Added `lux_api_calls_duration` metric
+- Added `avalanche_network_peer_connected_duration_average` metric
+- Added `avalanche_api_calls_processing` metric
+- Added `avalanche_api_calls` metric
+- Added `avalanche_api_calls_duration` metric
 
 ### Documentation
 
@@ -3449,7 +3453,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Miscellaneous
 
-- Updated ledger to v0.6.5
+- Updated ledger-avalanche to v0.6.5
 - Added linter to ban the usage of `fmt.Errorf` without format directives
 - Added `List` to the `buffer#Deque` interface
 - Added `Index` to the `buffer#Deque` interface
@@ -3477,7 +3481,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Removed incorrect `uintptr` handling in the generic codec
 - Removed message latency tracking on messages being sent to itself
 
-### Geth
+### Coreth
 
 - Added support for eth_call over VM2VM messaging
 - Added config flags for tx pool behavior
@@ -3540,7 +3544,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added race detection to the E2E tests
 - Added additional message and sender tests
 
-### Geth
+### Coreth
 
 - Improved header and logs caching using maximum accepted depth cache
 - Added config option to perform database inspection on startup
@@ -3555,7 +3559,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Chain Data
 
-- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside luxd's database
+- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside node's database
 - Added `--chain-data-dir` as a CLI flag to specify the base directory for all `ChainDataDir`s
 
 ### Miscellaneous
@@ -3579,7 +3583,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `tracedVM` implementations for `block.ChainVM` and `vertex.DAGVM`
 - Added `tracedState` implementation for `validators.State`
 - Added `tracedHandler` implementation for `http.Handler`
-- Added `tracedConsensus` implementations for `linear.Consensus` and `lux.Consensus`
+- Added `tracedConsensus` implementations for `snowman.Consensus` and `avalanche.Consensus`
 
 ### Fixes
 
@@ -3594,7 +3598,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `--chain-aliases-file` and `--chain-aliases-file-content` CLI flags
 - Added `--proposervm-use-current-height` CLI flag
 
-### Geth
+### Coreth
 
 - Added metric for number of processed and accepted transactions
 - Added wait for state sync goroutines to complete on shutdown
@@ -3626,27 +3630,27 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 ### Documentation
 
 - Documented `Database.Put` invariant for `nil` and empty slices
-- Documented luxd's versioning scheme
+- Documented node's versioning scheme
 - Improved `vm.proto` docs
 
 ### Miscellaneous
 
 - Added peer gossip tracker
-- Added `lux_P_vm_time_until_unstake` and `lux_P_vm_time_until_unstake_subnet` metrics
+- Added `avalanche_P_vm_time_until_unstake` and `avalanche_P_vm_time_until_unstake_subnet` metrics
 - Added `keychain.NewLedgerKeychainFromIndices`
 - Removed usage of `Temporary` error handling after `listener#Accept`
 - Removed `Parameters` from all `Consensus` interfaces
-- Updated `lux-network-runner` to `v1.3.0`
+- Updated `avalanche-network-runner` to `v1.3.0`
 - Added `ids.BigBitSet` to extend `ids.BitSet64` for arbitrarily large sets
 - Added support for parsing future subnet uptime tracking data to the P-chain's state implementation
 - Increased validator set cache size
-- Added `lux.UTXOIDFromString` helper for managing `UTXOID`s more easily
+- Added `avax.UTXOIDFromString` helper for managing `UTXOID`s more easily
 
 ## [v1.9.2](https://github.com/luxfi/node/releases/tag/v1.9.2)
 
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `19`.
 
-### Geth
+### Coreth
 
 - Added trie clean cache journaling to disk to improve processing time after restart
 - Fixed regression where a snapshot could be marked as stale by the async acceptor during block processing
@@ -3657,7 +3661,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `validators.State` to the rpcchainvm server's `snow.Context`
 - Added `rpcProtocolVersion` to the output of `info.getNodeVersion`
 - Added `rpcchainvm` protocol version to the output of the `--version` flag
-- Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against luxd versions
+- Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against node versions
 
 ### Builds
 
@@ -3710,7 +3714,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed ProposerVM inner block caching after verification
 - Fixed PlatformVM mempool verification to use an updated chain time
 - Removed deprecated CLI flags: `--dynamic-update-duration`, `--dynamic-public-ip`
-- Added unexpected Put bytes tests to the Lux and Linear consensus engines
+- Added unexpected Put bytes tests to the Lux and Snowman consensus engines
 - Removed mockery generated mock implementations
 - Converted safe math functions to use generics where possible
 - Added linting to prevent usage of `assert` in unit tests
@@ -3730,7 +3734,7 @@ The supported plugin version is `17`.
 ### Upgrades
 
 - Activated P2P serialization format change to Protobuf
-- Activated non-LUX `ImportTx`/`ExportTx`s to/from the P-chain
+- Activated non-AVAX `ImportTx`/`ExportTx`s to/from the P-chain
 - Activated `Banff*` blocks on the P-chain
 - Deactivated `Apricot*` blocks on the P-chain
 - Activated `RemoveSubnetValidatorTx`s on the P-chain
@@ -3764,7 +3768,7 @@ This version is backwards compatible to [v1.8.0](https://github.com/luxfi/node/r
 - Exposed BLS proof of possession in the `info.getNodeID` API
 - Added BLS proof of possession to `AddPermissionlessValidatorTx`s for the Primary Network
 
-The default value of `--staking-signer-key-file` is `~/.luxd/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
+The default value of `--staking-signer-key-file` is `~/.node/staking/signer.key`. If the key file doesn't exist, it will be populated with a new key.
 
 ### Networking
 
@@ -3782,7 +3786,7 @@ The default value of `--staking-signer-key-file` is `~/.luxd/staking/signer.key`
 - Removed unused `unknown_txs_count` metric
 - Replaced duplicated code with generic implementations
 
-### Geth
+### Coreth
 
 - Added failure reason to bad block API
 
@@ -3796,7 +3800,7 @@ The supported plugin version is `16`.
 
 - Fixed stale block reference by evicting blocks upon successful verification
 
-### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Removed check for Apricot Phase6 incompatible fork to unblock nodes that did not upgrade ahead of the activation time
 
@@ -3811,7 +3815,7 @@ The supported plugin version is `16`.
 - Added temporarily invalid block caching to reduce repeated network requests
 - Added caching to the proposervm's inner block parsing
 
-### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Deprecated Native Asset Call
@@ -3824,7 +3828,7 @@ The changes in `v1.8.x` go into effect at 4 PM EDT on September 6th, 2022 on bot
 
 The supported plugin version is `16`.
 
-### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Fixed live-lock in bootstrapping, after performing state-sync, by properly reporting `database.ErrNotFound` in `GetBlockIDAtHeight` rather than a formatted error
 - Increased the log level of `BAD BLOCK`s from `DEBUG` to `ERROR`
@@ -3842,7 +3846,7 @@ The supported plugin version is `16`.
 
 - Reduced the severity of not quickly connecting to bootstrap nodes from `FATAL` to `WARN`
 
-### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Reduced the log level of `BAD BLOCK`s from `ERROR` to `DEBUG`
 - Added Apricot Phase6 to Chain Config `String` function
@@ -3925,7 +3929,7 @@ The supported plugin version is `16`.
 
 - Defined `p2p.proto` to be used for future network messages
 - Added `--network-tls-key-log-file-unsafe` to support inspecting p2p messages
-- Added `lux_network_accept_failed` metrics to track networking `Accept` errors
+- Added `avalanche_network_accept_failed` metrics to track networking `Accept` errors
 
 ### Miscellaneous
 
@@ -3939,7 +3943,7 @@ The supported plugin version is `16`.
   - `timer.NewStagedTimer`
   - `timer.TimedMeter`
 
-### [Geth](https://medium.com/luxlux/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
+### [Coreth](https://medium.com/avalancheavax/apricot-phase-6-native-asset-call-deprecation-a7b7a77b850a)
 
 - Incorrectly deprecated Native Asset Call
 - Migrated to go-ethereum v1.10.23
@@ -3963,7 +3967,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Refactored platformvm block creation
 - Introduced support to prevent empty nodeID use on the P-chain to be activated in a future upgrade
 
-### Geth
+### Coreth
 
 - Updated gas price estimation to limit lookback window based on block timestamps
 - Added metrics for processed/accepted gas
@@ -3998,7 +4002,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added VMs README to begin fully documenting plugin invariants
 - Added various comments around expected usages of VM tools
 
-### Geth
+### Coreth
 
 - Added optional JSON logging
 - Added interface for supporting stateful precompiles
@@ -4016,7 +4020,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Added bootstrapping ETA metrics
 - Converted all logs to support structured fields
-- Improved Linear++ oracle block verification error messages
+- Improved Snowman++ oracle block verification error messages
 - Removed deprecated or unused scripts
 
 ## [v1.7.16](https://github.com/luxfi/node/releases/tag/v1.7.16)
@@ -4039,10 +4043,10 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Removed child pointers from processing blocks
 - Added P-chain wallet helper for providing initial transactions
 
-### Geth
+### Coreth
 
 - Bumped go-ethereum dependency to v1.10.20
-- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.lux.network/nodes/maintain/chain-config-flags#c-chain-configs)
+- Updated API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update configurations [accordingly](https://docs.avax.network/nodes/maintain/chain-config-flags#c-chain-configs)
 - Optimized state sync by parallelizing trie syncing
 - Added `eth_syncing` API for compatibility. Note: This API is only accessible after bootstrapping and always returns `"false"`, since the node will no longer be syncing at that point
 - Added metrics to the atomic transaction mempool
@@ -4050,7 +4054,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Fixes
 
-- Updated Linear and Lux consensus engines to report original container preferences before processing the provided container
+- Updated Snowman and Lux consensus engines to report original container preferences before processing the provided container
 - Fixed inbound message byte throttler context cancellation cleanup
 - Removed case sensitivity of IP resolver services
 - Added failing health check when a whitelisted subnet fails to initialize a chain
@@ -4070,7 +4074,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using Lux APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/luxd/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.avax.network and https://api.avax-test.network have been updated with this format. If you are using Lux Node APIs in your code, please ensure you have updated to the latest versions. See  https://docs.avax.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -4079,7 +4083,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### PlatformVM
 
-- Fixed incorrect `P-chain` height in `Linear++` when staking is disabled
+- Fixed incorrect `P-chain` height in `Snowman++` when staking is disabled
 - Moved `platformvm` transactions to be defined in a sub-package
 - Moved `platformvm` genesis management to be defined in a sub-package
 - Moved `platformvm` state to be defined in a sub-package
@@ -4087,7 +4091,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Moved the `platformvm` transaction builder to be defined in a sub-package
 - Fixed uptime rounding during node shutdown
 
-### Geth
+### Coreth
 
 - Bumped go-ethereum dependency to v1.10.18
 - Parallelized state sync code fetching
@@ -4103,7 +4107,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Fixed `--public-ip-resolution-frequency` invalid overwrite of the resolution service
 - Added additional metrics to distinguish between virtuous and rogue currently processing transactions
-- Suppressed the super cool `luxd` banner when `stdout` is not directed to a terminal
+- Suppressed the super cool `node` banner when `stdout` is not directed to a terminal
 - Updated linter version
 - Improved various comments and documentation
 - Standardized primary network handling across subnet maps
@@ -4114,13 +4118,13 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### State Sync
 
-- Added peer bandwidth tracking to optimize `geth` state sync message routing
-- Fixed `geth` leaf request handler bug to ensure the handler delivers a valid range proof
-- Removed redundant proof keys from `geth` leafs response message format
-- Improved `geth` state sync request retry logic
-- Improved `geth` state sync handler metrics
-- Improved `geth` state sync ETA
-- Added `lux_{chainID}_handler_async_expired` metric
+- Added peer bandwidth tracking to optimize `coreth` state sync message routing
+- Fixed `coreth` leaf request handler bug to ensure the handler delivers a valid range proof
+- Removed redundant proof keys from `coreth` leafs response message format
+- Improved `coreth` state sync request retry logic
+- Improved `coreth` state sync handler metrics
+- Improved `coreth` state sync ETA
+- Added `avalanche_{chainID}_handler_async_expired` metric
 
 ### Miscellaneous
 
@@ -4129,8 +4133,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added process metrics by default in the `rpcchainvm#Server`
 - Added `Database` health checks
 - Removed the deprecated `Database.Stat` call from the `rpcdb#Server`
-- Added fail fast logic to duplicated Linear additions to avoid undefined behavior
-- Added additional testing around Linear diverged voting tests
+- Added fail fast logic to duplicated Snowman additions to avoid undefined behavior
+- Added additional testing around Snowman diverged voting tests
 - Deprecated `--dynamic-update-duration` and `--dynamic-public-ip` CLI flags
 - Added `--public-ip-resolution-frequency` and `--public-ip-resolution-service` to replace `--dynamic-update-duration` and `--dynamic-public-ip`, respectively
 
@@ -4153,7 +4157,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 ### Metrics
 
 - Added leveldb metrics
-- Added process and golang metrics for the luxd binary
+- Added process and golang metrics for the node binary
 - Added available disk space health check
   - Ensured that the disk space will not be fully utilized by shutting down the node if there is a critically low amount of free space remaining
 - Improved C-chain state sync metrics
@@ -4166,9 +4170,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Cleanup
 
-- Refactored the xvm to utilize the external txs package
+- Refactored the avm to utilize the external txs package
 - Unified platformvm dropped tx handling
-- Clarified linear child block acceptance calls
+- Clarified snowman child block acceptance calls
 - Fixed small consensus typos
 - Reduced minor duplicated code in consensus
 - Moved the platformvm key factory out of the VM into the test file
@@ -4193,7 +4197,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added state sync support to the `metervm`
 - Added state sync support to the `proposervm`
 - Added state sync support to the `rpcchainvm`
-- Added beta state sync support to `geth`
+- Added beta state sync support to `coreth`
 
 ### ProposerVM
 
@@ -4206,9 +4210,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 ### Bug Fixes
 
 - Fixed IPC message issuance and restructured consensus event callbacks to be checked at compile time
-- Fixed `geth` metrics initialization
+- Fixed `coreth` metrics initialization
 - Fixed bootstrapping startup logic to correctly startup if initially connected to enough stake
-- Fixed `geth` panic during metrics collection
+- Fixed `coreth` panic during metrics collection
 - Fixed panic on concurrent map read/write in P-chain wallet SDK
 - Fixed `rpcchainvm` panic by sanitizing http response codes
 - Fixed incorrect JSON tag on `platformvm.BaseTx`
@@ -4235,8 +4239,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Logging
 
-- Replaced Lux's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
-- Replaced Lux's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
+- Replaced Lux Node's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced Lux Node's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.
 
@@ -4246,9 +4250,9 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Standardized RPC specification of timestamp fields
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
-- Increased `geth` trie tip buffer size to 32
-- Added CPU usage metrics for Lux and all sub-processes
-- Added Disk IO usage metrics for Lux and all sub-processes
+- Increased `coreth` trie tip buffer size to 32
+- Added CPU usage metrics for Lux Node and all sub-processes
+- Added Disk IO usage metrics for Lux Node and all sub-processes
 
 ### Cleanup
 
@@ -4262,7 +4266,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Increased recommended disk size to 1 TB
 - Updated issue template
-- Documented additional `linear.Block` invariants
+- Documented additional `snowman.Block` invariants
 
 ## [v1.7.10](https://github.com/luxfi/node/releases/tag/v1.7.10)
 
@@ -4277,7 +4281,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 ### APIs
 
 - Added support for specifying additional headers and query params in the RPC client implementations.
-- Added static API clients for the `platformvm` and the `xvm`.
+- Added static API clients for the `platformvm` and the `avm`.
 
 ### PlatformVM
 
@@ -4292,18 +4296,18 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added grpc metrics.
 - Added grpc server health checks.
 
-### Geth
+### Coreth
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
-- Added Lux custom log formatting to the logs.
+- Added Lux Node custom log formatting to the logs.
 - Removed support for the JS Tracer.
 
 ### Logging
 
 - Added piping of subnet logs to stdout.
 - Lazily initialized logs to avoid opening files that are never written to.
-- Added support for arbitrarily deleted log files while luxd is running.
+- Added support for arbitrarily deleted log files while node is running.
 - Removed redundant logging configs.
 
 ### Miscellaneous
@@ -4344,7 +4348,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Reused dialer across multiple outbound connections.
 - Exported `NewTestNetwork` for easier external testing.
 
-### Geth
+### Coreth
 
 - Reduced log level of snapshot regeneration logs.
 - Enabled atomic tx replacement with higher gas fees.
@@ -4383,7 +4387,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Removed duplicated message definitions.
 - Improved error reporting around invalid plugins.
 
-### Geth
+### Coreth
 
 - Optimized FeeHistory API.
 - Added protection to prevent accidental corruption of archival node trie index.
@@ -4425,7 +4429,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added `platform.getBlock` API.
 - Cleaned up block building logic to be more modular and testable.
 
-### Geth
+### Coreth
 
 - Increased `FeeHistory` maximum historical limit to improve MetaMask UI on the C-Chain.
 - Enabled chain state metrics.
@@ -4465,7 +4469,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added additional sanity checks to prevent users from incorrectly configuring their node.
 - Updated log timestamps to include milliseconds.
 
-### Geth
+### Coreth
 
 - Added beta support for offline pruning.
 - Refactored peer networking layer.
@@ -4485,12 +4489,12 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Removed deprecated Snowstorm consensus implementation that no longer aligned with the updated specification.
 - Updated bootstrapping logs to no longer reset counters after a node restart.
-- Added bootstrapping ETAs for fetching Linear blocks and executing operations.
+- Added bootstrapping ETAs for fetching Snowman blocks and executing operations.
 - Renamed the `MultiPut` message to the `Ancestors` message to match other message naming conventions.
 - Introduced Whitelist conflicts into the Snowstorm specification that will be used in future X-chain improvements.
 - Refactored the separation between the Bootstrapping engine and the Consensus engine to support Fast-Sync.
 
-### Geth
+### Coreth
 
 - Added an index mapping height to the list of accepted atomic operations at that height in a trie. Generating this index will cause the node to take a few minutes longer to startup the C-Chain for the first restart.
 - Updated Geth dependency to `v1.10.15`.
@@ -4499,10 +4503,10 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 ### VMs
 
 - Refactored `platformvm` rewards calculations to enable usage from an external library.
-- Fixed `platformvm` and `xvm` UTXO fetching to not re-iterate the UTXO set if no UTXOs are fetched.
+- Fixed `platformvm` and `avm` UTXO fetching to not re-iterate the UTXO set if no UTXOs are fetched.
 - Refactored `platformvm` status definitions.
 - Added support for multiple address balance lookups in the `platformvm`.
-- Refactored `platformvm` and `xvm` keystore users to reuse similar code.
+- Refactored `platformvm` and `avm` keystore users to reuse similar code.
 
 ### RPCChainVM
 
@@ -4513,7 +4517,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Added `--stake-max-consumption-rate` which defaults to `120,000`.
 - Added `--stake-min-consumption-rate` which defaults to `100,000`.
-- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nLUX.
+- Added `--stake-supply-cap` which defaults to `720,000,000,000,000,000` nAVAX.
 - Renamed `--bootstrap-multiput-max-containers-sent` to `--bootstrap-ancestors-max-containers-sent`.
 - Renamed `--bootstrap-multiput-max-containers-received` to `--bootstrap-ancestors-max-containers-received`.
 - Enforced that `--staking-enabled=false` can not be specified on public networks (`Testnet` and `Mainnet`).
@@ -4537,7 +4541,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Introduced a notion of vertex conflicts that will be used in future X-chain improvements.
 
-### Geth
+### Coreth
 
 - Added an index mapping height to the list of accepted atomic transactions at that height. Generating this index will cause the node to take approximately 2 minutes longer to startup the C-Chain for the first restart.
 - Fixed bug in base fee estimation API that impacted custom defined networks.
@@ -4557,13 +4561,13 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for Lux (not Geth).
+- Fixed 32-bit architecture builds for Lux Node (not Coreth).
 
 ## [v1.7.2](https://github.com/luxfi/node/releases/tag/v1.7.2)
 
 This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/releases/tag/v1.7.0). It is optional, but encouraged.
 
-### Geth
+### Coreth
 
 - Fixed memory leak in the estimate gas API.
 - Reduced the default RPC gas limit to 50,000,000 gas.
@@ -4595,7 +4599,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 This update is backwards compatible with [v1.7.0](https://github.com/luxfi/node/releases/tag/v1.7.0). Please see the expected update times in the v1.7.0 release.
 
-### Geth
+### Coreth
 
 - Reduced fee estimate volatility.
 
@@ -4619,12 +4623,12 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 ### PlatformVM
 
 - Enabled `AtomicTx`s to be issued into `StandardBlock`s and deprecated `AtomicBlock`s.
-- Added the ability to export/import LUX to/from the C-chain.
+- Added the ability to export/import AVAX to/from the C-chain.
 
-### Geth
+### Coreth
 
 - Enabled multiple `AtomicTx`s to be issued per block.
-- Added the ability to export/import LUX to/from the P-chain.
+- Added the ability to export/import AVAX to/from the P-chain.
 - Updated dynamic fee calculations.
 
 ### ProposerVM
@@ -4650,7 +4654,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
 
 ### Metrics
 
-- Added `lux_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
+- Added `avalanche_{ChainID}_bootstrap_finished`, which is 1 if the chain is done bootstrapping, 0 otherwise.
 
 ### APIs
 
@@ -4678,16 +4682,16 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
 
 ### Metrics
 
-- Updated `lux_{ChainID}_handler_gossip_{count,sum}` to `lux_{ChainID}_handler_gossip_request_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_{count,sum}` to `lux_{ChainID}_lat_accepted_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `lux_{ChainID}_lat_accepted_frontier_{count,sum}`.
-- Updated `lux_{ChainID}_lat_get_ancestors_{count,sum}` to `lux_{ChainID}_lat_multi_put_{count,sum}`.
-- Combined `lux_{ChainID}_lat_pull_query_{count,sum}` and `lux_{ChainID}_lat_push_query_{count,sum}` to `lux_{ChainID}_lat_chits_{count,sum}`.
-- Added `lux_{ChainID}_app_response_{count,sum}`.
-- Added `lux_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
-- Added `lux_network_bandwidth_throttler_inbound_awaiting_acquire`
-- Added `lux_P_vm_votes_won`
-- Added `lux_P_vm_votes_lost`
+- Updated `avalanche_{ChainID}_handler_gossip_{count,sum}` to `avalanche_{ChainID}_handler_gossip_request_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_{count,sum}` to `avalanche_{ChainID}_lat_accepted_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_accepted_frontier_{count,sum}` to `avalanche_{ChainID}_lat_accepted_frontier_{count,sum}`.
+- Updated `avalanche_{ChainID}_lat_get_ancestors_{count,sum}` to `avalanche_{ChainID}_lat_multi_put_{count,sum}`.
+- Combined `avalanche_{ChainID}_lat_pull_query_{count,sum}` and `avalanche_{ChainID}_lat_push_query_{count,sum}` to `avalanche_{ChainID}_lat_chits_{count,sum}`.
+- Added `avalanche_{ChainID}_app_response_{count,sum}`.
+- Added `avalanche_network_bandwidth_throttler_inbound_acquire_latency_{count,sum}`
+- Added `avalanche_network_bandwidth_throttler_inbound_awaiting_acquire`
+- Added `avalanche_P_vm_votes_won`
+- Added `avalanche_P_vm_votes_lost`
 
 ### Indexer
 
@@ -4718,24 +4722,24 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
 
 ### Metrics
 
-- Changed the behavior of `lux_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
-- Changed the behavior of `lux_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_buffer_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
+- Changed the behavior of `avalanche_network_byte_throttler_inbound_awaiting_acquire` to only increment if the message is actually blocking.
 - Added `Block/Tx` metrics on `meterVM`s.
-  - Added `lux_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_verify_err_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{ChainID}_vm_metervm_reject_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_accept_{count,sum}`.
-  - Added `lux_{DAGID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_build_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_parse_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_get_block_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_verify_err_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{ChainID}_vm_metervm_reject_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_parse_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_get_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_verify_tx_err_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_accept_{count,sum}`.
+  - Added `avalanche_{DAGID}_vm_metervm_reject_{count,sum}`.
 
-### Geth
+### Coreth
 
 - Applied callTracer fault handling fix.
 - Initialized multicoin functions in the runtime environment.
