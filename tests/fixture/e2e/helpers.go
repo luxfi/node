@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/ethclient"
-	"github.com/luxfi/evm/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

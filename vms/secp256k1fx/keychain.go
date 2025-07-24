@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/evm"
-
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
