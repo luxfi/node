@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 )
@@ -40,12 +40,12 @@ type NFTTransferTx struct {
 	Metadata []byte `serialize:"true" json:"metadata"`
 }
 
-func (t *NFTTransferTx) InitCtx(ctx *snow.Context) {
+func (t *NFTTransferTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
 func (t *NFTTransferTx) SyntacticVerify(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	c codec.Manager,
 	txFeeAssetID ids.ID,
 	txFee uint64,

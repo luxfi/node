@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -41,12 +41,12 @@ type BurnTx struct {
 	TeleportData []byte `serialize:"true" json:"teleportData"`
 }
 
-func (t *BurnTx) InitCtx(ctx *snow.Context) {
+func (t *BurnTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
 func (t *BurnTx) SyntacticVerify(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	c codec.Manager,
 	txFeeAssetID ids.ID,
 	txFee uint64,

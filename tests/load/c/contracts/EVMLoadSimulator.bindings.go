@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/evm/accounts/abi"
 	"github.com/luxfi/evm/accounts/abi/bind"
-	"github.com/luxfi/evm/common"
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/event"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/luxfi/evm/interfaces"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -41,12 +41,12 @@ type MintTx struct {
 	MPCSignatures [][]byte `serialize:"true" json:"mpcSignatures"`
 }
 
-func (t *MintTx) InitCtx(ctx *snow.Context) {
+func (t *MintTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
 func (t *MintTx) SyntacticVerify(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	c codec.Manager,
 	txFeeAssetID ids.ID,
 	txFee uint64,

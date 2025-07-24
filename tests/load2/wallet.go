@@ -10,9 +10,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/evm/common"
-	"github.com/luxfi/evm/crypto"
-	"github.com/luxfi/evm/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/luxfi/evm/ethclient"
 )
 

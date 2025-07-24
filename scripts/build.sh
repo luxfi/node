@@ -31,7 +31,8 @@ source "${REPO_ROOT}"/scripts/constants.sh
 # Determine the git commit hash to use for the build
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
+
 echo "Building Lux with [$(go version)]..."
-go build ${race} -o "${luxd_path}" \
+   go build ${race} -o "${luxd_path}" \
    -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" \
    "${REPO_ROOT}"/main
