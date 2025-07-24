@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="resources/LuxLogoRed.png?raw=true">
+  <img src="https://lux.network/logo.png">
 </div>
 
 ---
 
-Node implementation for the [Lux](https://avax.network) network -
+Node implementation for the [Lux](https://lux.network) network -
 a blockchains platform with high throughput, and blazing fast transactions.
 
 ## Installation
@@ -48,10 +48,10 @@ Build Lux Node by running the build task:
 ./scripts/run_task.sh build
 ```
 
-The `node` binary is now in the `build` directory. To run:
+The `luxd` binary is now in the `build` directory. To run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 ### Binary Repository
@@ -66,8 +66,8 @@ To add the repository on Ubuntu, run:
 
 ```sh
 sudo su -
-wget -qO - https://downloads.avax.network/node.gpg.key | tee /etc/apt/trusted.gpg.d/node.asc
-source /etc/os-release && echo "deb https://downloads.avax.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/avalanche.list
+wget -qO - https://downloads.lux.network/luxd.gpg.key | tee /etc/apt/trusted.gpg.d/luxd.asc
+source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/lux.list
 exit
 ```
 
@@ -84,7 +84,7 @@ sudo apt install node
 
 Download the [latest build](https://github.com/luxfi/node/releases/latest) for your operating system and architecture.
 
-The Lux binary to be executed is named `node`.
+The Lux binary to be executed is named `luxd`.
 
 ### Docker Install
 
@@ -102,10 +102,10 @@ To check the built image, run:
 docker image ls
 ```
 
-The image should be tagged as `avaplatform/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
+The image should be tagged as `luxfi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/node
+docker run -ti -p 9650:9650 -p 9651:9651 luxfi/node:xxxxxxxx /node/build/luxd
 ```
 
 ## Running Lux
@@ -115,7 +115,7 @@ docker run -ti -p 9650:9650 -p 9651:9651 avaplatform/node:xxxxxxxx /node/build/n
 To connect to the Lux Mainnet, run:
 
 ```sh
-./build/node
+./build/luxd
 ```
 
 You should see some pretty ASCII art and log messages.
@@ -127,23 +127,23 @@ You can use `Ctrl+C` to kill the node.
 To connect to the Testnet Testnet, run:
 
 ```sh
-./build/node --network-id=testnet
+./build/luxd --network-id=testnet
 ```
 
 ### Creating a Local Testnet
 
-The [avalanche-cli](https://github.com/luxfi/avalanche-cli) is the easiest way to start a local network.
+The [Lux CLI](https://github.com/luxfi/cli) is the easiest way to start a local network.
 
 ```sh
-avalanche network start
-avalanche network status
+lux network start
+lux network status
 ```
 
 ## Bootstrapping
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://build.avax.network/docs/api-reference/health-api) until it is done bootstrapping.
+A node will not [report healthy](https://docs.lux.network/docs/api-reference/health-api) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
