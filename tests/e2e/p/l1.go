@@ -829,7 +829,7 @@ func findMessage[T any](
 }
 
 // unwrapWarpSignature assumes the only type of AppResponses that will be
-// received are ACP-118 compliant responses.
+// received are LP-118 compliant responses.
 func unwrapWarpSignature(msg p2pmessage.InboundMessage) (*bls.Signature, bool, error) {
 	var appResponse *p2ppb.AppResponse
 	switch msg := msg.Message().(type) {

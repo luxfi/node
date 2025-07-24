@@ -663,8 +663,8 @@ type Handshake struct {
 	// Subnets the peer is tracking
 	TrackedSubnets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
 	Client         *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
-	SupportedAcps  []uint32     `protobuf:"varint,10,rep,packed,name=supported_acps,json=supportedAcps,proto3" json:"supported_acps,omitempty"`
-	ObjectedAcps   []uint32     `protobuf:"varint,11,rep,packed,name=objected_acps,json=objectedAcps,proto3" json:"objected_acps,omitempty"`
+	SupportedLPs  []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLPs,proto3" json:"supported_lps,omitempty"`
+	ObjectedLPs   []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLPs,proto3" json:"objected_lps,omitempty"`
 	KnownPeers     *BloomFilter `protobuf:"bytes,12,opt,name=known_peers,json=knownPeers,proto3" json:"known_peers,omitempty"`
 	// Signature of the peer IP port pair at a provided timestamp with the BLS
 	// key.
@@ -762,16 +762,16 @@ func (x *Handshake) GetClient() *Client {
 	return nil
 }
 
-func (x *Handshake) GetSupportedAcps() []uint32 {
+func (x *Handshake) GetSupportedLPs() []uint32 {
 	if x != nil {
-		return x.SupportedAcps
+		return x.SupportedLPs
 	}
 	return nil
 }
 
-func (x *Handshake) GetObjectedAcps() []uint32 {
+func (x *Handshake) GetObjectedLPs() []uint32 {
 	if x != nil {
-		return x.ObjectedAcps
+		return x.ObjectedLPs
 	}
 	return nil
 }
@@ -3360,9 +3360,9 @@ const file_p2p_p2p_proto_rawDesc = "" +
 	"\x0eip_node_id_sig\x18\a \x01(\fR\vipNodeIdSig\x12'\n" +
 	"\x0ftracked_subnets\x18\b \x03(\fR\x0etrackedSubnets\x12#\n" +
 	"\x06client\x18\t \x01(\v2\v.p2p.ClientR\x06client\x12%\n" +
-	"\x0esupported_acps\x18\n" +
-	" \x03(\rR\rsupportedAcps\x12#\n" +
-	"\robjected_acps\x18\v \x03(\rR\fobjectedAcps\x121\n" +
+	"\x0esupported_lps\x18\n" +
+	" \x03(\rR\rsupportedLPs\x12#\n" +
+	"\robjected_lps\x18\v \x03(\rR\fobjectedLPs\x121\n" +
 	"\vknown_peers\x18\f \x01(\v2\x10.p2p.BloomFilterR\n" +
 	"knownPeers\x12\x1c\n" +
 	"\n" +

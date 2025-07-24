@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
@@ -164,9 +164,9 @@ func New(
 		stateLock: stateLock,
 		state:     state,
 	}
-	signatureRequestHandler := acp118.NewHandler(signatureRequestVerifier, signer)
+	signatureRequestHandler := lp118.NewHandler(signatureRequestVerifier, signer)
 
-	if err := p2pNetwork.AddHandler(acp118.HandlerID, signatureRequestHandler); err != nil {
+	if err := p2pNetwork.AddHandler(lp118.HandlerID, signatureRequestHandler); err != nil {
 		return nil, err
 	}
 

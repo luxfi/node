@@ -110,9 +110,9 @@ func (id ID) Prefix(prefixes ...uint64) ID {
 // Append this id with the provided suffixes and re-hash the result. This
 // returns a new ID and does not modify the original ID.
 //
-// This is used to generate ACP-77 validationIDs.
+// This is used to generate LP-77 validationIDs.
 //
-// Ref: https://github.com/lux-foundation/ACPs/tree/e333b335c34c8692d84259d21bd07b2bb849dc2c/ACPs/77-reinventing-subnets#convertsubnettol1tx
+// Ref: https://github.com/luxfi/LPs/tree/e333b335c34c8692d84259d21bd07b2bb849dc2c/LPs/77-reinventing-subnets#convertsubnettol1tx
 func (id ID) Append(suffixes ...uint32) ID {
 	packer := wrappers.Packer{
 		Bytes: make([]byte, IDLen+len(suffixes)*wrappers.IntLen),

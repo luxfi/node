@@ -1,8 +1,8 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// The gas package implements dynamic gas pricing specified in ACP-103:
-// https://github.com/lux-foundation/ACPs/tree/main/ACPs/103-dynamic-fees
+// The gas package implements dynamic gas pricing specified in LP-103:
+// https://github.com/luxfi/LPs/tree/main/LPs/103-dynamic-fees
 package gas
 
 type Config struct {

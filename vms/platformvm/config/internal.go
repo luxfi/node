@@ -36,7 +36,7 @@ type Internal struct {
 	// Dynamic fees are active after Etna
 	DynamicFeeConfig gas.Config
 
-	// ACP-77 validator fees are active after Etna
+	// LP-77 validator fees are active after Etna
 	ValidatorFeeConfig fee.Config
 
 	// Provides access to the uptime manager as a thread safe data structure

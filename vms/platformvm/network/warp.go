@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -45,7 +45,7 @@ const (
 	ErrWrongWeight
 )
 
-var _ acp118.Verifier = (*signatureRequestVerifier)(nil)
+var _ lp118.Verifier = (*signatureRequestVerifier)(nil)
 
 type signatureRequestVerifier struct {
 	stateLock sync.Locker

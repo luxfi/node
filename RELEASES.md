@@ -30,7 +30,7 @@ Key Changes:
 
 [v1.13.0] (May 2025) - Mainnet Launch with Teleport Dynamic Fees
 
-Activates Lux Community Proposal (LCP) equivalent to ACP-176: Dynamic EVM Gas Limits via Teleport.
+Activates Lux Community Proposal (LCP) equivalent to LP-176: Dynamic EVM Gas Limits via Teleport.
 
 Activation: Effective May 2025 on Lux Mainnet—upgrade before then.
 Key Changes:
@@ -73,7 +73,7 @@ Key Changes:
 
 [v1.12.0] (February 2025) - Mainnet Rollout
 
-Activates multiple LCPs (Lux equivalents of ACPs like 77, 103, etc.) effective February 2025.
+Activates multiple LCPs (Lux equivalents of LPs like 77, 103, etc.) effective February 2025.
 
 Key Changes:
 
@@ -245,7 +245,7 @@ Key Changes:
 
 [v1.11.0] (February 2024) - Beta LCP Activations
 
-Activates Lux equivalents of ACPs (e.g., Warp Messaging).
+Activates Lux equivalents of LPs (e.g., Warp Messaging).
 
 Key Changes:
 
@@ -279,7 +279,7 @@ Backwards compatible with v1.10.0. Plugin version to 31.
 
 Key Changes:
 
-    APIs: Added info.acps; metrics updates.
+    APIs: Added info.lps; metrics updates.
 
     Configs: Added peer-list frequencies.
 
@@ -289,4 +289,4 @@ Key Changes:
 
     Full Changelog: Compare v1.10.17...v1.10.18.
 
-For older releases (pre-2023 alpha), refer to Lux GitHub archives. If this is related to your previous query on ACP-176, note that Lux's v1.13.0 incorporates a similar dynamic gas mechanism via Teleport, adapted for mainnet. For more details or comparisons, provide additional context!
+For older releases (pre-2023 alpha), refer to Lux GitHub archives. If this is related to your previous query on LP-176, note that Lux's v1.13.0 incorporates a similar dynamic gas mechanism via Teleport, adapted for mainnet. For more details or comparisons, provide additional context!
