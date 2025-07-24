@@ -66,6 +66,9 @@ func NewCustomParser(
 		c.RegisterType(&OperationTx{}),
 		c.RegisterType(&ImportTx{}),
 		c.RegisterType(&ExportTx{}),
+		c.RegisterType(&BurnTx{}),
+		c.RegisterType(&MintTx{}),
+		c.RegisterType(&NFTTransferTx{}),
 		cm.RegisterCodec(CodecVersion, c),
 
 		gc.RegisterType(&BaseTx{}),
@@ -73,6 +76,9 @@ func NewCustomParser(
 		gc.RegisterType(&OperationTx{}),
 		gc.RegisterType(&ImportTx{}),
 		gc.RegisterType(&ExportTx{}),
+		gc.RegisterType(&BurnTx{}),
+		gc.RegisterType(&MintTx{}),
+		gc.RegisterType(&NFTTransferTx{}),
 		gcm.RegisterCodec(CodecVersion, gc),
 	)
 	if err != nil {

@@ -7,10 +7,10 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/params"
+	"github.com/luxfi/evm/common"
+	"github.com/luxfi/evm/crypto"
+	"github.com/luxfi/evm/core/types"
+	"github.com/luxfi/evm/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

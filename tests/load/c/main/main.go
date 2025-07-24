@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/evm/common"
+	"github.com/luxfi/evm/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 

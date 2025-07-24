@@ -243,6 +243,49 @@ func (v *SemanticVerifier) verifyFxUsage(
 	return errIncompatibleFx
 }
 
+func (v *SemanticVerifier) BurnTx(tx *txs.BurnTx) error {
+	// Verify the base transaction
+	if err := v.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Additional burn-specific verification
+	// - Verify destination chain is supported
+	// - Verify asset is allowed to be burned
+	// - Check burn limits if any
+
+	return nil
+}
+
+func (v *SemanticVerifier) MintTx(tx *txs.MintTx) error {
+	// Verify the base transaction
+	if err := v.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Verify MPC signatures
+	// This would involve checking that 67+ of the top 100 validators
+	// have signed this mint transaction
+
+	// TODO: Verify burn proof from source chain
+	// This would involve checking merkle proofs, block headers, etc.
+
+	return nil
+}
+
+func (v *SemanticVerifier) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	// Verify the base transaction
+	if err := v.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Verify NFT ownership and permissions
+	// TODO: Verify destination chain supports this NFT type
+	// TODO: Check if the NFT is not locked or frozen
+
+	return nil
+}
+
 func (v *SemanticVerifier) getFx(val interface{}) (int, error) {
 	valType := reflect.TypeOf(val)
 	fx, exists := v.TypeToFxIndex[valType]
