@@ -20,8 +20,6 @@ const (
 	DenaliID  uint32 = 3
 	EverestID uint32 = 4
 	TestnetID    uint32 = 5
-
-	TestnetID  uint32 = TestnetID
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 	
@@ -34,7 +32,6 @@ const (
 	DenaliName   = "denali"
 	EverestName  = "everest"
 	TestnetName     = "testnet"
-	TestnetName  = "testnet"
 	UnitTestName = "testing"
 	LocalName    = "local"
 	LuxMainnetName = "lux-mainnet"
@@ -74,7 +71,6 @@ var (
 		DenaliName:   DenaliID,
 		EverestName:  EverestID,
 		TestnetName:     TestnetID,
-		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
 		LocalName:    LocalID,
 		LuxMainnetName: LuxMainnetID,
