@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/evm/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/luxfi/evm/interfaces"
 )
 
