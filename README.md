@@ -127,20 +127,16 @@ You can use `Ctrl+C` to kill the node.
 To connect to the Testnet Testnet, run:
 
 ```sh
-<<<<<<< HEAD
 ./build/luxd --network-id=testnet
-=======
-./build/node --network-id=testnet
->>>>>>> a8fe7515f (Update to add new integrated M-Chain)
 ```
 
 ### Creating a Local Testnet
 
-The [avalanche-cli](https://github.com/luxfi/avalanche-cli) is the easiest way to start a local network.
+The [Lux CLI](https://github.com/luxfi/cli) is the easiest way to start a local network.
 
 ```sh
-avalanche network start
-avalanche network status
+lux network start
+lux network status
 ```
 
 <<<<<<< HEAD
@@ -150,7 +146,7 @@ For quick local development, you can run a single-node Lux network with sybil pr
 
 ```sh
 # Using the convenience script
-./scripts/run_dev.sh
+make dev
 
 # Or manually with all options
 ./build/luxd \
@@ -180,12 +176,10 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}
 **Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Testnet).
 
 =======
->>>>>>> a8fe7515f (Update to add new integrated M-Chain)
-## Bootstrapping
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
-A node will not [report healthy](https://build.avax.network/docs/api-reference/health-api) until it is done bootstrapping.
+A node will not [report healthy](https://docs.lux.network/docs/api-reference/health-api) until it is done bootstrapping.
 
 Improvements that reduce the amount of time it takes to bootstrap are under development.
 
@@ -193,7 +187,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-Lux Node uses multiple tools to generate efficient and boilerplate code.
+Lux uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 
@@ -244,7 +238,7 @@ Lux Node is first and foremost a client for the Lux network. The versioning of L
 
 ### Library Compatibility Guarantees
 
-Because Lux Node's version denotes the network version, it is expected that interfaces exported by Lux Node's packages may change in `Patch` version updates.
+Because `luxd` version denotes the network version, it is expected that interfaces exported by Lux Node may change in `Patch` version updates.
 
 ### API Compatibility Guarantees
 
