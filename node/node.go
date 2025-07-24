@@ -519,22 +519,22 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		)
 	}
 
-	// We allow nodes to gossip unknown ACPs in case the current ACPs constant
+	// We allow nodes to gossip unknown LPs in case the current LPs constant
 	// becomes out of date.
-	var unknownACPs set.Set[uint32]
-	for acp := range n.Config.NetworkConfig.SupportedACPs {
-		if !constants.CurrentACPs.Contains(acp) {
-			unknownACPs.Add(acp)
+	var unknownLPs set.Set[uint32]
+	for lp := range n.Config.NetworkConfig.SupportedLPs {
+		if !constants.CurrentLPs.Contains(lp) {
+			unknownLPs.Add(lp)
 		}
 	}
-	for acp := range n.Config.NetworkConfig.ObjectedACPs {
-		if !constants.CurrentACPs.Contains(acp) {
-			unknownACPs.Add(acp)
+	for lp := range n.Config.NetworkConfig.ObjectedLPs {
+		if !constants.CurrentLPs.Contains(lp) {
+			unknownLPs.Add(lp)
 		}
 	}
-	if unknownACPs.Len() > 0 {
-		n.Log.Warn("gossiping unknown ACPs",
-			zap.Reflect("acps", unknownACPs),
+	if unknownLPs.Len() > 0 {
+		n.Log.Warn("gossiping unknown LPs",
+			zap.Reflect("lps", unknownLPs),
 		)
 	}
 

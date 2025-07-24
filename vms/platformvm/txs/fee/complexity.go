@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// TODO: Before Etna, address all TODOs in this package and ensure ACP-103
+// TODO: Before Etna, address all TODOs in this package and ensure LP-103
 // compliance.
 package fee
 

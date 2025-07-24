@@ -238,7 +238,7 @@ func (w *windower) makeSampler(
 		return nil, nil, err
 	}
 
-	delete(validatorsMap, ids.EmptyNodeID) // Ignore inactive ACP-77 validators.
+	delete(validatorsMap, ids.EmptyNodeID) // Ignore inactive LP-77 validators.
 
 	validators := make([]validatorData, 0, len(validatorsMap))
 	for k, v := range validatorsMap {

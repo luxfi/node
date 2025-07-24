@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -83,11 +83,11 @@ func (vm *VM) Initialize(
 
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
-	acp118Handler := acp118.NewHandler(
-		acp118Verifier{},
+	lp118Handler := lp118.NewHandler(
+		lp118Verifier{},
 		chainContext.WarpSigner,
 	)
-	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, acp118Handler); err != nil {
+	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {
 		return err
 	}
 

@@ -257,7 +257,7 @@ func advanceTimeTo(
 // expiry with a timestamp less than or equal to the new chain time can be
 // removed.
 //
-// Ref: https://github.com/lux-foundation/ACPs/tree/e333b335c34c8692d84259d21bd07b2bb849dc2c/ACPs/77-reinventing-subnets#registerl1validatortx
+// Ref: https://github.com/luxfi/LPs/tree/e333b335c34c8692d84259d21bd07b2bb849dc2c/LPs/77-reinventing-subnets#registerl1validatortx
 func removeStaleExpiries(
 	parentState state.Chain,
 	changes state.Diff,
