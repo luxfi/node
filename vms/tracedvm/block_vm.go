@@ -101,9 +101,8 @@ func (vm *blockVM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	ctx, span := vm.tracer.Start(ctx, vm.initializeTag)
 	defer span.End()
@@ -115,7 +114,6 @@ func (vm *blockVM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
-		toEngine,
 		fxs,
 		appSender,
 	)

@@ -21,6 +21,11 @@ replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/ot
 
 replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
 
+// Fix genproto ambiguity
+exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+
+exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
 require (
 	github.com/DataDog/zstd v1.5.7
 	github.com/Microsoft/go-winio v0.6.2
@@ -32,7 +37,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
 	github.com/ethereum/go-ethereum v1.16.1
 	github.com/golang-jwt/jwt/v4 v4.5.1
-	github.com/google/btree v1.1.2
+	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.0
@@ -75,8 +80,8 @@ require (
 	golang.org/x/net v0.42.0
 	golang.org/x/sync v0.16.0
 	golang.org/x/term v0.33.0
-	golang.org/x/time v0.9.0
-	gonum.org/v1/gonum v0.11.0
+	golang.org/x/time v0.12.0
+	gonum.org/v1/gonum v0.12.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
@@ -140,7 +145,7 @@ require (
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -189,6 +194,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gotest.tools/v3 v3.5.1 // indirect
 )
 
 replace (

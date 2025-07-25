@@ -75,7 +75,7 @@ type VM struct {
 
 	ctx         *consensus.Context
 	db          *versiondb.Database
-	toScheduler chan<- common.Message
+	toScheduler chan<- core.Message
 
 	// Block ID --> Block
 	// Each element is a block that passed verification but
@@ -133,9 +133,9 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	toEngine chan<- core.Message,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	vm.ctx = chainCtx
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
@@ -180,7 +180,6 @@ func (vm *VM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
-		vmToEngine,
 		fxs,
 		appSender,
 	)
@@ -706,7 +705,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 // a new block
 func (vm *VM) notifyInnerBlockReady() {
 	select {
-	case vm.toScheduler <- common.PendingTxs:
+	case vm.toScheduler <- core.PendingTxs:
 	default:
 		vm.ctx.Log.Debug("dropping message to consensus engine")
 	}

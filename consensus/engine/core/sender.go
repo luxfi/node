@@ -196,4 +196,27 @@ type AppSender interface {
 		config SendConfig,
 		appGossipBytes []byte,
 	) error
+
+	// SendCrossChainAppRequest sends a cross-chain application-level request
+	// to another chain.
+	//
+	// The VM corresponding to this CrossChainAppSender may receive either:
+	// * A CrossChainAppResponse from [chainID] with ID [requestID]
+	// * A CrossChainAppRequestFailed from [chainID] with ID [requestID]
+	//
+	// A nil return value guarantees that the VM corresponding to this
+	// CrossChainAppSender will eventually receive exactly one of the above messages.
+	//
+	// A non-nil return value guarantees that the VM corresponding to this
+	// CrossChainAppSender will receive at most one of the above messages.
+	SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error
+
+	// SendCrossChainAppResponse sends a cross-chain application-level response to a
+	// request. This response must be in response to a CrossChainAppRequest that the VM
+	// corresponding to this CrossChainAppSender received from [chainID] with ID [requestID].
+	SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error
+
+	// SendCrossChainAppError sends a cross-chain application-level error to a
+	// CrossChainAppRequest.
+	SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error
 }

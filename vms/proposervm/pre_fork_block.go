@@ -48,7 +48,8 @@ func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
 func (b *preForkBlock) Status() choices.Status {
 	forkHeight, err := b.vm.GetForkHeight()
 	if err == database.ErrNotFound {
-		return b.Block.Status()
+		// Pre-fork, so the status is always processing if we have the block
+		return choices.Processing
 	}
 	if err != nil {
 		// TODO: Once `Status()` can return an error, we should return the error
@@ -56,7 +57,7 @@ func (b *preForkBlock) Status() choices.Status {
 		b.vm.ctx.Log.Error("unexpected error looking up fork height",
 			zap.Error(err),
 		)
-		return b.Block.Status()
+		return choices.Processing
 	}
 
 	// The fork has occurred earlier than this block, so preForkBlocks are all
@@ -64,7 +65,7 @@ func (b *preForkBlock) Status() choices.Status {
 	if b.Height() >= forkHeight {
 		return choices.Rejected
 	}
-	return b.Block.Status()
+	return choices.Processing
 }
 
 func (b *preForkBlock) Verify(ctx context.Context) error {

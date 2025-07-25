@@ -80,7 +80,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     *common.AppError
+		expected     *core.AppError
 	}{
 		{
 			name:         "message dropped",

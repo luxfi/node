@@ -46,7 +46,7 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        common.AppSender
+	sender        core.AppSender
 	options       *clientOptions
 }
 
@@ -125,7 +125,7 @@ func (c *Client) AppRequest(
 // AppGossip sends a gossip message to a random set of peers.
 func (c *Client) AppGossip(
 	ctx context.Context,
-	config common.SendConfig,
+	config core.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.

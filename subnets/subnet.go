@@ -22,7 +22,7 @@ type Allower interface {
 // chains in the subnet are currently bootstrapping, the subnet is considered
 // bootstrapped.
 type Subnet interface {
-	common.BootstrapTracker
+	core.BootstrapTracker
 
 	// AddChain adds a chain to this Subnet
 	AddChain(chainID ids.ID) bool
@@ -73,7 +73,7 @@ func (s *subnet) Bootstrapped(chainID ids.ID) {
 	})
 }
 
-func (s *subnet) OnBootstrapCompleted() chan struct{} {
+func (s *subnet) AllBootstrapped() <-chan struct{} {
 	return s.bootstrappedSema
 }
 

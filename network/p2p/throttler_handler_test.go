@@ -58,7 +58,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		Throttler   Throttler
-		expectedErr *common.AppError
+		expectedErr *core.AppError
 	}{
 		{
 			name:      "not throttled",

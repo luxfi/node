@@ -22,18 +22,18 @@ type (
 //
 // If overflow would occur, an error is returned.
 func (g Gas) Cost(price Price) (uint64, error) {
-	return safemath.Mul(uint64(g), uint64(price))
+	return safemath.Mul64(uint64(g), uint64(price))
 }
 
 // AddPerSecond returns g + gasPerSecond * seconds.
 //
 // If overflow would occur, MaxUint64 is returned.
 func (g Gas) AddPerSecond(gasPerSecond Gas, seconds uint64) Gas {
-	newGas, err := safemath.Mul(uint64(gasPerSecond), seconds)
+	newGas, err := safemath.Mul64(uint64(gasPerSecond), seconds)
 	if err != nil {
 		return math.MaxUint64
 	}
-	totalGas, err := safemath.Add(uint64(g), newGas)
+	totalGas, err := safemath.Add64(uint64(g), newGas)
 	if err != nil {
 		return math.MaxUint64
 	}
@@ -44,7 +44,7 @@ func (g Gas) AddPerSecond(gasPerSecond Gas, seconds uint64) Gas {
 //
 // If underflow would occur, 0 is returned.
 func (g Gas) SubPerSecond(gasPerSecond Gas, seconds uint64) Gas {
-	gasToRemove, err := safemath.Mul(uint64(gasPerSecond), seconds)
+	gasToRemove, err := safemath.Mul64(uint64(gasPerSecond), seconds)
 	if err != nil {
 		return 0
 	}

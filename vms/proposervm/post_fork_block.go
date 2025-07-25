@@ -116,7 +116,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
 			postForkCommonComponents: postForkCommonComponents{
 				vm:       b.vm,
 				innerBlk: innerOption,
-				status:   innerOption.Status(),
+				status:   choices.Processing,
 			},
 		}
 	}

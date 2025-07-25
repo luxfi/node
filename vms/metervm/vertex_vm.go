@@ -45,9 +45,8 @@ func (vm *vertexVM) Initialize(
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	if err := vm.vertexMetrics.Initialize(vm.registry); err != nil {
 		return err
@@ -60,7 +59,6 @@ func (vm *vertexVM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
-		toEngine,
 		fxs,
 		appSender,
 	)

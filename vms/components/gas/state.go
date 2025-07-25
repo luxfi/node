@@ -48,7 +48,7 @@ func (s State) ConsumeGas(gas Gas) (State, error) {
 		return State{}, fmt.Errorf("%w: capacity (%d) < gas (%d)", ErrInsufficientCapacity, s.Capacity, gas)
 	}
 
-	newExcess, err := safemath.Add(uint64(s.Excess), uint64(gas))
+	newExcess, err := safemath.Add64(uint64(s.Excess), uint64(gas))
 	if err != nil {
 		//nolint:nilerr // excess is capped at MaxUint64
 		return State{
