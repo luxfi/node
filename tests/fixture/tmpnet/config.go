@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/params"
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"

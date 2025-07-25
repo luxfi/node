@@ -240,8 +240,8 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - [tmpnet] Enable single node networks by @marun in https://github.com/luxfi/node/pull/3003
 - P-chain - introducing fees calculators by @abi87 in https://github.com/luxfi/node/pull/2698
 - Change default staking key from RSA 4096 to secp256r1 by @StephenButtolph in https://github.com/luxfi/node/pull/3025
-- Fix ACP links by @dhrubabasu in https://github.com/luxfi/node/pull/3037
-- Prevent unnecessary bandwidth from activated ACPs by @dhrubabasu in https://github.com/luxfi/node/pull/3031
+- Fix LP links by @dhrubabasu in https://github.com/luxfi/node/pull/3037
+- Prevent unnecessary bandwidth from activated LPs by @dhrubabasu in https://github.com/luxfi/node/pull/3031
 - [antithesis] Add test setup for xsvm by @marun in https://github.com/luxfi/node/pull/2982
 - [antithesis] Ensure node image is pushed by @marun in https://github.com/luxfi/node/pull/3042
 - Cleanup fee config passing by @StephenButtolph in https://github.com/luxfi/node/pull/3043
@@ -601,15 +601,15 @@ The plugin version is updated to `34` all plugins must update to be compatible.
 
 ## [v1.11.0](https://github.com/luxfi/node/releases/tag/v1.11.0)
 
-This upgrade consists of the following Lux Community Proposals (ACPs):
+This upgrade consists of the following Lux Community Proposals (LPs):
 
-- [ACP-23](https://github.com/lux-foundation/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
-- [ACP-24](https://github.com/lux-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
-- [ACP-25](https://github.com/lux-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
-- [ACP-30](https://github.com/lux-foundation/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
-- [ACP-31](https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Subnet Ownership Transfer
-- [ACP-41](https://github.com/lux-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
-- [ACP-62](https://github.com/lux-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
+- [LP-23](https://github.com/luxfi/LPs/blob/main/LPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
+- [LP-24](https://github.com/luxfi/LPs/blob/main/LPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
+- [LP-25](https://github.com/luxfi/LPs/blob/main/LPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
+- [LP-30](https://github.com/luxfi/LPs/blob/main/LPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
+- [LP-31](https://github.com/luxfi/LPs/blob/main/LPs/31-enable-subnet-ownership-transfer/README.md) Enable Subnet Ownership Transfer
+- [LP-41](https://github.com/luxfi/LPs/blob/main/LPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
+- [LP-62](https://github.com/luxfi/LPs/blob/main/LPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
 
 The changes in the upgrade go into effect at 11 AM ET (4 PM UTC) on Wednesday, March 6th, 2024 on Mainnet.
 
@@ -642,7 +642,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - `ci`: Updated shellcheck script to support autofix by @marun in https://github.com/luxfi/node/pull/2678
 - Unblock misconfigured subnets by @StephenButtolph in https://github.com/luxfi/node/pull/2679
 - Add transfer subnet ownership functionality to wallet by @felipemadero in https://github.com/luxfi/node/pull/2659
-- Add ACP-62 by @dhrubabasu in https://github.com/luxfi/node/pull/2681
+- Add LP-62 by @dhrubabasu in https://github.com/luxfi/node/pull/2681
 - `vms/platformvm`: Add missing txs to `txs.Builder` by @dhrubabasu in https://github.com/luxfi/node/pull/2663
 - `vms/platformvm`: Disable `AddValidatorTx` and `AddDelegatorTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2662
 - Remove chain router from node.Config by @StephenButtolph in https://github.com/luxfi/node/pull/2683
@@ -753,8 +753,8 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 
 ### APIs
 
-- Added `info.acps` API
-- Added `supportedACPs` and `objectedACPs` for each peer returned by `info.peers`
+- Added `info.lps` API
+- Added `supportedLPs` and `objectedLPs` for each peer returned by `info.peers`
 - Added `txs` field to `BanffProposalBlock`'s json format
 - Added metrics:
   - `lux_network_validator_ips`
@@ -777,8 +777,8 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 ### Configs
 
 - Added:
-  - `--acp-support`
-  - `--acp-object`
+  - `--lp-support`
+  - `--lp-object`
   - `consensus-commit-threshold`
   - `network-peer-list-pull-gossip-frequency`
   - `network-peer-list-bloom-reset-frequency`
@@ -867,7 +867,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - P2P AppError handling by @joshua-kim in https://github.com/luxfi/node/pull/2248
 - `vms/platformvm`: Verify txs before building a block by @dhrubabasu in https://github.com/luxfi/node/pull/2359
 - Refactor p2p unit tests by @joshua-kim in https://github.com/luxfi/node/pull/2475
-- Add ACP signaling by @StephenButtolph in https://github.com/luxfi/node/pull/2476
+- Add LP signaling by @StephenButtolph in https://github.com/luxfi/node/pull/2476
 - Refactor SDK by @joshua-kim in https://github.com/luxfi/node/pull/2452
 - Cleanup CI by @dhrubabasu in https://github.com/luxfi/node/pull/2480
 - Ensure upgrade test uses the correct binary on restart by @marun in https://github.com/luxfi/node/pull/2478

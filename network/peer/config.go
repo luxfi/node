@@ -42,8 +42,8 @@ type Config struct {
 	PongTimeout        time.Duration
 	MaxClockDifference time.Duration
 
-	SupportedACPs []uint32
-	ObjectedACPs  []uint32
+	SupportedLPs []uint32
+	ObjectedLPs  []uint32
 
 	// Unix time of the last message sent and received respectively
 	// Must only be accessed atomically

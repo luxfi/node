@@ -97,9 +97,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
 
-	// ACP flagging
-	fs.IntSlice(ACPSupportKey, nil, "ACPs to support adoption")
-	fs.IntSlice(ACPObjectKey, nil, "ACPs to object adoption")
+	// LP flagging
+	fs.IntSlice(LPSupportKey, nil, "LPs to support adoption")
+	fs.IntSlice(LPObjectKey, nil, "LPs to object adoption")
 
 	// LUX fees
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")

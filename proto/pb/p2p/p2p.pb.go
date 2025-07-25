@@ -674,8 +674,8 @@ type Handshake struct {
 	// Subnets the peer is tracking
 	TrackedSubnets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
 	Client         *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
-	SupportedAcps  []uint32     `protobuf:"varint,10,rep,packed,name=supported_acps,json=supportedAcps,proto3" json:"supported_acps,omitempty"`
-	ObjectedAcps   []uint32     `protobuf:"varint,11,rep,packed,name=objected_acps,json=objectedAcps,proto3" json:"objected_acps,omitempty"`
+	SupportedLps  []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLps,proto3" json:"supported_lps,omitempty"`
+	ObjectedLps   []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLps,proto3" json:"objected_lps,omitempty"`
 	KnownPeers     *BloomFilter `protobuf:"bytes,12,opt,name=known_peers,json=knownPeers,proto3" json:"known_peers,omitempty"`
 	// Signature of the peer IP port pair at a provided timestamp with the BLS
 	// key.
@@ -770,16 +770,16 @@ func (x *Handshake) GetClient() *Client {
 	return nil
 }
 
-func (x *Handshake) GetSupportedAcps() []uint32 {
+func (x *Handshake) GetSupportedLps() []uint32 {
 	if x != nil {
-		return x.SupportedAcps
+		return x.SupportedLps
 	}
 	return nil
 }
 
-func (x *Handshake) GetObjectedAcps() []uint32 {
+func (x *Handshake) GetObjectedLps() []uint32 {
 	if x != nil {
-		return x.ObjectedAcps
+		return x.ObjectedLps
 	}
 	return nil
 }

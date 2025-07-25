@@ -20826,7 +20826,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1tapdw277cvl8zhaydw6t20zm0j8racp35szjvk",
+			"luxAddr": "X-lux1tapdw277cvl8zhaydw6t20zm0j8rlp35szjvk",
 			"initialAmount": 5883000000000,
 			"unlockSchedule": []
 		},
@@ -22527,7 +22527,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1pk3cec7wacp08knr7qffxfyslyg6dadjms0zll",
+			"luxAddr": "X-lux1pk3cec7wlp08knr7qffxfyslyg6dadjms0zll",
 			"initialAmount": 267400000000,
 			"unlockSchedule": [
 				{
@@ -33075,7 +33075,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1pk3cec7wacp08knr7qffxfyslyg6dadjms0zll",
+			"luxAddr": "X-lux1pk3cec7wlp08knr7qffxfyslyg6dadjms0zll",
 			"initialAmount": 5883000000000,
 			"unlockSchedule": []
 		},
@@ -70727,7 +70727,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1r3hmklxvgechjhacpplw6vklel9v33yjvx6x95",
+			"luxAddr": "X-lux1r3hmklxvgechjhlpplw6vklel9v33yjvx6x95",
 			"initialAmount": 1998100000000,
 			"unlockSchedule": [
 				{
@@ -112499,7 +112499,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux13ec085au6dmzhwr9gg3j2fc64rq0acpl6k5vxm",
+			"luxAddr": "X-lux13ec085au6dmzhwr9gg3j2fc64rq0lpl6k5vxm",
 			"initialAmount": 502100000000,
 			"unlockSchedule": [
 				{
@@ -123930,7 +123930,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1k042uh6sacpnpn8yvqc5hqjtgmchs84pfad30y",
+			"luxAddr": "X-lux1k042uh6slpnpn8yvqc5hqjtgmchs84pfad30y",
 			"initialAmount": 93500000000,
 			"unlockSchedule": [
 				{
@@ -123990,7 +123990,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux17jg0zcdul8fn4uw2mz3frhynrjrgrdex2kacp9",
+			"luxAddr": "X-lux17jg0zcdul8fn4uw2mz3frhynrjrgrdex2klp9",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -136012,7 +136012,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1ta9c42h7qas8q2963zujltx3apacp0mwdql4t5",
+			"luxAddr": "X-lux1ta9c42h7qas8q2963zujltx3aplp0mwdql4t5",
 			"initialAmount": 798300000000,
 			"unlockSchedule": [
 				{
@@ -167856,7 +167856,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux13ec085au6dmzhwr9gg3j2fc64rq0acpl6k5vxm",
+			"luxAddr": "X-lux13ec085au6dmzhwr9gg3j2fc64rq0lpl6k5vxm",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{

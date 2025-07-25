@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
