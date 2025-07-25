@@ -10,14 +10,11 @@
 /network/ @zeekay
 /network/throttling/ @zeekay
 /proto/ @zeekay
-/snow/ @zeekay
-/snow/consensus/ @zeekay
-/snow/engine/snowman/syncer/ @zeekay
-/snow/uptime/ @zeekay
+/consensus/ @zeekay
 /utils/logging/ @zeekay
-/vms/avm/ @zeekay
+/vms/xvm/ @zeekay
 /vms/platformvm/ @zeekay
 /vms/proposervm/ @zeekay
 /vms/rpcchainvm/ @zeekay
-/vms/registry/ @joshua-kim
+/vms/registry/ @zeekay
 /tests/ @zeekay

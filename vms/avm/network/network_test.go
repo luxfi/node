@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/block/executor"
 	"github.com/luxfi/node/vms/avm/fxs"

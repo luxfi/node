@@ -23,7 +23,7 @@ It works by starting the VM's as a subprocess of Lux Node by `os.Exec`.
 - Client sends a `Initialize` RPC informing the server of the `Protocol Version` and future `Address` of the RPC Chain VM server allowing it to perform a validation `Handshake`.
 - After the `Handshake` is complete the RPC Chain VM server is started which serves the `ChainVM` implementation.
 - The connection details for the RPC Chain VM server are now used to create an RPC Chain VM client.
-- `ChainManager` uses this VM client to bootstrap the chain powered by `Snowman` consensus.
+- `ChainManager` uses this VM client to bootstrap the chain powered by `Linear` consensus.
 - To shutdown the VM `runtime.Stop()` sends a `SIGTERM` signal to the VM process.
 
 ## Debugging

@@ -114,7 +114,7 @@ var (
 //
 // Without virtualization, failures of a node cascade as each node failing
 // results in the load of the failed node being shuffled into its clockwise
-// neighbor, which can result in a snowball effect across the network.
+// neighbor, which can result in a sampling effect across the network.
 type Ring interface {
 	RingReader
 	ringMutator

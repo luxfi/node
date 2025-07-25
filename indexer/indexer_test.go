@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )

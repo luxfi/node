@@ -8,20 +8,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 var (
-	_ snowman.Block           = (*meterBlock)(nil)
-	_ snowman.OracleBlock     = (*meterBlock)(nil)
+	_ linear.Block           = (*meterBlock)(nil)
+	_ linear.OracleBlock     = (*meterBlock)(nil)
 	_ block.WithVerifyContext = (*meterBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type meterBlock struct {
-	snowman.Block
+	linear.Block
 
 	vm *blockVM
 }
@@ -57,17 +57,17 @@ func (mb *meterBlock) Reject(ctx context.Context) error {
 	return err
 }
 
-func (mb *meterBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
-	oracleBlock, ok := mb.Block.(snowman.OracleBlock)
+func (mb *meterBlock) Options(ctx context.Context) ([2]linear.Block, error) {
+	oracleBlock, ok := mb.Block.(linear.OracleBlock)
 	if !ok {
-		return [2]snowman.Block{}, snowman.ErrNotOracle
+		return [2]linear.Block{}, linear.ErrNotOracle
 	}
 
 	blks, err := oracleBlock.Options(ctx)
 	if err != nil {
-		return [2]snowman.Block{}, err
+		return [2]linear.Block{}, err
 	}
-	return [2]snowman.Block{
+	return [2]linear.Block{
 		&meterBlock{
 			Block: blks[0],
 			vm:    mb.vm,

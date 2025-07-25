@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	snow "github.com/luxfi/node/snow"
-	common "github.com/luxfi/node/snow/engine/common"
+	common "github.com/luxfi/node/consensus/engine/common"
 	gomock "go.uber.org/mock/gomock"
 )
 

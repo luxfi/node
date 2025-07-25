@@ -116,7 +116,7 @@ func newEventIPCSocket(
 	ctx context,
 	chainID ids.ID,
 	name string,
-	snowmanAcceptorGroup snow.AcceptorGroup,
+	linearAcceptorGroup snow.AcceptorGroup,
 	luxAcceptorGroup snow.AcceptorGroup,
 ) (*eventSocket, error) {
 	var (
@@ -135,7 +135,7 @@ func newEventIPCSocket(
 		socket: socket.NewSocket(url, ctx.log),
 		unregisterFn: func() error {
 			return utils.Err(
-				snowmanAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+				linearAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 				luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 			)
 		},
@@ -148,7 +148,7 @@ func newEventIPCSocket(
 		return nil, err
 	}
 
-	if err := snowmanAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
+	if err := linearAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
 		if err := eis.stop(); err != nil {
 			return nil, err
 		}

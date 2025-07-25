@@ -5,7 +5,7 @@ package executor
 
 import (
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"

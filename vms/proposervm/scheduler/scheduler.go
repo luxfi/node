@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/utils/logging"
 )
 

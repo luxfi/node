@@ -25,8 +25,8 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -336,9 +336,9 @@ func TestGetTx(t *testing.T) {
 
 				require.NoError(blk.Accept(context.Background()))
 
-				if blk, ok := blk.(snowman.OracleBlock); ok { // For proposal blocks, commit them
+				if blk, ok := blk.(linear.OracleBlock); ok { // For proposal blocks, commit them
 					options, err := blk.Options(context.Background())
-					if !errors.Is(err, snowman.ErrNotOracle) {
+					if !errors.Is(err, linear.ErrNotOracle) {
 						require.NoError(err)
 
 						commit := options[0].(*blockexecutor.Block)

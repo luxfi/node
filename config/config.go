@@ -26,10 +26,10 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/node"
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/networking/benchlist"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -87,7 +87,7 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) snowball.Parameters {
+func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	// Check if POA mode is enabled
 	if v.GetBool(POAModeEnabledKey) {
 		// Return POA optimized parameters
@@ -95,7 +95,7 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
 	}
 
 	// Standard consensus parameters
-	p := snowball.Parameters{
+	p := sampling.Parameters{
 		K:                     v.GetInt(SnowSampleSizeKey),
 		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
@@ -425,7 +425,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters snowball.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters sampling.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.

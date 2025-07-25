@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

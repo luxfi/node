@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"

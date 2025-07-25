@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -45,11 +45,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -98,15 +98,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -133,11 +133,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return snowman.ErrNotOracle
+	return linear.ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {

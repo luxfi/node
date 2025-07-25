@@ -6,7 +6,7 @@ package subnets
 import (
 	"time"
 
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 // POAConfig provides Proof of Authority configuration for subnets
@@ -24,9 +24,9 @@ type POAConfig struct {
 	AuthorizedNodes []string `json:"authorizedNodes" yaml:"authorizedNodes"`
 }
 
-// DefaultPOAParameters returns snowball parameters optimized for POA mode
-func DefaultPOAParameters() snowball.Parameters {
-	return snowball.Parameters{
+// DefaultPOAParameters returns sampling parameters optimized for POA mode
+func DefaultPOAParameters() sampling.Parameters {
+	return sampling.Parameters{
 		K:                     1, // Only query 1 node (ourselves)
 		AlphaPreference:       1, // Change preference with 1 vote
 		AlphaConfidence:       1, // Increase confidence with 1 vote

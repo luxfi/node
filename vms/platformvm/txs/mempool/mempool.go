@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/vms/platformvm/txs"
 
 	txmempool "github.com/luxfi/node/vms/txs/mempool"

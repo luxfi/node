@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -59,7 +59,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (snowstorm.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))

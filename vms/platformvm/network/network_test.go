@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 

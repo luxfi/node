@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {
@@ -18,7 +18,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 
 	tr := New()
 
-	block := snowmantest.BuildChild(snowmantest.Genesis)
+	block := lineartest.BuildChild(lineartest.Genesis)
 	_, contains := tr.Get(block)
 	require.False(contains)
 
@@ -39,8 +39,8 @@ func TestAcceptBlockConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToReject := snowmantest.BuildChild(snowmantest.Genesis)
+	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
+	blockToReject := lineartest.BuildChild(lineartest.Genesis)
 
 	// add conflicting blocks
 	tr.Add(blockToAccept)
@@ -69,9 +69,9 @@ func TestAcceptChainConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToReject := snowmantest.BuildChild(snowmantest.Genesis)
-	blockToRejectChild := snowmantest.BuildChild(blockToReject)
+	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
+	blockToReject := lineartest.BuildChild(lineartest.Genesis)
+	blockToRejectChild := lineartest.BuildChild(blockToReject)
 
 	// add conflicting blocks.
 	tr.Add(blockToAccept)

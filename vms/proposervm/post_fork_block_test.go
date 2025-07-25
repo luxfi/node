@@ -14,10 +14,10 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
@@ -32,13 +32,13 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 	// setup
 	proBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
-			innerBlk: snowmantest.BuildChild(snowmantest.Genesis),
+			innerBlk: lineartest.BuildChild(lineartest.Genesis),
 		},
 	}
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(snowman.ErrNotOracle, err)
+	require.Equal(linear.ErrNotOracle, err)
 
 	// setup
 	var (
@@ -50,12 +50,12 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	innerTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	innerTestBlock := lineartest.BuildChild(lineartest.Genesis)
 	innerOracleBlk := &TestOptionsBlock{
 		Block: *innerTestBlock,
-		opts: [2]snowman.Block{
-			snowmantest.BuildChild(innerTestBlock),
-			snowmantest.BuildChild(innerTestBlock),
+		opts: [2]linear.Block{
+			lineartest.BuildChild(innerTestBlock),
+			lineartest.BuildChild(innerTestBlock),
 		},
 	}
 
@@ -102,24 +102,24 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	parentCoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -134,7 +134,7 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), parentBlk.ID()))
 
 	// .. create child block ...
-	childCoreBlk := snowmantest.BuildChild(parentCoreBlk)
+	childCoreBlk := lineartest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -193,24 +193,24 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	parentCoreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	parentCoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -224,7 +224,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 	require.NoError(parentBlk.Verify(context.Background()))
 	require.NoError(proVM.SetPreference(context.Background(), parentBlk.ID()))
 
-	childCoreBlk := snowmantest.BuildChild(parentCoreBlk)
+	childCoreBlk := lineartest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -310,24 +310,24 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	parentCoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -346,7 +346,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		parentPChainHeight = parentBlk.(*postForkBlock).PChainHeight()
 	)
 
-	childCoreBlk := snowmantest.BuildChild(parentCoreBlk)
+	childCoreBlk := lineartest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -499,24 +499,24 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	parentCoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -535,7 +535,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	parentBlkPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
 	require.NoError(waitForProposerWindow(proVM, parentBlk, parentBlkPChainHeight))
 
-	childCoreBlk := snowmantest.BuildChild(parentCoreBlk)
+	childCoreBlk := lineartest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -654,23 +654,23 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 	}
 
 	// create post fork oracle block ...
-	innerTestBlock := snowmantest.BuildChild(snowmantest.Genesis)
+	innerTestBlock := lineartest.BuildChild(lineartest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *innerTestBlock,
 	}
-	preferredOracleBlkChild := snowmantest.BuildChild(innerTestBlock)
-	oracleCoreBlk.opts = [2]snowman.Block{
+	preferredOracleBlkChild := lineartest.BuildChild(innerTestBlock)
+	oracleCoreBlk.opts = [2]linear.Block{
 		preferredOracleBlkChild,
-		snowmantest.BuildChild(innerTestBlock),
+		lineartest.BuildChild(innerTestBlock),
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -681,10 +681,10 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -719,7 +719,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 
 	parentBlkPChainHeight := postForkOracleBlk.PChainHeight() // option takes proposal blocks' Pchain height
 
-	childCoreBlk := snowmantest.BuildChild(preferredOracleBlkChild)
+	childCoreBlk := lineartest.BuildChild(preferredOracleBlkChild)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -820,24 +820,24 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -879,24 +879,24 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -914,7 +914,7 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 		if coreBlk.Status() == choices.Accepted {
 			return coreBlk.ID(), nil
 		}
-		return snowmantest.GenesisID, nil
+		return lineartest.GenesisID, nil
 	}
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
@@ -939,12 +939,12 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 	}
 
 	// generate two blocks with the same core block and store them
-	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
 
-	minimumHeight = snowmantest.GenesisHeight
+	minimumHeight = lineartest.GenesisHeight
 
 	proBlk1, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
@@ -976,8 +976,8 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -1005,22 +1005,22 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := snowmantest.BuildChild(snowmantest.Genesis)
+	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]snowman.Block{
-			snowmantest.BuildChild(coreTestBlk),
-			snowmantest.BuildChild(coreTestBlk),
+		opts: [2]linear.Block{
+			lineartest.BuildChild(coreTestBlk),
+			lineartest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -1031,10 +1031,10 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -1097,21 +1097,21 @@ func TestBlockVerify_PostForkBlock_PChainTooLow(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -1120,8 +1120,8 @@ func TestBlockVerify_PostForkBlock_PChainTooLow(t *testing.T) {
 	}
 
 	statelessChild, err := block.BuildUnsigned(
-		snowmantest.GenesisID,
-		snowmantest.GenesisTimestamp,
+		lineartest.GenesisID,
+		lineartest.GenesisTimestamp,
 		4,
 		coreBlk.Bytes(),
 	)

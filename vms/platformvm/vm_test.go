@@ -21,19 +21,19 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/tracker"
-	"github.com/luxfi/node/snow/engine/snowman/bootstrap"
-	"github.com/luxfi/node/snow/networking/benchlist"
-	"github.com/luxfi/node/snow/networking/handler"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/sender"
-	"github.com/luxfi/node/snow/networking/timeout"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/engine/linear/bootstrap"
+	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/consensus/networking/handler"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/sender"
+	"github.com/luxfi/node/consensus/networking/timeout"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -63,10 +63,10 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/snow/consensus/snowman"
-	smeng "github.com/luxfi/node/snow/engine/snowman"
-	snowgetter "github.com/luxfi/node/snow/engine/snowman/getter"
-	timetracker "github.com/luxfi/node/snow/networking/tracker"
+	smcon "github.com/luxfi/node/consensus/linear"
+	smeng "github.com/luxfi/node/consensus/engine/linear"
+	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -1469,7 +1469,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		externalSender,
 		chainRouter,
 		timeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		subnets.New(consensusCtx.NodeID, subnets.Config{}),
 		prometheus.NewRegistry(),
 	)
@@ -1556,7 +1556,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		VM:            bootstrapConfig.VM,
 		Sender:        bootstrapConfig.Sender,
 		Validators:    beacons,
-		Params: snowball.Parameters{
+		Params: sampling.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -1583,7 +1583,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Snowman: &handler.Engine{
+		Linear: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1591,7 +1591,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	})
 
 	consensusCtx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: snow.NormalOp,
 	})
 

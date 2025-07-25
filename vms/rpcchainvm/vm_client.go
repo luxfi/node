@@ -25,12 +25,12 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/appsender"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/validators/gvalidators"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
@@ -76,7 +76,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ snowman.Block           = (*blockClient)(nil)
+	_ linear.Block           = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -397,7 +397,7 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
-func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
+func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
@@ -407,7 +407,7 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VMClient) buildBlock(ctx context.Context) (linear.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
 		return nil, err
@@ -415,7 +415,7 @@ func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
+func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (linear.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
 	})
@@ -454,7 +454,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block
 	}, nil
 }
 
-func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
 	resp, err := vm.client.GetBlock(ctx, &vmpb.GetBlockRequest{
 		Id: blkID[:],
 	})
@@ -626,7 +626,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
+func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]linear.Block, error) {
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -637,7 +637,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		return nil, errBatchedParseBlockWrongNumberOfBlocks
 	}
 
-	res := make([]snowman.Block, 0, len(blksBytes))
+	res := make([]linear.Block, 0, len(blksBytes))
 	for idx, blkResp := range resp.Response {
 		id, err := ids.ToID(blkResp.Id)
 		if err != nil {

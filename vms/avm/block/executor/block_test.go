@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"

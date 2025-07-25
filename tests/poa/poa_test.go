@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -36,7 +36,7 @@ func TestPOASubnetConfig(t *testing.T) {
 		POAEnabled:        true,
 		POASingleNodeMode: true,
 		POAMinBlockTime:   1 * time.Second,
-		ConsensusParameters: snowball.Parameters{
+		ConsensusParameters: sampling.Parameters{
 			K:                     5,
 			AlphaPreference:       3,
 			AlphaConfidence:       3,

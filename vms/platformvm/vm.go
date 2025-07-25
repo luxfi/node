@@ -24,10 +24,10 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	snowmanblock "github.com/luxfi/node/snow/engine/snowman/block"
+	linearblock "github.com/luxfi/node/consensus/engine/linear/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -56,7 +56,7 @@ import (
 )
 
 var (
-	_ snowmanblock.ChainVM       = (*VM)(nil)
+	_ linearblock.ChainVM       = (*VM)(nil)
 	_ secp256k1fx.VM             = (*VM)(nil)
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
@@ -603,7 +603,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (linear.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -613,7 +613,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	return vm.manager.NewBlock(statelessBlk), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 

@@ -115,7 +115,7 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 			))
 		}
 
-		ginkgo.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate snowman++ consensus",
+		ginkgo.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate linear++ consensus",
 			destinationChain.ChainID, destinationSubnet.SubnetID))
 		recipientKey, err := secp256k1.NewPrivateKey()
 		require.NoError(err)

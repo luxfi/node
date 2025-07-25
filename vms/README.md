@@ -1,4 +1,4 @@
-# Snowman VMs
+# Linear VMs
 
 ## Recap of Lux Subnets
 
@@ -10,21 +10,21 @@ For each blockchain, consensus is driven by the consensus engine. For each subne
 
 A blockchain consists of two components: a consensus engine and a Virtual Machine (VM). The consensus engine samples validators, handles the responses, and pushes the results of the completed polls into the consensus [code](../snow/consensus/) to decide which containers to Accept/Reject. The VM encodes the application logic for the blockchain. The VM defines the contents of a block, the rules for determining whether a block is valid, the APIs exposed to users, the state transition that occurs if a given block is accepted, and so on.
 
-The consensus engine is general and agnostic to the application semantics of the blockchain. There are two consensus engine implementations in Lux Node: Snowman and Lux. Snowman provides a consensus engine for linear chains and Lux provides a consensus engine for DAGs. These consensus engine implementations can be re-used for multiple different blockchains in the Lux ecosystem, and each blockchain actually runs its own independent instance of consensus.
+The consensus engine is general and agnostic to the application semantics of the blockchain. There are two consensus engine implementations in Lux Node: Linear and Lux. Linear provides a consensus engine for linear chains and Lux provides a consensus engine for DAGs. These consensus engine implementations can be re-used for multiple different blockchains in the Lux ecosystem, and each blockchain actually runs its own independent instance of consensus.
 
 To launch a blockchain on Lux, you just need to write a VM that defines your application; the consensus part is handled by the existing consensus engine implementations.
 
-This document will go into the details of implementing a ChainVM to run on the Snowman consensus engine. To implement a VM for snowman, we just need to implement the `ChainVM` interface defined [here.](../snow/engine/snowman/block/vm.go)
+This document will go into the details of implementing a ChainVM to run on the Linear consensus engine. To implement a VM for linear, we just need to implement the `ChainVM` interface defined [here.](../snow/engine/linear/block/vm.go)
 
 VMs are reusable. Arbitrarily many blockchains can run the same VM. Each blockchain has its own state. In this way, a VM is to a blockchain what a class is to an instance of a class in an object-oriented programming language.
 
-## Snowman VM From the Perspective of the Consensus Engine
+## Linear VM From the Perspective of the Consensus Engine
 
-To the consensus engine, the Snowman VM is a black box that handles all block building, parsing, and storage and provides a simple block interface for the consensus engine to call as it decides blocks.
+To the consensus engine, the Linear VM is a black box that handles all block building, parsing, and storage and provides a simple block interface for the consensus engine to call as it decides blocks.
 
-### Snowman VM Block Handling
+### Linear VM Block Handling
 
-The Snowman VM needs to implement the following functions used by the consensus engine during the consensus process.
+The Linear VM needs to implement the following functions used by the consensus engine during the consensus process.
 
 #### Build Block
 
@@ -32,9 +32,9 @@ Build block allows the VM to propose a new block to be added to consensus.
 
 The VM can send messages to the consensus engine through a `toEngine` channel that is passed in when the VM is initialized. This channel allows the VM to send the consensus engine a message when it is ready to build a block. For example, if the VM receives some transactions via gossip or from an API, then it will signal that it is ready to build a block by sending a `PendingTxs` message to the consensus engine. The PendingTxs message signals to the consensus engine that it should call `BuildBlock()` so that the block can be added to consensus.
 
-The major caveat to this is the Snowman VMs are wrapped with [Snowman++](./proposervm/README.md). Snowman++ provides congestion control by using a soft leader, where a leader is designated as the proposer that should create a block at a given time. Snowman++ gracefully falls back to increase the number of validators that are allowed to propose a block to handle the case that the leader does not propose a block in a timely manner.
+The major caveat to this is the Linear VMs are wrapped with [Linear++](./proposervm/README.md). Linear++ provides congestion control by using a soft leader, where a leader is designated as the proposer that should create a block at a given time. Linear++ gracefully falls back to increase the number of validators that are allowed to propose a block to handle the case that the leader does not propose a block in a timely manner.
 
-Since a VM may be ready to build a block before its turn to propose a block according to Snowman++, the proposer VM will buffer PendingTxs messages until the ProposerVM agrees that it is time to build a block as well. This means that the consensus engine is not guaranteed to receive the `PendingTxs` message and call `BuildBlock()` in a timely manner.
+Since a VM may be ready to build a block before its turn to propose a block according to Linear++, the proposer VM will buffer PendingTxs messages until the ProposerVM agrees that it is time to build a block as well. This means that the consensus engine is not guaranteed to receive the `PendingTxs` message and call `BuildBlock()` in a timely manner.
 
 When the consensus engine does call `BuildBlock`, the VM should build a block on top of the currently [preferred block](#set-preference). This increases the likelihood that the block will be accepted since if the VM builds on top of a block that is not preferred, then the consensus engine is already leaning towards accepting something else, such that the newly created block will be more likely to get rejected.
 
@@ -56,7 +56,7 @@ The VM implements the function `SetPreference(blkID ids.ID)` to allow the consen
 
 Note: SetPreference will always be called with a block that has no verified children.
 
-### Implementing the Snowman VM Block
+### Implementing the Linear VM Block
 
 From the perspective of the consensus engine, the state of the VM can be defined as a linear chain starting from the
 genesis block through to the last accepted block.
@@ -123,7 +123,7 @@ If the consensus engine decides A and C simultaneously, the consensus engine wou
 2. Reject(B), Reject(D), Reject(E), Reject(F), and Reject(G)
 3. Accept(C)
 
-To see the actual code where Accept/Reject are performed, look [here.](../snow/consensus/snowman/topological.go)
+To see the actual code where Accept/Reject are performed, look [here.](../snow/consensus/linear/topological.go)
 
 ### Block Statuses
 
@@ -163,6 +163,6 @@ Once `Verify()` has been called and returns a non-nil error, the VM must subsequ
 
 This means that the VM needs to handle uniquification and leads to very specific requirements for how blocks are cached. This is why the [chain](./components/chain/) package was implemented to create a simple helper that helps a VM implement an efficient caching layer while correctly uniquifying blocks. For an example of how it's used, you can look at the [rpcchainvm](./rpcchainvm/).
 
-## Snowman VM APIs
+## Linear VM APIs
 
 The VM must also implement `CreateHandlers()` which can return a map of extensions mapped to HTTP handlers that will be added to the node's API server. This allows the VM to expose APIs for querying and interacting with the blockchain implemented by the API.

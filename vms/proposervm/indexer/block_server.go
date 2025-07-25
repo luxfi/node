@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 // BlockServer represents all requests heightIndexer can issue
@@ -18,5 +18,5 @@ type BlockServer interface {
 
 	// Note: this is a contention heavy call that should be avoided
 	// for frequent/repeated indexer ops
-	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error)
+	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (linear.Block, error)
 }

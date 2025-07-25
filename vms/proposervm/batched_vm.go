@@ -9,9 +9,9 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -34,7 +34,7 @@ func (vm *VM) GetAncestors(
 	currentByteLength := 0
 	startTime := vm.Clock.Time()
 
-	// hereinafter loop over proposerVM cache and DB, possibly till snowman++
+	// hereinafter loop over proposerVM cache and DB, possibly till linear++
 	// fork is hit
 	for {
 		blk, err := vm.getStatelessBlk(blkID)
@@ -61,7 +61,7 @@ func (vm *VM) GetAncestors(
 		}
 	}
 
-	// snowman++ fork may have been hit.
+	// linear++ fork may have been hit.
 	preMaxBlocksNum := maxBlocksNum - len(res)
 	preMaxBlocksSize := maxBlocksSize - currentByteLength
 	preMaxBlocksRetrivalTime := maxBlocksRetrievalTime - time.Since(startTime)
@@ -82,7 +82,7 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -93,7 +93,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]snowman.Block, len(blks))
+		blocks      = make([]linear.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))

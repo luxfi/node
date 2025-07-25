@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/vms/proposervm/block"
 )

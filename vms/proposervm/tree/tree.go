@@ -9,7 +9,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner
@@ -31,40 +31,40 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(snowman.Block)
+	Add(linear.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(snowman.Block) (snowman.Block, bool)
+	Get(linear.Block) (linear.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
-	Accept(context.Context, snowman.Block) error
+	Accept(context.Context, linear.Block) error
 }
 
 type tree struct {
 	// parentID -> childID -> childBlock
-	nodes map[ids.ID]map[ids.ID]snowman.Block
+	nodes map[ids.ID]map[ids.ID]linear.Block
 }
 
 func New() Tree {
 	return &tree{
-		nodes: make(map[ids.ID]map[ids.ID]snowman.Block),
+		nodes: make(map[ids.ID]map[ids.ID]linear.Block),
 	}
 }
 
-func (t *tree) Add(blk snowman.Block) {
+func (t *tree) Add(blk linear.Block) {
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
-		children = make(map[ids.ID]snowman.Block)
+		children = make(map[ids.ID]linear.Block)
 		t.nodes[parentID] = children
 	}
 	blkID := blk.ID()
 	children[blkID] = blk
 }
 
-func (t *tree) Get(blk snowman.Block) (snowman.Block, bool) {
+func (t *tree) Get(blk linear.Block) (linear.Block, bool) {
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	blkID := blk.ID()
@@ -72,7 +72,7 @@ func (t *tree) Get(blk snowman.Block) (snowman.Block, bool) {
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk snowman.Block) error {
+func (t *tree) Accept(ctx context.Context, blk linear.Block) error {
 	// accept the provided block
 	if err := blk.Accept(ctx); err != nil {
 		return err

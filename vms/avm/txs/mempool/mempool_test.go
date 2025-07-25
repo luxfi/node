@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/components/lux"
