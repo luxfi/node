@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/interfaces"
+	"github.com/luxfi/evm/plugin/evm/interfaces"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
