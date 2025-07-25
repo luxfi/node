@@ -19,12 +19,12 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 func TestInvalidGenesis(t *testing.T) {
@@ -37,14 +37,14 @@ func TestInvalidGenesis(t *testing.T) {
 
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                          // context
-		memdb.New(),                  // database
-		nil,                          // genesisState
-		nil,                          // upgradeBytes
-		nil,                          // configBytes
-		make(chan common.Message, 1), // engineMessenger
-		nil,                          // fxs
-		nil,                          // AppSender
+		ctx,                        // context
+		memdb.New(),                // database
+		nil,                        // genesisState
+		nil,                        // upgradeBytes
+		nil,                        // configBytes
+		make(chan core.Message, 1), // engineMessenger
+		nil,                        // fxs
+		nil,                        // AppSender
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 }
@@ -63,13 +63,13 @@ func TestInvalidFx(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                          // context
-		memdb.New(),                  // database
-		genesisBytes,                 // genesisState
-		nil,                          // upgradeBytes
-		nil,                          // configBytes
-		make(chan common.Message, 1), // engineMessenger
-		[]*common.Fx{ // fxs
+		ctx,                        // context
+		memdb.New(),                // database
+		genesisBytes,               // genesisState
+		nil,                        // upgradeBytes
+		nil,                        // configBytes
+		make(chan core.Message, 1), // engineMessenger
+		[]*core.Fx{ // fxs
 			nil,
 		},
 		nil,
@@ -91,13 +91,13 @@ func TestFxInitializationFailure(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                          // context
-		memdb.New(),                  // database
-		genesisBytes,                 // genesisState
-		nil,                          // upgradeBytes
-		nil,                          // configBytes
-		make(chan common.Message, 1), // engineMessenger
-		[]*common.Fx{{ // fxs
+		ctx,                        // context
+		memdb.New(),                // database
+		genesisBytes,               // genesisState
+		nil,                        // upgradeBytes
+		nil,                        // configBytes
+		make(chan core.Message, 1), // engineMessenger
+		[]*core.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -201,7 +201,7 @@ func TestIssueProperty(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},

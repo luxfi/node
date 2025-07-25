@@ -92,7 +92,7 @@ type VMClient struct {
 	metricsGatherer metrics.MultiGatherer
 
 	messenger            *messenger.Server
-	keystore             *gkeystore.Server
+	// keystore             *gkeystore.Server // Keystore removed
 	sharedMemory         *gsharedmemory.Server
 	bcLookup             *galiasreader.Server
 	appSender            *appsender.Server
@@ -130,7 +130,6 @@ func (vm *VMClient) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- core.Message,
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
@@ -174,7 +173,7 @@ func (vm *VMClient) Initialize(
 	)
 
 	vm.messenger = messenger.NewServer(toEngine)
-	vm.keystore = gkeystore.NewServer(chainCtx.Keystore)
+	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from consensus.Context
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
 	vm.appSender = appsender.NewServer(appSender)
@@ -292,7 +291,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 
 	// Register services
 	messengerpb.RegisterMessengerServer(server, vm.messenger)
-	keystorepb.RegisterKeystoreServer(server, vm.keystore)
+	// keystorepb.RegisterKeystoreServer(server, vm.keystore) // Keystore removed
 	sharedmemorypb.RegisterSharedMemoryServer(server, vm.sharedMemory)
 	aliasreaderpb.RegisterAliasReaderServer(server, vm.bcLookup)
 	appsenderpb.RegisterAppSenderServer(server, vm.appSender)

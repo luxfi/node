@@ -18,29 +18,30 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/pubsub"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/components/index"
+	"github.com/luxfi/node/vms/components/keystore"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/utxo"
-	"github.com/luxfi/node/vms/components/index"
-	"github.com/luxfi/node/vms/components/keystore"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockbuilder "github.com/luxfi/node/vms/xvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
@@ -146,7 +147,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 /*
  ******************************************************************************
- ********************************* Common VM **********************************
+ ********************************* Core VM **********************************
  ******************************************************************************
  */
 
@@ -157,11 +158,11 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	_ chan<- common.Message,
-	fxs []*common.Fx,
+	_ chan<- core.Message,
+	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
-	noopMessageHandler := common.NewNoOpAppHandler(ctx.Log)
+	noopMessageHandler := core.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)
@@ -393,7 +394,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- common.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- core.Message) error {
 	time := version.GetCortinaTime(vm.ctx.NetworkID)
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {

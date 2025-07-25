@@ -15,23 +15,23 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -501,7 +501,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	toEngine := make(chan common.Message, 100)
+	toEngine := make(chan core.Message, 100)
 	mempool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)
 	// add a tx to the mempool

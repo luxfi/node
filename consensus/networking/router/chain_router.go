@@ -168,10 +168,11 @@ func (cr *ChainRouter) RegisterRequest(
 	// we validate that we actually sent the corresponding request.
 	// Give this request a unique ID so we can do that validation.
 	uniqueRequestID := ids.RequestID{
-		NodeID:    nodeID,
-		ChainID:   chainID,
-		RequestID: requestID,
-		Op:        byte(op),
+		NodeID:             nodeID,
+		SourceChainID:      chainID,
+		DestinationChainID: chainID,
+		RequestID:          requestID,
+		Op:                 byte(op),
 	}
 	// Add to the set of unfulfilled requests
 	cr.timedRequests.Put(uniqueRequestID, requestEntry{
@@ -707,10 +708,11 @@ func (cr *ChainRouter) clearRequest(
 ) (ids.RequestID, *requestEntry) {
 	// Create the request ID of the request we sent that this message is (allegedly) in response to.
 	uniqueRequestID := ids.RequestID{
-		NodeID:    nodeID,
-		ChainID:   chainID,
-		RequestID: requestID,
-		Op:        byte(op),
+		NodeID:             nodeID,
+		SourceChainID:      chainID,
+		DestinationChainID: chainID,
+		RequestID:          requestID,
+		Op:                 byte(op),
 	}
 	// Mark that an outstanding request has been fulfilled
 	request, exists := cr.timedRequests.Get(uniqueRequestID)

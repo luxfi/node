@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/api/keystore"
@@ -27,14 +26,14 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/txstest"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 
 	avajson "github.com/luxfi/node/utils/json"
 	keystoreutils "github.com/luxfi/node/vms/components/keystore"

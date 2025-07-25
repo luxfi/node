@@ -837,10 +837,7 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 }
 
 func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
-	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(
-		p.id,
-		constants.PrimaryNetworkID,
-	)
+	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id)
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,
 			zap.Stringer("nodeID", p.id),
@@ -856,7 +853,7 @@ func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
 			continue
 		}
 
-		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, subnetID)
+		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id)
 		if err != nil {
 			p.Log.Debug(failedToGetUptimeLog,
 				zap.Stringer("nodeID", p.id),
