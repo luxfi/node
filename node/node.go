@@ -1128,6 +1128,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Health:                                  n.health,
 			ShutdownNodeFunc:                        n.Shutdown,
 			MeterVMEnabled:                          n.Config.MeterVMEnabled,
+			ImportMode:                              n.Config.ImportMode,
 			Metrics:                                 n.MetricsGatherer,
 			MeterDBMetrics:                          n.MeterDBMetricsGatherer,
 			SubnetConfigs:                           n.Config.SubnetConfigs,

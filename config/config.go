@@ -1274,6 +1274,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	
 	// Set dev mode flag
 	nodeConfig.DevMode = v.GetBool(DevModeKey)
+	
+	// Set import mode flag
+	nodeConfig.ImportMode = v.GetBool(ImportModeKey)
 
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {

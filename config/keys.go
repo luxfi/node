@@ -157,6 +157,7 @@ const (
 	ProposerVMMinBlockDelayKey                         = "proposervm-min-block-delay"
 	FdLimitKey                                         = "fd-limit"
 	DevModeKey                                         = "dev"
+	ImportModeKey                                      = "import-mode"
 	IndexEnabledKey                                    = "index-enabled"
 	IndexAllowIncompleteKey                            = "index-allow-incomplete"
 	RouterHealthMaxDropRateKey                         = "router-health-max-drop-rate"

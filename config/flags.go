@@ -82,6 +82,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(FdLimitKey, ulimit.DefaultFDLimit, "Attempts to raise the process file descriptor limit to at least this value and error if the value is above the system max")
 	// Dev Mode
 	fs.Bool(DevModeKey, false, "Enable development mode. Sets network-id=local, sybil-protection-enabled=false, and enables all APIs for local development")
+	// Import Mode
+	fs.Bool(ImportModeKey, false, "Enable import mode for one-time blockchain data import with pruning disabled")
 
 	// Plugin directory
 	fs.String(PluginDirKey, defaultPluginDir, "Path to the plugin directory")
