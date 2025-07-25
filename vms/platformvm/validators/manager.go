@@ -385,3 +385,19 @@ func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error)
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 	m.recentlyAccepted.Add(blkID)
 }
+
+func (m *manager) GetCurrentValidatorSet(
+	ctx context.Context,
+	subnetID ids.ID,
+) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+	// For now, return an empty map with current height
+	// This is a stub implementation that needs to be properly implemented
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// TODO: Implement proper conversion from GetValidatorOutput to GetCurrentValidatorOutput
+	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
+	return result, currentHeight, nil
+}

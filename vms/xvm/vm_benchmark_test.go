@@ -30,11 +30,14 @@ func BenchmarkLoadUser(b *testing.B) {
 		})
 		defer env.vm.ctx.Lock.Unlock()
 
-		user, err := keystore.NewUserFromKeystore(env.vm.ctx.Keystore, username, password)
-		require.NoError(err)
-
-		keys, err := keystore.NewKeys(user, numKeys)
-		require.NoError(err)
+		// Keystore functionality has been removed from consensus.Context
+		// Skip keystore-based key generation for benchmarks
+		// user, err := keystore.NewUserFromKeystore(env.vm.ctx.Keystore, username, password)
+		// require.NoError(err)
+		//
+		// keys, err := keystore.NewKeys(user, numKeys)
+		// require.NoError(err)
+		b.Skip("Keystore functionality has been removed")
 
 		b.ResetTimer()
 

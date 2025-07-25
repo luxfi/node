@@ -88,9 +88,9 @@ var (
 )
 
 func getConsensusConfig(v *viper.Viper) sampling.Parameters {
-	// Check if POA mode is enabled
-	if v.GetBool(POAModeEnabledKey) {
-		// Return POA optimized parameters
+	// Check if dev mode is enabled
+	if v.GetBool(DevModeKey) {
+		// Return dev mode optimized parameters
 		return subnets.GetPOAConsensusParameters()
 	}
 
@@ -722,7 +722,7 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 		return node.StakingConfig{}, errSybilProtectionDisabledStakerWeights
 	}
 
-	if !config.SybilProtectionEnabled && (networkID == constants.MainnetID || networkID == constants.FujiID) {
+	if !config.SybilProtectionEnabled && (networkID == constants.MainnetID || networkID == constants.TestnetID) && !v.GetBool(DevModeKey) {
 		return node.StakingConfig{}, errSybilProtectionDisabledOnPublicNetwork
 	}
 
@@ -735,7 +735,7 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	if err != nil {
 		return node.StakingConfig{}, err
 	}
-	if networkID != constants.MainnetID && networkID != constants.FujiID {
+	if networkID != constants.MainnetID && networkID != constants.TestnetID {
 		config.UptimeRequirement = v.GetFloat64(UptimeRequirementKey)
 		config.MinValidatorStake = v.GetUint64(MinValidatorStakeKey)
 		config.MaxValidatorStake = v.GetUint64(MaxValidatorStakeKey)
@@ -772,7 +772,7 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 }
 
 func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
-	if networkID != constants.MainnetID && networkID != constants.FujiID {
+	if networkID != constants.MainnetID && networkID != constants.TestnetID {
 		return fee.StaticConfig{
 			TxFee:                         v.GetUint64(TxFeeKey),
 			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
@@ -1107,12 +1107,12 @@ func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 		ValidatorOnly:               false,
 		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
 		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
-		POAEnabled:                  v.GetBool(POAModeEnabledKey),
-		POASingleNodeMode:           v.GetBool(POASingleNodeModeKey),
+		POAEnabled:                  v.GetBool(DevModeKey) || v.GetBool(POAModeEnabledKey),
+		POASingleNodeMode:           v.GetBool(DevModeKey) || v.GetBool(POASingleNodeModeKey),
 		POAMinBlockTime:             v.GetDuration(POAMinBlockTimeKey),
 	}
 
-	// If POA mode is enabled, adjust consensus parameters
+	// If dev mode or POA mode is enabled, adjust consensus parameters
 	if config.POAEnabled {
 		config.ConsensusParameters = subnets.GetPOAConsensusParameters()
 		if config.POAMinBlockTime == 0 {

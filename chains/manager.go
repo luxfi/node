@@ -168,7 +168,7 @@ type ChainParameters struct {
 
 type chain struct {
 	Name    string
-	Context *consensus.ConsensusContext
+	Context *consensus.Context
 	VM      core.VM
 	Handler handler.Handler
 }
@@ -531,29 +531,27 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, err
 	}
 
-	ctx := &consensus.ConsensusContext{
-		Context: &consensus.Context{
-			NetworkID: m.NetworkID,
-			SubnetID:  chainParams.SubnetID,
-			ChainID:   chainParams.ID,
-			NodeID:    m.NodeID,
-			PublicKey: bls.PublicFromSecretKey(m.StakingBLSKey),
+	ctx := &consensus.Context{
+		NetworkID: m.NetworkID,
+		SubnetID:  chainParams.SubnetID,
+		ChainID:   chainParams.ID,
+		NodeID:    m.NodeID,
+		PublicKey: bls.PublicFromSecretKey(m.StakingBLSKey),
 
-			XChainID:   m.XChainID,
-			CChainID:   m.CChainID,
-			LUXAssetID: m.LUXAssetID,
+		XChainID:   m.XChainID,
+		CChainID:   m.CChainID,
+		LUXAssetID: m.LUXAssetID,
 
-			Log:          chainLog,
-			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),
-			SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
-			BCLookup:     m,
-			Metrics:      vmMetrics,
+		Log:          chainLog,
+		SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
+		BCLookup:     m,
+		Metrics:      vmMetrics,
 
-			WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
+		WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
 
-			ValidatorState: m.validatorState,
-			ChainDataDir:   chainDataDir,
-		},
+		ValidatorState: m.validatorState,
+		ChainDataDir:   chainDataDir,
+
 		PrimaryAlias:   primaryAlias,
 		Registerer:     linearMetrics,
 		BlockAcceptor:  m.BlockAcceptorGroup,
@@ -644,7 +642,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 
 // Create a DAG-based blockchain that uses Lux
 func (m *manager) createLuxChain(
-	ctx *consensus.ConsensusContext,
+	ctx *consensus.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
@@ -760,17 +758,16 @@ func (m *manager) createLuxChain(
 	// persistence of vertices
 	vtxManager := state.NewSerializer(
 		state.SerializerConfig{
-			ChainID:     ctx.ChainID,
-			VM:          dagVM,
-			DB:          vertexDB,
-			Log:         ctx.Log,
-			CortinaTime: version.GetCortinaTime(ctx.NetworkID),
+			ChainID: ctx.ChainID,
+			VM:      dagVM,
+			DB:      vertexDB,
+			Log:     ctx.Log,
 		},
 	)
 
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
-	msgChan := make(chan core.Message, defaultChannelSize)
+	// msgChan := make(chan core.Message, defaultChannelSize) // Not used for DAG chains - commented to avoid unused variable error
 
 	// The only difference between using luxMessageSender and
 	// linearMessageSender here is where the metrics will be placed. Because we
@@ -778,12 +775,11 @@ func (m *manager) createLuxChain(
 	// linearMessageSender here.
 	err = dagVM.Initialize(
 		context.TODO(),
-		ctx.Context,
+		ctx,
 		vmDB,
 		genesisData,
 		chainConfig.Upgrade,
 		chainConfig.Config,
-		msgChan,
 		fxs,
 		linearMessageSender,
 	)
@@ -861,12 +857,11 @@ func (m *manager) createLuxChain(
 		vmToInitialize: vmWrappingProposerVM,
 		vmToLinearize:  untracedVMWrappedInsideProposerVM,
 
-		ctx:          ctx.Context,
+		ctx:          ctx,
 		db:           vmDB,
 		genesisBytes: genesisData,
 		upgradeBytes: chainConfig.Upgrade,
 		configBytes:  chainConfig.Config,
-		toEngine:     msgChan,
 		fxs:          fxs,
 		appSender:    linearMessageSender,
 	}
@@ -926,16 +921,17 @@ func (m *manager) createLuxChain(
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
 		ctx,
+		nil, // cn *block.ChangeNotifier - not used for DAG chains
+		nil, // subscription core.Subscription - not used for DAG chains
 		vdrs,
-		msgChan,
 		m.FrontierPollFrequency,
 		m.ConsensusAppConcurrency,
 		m.ResourceTracker,
-		validators.UnhandledSubnetConnector, // lux chains don't use subnet connector
 		sb,
 		connectedValidators,
 		peerTracker,
 		handlerReg,
+		func() {}, // haltBootstrapping
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing network handler: %w", err)
@@ -944,8 +940,8 @@ func (m *manager) createLuxChain(
 	connectedBeacons := tracker.NewPeers()
 	var startupTracker tracker.Startup
 	if m.SkipBootstrap {
-		// Use skip bootstrap tracker that immediately returns true
-		startupTracker = tracker.NewSkipBootstrap(connectedBeacons)
+		// Use startup tracker with 0 weight requirement to skip bootstrap
+		startupTracker = tracker.NewStartup(connectedBeacons, 0)
 		ctx.Log.Info("bootstrapping disabled - starting processing immediately")
 	} else {
 		startupTracker = tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
@@ -992,21 +988,21 @@ func (m *manager) createLuxChain(
 	}
 
 	// create bootstrap gear
-	bootstrapBeacons := vdrs
+	// bootstrapBeacons := vdrs // Not used
 	// In skip-bootstrap mode, use empty beacons for single-node development
-	if m.SkipBootstrap {
-		bootstrapBeacons = validators.NewManager()
-	}
+	// if m.SkipBootstrap {
+	// 	bootstrapBeacons = validators.NewManager()
+	// }
 
 	bootstrapCfg := smbootstrap.Config{
 		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
-		Beacons:                        bootstrapBeacons,
+		// Beacons field removed - bootstrapBeacons,
 		SampleK:                        sampleK,
 		StartupTracker:                 startupTracker,
 		Sender:                         linearMessageSender,
 		BootstrapTracker:               sb,
-		Timer:                          h,
+		// Timer field removed - h,
 		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		DB:                             blockBootstrappingDB,
@@ -1038,30 +1034,31 @@ func (m *manager) createLuxChain(
 	}
 
 	// create engine gear
-	luxEngine := aveng.New(ctx, avaGetHandler, linearizableVM)
+	luxEngine := aveng.New(ctx, avaGetHandler)
 	if m.TracingEnabled {
 		luxEngine = core.TraceEngine(luxEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
-	beacons := vdrs
+	// beacons := vdrs // Not used
 	// In skip-bootstrap mode, use empty beacons for single-node development
-	if m.SkipBootstrap {
-		beacons = validators.NewManager()
-		ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
-	}
+	// if m.SkipBootstrap {
+	// 	beacons = validators.NewManager()
+	// 	ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
+	// }
 
 	luxBootstrapperConfig := avbootstrap.Config{
 		AllGetsServer:                  avaGetHandler,
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
-		Beacons:                        beacons,
+		// Beacons field removed - beacons,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
 		TxBlocked:                      txBlocker,
 		Manager:                        vtxManager,
 		VM:                             linearizableVM,
+		Haltable:                       &core.Halter{},
 	}
 	if ctx.ChainID == m.XChainID {
 		luxBootstrapperConfig.StopVertexID = version.CortinaXChainStopVertexID[ctx.NetworkID]
@@ -1070,22 +1067,24 @@ func (m *manager) createLuxChain(
 	luxBootstrapper, err := avbootstrap.New(
 		luxBootstrapperConfig,
 		linearBootstrapper.Start,
+		ctx.Registerer,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
 	}
 
+	var tracedLuxBootstrapper core.BootstrapableEngine = luxBootstrapper
 	if m.TracingEnabled {
-		luxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
+		tracedLuxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: &handler.Engine{
+		Dag: &handler.Engine{
 			StateSyncer:  nil,
-			Bootstrapper: luxBootstrapper,
+			Bootstrapper: tracedLuxBootstrapper,
 			Consensus:    luxEngine,
 		},
-		Linear: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: linearBootstrapper,
 			Consensus:    linearEngine,
@@ -1107,7 +1106,7 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Linear consensus engine
 func (m *manager) createLinearChain(
-	ctx *consensus.ConsensusContext,
+	ctx *consensus.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
@@ -1161,8 +1160,8 @@ func (m *manager) createLinearChain(
 	}
 
 	var (
-		bootstrapFunc   func()
-		subnetConnector = validators.UnhandledSubnetConnector
+		bootstrapFunc func()
+		// subnetConnector interface{} // Not used
 	)
 	// If [m.validatorState] is nil then we are creating the P-Chain. Since the
 	// P-Chain is the first chain to be created, we can use it to initialize
@@ -1202,10 +1201,11 @@ func (m *manager) createLinearChain(
 		}
 
 		// Set up the subnet connector for the P-Chain
-		subnetConnector, ok = vm.(validators.SubnetConnector)
-		if !ok {
-			return nil, fmt.Errorf("expected validators.SubnetConnector but got %T", vm)
-		}
+		// TODO: validators.SubnetConnector interface has been removed, need to update this
+		// subnetConnector, ok = vm.(validators.SubnetConnector)
+		// if !ok {
+		// 	return nil, fmt.Errorf("expected validators.SubnetConnector but got %T", vm)
+		// }
 	}
 
 	// Initialize the ProposerVM and the vm wrapped inside it
@@ -1276,12 +1276,11 @@ func (m *manager) createLinearChain(
 
 	if err := vm.Initialize(
 		context.TODO(),
-		ctx.Context,
+		ctx,
 		vmDB,
 		genesisData,
 		chainConfig.Upgrade,
 		chainConfig.Config,
-		msgChan,
 		fxs,
 		messageSender,
 	); err != nil {
@@ -1340,19 +1339,31 @@ func (m *manager) createLinearChain(
 		return nil, err
 	}
 
+	// Create change notifier and subscription for linear chain
+	cn := &block.ChangeNotifier{}
+	subscription := func(ctx context.Context) (core.Message, error) {
+		select {
+		case msg := <-msgChan:
+			return msg, nil
+		case <-ctx.Done():
+			return core.Message(0), ctx.Err()
+		}
+	}
+
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
 		ctx,
+		cn,
+		subscription,
 		vdrs,
-		msgChan,
 		m.FrontierPollFrequency,
 		m.ConsensusAppConcurrency,
 		m.ResourceTracker,
-		subnetConnector,
 		sb,
 		connectedValidators,
 		peerTracker,
 		handlerReg,
+		func() {}, // haltBootstrapping
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
@@ -1411,12 +1422,14 @@ func (m *manager) createLinearChain(
 		StartupTracker:                 startupTracker,
 		Sender:                         messageSender,
 		BootstrapTracker:               sb,
-		Timer:                          h,
+		// Timer field removed - h,
 		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		DB:                             bootstrappingDB,
 		VM:                             vm,
 		Bootstrapped:                   bootstrapFunc,
+		NonVerifyingParse:              vm.ParseBlock,
+		Haltable:                       &core.Halter{},
 	}
 	var bootstrapper core.BootstrapableEngine
 	bootstrapper, err = smbootstrap.New(
@@ -1456,8 +1469,8 @@ func (m *manager) createLinearChain(
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: nil,
-		Linear: &handler.Engine{
+		Dag: nil,
+		Chain: &handler.Engine{
 			StateSyncer:  stateSyncer,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1587,7 +1600,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *consensus.ConsensusContext, vm core.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensus.Context, vm core.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

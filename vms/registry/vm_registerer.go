@@ -100,7 +100,7 @@ func (r *vmRegisterer) createStaticHandlers(
 		return nil, err
 	}
 
-	commonVM, ok := vm.(common.VM)
+	commonVM, ok := vm.(core.VM)
 	if !ok {
 		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}

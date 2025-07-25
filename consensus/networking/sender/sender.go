@@ -1168,7 +1168,7 @@ func (s *sender) SendChits(
 	}
 
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, preferredID, preferredIDAtHeight, acceptedID, acceptedHeight)
+	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, preferredID, preferredIDAtHeight, acceptedID)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.ChitsOp),

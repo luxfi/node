@@ -13,10 +13,10 @@ type Config struct {
 	// Fee that must be burned by every asset creating transaction
 	CreateAssetTxFee uint64
 
-	// Time of the E network upgrade
-	EUpgradeTime time.Time
+	// Time of the Etna network upgrade
+	EtnaTime time.Time
 }
 
-func (c *Config) IsEActivated(timestamp time.Time) bool {
-	return !timestamp.Before(c.EUpgradeTime)
+func (c *Config) IsEtnaActivated(timestamp time.Time) bool {
+	return !timestamp.Before(c.EtnaTime)
 }

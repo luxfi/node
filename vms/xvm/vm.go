@@ -32,7 +32,6 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
-	"github.com/luxfi/node/vms/components/keystore"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
@@ -123,6 +122,9 @@ type VM struct {
 	blockbuilder.Builder
 	chainManager blockexecutor.Manager
 	network      *network.Network
+	
+	// Channel for receiving messages from mempool
+	toEngine chan core.Message
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -158,7 +160,6 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	_ chan<- core.Message,
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
@@ -394,14 +395,16 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- core.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	time := version.GetCortinaTime(vm.ctx.NetworkID)
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {
 		return err
 	}
 
-	mempool, err := xmempool.New("mempool", vm.registerer, toEngine)
+	// Create a channel for mempool to engine communication
+	vm.toEngine = make(chan core.Message, 1)
+	mempool, err := xmempool.New("mempool", vm.registerer, vm.toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -597,25 +600,9 @@ func (vm *VM) LoadUser(
 	*secp256k1fx.Keychain,
 	error,
 ) {
-	user, err := keystore.NewUserFromKeystore(vm.ctx.Keystore, username, password)
-	if err != nil {
-		return nil, nil, err
-	}
-	// Drop any potential error closing the database to report the original
-	// error
-	defer user.Close()
-
-	kc, err := keystore.GetKeychain(user, addrsToUse)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	utxos, err := lux.GetAllUTXOs(vm.state, kc.Addresses())
-	if err != nil {
-		return nil, nil, fmt.Errorf("problem retrieving user's UTXOs: %w", err)
-	}
-
-	return utxos, kc, user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return nil, nil, errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // selectChangeAddr returns the change address to be used for [kc] when [changeAddr] is given
@@ -684,4 +671,26 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 	vm.pubsub.Publish(NewPubSubFilterer(tx))
 	vm.walletService.decided(txID)
 	return nil
+}
+
+// WaitForEvent implements the core.VM interface
+func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+	if vm.toEngine == nil {
+		// Before linearization, no events to wait for
+		<-ctx.Done()
+		return core.PendingTxs, ctx.Err()
+	}
+	
+	select {
+	case msg := <-vm.toEngine:
+		return msg, nil
+	case <-ctx.Done():
+		return core.PendingTxs, ctx.Err()
+	}
+}
+
+// NewHTTPHandler implements the core.VM interface
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
+	return nil, nil
 }

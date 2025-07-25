@@ -16,13 +16,13 @@ import (
 	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
-// This fetches the current validator set of both Fuji and Mainnet.
+// This fetches the current validator set of both Testnet and Mainnet.
 func main() {
 	ctx := context.Background()
 
-	fujiValidators, err := getCurrentValidators(ctx, primary.FujiAPIURI)
+	testnetValidators, err := getCurrentValidators(ctx, primary.TestnetAPIURI)
 	if err != nil {
-		log.Fatalf("failed to fetch Fuji validators: %v", err)
+		log.Fatalf("failed to fetch Testnet validators: %v", err)
 	}
 
 	mainnetValidators, err := getCurrentValidators(ctx, primary.MainnetAPIURI)
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	validators := map[string]set.Set[ids.NodeID]{
-		constants.FujiName:    fujiValidators,
+		constants.TestnetName:    testnetValidators,
 		constants.MainnetName: mainnetValidators,
 	}
 	validatorsJSON, err := json.MarshalIndent(validators, "", "\t")

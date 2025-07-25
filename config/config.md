@@ -279,7 +279,7 @@ Specifies the type of database to use. Must be one of `leveldb`, `memdb`, or `pe
 
 `memdb` stores everything in memory. So if you have a 900 GiB LevelDB instance, then using `memdb`
 you’d need 900 GiB of RAM.
-`memdb` is useful for fast one-off testing, not for running an actual node (on Fuji or Mainnet).
+`memdb` is useful for fast one-off testing, not for running an actual node (on Testnet or Mainnet).
 Also note that `memdb` doesn’t persist after restart. So any time you restart the node it would
 start syncing from scratch.
 
@@ -424,7 +424,7 @@ Any keys not given will receive the default value.
 #### `--genesis-file` (string)
 
 Path to a JSON file containing the genesis data to use. Ignored when running
-standard networks (Mainnet, Fuji Testnet), or when `--genesis-content` is
+standard networks (Mainnet, Testnet), or when `--genesis-content` is
 specified. If not given, uses default genesis data.
 
 These are the main properties in the JSON file:
@@ -606,8 +606,8 @@ Enables the compression of rotated log files through gzip. Defaults to `false`.
 The identity of the network the node should connect to. Can be one of:
 
 - `--network-id=mainnet` -&gt; Connect to Mainnet (default).
-- `--network-id=fuji` -&gt; Connect to the Fuji test-network.
-- `--network-id=testnet` -&gt; Connect to the current test-network. (Right now, this is Fuji.)
+- `--network-id=testnet` -&gt; Connect to the Testnet test-network.
+- `--network-id=testnet` -&gt; Connect to the current test-network. (Right now, this is Testnet.)
 - `--network-id=local` -&gt; Connect to a local test-network.
 - `--network-id=network-{id}` -&gt; Connect to the network with the given ID.
   `id` must be in the range `[0, 2^32)`.
@@ -677,7 +677,7 @@ operation. Defaults to `9651`.
 Lux uses Proof of Stake (PoS) as sybil resistance to make it prohibitively
 expensive to attack the network. If false, sybil resistance is disabled and all
 peers will be sampled during consensus. Defaults to `true`. Note that this can
-not be disabled on public networks (`Fuji` and `Mainnet`).
+not be disabled on public networks (`Testnet` and `Mainnet`).
 
 Setting this flag to `false` **does not** mean "this node is not a validator."
 It means that this node will sample all nodes, not just validators.
@@ -826,7 +826,7 @@ Minimum amount of time queries to a peer must be failing before the peer is benc
 ### Consensus Parameters
 
 :::note
-Some of these parameters can only be set on a local or private network, not on Fuji Testnet or Mainnet
+Some of these parameters can only be set on a local or private network, not on Testnet or Mainnet
 :::
 
 #### `--consensus-shutdown-timeout` (duration)

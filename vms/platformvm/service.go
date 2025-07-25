@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/keystore"
+	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -117,27 +117,8 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 		logging.UserString("username", args.Username),
 	)
 
-	address, err := lux.ParseServiceAddress(s.addrManager, args.Address)
-	if err != nil {
-		return fmt.Errorf("couldn't parse %s to address: %w", args.Address, err)
-	}
-
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-
-	reply.PrivateKey, err = user.GetKey(address)
-	if err != nil {
-		// Drop any potential error closing the user to report the original
-		// error
-		_ = user.Close()
-		return fmt.Errorf("problem retrieving private key: %w", err)
-	}
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	return fmt.Errorf("keystore functionality has been removed")
 }
 
 type GetBalanceRequest struct {
@@ -288,27 +269,8 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 		logging.UserString("username", args.Username),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	addresses, err := user.GetAddresses()
-	if err != nil {
-		return fmt.Errorf("couldn't get addresses: %w", err)
-	}
-	response.Addresses = make([]string, len(addresses))
-	for i, addr := range addresses {
-		response.Addresses[i], err = s.addrManager.FormatLocalAddress(addr)
-		if err != nil {
-			return fmt.Errorf("problem formatting address: %w", err)
-		}
-	}
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	return fmt.Errorf("keystore functionality has been removed")
 }
 
 // Index is an address and an associated UTXO.
@@ -836,7 +798,11 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 				return err
 			}
 
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+			// TODO: handle subnet uptime
+			connected := false
+			if args.SubnetID == constants.PrimaryNetworkID {
+				connected = s.vm.uptimeManager.IsConnected(nodeID)
+			}
 			var (
 				validationRewardOwner *platformapi.Owner
 				delegationRewardOwner *platformapi.Owner
@@ -900,7 +866,11 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			if err != nil {
 				return err
 			}
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
+			// TODO: handle subnet uptime
+			connected := false
+			if args.SubnetID == constants.PrimaryNetworkID {
+				connected = s.vm.uptimeManager.IsConnected(nodeID)
+			}
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -1834,7 +1804,12 @@ func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
 		return nil, nil
 	}
 
-	rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, staker.SubnetID, staker.StartTime)
+	// TODO: handle subnet uptime
+	rawUptime := float64(0)
+	var err error
+	if staker.SubnetID == constants.PrimaryNetworkID {
+		rawUptime, err = s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, staker.StartTime)
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -138,19 +138,22 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// The caller of this function is responsible for unlocking.
 	ctx.Lock.Lock()
 
-	userKeystore := keystore.New(logging.NoLog{}, memdb.New())
-	ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
-
-	for _, user := range c.keystoreUsers {
-		require.NoError(userKeystore.CreateUser(user.username, user.password))
-
-		// Import the initially funded private keys
-		keystoreUser, err := keystoreutils.NewUserFromKeystore(ctx.Keystore, user.username, user.password)
-		require.NoError(err)
-
-		require.NoError(keystoreUser.PutKeys(user.initialKeys...))
-		require.NoError(keystoreUser.Close())
-	}
+	// Keystore functionality has been removed from consensus.Context
+	// Skip keystore initialization for tests
+	//
+	// userKeystore := keystore.New(logging.NoLog{}, memdb.New())
+	// ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
+	//
+	// for _, user := range c.keystoreUsers {
+	//	require.NoError(userKeystore.CreateUser(user.username, user.password))
+	//
+	//	// Import the initially funded private keys
+	//	keystoreUser, err := keystoreutils.NewUserFromKeystore(ctx.Keystore, user.username, user.password)
+	//	require.NoError(err)
+	//
+	//	require.NoError(keystoreUser.PutKeys(user.initialKeys...))
+	//	require.NoError(keystoreUser.Close())
+	// }
 
 	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {

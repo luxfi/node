@@ -43,8 +43,8 @@ func GetTxFeeConfig(networkID uint32) fee.StaticConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.StaticConfig
-	case constants.FujiID:
-		return FujiParams.StaticConfig
+	case constants.TestnetID:
+		return TestnetParams.StaticConfig
 	case constants.LocalID:
 		return LocalParams.StaticConfig
 	default:
@@ -56,8 +56,8 @@ func GetStakingConfig(networkID uint32) StakingConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.StakingConfig
-	case constants.FujiID:
-		return FujiParams.StakingConfig
+	case constants.TestnetID:
+		return TestnetParams.StakingConfig
 	case constants.LocalID:
 		return LocalParams.StakingConfig
 	default:

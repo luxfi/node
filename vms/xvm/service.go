@@ -22,7 +22,6 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/components/keystore"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -992,28 +991,9 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 		logging.UserString("username", args.Username),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	sk, err := keystore.NewKey(user)
-	if err != nil {
-		return err
-	}
-
-	reply.Address, err = s.vm.FormatLocalAddress(sk.PublicKey().Address())
-	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
-	}
-
-	// Return an error if the DB can't close, this will execute before the above
-	// db close.
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ListAddresses returns all of the addresses controlled by user [args.Username]
@@ -1024,34 +1004,9 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 		logging.UserString("username", args.Username),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-
-	response.Addresses = []string{}
-
-	addresses, err := user.GetAddresses()
-	if err != nil {
-		// An error fetching the addresses may just mean that the user has no
-		// addresses.
-		return user.Close()
-	}
-
-	for _, address := range addresses {
-		addr, err := s.vm.FormatLocalAddress(address)
-		if err != nil {
-			// Drop any potential error closing the database to report the
-			// original error
-			_ = user.Close()
-			return fmt.Errorf("problem formatting address: %w", err)
-		}
-		response.Addresses = append(response.Addresses, addr)
-	}
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ExportKeyArgs are arguments for ExportKey
@@ -1074,27 +1029,14 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 		logging.UserString("username", args.Username),
 	)
 
-	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
+	_, err := lux.ParseServiceAddress(s.vm, args.Address)
 	if err != nil {
 		return fmt.Errorf("problem parsing address %q: %w", args.Address, err)
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-
-	reply.PrivateKey, err = user.GetKey(addr)
-	if err != nil {
-		// Drop any potential error closing the database to report the original
-		// error
-		_ = user.Close()
-		return fmt.Errorf("problem retrieving private key: %w", err)
-	}
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ImportKeyArgs are arguments for ImportKey
@@ -1121,26 +1063,9 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 		return errMissingPrivateKey
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
-	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
-	if err != nil {
-		return err
-	}
-	defer user.Close()
-
-	if err := user.PutKeys(args.PrivateKey); err != nil {
-		return fmt.Errorf("problem saving key %w", err)
-	}
-
-	newAddress := args.PrivateKey.PublicKey().Address()
-	reply.Address, err = s.vm.FormatLocalAddress(newAddress)
-	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
-	}
-
-	return user.Close()
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // SendOutput specifies that [Amount] of asset [AssetID] be sent to [To]
