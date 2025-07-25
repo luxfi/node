@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/maybe"

@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/leveldb"
+	"github.com/luxfi/db/leveldb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"

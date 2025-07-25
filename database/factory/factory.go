@@ -7,13 +7,13 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/meterdb"
-	"github.com/luxfi/node/database/pebbledb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/corruptabledb"
+	"github.com/luxfi/db/leveldb"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/meterdb"
+	"github.com/luxfi/db/pebbledb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/utils/logging"
 )
 

@@ -18,7 +18,7 @@ import (
 	consensus "github.com/luxfi/node/consensus"
 	core "github.com/luxfi/node/consensus/engine/core"
 	linear "github.com/luxfi/node/consensus/linear"
-	database "github.com/luxfi/node/database"
+	database "github.com/luxfi/db"
 	ids "github.com/luxfi/node/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"

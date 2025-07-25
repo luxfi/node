@@ -16,8 +16,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/databasemock"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/databasemock"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/units"
 )

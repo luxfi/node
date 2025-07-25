@@ -35,10 +35,10 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/pebbledb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/leveldb"
+	"github.com/luxfi/db/pebbledb"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/indexer"
@@ -81,7 +81,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
 	geth "github.com/luxfi/evm/plugin/evm"
-	databasefactory "github.com/luxfi/node/database/factory"
+	databasefactory "github.com/luxfi/db/factory"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )

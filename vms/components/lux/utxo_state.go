@@ -10,9 +10,9 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/linkeddb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/linkeddb"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/node/ids"
 )
 

@@ -3,7 +3,7 @@
 
 package archivedb
 
-import "github.com/luxfi/node/database"
+import "github.com/luxfi/db"
 
 var _ database.KeyValueReader = (*Reader)(nil)
 

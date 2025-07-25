@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"

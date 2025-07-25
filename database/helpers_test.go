@@ -11,10 +11,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/utils"
 
-	. "github.com/luxfi/node/database"
+	. "github.com/luxfi/db"
 )
 
 func TestSortednessUint64(t *testing.T) {

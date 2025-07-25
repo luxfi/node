@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"

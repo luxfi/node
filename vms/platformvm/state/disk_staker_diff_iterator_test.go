@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thepudds/fzgen/fuzzer"
 
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 )
 

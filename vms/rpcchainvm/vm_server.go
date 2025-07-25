@@ -17,9 +17,9 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/corruptabledb"
+	"github.com/luxfi/db/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/consensus"

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/block"

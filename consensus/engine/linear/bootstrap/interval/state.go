@@ -6,7 +6,7 @@ package interval
 import (
 	"errors"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 )
 
 const (

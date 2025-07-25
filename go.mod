@@ -1,5 +1,8 @@
 module github.com/luxfi/node
 
+replace github.com/luxfi/db => ../db
+replace github.com/luxfi/warp => ../warp
+
 // - Changes to the minimum golang version must also be replicated in:
 //   - CONTRIBUTING.md
 //   - README.md

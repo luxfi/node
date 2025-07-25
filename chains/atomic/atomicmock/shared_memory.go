@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	atomic "github.com/luxfi/node/chains/atomic"
-	database "github.com/luxfi/node/database"
+	database "github.com/luxfi/db"
 	ids "github.com/luxfi/node/ids"
 	gomock "go.uber.org/mock/gomock"
 )

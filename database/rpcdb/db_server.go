@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils/units"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"

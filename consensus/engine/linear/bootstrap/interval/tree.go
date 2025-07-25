@@ -6,7 +6,7 @@ package interval
 import (
 	"github.com/google/btree"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 )
 
 // TODO: Benchmark what degree to use.

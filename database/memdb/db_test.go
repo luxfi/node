@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luxfi/node/database/dbtest"
+	"github.com/luxfi/db/dbtest"
 )
 
 func TestInterface(t *testing.T) {

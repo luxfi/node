@@ -4,7 +4,7 @@
 package rpcchainvm
 
 import (
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 
 	vmpb "github.com/luxfi/node/proto/pb/vm"
