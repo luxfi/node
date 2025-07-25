@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package propertyfx
@@ -59,7 +59,7 @@ func TestFxVerifyMintOperation(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -101,7 +101,7 @@ func TestFxVerifyMintOperationWrongTx(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -135,7 +135,7 @@ func TestFxVerifyMintOperationWrongNumberUTXOs(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -166,7 +166,7 @@ func TestFxVerifyMintOperationWrongCredential(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -198,7 +198,7 @@ func TestFxVerifyMintOperationInvalidUTXO(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -229,7 +229,7 @@ func TestFxVerifyMintOperationFailingVerification(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -267,7 +267,7 @@ func TestFxVerifyMintOperationInvalidGroupID(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -304,7 +304,7 @@ func TestFxVerifyTransferOperation(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -338,7 +338,7 @@ func TestFxVerifyTransferOperationWrongUTXO(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -367,7 +367,7 @@ func TestFxVerifyTransferOperationFailedVerify(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -402,7 +402,7 @@ func TestFxVerifyOperationUnknownOperation(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}
@@ -434,7 +434,7 @@ func TestFxVerifyTransfer(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 
 	fx := Fx{}

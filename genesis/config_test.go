@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -63,51 +63,51 @@ func TestGetRecentStartTime(t *testing.T) {
 	tests := []test{
 		{
 			name:     "before 1 period and 1 second",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(-localNetworkUpdateStartTimePeriod - time.Second),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(-localNetworkUpdateStartTimePeriod - time.Second),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name:     "before 1 second",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(-time.Second),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(-time.Second),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name:     "equal",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name:     "after 1 second",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(time.Second),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(time.Second),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name:     "after 1 period",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
 		},
 		{
 			name:     "after 1 period and 1 second",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod + time.Second),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod + time.Second),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(localNetworkUpdateStartTimePeriod),
 		},
 		{
 			name:     "after 2 periods",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
 		},
 		{
 			name:     "after 2 periods and 1 second",
-			defined:  time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC),
-			now:      time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2*localNetworkUpdateStartTimePeriod + time.Second),
-			expected: time.Date(2024, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
+			defined:  time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC),
+			now:      time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2*localNetworkUpdateStartTimePeriod + time.Second),
+			expected: time.Date(2025, time.July, 15, 4, 0, 0, 0, time.UTC).Add(2 * localNetworkUpdateStartTimePeriod),
 		},
 	}
 	for _, tt := range tests {

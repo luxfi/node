@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -72,7 +72,7 @@ func TestFxVerifyTransfer(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -110,7 +110,7 @@ func TestFxVerifyTransferNilTx(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -146,7 +146,7 @@ func TestFxVerifyTransferNilOutput(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -173,7 +173,7 @@ func TestFxVerifyTransferNilInput(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -204,7 +204,7 @@ func TestFxVerifyTransferNilCredential(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -236,7 +236,7 @@ func TestFxVerifyTransferInvalidOutput(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -273,7 +273,7 @@ func TestFxVerifyTransferWrongAmounts(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -310,7 +310,7 @@ func TestFxVerifyTransferTimelocked(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -347,7 +347,7 @@ func TestFxVerifyTransferTooManySigners(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -385,7 +385,7 @@ func TestFxVerifyTransferTooFewSigners(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -420,7 +420,7 @@ func TestFxVerifyTransferMismatchedSigners(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -458,7 +458,7 @@ func TestFxVerifyTransferInvalidSignature(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -498,7 +498,7 @@ func TestFxVerifyTransferWrongSigner(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -538,7 +538,7 @@ func TestFxVerifyTransferSigIndexOOB(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -578,7 +578,7 @@ func TestFxVerifyOperation(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -630,7 +630,7 @@ func TestFxVerifyOperationUnknownTx(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -682,7 +682,7 @@ func TestFxVerifyOperationUnknownOperation(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -712,7 +712,7 @@ func TestFxVerifyOperationUnknownCredential(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -760,7 +760,7 @@ func TestFxVerifyOperationWrongNumberOfUTXOs(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -813,7 +813,7 @@ func TestFxVerifyOperationUnknownUTXOType(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -858,7 +858,7 @@ func TestFxVerifyOperationInvalidOperationVerify(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))
@@ -908,7 +908,7 @@ func TestFxVerifyOperationMismatchedMintOutputs(t *testing.T) {
 		Codec: linearcodec.NewDefault(),
 		Log:   logging.NoLog{},
 	}
-	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
+	date := time.Date(2020, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
 	fx := Fx{}
 	require.NoError(fx.Initialize(&vm))

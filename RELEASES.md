@@ -99,7 +99,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.12...v1.11.13.
 
-[v1.11.11] (December 2024) - Beta Enhancements
+[v1.11.11] (December 2025) - Beta Enhancements
 
 Backwards compatible with v1.11.0. Plugin version to 37.
 
@@ -115,7 +115,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.10...v1.11.11.
 
-[v1.11.10] (November 2024) - Beta Networking Fixes
+[v1.11.10] (November 2025) - Beta Networking Fixes
 
 Backwards compatible with v1.11.0. Plugin version to 36.
 
@@ -129,7 +129,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.9...v1.11.10.
 
-[v1.11.9] (October 2024) - Beta Stability
+[v1.11.9] (October 2025) - Beta Stability
 
 Backwards compatible with v1.11.0. Plugin version to 35.
 
@@ -143,7 +143,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.8...v1.11.9.
 
-[v1.11.8] (September 2024) - Beta Metrics Overhaul
+[v1.11.8] (September 2025) - Beta Metrics Overhaul
 
 Backwards compatible with v1.11.0.
 
@@ -155,7 +155,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.7...v1.11.8.
 
-[v1.11.7] (August 2024) - Beta Pruning and Metrics
+[v1.11.7] (August 2025) - Beta Pruning and Metrics
 
 Backwards compatible with v1.11.0. Plugin version to 35.
 
@@ -169,7 +169,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.6...v1.11.7.
 
-[v1.11.6] (July 2024) - Beta Consensus Tweaks
+[v1.11.6] (July 2025) - Beta Consensus Tweaks
 
 Backwards compatible with v1.11.0.
 
@@ -183,7 +183,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.5...v1.11.6.
 
-[v1.11.5] (June 2024) - Beta Gossip Improvements
+[v1.11.5] (June 2025) - Beta Gossip Improvements
 
 Backwards compatible with v1.11.0.
 
@@ -197,7 +197,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.4...v1.11.5.
 
-[v1.11.4] (May 2024) - Beta Sync Optimizations
+[v1.11.4] (May 2025) - Beta Sync Optimizations
 
 Backwards compatible with v1.11.0.
 
@@ -211,7 +211,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.3...v1.11.4.
 
-[v1.11.3] (April 2024) - Beta API Removals
+[v1.11.3] (April 2025) - Beta API Removals
 
 Backwards compatible with v1.11.0. Plugin version to 35.
 
@@ -227,7 +227,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.2...v1.11.3.
 
-[v1.11.2] (March 2024) - Beta Gossip Redesign
+[v1.11.2] (March 2025) - Beta Gossip Redesign
 
 Backwards compatible with v1.11.0. Plugin version to 34.
 
@@ -243,7 +243,7 @@ Key Changes:
 
     Full Changelog: Compare v1.11.0...v1.11.2.
 
-[v1.11.0] (February 2024) - Beta LCP Activations
+[v1.11.0] (February 2025) - Beta LCP Activations
 
 Activates Lux equivalents of LPs (e.g., Warp Messaging).
 
@@ -259,7 +259,7 @@ Key Changes:
 
     Full Changelog: Compare v1.10.19...v1.11.0.
 
-[v1.10.19] (January 2024) - Beta Prep
+[v1.10.19] (January 2025) - Beta Prep
 
 Backwards compatible with v1.10.0.
 

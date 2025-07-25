@@ -96,7 +96,7 @@ curl  -H 'Content-Type: application/json' --data '{
                         "percentConnected": 0.9999592612587486
                     }
                 },
-                "timestamp": "2024-03-26T19:44:45.2931-04:00",
+                "timestamp": "2025-03-26T19:44:45.2931-04:00",
                 "duration": 20375
             },
             "P": {
@@ -114,7 +114,7 @@ curl  -H 'Content-Type: application/json' --data '{
                         "percentConnected": 0.9999592612587486
                     }
                 },
-                "timestamp": "2024-03-26T19:44:45.293115-04:00",
+                "timestamp": "2025-03-26T19:44:45.293115-04:00",
                 "duration": 8750
             },
             "X": {
@@ -132,23 +132,23 @@ curl  -H 'Content-Type: application/json' --data '{
                         "percentConnected": 0.9999592612587486
                     }
                 },
-                "timestamp": "2024-03-26T19:44:45.29312-04:00",
+                "timestamp": "2025-03-26T19:44:45.29312-04:00",
                 "duration": 23291
             },
             "bootstrapped": {
                 "message": [],
-                "timestamp": "2024-03-26T19:44:45.293078-04:00",
+                "timestamp": "2025-03-26T19:44:45.293078-04:00",
                 "duration": 3375
             },
             "database": {
-                "timestamp": "2024-03-26T19:44:45.293102-04:00",
+                "timestamp": "2025-03-26T19:44:45.293102-04:00",
                 "duration": 1959
             },
             "diskspace": {
                 "message": {
                     "availableDiskBytes": 227332591616
                 },
-                "timestamp": "2024-03-26T19:44:45.293106-04:00",
+                "timestamp": "2025-03-26T19:44:45.293106-04:00",
                 "duration": 3042
             },
             "network": {
@@ -158,7 +158,7 @@ curl  -H 'Content-Type: application/json' --data '{
                     "timeSinceLastMsgReceived": "293.098ms",
                     "timeSinceLastMsgSent": "293.098ms"
                 },
-                "timestamp": "2024-03-26T19:44:45.2931-04:00",
+                "timestamp": "2025-03-26T19:44:45.2931-04:00",
                 "duration": 2333
             },
             "router": {
@@ -166,7 +166,7 @@ curl  -H 'Content-Type: application/json' --data '{
                     "longestRunningRequest": "66.90725ms",
                     "outstandingRequests": 3
                 },
-                "timestamp": "2024-03-26T19:44:45.293097-04:00",
+                "timestamp": "2025-03-26T19:44:45.293097-04:00",
                 "duration": 3542
             }
         },
@@ -215,7 +215,7 @@ curl  -H 'Content-Type: application/json' --data '{
         "checks": {
             "bootstrapped": {
                 "message": [],
-                "timestamp": "2024-03-26T20:02:45.299114-04:00",
+                "timestamp": "2025-03-26T20:02:45.299114-04:00",
                 "duration": 2834
             }
         },
