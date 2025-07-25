@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/consensus/engine/linear/block/mocks"
+	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
