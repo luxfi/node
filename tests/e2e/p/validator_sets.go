@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"

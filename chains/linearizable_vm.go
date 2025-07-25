@@ -9,9 +9,9 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 var (

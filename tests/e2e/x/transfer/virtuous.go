@@ -31,8 +31,8 @@ import (
 const (
 	totalRounds = 50
 
-	blksProcessingMetric = "lux_snowman_blks_processing"
-	blksAcceptedMetric   = "lux_snowman_blks_accepted_count"
+	blksProcessingMetric = "lux_linear_blks_processing"
+	blksAcceptedMetric   = "lux_linear_blks_accepted_count"
 )
 
 var xChainMetricLabels = prometheus.Labels{

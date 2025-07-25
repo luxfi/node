@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -185,7 +185,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.Equal([]*txs.Tx{expectedTx}, blk.(*blockexecutor.Block).Block.Txs())
 
 		// Commit the [ProposalBlock] with a [CommitBlock]
-		proposalBlk, ok := blk.(snowman.OracleBlock)
+		proposalBlk, ok := blk.(linear.OracleBlock)
 		require.True(ok)
 		options, err := proposalBlk.Options(context.Background())
 		require.NoError(err)

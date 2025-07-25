@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -140,11 +140,11 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
 	return nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, err
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -165,7 +165,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (linear.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 

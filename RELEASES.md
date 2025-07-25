@@ -666,7 +666,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - Provide pgo file during compilation by @StephenButtolph in https://github.com/luxfi/node/pull/2724
 - P-chain - Tx builder cleanup by @abi87 in https://github.com/luxfi/node/pull/2718
 - Refactor chain manager subnets by @joshua-kim in https://github.com/luxfi/node/pull/2711
-- Replace snowball/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
+- Replace sampling/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
 - Remove duplicate IP length constant by @StephenButtolph in https://github.com/luxfi/node/pull/2733
 - Add `platform.getSubnet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
 - Provide BLS signature in Handshake message by @StephenButtolph in https://github.com/luxfi/node/pull/2730
@@ -1054,7 +1054,7 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 - `vms/platformvm`: Move `toEngine` channel to mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2333
 - `vms/avm`: Rename `states` pkg to `state` by @dhrubabasu in https://github.com/luxfi/node/pull/2381
 - Implement generic bimap by @StephenButtolph in https://github.com/luxfi/node/pull/2383
-- Unexport RequestID from snowman engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
+- Unexport RequestID from linear engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
 - Add metric to track the stake weight of block providers by @StephenButtolph in https://github.com/luxfi/node/pull/2376
 - Add block source metrics to monitor gossip by @StephenButtolph in https://github.com/luxfi/node/pull/2386
 - Rename `D` to `Durango` by @dhrubabasu in https://github.com/luxfi/node/pull/2389
@@ -1150,11 +1150,11 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Remove `common.Config` functions by @StephenButtolph in https://github.com/luxfi/node/pull/2328
 - Move engine startup into helper function by @StephenButtolph in https://github.com/luxfi/node/pull/2329
 - Remove bootstrapping retry config by @StephenButtolph in https://github.com/luxfi/node/pull/2301
-- Export snowman bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
+- Export linear bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
 - Remove common.Config from syncer.Config by @StephenButtolph in https://github.com/luxfi/node/pull/2330
 - `platformvm.VM` -- replace `Config` field with `validators.Manager` by @danlaine in https://github.com/luxfi/node/pull/2319
 - Improve height monitoring by @StephenButtolph in https://github.com/luxfi/node/pull/2347
-- Cleanup snowman consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
+- Cleanup linear consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
 - Expand consensus health check by @StephenButtolph in https://github.com/luxfi/node/pull/2354
 - Reduce the size of the OracleBlock interface by @StephenButtolph in https://github.com/luxfi/node/pull/2355
 - [vms/proposervm] Update Build Heuristic by @patrick-ogrady in https://github.com/luxfi/node/pull/2348
@@ -1329,13 +1329,13 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 
 ### What's Changed
 
-- Add last accepted height to the snowman interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
+- Add last accepted height to the linear interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
 - Delete kurtosis CI jobs by @marun in https://github.com/luxfi/node/pull/2068
 - e2e: Ensure all Issue* calls use the default context by @marun in https://github.com/luxfi/node/pull/2069
 - Remove Finalized from the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2093
 - Remove embedding of `verify.Verifiable` in `FxCredential` by @dhrubabasu in https://github.com/luxfi/node/pull/2089
 - Clarify decidable interface simple default parameter tests by @gyuho in https://github.com/luxfi/node/pull/2094
-- snow/consensus/snowman/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
+- snow/consensus/linear/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
 - Cleanup `.golangci.yml` by @dhrubabasu in https://github.com/luxfi/node/pull/2097
 - Refactor `ancestor.Tree` by @StephenButtolph in https://github.com/luxfi/node/pull/2099
 - Update AMI runner image and instance type by @charlie-ava in https://github.com/luxfi/node/pull/1939
@@ -1345,8 +1345,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Add preference lookups by height to the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2092
 - Remove duplicate pullQuery method by @StephenButtolph in https://github.com/luxfi/node/pull/2103
 - Add additional validator set metrics by @aaronbuchwald in https://github.com/luxfi/node/pull/2051
-- Remove `snowball.Initialize` and `snowball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
-- Remove initialize functions from the snowball package by @danlaine in https://github.com/luxfi/node/pull/2105
+- Remove `sampling.Initialize` and `sampling.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
+- Remove initialize functions from the sampling package by @danlaine in https://github.com/luxfi/node/pull/2105
 - Remove `genesis.State` by @joshua-kim in https://github.com/luxfi/node/pull/2112
 - add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
 - Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxfi/node/pull/2100
@@ -1931,7 +1931,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Rename license header file to avoid unintended license indexing by @StephenButtolph in https://github.com/luxfi/node/pull/1608
 - `merkledb` and `sync` -- use time based rand seed by @danlaine in https://github.com/luxfi/node/pull/1607
 - add `local-prefixes` setting for `goimports` by @dhrubabasu in https://github.com/luxfi/node/pull/1612
-- snow/engine/snowman: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
+- snow/engine/linear: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
 - Update CodeQL to v2 by @StephenButtolph in https://github.com/luxfi/node/pull/1616
 - Remove old networking metric by @StephenButtolph in https://github.com/luxfi/node/pull/1619
 - Fix --http-host flag to support IPv6 by @StephenButtolph in https://github.com/luxfi/node/pull/1620
@@ -2005,7 +2005,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - ban usage of `require.Equal` when testing for length by @dhrubabasu in https://github.com/luxfi/node/pull/1497
 - ban usage of `nil` in require functions by @dhrubabasu in https://github.com/luxfi/node/pull/1498
 - Sized LRU cache by @abi87 in https://github.com/luxfi/node/pull/1517
-- engine/snowman: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
+- engine/linear: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
 - snow/networking/sender: add missing verbo check by @gyuho in https://github.com/luxfi/node/pull/1504
 - Delete duplicate test var definitions by @StephenButtolph in https://github.com/luxfi/node/pull/1518
 - utils/bag: print generic type for bag elements by @gyuho in https://github.com/luxfi/node/pull/1507
@@ -2054,7 +2054,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 ### Fixes
 
-- Fixed panic when restarting partially completed X-chain snowman bootstrapping
+- Fixed panic when restarting partially completed X-chain linear bootstrapping
 - Fixed `--network-allow-private-ips` handling to correctly prevent outbound connections to private IP ranges
 - Fixed UniformSampler to support sampling numbers between MaxInt64 and MaxUint64
 - Fixed data race in txID access during transaction gossip in the AVM
@@ -2114,7 +2114,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Change ChangeProofs to only have one list of key/value change instead of key/values and deleted by @dboehm-avalabs in https://github.com/luxfi/node/pull/1385
 - Update AMI generation workflow by @charlie-ava in https://github.com/luxfi/node/pull/1289
 - Support `height` as a string in `avm.getBlockByHeight` by @StephenButtolph in https://github.com/luxfi/node/pull/1437
-- Defer Snowman Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
+- Defer Linear Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
 - Cleanup proposervm ancestors packing @StephenButtolph in https://github.com/luxfi/node/pull/1446
 
 ### New Contributors
@@ -2188,7 +2188,7 @@ The supported plugin version is `25`.
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `24`.
 
 - Removed unnecessary repoll after rejecting vertices
-- Improved snowstorm lookup error handling
+- Improved graph lookup error handling
 - Removed rejected vertices from the Lux frontier more aggressively
 - Reduced default health check values for processing decisions
 
@@ -2225,13 +2225,13 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Consensus
 
-- Added support to switch from `Lux` consensus to `Snowman` consensus
-- Added support for routing consensus messages to either `Lux` or `Snowman` consensus on the same chain
+- Added support to switch from `Lux` consensus to `Linear` consensus
+- Added support for routing consensus messages to either `Lux` or `Linear` consensus on the same chain
 - Removed usage of deferred evaluation of the `handler.Consensus` in the `Lux` `OnFinished` callback
-- Dropped inbound `Lux` consensus messages after switching to `Snowman` consensus
+- Dropped inbound `Lux` consensus messages after switching to `Linear` consensus
 - Renamed the `Lux` VM metrics prefix from `lux_{chainID}_vm_` to `lux_{chainID}_vm_lux`
 - Replaced `consensus` and `decision` dispatchers with `block`, `tx`, and `vertex` dispatchers
-- Removed `Lux` bootstrapping restarts during the switch to `Snowman` consensus
+- Removed `Lux` bootstrapping restarts during the switch to `Linear` consensus
 
 ### AVM
 
@@ -2711,7 +2711,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `tracedVM` implementations for `block.ChainVM` and `vertex.DAGVM`
 - Added `tracedState` implementation for `validators.State`
 - Added `tracedHandler` implementation for `http.Handler`
-- Added `tracedConsensus` implementations for `snowman.Consensus` and `lux.Consensus`
+- Added `tracedConsensus` implementations for `linear.Consensus` and `lux.Consensus`
 
 ### Fixes
 
@@ -2842,7 +2842,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed ProposerVM inner block caching after verification
 - Fixed PlatformVM mempool verification to use an updated chain time
 - Removed deprecated CLI flags: `--dynamic-update-duration`, `--dynamic-public-ip`
-- Added unexpected Put bytes tests to the Lux and Snowman consensus engines
+- Added unexpected Put bytes tests to the Lux and Linear consensus engines
 - Removed mockery generated mock implementations
 - Converted safe math functions to use generics where possible
 - Added linting to prevent usage of `assert` in unit tests
@@ -3148,7 +3148,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Added bootstrapping ETA metrics
 - Converted all logs to support structured fields
-- Improved Snowman++ oracle block verification error messages
+- Improved Linear++ oracle block verification error messages
 - Removed deprecated or unused scripts
 
 ## [v1.7.16](https://github.com/luxfi/node/releases/tag/v1.7.16)
@@ -3182,7 +3182,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Fixes
 
-- Updated Snowman and Lux consensus engines to report original container preferences before processing the provided container
+- Updated Linear and Lux consensus engines to report original container preferences before processing the provided container
 - Fixed inbound message byte throttler context cancellation cleanup
 - Removed case sensitivity of IP resolver services
 - Added failing health check when a whitelisted subnet fails to initialize a chain
@@ -3211,7 +3211,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### PlatformVM
 
-- Fixed incorrect `P-chain` height in `Snowman++` when staking is disabled
+- Fixed incorrect `P-chain` height in `Linear++` when staking is disabled
 - Moved `platformvm` transactions to be defined in a sub-package
 - Moved `platformvm` genesis management to be defined in a sub-package
 - Moved `platformvm` state to be defined in a sub-package
@@ -3261,8 +3261,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added process metrics by default in the `rpcchainvm#Server`
 - Added `Database` health checks
 - Removed the deprecated `Database.Stat` call from the `rpcdb#Server`
-- Added fail fast logic to duplicated Snowman additions to avoid undefined behavior
-- Added additional testing around Snowman diverged voting tests
+- Added fail fast logic to duplicated Linear additions to avoid undefined behavior
+- Added additional testing around Linear diverged voting tests
 - Deprecated `--dynamic-update-duration` and `--dynamic-public-ip` CLI flags
 - Added `--public-ip-resolution-frequency` and `--public-ip-resolution-service` to replace `--dynamic-update-duration` and `--dynamic-public-ip`, respectively
 
@@ -3300,7 +3300,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Refactored the avm to utilize the external txs package
 - Unified platformvm dropped tx handling
-- Clarified snowman child block acceptance calls
+- Clarified linear child block acceptance calls
 - Fixed small consensus typos
 - Reduced minor duplicated code in consensus
 - Moved the platformvm key factory out of the VM into the test file
@@ -3394,7 +3394,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Increased recommended disk size to 1 TB
 - Updated issue template
-- Documented additional `snowman.Block` invariants
+- Documented additional `linear.Block` invariants
 
 ## [v1.7.10](https://github.com/luxfi/node/releases/tag/v1.7.10)
 
@@ -3617,7 +3617,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Removed deprecated Snowstorm consensus implementation that no longer aligned with the updated specification.
 - Updated bootstrapping logs to no longer reset counters after a node restart.
-- Added bootstrapping ETAs for fetching Snowman blocks and executing operations.
+- Added bootstrapping ETAs for fetching Linear blocks and executing operations.
 - Renamed the `MultiPut` message to the `Ancestors` message to match other message naming conventions.
 - Introduced Whitelist conflicts into the Snowstorm specification that will be used in future X-chain improvements.
 - Refactored the separation between the Bootstrapping engine and the Consensus engine to support Fast-Sync.

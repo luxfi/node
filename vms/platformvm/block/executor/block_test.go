@@ -13,9 +13,9 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/snow/uptime"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"

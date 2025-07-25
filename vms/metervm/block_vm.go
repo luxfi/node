@@ -11,9 +11,9 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -75,7 +75,7 @@ func (vm *blockVM) Initialize(
 	return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, toEngine, fxs, appSender)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.BuildBlock(ctx)
 	end := vm.clock.Time()
@@ -91,7 +91,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	}, nil
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (linear.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.ParseBlock(ctx, b)
 	end := vm.clock.Time()
@@ -107,7 +107,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, err
 	}, nil
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (linear.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.GetBlock(ctx, id)
 	end := vm.clock.Time()

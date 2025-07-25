@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/engine/common"
 
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )

@@ -13,17 +13,17 @@ import (
 
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/snowtest"
 )
 
 var (
 	_ block.ChainVM                      = ContextEnabledVMMock{}
 	_ block.BuildBlockWithContextChainVM = ContextEnabledVMMock{}
 
-	_ snowman.Block           = ContextEnabledBlockMock{}
+	_ linear.Block           = ContextEnabledBlockMock{}
 	_ block.WithVerifyContext = ContextEnabledBlockMock{}
 
 	blockContext = &block.Context{
@@ -41,7 +41,7 @@ type ContextEnabledVMMock struct {
 }
 
 type ContextEnabledBlockMock struct {
-	*snowmantest.MockBlock
+	*lineartest.MockBlock
 	*block.MockWithVerifyContext
 }
 
@@ -57,7 +57,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			MockBlock:             snowmantest.NewMockBlock(ctrl),
+			MockBlock:             lineartest.NewMockBlock(ctrl),
 			MockWithVerifyContext: block.NewMockWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

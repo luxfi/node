@@ -12,15 +12,15 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/avm/txs/executor"
 )
 
 var (
-	_ snowstorm.Tx = (*Tx)(nil)
+	_ graph.Tx = (*Tx)(nil)
 
 	errTxNotProcessing  = errors.New("transaction is not processing")
 	errUnexpectedReject = errors.New("attempting to reject transaction")

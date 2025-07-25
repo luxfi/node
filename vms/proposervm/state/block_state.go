@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/units"

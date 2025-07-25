@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -42,7 +42,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &snowmantest.Block{
+	preSummaryBlk = &lineartest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,
@@ -51,7 +51,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &snowmantest.Block{
+	summaryBlk = &lineartest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,

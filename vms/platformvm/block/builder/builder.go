@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -59,7 +59,7 @@ type Builder interface {
 	ShutdownBlockTimer()
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (snowman.Block, error)
+	BuildBlock(context.Context) (linear.Block, error)
 
 	// PackBlockTxs returns an array of txs that can fit into a valid block of
 	// size [targetBlockSize]. The returned txs are all verified against the
@@ -197,7 +197,7 @@ func (b *builder) ShutdownBlockTimer() {
 // BuildBlock builds a block to be added to consensus.
 // This method removes the transactions from the returned
 // blocks from the mempool.
-func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
+func (b *builder) BuildBlock(context.Context) (linear.Block, error) {
 	// If there are still transactions in the mempool, then we need to
 	// re-trigger block building.
 	defer b.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)

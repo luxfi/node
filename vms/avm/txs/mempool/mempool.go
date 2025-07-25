@@ -6,7 +6,7 @@ package mempool
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/vms/avm/txs"
 
 	txmempool "github.com/luxfi/node/vms/txs/mempool"

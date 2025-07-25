@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs/executor"
@@ -24,7 +24,7 @@ import (
 const SyncBound = 10 * time.Second
 
 var (
-	_ snowman.Block = (*Block)(nil)
+	_ linear.Block = (*Block)(nil)
 
 	ErrUnexpectedMerkleRoot        = errors.New("unexpected merkle root")
 	ErrTimestampBeyondSyncBound    = errors.New("proposed timestamp is too far in the future relative to local time")

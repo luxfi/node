@@ -343,7 +343,7 @@ Save the TxID printed out by running the export command.
 
 ### Issue Import Tx from Subnet B
 
-> Note: The import tx requires **snowman++** consensus to be activated on the importing chain. A chain requires ~3 blocks to be produced for snowman++ to start.
+> Note: The import tx requires **linear++** consensus to be activated on the importing chain. A chain requires ~3 blocks to be produced for linear++ to start.
 > Run `xsvm issue transfer --chain-id <SubnetB.BlockchainID> --amount 1000`  to issue simple Txs on SubnetB
 
 ```bash

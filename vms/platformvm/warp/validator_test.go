@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )

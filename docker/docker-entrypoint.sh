@@ -29,7 +29,7 @@ mkdir -p /luxd/configs/chains/C
 
 cat > /luxd/configs/chains/C/config.json << EOF
 {
-  "snowman-api-enabled": false,
+  "linear-api-enabled": false,
   "coreth-admin-api-enabled": true,
   "eth-apis": ["eth", "eth-filter", "net", "web3", "internal-eth", "internal-blockchain", "internal-debug", "internal-tx-pool", "debug", "trace"],
   "personal-api-enabled": true,

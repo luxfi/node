@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -33,9 +33,9 @@ type Manager interface {
 	SetPreference(blkID ids.ID) (updated bool)
 	Preferred() ids.ID
 
-	GetBlock(blkID ids.ID) (snowman.Block, error)
+	GetBlock(blkID ids.ID) (linear.Block, error)
 	GetStatelessBlock(blkID ids.ID) (block.Block, error)
-	NewBlock(block.Block) snowman.Block
+	NewBlock(block.Block) linear.Block
 
 	// VerifyTx verifies that the transaction can be issued based on the currently
 	// preferred state. This should *not* be used to verify transactions in a block.
@@ -93,7 +93,7 @@ type manager struct {
 	txExecutorBackend *executor.Backend
 }
 
-func (m *manager) GetBlock(blkID ids.ID) (snowman.Block, error) {
+func (m *manager) GetBlock(blkID ids.ID) (linear.Block, error) {
 	blk, err := m.backend.GetBlock(blkID)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (m *manager) GetStatelessBlock(blkID ids.ID) (block.Block, error) {
 	return m.backend.GetBlock(blkID)
 }
 
-func (m *manager) NewBlock(blk block.Block) snowman.Block {
+func (m *manager) NewBlock(blk block.Block) linear.Block {
 	return &Block{
 		manager: m,
 		Block:   blk,

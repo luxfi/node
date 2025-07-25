@@ -22,12 +22,12 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -770,7 +770,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	require.NoError(advanceTimeStandardBlk.Verify(context.Background()))
 
 	// Accept all the blocks
-	allBlocks := []snowman.Block{
+	allBlocks := []linear.Block{
 		addValidatorStandardBlk,
 		importBlk,
 		advanceTimeStandardBlk,
@@ -1083,7 +1083,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	}
 
 	// Accept all the blocks
-	allBlocks := []snowman.Block{
+	allBlocks := []linear.Block{
 		addValidatorStandardBlk0,
 		advanceTimeStandardBlk0,
 		importBlk,
@@ -1811,7 +1811,7 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(snowman.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2008,7 +2008,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(snowman.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2218,7 +2218,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(snowman.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2429,7 +2429,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(snowman.OracleBlock)
+	proposalBlk := blk.(linear.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 

@@ -4,8 +4,8 @@ This package deals with state management for P-Chain blocks.
 
 ## `*Block`
 
-The `*Block` type implements the `snowman.Block` interface.
-This is the type that the `platformvm` deals with when it uses `snowman.Block`s.
+The `*Block` type implements the `linear.Block` interface.
+This is the type that the `platformvm` deals with when it uses `linear.Block`s.
 `*Block` wraps a `blocks.Block` and a `manager`.
 The `*Block` itself doesn't have any state.
 The state is all held by the `manager`, and the `*Block` acts upon the `manager` to get/set the state.

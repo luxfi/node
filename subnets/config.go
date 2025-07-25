@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -24,16 +24,16 @@ type Config struct {
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
 	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes"        yaml:"allowedNodes"`
-	ConsensusParameters snowball.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters sampling.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
-	// building a snowman++ block.
+	// building a linear++ block.
 	//
 	// TODO: Remove this flag once all VMs throttle their own block production.
 	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay" yaml:"proposerMinBlockDelay"`
-	// ProposerNumHistoricalBlocks is the number of historical snowman++ blocks
+	// ProposerNumHistoricalBlocks is the number of historical linear++ blocks
 	// this node will index per chain. If set to 0, the node will index all
-	// snowman++ blocks.
+	// linear++ blocks.
 	//
 	// Note: The last accepted block is not considered a historical block. This
 	// prevents the user from only storing the last accepted block, which can
@@ -66,9 +66,9 @@ func (c *Config) Valid() error {
 	return nil
 }
 
-// GetPOAConsensusParameters returns snowball parameters optimized for POA mode
-func GetPOAConsensusParameters() snowball.Parameters {
-	return snowball.Parameters{
+// GetPOAConsensusParameters returns sampling parameters optimized for POA mode
+func GetPOAConsensusParameters() sampling.Parameters {
+	return sampling.Parameters{
 		K:                     1, // Only query 1 node (ourselves)
 		AlphaPreference:       1, // Change preference with 1 vote
 		AlphaConfidence:       1, // Increase confidence with 1 vote

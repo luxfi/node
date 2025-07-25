@@ -18,10 +18,10 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -46,11 +46,11 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blkID                  = ids.GenerateTestID()
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk := lineartest.NewMockBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := snowmantest.NewMockBlock(ctrl)
+	builtBlk := lineartest.NewMockBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
@@ -120,26 +120,26 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -170,8 +170,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := snowmantest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreChildBlk := lineartest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -250,26 +250,26 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := snowmantest.BuildChild(snowmantest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case snowmantest.GenesisID:
-			return snowmantest.Genesis, nil
+		case lineartest.GenesisID:
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (snowman.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, snowmantest.GenesisBytes):
-			return snowmantest.Genesis, nil
+		case bytes.Equal(b, lineartest.GenesisBytes):
+			return lineartest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -302,8 +302,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := snowmantest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
+	coreChildBlk := lineartest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -368,7 +368,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		parentHeight     uint64 = 1234
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk := lineartest.NewMockBlock(ctrl)
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
 	vdrState := validators.NewMockState(ctrl)

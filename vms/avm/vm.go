@@ -22,10 +22,10 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/set"
@@ -363,11 +363,11 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err
@@ -472,7 +472,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	return nil
 }
 
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (snowstorm.Tx, error) {
+func (vm *VM) ParseTx(_ context.Context, bytes []byte) (graph.Tx, error) {
 	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err

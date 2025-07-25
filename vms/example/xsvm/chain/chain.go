@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"

@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -37,7 +37,7 @@ var (
 )
 
 type Block interface {
-	snowman.Block
+	linear.Block
 	smblock.WithVerifyContext
 
 	// State intends to return the new chain state following this block's

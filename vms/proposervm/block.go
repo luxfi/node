@@ -13,12 +13,12 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 const (
@@ -42,9 +42,9 @@ var (
 )
 
 type Block interface {
-	snowman.Block
+	linear.Block
 
-	getInnerBlk() snowman.Block
+	getInnerBlk() linear.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -67,13 +67,13 @@ type PostForkBlock interface {
 
 	setStatus(choices.Status)
 	getStatelessBlk() block.Block
-	setInnerBlk(snowman.Block)
+	setInnerBlk(linear.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk snowman.Block
+	innerBlk linear.Block
 	status   choices.Status
 }
 
@@ -221,7 +221,7 @@ func (p *postForkCommonComponents) buildChild(
 		return nil, err
 	}
 
-	var innerBlock snowman.Block
+	var innerBlock linear.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: parentPChainHeight,
@@ -283,19 +283,19 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() snowman.Block {
+func (p *postForkCommonComponents) getInnerBlk() linear.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk snowman.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk linear.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsOracleBlock(ctx context.Context, b linear.Block) error {
+	oracle, ok := b.(linear.OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a snowman.OracleBlock but it's a %T",
+			"%w: expected block %s to be a linear.OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -303,8 +303,8 @@ func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsNotOracleBlock(ctx context.Context, b linear.Block) error {
+	oracle, ok := b.(linear.OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -315,7 +315,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case snowman.ErrNotOracle:
+	case linear.ErrNotOracle:
 		return nil
 	default:
 		return err

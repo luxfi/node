@@ -200,7 +200,7 @@ func (a *acceptor) proposalBlock(b block.Block, blockType string) {
 	//   We do this so that in the event that the node shuts down, the proposal block
 	//   is not written to disk unless its child is.
 	//   (The VM's Shutdown method commits the database.)
-	//   The snowman.Engine requires that the last committed block is a decision block
+	//   The linear.Engine requires that the last committed block is a decision block
 
 	blkID := b.ID()
 	a.backend.lastAccepted = blkID

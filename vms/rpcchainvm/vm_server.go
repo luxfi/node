@@ -24,11 +24,11 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/appsender"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/validators/gvalidators"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/common/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
@@ -250,7 +250,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		WarpSigner: warpSignerClient,
 
 		ValidatorState: validatorStateClient,
-		// TODO: support remaining snowman++ fields
+		// TODO: support remaining linear++ fields
 
 		ChainDataDir: req.ChainDataDir,
 	}
@@ -381,7 +381,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
 	var (
-		blk snowman.Block
+		blk linear.Block
 		err error
 	)
 	if vm.bVM == nil || req.PChainHeight == nil {
