@@ -106,8 +106,8 @@ message Handshake {
   // Subnets the peer is tracking
   repeated bytes tracked_subnets = 8;
   Client client = 9;
-  repeated uint32 supported_acps = 10;
-  repeated uint32 objected_acps = 11;
+  repeated uint32 supported_lps = 10;
+  repeated uint32 objected_lps = 11;
   BloomFilter known_peers = 12;
   // Signature of the peer IP port pair at a provided timestamp with the BLS
   // key.

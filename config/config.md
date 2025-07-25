@@ -55,15 +55,15 @@ among currently supported file format (see
 
 ## Lux Community Proposals
 
-#### `--acp-support` (array of integers)
+#### `--lp-support` (array of integers)
 
-The `--acp-support` flag allows an Lux Node node to indicate support for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-support` flag allows an Lux Node node to indicate support for a
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
-#### `--acp-object` (array of integers)
+#### `--lp-object` (array of integers)
 
-The `--acp-object` flag allows an Lux Node node to indicate objection for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-object` flag allows an Lux Node node to indicate objection for a
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
 ## APIs
 

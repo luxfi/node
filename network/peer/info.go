@@ -22,6 +22,6 @@ type Info struct {
 	ObservedUptime        json.Uint32            `json:"observedUptime"`
 	ObservedSubnetUptimes map[ids.ID]json.Uint32 `json:"observedSubnetUptimes"`
 	TrackedSubnets        set.Set[ids.ID]        `json:"trackedSubnets"`
-	SupportedACPs         set.Set[uint32]        `json:"supportedACPs"`
-	ObjectedACPs          set.Set[uint32]        `json:"objectedACPs"`
+	SupportedLPs         set.Set[uint32]        `json:"supportedLPs"`
+	ObjectedLPs          set.Set[uint32]        `json:"objectedLPs"`
 }

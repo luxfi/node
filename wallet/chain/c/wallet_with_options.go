@@ -4,7 +4,7 @@
 package c
 
 import (
-	"github.com/luxfi/geth/plugin/evm"
+	"github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"

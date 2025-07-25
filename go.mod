@@ -75,6 +75,7 @@ require (
 
 require (
 	github.com/StephenButtolph/canoto v0.17.1
+	github.com/luxfi/bft v0.0.0-20250725034527-7f9105e62a1d
 	github.com/luxfi/geth v0.0.0-00010101000000-000000000000
 	github.com/supranational/blst v0.3.15
 )
@@ -122,7 +123,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/bft v0.0.0-20250725034527-7f9105e62a1d // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect

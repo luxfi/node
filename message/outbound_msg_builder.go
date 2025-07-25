@@ -31,8 +31,8 @@ type OutboundMsgBuilder interface {
 		ipNodeIDSig []byte,
 		ipBLSSig []byte,
 		trackedSubnets []ids.ID,
-		supportedACPs []uint32,
-		objectedACPs []uint32,
+		supportedLPs []uint32,
+		objectedLPs []uint32,
 		knownPeersFilter []byte,
 		knownPeersSalt []byte,
 	) (OutboundMessage, error)
@@ -238,8 +238,8 @@ func (b *outMsgBuilder) Handshake(
 	ipNodeIDSig []byte,
 	ipBLSSig []byte,
 	trackedSubnets []ids.ID,
-	supportedACPs []uint32,
-	objectedACPs []uint32,
+	supportedLPs []uint32,
+	objectedLPs []uint32,
 	knownPeersFilter []byte,
 	knownPeersSalt []byte,
 ) (OutboundMessage, error) {
@@ -264,8 +264,8 @@ func (b *outMsgBuilder) Handshake(
 						Minor: minor,
 						Patch: patch,
 					},
-					SupportedAcps: supportedACPs,
-					ObjectedAcps:  objectedACPs,
+					SupportedLps: supportedLPs,
+					ObjectedLps:  objectedLPs,
 					KnownPeers: &p2p.BloomFilter{
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,

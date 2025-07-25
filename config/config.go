@@ -64,8 +64,8 @@ var (
 		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
 	}
 
-	errConflictingACPOpinion                  = errors.New("supporting and objecting to the same ACP")
-	errConflictingImplicitACPOpinion          = errors.New("objecting to enabled ACP")
+	errConflictingLPOpinion                  = errors.New("supporting and objecting to the same LP")
+	errConflictingImplicitLPOpinion          = errors.New("objecting to enabled LP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
 	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
@@ -270,36 +270,36 @@ func getNetworkConfig(
 		allowPrivateIPs = v.GetBool(NetworkAllowPrivateIPsKey)
 	}
 
-	var supportedACPs set.Set[uint32]
-	for _, acp := range v.GetIntSlice(ACPSupportKey) {
-		if acp < 0 || acp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid ACP: %d", acp)
+	var supportedLPs set.Set[uint32]
+	for _, lp := range v.GetIntSlice(LPSupportKey) {
+		if lp < 0 || lp > math.MaxInt32 {
+			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
-		supportedACPs.Add(uint32(acp))
+		supportedLPs.Add(uint32(lp))
 	}
 
-	var objectedACPs set.Set[uint32]
-	for _, acp := range v.GetIntSlice(ACPObjectKey) {
-		if acp < 0 || acp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid ACP: %d", acp)
+	var objectedLPs set.Set[uint32]
+	for _, lp := range v.GetIntSlice(LPObjectKey) {
+		if lp < 0 || lp > math.MaxInt32 {
+			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
-		objectedACPs.Add(uint32(acp))
+		objectedLPs.Add(uint32(lp))
 	}
-	if supportedACPs.Overlaps(objectedACPs) {
-		return network.Config{}, errConflictingACPOpinion
+	if supportedLPs.Overlaps(objectedLPs) {
+		return network.Config{}, errConflictingLPOpinion
 	}
-	if constants.ScheduledACPs.Overlaps(objectedACPs) {
-		return network.Config{}, errConflictingImplicitACPOpinion
+	if constants.ScheduledLPs.Overlaps(objectedLPs) {
+		return network.Config{}, errConflictingImplicitLPOpinion
 	}
 
-	// Because this node version has scheduled these ACPs, we should notify
+	// Because this node version has scheduled these LPs, we should notify
 	// peers that we support these upgrades.
-	supportedACPs.Union(constants.ScheduledACPs)
+	supportedLPs.Union(constants.ScheduledLPs)
 
 	// To decrease unnecessary network traffic, peers will not be notified of
-	// objection or support of activated ACPs.
-	supportedACPs.Difference(constants.ActivatedACPs)
-	objectedACPs.Difference(constants.ActivatedACPs)
+	// objection or support of activated LPs.
+	supportedLPs.Difference(constants.ActivatedLPs)
+	objectedLPs.Difference(constants.ActivatedLPs)
 
 	config := network.Config{
 		ThrottlerConfig: network.ThrottlerConfig{
@@ -378,8 +378,8 @@ func getNetworkConfig(
 		UptimeMetricFreq:             v.GetDuration(UptimeMetricFreqKey),
 		MaximumInboundMessageTimeout: v.GetDuration(NetworkMaximumInboundTimeoutKey),
 
-		SupportedACPs: supportedACPs,
-		ObjectedACPs:  objectedACPs,
+		SupportedLPs: supportedLPs,
+		ObjectedLPs:  objectedLPs,
 
 		RequireValidatorToConnect: v.GetBool(NetworkRequireValidatorToConnectKey),
 		PeerReadBufferSize:        int(v.GetUint(NetworkPeerReadBufferSizeKey)),

@@ -6,25 +6,25 @@ package constants
 import "github.com/luxfi/node/utils/set"
 
 var (
-	// ActivatedACPs is the set of ACPs that are activated.
+	// ActivatedLPs is the set of LPs that are activated.
 	//
-	// See: https://github.com/orgs/lux-foundation/projects/1
-	ActivatedACPs = set.Of[uint32](
-		23, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md
-		24, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md
-		25, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md
-		30, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md
-		31, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md
-		41, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md
-		62, // https://github.com/lux-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md
+	// See: https://github.com/orgs/luxfi/projects/1
+	ActivatedLPs = set.Of[uint32](
+		23, // https://github.com/luxfi/LPs/blob/main/LPs/23-p-chain-native-transfers/README.md
+		24, // https://github.com/luxfi/LPs/blob/main/LPs/24-shanghai-eips/README.md
+		25, // https://github.com/luxfi/LPs/blob/main/LPs/25-vm-application-errors/README.md
+		30, // https://github.com/luxfi/LPs/blob/main/LPs/30-lux-warp-x-evm/README.md
+		31, // https://github.com/luxfi/LPs/blob/main/LPs/31-enable-subnet-ownership-transfer/README.md
+		41, // https://github.com/luxfi/LPs/blob/main/LPs/41-remove-pending-stakers/README.md
+		62, // https://github.com/luxfi/LPs/blob/main/LPs/62-disable-addvalidatortx-and-adddelegatortx/README.md
 	)
 
-	// CurrentACPs is the set of ACPs that are currently, at the time of
+	// CurrentLPs is the set of LPs that are currently, at the time of
 	// release, marked as implementable and not activated.
 	//
-	// See: https://github.com/orgs/lux-foundation/projects/1
-	CurrentACPs = set.Of[uint32]()
+	// See: https://github.com/orgs/luxfi/projects/1
+	CurrentLPs = set.Of[uint32]()
 
-	// ScheduledACPs are the ACPs included into the next upgrade.
-	ScheduledACPs = set.Of[uint32]()
+	// ScheduledLPs are the LPs included into the next upgrade.
+	ScheduledLPs = set.Of[uint32]()
 )

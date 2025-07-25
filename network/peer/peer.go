@@ -146,9 +146,9 @@ type peer struct {
 	// trackedSubnets are the subnetIDs the peer sent us in the Handshake
 	// message. The primary network ID is always included.
 	trackedSubnets set.Set[ids.ID]
-	// options of ACPs provided in the Handshake message.
-	supportedACPs set.Set[uint32]
-	objectedACPs  set.Set[uint32]
+	// options of LPs provided in the Handshake message.
+	supportedLPs set.Set[uint32]
+	objectedLPs  set.Set[uint32]
 
 	// txIDOfVerifiedBLSKey is the txID that added the BLS key that was most
 	// recently verified to have signed the IP.
@@ -295,8 +295,8 @@ func (p *peer) Info() Info {
 		ObservedUptime:        json.Uint32(primaryUptime),
 		ObservedSubnetUptimes: uptimes,
 		TrackedSubnets:        p.trackedSubnets,
-		SupportedACPs:         p.supportedACPs,
-		ObjectedACPs:          p.objectedACPs,
+		SupportedLPs:         p.supportedLPs,
+		ObjectedLPs:          p.objectedLPs,
 	}
 }
 
@@ -546,8 +546,8 @@ func (p *peer) writeMessages() {
 		mySignedIP.TLSSignature,
 		mySignedIP.BLSSignatureBytes,
 		p.MySubnets.List(),
-		p.SupportedACPs,
-		p.ObjectedACPs,
+		p.SupportedLPs,
+		p.ObjectedLPs,
 		knownPeersFilter,
 		knownPeersSalt,
 	)
@@ -981,24 +981,24 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		p.trackedSubnets.Add(subnetID)
 	}
 
-	for _, acp := range msg.SupportedAcps {
-		if constants.CurrentACPs.Contains(acp) {
-			p.supportedACPs.Add(acp)
+	for _, lp := range msg.SupportedLps {
+		if constants.CurrentLPs.Contains(lp) {
+			p.supportedLPs.Add(lp)
 		}
 	}
-	for _, acp := range msg.ObjectedAcps {
-		if constants.CurrentACPs.Contains(acp) {
-			p.objectedACPs.Add(acp)
+	for _, lp := range msg.ObjectedLps {
+		if constants.CurrentLPs.Contains(lp) {
+			p.objectedLPs.Add(lp)
 		}
 	}
 
-	if p.supportedACPs.Overlaps(p.objectedACPs) {
+	if p.supportedLPs.Overlaps(p.objectedLPs) {
 		p.Log.Debug(malformedMessageLog,
 			zap.Stringer("nodeID", p.id),
 			zap.Stringer("messageOp", message.HandshakeOp),
-			zap.String("field", "acps"),
-			zap.Reflect("supportedACPs", p.supportedACPs),
-			zap.Reflect("objectedACPs", p.objectedACPs),
+			zap.String("field", "lps"),
+			zap.Reflect("supportedLPs", p.supportedLPs),
+			zap.Reflect("objectedLPs", p.objectedLPs),
 		)
 		p.StartClose()
 		return
