@@ -75,6 +75,7 @@ require (
 
 require (
 	github.com/StephenButtolph/canoto v0.17.1
+	github.com/holiman/uint256 v1.3.2
 	github.com/luxfi/bft v0.0.0-20250725034527-7f9105e62a1d
 	github.com/luxfi/geth v0.0.0-00010101000000-000000000000
 	github.com/supranational/blst v0.3.15
@@ -116,7 +117,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
-	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
