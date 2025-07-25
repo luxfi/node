@@ -159,6 +159,8 @@ require (
 )
 
 replace (
+	github.com/luxfi/bft => ../bft
+	github.com/luxfi/evm => ../evm
 	github.com/luxfi/geth => ../geth
 	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 )
