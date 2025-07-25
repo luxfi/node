@@ -56,7 +56,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name           string
 		mempoolFunc    func(*gomock.Controller) xmempool.Mempool
 		txVerifierFunc func(*gomock.Controller) TxVerifier
-		appSenderFunc  func(*gomock.Controller) common.AppSender
+		appSenderFunc  func(*gomock.Controller) core.AppSender
 		expectedErr    error
 	}
 
@@ -130,7 +130,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				appSender := common.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
@@ -167,7 +167,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
-			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
 				return common.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
@@ -206,7 +206,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 	type test struct {
 		name          string
 		mempoolFunc   func(*gomock.Controller) xmempool.Mempool
-		appSenderFunc func(*gomock.Controller) common.AppSender
+		appSenderFunc func(*gomock.Controller) core.AppSender
 		expectedErr   error
 	}
 
@@ -231,7 +231,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				mempool.EXPECT().RequestBuildBlock()
 				return mempool
 			},
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				appSender := common.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
@@ -261,7 +261,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				mempoolFunc = tt.mempoolFunc
 			}
 
-			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
 				return common.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {

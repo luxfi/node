@@ -85,7 +85,7 @@ type VM struct {
 
 	pubsub *pubsub.Server
 
-	appSender common.AppSender
+	appSender core.AppSender
 
 	// State management
 	state state.State
@@ -159,7 +159,7 @@ func (vm *VM) Initialize(
 	configBytes []byte,
 	_ chan<- common.Message,
 	fxs []*common.Fx,
-	appSender common.AppSender,
+	appSender core.AppSender,
 ) error {
 	noopMessageHandler := common.NewNoOpAppHandler(ctx.Log)
 	vm.Atomic = network.NewAtomic(noopMessageHandler)

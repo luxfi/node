@@ -168,7 +168,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -275,7 +275,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -442,7 +442,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -566,7 +566,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 				State: consensus.NormalOp,
 			})
 			return nil

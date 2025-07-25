@@ -39,7 +39,7 @@ func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *test
 
 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
-		[]*common.Fx, common.AppSender,
+		[]*common.Fx, core.AppSender,
 	) error {
 		return nil
 	}

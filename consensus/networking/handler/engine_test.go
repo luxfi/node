@@ -40,7 +40,7 @@ func TestEngineManager_Get(t *testing.T) {
 		{
 			name: "request dag engine",
 			args: args{
-				engineType: p2p.EngineType_ENGINE_TYPE_DAG,
+				engineType: p2p.EngineType_ENGINE_TYPE_GRAPH,
 			},
 			expected: expected{
 				engine: dag,

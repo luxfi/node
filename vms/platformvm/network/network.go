@@ -32,7 +32,7 @@ type Network struct {
 	txVerifier                TxVerifier
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
-	appSender                 common.AppSender
+	appSender                 core.AppSender
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -48,7 +48,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool,
 	partialSyncPrimaryNetwork bool,
-	appSender common.AppSender,
+	appSender core.AppSender,
 	registerer prometheus.Registerer,
 	config Config,
 ) (*Network, error) {

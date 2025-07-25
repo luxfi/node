@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	engineType         = p2ppb.EngineType_ENGINE_TYPE_DAG
+	engineType         = p2ppb.EngineType_ENGINE_TYPE_GRAPH
 	testThreadPoolSize = 2
 )
 

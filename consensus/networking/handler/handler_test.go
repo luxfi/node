@@ -460,7 +460,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -475,8 +475,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - lux, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_GRAPH,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
@@ -506,7 +506,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		{
 			name:                "current - linear, requested - lux",
 			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_GRAPH,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
