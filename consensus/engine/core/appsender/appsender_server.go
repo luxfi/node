@@ -80,3 +80,30 @@ func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGoss
 	)
 	return &emptypb.Empty{}, err
 }
+
+func (s *Server) SendCrossChainAppRequest(ctx context.Context, req *appsenderpb.SendCrossChainAppRequestMsg) (*emptypb.Empty, error) {
+	chainID, err := ids.ToID(req.ChainId)
+	if err != nil {
+		return nil, err
+	}
+	err = s.appSender.SendCrossChainAppRequest(ctx, chainID, req.RequestId, req.Request)
+	return &emptypb.Empty{}, err
+}
+
+func (s *Server) SendCrossChainAppResponse(ctx context.Context, req *appsenderpb.SendCrossChainAppResponseMsg) (*emptypb.Empty, error) {
+	chainID, err := ids.ToID(req.ChainId)
+	if err != nil {
+		return nil, err
+	}
+	err = s.appSender.SendCrossChainAppResponse(ctx, chainID, req.RequestId, req.Response)
+	return &emptypb.Empty{}, err
+}
+
+func (s *Server) SendCrossChainAppError(ctx context.Context, req *appsenderpb.SendCrossChainAppErrorMsg) (*emptypb.Empty, error) {
+	chainID, err := ids.ToID(req.ChainId)
+	if err != nil {
+		return nil, err
+	}
+	err = s.appSender.SendCrossChainAppError(ctx, chainID, req.RequestId, req.ErrorCode, req.ErrorMessage)
+	return &emptypb.Empty{}, err
+}

@@ -113,7 +113,7 @@ func (ss *stateSyncer) Start(ctx context.Context, startReqID uint32) error {
 	ss.Ctx.Log.Info("starting state sync")
 
 	ss.Ctx.State.Set(consensus.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2p.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.StateSyncing,
 	})
 	if err := ss.VM.SetState(ctx, consensus.StateSyncing); err != nil {
@@ -306,7 +306,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 			continue
 		}
 
-		newWeight, err := safemath.Add(nodeWeight, ws.weight)
+		newWeight, err := safemath.Add64(nodeWeight, ws.weight)
 		if err != nil {
 			ss.Ctx.Log.Error("failed to calculate new summary weight",
 				zap.Stringer("nodeID", nodeID),

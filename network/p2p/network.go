@@ -23,7 +23,7 @@ import (
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ common.AppHandler    = (*Network)(nil)
+	_ core.AppHandler    = (*Network)(nil)
 	_ NodeSampler          = (*peerSampler)(nil)
 
 	opLabel      = "op"
@@ -58,7 +58,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log logging.Logger,
-	sender common.AppSender,
+	sender core.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -103,7 +103,7 @@ type Network struct {
 	Peers *Peers
 
 	log    logging.Logger
-	sender common.AppSender
+	sender core.AppSender
 
 	router *router
 }
@@ -116,7 +116,7 @@ func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 	return n.router.AppResponse(ctx, nodeID, requestID, response)
 }
 
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	return n.router.AppRequestFailed(ctx, nodeID, requestID, appErr)
 }
 
@@ -132,7 +132,7 @@ func (n *Network) CrossChainAppResponse(ctx context.Context, chainID ids.ID, req
 	return n.router.CrossChainAppResponse(ctx, chainID, requestID, response)
 }
 
-func (n *Network) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+func (n *Network) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *core.AppError) error {
 	return n.router.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
 }
 

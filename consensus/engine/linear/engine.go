@@ -182,7 +182,7 @@ func (e *Engine) Gossip(ctx context.Context) error {
 		return nil
 	}
 
-	nextHeightToAccept, err := math.Add(lastAcceptedHeight, 1)
+	nextHeightToAccept, err := math.Add64(lastAcceptedHeight, 1)
 	if err != nil {
 		e.Ctx.Log.Error("skipping block gossip",
 			zap.String("reason", "block height overflow"),
@@ -515,7 +515,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	e.metrics.bootstrapFinished.Set(1)
 
 	e.Ctx.State.Set(consensus.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2p.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.NormalOp,
 	})
 	if err := e.VM.SetState(ctx, consensus.NormalOp); err != nil {
@@ -891,7 +891,7 @@ func (e *Engine) sendQuery(
 	}
 
 	_, lastAcceptedHeight := e.Consensus.LastAccepted()
-	nextHeightToAccept, err := math.Add(lastAcceptedHeight, 1)
+	nextHeightToAccept, err := math.Add64(lastAcceptedHeight, 1)
 	if err != nil {
 		e.Ctx.Log.Error("dropped query for block",
 			zap.String("reason", "block height overflow"),

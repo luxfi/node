@@ -39,8 +39,8 @@ type autominingCommand struct {
 }
 
 // NewAutomining creates a new scheduler with automining capabilities
-func NewAutomining(log logging.Logger, toEngine chan<- common.Message) (AutominingScheduler, chan<- common.Message) {
-	vmToEngine := make(chan common.Message, cap(toEngine))
+func NewAutomining(log logging.Logger, toEngine chan<- core.Message) (AutominingScheduler, chan<- core.Message) {
+	vmToEngine := make(chan core.Message, cap(toEngine))
 	baseScheduler := &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -138,7 +138,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 
 func (s *autominingScheduler) handleBuildRequest() {
 	// Send a build block message to the engine
-	msg := common.PendingTxs
+	msg := core.PendingTxs
 	select {
 	case s.toEngine <- msg:
 		s.log.Debug("sent build block request to engine",

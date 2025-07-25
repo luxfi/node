@@ -509,7 +509,7 @@ func (p *PushGossiper[T]) gossip(
 
 	return p.client.AppGossip(
 		ctx,
-		common.SendConfig{
+		core.SendConfig{
 			NodeIDs:       set.Of(validatorsByStake...),
 			Validators:    gossipParams.Validators,
 			NonValidators: gossipParams.NonValidators,

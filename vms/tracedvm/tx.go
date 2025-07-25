@@ -24,7 +24,7 @@ type tracedTx struct {
 
 func (t *tracedTx) Verify(ctx context.Context) error {
 	ctx, span := t.tracer.Start(ctx, "tracedTx.Verify", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.ID()),
+		attribute.Stringer("txID", t.Tx.ID()),
 	))
 	defer span.End()
 
@@ -33,7 +33,7 @@ func (t *tracedTx) Verify(ctx context.Context) error {
 
 func (t *tracedTx) Accept(ctx context.Context) error {
 	ctx, span := t.tracer.Start(ctx, "tracedTx.Accept", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.ID()),
+		attribute.Stringer("txID", t.Tx.ID()),
 	))
 	defer span.End()
 
@@ -42,7 +42,7 @@ func (t *tracedTx) Accept(ctx context.Context) error {
 
 func (t *tracedTx) Reject(ctx context.Context) error {
 	ctx, span := t.tracer.Start(ctx, "tracedTx.Reject", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.ID()),
+		attribute.Stringer("txID", t.Tx.ID()),
 	))
 	defer span.End()
 
