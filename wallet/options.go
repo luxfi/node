@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	"github.com/luxfi/evm"
+	"github.com/luxfi/geth/common"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond
@@ -50,7 +50,7 @@ type Options struct {
 	customAddresses    set.Set[ids.ShortID]
 
 	customEthAddressesSet bool
-	customEthAddresses    set.Set[geth.Address]
+	customEthAddresses    set.Set[common.Address]
 
 	baseFee *big.Int
 
@@ -106,7 +106,7 @@ func (o *Options) Addresses(defaultAddresses set.Set[ids.ShortID]) set.Set[ids.S
 	return defaultAddresses
 }
 
-func (o *Options) EthAddresses(defaultAddresses set.Set[geth.Address]) set.Set[geth.Address] {
+func (o *Options) EthAddresses(defaultAddresses set.Set[common.Address]) set.Set[common.Address] {
 	if o.customEthAddressesSet {
 		return o.customEthAddresses
 	}
@@ -174,7 +174,7 @@ func WithCustomAddresses(addrs set.Set[ids.ShortID]) Option {
 	}
 }
 
-func WithCustomEthAddresses(addrs set.Set[geth.Address]) Option {
+func WithCustomEthAddresses(addrs set.Set[common.Address]) Option {
 	return func(o *Options) {
 		o.customEthAddressesSet = true
 		o.customEthAddresses = addrs

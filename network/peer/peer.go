@@ -911,12 +911,12 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		p.trackedSubnets.Add(subnetID)
 	}
 
-	for _, lp := range msg.SupportedLPs {
+	for _, lp := range msg.SupportedLps {
 		if constants.CurrentLPs.Contains(lp) {
 			p.supportedLPs.Add(lp)
 		}
 	}
-	for _, lp := range msg.ObjectedLPs {
+	for _, lp := range msg.ObjectedLps {
 		if constants.CurrentLPs.Contains(lp) {
 			p.objectedLPs.Add(lp)
 		}

@@ -95,6 +95,32 @@ func (s *visitor) ExportTx(tx *txs.ExportTx) error {
 	return sign(s.tx, txCreds, txSigners)
 }
 
+func (s *visitor) BurnTx(tx *txs.BurnTx) error {
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
+func (s *visitor) MintTx(tx *txs.MintTx) error {
+	// MintTx only requires inputs to be signed, no operations
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
+func (s *visitor) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	// NFTTransferTx only requires inputs to be signed, no operations
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
 func (s *visitor) getSigners(ctx context.Context, sourceChainID ids.ID, ins []*lux.TransferableInput) ([]verify.Verifiable, [][]keychain.Signer, error) {
 	txCreds := make([]verify.Verifiable, len(ins))
 	txSigners := make([][]keychain.Signer, len(ins))

@@ -6,15 +6,15 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/nftfx"
 )
 
 var (
-	_ UnsignedTx = (*NFTTransferTx)(nil)
+	_ UnsignedTx             = (*NFTTransferTx)(nil)
+	_ secp256k1fx.UnsignedTx = (*NFTTransferTx)(nil)
 
 	ErrInvalidNFTID        = errors.New("invalid NFT ID")
 	ErrInvalidRecipient    = errors.New("invalid recipient")
@@ -42,50 +42,6 @@ type NFTTransferTx struct {
 
 func (t *NFTTransferTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
-}
-
-func (t *NFTTransferTx) SyntacticVerify(
-	ctx *consensus.Context,
-	c codec.Manager,
-	txFeeAssetID ids.ID,
-	txFee uint64,
-	_ uint64,
-	_ int,
-) error {
-	switch {
-	case t == nil:
-		return ErrNilTx
-	case t.DestChain == ids.Empty:
-		return ErrInvalidDestChain
-	case len(t.Recipient) == 0:
-		return ErrInvalidRecipient
-	case t.DestChain == ctx.ChainID:
-		return errors.New("cannot transfer NFT to same chain")
-	}
-
-	if err := t.BaseTx.SyntacticVerify(ctx, c, txFeeAssetID, txFee, txFee, len(t.Ins)); err != nil {
-		return err
-	}
-
-	// Verify NFT transfer operation
-	if err := t.NFTTransferOp.Verify(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (t *NFTTransferTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Verifiable) error {
-	// Verify the transaction is well-formed
-	if err := t.BaseTx.SemanticVerify(vm, tx, creds); err != nil {
-		return err
-	}
-
-	// TODO: Verify NFT ownership
-	// TODO: Verify destination chain supports NFTs
-	// TODO: Check if recipient address is valid for destination chain
-
-	return nil
 }
 
 func (t *NFTTransferTx) Visit(v Visitor) error {

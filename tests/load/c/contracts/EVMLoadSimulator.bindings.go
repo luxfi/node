@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/evm/accounts/abi"
 	"github.com/luxfi/evm/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/evm/core/types"
+	"github.com/luxfi/geth/event"
 	"github.com/luxfi/evm/interfaces"
 )
 
@@ -21,7 +21,7 @@ var (
 	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
-	_ = interfaces.NotFound
+	_ = interfaces.ErrNotFound
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
