@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/api/keystore/gkeystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/consensus"
@@ -43,7 +42,6 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	keystorepb "github.com/luxfi/node/proto/pb/keystore"
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
@@ -512,11 +510,11 @@ func (vm *VMServer) Version(ctx context.Context, _ *emptypb.Empty) (*vmpb.Versio
 }
 
 func (vm *VMServer) CrossChainAppRequest(ctx context.Context, msg *vmpb.CrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
+	_, err := ids.ToID(msg.ChainId)
 	if err != nil {
 		return nil, err
 	}
-	deadline, err := grpcutils.TimestampAsTime(msg.Deadline)
+	_, err = grpcutils.TimestampAsTime(msg.Deadline)
 	if err != nil {
 		return nil, err
 	}
@@ -526,12 +524,12 @@ func (vm *VMServer) CrossChainAppRequest(ctx context.Context, msg *vmpb.CrossCha
 }
 
 func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.CrossChainAppRequestFailedMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
+	_, err := ids.ToID(msg.ChainId)
 	if err != nil {
 		return nil, err
 	}
 
-	appErr := &core.AppError{
+	_ = &core.AppError{
 		Code:    msg.ErrorCode,
 		Message: msg.ErrorMessage,
 	}
@@ -541,7 +539,7 @@ func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.Cr
 }
 
 func (vm *VMServer) CrossChainAppResponse(ctx context.Context, msg *vmpb.CrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	chainID, err := ids.ToID(msg.ChainId)
+	_, err := ids.ToID(msg.ChainId)
 	if err != nil {
 		return nil, err
 	}

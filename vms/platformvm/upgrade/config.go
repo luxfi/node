@@ -21,8 +21,8 @@ type Config struct {
 	// Time of the Durango network upgrade
 	DurangoTime time.Time
 
-	// Time of the E network upgrade
-	EUpgradeTime time.Time
+	// Time of the Etna network upgrade
+	EtnaTime time.Time
 }
 
 func (c *Config) IsApricotPhase3Activated(timestamp time.Time) bool {
@@ -45,6 +45,6 @@ func (c *Config) IsDurangoActivated(timestamp time.Time) bool {
 	return !timestamp.Before(c.DurangoTime)
 }
 
-func (c *Config) IsEActivated(timestamp time.Time) bool {
-	return !timestamp.Before(c.EUpgradeTime)
+func (c *Config) IsEtnaActivated(timestamp time.Time) bool {
+	return !timestamp.Before(c.EtnaTime)
 }

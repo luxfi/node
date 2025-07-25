@@ -80,7 +80,7 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
 	if err != nil {
 		// Fallback for legacy addresses with invalid checksums
-		if strings.Contains(us.RewardAddress, "-lux1") || strings.Contains(us.RewardAddress, "-fuji1") || strings.Contains(us.RewardAddress, "-local1") {
+		if strings.Contains(us.RewardAddress, "-lux1") || strings.Contains(us.RewardAddress, "-testnet1") || strings.Contains(us.RewardAddress, "-local1") {
 			luxAddrBytes = make([]byte, 20)
 			copy(luxAddrBytes, []byte(us.RewardAddress))
 		} else {
@@ -135,7 +135,7 @@ func (uc UnparsedConfig) Parse() (Config, error) {
 		_, _, luxAddrBytes, err := address.Parse(isa)
 		if err != nil {
 			// Fallback for legacy addresses
-			if strings.Contains(isa, "-lux1") || strings.Contains(isa, "-fuji1") || strings.Contains(isa, "-local1") {
+			if strings.Contains(isa, "-lux1") || strings.Contains(isa, "-testnet1") || strings.Contains(isa, "-local1") {
 				luxAddrBytes = make([]byte, 20)
 				copy(luxAddrBytes, []byte(isa))
 			} else {

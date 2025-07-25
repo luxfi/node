@@ -129,7 +129,7 @@ type indexer struct {
 }
 
 // Assumes [ctx.Lock] is not held
-func (i *indexer) RegisterChain(chainName string, ctx *consensus.ConsensusContext, vm common.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

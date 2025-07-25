@@ -989,12 +989,26 @@ func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
 }
 
-func (s *state) GetStartTime(nodeID ids.NodeID, subnetID ids.ID) (time.Time, error) {
+func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
+	// For uptime.State interface compatibility, use PrimaryNetworkID
+	subnetID := constants.PrimaryNetworkID
 	staker, err := s.currentStakers.GetValidator(subnetID, nodeID)
 	if err != nil {
 		return time.Time{}, err
 	}
 	return staker.StartTime, nil
+}
+
+// GetUptime implements the uptime.State interface
+func (s *state) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, error) {
+	// For uptime.State interface compatibility, use PrimaryNetworkID
+	return s.validatorState.GetUptime(nodeID, constants.PrimaryNetworkID)
+}
+
+// SetUptime implements the uptime.State interface
+func (s *state) SetUptime(nodeID ids.NodeID, upDuration time.Duration, lastUpdated time.Time) error {
+	// For uptime.State interface compatibility, use PrimaryNetworkID
+	return s.validatorState.SetUptime(nodeID, constants.PrimaryNetworkID, upDuration, lastUpdated)
 }
 
 func (s *state) GetTimestamp() time.Time {
@@ -1588,7 +1602,7 @@ func (s *state) loadPendingValidators() error {
 // been called.
 func (s *state) initValidatorSets() error {
 	for subnetID, validators := range s.currentStakers.validators {
-		if s.validators.Count(subnetID) != 0 {
+		if len(s.validators.GetValidatorIDs(subnetID)) != 0 {
 			// Enforce the invariant that the validator set is empty here.
 			return fmt.Errorf("%w: %s", errValidatorSetAlreadyPopulated, subnetID)
 		}

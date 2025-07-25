@@ -92,7 +92,7 @@ func ExampleNewTestNetwork() {
 
 	network, err := NewTestNetwork(
 		log,
-		constants.FujiID,
+		constants.TestnetID,
 		validators,
 		trackedSubnets,
 		handler,
@@ -107,7 +107,7 @@ func ExampleNewTestNetwork() {
 
 	// We need to initially connect to some nodes in the network before peer
 	// gossip will enable connecting to all the remaining nodes in the network.
-	bootstrappers := genesis.SampleBootstrappers(constants.FujiID, 5)
+	bootstrappers := genesis.SampleBootstrappers(constants.TestnetID, 5)
 	for _, bootstrapper := range bootstrappers {
 		network.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
 	}

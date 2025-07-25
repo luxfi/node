@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/api/keystore/gkeystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/consensus"
@@ -47,7 +46,6 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	keystorepb "github.com/luxfi/node/proto/pb/keystore"
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
@@ -172,6 +170,8 @@ func (vm *VMClient) Initialize(
 		zap.String("address", dbServerAddr),
 	)
 
+	// Create a channel for message passing
+	toEngine := make(chan core.Message, 1)
 	vm.messenger = messenger.NewServer(toEngine)
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from consensus.Context
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
@@ -917,4 +917,18 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 		return block.StateSyncSkipped, err
 	}
 	return block.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
+}
+
+// WaitForEvent implements the core.VM interface
+func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
+	// The RPC VM client doesn't directly handle events, 
+	// it relies on the server-side VM for event handling
+	<-ctx.Done()
+	return core.PendingTxs, ctx.Err()
+}
+
+// NewHTTPHandler implements the core.VM interface
+func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	// RPC VM uses CreateHandlers instead of a single handler
+	return nil, nil
 }

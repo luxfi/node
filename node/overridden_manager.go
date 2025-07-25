@@ -57,7 +57,7 @@ func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uin
 }
 
 func (o *overriddenManager) Count(ids.ID) int {
-	return o.manager.Count(o.subnetID)
+	return len(o.manager.GetValidatorIDs(o.subnetID))
 }
 
 func (o *overriddenManager) TotalWeight(ids.ID) (uint64, error) {
@@ -86,4 +86,12 @@ func (o *overriddenManager) String() string {
 
 func (o *overriddenManager) GetValidatorIDs(ids.ID) []ids.NodeID {
 	return o.manager.GetValidatorIDs(o.subnetID)
+}
+
+func (o *overriddenManager) NumSubnets() int {
+	return o.manager.NumSubnets()
+}
+
+func (o *overriddenManager) NumValidators(subnetID ids.ID) int {
+	return o.manager.NumValidators(subnetID)
 }

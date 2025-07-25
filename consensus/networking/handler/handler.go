@@ -249,8 +249,12 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
-	h.nf = enginepkg.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
-	h.cn.OnChange = h.nf.CheckForEvent
+	if h.subscription != nil {
+		h.nf = enginepkg.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
+		if h.cn != nil {
+			h.cn.OnChange = h.nf.CheckForEvent
+		}
+	}
 
 	h.ctx.Lock.Lock()
 	err = gear.Start(ctx, 0)

@@ -245,3 +245,53 @@ func (s *tracedSender) SendAppGossip(
 		appGossipBytes,
 	)
 }
+
+func (s *tracedSender) SendCrossChainAppRequest(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	appRequestBytes []byte,
+) error {
+	ctx, span := s.tracer.Start(ctx, "tracedSender.SendCrossChainAppRequest", oteltrace.WithAttributes(
+		attribute.Stringer("chainID", chainID),
+		attribute.Int64("requestID", int64(requestID)),
+		attribute.Int("requestLen", len(appRequestBytes)),
+	))
+	defer span.End()
+
+	return s.sender.SendCrossChainAppRequest(ctx, chainID, requestID, appRequestBytes)
+}
+
+func (s *tracedSender) SendCrossChainAppResponse(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	appResponseBytes []byte,
+) error {
+	ctx, span := s.tracer.Start(ctx, "tracedSender.SendCrossChainAppResponse", oteltrace.WithAttributes(
+		attribute.Stringer("chainID", chainID),
+		attribute.Int64("requestID", int64(requestID)),
+		attribute.Int("responseLen", len(appResponseBytes)),
+	))
+	defer span.End()
+
+	return s.sender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponseBytes)
+}
+
+func (s *tracedSender) SendCrossChainAppError(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	errorCode int32,
+	errorMessage string,
+) error {
+	ctx, span := s.tracer.Start(ctx, "tracedSender.SendCrossChainAppError", oteltrace.WithAttributes(
+		attribute.Stringer("chainID", chainID),
+		attribute.Int64("requestID", int64(requestID)),
+		attribute.Int64("errorCode", int64(errorCode)),
+		attribute.String("errorMessage", errorMessage),
+	))
+	defer span.End()
+
+	return s.sender.SendCrossChainAppError(ctx, chainID, requestID, errorCode, errorMessage)
+}

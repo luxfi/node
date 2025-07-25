@@ -81,7 +81,7 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	coreth "github.com/luxfi/evm/plugin/evm"
+	coreth "github.com/luxfi/evm"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
@@ -601,7 +601,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	}
 
 	n.onSufficientlyConnected = make(chan struct{})
-	numBootstrappers := n.bootstrappers.Count(constants.PrimaryNetworkID)
+	numBootstrappers := len(n.bootstrappers.GetValidatorIDs(constants.PrimaryNetworkID))
 	requiredConns := (3*numBootstrappers + 3) / 4
 
 	if requiredConns > 0 {
@@ -1219,7 +1219,7 @@ func (n *Node) initVMs() error {
 	}
 
 	// Register the VMs that Lux supports
-	eUpgradeTime := version.GetEUpgradeTime(n.Config.NetworkID)
+	etnaTime := version.GetEtnaTime(n.Config.NetworkID)
 	err := errors.Join(
 		n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
 			Config: platformconfig.Config{
@@ -1244,7 +1244,7 @@ func (n *Node) initVMs() error {
 					BanffTime:         version.GetBanffTime(n.Config.NetworkID),
 					CortinaTime:       version.GetCortinaTime(n.Config.NetworkID),
 					DurangoTime:       version.GetDurangoTime(n.Config.NetworkID),
-					EUpgradeTime:      eUpgradeTime,
+					EtnaTime:          etnaTime,
 				},
 				UseCurrentHeight: n.Config.UseCurrentHeight,
 			},
@@ -1253,7 +1253,7 @@ func (n *Node) initVMs() error {
 			Config: xvmconfig.Config{
 				TxFee:            n.Config.TxFee,
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
-				EUpgradeTime:     eUpgradeTime,
+				EtnaTime:         etnaTime,
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
