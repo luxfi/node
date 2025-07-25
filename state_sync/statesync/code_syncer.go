@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/evm/plugin/evm/customrawdb"
@@ -45,7 +45,7 @@ type codeSyncer struct {
 
 	CodeSyncerConfig
 
-	outstandingCodeHashes map[interfaces.ID]struct{}  // Set of code hashes that we need to fetch from the network.
+	outstandingCodeHashes map[iface.ID]struct{}  // Set of code hashes that we need to fetch from the network.
 	codeHashes            chan common.Hash // Channel of incoming code hash requests
 
 	// Used to set terminal error or pass nil to [errChan] if successful.
@@ -62,7 +62,7 @@ func newCodeSyncer(config CodeSyncerConfig) *codeSyncer {
 	return &codeSyncer{
 		CodeSyncerConfig:      config,
 		codeHashes:            make(chan common.Hash, config.MaxOutstandingCodeHashes),
-		outstandingCodeHashes: make(map[interfaces.ID]struct{}),
+		outstandingCodeHashes: make(map[iface.ID]struct{}),
 		errChan:               make(chan error, 1),
 	}
 }
@@ -187,7 +187,7 @@ func (c *codeSyncer) fulfillCodeRequest(ctx context.Context, codeHashes []common
 	batch := c.DB.NewBatch()
 	for i, codeHash := range codeHashes {
 		customrawdb.DeleteCodeToFetch(batch, codeHash)
-		delete(c.outstandingCodeHashes, interfaces.ID(codeHash))
+		delete(c.outstandingCodeHashes, iface.ID(codeHash))
 		rawdb.WriteCode(batch, codeHash, codeByteSlices[i])
 	}
 	c.lock.Unlock() // Release the lock before writing the batch
@@ -208,9 +208,9 @@ func (c *codeSyncer) addCode(codeHashes []common.Hash) error {
 	for _, codeHash := range codeHashes {
 		// Add the code hash to the queue if it's not already on the queue and we do not already have it
 		// in the database.
-		if _, exists := c.outstandingCodeHashes[interfaces.ID(codeHash)]; !exists && !rawdb.HasCode(c.DB, codeHash) {
+		if _, exists := c.outstandingCodeHashes[iface.ID(codeHash)]; !exists && !rawdb.HasCode(c.DB, codeHash) {
 			selectedCodeHashes = append(selectedCodeHashes, codeHash)
-			c.outstandingCodeHashes[interfaces.ID(codeHash)] = struct{}{}
+			c.outstandingCodeHashes[iface.ID(codeHash)] = struct{}{}
 			customrawdb.AddCodeToFetch(batch, codeHash)
 		}
 	}

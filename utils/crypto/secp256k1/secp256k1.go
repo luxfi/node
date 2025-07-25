@@ -4,22 +4,21 @@
 package secp256k1
 
 import (
+	"crypto/ecdsa"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/crypto"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
-
-	stdecdsa "crypto/ecdsa"
-	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 const (
@@ -57,8 +56,11 @@ var (
 )
 
 func NewPrivateKey() (*PrivateKey, error) {
-	k, err := secp256k1.GeneratePrivateKey()
-	return &PrivateKey{sk: k}, err
+	privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	return &PrivateKey{sk: privateKey}, nil
 }
 
 func ToPublicKey(b []byte) (*PublicKey, error) {
@@ -66,19 +68,31 @@ func ToPublicKey(b []byte) (*PublicKey, error) {
 		return nil, errInvalidPublicKeyLength
 	}
 
-	key, err := secp256k1.ParsePubKey(b)
+	// Decompress the public key using Geth's crypto library
+	pubKey, err := crypto.DecompressPubkey(b)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PublicKey{
-		pk:    key,
+		pk:    pubKey,
 		bytes: b,
-	}, err
+	}, nil
 }
 
 func ToPrivateKey(b []byte) (*PrivateKey, error) {
 	if len(b) != PrivateKeyLen {
 		return nil, errInvalidPrivateKeyLength
 	}
+
+	// Convert bytes to ECDSA private key
+	privateKey, err := crypto.ToECDSA(b)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PrivateKey{
-		sk:    secp256k1.PrivKeyFromBytes(b),
+		sk:    privateKey,
 		bytes: b,
 	}, nil
 }
@@ -92,21 +106,30 @@ func RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, error) {
 		return nil, err
 	}
 
-	sig, err := sigToRawSig(sig)
-	if err != nil {
-		return nil, err
+	// The signature is in [r || s || v] format, but Geth expects [r || s || v]
+	// where v is 0 or 1 (not 27 or 28)
+	if len(sig) != SignatureLen {
+		return nil, errInvalidSigLen
 	}
 
-	rawPubkey, compressed, err := ecdsa.RecoverCompact(sig, hash)
+	// Create a copy to avoid modifying the original
+	sigCopy := make([]byte, SignatureLen)
+	copy(sigCopy, sig)
+
+	// Geth's crypto.Ecrecover expects the signature in [r || s || v] format
+	// where v is 0 or 1 (recovery id), not 27 or 28
+	rawPubkey, err := crypto.Ecrecover(hash, sigCopy)
 	if err != nil {
 		return nil, ErrInvalidSig
 	}
 
-	if compressed {
-		return nil, errCompressed
+	// Convert to public key
+	pubKey, err := crypto.UnmarshalPubkey(rawPubkey)
+	if err != nil {
+		return nil, err
 	}
 
-	return &PublicKey{pk: rawPubkey}, nil
+	return &PublicKey{pk: pubKey}, nil
 }
 
 type RecoverCache struct {
@@ -147,7 +170,7 @@ func (r *RecoverCache) RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, e
 }
 
 type PublicKey struct {
-	pk    *secp256k1.PublicKey
+	pk    *ecdsa.PublicKey
 	addr  ids.ShortID
 	bytes []byte
 }
@@ -165,8 +188,8 @@ func (k *PublicKey) VerifyHash(hash, sig []byte) bool {
 }
 
 // ToECDSA returns the ecdsa representation of this public key
-func (k *PublicKey) ToECDSA() *stdecdsa.PublicKey {
-	return k.pk.ToECDSA()
+func (k *PublicKey) ToECDSA() *ecdsa.PublicKey {
+	return k.pk
 }
 
 func (k *PublicKey) Address() ids.ShortID {
@@ -181,25 +204,25 @@ func (k *PublicKey) Address() ids.ShortID {
 }
 
 func (k *PublicKey) EthAddress() common.Address {
-	return crypto.PubkeyToAddress(*(k.ToECDSA()))
+	return crypto.PubkeyToAddress(*k.pk)
 }
 
 func (k *PublicKey) Bytes() []byte {
 	if k.bytes == nil {
-		k.bytes = k.pk.SerializeCompressed()
+		k.bytes = crypto.CompressPubkey(k.pk)
 	}
 	return k.bytes
 }
 
 type PrivateKey struct {
-	sk    *secp256k1.PrivateKey
+	sk    *ecdsa.PrivateKey
 	pk    *PublicKey
 	bytes []byte
 }
 
 func (k *PrivateKey) PublicKey() *PublicKey {
 	if k.pk == nil {
-		k.pk = &PublicKey{pk: k.sk.PubKey()}
+		k.pk = &PublicKey{pk: &k.sk.PublicKey}
 	}
 	return k.pk
 }
@@ -209,7 +232,7 @@ func (k *PrivateKey) Address() ids.ShortID {
 }
 
 func (k *PrivateKey) EthAddress() common.Address {
-	return crypto.PubkeyToAddress(*(k.PublicKey().ToECDSA()))
+	return crypto.PubkeyToAddress(k.sk.PublicKey)
 }
 
 func (k *PrivateKey) Sign(msg []byte) ([]byte, error) {
@@ -217,18 +240,29 @@ func (k *PrivateKey) Sign(msg []byte) ([]byte, error) {
 }
 
 func (k *PrivateKey) SignHash(hash []byte) ([]byte, error) {
-	sig := ecdsa.SignCompact(k.sk, hash, false) // returns [v || r || s]
-	return rawSigToSig(sig)
+	// Sign the hash using Geth's crypto library
+	sig, err := crypto.Sign(hash, k.sk)
+	if err != nil {
+		return nil, err
+	}
+
+	// Geth's crypto.Sign returns signature in [r || s || v] format where v is 0 or 1
+	// We need to ensure it's in the correct format [r || s || v] for our API
+	if len(sig) != SignatureLen {
+		return nil, errInvalidSigLen
+	}
+
+	return sig, nil
 }
 
 // ToECDSA returns the ecdsa representation of this private key
-func (k *PrivateKey) ToECDSA() *stdecdsa.PrivateKey {
-	return k.sk.ToECDSA()
+func (k *PrivateKey) ToECDSA() *ecdsa.PrivateKey {
+	return k.sk
 }
 
 func (k *PrivateKey) Bytes() []byte {
 	if k.bytes == nil {
-		k.bytes = k.sk.Serialize()
+		k.bytes = crypto.FromECDSA(k.sk)
 	}
 	return k.bytes
 }
@@ -275,8 +309,13 @@ func (k *PrivateKey) UnmarshalJSON(b []byte) error {
 		return errInvalidPrivateKeyLength
 	}
 
+	privateKey, err := crypto.ToECDSA(keyBytes)
+	if err != nil {
+		return err
+	}
+
 	*k = PrivateKey{
-		sk:    secp256k1.PrivKeyFromBytes(keyBytes),
+		sk:    privateKey,
 		bytes: keyBytes,
 	}
 	return nil
@@ -314,9 +353,14 @@ func verifySECP256K1RSignatureFormat(sig []byte) error {
 		return errInvalidSigLen
 	}
 
-	var s secp256k1.ModNScalar
-	s.SetByteSlice(sig[32:64])
-	if s.IsOverHalfOrder() {
+	// Check if S value is over half order (malleability check)
+	// S value is bytes 32-64 of the signature
+	s := new(big.Int).SetBytes(sig[32:64])
+
+	// Half of the order of the secp256k1 curve
+	halfOrder := new(big.Int).Rsh(crypto.S256().Params().N, 1)
+
+	if s.Cmp(halfOrder) > 0 {
 		return errMutatedSig
 	}
 	return nil

@@ -46,7 +46,7 @@ func (p *vtxParser) Parse(ctx context.Context, vtxBytes []byte) (queue.Job, erro
 type vertexJob struct {
 	log         logging.Logger
 	numAccepted prometheus.Counter
-	vtx         dag.Vertex
+	vtx         graph.Vertex
 }
 
 func (v *vertexJob) ID() ids.ID {

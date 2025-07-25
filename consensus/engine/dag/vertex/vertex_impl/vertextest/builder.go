@@ -24,14 +24,14 @@ var (
 type Builder struct {
 	T             *testing.T
 	CantBuildVtx  bool
-	BuildStopVtxF func(ctx context.Context, parentIDs []ids.ID) (dag.Vertex, error)
+	BuildStopVtxF func(ctx context.Context, parentIDs []ids.ID) (graph.Vertex, error)
 }
 
 func (b *Builder) Default(cant bool) {
 	b.CantBuildVtx = cant
 }
 
-func (b *Builder) BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (dag.Vertex, error) {
+func (b *Builder) BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (graph.Vertex, error) {
 	if b.BuildStopVtxF != nil {
 		return b.BuildStopVtxF(ctx, parentIDs)
 	}

@@ -26,7 +26,7 @@ var (
 type Storage struct {
 	T                                            *testing.T
 	CantGetVtx, CantEdge, CantStopVertexAccepted bool
-	GetVtxF                                      func(context.Context, ids.ID) (dag.Vertex, error)
+	GetVtxF                                      func(context.Context, ids.ID) (graph.Vertex, error)
 	EdgeF                                        func(context.Context) []ids.ID
 	StopVertexAcceptedF                          func(context.Context) (bool, error)
 }
@@ -36,7 +36,7 @@ func (s *Storage) Default(cant bool) {
 	s.CantEdge = cant
 }
 
-func (s *Storage) GetVtx(ctx context.Context, vtxID ids.ID) (dag.Vertex, error) {
+func (s *Storage) GetVtx(ctx context.Context, vtxID ids.ID) (graph.Vertex, error) {
 	if s.GetVtxF != nil {
 		return s.GetVtxF(ctx, vtxID)
 	}

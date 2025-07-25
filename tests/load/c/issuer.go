@@ -12,9 +12,9 @@ import (
 	"math/rand/v2"
 
 	"github.com/luxfi/evm/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/evm/params"
 

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 	
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/core/state/snapshot"
 	"github.com/luxfi/evm/core/types"
 	"github.com/luxfi/geth/ethdb"
@@ -43,12 +43,12 @@ const (
 type LeafsRequestHandler struct {
 	trieDB           *triedb.Database
 	snapshotProvider SnapshotProvider
-	codec            interfaces.Codec
+	codec            iface.Codec
 	stats            stats.LeafsRequestHandlerStats
 	pool             sync.Pool
 }
 
-func NewLeafsRequestHandler(trieDB *triedb.Database, snapshotProvider SnapshotProvider, codec interfaces.Codec, syncerStats stats.LeafsRequestHandlerStats) *LeafsRequestHandler {
+func NewLeafsRequestHandler(trieDB *triedb.Database, snapshotProvider SnapshotProvider, codec iface.Codec, syncerStats stats.LeafsRequestHandlerStats) *LeafsRequestHandler {
 	return &LeafsRequestHandler{
 		trieDB:           trieDB,
 		snapshotProvider: snapshotProvider,
@@ -70,7 +70,7 @@ func NewLeafsRequestHandler(trieDB *triedb.Database, snapshotProvider SnapshotPr
 // Never returns errors
 // Returns nothing if the requested trie root is not found
 // Assumes ctx is active
-func (lrh *LeafsRequestHandler) OnLeafsRequest(ctx context.Context, nodeID interfaces.NodeID, requestID uint32, leafsRequest message.LeafsRequest) ([]byte, error) {
+func (lrh *LeafsRequestHandler) OnLeafsRequest(ctx context.Context, nodeID iface.NodeID, requestID uint32, leafsRequest message.LeafsRequest) ([]byte, error) {
 	startTime := time.Now()
 	lrh.stats.IncLeafsRequest()
 

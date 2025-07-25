@@ -13,7 +13,7 @@ import (
 // Parser parses bytes into a vertex.
 type Parser interface {
 	// Parse a vertex from a slice of bytes
-	ParseVtx(ctx context.Context, vertex []byte) (dag.Vertex, error)
+	ParseVtx(ctx context.Context, vertex []byte) (graph.Vertex, error)
 }
 
 // Parse parses the provided vertex bytes into a stateless vertex

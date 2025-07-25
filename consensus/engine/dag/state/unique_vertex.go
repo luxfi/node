@@ -20,7 +20,7 @@ import (
 
 var (
 	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
-	_ dag.Vertex      = (*uniqueVertex)(nil)
+	_ graph.Vertex      = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")
 	errGetHeight  = errors.New("failed to get height for vertex")
@@ -64,7 +64,7 @@ func newUniqueVertex(ctx context.Context, s *Serializer, b []byte) (*uniqueVerte
 	}
 
 	unparsedTxs := innerVertex.Txs()
-	txs := make([]dag.Tx, len(unparsedTxs))
+	txs := make([]graph.Tx, len(unparsedTxs))
 	for i, txBytes := range unparsedTxs {
 		tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
 		if err != nil {
@@ -220,7 +220,7 @@ func (vtx *uniqueVertex) Status() choices.Status {
 	return vtx.v.status
 }
 
-func (vtx *uniqueVertex) Parents() ([]dag.Vertex, error) {
+func (vtx *uniqueVertex) Parents() ([]graph.Vertex, error) {
 	vtx.refresh()
 
 	if vtx.v.vtx == nil {
@@ -229,7 +229,7 @@ func (vtx *uniqueVertex) Parents() ([]dag.Vertex, error) {
 
 	parentIDs := vtx.v.vtx.ParentIDs()
 	if len(vtx.v.parents) != len(parentIDs) {
-		vtx.v.parents = make([]dag.Vertex, len(parentIDs))
+		vtx.v.parents = make([]graph.Vertex, len(parentIDs))
 		for i, parentID := range parentIDs {
 			vtx.v.parents[i] = &uniqueVertex{
 				serializer: vtx.serializer,
@@ -251,7 +251,7 @@ func (vtx *uniqueVertex) Height() (uint64, error) {
 	return vtx.v.vtx.Height(), nil
 }
 
-func (vtx *uniqueVertex) Txs(ctx context.Context) ([]dag.Tx, error) {
+func (vtx *uniqueVertex) Txs(ctx context.Context) ([]graph.Tx, error) {
 	vtx.refresh()
 
 	if vtx.v.vtx == nil {
@@ -260,7 +260,7 @@ func (vtx *uniqueVertex) Txs(ctx context.Context) ([]dag.Tx, error) {
 
 	txs := vtx.v.vtx.Txs()
 	if len(txs) != len(vtx.v.txs) {
-		vtx.v.txs = make([]dag.Tx, len(txs))
+		vtx.v.txs = make([]graph.Tx, len(txs))
 		for i, txBytes := range txs {
 			tx, err := vtx.serializer.VM.ParseTx(ctx, txBytes)
 			if err != nil {
@@ -320,6 +320,6 @@ type vertexState struct {
 	vtx    vertex.StatelessVertex
 	status choices.Status
 
-	parents []dag.Vertex
-	txs     []dag.Tx
+	parents []graph.Vertex
+	txs     []graph.Tx
 }

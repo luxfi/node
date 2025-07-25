@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/evm/interfaces/metrics"
+	"github.com/luxfi/evm/iface/metrics"
 	"github.com/stretchr/testify/require"
 )
 

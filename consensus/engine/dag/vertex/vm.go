@@ -56,5 +56,5 @@ type DAGVM interface {
 	block.ChainVM
 
 	// Convert a stream of bytes to a transaction or return an error
-	ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error)
+	ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error)
 }

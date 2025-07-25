@@ -43,9 +43,9 @@ var (
 )
 
 type testTx struct {
-	dag.Tx
+	graph.Tx
 
-	tx *dag.TestTx
+	tx *graph.TestTx
 }
 
 func (t *testTx) Accept(ctx context.Context) error {
@@ -132,7 +132,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &dag.TestVertex{
+	vtx0 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Processing,
@@ -140,23 +140,23 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &dag.TestVertex{
+	vtx1 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []dag.Vertex{
+		ParentsV: []graph.Vertex{
 			vtx0,
 		},
 		HeightV: 1,
 		BytesV:  vtxBytes1,
 	}
-	vtx2 := &dag.TestVertex{ // vtx2 is the stop vertex
+	vtx2 := &graph.TestVertex{ // vtx2 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []dag.Vertex{
+		ParentsV: []graph.Vertex{
 			vtx1,
 		},
 		HeightV: 2,
@@ -177,7 +177,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 		switch vtxID {
 		case vtxID0:
 			return vtx0, nil
@@ -191,7 +191,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		}
 	}
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (graph.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			return vtx0, nil
@@ -243,7 +243,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &dag.TestVertex{
+	vtx0 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
@@ -251,17 +251,17 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &dag.TestVertex{ // vtx1 is the stop vertex
+	vtx1 := &graph.TestVertex{ // vtx1 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []dag.Vertex{vtx0},
+		ParentsV: []graph.Vertex{vtx0},
 		HeightV:  1,
 		BytesV:   vtxBytes1,
 	}
 	// Should not receive transitive votes from [vtx1]
-	vtx2 := &dag.TestVertex{
+	vtx2 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Unknown,
@@ -284,7 +284,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -306,7 +306,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		reqVtxID = vtxID
 	}
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (graph.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing
@@ -332,7 +332,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 	require.NotEqual(oldReqID, *requestID)                                                       // should have sent a new request
 
 	oldReqID = *requestID
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -378,7 +378,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	txBytes0 := []byte{0}
 	txBytes1 := []byte{1}
 
-	innerTx0 := &dag.TestTx{
+	innerTx0 := &graph.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     txID0,
 			StatusV: choices.Processing,
@@ -387,7 +387,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	}
 
 	// Depends on tx0
-	tx1 := &dag.TestTx{
+	tx1 := &graph.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     txID1,
 			StatusV: choices.Processing,
@@ -406,7 +406,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 
 	vtxBytes0 := []byte{2}
 	vtxBytes1 := []byte{3}
-	vm.ParseTxF = func(_ context.Context, b []byte) (dag.Tx, error) {
+	vm.ParseTxF = func(_ context.Context, b []byte) (graph.Tx, error) {
 		switch {
 		case bytes.Equal(b, txBytes0):
 			return tx0, nil
@@ -417,23 +417,23 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		}
 	}
 
-	vtx0 := &dag.TestVertex{
+	vtx0 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
 		},
 		HeightV: 0,
-		TxsV:    []dag.Tx{tx1},
+		TxsV:    []graph.Tx{tx1},
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &dag.TestVertex{ // vtx1 is the stop vertex
+	vtx1 := &graph.TestVertex{ // vtx1 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []dag.Vertex{vtx0}, // Depends on vtx0
+		ParentsV: []graph.Vertex{vtx0}, // Depends on vtx0
 		HeightV:  1,
-		TxsV:     []dag.Tx{tx0},
+		TxsV:     []graph.Tx{tx0},
 		BytesV:   vtxBytes1,
 	}
 
@@ -451,7 +451,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (graph.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -462,7 +462,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			return nil, errParsedUnknownVertex
 		}
 	}
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 		switch vtxID {
 		case vtxID1:
 			return vtx1, nil
@@ -485,7 +485,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	vm.CantSetState = false
 	require.NoError(bs.Start(context.Background(), 0))
 
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (graph.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes1):
 			return vtx1, nil
@@ -534,7 +534,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	vtxBytes1 := []byte{1}
 	vtxBytes2 := []byte{2}
 
-	vtx0 := &dag.TestVertex{
+	vtx0 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID0,
 			StatusV: choices.Unknown,
@@ -542,21 +542,21 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		HeightV: 0,
 		BytesV:  vtxBytes0,
 	}
-	vtx1 := &dag.TestVertex{
+	vtx1 := &graph.TestVertex{
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID1,
 			StatusV: choices.Unknown,
 		},
-		ParentsV: []dag.Vertex{vtx0},
+		ParentsV: []graph.Vertex{vtx0},
 		HeightV:  1,
 		BytesV:   vtxBytes1,
 	}
-	vtx2 := &dag.TestVertex{ // vtx2 is the stop vertex
+	vtx2 := &graph.TestVertex{ // vtx2 is the stop vertex
 		TestDecidable: choices.TestDecidable{
 			IDV:     vtxID2,
 			StatusV: choices.Processing,
 		},
-		ParentsV: []dag.Vertex{vtx1},
+		ParentsV: []graph.Vertex{vtx1},
 		HeightV:  2,
 		BytesV:   vtxBytes2,
 	}
@@ -575,7 +575,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 	)
 	require.NoError(err)
 
-	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+	manager.GetVtxF = func(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 		switch vtxID {
 		case vtxID0:
 			return nil, errUnknownVertex
@@ -588,7 +588,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 			return nil, errUnknownVertex
 		}
 	}
-	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (dag.Vertex, error) {
+	manager.ParseVtxF = func(_ context.Context, vtxBytes []byte) (graph.Vertex, error) {
 		switch {
 		case bytes.Equal(vtxBytes, vtxBytes0):
 			vtx0.StatusV = choices.Processing

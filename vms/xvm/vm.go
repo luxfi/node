@@ -435,7 +435,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return nil
 }
 
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (dag.Tx, error) {
+func (vm *VM) ParseTx(_ context.Context, bytes []byte) (graph.Tx, error) {
 	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err

@@ -43,7 +43,7 @@ func (p *txParser) Parse(ctx context.Context, txBytes []byte) (queue.Job, error)
 type txJob struct {
 	log         logging.Logger
 	numAccepted prometheus.Counter
-	tx          dag.Tx
+	tx          graph.Tx
 }
 
 func (t *txJob) ID() ids.ID {

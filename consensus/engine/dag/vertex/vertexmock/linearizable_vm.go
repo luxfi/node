@@ -19,7 +19,7 @@ import (
 	ids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	dag "github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/core"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
@@ -282,10 +282,10 @@ func (mr *LinearizableVMMockRecorder) ParseBlock(ctx, blockBytes any) *gomock.Ca
 }
 
 // ParseTx mocks base method.
-func (m *LinearizableVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error) {
+func (m *LinearizableVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseTx", ctx, txBytes)
-	ret0, _ := ret[0].(dag.Tx)
+	ret0, _ := ret[0].(graph.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

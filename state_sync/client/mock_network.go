@@ -10,10 +10,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/internal/stub"
 
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 )
 
 var _ peer.NetworkClient = &mockNetwork{}
