@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

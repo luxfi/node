@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 )
 
 const (

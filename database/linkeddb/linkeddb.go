@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 )
 
 const (

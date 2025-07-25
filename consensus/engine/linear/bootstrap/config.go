@@ -4,7 +4,7 @@
 package bootstrap
 
 import (
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/ids"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"

@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"

@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/hashing"
 )

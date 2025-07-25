@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"

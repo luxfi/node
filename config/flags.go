@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/pebbledb"
+	"github.com/luxfi/db/leveldb"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/trace"

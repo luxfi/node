@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"

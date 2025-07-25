@@ -10,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/dbtest"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/dbtest"
 	"github.com/luxfi/node/utils/logging"
 )
 

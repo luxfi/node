@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/hashing"
 )

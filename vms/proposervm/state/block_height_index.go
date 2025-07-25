@@ -6,9 +6,9 @@ package state
 import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/ids"
 )
 

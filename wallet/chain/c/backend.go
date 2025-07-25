@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	walletutil "github.com/luxfi/node/wallet"

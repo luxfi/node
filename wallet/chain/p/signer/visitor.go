@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/keychain"

@@ -7,7 +7,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"

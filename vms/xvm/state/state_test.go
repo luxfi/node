@@ -10,9 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/xvm/block"

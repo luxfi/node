@@ -11,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/vms/proposervm/block"

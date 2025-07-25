@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/node/database"
+	database "github.com/luxfi/db"
 	ids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"

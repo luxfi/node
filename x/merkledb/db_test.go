@@ -17,9 +17,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/dbtest"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/dbtest"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"

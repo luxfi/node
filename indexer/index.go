@@ -10,9 +10,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/logging"

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
