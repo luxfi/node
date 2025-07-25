@@ -8,6 +8,19 @@ go 1.24.5
 
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
 
+// Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
+replace go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.37.0
+
+replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
 require (
 	github.com/DataDog/zstd v1.5.7
 	github.com/Microsoft/go-winio v0.6.2
@@ -166,6 +179,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -181,6 +195,6 @@ replace (
 	github.com/luxfi/bft => ../bft
 	github.com/luxfi/evm => ../evm
 	github.com/luxfi/geth => ../geth
-	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 	github.com/luxfi/node => .
+	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 )
