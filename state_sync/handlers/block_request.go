@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 	
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/plugin/evm/message"
 	"github.com/luxfi/node/state_sync/handlers/stats"
 	"github.com/luxfi/geth/common"
@@ -28,10 +28,10 @@ const (
 type BlockRequestHandler struct {
 	stats         stats.BlockRequestHandlerStats
 	blockProvider BlockProvider
-	codec         interfaces.Codec
+	codec         iface.Codec
 }
 
-func NewBlockRequestHandler(blockProvider BlockProvider, codec interfaces.Codec, handlerStats stats.BlockRequestHandlerStats) *BlockRequestHandler {
+func NewBlockRequestHandler(blockProvider BlockProvider, codec iface.Codec, handlerStats stats.BlockRequestHandlerStats) *BlockRequestHandler {
 	return &BlockRequestHandler{
 		blockProvider: blockProvider,
 		codec:         codec,
@@ -44,7 +44,7 @@ func NewBlockRequestHandler(blockProvider BlockProvider, codec interfaces.Codec,
 // Expects returned errors to be treated as FATAL
 // Returns empty response or subset of requested blocks if ctx expires during fetch
 // Assumes ctx is active
-func (b *BlockRequestHandler) OnBlockRequest(ctx context.Context, nodeID interfaces.NodeID, requestID uint32, blockRequest message.BlockRequest) ([]byte, error) {
+func (b *BlockRequestHandler) OnBlockRequest(ctx context.Context, nodeID iface.NodeID, requestID uint32, blockRequest message.BlockRequest) ([]byte, error) {
 	startTime := time.Now()
 	b.stats.IncBlockRequest()
 

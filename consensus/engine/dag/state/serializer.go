@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // Package state manages the meta-data required by consensus for an lux
-// dag.
+// graph.
 package state
 
 import (
@@ -68,14 +68,14 @@ func NewSerializer(config SerializerConfig) vertex.Manager {
 	return &s
 }
 
-func (s *Serializer) ParseVtx(ctx context.Context, b []byte) (dag.Vertex, error) {
+func (s *Serializer) ParseVtx(ctx context.Context, b []byte) (graph.Vertex, error) {
 	return newUniqueVertex(ctx, s, b)
 }
 
 func (s *Serializer) BuildStopVtx(
 	ctx context.Context,
 	parentIDs []ids.ID,
-) (dag.Vertex, error) {
+) (graph.Vertex, error) {
 	height := uint64(0)
 	for _, parentID := range parentIDs {
 		parent, err := s.getUniqueVertex(parentID)
@@ -108,7 +108,7 @@ func (s *Serializer) BuildStopVtx(
 	return uVtx, uVtx.setVertex(ctx, vtx)
 }
 
-func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (dag.Vertex, error) {
+func (s *Serializer) GetVtx(_ context.Context, vtxID ids.ID) (graph.Vertex, error) {
 	return s.getUniqueVertex(vtxID)
 }
 

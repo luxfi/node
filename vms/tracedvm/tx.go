@@ -14,10 +14,10 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var _ dag.Tx = (*tracedTx)(nil)
+var _ graph.Tx = (*tracedTx)(nil)
 
 type tracedTx struct {
-	dag.Tx
+	graph.Tx
 
 	tracer trace.Tracer
 }

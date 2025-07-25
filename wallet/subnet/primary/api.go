@@ -28,7 +28,7 @@ import (
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/luxfi/geth/common"
 )
 
 const (

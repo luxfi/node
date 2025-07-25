@@ -7,7 +7,7 @@ import (
 	"context"
 	"math/big"
 	"testing"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/consensus/dummy"
 	"github.com/luxfi/evm/core"
 	"github.com/luxfi/evm/core/types"

@@ -8,7 +8,7 @@ import (
 	"context"
 	"math/rand"
 	"testing"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/evm/core/state/snapshot"
 	"github.com/luxfi/evm/core/types"

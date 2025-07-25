@@ -23,7 +23,7 @@ import (
 
 var errUnknownTx = errors.New("unknown tx")
 
-func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (dag.Tx, error)) *Serializer {
+func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (graph.Tx, error)) *Serializer {
 	vm := vertextest.VM{}
 	vm.T = t
 	vm.Default(true)
@@ -67,11 +67,11 @@ func TestUnknownUniqueVertexErrors(t *testing.T) {
 func TestUniqueVertexCacheHit(t *testing.T) {
 	require := require.New(t)
 
-	testTx := &dag.TestTx{TestDecidable: choices.TestDecidable{
+	testTx := &graph.TestTx{TestDecidable: choices.TestDecidable{
 		IDV: ids.ID{1},
 	}}
 
-	s := newTestSerializer(t, func(_ context.Context, b []byte) (dag.Tx, error) {
+	s := newTestSerializer(t, func(_ context.Context, b []byte) (graph.Tx, error) {
 		require.Equal([]byte{0}, b)
 		return testTx, nil
 	})
@@ -120,7 +120,7 @@ func TestUniqueVertexCacheMiss(t *testing.T) {
 	require := require.New(t)
 
 	txBytesParent := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	testTxParent := &dag.TestTx{
+	testTxParent := &graph.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{1},
 			StatusV: choices.Accepted,
@@ -129,13 +129,13 @@ func TestUniqueVertexCacheMiss(t *testing.T) {
 	}
 
 	txBytes := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	testTx := &dag.TestTx{
+	testTx := &graph.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV: ids.ID{1},
 		},
 		BytesV: txBytes,
 	}
-	parseTx := func(_ context.Context, b []byte) (dag.Tx, error) {
+	parseTx := func(_ context.Context, b []byte) (graph.Tx, error) {
 		if bytes.Equal(txBytesParent, b) {
 			return testTxParent, nil
 		}
@@ -244,9 +244,9 @@ func TestParseVertexWithIncorrectChainID(t *testing.T) {
 	require.NoError(err)
 	vtxBytes := statelessVertex.Bytes()
 
-	s := newTestSerializer(t, func(_ context.Context, b []byte) (dag.Tx, error) {
+	s := newTestSerializer(t, func(_ context.Context, b []byte) (graph.Tx, error) {
 		if bytes.Equal(b, []byte{1}) {
-			return &dag.TestTx{}, nil
+			return &graph.TestTx{}, nil
 		}
 		return nil, errUnknownTx
 	})
@@ -258,10 +258,10 @@ func TestParseVertexWithIncorrectChainID(t *testing.T) {
 func TestParseVertexWithInvalidTxs(t *testing.T) {
 	require := require.New(t)
 
-	s := newTestSerializer(t, func(_ context.Context, b []byte) (dag.Tx, error) {
+	s := newTestSerializer(t, func(_ context.Context, b []byte) (graph.Tx, error) {
 		switch {
 		case bytes.Equal(b, []byte{2}):
-			return &dag.TestTx{}, nil
+			return &graph.TestTx{}, nil
 		default:
 			return nil, errUnknownTx
 		}

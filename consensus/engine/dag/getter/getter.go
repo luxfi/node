@@ -115,14 +115,14 @@ func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID
 		return nil //nolint:nilerr
 	}
 
-	queue := make([]dag.Vertex, 1, gh.maxContainersGetAncestors) // for BFS
+	queue := make([]graph.Vertex, 1, gh.maxContainersGetAncestors) // for BFS
 	queue[0] = vertex
 	ancestorsBytesLen := 0                                            // length, in bytes, of vertex and its ancestors
 	ancestorsBytes := make([][]byte, 0, gh.maxContainersGetAncestors) // vertex and its ancestors in BFS order
 	visited := set.Of(vertex.ID())                                    // IDs of vertices that have been in queue before
 
 	for len(ancestorsBytes) < gh.maxContainersGetAncestors && len(queue) > 0 && time.Since(startTime) < gh.maxTimeGetAncestors {
-		var vtx dag.Vertex
+		var vtx graph.Vertex
 		vtx, queue = queue[0], queue[1:] // pop
 		vtxBytes := vtx.Bytes()
 		// Ensure response size isn't too large. Include wrappers.IntLen because the size of the message

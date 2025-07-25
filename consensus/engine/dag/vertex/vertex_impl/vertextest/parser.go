@@ -23,14 +23,14 @@ var (
 type Parser struct {
 	T            *testing.T
 	CantParseVtx bool
-	ParseVtxF    func(context.Context, []byte) (dag.Vertex, error)
+	ParseVtxF    func(context.Context, []byte) (graph.Vertex, error)
 }
 
 func (p *Parser) Default(cant bool) {
 	p.CantParseVtx = cant
 }
 
-func (p *Parser) ParseVtx(ctx context.Context, b []byte) (dag.Vertex, error) {
+func (p *Parser) ParseVtx(ctx context.Context, b []byte) (graph.Vertex, error) {
 	if p.ParseVtxF != nil {
 		return p.ParseVtxF(ctx, b)
 	}

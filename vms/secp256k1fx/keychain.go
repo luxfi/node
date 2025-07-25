@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	geth "github.com/ethereum/go-ethereum/common"
+	geth "github.com/luxfi/geth/common"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"

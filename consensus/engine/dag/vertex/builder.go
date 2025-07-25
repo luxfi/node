@@ -15,7 +15,7 @@ import (
 // Builder builds a vertex given a set of parentIDs and transactions.
 type Builder interface {
 	// Build a new stop vertex from the parents
-	BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (dag.Vertex, error)
+	BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (graph.Vertex, error)
 }
 
 // Build a new stateless vertex from the contents of a vertex

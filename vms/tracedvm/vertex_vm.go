@@ -57,7 +57,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))

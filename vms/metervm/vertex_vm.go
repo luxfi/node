@@ -18,7 +18,7 @@ import (
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ dag.Tx                    = (*meterTx)(nil)
+	_ graph.Tx                    = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -64,7 +64,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (graph.Tx, error) {
 	start := vm.clock.Time()
 	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, b)
 	end := vm.clock.Time()
@@ -81,7 +81,7 @@ func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
 }
 
 type meterTx struct {
-	dag.Tx
+	graph.Tx
 
 	vm *vertexVM
 }

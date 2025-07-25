@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/core/types"
 	"github.com/luxfi/evm/plugin/evm/message"
 	"github.com/luxfi/node/state_sync/handlers"

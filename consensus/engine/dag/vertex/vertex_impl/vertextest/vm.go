@@ -27,7 +27,7 @@ type VM struct {
 	CantLinearize, CantParse bool
 
 	LinearizeF func(context.Context, ids.ID) error
-	ParseTxF   func(context.Context, []byte) (dag.Tx, error)
+	ParseTxF   func(context.Context, []byte) (graph.Tx, error)
 }
 
 func (vm *VM) Default(cant bool) {
@@ -46,7 +46,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return errLinearize
 }
 
-func (vm *VM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
+func (vm *VM) ParseTx(ctx context.Context, b []byte) (graph.Tx, error) {
 	if vm.ParseTxF != nil {
 		return vm.ParseTxF(ctx, b)
 	}

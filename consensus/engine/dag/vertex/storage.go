@@ -14,7 +14,7 @@ import (
 // engine.
 type Storage interface {
 	// Get a vertex by its hash from storage.
-	GetVtx(ctx context.Context, vtxID ids.ID) (dag.Vertex, error)
+	GetVtx(ctx context.Context, vtxID ids.ID) (graph.Vertex, error)
 	// Edge returns a list of accepted vertex IDs with no accepted children.
 	Edge(ctx context.Context) (vtxIDs []ids.ID)
 	// Returns "true" if accepted frontier ("Edge") is stop vertex.

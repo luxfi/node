@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/evm/ethdb/memorydb"
 	"github.com/luxfi/evm/plugin/evm/message"

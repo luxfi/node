@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/luxfi/evm/interfaces"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/iface"
 )
 
 type NewHeadSubscriber interface {

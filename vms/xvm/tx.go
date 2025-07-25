@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	_ dag.Tx = (*Tx)(nil)
+	_ graph.Tx = (*Tx)(nil)
 
 	errTxNotProcessing  = errors.New("transaction is not processing")
 	errUnexpectedReject = errors.New("attempting to reject transaction")
