@@ -11,9 +11,9 @@ import (
 	"github.com/luxfi/node/utils/logging"
 )
 
-// Config wraps all the parameters needed for a simplex engine
+// Config wraps all the parameters needed for a bft engine
 type Config struct {
-	Ctx SimplexChainContext
+	Ctx BFTChainContext
 	Log logging.Logger
 
 	Sender             sender.ExternalSender
@@ -29,7 +29,7 @@ type Config struct {
 }
 
 // Context is information about the current execution.
-type SimplexChainContext struct {
+type BFTChainContext struct {
 	// Network is the ID of the network this context exists within.
 	NodeID ids.NodeID
 

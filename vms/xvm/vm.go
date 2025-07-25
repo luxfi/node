@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"

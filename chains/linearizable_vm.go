@@ -7,11 +7,11 @@ import (
 	"context"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.DAGVM
-	vmToInitialize common.VM
+	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
 	ctx          *consensus.Context
@@ -33,9 +33,9 @@ type initializeOnLinearizeVM struct {
 	genesisBytes []byte
 	upgradeBytes []byte
 	configBytes  []byte
-	toEngine     chan<- common.Message
-	fxs          []*common.Fx
-	appSender    common.AppSender
+	toEngine     chan<- core.Message
+	fxs          []*core.Fx
+	appSender    core.AppSender
 }
 
 func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
@@ -74,9 +74,9 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	toEngine chan<- common.Message,
-	_ []*common.Fx,
-	_ common.AppSender,
+	toEngine chan<- core.Message,
+	_ []*core.Fx,
+	_ core.AppSender,
 ) error {
 	return vm.Linearize(ctx, vm.stopVertexID, toEngine)
 }
