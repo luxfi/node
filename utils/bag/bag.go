@@ -174,3 +174,12 @@ func (b *Bag[T]) PrefixedString(prefix string) string {
 func (b *Bag[_]) String() string {
 	return b.PrefixedString("")
 }
+
+// Clone returns a shallow copy of the bag, preserving counts of all elements.
+func (b *Bag[T]) Clone() Bag[T] {
+	var clone Bag[T]
+	for elt, count := range b.counts {
+		clone.AddCount(elt, count)
+	}
+	return clone
+}

@@ -6,6 +6,8 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
+replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
+
 require (
 	github.com/DataDog/zstd v1.5.7
 	github.com/Microsoft/go-winio v0.6.2
@@ -180,4 +182,5 @@ replace (
 	github.com/luxfi/evm => ../evm
 	github.com/luxfi/geth => ../geth
 	launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+	github.com/luxfi/node => .
 )
