@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -459,7 +459,7 @@ func TestExportTx(t *testing.T) {
 func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 	// Note: we avoid ids.GenerateTestNodeID here to make sure that UTXO IDs won't change
 	// run by run. This simplifies checking what utxos are included in the built txs.
-	const utxosOffset uint64 = 2024
+	const utxosOffset uint64 = 2025
 
 	return []*lux.UTXO{ // currently, the wallet scans UTXOs in the order provided here
 		{ // a small UTXO first, which should not be enough to pay fees
