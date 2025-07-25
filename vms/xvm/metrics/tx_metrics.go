@@ -68,3 +68,24 @@ func (m *txMetrics) ExportTx(*txs.ExportTx) error {
 	}).Inc()
 	return nil
 }
+
+func (m *txMetrics) BurnTx(*txs.BurnTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "burn",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) MintTx(*txs.MintTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "mint",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) NFTTransferTx(*txs.NFTTransferTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "nft_transfer",
+	}).Inc()
+	return nil
+}

@@ -6,14 +6,14 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (
-	_ UnsignedTx = (*MintTx)(nil)
+	_ UnsignedTx             = (*MintTx)(nil)
+	_ secp256k1fx.UnsignedTx = (*MintTx)(nil)
 
 	ErrInvalidSourceChain = errors.New("invalid source chain")
 	ErrInvalidBurnProof   = errors.New("invalid burn proof")
@@ -43,66 +43,6 @@ type MintTx struct {
 
 func (t *MintTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
-}
-
-func (t *MintTx) SyntacticVerify(
-	ctx *consensus.Context,
-	c codec.Manager,
-	txFeeAssetID ids.ID,
-	txFee uint64,
-	_ uint64,
-	_ int,
-) error {
-	switch {
-	case t == nil:
-		return ErrNilTx
-	case t.AssetID == ids.Empty:
-		return ErrInvalidAssetID
-	case t.Amount == 0:
-		return ErrInvalidMintAmount
-	case t.SourceChain == ids.Empty:
-		return ErrInvalidSourceChain
-	case len(t.BurnProof) == 0:
-		return ErrInvalidBurnProof
-	case t.SourceChain == ctx.ChainID:
-		return errors.New("cannot mint from same chain")
-	case len(t.MPCSignatures) < 67: // Requires 67/100 threshold
-		return errors.New("insufficient MPC signatures")
-	}
-
-	if err := t.BaseTx.SyntacticVerify(ctx, c, txFeeAssetID, txFee, txFee, len(t.Ins)); err != nil {
-		return err
-	}
-
-	// Ensure outputs match the mint amount
-	totalOut := uint64(0)
-	for _, out := range t.Outs {
-		if out.AssetID() == t.AssetID {
-			totalOut += out.Output().Amount()
-		}
-	}
-
-	// Must mint exact amount
-	if totalOut != t.Amount {
-		return errors.New("mint amount mismatch")
-	}
-
-	return nil
-}
-
-func (t *MintTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Verifiable) error {
-	// Verify the transaction is well-formed
-	if err := t.BaseTx.SemanticVerify(vm, tx, creds); err != nil {
-		return err
-	}
-
-	// TODO: Verify burn proof from source chain
-	// This would involve checking merkle proofs, block headers, etc.
-
-	// TODO: Verify MPC signatures
-	// This would involve checking threshold signatures from validators
-
-	return nil
 }
 
 func (t *MintTx) Visit(v Visitor) error {

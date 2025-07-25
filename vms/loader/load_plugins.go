@@ -5,7 +5,6 @@ package loader
 
 import (
 	"fmt"
-	"plugin"
 	
 	"github.com/luxfi/node/vms/registry"
 )

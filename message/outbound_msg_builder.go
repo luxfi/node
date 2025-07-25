@@ -267,8 +267,8 @@ func (b *outMsgBuilder) Handshake(
 						Minor: minor,
 						Patch: patch,
 					},
-					SupportedLPs: supportedLPs,
-					ObjectedLPs:  objectedLPs,
+					SupportedLps: supportedLPs,
+					ObjectedLps:  objectedLPs,
 					KnownPeers: &p2p.BloomFilter{
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,

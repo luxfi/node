@@ -20,9 +20,9 @@ Backwards compatible with v1.13.0. Plugin version to 40—update plugins.
 
 Key Changes:
 
-    APIs: Removed deprecated AVM APIs; added L1 validators to GetCurrentValidators.
+    APIs: Removed deprecated XVM APIs; added L1 validators to GetCurrentValidators.
 
-    Configs: Removed tracing-enabled flag; deprecated AVM indexer configs.
+    Configs: Removed tracing-enabled flag; deprecated XVM indexer configs.
 
     Lux-Specific: Incorporated Teleport for subnet configs; updated to match Avalanche's Etna while adding Lux's kube support for mainnet deployment. Many new contributors joined.
 

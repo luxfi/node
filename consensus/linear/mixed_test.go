@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 )
 
-func TestConvergenceSnowFlakeSnowBall(t *testing.T) {
+func TestConvergenceSampling(t *testing.T) {
 	require := require.New(t)
 
 	params := sampling.Parameters{

@@ -140,3 +140,26 @@ func (t *txInit) OperationTx(tx *txs.OperationTx) error {
 	}
 	return t.BaseTx(&tx.BaseTx)
 }
+
+func (t *txInit) BurnTx(tx *txs.BurnTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	return t.BaseTx(&tx.BaseTx)
+}
+
+func (t *txInit) MintTx(tx *txs.MintTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	return t.BaseTx(&tx.BaseTx)
+}
+
+func (t *txInit) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	// Initialize NFT operation's FxID if needed
+	// The NFT transfer operation might have its own FxID
+	return t.BaseTx(&tx.BaseTx)
+}
