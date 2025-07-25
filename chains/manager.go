@@ -219,6 +219,7 @@ type ManagerConfig struct {
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
 	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
+	ImportMode       bool // If true, disable pruning for one-time blockchain data import
 
 	Metrics        metrics.MultiGatherer
 	MeterDBMetrics metrics.MultiGatherer

@@ -133,6 +133,9 @@ type Config struct {
 	
 	// DevMode enables single-node development mode with simplified routing
 	DevMode bool `json:"devMode"`
+	
+	// ImportMode enables one-time blockchain data import with pruning disabled
+	ImportMode bool `json:"importMode"`
 
 	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
 
