@@ -1507,3 +1507,51 @@ func (s *sender) SendAppGossip(
 	}
 	return nil
 }
+
+func (s *sender) SendCrossChainAppRequest(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	appRequestBytes []byte,
+) error {
+	// Cross-chain messages are not currently supported in this implementation
+	// Log the attempt and return nil to avoid blocking
+	s.ctx.Log.Debug("SendCrossChainAppRequest not implemented",
+		zap.Stringer("destinationChainID", chainID),
+		zap.Uint32("requestID", requestID),
+	)
+	return nil
+}
+
+func (s *sender) SendCrossChainAppResponse(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	appResponseBytes []byte,
+) error {
+	// Cross-chain messages are not currently supported in this implementation
+	// Log the attempt and return nil to avoid blocking
+	s.ctx.Log.Debug("SendCrossChainAppResponse not implemented",
+		zap.Stringer("sourceChainID", chainID),
+		zap.Uint32("requestID", requestID),
+	)
+	return nil
+}
+
+func (s *sender) SendCrossChainAppError(
+	ctx context.Context,
+	chainID ids.ID,
+	requestID uint32,
+	errorCode int32,
+	errorMessage string,
+) error {
+	// Cross-chain messages are not currently supported in this implementation
+	// Log the attempt and return nil to avoid blocking
+	s.ctx.Log.Debug("SendCrossChainAppError not implemented",
+		zap.Stringer("sourceChainID", chainID),
+		zap.Uint32("requestID", requestID),
+		zap.Int32("errorCode", errorCode),
+		zap.String("errorMessage", errorMessage),
+	)
+	return nil
+}

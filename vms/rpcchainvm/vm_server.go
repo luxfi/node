@@ -205,7 +205,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.connCloser.Add(clientConn)
 
 	msgClient := messenger.NewClient(messengerpb.NewMessengerClient(clientConn))
-	keystoreClient := gkeystore.NewClient(keystorepb.NewKeystoreClient(clientConn))
+	// keystoreClient := gkeystore.NewClient(keystorepb.NewKeystoreClient(clientConn)) // Keystore removed
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
@@ -241,7 +241,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		LUXAssetID: luxAssetID,
 
 		Log:          vm.log,
-		Keystore:     keystoreClient,
+		// Keystore:     keystoreClient, // Keystore removed from consensus.Context
 		SharedMemory: sharedMemoryClient,
 		BCLookup:     bcLookupClient,
 		Metrics:      vmMetrics,
@@ -255,7 +255,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		ChainDataDir: req.ChainDataDir,
 	}
 
-	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
+	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
@@ -438,7 +438,7 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	return &vmpb.ParseBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
-		Status:            vmpb.Status(blk.Status()),
+		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on linear.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -469,7 +469,7 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	return &vmpb.GetBlockResponse{
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
-		Status:            vmpb.Status(blk.Status()),
+		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on linear.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -520,7 +520,9 @@ func (vm *VMServer) CrossChainAppRequest(ctx context.Context, msg *vmpb.CrossCha
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.CrossChainAppRequest(ctx, chainID, msg.RequestId, deadline, msg.Request)
+	// CrossChainAppRequest method no longer exists on ChainVM interface
+	// return &emptypb.Empty{}, vm.vm.CrossChainAppRequest(ctx, chainID, msg.RequestId, deadline, msg.Request)
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.CrossChainAppRequestFailedMsg) (*emptypb.Empty, error) {
@@ -533,7 +535,9 @@ func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.Cr
 		Code:    msg.ErrorCode,
 		Message: msg.ErrorMessage,
 	}
-	return &emptypb.Empty{}, vm.vm.CrossChainAppRequestFailed(ctx, chainID, msg.RequestId, appErr)
+	// CrossChainAppRequestFailed method no longer exists on ChainVM interface
+	// return &emptypb.Empty{}, vm.vm.CrossChainAppRequestFailed(ctx, chainID, msg.RequestId, appErr)
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) CrossChainAppResponse(ctx context.Context, msg *vmpb.CrossChainAppResponseMsg) (*emptypb.Empty, error) {
@@ -541,7 +545,9 @@ func (vm *VMServer) CrossChainAppResponse(ctx context.Context, msg *vmpb.CrossCh
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.CrossChainAppResponse(ctx, chainID, msg.RequestId, msg.Response)
+	// CrossChainAppResponse method no longer exists on ChainVM interface
+	// return &emptypb.Empty{}, vm.vm.CrossChainAppResponse(ctx, chainID, msg.RequestId, msg.Response)
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) AppRequest(ctx context.Context, req *vmpb.AppRequestMsg) (*emptypb.Empty, error) {

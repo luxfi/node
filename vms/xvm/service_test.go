@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil/bech32"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -20,6 +19,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -29,17 +29,17 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/block/executor"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/block/executor"
+	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
 )
@@ -698,7 +698,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -891,7 +891,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1033,7 +1033,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1214,7 +1214,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1357,7 +1357,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: durango,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1544,7 +1544,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -1679,7 +1679,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 
 	env := setup(t, &envConfig{
 		fork: latest,
-		additionalFxs: []*common.Fx{{
+		additionalFxs: []*core.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
