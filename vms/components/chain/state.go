@@ -133,7 +133,7 @@ func (s *State) initialize(config *Config) {
 	s.batchedUnmarshalBlock = config.BatchedUnmarshalBlock
 	if config.GetBlockIDAtHeight == nil {
 		s.getStatus = func(_ context.Context, blk linear.Block) (choices.Status, error) {
-			return blk.Status(), nil
+			return choices.Processing, nil
 		}
 	} else {
 		s.getStatus = produceGetStatus(s, config.GetBlockIDAtHeight)
