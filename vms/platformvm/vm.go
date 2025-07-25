@@ -106,7 +106,7 @@ func (vm *VM) Initialize(
 	configBytes []byte,
 	toEngine chan<- common.Message,
 	_ []*common.Fx,
-	appSender common.AppSender,
+	appSender core.AppSender,
 ) error {
 	chainCtx.Log.Verbo("initializing platform chain")
 

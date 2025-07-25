@@ -53,12 +53,12 @@ var (
 )
 
 type NetworkServer struct {
-	appSender common.AppSender // Used to respond to peer requests via AppResponse.
+	appSender core.AppSender // Used to respond to peer requests via AppResponse.
 	db        DB
 	log       logging.Logger
 }
 
-func NewNetworkServer(appSender common.AppSender, db DB, log logging.Logger) *NetworkServer {
+func NewNetworkServer(appSender core.AppSender, db DB, log logging.Logger) *NetworkServer {
 	return &NetworkServer{
 		appSender: appSender,
 		db:        db,

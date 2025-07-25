@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/appsender"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
@@ -28,7 +29,6 @@ import (
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
@@ -212,7 +212,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
 	warpSignerClient := gwarp.NewClient(warppb.NewSignerClient(clientConn))
 
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 	vm.closed = make(chan struct{})
 	go func() {
 		for {
@@ -529,7 +529,7 @@ func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.Cr
 		return nil, err
 	}
 
-	appErr := &common.AppError{
+	appErr := &core.AppError{
 		Code:    msg.ErrorCode,
 		Message: msg.ErrorMessage,
 	}
@@ -562,7 +562,7 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		return nil, err
 	}
 
-	appErr := &common.AppError{
+	appErr := &core.AppError{
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}

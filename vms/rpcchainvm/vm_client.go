@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/appsender"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
@@ -30,7 +31,6 @@ import (
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
@@ -130,9 +130,9 @@ func (vm *VMClient) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	toEngine chan<- core.Message,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
@@ -527,7 +527,7 @@ func (vm *VMClient) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 	return err
 }
 
-func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+func (vm *VMClient) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *core.AppError) error {
 	msg := &vmpb.CrossChainAppRequestFailedMsg{
 		ChainId:      chainID[:],
 		RequestId:    requestID,
@@ -576,7 +576,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,

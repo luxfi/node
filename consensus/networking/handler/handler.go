@@ -492,8 +492,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	// We will attempt to pass the message to the requested type for the state
 	// we are currently in.
 	currentState := h.ctx.State.Get()
-	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_CHAIN &&
-		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_DAG {
+	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_LINEAR &&
+		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_LUX {
 		// The peer is requesting an engine type that hasn't been initialized
 		// yet. This means we know that this isn't a response, so we can safely
 		// drop the message.
@@ -508,7 +508,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 
 	var engineType p2ppb.EngineType
 	switch msg.EngineType {
-	case p2ppb.EngineType_ENGINE_TYPE_DAG, p2ppb.EngineType_ENGINE_TYPE_CHAIN:
+	case p2ppb.EngineType_ENGINE_TYPE_LUX, p2ppb.EngineType_ENGINE_TYPE_LINEAR:
 		// The peer is requesting an engine type that has been initialized, so
 		// we should attempt to honor the request.
 		engineType = msg.EngineType
@@ -731,17 +731,19 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 			return engine.QueryFailed(ctx, nodeID, msg.RequestId)
 		}
 
-		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID, msg.AcceptedHeight)
+		// TODO: AcceptedHeight should be passed but is not available in the message
+		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID, 0)
 
 	case *message.QueryFailed:
 		return engine.QueryFailed(ctx, nodeID, msg.RequestID)
 
-	case *p2ppb.BFT:
-		h.ctx.Log.Debug("received bft message",
-			zap.Stringer("nodeID", nodeID),
-			zap.String("messageOp", op),
-			zap.Stringer("message", body),
-		)
+	// TODO: BFT message type is not defined in p2ppb
+	// case *p2ppb.BFT:
+	//	h.ctx.Log.Debug("received bft message",
+	//		zap.Stringer("nodeID", nodeID),
+	//		zap.String("messageOp", op),
+	//		zap.Stringer("message", body),
+	//	)
 		return nil
 	// Connection messages can be sent to the currently executing engine
 	case *message.Connected:

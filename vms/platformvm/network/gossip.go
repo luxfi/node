@@ -11,10 +11,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
@@ -52,7 +52,7 @@ func (t txGossipHandler) AppRequest(
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, *common.AppError) {
+) ([]byte, *core.AppError) {
 	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }
 

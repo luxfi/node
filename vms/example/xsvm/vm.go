@@ -37,7 +37,7 @@ var (
 )
 
 type VM struct {
-	common.AppHandler
+	core.AppHandler
 
 	chainContext *consensus.Context
 	db           database.Database
@@ -57,7 +57,7 @@ func (vm *VM) Initialize(
 	_ []byte,
 	engineChan chan<- common.Message,
 	_ []*common.Fx,
-	_ common.AppSender,
+	_ core.AppSender,
 ) error {
 	vm.AppHandler = common.NewNoOpAppHandler(chainContext.Log)
 

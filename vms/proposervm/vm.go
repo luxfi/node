@@ -133,7 +133,6 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- core.Message,
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
@@ -159,6 +158,9 @@ func (vm *VM) Initialize(
 	}
 	vm.innerBlkCache = innerBlkCache
 
+	// Create an internal channel for engine messages
+	// This channel is used by the scheduler to notify the consensus engine
+	toEngine := make(chan core.Message, 1)
 	scheduler, vmToEngine := scheduler.New(vm.ctx.Log, toEngine)
 	vm.Scheduler = scheduler
 	vm.toScheduler = vmToEngine

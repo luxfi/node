@@ -46,9 +46,9 @@ type EngineManager struct {
 // If an engine type is not specified, the initial engine type is returned.
 func (e *EngineManager) Get(engineType p2p.EngineType) *Engine {
 	switch engineType {
-	case p2p.EngineType_ENGINE_TYPE_DAG:
+	case p2p.EngineType_ENGINE_TYPE_LUX:
 		return e.Dag
-	case p2p.EngineType_ENGINE_TYPE_CHAIN:
+	case p2p.EngineType_ENGINE_TYPE_LINEAR:
 		return e.Chain
 	default:
 		return nil
