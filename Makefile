@@ -12,7 +12,7 @@ VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 GO_BUILD_FLAGS := -tags "pebbledb debug vmdebug"
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 
-.PHONY: all build build-linux build-mac docker clean help
+.PHONY: all build build-linux build-mac docker clean help tidy
 
 # Default target
 all: build
@@ -55,6 +55,9 @@ build-mac:
 	@mkdir -p $(BUILD_DIR)
 	GOOS=darwin GOARCH=arm64 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(MAC_BINARY) ./main
 	@echo "✅ macOS binary: $(MAC_BINARY)"
+
+tidy:
+	go mod tidy
 
 # Build Docker image
 docker: build-linux
