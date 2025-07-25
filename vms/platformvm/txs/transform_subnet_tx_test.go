@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -114,9 +114,9 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleTransformTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(simpleTransformTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -340,9 +340,9 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	require.NoError(complexTransformTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(complexTransformTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -526,11 +526,11 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransformTx.InitCtx(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	unsignedComplexTransformTx.InitCtx(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:    aliaser,
+		BCLookup:   aliaser,
 	})
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
@@ -641,9 +641,9 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &snow.Context{
-		ChainID:     chainID,
-		NetworkID:   networkID,
+	ctx := &consensus.Context{
+		ChainID:    chainID,
+		NetworkID:  networkID,
 		LUXAssetID: ids.GenerateTestID(),
 	}
 

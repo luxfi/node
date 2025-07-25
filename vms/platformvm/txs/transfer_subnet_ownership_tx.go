@@ -6,8 +6,8 @@ package txs
 import (
 	"errors"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -33,12 +33,12 @@ type TransferSubnetOwnershipTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [TransferSubnetOwnershipTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *snow.Context) {
+func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *consensus.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	tx.Owner.InitCtx(ctx)
 }
 
-func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

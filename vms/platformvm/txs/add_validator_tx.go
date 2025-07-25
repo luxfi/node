@@ -6,8 +6,8 @@ package txs
 import (
 	"fmt"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
@@ -44,7 +44,7 @@ type AddValidatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [AddValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddValidatorTx) InitCtx(ctx *snow.Context) {
+func (tx *AddValidatorTx) InitCtx(ctx *consensus.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
@@ -90,7 +90,7 @@ func (tx *AddValidatorTx) Shares() uint32 {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddValidatorTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *AddValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

@@ -11,7 +11,7 @@ import (
 // UTXO adds messages to UTXOs
 type UTXO struct {
 	lux.UTXO `serialize:"true"`
-	Message   []byte `serialize:"true" json:"message"`
+	Message  []byte `serialize:"true" json:"message"`
 }
 
 // Genesis represents a genesis state of the platform chain

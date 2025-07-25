@@ -43,9 +43,9 @@ func main() {
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:          uri,
+		URI:         uri,
 		LUXKeychain: kc,
-		EthKeychain:  kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)

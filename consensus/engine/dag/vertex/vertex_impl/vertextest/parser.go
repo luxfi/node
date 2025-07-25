@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	dag "github.com/luxfi/node/consensus/graph"
 )
 
 var (

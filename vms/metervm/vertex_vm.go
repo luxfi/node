@@ -8,17 +8,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ graph.Tx                    = (*meterTx)(nil)
+	_ graph.Tx                        = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -40,7 +40,7 @@ type vertexVM struct {
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,

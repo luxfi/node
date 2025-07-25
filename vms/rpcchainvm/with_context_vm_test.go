@@ -11,19 +11,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
 )
 
 var (
 	_ block.ChainVM                      = ContextEnabledVMMock{}
 	_ block.BuildBlockWithContextChainVM = ContextEnabledVMMock{}
 
-	_ linear.Block           = ContextEnabledBlockMock{}
+	_ linear.Block            = ContextEnabledBlockMock{}
 	_ block.WithVerifyContext = ContextEnabledBlockMock{}
 
 	blockContext = &block.Context{
@@ -97,7 +97,7 @@ func TestContextVMSummary(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 

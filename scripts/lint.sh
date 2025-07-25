@@ -19,8 +19,8 @@ grep -P 'lint.sh' scripts/lint.sh &> /dev/null || (\
 
 if [ "$#" -eq 0 ]; then
   # by default, check all source code
-  # to test only "snow" package
-  # ./scripts/lint.sh ./snow/...
+  # to test only "consensus" package
+  # ./scripts/lint.sh ./consensus/...
   TARGET="./..."
 else
   TARGET="${1}"

@@ -112,7 +112,7 @@ func (utxo *UTXOID) Compare(other *UTXOID) int {
 	if cmp := bytes.Compare(utxoID[:], otherID[:]); cmp != 0 {
 		return cmp
 	}
-	
+
 	if utxoIndex < otherIndex {
 		return -1
 	} else if utxoIndex > otherIndex {

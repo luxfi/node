@@ -6,13 +6,12 @@ package linear
 import (
 	"testing"
 
-	"github.com/luxfi/node/consensus/factories"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/validators"
 )
 
@@ -35,6 +34,6 @@ func DefaultConfig(t testing.TB) Config {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &linear.Topological{Factory: factories.SnowflakeFactory},
+		Consensus: &linear.Topological{Factory: factories.sampling.Factory},
 	}
 }

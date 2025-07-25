@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
@@ -31,7 +31,7 @@ type Builder interface {
 }
 
 type builder struct {
-	chainContext *snow.Context
+	chainContext *consensus.Context
 	engineChan   chan<- common.Message
 	chain        chain.Chain
 
@@ -39,7 +39,7 @@ type builder struct {
 	preference ids.ID
 }
 
-func New(chainContext *snow.Context, engineChan chan<- common.Message, chain chain.Chain) Builder {
+func New(chainContext *consensus.Context, engineChan chan<- common.Message, chain chain.Chain) Builder {
 	return &builder{
 		chainContext: chainContext,
 		engineChan:   engineChan,

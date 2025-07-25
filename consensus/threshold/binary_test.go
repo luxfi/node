@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBinarySnowflake(t *testing.T) {
+func TestBinaryConsensusflake(t *testing.T) {
 	require := require.New(t)
 
 	blue := 0
@@ -19,7 +19,7 @@ func TestBinarySnowflake(t *testing.T) {
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sf := newBinarySnowflake(alphaPreference, terminationConditions, red)
+	sf := newBinaryConsensusflake(alphaPreference, terminationConditions, red)
 
 	require.Equal(red, sf.Preference())
 	require.False(sf.Finalized())
@@ -58,12 +58,12 @@ type binaryThresholdTest struct {
 	binaryThreshold
 }
 
-func newBinarySnowflakeTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) snowflakeTest[int] {
+func newBinaryConsensusflakeTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) consensusflakeTest[int] {
 	require := require.New(t)
 
 	return &binaryThresholdTest{
 		require:         require,
-		binaryThreshold: newBinarySnowflake(alphaPreference, terminationConditions, 0),
+		binaryThreshold: newBinaryConsensusflake(alphaPreference, terminationConditions, 0),
 	}
 }
 
@@ -77,18 +77,18 @@ func (sf *binaryThresholdTest) AssertEqual(expectedConfidences []int, expectedFi
 	sf.require.Equal(expectedFinalized, sf.Finalized())
 }
 
-func TestBinarySnowflakeErrorDrivenSingleChoice(t *testing.T) {
-	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[int]() {
+func TestBinaryConsensusflakeErrorDrivenSingleChoice(t *testing.T) {
+	for _, test := range getErrorDrivenConsensusflakeSingleChoiceSuite[int]() {
 		t.Run(test.name, func(t *testing.T) {
-			test.f(t, newBinarySnowflakeTest, 0)
+			test.f(t, newBinaryConsensusflakeTest, 0)
 		})
 	}
 }
 
-func TestBinarySnowflakeErrorDrivenMultiChoice(t *testing.T) {
-	for _, test := range getErrorDrivenSnowflakeMultiChoiceSuite[int]() {
+func TestBinaryConsensusflakeErrorDrivenMultiChoice(t *testing.T) {
+	for _, test := range getErrorDrivenConsensusflakeMultiChoiceSuite[int]() {
 		t.Run(test.name, func(t *testing.T) {
-			test.f(t, newBinarySnowflakeTest, 0, 1)
+			test.f(t, newBinaryConsensusflakeTest, 0, 1)
 		})
 	}
 }

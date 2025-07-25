@@ -10,7 +10,7 @@ package lux
 import (
 	reflect "reflect"
 
-	snow "github.com/luxfi/node/snow"
+	consensus "github.com/luxfi/node/consensus"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -67,7 +67,7 @@ func (mr *MockTransferableInMockRecorder) Cost() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockTransferableIn) InitCtx(arg0 *snow.Context) {
+func (m *MockTransferableIn) InitCtx(arg0 *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

@@ -2,9 +2,9 @@ package ids
 
 import (
 	"testing"
-	
-	"github.com/stretchr/testify/require"
+
 	"github.com/mr-tron/base58/base58"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFromStringWithForce(t *testing.T) {
@@ -45,7 +45,7 @@ func TestFromStringWithForce(t *testing.T) {
 			wantErr:             false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			id, err := FromStringWithForce(tt.idStr, tt.forceIgnoreChecksum)
@@ -55,7 +55,7 @@ func TestFromStringWithForce(t *testing.T) {
 				require.NoError(t, err)
 				// Verify we got a valid ID
 				require.NotEqual(t, Empty, id)
-				
+
 				// If force was used, verify the ID matches what we expect
 				if tt.forceIgnoreChecksum && err == nil {
 					// Decode and verify we got the right bytes
@@ -81,12 +81,12 @@ func TestHistoricSubnetIDs(t *testing.T) {
 		"bXe2MhhAnXg6WGj6G8oDk55AKT1dMMsN72S8te7JdvzfZX1zM",  // ZOO blockchain
 		"QFAFyn1hh59mh7kokA55dJq5ywskF5A1yn8dDpLhmKApS6FP1",  // SPC blockchain
 	}
-	
+
 	for _, idStr := range historicIDs {
 		// Should fail without force
 		_, err := FromString(idStr)
 		require.Error(t, err, "ID %s should fail without force", idStr)
-		
+
 		// Should succeed with force
 		id, err := FromStringWithForce(idStr, true)
 		require.NoError(t, err, "ID %s should succeed with force", idStr)

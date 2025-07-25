@@ -14,15 +14,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -38,8 +38,8 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	require := require.New(t)
 
 	// Build state syncer
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	sender := &enginetest.Sender{T: t}
 
 	// Non state syncableVM case
@@ -109,8 +109,8 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 
 func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	require := require.New(t)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	alpha, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -152,8 +152,8 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 func TestStateSyncLocalSummaryIsIncludedAmongFrontiersIfAvailable(t *testing.T) {
 	require := require.New(t)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -190,8 +190,8 @@ func TestStateSyncLocalSummaryIsIncludedAmongFrontiersIfAvailable(t *testing.T) 
 
 func TestStateSyncNotFoundOngoingSummaryIsNotIncludedAmongFrontiers(t *testing.T) {
 	require := require.New(t)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -221,8 +221,8 @@ func TestStateSyncNotFoundOngoingSummaryIsNotIncludedAmongFrontiers(t *testing.T
 func TestBeaconsAreReachedForFrontiersUponStartup(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -260,8 +260,8 @@ func TestBeaconsAreReachedForFrontiersUponStartup(t *testing.T) {
 func TestUnRequestedStateSummaryFrontiersAreDropped(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -350,8 +350,8 @@ func TestUnRequestedStateSummaryFrontiersAreDropped(t *testing.T) {
 func TestMalformedStateSummaryFrontiersAreDropped(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -419,8 +419,8 @@ func TestMalformedStateSummaryFrontiersAreDropped(t *testing.T) {
 func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -502,8 +502,8 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 func TestStateSyncIsRestartedIfTooManyFrontierSeedersTimeout(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -591,8 +591,8 @@ func TestStateSyncIsRestartedIfTooManyFrontierSeedersTimeout(t *testing.T) {
 func TestVoteRequestsAreSentAsAllFrontierBeaconsResponded(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -662,8 +662,8 @@ func TestVoteRequestsAreSentAsAllFrontierBeaconsResponded(t *testing.T) {
 func TestUnRequestedVotesAreDropped(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -779,8 +779,8 @@ func TestUnRequestedVotesAreDropped(t *testing.T) {
 func TestVotesForUnknownSummariesAreDropped(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -882,8 +882,8 @@ func TestVotesForUnknownSummariesAreDropped(t *testing.T) {
 func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -1027,8 +1027,8 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -1133,8 +1133,8 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)
@@ -1279,8 +1279,8 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 func TestStateSyncIsDoneOnceVMNotifies(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	beacons := buildTestPeers(t, ctx.SubnetID)
 	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	require.NoError(err)

@@ -12,16 +12,16 @@ import (
 
 var _ sampling.Nnary = (*multiThreshold)(nil)
 
-func newNnarySnowflake(alphaPreference int, terminationConditions []terminationCondition, choice ids.ID) multiThreshold {
+func NewNetwork(alphaPreference int, terminationConditions []terminationCondition, choice ids.ID) multiThreshold {
 	return multiThreshold{
-		MultiSampler:            sampling.NewMultiSampler(choice),
+		MultiSampler:          sampling.NewMultiSampler(choice),
 		alphaPreference:       alphaPreference,
 		terminationConditions: terminationConditions,
 		confidence:            make([]int, len(terminationConditions)),
 	}
 }
 
-// multiThreshold is the implementation of a snowflake instance with an
+// multiThreshold is the implementation of a consensusflake instance with an
 // unbounded number of choices
 // Invariant:
 // len(terminationConditions) == len(confidence)

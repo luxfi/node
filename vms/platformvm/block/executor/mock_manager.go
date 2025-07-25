@@ -12,8 +12,8 @@ package executor
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
 	linear "github.com/luxfi/node/consensus/linear"
+	ids "github.com/luxfi/node/ids"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

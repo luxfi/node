@@ -10,9 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"

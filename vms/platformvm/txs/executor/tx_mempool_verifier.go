@@ -15,7 +15,7 @@ import (
 
 var (
 	errFutureStakeTime = errors.New("validator's stake time is too far in the future")
-	
+
 	_ txs.Visitor = (*MempoolTxVerifier)(nil)
 )
 

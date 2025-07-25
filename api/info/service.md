@@ -387,7 +387,7 @@ curl -X POST --data '{
     "rpcProtocolVersion": "18",
     "gitCommit": "79cd09ba728e1cecef40acd60702f0a2d41ea404",
     "vmVersions": {
-      "avm": "v1.9.1",
+      "xvm": "v1.9.1",
       "evm": "v0.11.1",
       "platform": "v1.9.1"
     }
@@ -493,7 +493,7 @@ curl -X POST --data '{
   "jsonrpc": "2.0",
   "result": {
     "vms": {
-      "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq": ["avm"],
+      "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq": ["xvm"],
       "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6": ["evm"],
       "qd2U4HDWUvMrVUeTcCHp6xH3Qpnn1XbU5MDdnBoiifFqvgXwT": ["nftfx"],
       "rWhpuQPF1kb72esV2momhMuTYGkEb1oL29pt2EBXWmSy4kxnT": ["platform"],

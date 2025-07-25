@@ -17,14 +17,14 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/snowtest"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -101,7 +101,7 @@ type environment struct {
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *snow.Context
+	ctx            *consensus.Context
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
@@ -132,7 +132,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(ctx.ChainID),
@@ -244,7 +244,7 @@ func addSubnet(t *testing.T, env *environment) {
 
 func defaultState(
 	cfg *config.Config,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	db database.Database,
 	rewards reward.Calculator,
 ) state.State {
@@ -376,7 +376,7 @@ func defaultFx(clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.
 	return res
 }
 
-func buildGenesisTest(ctx *snow.Context) []byte {
+func buildGenesisTest(ctx *consensus.Context) []byte {
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))
 	for i, key := range preFundedKeys {
 		id := key.PublicKey().Address()
@@ -416,7 +416,7 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:   ctx.LUXAssetID,
+		LuxAssetID:    ctx.LUXAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

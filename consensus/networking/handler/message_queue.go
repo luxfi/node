@@ -10,11 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"

@@ -37,7 +37,7 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -71,7 +71,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -112,7 +112,7 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -145,7 +145,7 @@ func TestCreateChainTxValid(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)

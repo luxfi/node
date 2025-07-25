@@ -43,7 +43,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              config.URI,
-		LUXKeychain:     kc,
+		LUXKeychain:      kc,
 		EthKeychain:      kc,
 		PChainTxsToFetch: set.Of(config.SubnetID),
 	})

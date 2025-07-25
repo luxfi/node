@@ -14,15 +14,15 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -73,7 +73,7 @@ type VM struct {
 	scheduler.Scheduler
 	mockable.Clock
 
-	ctx         *snow.Context
+	ctx         *consensus.Context
 	db          *versiondb.Database
 	toScheduler chan<- common.Message
 
@@ -87,7 +87,7 @@ type VM struct {
 	// processing a GetAncestors message from a bootstrapping node.
 	innerBlkCache  cache.Cacher[ids.ID, linear.Block]
 	preferred      ids.ID
-	consensusState snow.State
+	consensusState consensus.State
 	context        context.Context
 	onShutdown     func()
 
@@ -128,7 +128,7 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -251,14 +251,14 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	return vm.ChainVM.Shutdown(ctx)
 }
 
-func (vm *VM) SetState(ctx context.Context, newState snow.State) error {
+func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
 	if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 		return err
 	}
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != snow.StateSyncing {
+	if oldState != consensus.StateSyncing {
 		return nil
 	}
 

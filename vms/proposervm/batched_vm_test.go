@@ -12,17 +12,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -828,7 +828,7 @@ func initTestRemoteProposerVM(
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*snow.Context,
+		*consensus.Context,
 		database.Database,
 		[]byte,
 		[]byte,
@@ -909,7 +909,7 @@ func initTestRemoteProposerVM(
 		}, nil
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -928,7 +928,7 @@ func initTestRemoteProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 	return coreVM, proVM
 }

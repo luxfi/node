@@ -13,13 +13,13 @@ import (
 type POAConfig struct {
 	// Enabled indicates if POA mode is active
 	Enabled bool `json:"enabled" yaml:"enabled"`
-	
+
 	// SingleNodeMode allows a single node to produce and finalize blocks
 	SingleNodeMode bool `json:"singleNodeMode" yaml:"singleNodeMode"`
-	
+
 	// MinBlockTime is the minimum time between blocks in POA mode
 	MinBlockTime time.Duration `json:"minBlockTime" yaml:"minBlockTime"`
-	
+
 	// AuthorizedNodes are the nodes authorized to produce blocks
 	AuthorizedNodes []string `json:"authorizedNodes" yaml:"authorizedNodes"`
 }
@@ -43,17 +43,17 @@ func (c *Config) ApplyPOAConfig(poa POAConfig) {
 	if !poa.Enabled {
 		return
 	}
-	
+
 	// Override consensus parameters for POA
 	c.ConsensusParameters = DefaultPOAParameters()
-	
+
 	// Set minimum block delay for POA
 	if poa.MinBlockTime > 0 {
 		c.ProposerMinBlockDelay = poa.MinBlockTime
 	} else {
 		c.ProposerMinBlockDelay = 1 * time.Second // Default 1 second blocks
 	}
-	
+
 	// In POA mode, we don't need to store many historical blocks
 	c.ProposerNumHistoricalBlocks = 100
 }

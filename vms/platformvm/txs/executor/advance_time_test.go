@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -31,7 +31,7 @@ func newAdvanceTimeTx(t testing.TB, timestamp time.Time) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(snowtest.Context(t, snowtest.PChainID))
+	return tx, tx.SyntacticVerify(consensustest.Context(t, consensustest.PChainID))
 }
 
 // Ensure semantic verification updates the current and pending staker set

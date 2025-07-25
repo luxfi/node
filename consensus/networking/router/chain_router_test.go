@@ -13,10 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
@@ -25,8 +23,10 @@ import (
 	"github.com/luxfi/node/consensus/networking/handler/handlermock"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/utils/logging"
@@ -36,8 +36,8 @@ import (
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 const (
@@ -50,8 +50,8 @@ const (
 func TestShutdown(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	chainCtx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	chainCtx := consensustest.ConsensusContext(consensusCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(chainCtx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -198,8 +198,8 @@ func TestShutdown(t *testing.T) {
 func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.PChainID)
-	chainCtx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	chainCtx := consensustest.ConsensusContext(consensusCtx)
 
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
@@ -310,8 +310,8 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 func TestShutdownTimesOut(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	nodeID := ids.EmptyNodeID
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
@@ -514,8 +514,8 @@ func TestRouterTimeout(t *testing.T) {
 		wg = sync.WaitGroup{}
 	)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -835,8 +835,8 @@ func TestRouterHonorsRequestedEngine(t *testing.T) {
 
 	h := handlermock.NewHandler(ctrl)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	h.EXPECT().Context().Return(ctx).AnyTimes()
 	h.EXPECT().SetOnStopped(gomock.Any()).AnyTimes()
 	h.EXPECT().Stop(gomock.Any()).AnyTimes()
@@ -1046,8 +1046,8 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	calledF := false
 	wg := sync.WaitGroup{}
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	sb := subnets.New(ctx.NodeID, subnets.Config{ValidatorOnly: true})
 	vdrs := validators.NewManager()
 	vID := ids.GenerateTestNodeID()
@@ -1209,8 +1209,8 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	calledF := false
 	wg := sync.WaitGroup{}
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	allowedID := ids.GenerateTestNodeID()
 	allowedSet := set.Of(allowedID)
 	sb := subnets.New(ctx.NodeID, subnets.Config{ValidatorOnly: true, AllowedNodes: allowedSet})
@@ -1467,8 +1467,8 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	))
 
 	// Create bootstrapper, engine and handler
-	snowCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	vdrs := validators.NewManager()
 	require.NoError(t, vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -1590,8 +1590,8 @@ func TestHandleSimplexMessage(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	h := handlermock.NewHandler(ctrl)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	ctx.ChainID = testID
 	h.EXPECT().Context().Return(ctx).AnyTimes()
 	h.EXPECT().SetOnStopped(gomock.Any()).AnyTimes()

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math"
@@ -193,7 +193,7 @@ type ProposalTxBuilder interface {
 }
 
 func New(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	cfg *config.Config,
 	clk *mockable.Clock,
 	fx fx.Fx,
@@ -218,7 +218,7 @@ type builder struct {
 	state state.State
 
 	cfg *config.Config
-	ctx *snow.Context
+	ctx *consensus.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

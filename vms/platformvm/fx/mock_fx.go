@@ -12,7 +12,7 @@ package fx
 import (
 	reflect "reflect"
 
-	snow "github.com/luxfi/node/snow"
+	consensus "github.com/luxfi/node/consensus"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -151,7 +151,7 @@ func (m *MockOwner) EXPECT() *MockOwnerMockRecorder {
 }
 
 // InitCtx mocks base method.
-func (m *MockOwner) InitCtx(arg0 *snow.Context) {
+func (m *MockOwner) InitCtx(arg0 *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

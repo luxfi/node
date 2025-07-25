@@ -13,14 +13,14 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -470,7 +470,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	defer vm.runtime.Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil, nil))
 
@@ -500,7 +500,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 
 	blkID, err = vm.LastAccepted(context.Background())
 	require.NoError(err)

@@ -4,7 +4,7 @@
 package txstest
 
 import (
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -14,7 +14,7 @@ import (
 )
 
 func NewWalletFactory(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
@@ -26,7 +26,7 @@ func NewWalletFactory(
 }
 
 type WalletFactory struct {
-	ctx   *snow.Context
+	ctx   *consensus.Context
 	cfg   *config.Config
 	state state.State
 }

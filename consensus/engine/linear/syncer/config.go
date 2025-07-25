@@ -6,12 +6,12 @@ package syncer
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 )
 
 type Config struct {
@@ -39,7 +39,7 @@ type Config struct {
 }
 
 func NewConfig(
-	snowGetHandler core.AllGetsServer,
+	consensusGetHandler core.AllGetsServer,
 	ctx *consensus.Context,
 	startupTracker tracker.Startup,
 	sender core.Sender,
@@ -70,7 +70,7 @@ func NewConfig(
 		alpha = stateSyncingWeight/2 + 1 // must be > 50%
 	}
 	return Config{
-		AllGetsServer:    snowGetHandler,
+		AllGetsServer:    consensusGetHandler,
 		Ctx:              ctx,
 		StartupTracker:   startupTracker,
 		Sender:           sender,

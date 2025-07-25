@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -94,9 +94,9 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -262,9 +262,9 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -423,11 +423,11 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexRemoveValidatorTx.InitCtx(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	unsignedComplexRemoveValidatorTx.InitCtx(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:    aliaser,
+		BCLookup:   aliaser,
 	})
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
@@ -526,7 +526,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &snow.Context{
+	ctx := &consensus.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

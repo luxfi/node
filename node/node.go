@@ -33,6 +33,13 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/timeout"
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/leveldb"
 	"github.com/luxfi/node/database/memdb"
@@ -49,13 +56,6 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
@@ -74,16 +74,16 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	avmconfig "github.com/luxfi/node/vms/avm/config"
-	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	coreth "github.com/luxfi/geth/plugin/evm"
+	xvmconfig "github.com/luxfi/node/vms/xvm/config"
+	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
 
 const (
@@ -330,9 +330,9 @@ type Node struct {
 	uptimeCalculator uptime.LockedCalculator
 
 	// dispatcher for events as they happen in consensus
-	BlockAcceptorGroup  snow.AcceptorGroup
-	TxAcceptorGroup     snow.AcceptorGroup
-	VertexAcceptorGroup snow.AcceptorGroup
+	BlockAcceptorGroup  consensus.AcceptorGroup
+	TxAcceptorGroup     consensus.AcceptorGroup
+	VertexAcceptorGroup consensus.AcceptorGroup
 
 	// Net runs the networking stack
 	Net network.Network
@@ -887,9 +887,9 @@ func (n *Node) initBootstrappers() error {
 // Create the EventDispatcher used for hooking events
 // into the general process flow.
 func (n *Node) initEventDispatchers() {
-	n.BlockAcceptorGroup = snow.NewAcceptorGroup(n.Log)
-	n.TxAcceptorGroup = snow.NewAcceptorGroup(n.Log)
-	n.VertexAcceptorGroup = snow.NewAcceptorGroup(n.Log)
+	n.BlockAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
+	n.TxAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
+	n.VertexAcceptorGroup = consensus.NewAcceptorGroup(n.Log)
 }
 
 // Initialize [n.indexer].
@@ -1073,14 +1073,14 @@ func (n *Node) addDefaultVMAliases() error {
 }
 
 // Create the chainManager and register the following VMs:
-// AVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
+// XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
 func (n *Node) initChainManager(luxAssetID ids.ID) error {
-	createAVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.AVMID)
+	createXVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
 	if err != nil {
 		return err
 	}
-	xChainID := createAVMTx.ID()
+	xChainID := createXVMTx.ID()
 
 	createEVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.EVMID)
 	if err != nil {
@@ -1167,7 +1167,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Server:                                  n.APIServer,
 			Keystore:                                n.keystore,
 			AtomicMemory:                            n.sharedMemory,
-			LUXAssetID:                             luxAssetID,
+			LUXAssetID:                              luxAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			CriticalChains:                          criticalChains,
@@ -1249,8 +1249,8 @@ func (n *Node) initVMs() error {
 				UseCurrentHeight: n.Config.UseCurrentHeight,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
-			Config: avmconfig.Config{
+		n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
+			Config: xvmconfig.Config{
 				TxFee:            n.Config.TxFee,
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
 				EUpgradeTime:     eUpgradeTime,

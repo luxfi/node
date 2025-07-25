@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,16 +18,15 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/snowtest"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -81,7 +81,7 @@ var (
 	defaultMinValidatorStake  = 5 * units.MilliLux
 	defaultBalance            = 100 * defaultMinValidatorStake
 	preFundedKeys             = secp256k1.TestKeys()
-	luxAssetID               = ids.ID{'y', 'e', 'e', 't'}
+	luxAssetID                = ids.ID{'y', 'e', 'e', 't'}
 	defaultTxFee              = uint64(100)
 
 	genesisBlkID ids.ID
@@ -126,7 +126,7 @@ type environment struct {
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *snow.Context
+	ctx            *consensus.Context
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
@@ -148,7 +148,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
 	m := atomic.NewMemory(atomicDB)
 
-	res.ctx = snowtest.Context(t, snowtest.PChainID)
+	res.ctx = consensustest.Context(t, consensustest.PChainID)
 	res.ctx.LUXAssetID = luxAssetID
 	res.ctx.SharedMemory = m.NewSharedMemory(res.ctx.ChainID)
 
@@ -299,7 +299,7 @@ func addSubnet(env *environment) {
 
 func defaultState(
 	cfg *config.Config,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	db database.Database,
 	rewards reward.Calculator,
 ) state.State {
@@ -426,7 +426,7 @@ func defaultFx(clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.
 	return res
 }
 
-func buildGenesisTest(ctx *snow.Context) []byte {
+func buildGenesisTest(ctx *consensus.Context) []byte {
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))
 	for i, key := range preFundedKeys {
 		id := key.PublicKey().Address()
@@ -466,7 +466,7 @@ func buildGenesisTest(ctx *snow.Context) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:   ctx.LUXAssetID,
+		LuxAssetID:    ctx.LUXAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

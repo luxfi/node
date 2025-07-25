@@ -5,11 +5,11 @@ package units
 
 // Denominations of value
 const (
-	NanoLux  uint64 = 1
-	MicroLux uint64 = 1000 * NanoLux
+	NanoLux   uint64 = 1
+	MicroLux  uint64 = 1000 * NanoLux
 	Schmeckle uint64 = 49*MicroLux + 463*NanoLux
-	MilliLux uint64 = 1000 * MicroLux
-	Lux      uint64 = 1000 * MilliLux
-	KiloLux  uint64 = 1000 * Lux
-	MegaLux  uint64 = 1000 * KiloLux
+	MilliLux  uint64 = 1000 * MicroLux
+	Lux       uint64 = 1000 * MilliLux
+	KiloLux   uint64 = 1000 * Lux
+	MegaLux   uint64 = 1000 * KiloLux
 )

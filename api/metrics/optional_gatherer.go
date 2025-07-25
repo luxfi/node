@@ -15,7 +15,7 @@ import (
 
 var (
 	_ OptionalGatherer = (*optionalGatherer)(nil)
-	
+
 	errReregisterGatherer = errors.New("gatherer already registered")
 )
 

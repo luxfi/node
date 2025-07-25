@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -33,12 +33,12 @@ type OutputOwners struct {
 	// ctx is used in MarshalJSON to convert Addrs into human readable
 	// format with ChainID and NetworkID. Unexported because we don't use
 	// it outside this object.
-	ctx *snow.Context
+	ctx *consensus.Context
 }
 
 // InitCtx allows addresses to be formatted into their human readable format
 // during json marshalling.
-func (out *OutputOwners) InitCtx(ctx *snow.Context) {
+func (out *OutputOwners) InitCtx(ctx *consensus.Context) {
 	out.ctx = ctx
 }
 
@@ -132,7 +132,7 @@ func (out *OutputOwners) Sort() {
 // formatAddress formats a given [addr] into human readable format using
 // [ChainID] and [NetworkID] if a non-nil [ctx] is provided. If [ctx] is not
 // provided, the address will be returned in cb58 format.
-func formatAddress(ctx *snow.Context, addr ids.ShortID) (string, error) {
+func formatAddress(ctx *consensus.Context, addr ids.ShortID) (string, error) {
 	if ctx == nil {
 		return addr.String(), nil
 	}

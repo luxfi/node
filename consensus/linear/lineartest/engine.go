@@ -6,9 +6,9 @@ package lineartest
 import (
 	"context"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func MakeLastAcceptedBlockF(blks ...[]*Block) func(context.Context) (ids.ID, error) {

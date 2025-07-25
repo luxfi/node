@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -35,7 +35,7 @@ type ImportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [ImportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ImportTx) InitCtx(ctx *snow.Context) {
+func (tx *ImportTx) InitCtx(ctx *consensus.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, in := range tx.ImportedInputs {
 		in.FxID = secp256k1fx.ID
@@ -59,7 +59,7 @@ func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ImportTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *ImportTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

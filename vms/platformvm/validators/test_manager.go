@@ -6,8 +6,8 @@ package validators
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 )
 
 var TestManager Manager = testManager{}

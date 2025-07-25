@@ -12,9 +12,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -428,7 +428,7 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx *snow.Context, txID ids.ID) (*txs.Tx, error) {
+func NewRewardValidatorTx(ctx *consensus.Context, txID ids.ID) (*txs.Tx, error) {
 	utx := &txs.RewardValidatorTx{TxID: txID}
 	tx, err := txs.NewSigned(utx, txs.Codec, nil)
 	if err != nil {

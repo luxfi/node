@@ -28,9 +28,9 @@ func ExampleWallet() {
 	// [LocalAPIURI] is hosting.
 	walletSyncStartTime := time.Now()
 	wallet, err := MakeWallet(ctx, &WalletConfig{
-		URI:          LocalAPIURI,
+		URI:         LocalAPIURI,
 		LUXKeychain: kc,
-		EthKeychain:  kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet with: %s\n", err)

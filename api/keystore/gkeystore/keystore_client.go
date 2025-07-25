@@ -18,7 +18,7 @@ import (
 
 var _ keystore.BlockchainKeystore = (*Client)(nil)
 
-// Client is a snow.Keystore that talks over RPC.
+// Client is a consensus.Keystore that talks over RPC.
 type Client struct {
 	client keystorepb.KeystoreClient
 }

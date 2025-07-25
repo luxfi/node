@@ -18,17 +18,17 @@ import (
 	"github.com/luxfi/node/api/keystore/gkeystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/corruptabledb"
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/appsender"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/validators/gvalidators"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
@@ -39,6 +39,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
@@ -49,7 +50,6 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 var (
@@ -79,7 +79,7 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    *snow.Context
+	ctx    *consensus.Context
 	closed chan struct{}
 }
 
@@ -229,15 +229,15 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		}
 	}()
 
-	vm.ctx = &snow.Context{
+	vm.ctx = &consensus.Context{
 		NetworkID: req.NetworkId,
 		SubnetID:  subnetID,
 		ChainID:   chainID,
 		NodeID:    nodeID,
 		PublicKey: publicKey,
 
-		XChainID:    xChainID,
-		CChainID:    cChainID,
+		XChainID:   xChainID,
+		CChainID:   cChainID,
 		LUXAssetID: luxAssetID,
 
 		Log:          vm.log,
@@ -290,7 +290,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 }
 
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
-	err := vm.vm.SetState(ctx, snow.State(stateReq.State))
+	err := vm.vm.SetState(ctx, consensus.State(stateReq.State))
 	if err != nil {
 		return nil, err
 	}

@@ -6,9 +6,9 @@ package api
 import (
 	"net/http"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -32,7 +32,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -48,7 +48,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *snow.Context
+	ctx     *consensus.Context
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain

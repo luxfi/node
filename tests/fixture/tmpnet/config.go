@@ -352,7 +352,7 @@ func NewTestGenesis(
 		Allocations: []genesis.UnparsedAllocation{
 			{
 				ETHAddr:       ethAddress,
-				LUXAddr:      stakeAddress,
+				LUXAddr:       stakeAddress,
 				InitialAmount: 0,
 				UnlockSchedule: []genesis.LockedAmount{ // Provides stake to validators
 					{
@@ -379,7 +379,7 @@ func NewTestGenesis(
 			config.Allocations,
 			genesis.UnparsedAllocation{
 				ETHAddr:       ethAddress,
-				LUXAddr:      luxAddr,
+				LUXAddr:       luxAddr,
 				InitialAmount: balance,
 				UnlockSchedule: []genesis.LockedAmount{
 					{

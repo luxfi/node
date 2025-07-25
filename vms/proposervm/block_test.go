@@ -16,12 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -79,7 +79,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},
@@ -391,7 +391,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 			Registerer:        prometheus.NewRegistry(),
 		},
 		ChainVM: block.NewMockChainVM(ctrl),
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,
 			Log:            logging.NoLog{},

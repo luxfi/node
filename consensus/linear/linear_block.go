@@ -4,8 +4,8 @@
 package linear
 
 import (
-	"github.com/luxfi/node/ids"
 	sampling "github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/ids"
 )
 
 // Tracks the state of a chain block

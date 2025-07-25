@@ -26,7 +26,7 @@ func NewTree(factory Factory, params Parameters, choice ids.ID) Consensus {
 		tree:         t,
 		preference:   choice,
 		commonPrefix: ids.NumBits, // The initial state has no conflicts
-		snow:         factory.NewUnary(params),
+		consensus:    factory.NewUnary(params),
 	}
 
 	return t
@@ -34,15 +34,15 @@ func NewTree(factory Factory, params Parameters, choice ids.ID) Consensus {
 
 // Tree implements the Consensus interface by using a modified patricia tree.
 type Tree struct {
-	// node is the root that represents the first snow instance in the tree,
-	// and contains references to all the other snow instances in the tree.
+	// node is the root that represents the first consensus instance in the tree,
+	// and contains references to all the other consensus instances in the tree.
 	node
 
-	// params contains all the configurations of a snow instance
+	// params contains all the configurations of a consensus instance
 	params Parameters
 
 	// shouldReset is used as an optimization to prevent needless tree
-	// traversals. If a snow instance does not get an alpha majority, that
+	// traversals. If a consensus instance does not get an alpha majority, that
 	// instance needs to reset by calling RecordUnsuccessfulPoll. Because the
 	// tree splits votes based on the branch, when an instance doesn't get an
 	// alpha majority none of the children of this instance can get an alpha
@@ -52,7 +52,7 @@ type Tree struct {
 	// RecordUnsuccessfulPoll before performing any other action.
 	shouldReset bool
 
-	// factory is used to produce new snow instances as needed
+	// factory is used to produce new consensus instances as needed
 	factory Factory
 }
 
@@ -76,11 +76,11 @@ func (t *Tree) RecordPoll(votes bag.Bag[ids.ID]) bool {
 	})
 
 	// Now that the votes have been restricted to valid votes, pass them into
-	// the first snow instance
+	// the first consensus instance
 	var successful bool
 	t.node, successful = t.node.RecordPoll(filteredVotes, t.shouldReset)
 
-	// Because we just passed the reset into the snow instance, we should no
+	// Because we just passed the reset into the consensus instance, we should no
 	// longer reset.
 	t.shouldReset = false
 	return successful
@@ -139,7 +139,7 @@ type node interface {
 }
 
 // unary is a node with either no children, or a single child. It handles the
-// voting on a range of identical, unary, snow instances.
+// voting on a range of identical, unary, consensus instances.
 type unaryNode struct {
 	// tree references the tree that contains this node
 	tree *Tree
@@ -155,8 +155,8 @@ type unaryNode struct {
 	// references
 	commonPrefix int // Will be in the range (decidedPrefix, 256)
 
-	// snow wraps the unary decision logic
-	snow Unary
+	// consensus wraps the unary decision logic
+	consensus Unary
 
 	// shouldReset is used as an optimization to prevent needless tree
 	// traversals. It is the continuation of shouldReset in the Tree struct.
@@ -175,8 +175,6 @@ func (u *unaryNode) DecidedPrefix() int {
 	return u.decidedPrefix
 }
 
-//nolint:gci,gofmt,gofumpt // this comment is formatted as intended
-//
 // This is by far the most complicated function in this algorithm.
 // The intuition is that this instance represents a series of consecutive unary
 // confidence instances, and this function's purpose is convert one of these unary
@@ -188,23 +186,23 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 //     For example, attempting to insert the value "00001" in this node:
 //
-//                       +-------------------+ <-- This node will not be split
-//                       |                   |
-//                       |       0 0 0       |
-//                       |                   |
-//                       +-------------------+ <-- Pass the add to the child
-//                                 ^
-//                                 |
+//     +-------------------+ <-- This node will not be split
+//     |                   |
+//     |       0 0 0       |
+//     |                   |
+//     +-------------------+ <-- Pass the add to the child
+//     ^
+//     |
 //
 //     Results in:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |       0 0 0       |
-//                       |                   |
-//                       +-------------------+ <-- With the modified child
-//                                 ^
-//                                 |
+//     +-------------------+
+//     |                   |
+//     |       0 0 0       |
+//     |                   |
+//     +-------------------+ <-- With the modified child
+//     ^
+//     |
 //
 //  2. This instance represents a series of only one unary instance and it must
 //     be split.
@@ -215,19 +213,19 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 //     For example, attempting to insert the value "1" in this tree:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |         0         |
-//                       |                   |
-//                       +-------------------+
+//     +-------------------+
+//     |                   |
+//     |         0         |
+//     |                   |
+//     +-------------------+
 //
 //     Results in:
 //
-//                       +-------------------+
-//                       |         |         |
-//                       |    0    |    1    |
-//                       |         |         |
-//                       +-------------------+
+//     +-------------------+
+//     |         |         |
+//     |    0    |    1    |
+//     |         |         |
+//     +-------------------+
 //
 //  3. This instance must be split on the first bit
 //
@@ -237,26 +235,26 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 //     For example, attempting to insert the value "10" in this tree:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |        0 0        |
-//                       |                   |
-//                       +-------------------+
+//     +-------------------+
+//     |                   |
+//     |        0 0        |
+//     |                   |
+//     +-------------------+
 //
 //     Results in:
 //
-//                       +-------------------+
-//                       |         |         |
-//                       |    0    |    1    |
-//                       |         |         |
-//                       +-------------------+
-//                            ^         ^
-//                           /           \
-//            +-------------------+ +-------------------+
-//            |                   | |                   |
-//            |         0         | |         0         |
-//            |                   | |                   |
-//            +-------------------+ +-------------------+
+//     +-------------------+
+//     |         |         |
+//     |    0    |    1    |
+//     |         |         |
+//     +-------------------+
+//     ^         ^
+//     /           \
+//     +-------------------+ +-------------------+
+//     |                   | |                   |
+//     |         0         | |         0         |
+//     |                   | |                   |
+//     +-------------------+ +-------------------+
 //
 //  4. This instance must be split on the last bit
 //
@@ -267,26 +265,26 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 //     For example, attempting to insert the value "01" in this tree:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |        0 0        |
-//                       |                   |
-//                       +-------------------+
+//     +-------------------+
+//     |                   |
+//     |        0 0        |
+//     |                   |
+//     +-------------------+
 //
 //     Results in:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |         0         |
-//                       |                   |
-//                       +-------------------+
-//                                 ^
-//                                 |
-//                       +-------------------+
-//                       |         |         |
-//                       |    0    |    1    |
-//                       |         |         |
-//                       +-------------------+
+//     +-------------------+
+//     |                   |
+//     |         0         |
+//     |                   |
+//     +-------------------+
+//     ^
+//     |
+//     +-------------------+
+//     |         |         |
+//     |    0    |    1    |
+//     |         |         |
+//     +-------------------+
 //
 //  5. This instance must be split on an interior bit
 //
@@ -298,33 +296,35 @@ func (u *unaryNode) DecidedPrefix() int {
 //
 //     For example, attempting to insert the value "010" in this tree:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |       0 0 0       |
-//                       |                   |
-//                       +-------------------+
+//     +-------------------+
+//     |                   |
+//     |       0 0 0       |
+//     |                   |
+//     +-------------------+
 //
 //     Results in:
 //
-//                       +-------------------+
-//                       |                   |
-//                       |         0         |
-//                       |                   |
-//                       +-------------------+
-//                                 ^
-//                                 |
-//                       +-------------------+
-//                       |         |         |
-//                       |    0    |    1    |
-//                       |         |         |
-//                       +-------------------+
-//                            ^         ^
-//                           /           \
-//            +-------------------+ +-------------------+
-//            |                   | |                   |
-//            |         0         | |         0         |
-//            |                   | |                   |
-//            +-------------------+ +-------------------+
+//     +-------------------+
+//     |                   |
+//     |         0         |
+//     |                   |
+//     +-------------------+
+//     ^
+//     |
+//     +-------------------+
+//     |         |         |
+//     |    0    |    1    |
+//     |         |         |
+//     +-------------------+
+//     ^         ^
+//     /           \
+//     +-------------------+ +-------------------+
+//     |                   | |                   |
+//     |         0         | |         0         |
+//     |                   | |                   |
+//     +-------------------+ +-------------------+
+//
+//nolint:gci,gofmt,gofumpt // this comment is formatted as intended
 func (u *unaryNode) Add(newChoice ids.ID) node {
 	if u.Finalized() {
 		return u // Only happens if the tree is finalized, or it's a leaf node
@@ -350,19 +350,19 @@ func (u *unaryNode) Add(newChoice ids.ID) node {
 	b := &binaryNode{
 		tree:        u.tree,
 		bit:         index,
-		snow:        u.snow.Extend(bit),
+		consensus:   u.consensus.Extend(bit),
 		shouldReset: [2]bool{u.shouldReset, u.shouldReset},
 	}
 	b.preferences[bit] = u.preference
 	b.preferences[1-bit] = newChoice
 
-	newChildSnow := u.tree.factory.NewUnary(u.tree.params)
+	newChildConsensus := u.tree.factory.NewUnary(u.tree.params)
 	newChild := &unaryNode{
 		tree:          u.tree,
 		preference:    newChoice,
 		decidedPrefix: index + 1,   // The new child assumes this branch has decided in its favor
 		commonPrefix:  ids.NumBits, // The new child has no conflicts under this branch
-		snow:          newChildSnow,
+		consensus:     newChildConsensus,
 	}
 
 	switch {
@@ -399,7 +399,7 @@ func (u *unaryNode) Add(newChoice ids.ID) node {
 			preference:    u.preference,
 			decidedPrefix: originalDecidedPrefix,
 			commonPrefix:  index,
-			snow:          u.snow.Clone(),
+			consensus:     u.consensus.Clone(),
 			child:         b,
 		}
 	}
@@ -412,18 +412,18 @@ func (u *unaryNode) RecordPoll(votes bag.Bag[ids.ID], reset bool) (node, bool) {
 
 	// If my parent didn't get enough votes previously, then neither did I
 	if reset {
-		u.snow.RecordUnsuccessfulPoll()
+		u.consensus.RecordUnsuccessfulPoll()
 		u.shouldReset = true // Make sure my child is also reset correctly
 	}
 
 	numVotes := votes.Len()
 	if numVotes < u.tree.params.AlphaPreference {
-		u.snow.RecordUnsuccessfulPoll()
+		u.consensus.RecordUnsuccessfulPoll()
 		u.shouldReset = true
 		return u, false
 	}
 
-	u.snow.RecordPoll(numVotes)
+	u.consensus.RecordPoll(numVotes)
 
 	if u.child != nil {
 		// We are guaranteed that u.commonPrefix will equal
@@ -449,12 +449,12 @@ func (u *unaryNode) RecordPoll(votes bag.Bag[ids.ID], reset bool) (node, bool) {
 }
 
 func (u *unaryNode) Finalized() bool {
-	return u.snow.Finalized()
+	return u.consensus.Finalized()
 }
 
 func (u *unaryNode) Printable() (string, []node) {
 	s := fmt.Sprintf("%s Bits = [%d, %d)",
-		u.snow, u.decidedPrefix, u.commonPrefix)
+		u.consensus, u.decidedPrefix, u.commonPrefix)
 	if u.child == nil {
 		return s, nil
 	}
@@ -462,7 +462,7 @@ func (u *unaryNode) Printable() (string, []node) {
 }
 
 // binaryNode is a node with either no children, or two children. It handles the
-// voting of a single, binary, snow instance.
+// voting of a single, binary, consensus instance.
 type binaryNode struct {
 	// tree references the tree that contains this node
 	tree *Tree
@@ -474,8 +474,8 @@ type binaryNode struct {
 	// bit is the index in the id of the choice this node is deciding on
 	bit int // Will be in the range [0, 256)
 
-	// snow wraps the binary decision logic
-	snow Binary
+	// consensus wraps the binary decision logic
+	consensus Binary
 
 	// shouldReset is used as an optimization to prevent needless tree
 	// traversals. It is the continuation of shouldReset in the Tree struct.
@@ -487,7 +487,7 @@ type binaryNode struct {
 }
 
 func (b *binaryNode) Preference() ids.ID {
-	return b.preferences[b.snow.Preference()]
+	return b.preferences[b.consensus.Preference()]
 }
 
 func (b *binaryNode) DecidedPrefix() int {
@@ -524,7 +524,7 @@ func (b *binaryNode) RecordPoll(votes bag.Bag[ids.ID], reset bool) (node, bool) 
 	}
 
 	if reset {
-		b.snow.RecordUnsuccessfulPoll()
+		b.consensus.RecordUnsuccessfulPoll()
 		b.shouldReset[bit] = true
 		// 1-bit isn't set here because it is set below anyway
 	}
@@ -533,17 +533,17 @@ func (b *binaryNode) RecordPoll(votes bag.Bag[ids.ID], reset bool) (node, bool) 
 	prunedVotes := splitVotes[bit]
 	numVotes := prunedVotes.Len()
 	if numVotes < b.tree.params.AlphaPreference {
-		b.snow.RecordUnsuccessfulPoll()
+		b.consensus.RecordUnsuccessfulPoll()
 		// The winning child didn't get enough votes either
 		b.shouldReset[bit] = true
 		return b, false
 	}
 
-	b.snow.RecordPoll(numVotes, bit)
+	b.consensus.RecordPoll(numVotes, bit)
 
 	if child := b.children[bit]; child != nil {
 		newChild, _ := child.RecordPoll(prunedVotes, b.shouldReset[bit])
-		if b.snow.Finalized() {
+		if b.consensus.Finalized() {
 			// If we are decided here, that means we must have decided due
 			// to this poll. Therefore, we must have decided on bit.
 			return newChild, true
@@ -555,11 +555,11 @@ func (b *binaryNode) RecordPoll(votes bag.Bag[ids.ID], reset bool) (node, bool) 
 }
 
 func (b *binaryNode) Finalized() bool {
-	return b.snow.Finalized()
+	return b.consensus.Finalized()
 }
 
 func (b *binaryNode) Printable() (string, []node) {
-	s := fmt.Sprintf("%s Bit = %d", b.snow, b.bit)
+	s := fmt.Sprintf("%s Bit = %d", b.consensus, b.bit)
 	if b.children[0] == nil {
 		return s, nil
 	}

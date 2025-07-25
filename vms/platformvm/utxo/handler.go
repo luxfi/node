@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/math"
@@ -129,7 +129,7 @@ type Handler interface {
 }
 
 func NewHandler(
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	clk *mockable.Clock,
 	fx fx.Fx,
 ) Handler {
@@ -141,7 +141,7 @@ func NewHandler(
 }
 
 type handler struct {
-	ctx *snow.Context
+	ctx *consensus.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

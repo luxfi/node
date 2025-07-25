@@ -20,16 +20,16 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/node"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -96,17 +96,17 @@ func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 
 	// Standard consensus parameters
 	p := sampling.Parameters{
-		K:                     v.GetInt(SnowSampleSizeKey),
-		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
-		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(SnowCommitThresholdKey),
-		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
-		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
-		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
-		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
+		K:                     v.GetInt(ConsensusSampleSizeKey),
+		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
+		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
+		Beta:                  v.GetInt(ConsensusCommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
+		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
+		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
+		MaxItemProcessingTime: v.GetDuration(ConsensusMaxTimeProcessingKey),
 	}
-	if v.IsSet(SnowQuorumSizeKey) {
-		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+	if v.IsSet(ConsensusQuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(ConsensusQuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
 	}
 	return p
@@ -811,22 +811,22 @@ func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackSubnetsStrs := strings.Split(trackSubnetsStr, ",")
 	trackedSubnetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
 	forceIgnoreChecksum := v.GetBool(ForceIgnoreChecksumKey)
-	
+
 	for _, subnet := range trackSubnetsStrs {
 		if subnet == "" {
 			continue
 		}
-		
+
 		var subnetID ids.ID
 		var err error
-		
+
 		if forceIgnoreChecksum {
 			// Try to parse with force flag
 			subnetID, err = ids.FromStringWithForce(subnet, true)
 		} else {
 			subnetID, err = ids.FromString(subnet)
 		}
-		
+
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse subnetID %q: %w", subnet, err)
 		}
@@ -1242,10 +1242,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		// Development mode sets various flags for single-node operation
 		v.Set(SybilProtectionEnabledKey, false)
 		v.Set(SybilProtectionDisabledWeightKey, 100)
-		v.Set(SnowSampleSizeKey, 1)
-		v.Set(SnowQuorumSizeKey, 1)
-		v.Set(SnowVirtuousCommitThresholdKey, 1)
-		v.Set(SnowRogueCommitThresholdKey, 1)
+		v.Set(ConsensusSampleSizeKey, 1)
+		v.Set(ConsensusQuorumSizeKey, 1)
+		v.Set(ConsensusVirtuousCommitThresholdKey, 1)
+		v.Set(ConsensusRogueCommitThresholdKey, 1)
 		v.Set(POASingleNodeModeKey, true)
 		v.Set(SkipBootstrapKey, true)
 		v.Set(NetworkHealthMinPeersKey, 0)

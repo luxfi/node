@@ -14,26 +14,25 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -62,11 +61,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/linear"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
-	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	smcon "github.com/luxfi/node/consensus/linear"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -188,7 +187,7 @@ func defaultGenesis(t *testing.T, luxAssetID ids.ID) (*api.BuildGenesisArgs, []b
 	buildGenesisArgs := api.BuildGenesisArgs{
 		Encoding:      formatting.Hex,
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:   luxAssetID,
+		LuxAssetID:    luxAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,
@@ -275,7 +274,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 
 	vm.clock.Set(latestForkTime)
 	msgChan := make(chan common.Message, 1)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
@@ -311,7 +310,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	// align chain time and local clock
 	vm.state.SetTimestamp(vm.clock.Time())
 
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	factory := txstest.NewWalletFactory(
 		ctx,
@@ -1069,7 +1068,7 @@ func TestAtomicImport(t *testing.T) {
 	)
 	require.ErrorIs(err, walletbuilder.ErrInsufficientFunds)
 
-	// Provide the avm UTXO
+	// Provide the xvm UTXO
 
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
@@ -1175,13 +1174,13 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
 	require.NoError(blk.Accept(context.Background()))
 
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1210,7 +1209,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	firstCtx := snowtest.Context(t, snowtest.PChainID)
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
 
@@ -1300,7 +1299,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	secondCtx := snowtest.Context(t, snowtest.PChainID)
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.SharedMemory = firstCtx.SharedMemory
 	secondVM.clock.Set(initialClkTime)
 	secondCtx.Lock.Lock()
@@ -1353,7 +1352,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.clock.Set(initialClkTime)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
 
@@ -1361,7 +1360,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
-	consensusCtx := snowtest.ConsensusContext(ctx)
+	consensusCtx := consensustest.ConsensusContext(ctx)
 	ctx.Lock.Lock()
 
 	msgChan := make(chan common.Message, 1)
@@ -1493,7 +1492,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	// The engine handles consensus
-	snowGetHandler, err := snowgetter.New(
+	consensusGetHandler, err := consensusgetter.New(
 		vm,
 		sender,
 		consensusCtx.Log,
@@ -1513,7 +1512,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	bootstrapConfig := bootstrap.Config{
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
 		SampleK:                        beacons.Count(ctx.SubnetID),
@@ -1552,7 +1551,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	engineConfig := smeng.Config{
 		Ctx:           bootstrapConfig.Ctx,
-		AllGetsServer: snowGetHandler,
+		AllGetsServer: consensusGetHandler,
 		VM:            bootstrapConfig.VM,
 		Sender:        bootstrapConfig.Sender,
 		Validators:    beacons,
@@ -1590,9 +1589,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	})
 
-	consensusCtx.State.Set(snow.EngineState{
+	consensusCtx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
-		State: snow.NormalOp,
+		State: consensus.NormalOp,
 	})
 
 	// Allow incoming messages to be routed to the new chain
@@ -1703,7 +1702,7 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.clock.Set(initialClkTime)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
@@ -1864,7 +1863,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	firstCtx := snowtest.Context(t, snowtest.PChainID)
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 	firstCtx.Lock.Lock()
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
@@ -1886,8 +1885,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(firstVM.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(firstVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(firstVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(firstVM.SetState(context.Background(), consensus.NormalOp))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
 	durationForReward := defaultValidateEndTime.Sub(defaultValidateStartTime) * firstUptimePercentage / 100
@@ -1915,7 +1914,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	secondCtx := snowtest.Context(t, snowtest.PChainID)
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.Lock.Lock()
 	defer func() {
 		require.NoError(secondVM.Shutdown(context.Background()))
@@ -1942,8 +1941,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	secondVM.clock.Set(vmStopTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(secondVM.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(secondVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(secondVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(secondVM.SetState(context.Background(), consensus.NormalOp))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
 	secondVM.clock.Set(defaultValidateEndTime)
@@ -2017,7 +2016,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		},
 	}}
 
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 
 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
@@ -2049,8 +2048,8 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	vm.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
-	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.clock.Set(defaultValidateEndTime)
@@ -2290,7 +2289,7 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 			keys[0].PublicKey().Address(),
 		},
 	}
-	ctx, err := walletbuilder.NewSnowContext(vm.ctx.NetworkID, vm.ctx.LUXAssetID)
+	ctx, err := walletbuilder.NewConsensusContext(vm.ctx.NetworkID, vm.ctx.LUXAssetID)
 	require.NoError(err)
 	expectedOwner.InitCtx(ctx)
 	require.Equal(expectedOwner, subnetOwner)

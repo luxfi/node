@@ -6,8 +6,8 @@ package block
 import (
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -55,7 +55,7 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(*snow.Context) {}
+func (*ApricotAbortBlock) InitCtx(*consensus.Context) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
 	return nil

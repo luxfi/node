@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -24,8 +24,8 @@ func TestIndex(t *testing.T) {
 	require := require.New(t)
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 
 	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
 	require.NoError(err)
@@ -109,8 +109,8 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
@@ -147,8 +147,8 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	ctx := snowtest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 

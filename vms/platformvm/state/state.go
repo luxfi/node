@@ -17,15 +17,15 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/linkeddb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
@@ -274,7 +274,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *snow.Context
+	ctx        *consensus.Context
 	cfg        *config.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -434,7 +434,7 @@ func New(
 	metricsReg prometheus.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
@@ -466,7 +466,7 @@ func newState(
 	metrics metrics.Metrics,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	metricsReg prometheus.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {

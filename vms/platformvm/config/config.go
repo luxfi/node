@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -111,11 +111,11 @@ func (c *Config) QueueExistingChain(chainID ids.ID, subnetID ids.ID, vmID ids.ID
 		!c.TrackedSubnets.Contains(subnetID) { // This node doesn't validate this blockchain
 		return
 	}
-	
+
 	// For existing chains, we need to provide minimal genesis data
 	// The EVM will load existing data from disk
 	genesisData := []byte(`{}`)
-	
+
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
 		SubnetID:    subnetID,
@@ -134,7 +134,7 @@ func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, subnetID ids.ID, 
 		!c.TrackedSubnets.Contains(subnetID) { // This node doesn't validate this blockchain
 		return
 	}
-	
+
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
 		SubnetID:    subnetID,

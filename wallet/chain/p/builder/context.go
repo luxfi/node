@@ -7,18 +7,18 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 )
 
 const Alias = "P"
 
 type Context struct {
 	NetworkID                     uint32
-	LUXAssetID                   ids.ID
+	LUXAssetID                    ids.ID
 	BaseTxFee                     uint64
 	CreateSubnetTxFee             uint64
 	TransformSubnetTxFee          uint64
@@ -31,14 +31,14 @@ type Context struct {
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := avm.NewClient(uri, "X")
+	xChainClient := xvm.NewClient(uri, "X")
 	return NewContextFromClients(ctx, infoClient, xChainClient)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient info.Client,
-	xChainClient avm.Client,
+	xChainClient xvm.Client,
 ) (*Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -57,7 +57,7 @@ func NewContextFromClients(
 
 	return &Context{
 		NetworkID:                     networkID,
-		LUXAssetID:                   asset.AssetID,
+		LUXAssetID:                    asset.AssetID,
 		BaseTxFee:                     uint64(txFees.TxFee),
 		CreateSubnetTxFee:             uint64(txFees.CreateSubnetTxFee),
 		TransformSubnetTxFee:          uint64(txFees.TransformSubnetTxFee),
@@ -69,14 +69,14 @@ func NewContextFromClients(
 	}, nil
 }
 
-func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*snow.Context, error) {
+func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
-		NetworkID:   networkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     constants.PlatformChainID,
+	return &consensus.Context{
+		NetworkID:  networkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		Log:        logging.NoLog{},
+		BCLookup:   lookup,
 	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

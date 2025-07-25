@@ -11,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"

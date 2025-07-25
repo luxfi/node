@@ -2447,7 +2447,7 @@
 		},
 		{
 			"ethAddr": "0xa8d8de1f4aa943b51170924911fac2aca4d0a19b",
-			"luxAddr": "X-lux1xhl0khz4davms3xlv37s2sekgvvjlznl3wn7c8",
+			"luxAddr": "X-lux1xhl0khz4dxvms3xlv37s2sekgvvjlznl3wn7c8",
 			"initialAmount": 1910529411764,
 			"unlockSchedule": [
 				{
@@ -26238,7 +26238,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1gd06s7lem9dangpz9ahpd3aavm7ca3t7qzl296",
+			"luxAddr": "X-lux1gd06s7lem9dangpz9ahpd3axvm7ca3t7qzl296",
 			"initialAmount": 370000000000,
 			"unlockSchedule": [
 				{
@@ -36423,7 +36423,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1g2twxavmfkjg7jwk9990ungnz6dye2c9q3xsmj",
+			"luxAddr": "X-lux1g2twxxvmfkjg7jwk9990ungnz6dye2c9q3xsmj",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -72107,7 +72107,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux146n7g7kvnqk6s7mkpc5ud8h00yhm888zsavm4x",
+			"luxAddr": "X-lux146n7g7kvnqk6s7mkpc5ud8h00yhm888zsxvm4x",
 			"initialAmount": 1000400000000,
 			"unlockSchedule": [
 				{
@@ -95918,7 +95918,7 @@
 		},
 		{
 			"ethAddr": "0xa8d8de1f4aa943b51170924911fac2aca4d0a19b",
-			"luxAddr": "X-lux1jsh9v2gt20fgmscv45unutgjlwpl0avm38vmeu",
+			"luxAddr": "X-lux1jsh9v2gt20fgmscv45unutgjlwpl0xvm38vmeu",
 			"initialAmount": 2234235294117,
 			"unlockSchedule": [
 				{
@@ -101316,7 +101316,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1z30fav4xrmfx9xjpl9c9gavmf22ql077lkw9ua",
+			"luxAddr": "X-lux1z30fav4xrmfx9xjpl9c9gxvmf22ql077lkw9ua",
 			"initialAmount": 0,
 			"unlockSchedule": [
 				{
@@ -145957,7 +145957,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1favmknp6shwde0c2e5nvt3zclj7ea5jz6rzhsy",
+			"luxAddr": "X-lux1fxvmknp6shwde0c2e5nvt3zclj7ea5jz6rzhsy",
 			"initialAmount": 40200000000,
 			"unlockSchedule": [
 				{
@@ -162247,7 +162247,7 @@
 		},
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
-			"luxAddr": "X-lux1dmfr2l0h76qh8sxcdq4md47esgmrnw6avmuuq3",
+			"luxAddr": "X-lux1dmfr2l0h76qh8sxcdq4md47esgmrnw6xvmuuq3",
 			"initialAmount": 119400000000,
 			"unlockSchedule": [
 				{
@@ -175147,7 +175147,7 @@
 		"X-lux1wrps9jk9pa5dln9v7j3hph9r45uryku2dzfru3",
 		"X-lux1rtkhvkznfv4dpe8sgq9883pnr6gjr6z3hfzgx2",
 		"X-lux15hl436vxhnsw4vaaqjdeq8spyqwzrjscsfcy2s",
-		"X-lux1xhl0khz4davms3xlv37s2sekgvvjlznl3wn7c8",
+		"X-lux1xhl0khz4dxvms3xlv37s2sekgvvjlznl3wn7c8",
 		"X-lux1nyfvcc3tk0ah4rtj8mj978yghsv2kc0j4t38z4",
 		"X-lux1w6yvmu2euy2rd4schw0790usmsa4zx25palpqh",
 		"X-lux1d33hn6exrputwpfcxdezdkzuahnlujh8ehfpnp",
@@ -175275,7 +175275,7 @@
 		"X-lux1md70hmm94e2h09gk4ky7crj8sjwxrdhu7p9cqw",
 		"X-lux176ja4slxkqwa55ju8pqy07udpjjmqae7u654vx",
 		"X-lux19y68u7unz274557clyzmx70kqdtf7he6ze5pl9",
-		"X-lux1jsh9v2gt20fgmscv45unutgjlwpl0avm38vmeu",
+		"X-lux1jsh9v2gt20fgmscv45unutgjlwpl0xvm38vmeu",
 		"X-lux1mluxkevhf5pxlryv2k769udvqttxjmlq7tnp36",
 		"X-lux1057y9jwqe9u52hh2nmuun4p3f838ls2jagtulq",
 		"X-lux1tshpncpke7t2fez8d3qwme8fyc267zuva3sdtg",
@@ -175754,5 +175754,5 @@
 		}
 	],
 	"cChainGenesis": "{\"config\":{\"chainId\":96369,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",
-	"message": "From Snowflake to Lux. Per consensum ad astra."
+	"message": "From Consensusflake to Lux. Per consensum ad astra."
 }

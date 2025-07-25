@@ -4,7 +4,7 @@
 package executor
 
 import (
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -16,7 +16,7 @@ import (
 
 type Backend struct {
 	Config       *config.Config
-	Ctx          *snow.Context
+	Ctx          *consensus.Context
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier

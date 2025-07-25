@@ -7,10 +7,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/sampler"
@@ -67,8 +67,8 @@ func (n *Network) shuffleColors() {
 }
 
 func (n *Network) AddNode(t testing.TB, sm Consensus) error {
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	if err := sm.Initialize(ctx, n.params, lineartest.GenesisID, lineartest.GenesisHeight, lineartest.GenesisTimestamp); err != nil {
 		return err
 	}

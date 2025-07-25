@@ -12,10 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database/leveldb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
@@ -82,7 +82,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:   luxAssetID,
+		LuxAssetID:    luxAssetID,
 		UTXOs:         nil,
 		Validators:    genesisValidators,
 		Chains:        nil,
@@ -114,7 +114,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			Validators: vdrs,
 		},
 		execConfig,
-		&snow.Context{
+		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
 			Log:       logging.NoLog{},

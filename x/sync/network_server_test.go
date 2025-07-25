@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/x/merkledb"
 

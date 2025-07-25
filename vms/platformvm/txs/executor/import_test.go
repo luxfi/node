@@ -104,7 +104,7 @@ func TestNewImportTx(t *testing.T) {
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
 					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
-					customAssetID:       1,
+					customAssetID:      1,
 				},
 				randSrc,
 			),

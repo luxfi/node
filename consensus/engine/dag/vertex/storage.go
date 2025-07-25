@@ -6,8 +6,8 @@ package vertex
 import (
 	"context"
 
+	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/graph"
 )
 
 // Storage defines the persistent storage that is required by the consensus

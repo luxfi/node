@@ -6,7 +6,7 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/graph"
+	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/hashing"
 )
 

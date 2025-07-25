@@ -9,11 +9,11 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/params"
 	"github.com/luxfi/geth/plugin/evm"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

@@ -463,7 +463,7 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		//            second entry.
 		map[ids.ID]uint64{
 			e.Ctx.LUXAssetID: fee,
-			tx.AssetID:        totalRewardAmount,
+			tx.AssetID:       totalRewardAmount,
 		},
 	); err != nil {
 		return err

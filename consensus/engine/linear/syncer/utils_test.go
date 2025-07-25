@@ -10,8 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
@@ -19,6 +17,8 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/hashing"
 )
 

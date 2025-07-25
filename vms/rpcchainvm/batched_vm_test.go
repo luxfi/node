@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/vms/components/chain"
 )
 
@@ -84,7 +84,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 

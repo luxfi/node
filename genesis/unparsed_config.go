@@ -17,7 +17,7 @@ var errInvalidETHAddress = errors.New("invalid eth address")
 
 type UnparsedAllocation struct {
 	ETHAddr        string         `json:"ethAddr"`
-	LUXAddr       string         `json:"luxAddr"`
+	LUXAddr        string         `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }

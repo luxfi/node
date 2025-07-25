@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -575,7 +575,6 @@ func setupViper(configFilePath string) *viper.Viper {
 	}
 	return v
 }
-
 
 func TestSkipBootstrapConfig(t *testing.T) {
 	v := viper.New()

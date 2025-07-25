@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Implements static handlers tests for avm and platformvm
+// Implements static handlers tests for xvm and platformvm
 package statichandlers
 
 import (
@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/reward"
 )
@@ -28,7 +28,7 @@ import (
 var _ = ginkgo.Describe("[StaticHandlers]", func() {
 	require := require.New(ginkgo.GinkgoT())
 
-	ginkgo.It("can make calls to avm static api",
+	ginkgo.It("can make calls to xvm static api",
 		func() {
 			addrMap := map[string]string{}
 			for _, addrStr := range []string{
@@ -42,28 +42,28 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 				addrMap[addrStr], err = address.FormatBech32(constants.NetworkIDToHRP[constants.LocalID], addr[:])
 				require.NoError(err)
 			}
-			avmArgs := avm.BuildGenesisArgs{
+			xvmArgs := xvm.BuildGenesisArgs{
 				Encoding: formatting.Hex,
-				GenesisData: map[string]avm.AssetDefinition{
+				GenesisData: map[string]xvm.AssetDefinition{
 					"asset1": {
 						Name:         "myFixedCapAsset",
 						Symbol:       "MFCA",
 						Denomination: 8,
 						InitialState: map[string][]interface{}{
 							"fixedCap": {
-								avm.Holder{
+								xvm.Holder{
 									Amount:  100000,
 									Address: addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],
 								},
-								avm.Holder{
+								xvm.Holder{
 									Amount:  100000,
 									Address: addrMap["6mxBGnjGDCKgkVe7yfrmvMA7xE7qCv3vv"],
 								},
-								avm.Holder{
+								xvm.Holder{
 									Amount:  json.Uint64(50000),
 									Address: addrMap["6ncQ19Q2U4MamkCYzshhD8XFjfwAWFzTa"],
 								},
-								avm.Holder{
+								xvm.Holder{
 									Amount:  json.Uint64(50000),
 									Address: addrMap["Jz9ayEDt7dx9hDx45aXALujWmL9ZUuqe7"],
 								},
@@ -75,14 +75,14 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 						Symbol: "MVCA",
 						InitialState: map[string][]interface{}{
 							"variableCap": {
-								avm.Owners{
+								xvm.Owners{
 									Threshold: 1,
 									Minters: []string{
 										addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],
 										addrMap["6mxBGnjGDCKgkVe7yfrmvMA7xE7qCv3vv"],
 									},
 								},
-								avm.Owners{
+								xvm.Owners{
 									Threshold: 2,
 									Minters: []string{
 										addrMap["6ncQ19Q2U4MamkCYzshhD8XFjfwAWFzTa"],
@@ -96,7 +96,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 						Name: "myOtherVarCapAsset",
 						InitialState: map[string][]interface{}{
 							"variableCap": {
-								avm.Owners{
+								xvm.Owners{
 									Threshold: 1,
 									Minters: []string{
 										addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],
@@ -107,8 +107,8 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 					},
 				},
 			}
-			staticClient := avm.NewStaticClient(e2e.Env.GetRandomNodeURI().URI)
-			resp, err := staticClient.BuildGenesis(e2e.DefaultContext(), &avmArgs)
+			staticClient := xvm.NewStaticClient(e2e.Env.GetRandomNodeURI().URI)
+			resp, err := staticClient.BuildGenesis(e2e.DefaultContext(), &xvmArgs)
 			require.NoError(err)
 			require.Equal(resp.Bytes, "0x0000000000030006617373657431000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f6d794669786564436170417373657400044d4643410800000001000000000000000400000007000000000000c350000000000000000000000001000000013f78e510df62bc48b0829ec06d6a6b98062d695300000007000000000000c35000000000000000000000000100000001c54903de5177a16f7811771ef2f4659d9e8646710000000700000000000186a0000000000000000000000001000000013f58fda2e9ea8d9e4b181832a07b26dae286f2cb0000000700000000000186a000000000000000000000000100000001645938bb7ae2193270e6ffef009e3664d11e07c10006617373657432000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d6d79566172436170417373657400044d5643410000000001000000000000000200000006000000000000000000000001000000023f58fda2e9ea8d9e4b181832a07b26dae286f2cb645938bb7ae2193270e6ffef009e3664d11e07c100000006000000000000000000000001000000023f78e510df62bc48b0829ec06d6a6b98062d6953c54903de5177a16f7811771ef2f4659d9e864671000661737365743300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000126d794f7468657256617243617041737365740000000000000100000000000000010000000600000000000000000000000100000001645938bb7ae2193270e6ffef009e3664d11e07c1279fa028")
 		})
@@ -166,7 +166,7 @@ var _ = ginkgo.Describe("[StaticHandlers]", func() {
 
 		buildGenesisArgs := api.BuildGenesisArgs{
 			NetworkID:     json.Uint32(constants.UnitTestID),
-			LuxAssetID:   ids.ID{'a', 'v', 'a', 'x'},
+			LuxAssetID:    ids.ID{'a', 'v', 'a', 'x'},
 			UTXOs:         genesisUTXOs,
 			Validators:    genesisValidators,
 			Chains:        nil,

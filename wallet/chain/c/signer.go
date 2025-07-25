@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/geth/plugin/evm"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
@@ -60,14 +60,14 @@ type SignerBackend interface {
 }
 
 type txSigner struct {
-	luxKC  keychain.Keychain
+	luxKC   keychain.Keychain
 	ethKC   EthKeychain
 	backend SignerBackend
 }
 
 func NewSigner(luxKC keychain.Keychain, ethKC EthKeychain, backend SignerBackend) Signer {
 	return &txSigner{
-		luxKC:  luxKC,
+		luxKC:   luxKC,
 		ethKC:   ethKC,
 		backend: backend,
 	}

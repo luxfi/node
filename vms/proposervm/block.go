@@ -11,10 +11,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
@@ -125,7 +125,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == snow.NormalOp {
+	if p.vm.consensusState == consensus.NormalOp {
 		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
 		if err != nil {
 			p.vm.ctx.Log.Error("block verification failed",

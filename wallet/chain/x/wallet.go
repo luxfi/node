@@ -5,8 +5,8 @@ package x
 
 import (
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/vms/avm"
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -140,7 +140,7 @@ type Wallet interface {
 func NewWallet(
 	builder builder.Builder,
 	signer signer.Signer,
-	client avm.Client,
+	client xvm.Client,
 	backend Backend,
 ) Wallet {
 	return &wallet{
@@ -155,7 +155,7 @@ type wallet struct {
 	backend Backend
 	builder builder.Builder
 	signer  signer.Signer
-	client  avm.Client
+	client  xvm.Client
 }
 
 func (w *wallet) Builder() builder.Builder {
@@ -306,7 +306,7 @@ func (w *wallet) IssueTx(
 		return w.backend.AcceptTx(ctx, tx)
 	}
 
-	if err := avm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
+	if err := xvm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
 	}
 

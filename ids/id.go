@@ -9,11 +9,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mr-tron/base58/base58"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
+	"github.com/mr-tron/base58/base58"
 )
 
 const (

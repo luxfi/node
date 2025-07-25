@@ -10,15 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap/interval"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )

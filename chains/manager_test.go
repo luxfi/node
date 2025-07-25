@@ -5,18 +5,15 @@ package chains
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -43,21 +40,21 @@ func TestSkipBootstrap(t *testing.T) {
 	primaryVdrs := validators.NewMockManager()
 
 	// Create a mock chain context
-	ctx := &snow.ConsensusContext{
-		Context: &snow.Context{
+	ctx := &consensus.ConsensusContext{
+		Context: &consensus.Context{
 			NodeID:    ids.EmptyNodeID,
 			NetworkID: constants.MainnetID,
 			SubnetID:  constants.PrimaryNetworkID,
 			ChainID:   ids.Empty,
 			Log:       logging.NoLog{},
 		},
-		Registerer:          nil,
-		BlockAcceptor:       nil,
-		TxAcceptor:          nil,
-		VertexAcceptor:      nil,
-		Sender:              nil,
-		ValidatorState:      nil,
-		VM:                  nil,
+		Registerer:     nil,
+		BlockAcceptor:  nil,
+		TxAcceptor:     nil,
+		VertexAcceptor: nil,
+		Sender:         nil,
+		ValidatorState: nil,
+		VM:             nil,
 	}
 
 	// Test that skip bootstrap creates the correct tracker
@@ -66,18 +63,18 @@ func TestSkipBootstrap(t *testing.T) {
 
 	// Verify it's a skip bootstrap tracker
 	require.NotNil(startupTracker)
-	
+
 	// The skip bootstrap tracker should always return true for ShouldStart
 	require.True(startupTracker.ShouldStart())
-	
+
 	// Even with no connected validators, it should start
 	startupTracker.Connected(ctx.Context, ids.EmptyNodeID, version.CurrentApp)
 	require.True(startupTracker.ShouldStart())
-	
+
 	// Test with regular bootstrap (skip = false)
 	m.SkipBootstrap = false
 	regularTracker := m.createStartupTracker(ctx, beacons)
-	
+
 	// Regular tracker should not start immediately with no validators
 	require.False(regularTracker.ShouldStart())
 }
@@ -88,41 +85,41 @@ func TestSkipBootstrapChainCreation(t *testing.T) {
 
 	// Create a minimal manager config
 	config := ManagerConfig{
-		SkipBootstrap:          true,
-		EnableAutomining:       true,
-		Log:                    logging.NoLog{},
-		Router:                 &router.ChainRouter{},
-		Net:                    nil,
-		Validators:             validators.NewManager(),
+		SkipBootstrap:             true,
+		EnableAutomining:          true,
+		Log:                       logging.NoLog{},
+		Router:                    &router.ChainRouter{},
+		Net:                       nil,
+		Validators:                validators.NewManager(),
 		PartialSyncPrimaryNetwork: false,
-		NodeID:                 ids.GenerateTestNodeID(),
-		NetworkID:              constants.MainnetID,
-		Server:                 &server.Server{},
-		Keystore:               nil,
-		AtomicMemory:           nil,
-		LUXAssetID:            ids.Empty,
-		XChainID:              ids.Empty,
-		CriticalChains:        nil,
-		TimeoutManager:        nil,
-		Health:                nil,
-		SubnetConfigs:         nil,
-		ChainConfigs:          nil,
-		VMManager:             vms.NewManager(),
-		VMRegistry:            nil,
-		Metrics:               nil,
-		BlockAcceptorGroup:    nil,
-		TxAcceptorGroup:       nil,
-		VertexAcceptorGroup:   nil,
-		DBManager:             nil,
-		MsgCreator:            nil,
-		SybilProtectionEnabled: false,
-		TracingEnabled:        false,
-		Tracer:                nil,
-		ChainDataDir:          "",
+		NodeID:                    ids.GenerateTestNodeID(),
+		NetworkID:                 constants.MainnetID,
+		Server:                    &server.Server{},
+		Keystore:                  nil,
+		AtomicMemory:              nil,
+		LUXAssetID:                ids.Empty,
+		XChainID:                  ids.Empty,
+		CriticalChains:            nil,
+		TimeoutManager:            nil,
+		Health:                    nil,
+		SubnetConfigs:             nil,
+		ChainConfigs:              nil,
+		VMManager:                 vms.NewManager(),
+		VMRegistry:                nil,
+		Metrics:                   nil,
+		BlockAcceptorGroup:        nil,
+		TxAcceptorGroup:           nil,
+		VertexAcceptorGroup:       nil,
+		DBManager:                 nil,
+		MsgCreator:                nil,
+		SybilProtectionEnabled:    false,
+		TracingEnabled:            false,
+		Tracer:                    nil,
+		ChainDataDir:              "",
 	}
 
 	m := New(&config)
-	
+
 	// Verify manager was created with skip bootstrap
 	require.NotNil(m)
 	require.True(m.SkipBootstrap)
@@ -144,7 +141,7 @@ func TestCreateStartupTracker(t *testing.T) {
 			expectStart:   true,
 		},
 		{
-			name:          "skip bootstrap disabled", 
+			name:          "skip bootstrap disabled",
 			skipBootstrap: false,
 			expectStart:   false,
 		},
@@ -159,8 +156,8 @@ func TestCreateStartupTracker(t *testing.T) {
 				},
 			}
 
-			ctx := &snow.ConsensusContext{
-				Context: &snow.Context{
+			ctx := &consensus.ConsensusContext{
+				Context: &consensus.Context{
 					Log: logging.NoLog{},
 				},
 			}
@@ -174,14 +171,14 @@ func TestCreateStartupTracker(t *testing.T) {
 }
 
 // Helper to create startup tracker
-func (m *manager) createStartupTracker(ctx *snow.ConsensusContext, beacons validators.Manager) tracker.Startup {
+func (m *manager) createStartupTracker(ctx *consensus.ConsensusContext, beacons validators.Manager) tracker.Startup {
 	connectedBeacons := tracker.NewPeers()
 	startupTracker := tracker.NewStartup(connectedBeacons, 0)
-	
+
 	if m.SkipBootstrap {
 		ctx.Log.Info("bootstrapping disabled - using skip bootstrap tracker")
 		return tracker.NewSkipBootstrap(connectedBeacons)
 	}
-	
+
 	return startupTracker
 }

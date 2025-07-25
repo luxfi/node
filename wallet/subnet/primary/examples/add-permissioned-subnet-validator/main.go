@@ -47,7 +47,7 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain:     kc,
+		LUXKeychain:      kc,
 		EthKeychain:      kc,
 		PChainTxsToFetch: set.Of(subnetID),
 	})

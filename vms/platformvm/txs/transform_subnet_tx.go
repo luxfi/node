@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -19,7 +19,7 @@ var (
 
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
-	errAssetIDCantBeLUX                 = errors.New("asset ID can't be LUX")
+	errAssetIDCantBeLUX                  = errors.New("asset ID can't be LUX")
 	errInitialSupplyZero                 = errors.New("initial supply must be non-0")
 	errInitialSupplyGreaterThanMaxSupply = errors.New("initial supply can't be greater than maximum supply")
 	errMinConsumptionRateTooLarge        = errors.New("min consumption rate must be less than or equal to max consumption rate")
@@ -112,7 +112,7 @@ type TransformSubnetTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *TransformSubnetTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

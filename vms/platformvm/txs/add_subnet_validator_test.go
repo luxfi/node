@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -22,7 +22,7 @@ import (
 func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -140,7 +140,7 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (

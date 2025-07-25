@@ -19,15 +19,14 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/snowtest"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
@@ -677,7 +676,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 
 	msgChan := make(chan common.Message, 1)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
@@ -710,7 +709,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	err = vm.SetState(context.Background(), snow.NormalOp)
+	err = vm.SetState(context.Background(), consensus.NormalOp)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
@@ -807,7 +806,7 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 	buildGenesisArgs := api.BuildGenesisArgs{
 		Encoding:      formatting.Hex,
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:   luxAssetID,
+		LuxAssetID:    luxAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    []api.GenesisPermissionlessValidator{genesisValidator},
 		Chains:        nil,

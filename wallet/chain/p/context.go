@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 )
 
 var _ Context = (*context)(nil)
@@ -28,7 +28,7 @@ type Context interface {
 
 type context struct {
 	networkID                     uint32
-	luxAssetID                   ids.ID
+	luxAssetID                    ids.ID
 	baseTxFee                     uint64
 	createSubnetTxFee             uint64
 	transformSubnetTxFee          uint64
@@ -41,14 +41,14 @@ type context struct {
 
 func NewContextFromURI(ctx stdcontext.Context, uri string) (Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := avm.NewClient(uri, "X")
+	xChainClient := xvm.NewClient(uri, "X")
 	return NewContextFromClients(ctx, infoClient, xChainClient)
 }
 
 func NewContextFromClients(
 	ctx stdcontext.Context,
 	infoClient info.Client,
-	xChainClient avm.Client,
+	xChainClient xvm.Client,
 ) (Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -93,7 +93,7 @@ func NewContext(
 ) Context {
 	return &context{
 		networkID:                     networkID,
-		luxAssetID:                   luxAssetID,
+		luxAssetID:                    luxAssetID,
 		baseTxFee:                     baseTxFee,
 		createSubnetTxFee:             createSubnetTxFee,
 		transformSubnetTxFee:          transformSubnetTxFee,

@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/types"
 )
 
@@ -46,7 +46,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx *snow.Context) error {
+func (t *BaseTx) Verify(ctx *consensus.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx

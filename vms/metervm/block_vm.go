@@ -8,12 +8,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -53,7 +53,7 @@ func NewBlockVM(
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes,
 	upgradeBytes,

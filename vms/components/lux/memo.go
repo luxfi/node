@@ -5,7 +5,7 @@ package lux
 
 import (
 	"fmt"
-	
+
 	"github.com/luxfi/node/vms/types"
 )
 

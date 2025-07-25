@@ -13,11 +13,11 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
@@ -26,9 +26,9 @@ import (
 )
 
 var (
-	PChainID    = constants.PlatformChainID
-	XChainID    = ids.GenerateTestID()
-	CChainID    = ids.GenerateTestID()
+	PChainID   = constants.PlatformChainID
+	XChainID   = ids.GenerateTestID()
+	CChainID   = ids.GenerateTestID()
 	LUXAssetID = ids.GenerateTestID()
 
 	errMissing = errors.New("missing")
@@ -94,8 +94,8 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		PublicKey:       publicKey,
 		NetworkUpgrades: upgradetest.GetConfig(upgradetest.Latest),
 
-		XChainID:    XChainID,
-		CChainID:    CChainID,
+		XChainID:   XChainID,
+		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
 		Log:          logging.NoLog{},

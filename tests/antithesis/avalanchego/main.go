@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	xtxs "github.com/luxfi/node/vms/avm/txs"
+	xtxs "github.com/luxfi/node/vms/xvm/txs"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 )
@@ -52,9 +52,9 @@ func main() {
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:          c.URIs[0],
+		URI:         c.URIs[0],
 		LUXKeychain: kc,
-		EthKeychain:  kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s", err)
@@ -75,7 +75,7 @@ func main() {
 		genesisXWallet  = wallet.X()
 		genesisXBuilder = genesisXWallet.Builder()
 		genesisXContext = genesisXBuilder.Context()
-		luxAssetID     = genesisXContext.LUXAssetID
+		luxAssetID      = genesisXContext.LUXAssetID
 	)
 	for i := 1; i < NumKeys; i++ {
 		key, err := secp256k1.NewPrivateKey()
@@ -112,9 +112,9 @@ func main() {
 		kc := secp256k1fx.NewKeychain(key)
 		walletSyncStartTime := time.Now()
 		wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-			URI:          uri,
+			URI:         uri,
 			LUXKeychain: kc,
-			EthKeychain:  kc,
+			EthKeychain: kc,
 		})
 		if err != nil {
 			log.Fatalf("failed to initialize wallet: %s", err)
@@ -168,7 +168,7 @@ func (w *workload) run(ctx context.Context) {
 		log.Fatalf("failed to fetch P-chain balances: %s", err)
 	}
 	var (
-		xContext    = xBuilder.Context()
+		xContext   = xBuilder.Context()
 		luxAssetID = xContext.LUXAssetID
 		xLUX       = xBalances[luxAssetID]
 		pLUX       = pBalances[luxAssetID]
@@ -232,8 +232,8 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		luxAssetID   = xContext.LUXAssetID
-		luxBalance   = balances[luxAssetID]
+		luxAssetID    = xContext.LUXAssetID
+		luxBalance    = balances[luxAssetID]
 		baseTxFee     = xContext.BaseTxFee
 		neededBalance = baseTxFee + units.Schmeckle
 	)
@@ -286,8 +286,8 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		luxAssetID   = xContext.LUXAssetID
-		luxBalance   = balances[luxAssetID]
+		luxAssetID    = xContext.LUXAssetID
+		luxBalance    = balances[luxAssetID]
 		neededBalance = xContext.CreateAssetTxFee
 	)
 	if luxBalance < neededBalance {
@@ -339,8 +339,8 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 
 	var (
 		xContext         = xBuilder.Context()
-		luxAssetID      = xContext.LUXAssetID
-		luxBalance      = balances[luxAssetID]
+		luxAssetID       = xContext.LUXAssetID
+		luxBalance       = balances[luxAssetID]
 		createAssetTxFee = xContext.CreateAssetTxFee
 		baseTxFee        = xContext.BaseTxFee
 		neededBalance    = createAssetTxFee + baseTxFee
@@ -407,8 +407,8 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		luxAssetID   = xContext.LUXAssetID
-		luxBalance   = balances[luxAssetID]
+		luxAssetID    = xContext.LUXAssetID
+		luxBalance    = balances[luxAssetID]
 		xBaseTxFee    = xContext.BaseTxFee
 		pBuilder      = pWallet.Builder()
 		pContext      = pBuilder.Context()
@@ -482,8 +482,8 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	var (
 		xContext      = xBuilder.Context()
 		pContext      = pBuilder.Context()
-		luxAssetID   = pContext.LUXAssetID
-		luxBalance   = balances[luxAssetID]
+		luxAssetID    = pContext.LUXAssetID
+		luxBalance    = balances[luxAssetID]
 		pBaseTxFee    = pContext.BaseTxFee
 		xBaseTxFee    = xContext.BaseTxFee
 		txFees        = pBaseTxFee + xBaseTxFee
@@ -546,8 +546,8 @@ func (w *workload) makeOwner() secp256k1fx.OutputOwners {
 func (w *workload) confirmXChainTx(ctx context.Context, tx *xtxs.Tx) {
 	txID := tx.ID()
 	for _, uri := range w.uris {
-		client := avm.NewClient(uri, "X")
-		if err := avm.AwaitTxAccepted(client, ctx, txID, 100*time.Millisecond); err != nil {
+		client := xvm.NewClient(uri, "X")
+		if err := xvm.AwaitTxAccepted(client, ctx, txID, 100*time.Millisecond); err != nil {
 			log.Printf("failed to confirm X-chain transaction %s on %s: %s", txID, uri, err)
 			return
 		}
@@ -573,7 +573,7 @@ func (w *workload) verifyXChainTxConsumedUTXOs(ctx context.Context, tx *xtxs.Tx)
 	txID := tx.ID()
 	chainID := w.wallet.X().Builder().Context().BlockchainID
 	for _, uri := range w.uris {
-		client := avm.NewClient(uri, "X")
+		client := xvm.NewClient(uri, "X")
 
 		utxos := common.NewUTXOs()
 		err := primary.AddAllUTXOs(

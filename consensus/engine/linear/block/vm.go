@@ -6,9 +6,9 @@ package block
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/ids"
 )
 
 // ChainVM defines the required functionality of a Linear VM.

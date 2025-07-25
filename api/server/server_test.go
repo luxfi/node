@@ -10,15 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func TestRejectMiddleware(t *testing.T) {
 	type test struct {
 		name               string
 		handlerFunc        func(*require.Assertions) http.Handler
-		state              snow.State
+		state              consensus.State
 		expectedStatusCode int
 	}
 
@@ -30,7 +30,7 @@ func TestRejectMiddleware(t *testing.T) {
 					require.Fail("shouldn't have called handler")
 				})
 			},
-			state:              snow.StateSyncing,
+			state:              consensus.StateSyncing,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -40,7 +40,7 @@ func TestRejectMiddleware(t *testing.T) {
 					require.Fail("shouldn't have called handler")
 				})
 			},
-			state:              snow.Bootstrapping,
+			state:              consensus.Bootstrapping,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -50,7 +50,7 @@ func TestRejectMiddleware(t *testing.T) {
 					w.WriteHeader(http.StatusTeapot)
 				})
 			},
-			state:              snow.NormalOp,
+			state:              consensus.NormalOp,
 			expectedStatusCode: http.StatusTeapot,
 		},
 	}
@@ -59,9 +59,9 @@ func TestRejectMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			snowCtx := snowtest.Context(t, snowtest.CChainID)
-			ctx := snowtest.ConsensusContext(snowCtx)
-			ctx.State.Set(snow.EngineState{
+			consensusCtx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(consensusCtx)
+			ctx.State.Set(consensus.EngineState{
 				State: tt.state,
 			})
 

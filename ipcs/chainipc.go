@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -36,9 +36,9 @@ type context struct {
 type ChainIPCs struct {
 	context
 	chains              map[ids.ID]*EventSockets
-	blockAcceptorGroup  snow.AcceptorGroup
-	txAcceptorGroup     snow.AcceptorGroup
-	vertexAcceptorGroup snow.AcceptorGroup
+	blockAcceptorGroup  consensus.AcceptorGroup
+	txAcceptorGroup     consensus.AcceptorGroup
+	vertexAcceptorGroup consensus.AcceptorGroup
 }
 
 // NewChainIPCs creates a new *ChainIPCs that writes consensus and decision
@@ -47,9 +47,9 @@ func NewChainIPCs(
 	log logging.Logger,
 	path string,
 	networkID uint32,
-	blockAcceptorGroup snow.AcceptorGroup,
-	txAcceptorGroup snow.AcceptorGroup,
-	vertexAcceptorGroup snow.AcceptorGroup,
+	blockAcceptorGroup consensus.AcceptorGroup,
+	txAcceptorGroup consensus.AcceptorGroup,
+	vertexAcceptorGroup consensus.AcceptorGroup,
 	defaultChainIDs []ids.ID,
 ) (*ChainIPCs, error) {
 	cipcs := &ChainIPCs{
