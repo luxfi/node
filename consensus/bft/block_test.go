@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/StephenButtolph/canoto"
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
@@ -28,7 +28,7 @@ func TestBlockSerialization(t *testing.T) {
 
 	b := &Block{
 		vmBlock: testBlock,
-		metadata: simplex.ProtocolMetadata{
+		metadata: bft.ProtocolMetadata{
 			Version: 1,
 			Epoch:   1,
 			Round:   1,
@@ -188,7 +188,7 @@ func TestVerifyParentAccepted(t *testing.T) {
 	require.Equal(t, consensustest.Accepted, seq2Block.vmBlock.(*lineartest.Block).Decidable.Status)
 
 	// ensure tracker cleans up the block
-	require.NotContains(t, genesis.blockTracker.simplexDigestsToBlock, seq1Block.digest)
+	require.NotContains(t, genesis.blockTracker.bftDigestsToBlock, seq1Block.digest)
 }
 
 func TestVerifyBlockRejectsSiblings(t *testing.T) {
@@ -244,6 +244,6 @@ func TestIndexBlockDigestNotFound(t *testing.T) {
 	genesis := newBlock(t, newBlockConfig{})
 
 	unknownDigest := ids.GenerateTestID()
-	err := genesis.blockTracker.indexBlock(ctx, simplex.Digest(unknownDigest))
+	err := genesis.blockTracker.indexBlock(ctx, bft.Digest(unknownDigest))
 	require.ErrorIs(t, err, errDigestNotFound)
 }

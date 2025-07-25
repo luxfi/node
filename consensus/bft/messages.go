@@ -4,7 +4,7 @@
 package bft
 
 import (
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -13,11 +13,11 @@ import (
 func newBlockProposal(
 	chainID ids.ID,
 	block []byte,
-	vote simplex.Vote,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	vote bft.Vote,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_BlockProposal{
+		Message: &p2p.BFT_BlockProposal{
 			BlockProposal: &p2p.BlockProposal{
 				Block: block,
 				Vote: &p2p.Vote{
@@ -34,11 +34,11 @@ func newBlockProposal(
 
 func newVote(
 	chainID ids.ID,
-	vote *simplex.Vote,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	vote *bft.Vote,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_Vote{
+		Message: &p2p.BFT_Vote{
 			Vote: &p2p.Vote{
 				BlockHeader: blockHeaderToP2P(vote.Vote.BlockHeader),
 				Signature: &p2p.Signature{
@@ -52,11 +52,11 @@ func newVote(
 
 func newEmptyVote(
 	chainID ids.ID,
-	emptyVote *simplex.EmptyVote,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	emptyVote *bft.EmptyVote,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_EmptyVote{
+		Message: &p2p.BFT_EmptyVote{
 			EmptyVote: &p2p.EmptyVote{
 				Metadata: protocolMetadataToP2P(emptyVote.Vote.ProtocolMetadata),
 				Signature: &p2p.Signature{
@@ -70,11 +70,11 @@ func newEmptyVote(
 
 func newFinalizeVote(
 	chainID ids.ID,
-	finalizeVote *simplex.FinalizeVote,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	finalizeVote *bft.FinalizeVote,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_FinalizeVote{
+		Message: &p2p.BFT_FinalizeVote{
 			FinalizeVote: &p2p.Vote{
 				BlockHeader: blockHeaderToP2P(finalizeVote.Finalization.BlockHeader),
 				Signature: &p2p.Signature{
@@ -88,11 +88,11 @@ func newFinalizeVote(
 
 func newNotarization(
 	chainID ids.ID,
-	notarization *simplex.Notarization,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	notarization *bft.Notarization,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_Notarization{
+		Message: &p2p.BFT_Notarization{
 			Notarization: &p2p.QuorumCertificate{
 				BlockHeader:       blockHeaderToP2P(notarization.Vote.BlockHeader),
 				QuorumCertificate: notarization.QC.Bytes(),
@@ -103,11 +103,11 @@ func newNotarization(
 
 func newEmptyNotarization(
 	chainID ids.ID,
-	emptyNotarization *simplex.EmptyNotarization,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	emptyNotarization *bft.EmptyNotarization,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_EmptyNotarization{
+		Message: &p2p.BFT_EmptyNotarization{
 			EmptyNotarization: &p2p.EmptyNotarization{
 				Metadata:          protocolMetadataToP2P(emptyNotarization.Vote.ProtocolMetadata),
 				QuorumCertificate: emptyNotarization.QC.Bytes(),
@@ -118,11 +118,11 @@ func newEmptyNotarization(
 
 func newFinalization(
 	chainID ids.ID,
-	finalization *simplex.Finalization,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	finalization *bft.Finalization,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_Finalization{
+		Message: &p2p.BFT_Finalization{
 			Finalization: &p2p.QuorumCertificate{
 				BlockHeader:       blockHeaderToP2P(finalization.Finalization.BlockHeader),
 				QuorumCertificate: finalization.QC.Bytes(),
@@ -133,11 +133,11 @@ func newFinalization(
 
 func newReplicationRequest(
 	chainID ids.ID,
-	replicationRequest *simplex.ReplicationRequest,
-) *p2p.Simplex {
-	return &p2p.Simplex{
+	replicationRequest *bft.ReplicationRequest,
+) *p2p.BFT {
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_ReplicationRequest{
+		Message: &p2p.BFT_ReplicationRequest{
 			ReplicationRequest: &p2p.ReplicationRequest{
 				Seqs:        replicationRequest.Seqs,
 				LatestRound: replicationRequest.LatestRound,
@@ -148,8 +148,8 @@ func newReplicationRequest(
 
 func newReplicationResponse(
 	chainID ids.ID,
-	replicationResponse *simplex.VerifiedReplicationResponse,
-) (*p2p.Simplex, error) {
+	replicationResponse *bft.VerifiedReplicationResponse,
+) (*p2p.BFT, error) {
 	data := replicationResponse.Data
 	latestRound := replicationResponse.LatestRound
 
@@ -167,9 +167,9 @@ func newReplicationResponse(
 		return nil, err
 	}
 
-	return &p2p.Simplex{
+	return &p2p.BFT{
 		ChainId: chainID[:],
-		Message: &p2p.Simplex_ReplicationResponse{
+		Message: &p2p.BFT_ReplicationResponse{
 			ReplicationResponse: &p2p.ReplicationResponse{
 				Data:        qrs,
 				LatestRound: latestQR,
@@ -178,14 +178,14 @@ func newReplicationResponse(
 	}, nil
 }
 
-func blockHeaderToP2P(bh simplex.BlockHeader) *p2p.BlockHeader {
+func blockHeaderToP2P(bh bft.BlockHeader) *p2p.BlockHeader {
 	return &p2p.BlockHeader{
 		Metadata: protocolMetadataToP2P(bh.ProtocolMetadata),
 		Digest:   bh.Digest[:],
 	}
 }
 
-func protocolMetadataToP2P(md simplex.ProtocolMetadata) *p2p.ProtocolMetadata {
+func protocolMetadataToP2P(md bft.ProtocolMetadata) *p2p.ProtocolMetadata {
 	return &p2p.ProtocolMetadata{
 		Version: uint32(md.Version),
 		Epoch:   md.Epoch,
@@ -195,7 +195,7 @@ func protocolMetadataToP2P(md simplex.ProtocolMetadata) *p2p.ProtocolMetadata {
 	}
 }
 
-func quorumRoundToP2P(qr *simplex.VerifiedQuorumRound) (*p2p.QuorumRound, error) {
+func quorumRoundToP2P(qr *bft.VerifiedQuorumRound) (*p2p.QuorumRound, error) {
 	p2pQR := &p2p.QuorumRound{}
 
 	if qr.VerifiedBlock != nil {

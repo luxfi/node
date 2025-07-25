@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	_ simplex.BlockDeserializer = (*blockDeserializer)(nil)
-	_ simplex.Block             = (*Block)(nil)
-	_ simplex.VerifiedBlock     = (*Block)(nil)
+	_ bft.BlockDeserializer = (*blockDeserializer)(nil)
+	_ bft.Block             = (*Block)(nil)
+	_ bft.VerifiedBlock     = (*Block)(nil)
 
 	errDigestNotFound       = errors.New("digest not found in block tracker")
 	errMismatchedPrevDigest = errors.New("prev digest does not match block parent")
@@ -30,10 +30,10 @@ var (
 )
 
 type Block struct {
-	digest simplex.Digest
+	digest bft.Digest
 
 	// metadata contains protocol metadata for the block
-	metadata simplex.ProtocolMetadata
+	metadata bft.ProtocolMetadata
 
 	// the parsed block
 	vmBlock linear.Block
@@ -41,17 +41,17 @@ type Block struct {
 	blockTracker *blockTracker
 }
 
-// CanotoSimplexBlock is the Canoto representation of a block
-type canotoSimplexBlock struct {
+// CanotoBFTBlock is the Canoto representation of a block
+type canotoBFTBlock struct {
 	Metadata   []byte `canoto:"bytes,1"`
 	InnerBlock []byte `canoto:"bytes,2"`
 
-	canotoData canotoData_canotoSimplexBlock
+	canotoData canotoData_canotoBFTBlock
 }
 
 // BlockHeader returns the block header for the block.
-func (b *Block) BlockHeader() simplex.BlockHeader {
-	return simplex.BlockHeader{
+func (b *Block) BlockHeader() bft.BlockHeader {
+	return bft.BlockHeader{
 		ProtocolMetadata: b.metadata,
 		Digest:           b.digest,
 	}
@@ -59,7 +59,7 @@ func (b *Block) BlockHeader() simplex.BlockHeader {
 
 // Bytes returns the serialized bytes of the block.
 func (b *Block) Bytes() ([]byte, error) {
-	cBlock := &canotoSimplexBlock{
+	cBlock := &canotoBFTBlock{
 		Metadata:   b.metadata.Bytes(),
 		InnerBlock: b.vmBlock.Bytes(),
 	}
@@ -68,7 +68,7 @@ func (b *Block) Bytes() ([]byte, error) {
 }
 
 // Verify verifies the block.
-func (b *Block) Verify(ctx context.Context) (simplex.VerifiedBlock, error) {
+func (b *Block) Verify(ctx context.Context) (bft.VerifiedBlock, error) {
 	// we should not verify the genesis block
 	if b.metadata.Seq == 0 {
 		return nil, errGenesisVerification
@@ -100,7 +100,7 @@ func (b *Block) verifyParentMatchesPrevBlock() error {
 	return nil
 }
 
-func computeDigest(bytes []byte) simplex.Digest {
+func computeDigest(bytes []byte) bft.Digest {
 	return hashing.ComputeHash256Array(bytes)
 }
 
@@ -108,14 +108,14 @@ type blockDeserializer struct {
 	parser block.Parser
 }
 
-func (d *blockDeserializer) DeserializeBlock(ctx context.Context, bytes []byte) (simplex.Block, error) {
-	var canotoBlock canotoSimplexBlock
+func (d *blockDeserializer) DeserializeBlock(ctx context.Context, bytes []byte) (bft.Block, error) {
+	var canotoBlock canotoBFTBlock
 
 	if err := canotoBlock.UnmarshalCanoto(bytes); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal block: %w", err)
 	}
 
-	md, err := simplex.ProtocolMetadataFromBytes(canotoBlock.Metadata)
+	md, err := bft.ProtocolMetadataFromBytes(canotoBlock.Metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse protocol metadata: %w", err)
 	}
@@ -136,8 +136,8 @@ func (d *blockDeserializer) DeserializeBlock(ctx context.Context, bytes []byte) 
 type blockTracker struct {
 	lock sync.Mutex
 
-	// tracks the simplex digests to the blocks that have been verified
-	simplexDigestsToBlock map[simplex.Digest]*Block
+	// tracks the bft digests to the blocks that have been verified
+	bftDigestsToBlock map[bft.Digest]*Block
 
 	// handles block acceptance and rejection of inner blocks
 	tree tree.Tree
@@ -146,17 +146,17 @@ type blockTracker struct {
 func newBlockTracker(latestBlock *Block) *blockTracker {
 	return &blockTracker{
 		tree: tree.New(),
-		simplexDigestsToBlock: map[simplex.Digest]*Block{
+		bftDigestsToBlock: map[bft.Digest]*Block{
 			latestBlock.digest: latestBlock,
 		},
 	}
 }
 
-func (bt *blockTracker) getBlockByDigest(digest simplex.Digest) (*Block, bool) {
+func (bt *blockTracker) getBlockByDigest(digest bft.Digest) (*Block, bool) {
 	bt.lock.Lock()
 	defer bt.lock.Unlock()
 
-	block, exists := bt.simplexDigestsToBlock[digest]
+	block, exists := bt.bftDigestsToBlock[digest]
 	return block, exists
 }
 
@@ -168,7 +168,7 @@ func (bt *blockTracker) verifyAndTrackBlock(ctx context.Context, block *Block) e
 
 	// check if the block is already verified
 	if _, exists := bt.tree.Get(block.vmBlock); exists {
-		bt.simplexDigestsToBlock[block.digest] = block
+		bt.bftDigestsToBlock[block.digest] = block
 		return nil
 	}
 
@@ -177,25 +177,25 @@ func (bt *blockTracker) verifyAndTrackBlock(ctx context.Context, block *Block) e
 	}
 
 	// track the block
-	bt.simplexDigestsToBlock[block.digest] = block
+	bt.bftDigestsToBlock[block.digest] = block
 	bt.tree.Add(block.vmBlock)
 	return nil
 }
 
 // indexBlock calls accept on the block with the given digest, and reject on competing blocks.
-func (bt *blockTracker) indexBlock(ctx context.Context, digest simplex.Digest) error {
+func (bt *blockTracker) indexBlock(ctx context.Context, digest bft.Digest) error {
 	bt.lock.Lock()
 	defer bt.lock.Unlock()
 
-	bd, exists := bt.simplexDigestsToBlock[digest]
+	bd, exists := bt.bftDigestsToBlock[digest]
 	if !exists {
 		return fmt.Errorf("%w: %s", errDigestNotFound, digest)
 	}
 
 	// removes all digests with a lower seq
-	for d, block := range bt.simplexDigestsToBlock {
+	for d, block := range bt.bftDigestsToBlock {
 		if block.metadata.Seq < bd.metadata.Seq {
-			delete(bt.simplexDigestsToBlock, d)
+			delete(bt.bftDigestsToBlock, d)
 		}
 	}
 

@@ -21,10 +21,11 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core/queue"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/graph/state"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/node/consensus/engine/dag/state"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
@@ -39,7 +40,6 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -61,9 +61,9 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	aveng "github.com/luxfi/node/consensus/engine/graph"
-	avbootstrap "github.com/luxfi/node/consensus/engine/graph/bootstrap"
-	avagetter "github.com/luxfi/node/consensus/engine/graph/getter"
+	aveng "github.com/luxfi/node/consensus/engine/dag"
+	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
+	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
@@ -89,7 +89,7 @@ const (
 )
 
 var (
-	// Commonly shared VM DB prefix
+	// corely shared VM DB prefix
 	VMDBPrefix = []byte("vm")
 
 	// Bootstrapping prefixes for LinearizableVMs
@@ -169,7 +169,7 @@ type ChainParameters struct {
 type chain struct {
 	Name    string
 	Context *consensus.ConsensusContext
-	VM      common.VM
+	VM      core.VM
 	Handler handler.Handler
 }
 
@@ -574,14 +574,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 	// TODO: Shutdown VM if an error occurs
 
-	chainFxs := make([]*common.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*core.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &common.Fx{
+		chainFxs[i] = &core.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -648,7 +648,7 @@ func (m *manager) createLuxChain(
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*common.Fx,
+	fxs []*core.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -770,7 +770,7 @@ func (m *manager) createLuxChain(
 
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
-	msgChan := make(chan common.Message, defaultChannelSize)
+	msgChan := make(chan core.Message, defaultChannelSize)
 
 	// The only difference between using luxMessageSender and
 	// linearMessageSender here is where the metrics will be placed. Because we
@@ -981,14 +981,14 @@ func (m *manager) createLuxChain(
 		Params:              consensusParams,
 		Consensus:           linearConsensus,
 	}
-	var linearEngine common.Engine
+	var linearEngine core.Engine
 	linearEngine, err = smeng.New(linearEngineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		linearEngine = common.TraceEngine(linearEngine, m.Tracer)
+		linearEngine = core.TraceEngine(linearEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1012,7 +1012,7 @@ func (m *manager) createLuxChain(
 		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
 	}
-	var linearBootstrapper common.BootstrapableEngine
+	var linearBootstrapper core.BootstrapableEngine
 	linearBootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
 		linearEngine.Start,
@@ -1022,7 +1022,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		linearBootstrapper = common.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
+		linearBootstrapper = core.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
 	}
 
 	avaGetHandler, err := avagetter.New(
@@ -1040,7 +1040,7 @@ func (m *manager) createLuxChain(
 	// create engine gear
 	luxEngine := aveng.New(ctx, avaGetHandler, linearizableVM)
 	if m.TracingEnabled {
-		luxEngine = common.TraceEngine(luxEngine, m.Tracer)
+		luxEngine = core.TraceEngine(luxEngine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1076,7 +1076,7 @@ func (m *manager) createLuxChain(
 	}
 
 	if m.TracingEnabled {
-		luxBootstrapper = common.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
+		luxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
@@ -1112,7 +1112,7 @@ func (m *manager) createLinearChain(
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
-	fxs []*common.Fx,
+	fxs []*core.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -1272,7 +1272,7 @@ func (m *manager) createLinearChain(
 
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
-	msgChan := make(chan common.Message, defaultChannelSize)
+	msgChan := make(chan core.Message, defaultChannelSize)
 
 	if err := vm.Initialize(
 		context.TODO(),
@@ -1392,14 +1392,14 @@ func (m *manager) createLinearChain(
 		Consensus:           consensus,
 		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
 	}
-	var engine common.Engine
+	var engine core.Engine
 	engine, err = smeng.New(engineConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
 	if m.TracingEnabled {
-		engine = common.TraceEngine(engine, m.Tracer)
+		engine = core.TraceEngine(engine, m.Tracer)
 	}
 
 	// create bootstrap gear
@@ -1418,7 +1418,7 @@ func (m *manager) createLinearChain(
 		VM:                             vm,
 		Bootstrapped:                   bootstrapFunc,
 	}
-	var bootstrapper common.BootstrapableEngine
+	var bootstrapper core.BootstrapableEngine
 	bootstrapper, err = smbootstrap.New(
 		bootstrapCfg,
 		engine.Start,
@@ -1428,7 +1428,7 @@ func (m *manager) createLinearChain(
 	}
 
 	if m.TracingEnabled {
-		bootstrapper = common.TraceBootstrapableEngine(bootstrapper, m.Tracer)
+		bootstrapper = core.TraceBootstrapableEngine(bootstrapper, m.Tracer)
 	}
 
 	// create state sync gear
@@ -1452,7 +1452,7 @@ func (m *manager) createLinearChain(
 	)
 
 	if m.TracingEnabled {
-		stateSyncer = common.TraceStateSyncer(stateSyncer, m.Tracer)
+		stateSyncer = core.TraceStateSyncer(stateSyncer, m.Tracer)
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
@@ -1587,7 +1587,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *consensus.ConsensusContext, vm common.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensus.ConsensusContext, vm core.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

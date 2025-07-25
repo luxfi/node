@@ -1553,8 +1553,8 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	return chainRouter, engine
 }
 
-// Tests that HandleInbound correctly handles Simplex Messages
-func TestHandleSimplexMessage(t *testing.T) {
+// Tests that HandleInbound correctly handles BFT Messages
+func TestHandleBFTMessage(t *testing.T) {
 	chainRouter := ChainRouter{}
 	log := tests.NewDefaultLogger("test")
 	log.SetLevel(logging.Debug)
@@ -1576,8 +1576,8 @@ func TestHandleSimplexMessage(t *testing.T) {
 	chainRouter.log = log
 	testID := ids.GenerateTestID()
 
-	msg := &p2ppb.Simplex{
-		Message: &p2ppb.Simplex_ReplicationRequest{
+	msg := &p2ppb.BFT{
+		Message: &p2ppb.BFT_ReplicationRequest{
 			ReplicationRequest: &p2ppb.ReplicationRequest{
 				Seqs:        []uint64{1, 2, 3},
 				LatestRound: 1,
@@ -1586,7 +1586,7 @@ func TestHandleSimplexMessage(t *testing.T) {
 		ChainId: testID[:],
 	}
 
-	inboundMsg := message.InboundSimplexMessage(ids.NodeID{}, msg)
+	inboundMsg := message.InboundBFTMessage(ids.NodeID{}, msg)
 
 	ctrl := gomock.NewController(t)
 	h := handlermock.NewHandler(ctrl)
@@ -1601,7 +1601,7 @@ func TestHandleSimplexMessage(t *testing.T) {
 	var receivedMsg bool
 	h.EXPECT().Push(gomock.Any(), gomock.Any()).
 		Do(func(_ context.Context, msg message.InboundMessage) {
-			if msg.Op() == message.SimplexOp {
+			if msg.Op() == message.BFTOp {
 				receivedMsg = true
 			}
 		}).AnyTimes()

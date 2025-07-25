@@ -6,7 +6,7 @@ github.com/luxfi/node/database=Iterator=database/mock_iterator.go
 github.com/luxfi/node/message=OutboundMessage=message/mock_message.go
 github.com/luxfi/node/message=OutboundMsgBuilder=message/mock_outbound_message_builder.go
 github.com/luxfi/node/consensus/consensus/linear=Block=consensus/consensus/linear/lineartest/mock_block.go
-github.com/luxfi/node/consensus/engine/graph/vertex=LinearizableVM=consensus/engine/graph/vertex/mock_vm.go
+github.com/luxfi/node/consensus/engine/dag/vertex=LinearizableVM=consensus/engine/dag/vertex/mock_vm.go
 github.com/luxfi/node/consensus/engine/linear/block=BuildBlockWithContextChainVM=consensus/engine/linear/block/mock_build_block_with_context_vm.go
 github.com/luxfi/node/consensus/engine/linear/block=ChainVM=consensus/engine/linear/block/mock_chain_vm.go
 github.com/luxfi/node/consensus/engine/linear/block=StateSyncableVM=consensus/engine/linear/block/mock_state_syncable_vm.go

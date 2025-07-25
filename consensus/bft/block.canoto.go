@@ -21,18 +21,18 @@ var (
 )
 
 const (
-	canoto__canotoSimplexBlock__Metadata__tag   = "\x0a" // canoto.Tag(1, canoto.Len)
-	canoto__canotoSimplexBlock__InnerBlock__tag = "\x12" // canoto.Tag(2, canoto.Len)
+	canoto__canotoBFTBlock__Metadata__tag   = "\x0a" // canoto.Tag(1, canoto.Len)
+	canoto__canotoBFTBlock__InnerBlock__tag = "\x12" // canoto.Tag(2, canoto.Len)
 )
 
-type canotoData_canotoSimplexBlock struct {
+type canotoData_canotoBFTBlock struct {
 	size uint64
 }
 
 // CanotoSpec returns the specification of this canoto message.
-func (*canotoSimplexBlock) CanotoSpec(...reflect.Type) *canoto.Spec {
+func (*canotoBFTBlock) CanotoSpec(...reflect.Type) *canoto.Spec {
 	s := &canoto.Spec{
-		Name: "canotoSimplexBlock",
+		Name: "canotoBFTBlock",
 		Fields: []canoto.FieldType{
 			{
 				FieldNumber: 1,
@@ -53,14 +53,14 @@ func (*canotoSimplexBlock) CanotoSpec(...reflect.Type) *canoto.Spec {
 }
 
 // MakeCanoto creates a new empty value.
-func (*canotoSimplexBlock) MakeCanoto() *canotoSimplexBlock {
-	return new(canotoSimplexBlock)
+func (*canotoBFTBlock) MakeCanoto() *canotoBFTBlock {
+	return new(canotoBFTBlock)
 }
 
 // UnmarshalCanoto unmarshals a Canoto-encoded byte slice into the struct.
 //
 // During parsing, the canoto cache is saved.
-func (c *canotoSimplexBlock) UnmarshalCanoto(bytes []byte) error {
+func (c *canotoBFTBlock) UnmarshalCanoto(bytes []byte) error {
 	r := canoto.Reader{
 		B: bytes,
 	}
@@ -73,9 +73,9 @@ func (c *canotoSimplexBlock) UnmarshalCanoto(bytes []byte) error {
 // During parsing, the canoto cache is saved.
 //
 // This function enables configuration of reader options.
-func (c *canotoSimplexBlock) UnmarshalCanotoFrom(r canoto.Reader) error {
+func (c *canotoBFTBlock) UnmarshalCanotoFrom(r canoto.Reader) error {
 	// Zero the struct before unmarshaling.
-	*c = canotoSimplexBlock{}
+	*c = canotoBFTBlock{}
 	atomic.StoreUint64(&c.canotoData.size, uint64(len(r.B)))
 
 	var minField uint32
@@ -127,7 +127,7 @@ func (c *canotoSimplexBlock) UnmarshalCanotoFrom(r canoto.Reader) error {
 // 1. All OneOfs are specified at most once.
 // 2. All strings are valid utf-8.
 // 3. All custom fields are ValidCanoto.
-func (c *canotoSimplexBlock) ValidCanoto() bool {
+func (c *canotoBFTBlock) ValidCanoto() bool {
 	if c == nil {
 		return true
 	}
@@ -138,16 +138,16 @@ func (c *canotoSimplexBlock) ValidCanoto() bool {
 // values in the struct.
 //
 // It is not safe to copy this struct concurrently.
-func (c *canotoSimplexBlock) CalculateCanotoCache() {
+func (c *canotoBFTBlock) CalculateCanotoCache() {
 	if c == nil {
 		return
 	}
 	var size uint64
 	if len(c.Metadata) != 0 {
-		size += uint64(len(canoto__canotoSimplexBlock__Metadata__tag)) + canoto.SizeBytes(c.Metadata)
+		size += uint64(len(canoto__canotoBFTBlock__Metadata__tag)) + canoto.SizeBytes(c.Metadata)
 	}
 	if len(c.InnerBlock) != 0 {
-		size += uint64(len(canoto__canotoSimplexBlock__InnerBlock__tag)) + canoto.SizeBytes(c.InnerBlock)
+		size += uint64(len(canoto__canotoBFTBlock__InnerBlock__tag)) + canoto.SizeBytes(c.InnerBlock)
 	}
 	atomic.StoreUint64(&c.canotoData.size, size)
 }
@@ -159,7 +159,7 @@ func (c *canotoSimplexBlock) CalculateCanotoCache() {
 //
 // If the struct has been modified since the last call to CalculateCanotoCache,
 // the returned size may be incorrect.
-func (c *canotoSimplexBlock) CachedCanotoSize() uint64 {
+func (c *canotoBFTBlock) CachedCanotoSize() uint64 {
 	if c == nil {
 		return 0
 	}
@@ -171,7 +171,7 @@ func (c *canotoSimplexBlock) CachedCanotoSize() uint64 {
 // It is assumed that this struct is ValidCanoto.
 //
 // It is not safe to copy this struct concurrently.
-func (c *canotoSimplexBlock) MarshalCanoto() []byte {
+func (c *canotoBFTBlock) MarshalCanoto() []byte {
 	c.CalculateCanotoCache()
 	w := canoto.Writer{
 		B: make([]byte, 0, c.CachedCanotoSize()),
@@ -189,16 +189,16 @@ func (c *canotoSimplexBlock) MarshalCanoto() []byte {
 // It is assumed that this struct is ValidCanoto.
 //
 // It is not safe to copy this struct concurrently.
-func (c *canotoSimplexBlock) MarshalCanotoInto(w canoto.Writer) canoto.Writer {
+func (c *canotoBFTBlock) MarshalCanotoInto(w canoto.Writer) canoto.Writer {
 	if c == nil {
 		return w
 	}
 	if len(c.Metadata) != 0 {
-		canoto.Append(&w, canoto__canotoSimplexBlock__Metadata__tag)
+		canoto.Append(&w, canoto__canotoBFTBlock__Metadata__tag)
 		canoto.AppendBytes(&w, c.Metadata)
 	}
 	if len(c.InnerBlock) != 0 {
-		canoto.Append(&w, canoto__canotoSimplexBlock__InnerBlock__tag)
+		canoto.Append(&w, canoto__canotoBFTBlock__InnerBlock__tag)
 		canoto.AppendBytes(&w, c.InnerBlock)
 	}
 	return w

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -20,7 +20,7 @@ var (
 	errFailedToParseSignature      = errors.New("failed to parse signature")
 )
 
-var _ simplex.Signer = (*BLSSigner)(nil)
+var _ bft.Signer = (*BLSSigner)(nil)
 
 type SignFunc func(msg []byte) (*bls.Signature, error)
 
@@ -66,22 +66,22 @@ func (s *BLSSigner) Sign(message []byte) ([]byte, error) {
 	return sigBytes, nil
 }
 
-type encodedSimplexSignedPayload struct {
+type encodedBFTSignedPayload struct {
 	NewtorkID uint32 `serialize:"true"`
 	ChainID   ids.ID `serialize:"true"`
 	Message   []byte `serialize:"true"`
 }
 
 func encodeMessageToSign(message []byte, chainID ids.ID, networkID uint32) ([]byte, error) {
-	encodedSimplexMessage := encodedSimplexSignedPayload{
+	encodedBFTMessage := encodedBFTSignedPayload{
 		Message:   message,
 		ChainID:   chainID,
 		NewtorkID: networkID,
 	}
-	return Codec.Marshal(CodecVersion, &encodedSimplexMessage)
+	return Codec.Marshal(CodecVersion, &encodedBFTMessage)
 }
 
-func (v BLSVerifier) Verify(message []byte, signature []byte, signer simplex.NodeID) error {
+func (v BLSVerifier) Verify(message []byte, signature []byte, signer bft.NodeID) error {
 	key, err := ids.ToNodeID(signer)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errInvalidNodeID, err)

@@ -6,7 +6,7 @@ package bft
 import (
 	"testing"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/linear/lineartest"
@@ -28,7 +28,7 @@ func newBlock(t *testing.T, config newBlockConfig) *Block {
 	if config.prev == nil {
 		block := &Block{
 			vmBlock: lineartest.Genesis,
-			metadata: simplex.ProtocolMetadata{
+			metadata: bft.ProtocolMetadata{
 				Version: 1,
 				Epoch:   1,
 				Round:   0,
@@ -52,7 +52,7 @@ func newBlock(t *testing.T, config newBlockConfig) *Block {
 	block := &Block{
 		vmBlock:      vmBlock,
 		blockTracker: config.prev.blockTracker,
-		metadata: simplex.ProtocolMetadata{
+		metadata: bft.ProtocolMetadata{
 			Version: 1,
 			Epoch:   1,
 			Round:   config.round,
@@ -99,7 +99,7 @@ func newNetworkConfigs(t *testing.T, numNodes uint64) []*Config {
 	configs := make([]*Config, 0, numNodes)
 	for _, node := range testNodes {
 		config := &Config{
-			Ctx: SimplexChainContext{
+			Ctx: BFTChainContext{
 				NodeID:    node.validator.NodeID,
 				ChainID:   chainID,
 				NetworkID: constants.UnitTestID,

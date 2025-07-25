@@ -736,8 +736,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	case *message.QueryFailed:
 		return engine.QueryFailed(ctx, nodeID, msg.RequestID)
 
-	case *p2ppb.Simplex:
-		h.ctx.Log.Debug("received simplex message",
+	case *p2ppb.BFT:
+		h.ctx.Log.Debug("received bft message",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),

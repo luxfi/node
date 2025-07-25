@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/engine/core"
@@ -20,18 +20,18 @@ import (
 )
 
 var (
-	_               simplex.Communication = (*Comm)(nil)
+	_               bft.Communication = (*Comm)(nil)
 	errNodeNotFound                       = errors.New("node not found in the validator list")
 )
 
 type Comm struct {
-	logger   simplex.Logger
+	logger   bft.Logger
 	subnetID ids.ID
 	chainID  ids.ID
 	// broadcastNodes are the nodes that should receive broadcast messages
 	broadcastNodes set.Set[ids.NodeID]
 	// allNodes are the IDs of all the nodes in the subnet
-	allNodes []simplex.NodeID
+	allNodes []bft.NodeID
 
 	// sender is used to send messages to other nodes
 	sender     sender.ExternalSender
@@ -49,7 +49,7 @@ func NewComm(config *Config) (*Comm, error) {
 	}
 
 	broadcastNodes := set.NewSet[ids.NodeID](len(config.Validators) - 1)
-	allNodes := make([]simplex.NodeID, 0, len(config.Validators))
+	allNodes := make([]bft.NodeID, 0, len(config.Validators))
 	// grab all the nodes that are validators for the subnet
 	for _, vd := range config.Validators {
 		allNodes = append(allNodes, vd.NodeID[:])
@@ -71,12 +71,12 @@ func NewComm(config *Config) (*Comm, error) {
 	}, nil
 }
 
-func (c *Comm) Nodes() []simplex.NodeID {
+func (c *Comm) Nodes() []bft.NodeID {
 	return c.allNodes
 }
 
-func (c *Comm) Send(msg *simplex.Message, destination simplex.NodeID) {
-	outboundMsg, err := c.simplexMessageToOutboundMessage(msg)
+func (c *Comm) Send(msg *bft.Message, destination bft.NodeID) {
+	outboundMsg, err := c.bftMessageToOutboundMessage(msg)
 	if err != nil {
 		c.logger.Error("Failed creating message", zap.Error(err))
 		return
@@ -91,8 +91,8 @@ func (c *Comm) Send(msg *simplex.Message, destination simplex.NodeID) {
 	c.sender.Send(outboundMsg, core.SendConfig{NodeIDs: set.Of(dest)}, c.subnetID, subnets.NoOpAllower)
 }
 
-func (c *Comm) Broadcast(msg *simplex.Message) {
-	outboundMsg, err := c.simplexMessageToOutboundMessage(msg)
+func (c *Comm) Broadcast(msg *bft.Message) {
+	outboundMsg, err := c.bftMessageToOutboundMessage(msg)
 	if err != nil {
 		c.logger.Error("Failed creating message", zap.Error(err))
 		return
@@ -101,38 +101,38 @@ func (c *Comm) Broadcast(msg *simplex.Message) {
 	c.sender.Send(outboundMsg, core.SendConfig{NodeIDs: c.broadcastNodes}, c.subnetID, subnets.NoOpAllower)
 }
 
-func (c *Comm) simplexMessageToOutboundMessage(msg *simplex.Message) (message.OutboundMessage, error) {
-	var simplexMsg *p2p.Simplex
+func (c *Comm) bftMessageToOutboundMessage(msg *bft.Message) (message.OutboundMessage, error) {
+	var bftMsg *p2p.BFT
 	switch {
 	case msg.VerifiedBlockMessage != nil:
 		bytes, err := msg.VerifiedBlockMessage.VerifiedBlock.Bytes()
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize block: %w", err)
 		}
-		simplexMsg = newBlockProposal(c.chainID, bytes, msg.VerifiedBlockMessage.Vote)
+		bftMsg = newBlockProposal(c.chainID, bytes, msg.VerifiedBlockMessage.Vote)
 	case msg.VoteMessage != nil:
-		simplexMsg = newVote(c.chainID, msg.VoteMessage)
+		bftMsg = newVote(c.chainID, msg.VoteMessage)
 	case msg.EmptyVoteMessage != nil:
-		simplexMsg = newEmptyVote(c.chainID, msg.EmptyVoteMessage)
+		bftMsg = newEmptyVote(c.chainID, msg.EmptyVoteMessage)
 	case msg.FinalizeVote != nil:
-		simplexMsg = newFinalizeVote(c.chainID, msg.FinalizeVote)
+		bftMsg = newFinalizeVote(c.chainID, msg.FinalizeVote)
 	case msg.Notarization != nil:
-		simplexMsg = newNotarization(c.chainID, msg.Notarization)
+		bftMsg = newNotarization(c.chainID, msg.Notarization)
 	case msg.EmptyNotarization != nil:
-		simplexMsg = newEmptyNotarization(c.chainID, msg.EmptyNotarization)
+		bftMsg = newEmptyNotarization(c.chainID, msg.EmptyNotarization)
 	case msg.Finalization != nil:
-		simplexMsg = newFinalization(c.chainID, msg.Finalization)
+		bftMsg = newFinalization(c.chainID, msg.Finalization)
 	case msg.ReplicationRequest != nil:
-		simplexMsg = newReplicationRequest(c.chainID, msg.ReplicationRequest)
+		bftMsg = newReplicationRequest(c.chainID, msg.ReplicationRequest)
 	case msg.VerifiedReplicationResponse != nil:
 		msg, err := newReplicationResponse(c.chainID, msg.VerifiedReplicationResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create replication response: %w", err)
 		}
-		simplexMsg = msg
+		bftMsg = msg
 	default:
 		return nil, fmt.Errorf("unknown message type: %+v", msg)
 	}
 
-	return c.msgBuilder.SimplexMessage(simplexMsg)
+	return c.msgBuilder.BFTMessage(bftMsg)
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -20,11 +20,11 @@ import (
 	"github.com/luxfi/node/utils/set"
 )
 
-var testSimplexMessage = simplex.Message{
-	VoteMessage: &simplex.Vote{
-		Vote: simplex.ToBeSignedVote{
-			BlockHeader: simplex.BlockHeader{
-				ProtocolMetadata: simplex.ProtocolMetadata{
+var testBFTMessage = bft.Message{
+	VoteMessage: &bft.Vote{
+		Vote: bft.ToBeSignedVote{
+			BlockHeader: bft.BlockHeader{
+				ProtocolMetadata: bft.ProtocolMetadata{
 					Version: 1,
 					Epoch:   1,
 					Round:   1,
@@ -32,7 +32,7 @@ var testSimplexMessage = simplex.Message{
 				},
 			},
 		},
-		Signature: simplex.Signature{
+		Signature: bft.Signature{
 			Signer: []byte("dummy_node_id"),
 			Value:  []byte("dummy_signature"),
 		},
@@ -58,14 +58,14 @@ func TestCommSendMessage(t *testing.T) {
 	comm, err := NewComm(config)
 	require.NoError(t, err)
 
-	outboundMsg, err := mc.SimplexMessage(newVote(config.Ctx.ChainID, testSimplexMessage.VoteMessage))
+	outboundMsg, err := mc.BFTMessage(newVote(config.Ctx.ChainID, testBFTMessage.VoteMessage))
 	require.NoError(t, err)
 	expectedSendConfig := core.SendConfig{
 		NodeIDs: set.Of(destinationNodeID),
 	}
 	sender.EXPECT().Send(outboundMsg, expectedSendConfig, comm.subnetID, gomock.Any())
 
-	comm.Send(&testSimplexMessage, destinationNodeID[:])
+	comm.Send(&testBFTMessage, destinationNodeID[:])
 }
 
 // TestCommBroadcast tests the Broadcast method sends to all nodes in the subnet
@@ -87,7 +87,7 @@ func TestCommBroadcast(t *testing.T) {
 
 	comm, err := NewComm(config)
 	require.NoError(t, err)
-	outboundMsg, err := mc.SimplexMessage(newVote(config.Ctx.ChainID, testSimplexMessage.VoteMessage))
+	outboundMsg, err := mc.BFTMessage(newVote(config.Ctx.ChainID, testBFTMessage.VoteMessage))
 	require.NoError(t, err)
 	nodes := make([]ids.NodeID, 0, len(comm.Nodes()))
 	for _, node := range comm.Nodes() {
@@ -103,7 +103,7 @@ func TestCommBroadcast(t *testing.T) {
 
 	sender.EXPECT().Send(outboundMsg, expectedSendConfig, comm.subnetID, gomock.Any())
 
-	comm.Broadcast(&testSimplexMessage)
+	comm.Broadcast(&testBFTMessage)
 }
 
 func TestCommFailsWithoutCurrentNode(t *testing.T) {
