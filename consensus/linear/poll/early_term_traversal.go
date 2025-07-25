@@ -200,20 +200,20 @@ func (p *earlyTermPoll) Finished() bool {
 	//   /   \
 	//  u     w
 	// If two competing blocks 'u', 'w' are potential successors to a block 'v',
-	// linear would instantiate a unary snowflake instance on the prefix of 'u' and 'w'.
+	// linear would instantiate a unary consensusflake instance on the prefix of 'u' and 'w'.
 	// The prefix inherits the votes for the IDs of 'u' and 'w'.
 	// We therefore compute the transitive votes for all prefixes of IDs
 	// for each bifurcation in the transitive vote graph.
 	transitiveVotesForPrefixes := computeTransitiveVotesForPrefixes(&votesGraph, transitiveVotes)
 
-	// We wish to compute the votes for snowflake instances, no matter if they correspond to an actual block ID,
-	// or a unary snowflake instance for a shared prefix between a bifurcation of two competing blocks.
-	// For that, only the number of votes and existence of such snowflake instances matters.
+	// We wish to compute the votes for consensusflake instances, no matter if they correspond to an actual block ID,
+	// or a unary consensusflake instance for a shared prefix between a bifurcation of two competing blocks.
+	// For that, only the number of votes and existence of such consensusflake instances matters.
 	voteCountsForIDsOrPrefixes := aggregateVotesFromPrefixesAndIDs(transitiveVotesForPrefixes, transitiveVotes)
 
-	// Given the aforementioned votes, we wish to see whether there exists a snowflake instance
+	// Given the aforementioned votes, we wish to see whether there exists a consensusflake instance
 	// that can benefit from waiting for more invocations of Vote().
-	// We therefore check each amount of votes separately and see if voting for that snowflake instance
+	// We therefore check each amount of votes separately and see if voting for that consensusflake instance
 	// should terminate, as it cannot be improved by further voting.
 
 	// If we have no votes, we may be able to improve the poll on some ID.

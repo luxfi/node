@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
@@ -238,13 +238,13 @@ RECEIVER  NEW BALANCE (AFTER) : %21d LUX
 
 				txID := tx.ID()
 				for _, u := range rpcEps {
-					xc := avm.NewClient(u, "X")
-					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
+					xc := xvm.NewClient(u, "X")
+					require.NoError(xvm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 				}
 
 				for _, u := range rpcEps {
-					xc := avm.NewClient(u, "X")
-					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
+					xc := xvm.NewClient(u, "X")
+					require.NoError(xvm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 
 					mm, err := tests.GetNodeMetrics(e2e.DefaultContext(), u)
 					require.NoError(err)

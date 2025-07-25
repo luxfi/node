@@ -7,13 +7,14 @@
 package vm
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	_go "github.com/prometheus/client_model/go"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -246,7 +247,7 @@ type InitializeRequest struct {
 	PublicKey    []byte `protobuf:"bytes,5,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	XChainId     []byte `protobuf:"bytes,6,opt,name=x_chain_id,json=xChainId,proto3" json:"x_chain_id,omitempty"`
 	CChainId     []byte `protobuf:"bytes,7,opt,name=c_chain_id,json=cChainId,proto3" json:"c_chain_id,omitempty"`
-	LuxAssetId  []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
+	LuxAssetId   []byte `protobuf:"bytes,8,opt,name=lux_asset_id,json=luxAssetId,proto3" json:"lux_asset_id,omitempty"`
 	ChainDataDir string `protobuf:"bytes,9,opt,name=chain_data_dir,json=chainDataDir,proto3" json:"chain_data_dir,omitempty"`
 	GenesisBytes []byte `protobuf:"bytes,10,opt,name=genesis_bytes,json=genesisBytes,proto3" json:"genesis_bytes,omitempty"`
 	UpgradeBytes []byte `protobuf:"bytes,11,opt,name=upgrade_bytes,json=upgradeBytes,proto3" json:"upgrade_bytes,omitempty"`

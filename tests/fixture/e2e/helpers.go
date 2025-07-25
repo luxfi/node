@@ -59,9 +59,9 @@ const (
 func NewWallet(keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.Wallet {
 	tests.Outf("{{blue}} initializing a new wallet for node %s with URI: %s {{/}}\n", nodeURI.NodeID, nodeURI.URI)
 	baseWallet, err := primary.MakeWallet(DefaultContext(), &primary.WalletConfig{
-		URI:          nodeURI.URI,
+		URI:         nodeURI.URI,
 		LUXKeychain: keychain,
-		EthKeychain:  keychain,
+		EthKeychain: keychain,
 	})
 	require.NoError(ginkgo.GinkgoT(), err)
 	return primary.NewWalletWithOptions(

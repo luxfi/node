@@ -6,9 +6,9 @@ package indexer
 import (
 	"context"
 
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
 )
 
 // BlockServer represents all requests heightIndexer can issue

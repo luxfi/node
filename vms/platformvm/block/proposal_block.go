@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -35,7 +35,7 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *BanffProposalBlock) InitCtx(ctx *snow.Context) {
+func (b *BanffProposalBlock) InitCtx(ctx *consensus.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}
@@ -92,7 +92,7 @@ func (b *ApricotProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotProposalBlock) InitCtx(ctx *snow.Context) {
+func (b *ApricotProposalBlock) InitCtx(ctx *consensus.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 

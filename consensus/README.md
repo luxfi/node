@@ -66,39 +66,39 @@ The consensus protocols are used by the Lux Virtual Machines (VMs) to achieve ag
 - **DAG consensus**: Fast massively parallelizable consensus X-Chain transactions
 - **Binary vote**: Core primitive used internally by other protocols
 
-## Migration from Snow Terminology
+## Migration from Consensus Terminology
 
-For developers familiar with the previous "Snow" naming:
+For developers familiar with the previous "Consensus" naming:
 - `confidence` → `binaryvote`
-- `snowman` → `linear`
+- `consensusman` → `linear`
 - `graph` → `graph`
 - `avalanche` → `graph` (vertex definitions merged)
-- `snow/choices` → `consensus/common/choices`
+- `consensus/choices` → `consensus/common/choices`
 
  This restructuring provides clearer semantics while maintaining full compatibility with the existing consensus algorithms.
 
-The old “Snowflake” primitive hasn’t disappeared—it’s just folded into the new sampling package under the name “flat sampling.”
-• Snowflake was the single-round, first-to-α decision rule (i.e. “sample k, if ≥α agree then decide”).
+The old “Consensusflake” primitive hasn’t disappeared—it’s just folded into the new sampling package under the name “flat sampling.”
+• Consensusflake was the single-round, first-to-α decision rule (i.e. “sample k, if ≥α agree then decide”).
 • In the new layout, that lives in `consensus/sampling/flat.go` and is exposed via:
 
 ```go
-// Flat is the one-shot (unary) sampling protocol—i.e. Snowflake.
+// Flat is the one-shot (unary) sampling protocol—i.e. Consensusflake.
 sampling.NewFlat(factory, params, choice)
 ```
 
-• The old “Snowball” (i.e. the tree-of-Snowflakes, multi-round extension) is now the tree sampling protocol in `consensus/sampling/tree.go` exposed via:
+• The old “Consensusball” (i.e. the tree-of-Consensusflakes, multi-round extension) is now the tree sampling protocol in `consensus/sampling/tree.go` exposed via:
 
 ```go
 sampling.NewNetwork(factory, params, numColors, rng)
 ```
 
-So there is no longer a separate snowflake package—everything lives under `consensus/sampling`:
-• Unary (Snowflake) → `sampling.NewFlat`
-• N-nary (Snowflake + Snowball) → `sampling.NewNetwork`
+So there is no longer a separate consensusflake package—everything lives under `consensus/sampling`:
+• Unary (Consensusflake) → `sampling.NewFlat`
+• N-nary (Consensusflake + Consensusball) → `sampling.NewNetwork`
 
-Thresholds, confidence and choice logic that used to live in snowball/snowflake are now in the sibling packages:
+Thresholds, confidence and choice logic that used to live in consensusball/consensusflake are now in the sibling packages:
 • `consensus/threshold` for the termination checks
 • `consensus/confidence` for the confidence counters
 • `consensus/choices` for the “decidable” interface
 
-Together they reconstitute exactly what Snowflake and Snowball used to do, just reorganized into a more composable structure.
+Together they reconstitute exactly what Consensusflake and Consensusball used to do, just reorganized into a more composable structure.

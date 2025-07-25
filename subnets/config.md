@@ -78,19 +78,19 @@ frequency at which blocks are built.
 Subnet configs supports loading new consensus parameters. JSON keys are
 different from their matching `CLI` keys. These parameters must be grouped under
 `consensusParameters` key. The consensus parameters of a Subnet default to the
-same values used for the Primary Network, which are given [CLI Snow Parameters](/nodes/configure/node-config-flags.md#snow-parameters).
+same values used for the Primary Network, which are given [CLI Consensus Parameters](/nodes/configure/node-config-flags.md#consensus-parameters).
 
 | CLI Key                          | JSON Key              |
 | :------------------------------- | :-------------------- |
-| --snow-sample-size               | k                     |
-| --snow-quorum-size               | alpha                 |
-| --snow-commit-threshold          | `beta`                |
-| --snow-concurrent-repolls        | concurrentRepolls     |
-| --snow-optimal-processing        | `optimalProcessing`   |
-| --snow-max-processing            | maxOutstandingItems   |
-| --snow-max-time-processing       | maxItemProcessingTime |
-| --snow-lux-batch-size      | `batchSize`           |
-| --snow-lux-num-parents     | `parentSize`          |
+| --consensus-sample-size               | k                     |
+| --consensus-quorum-size               | alpha                 |
+| --consensus-commit-threshold          | `beta`                |
+| --consensus-concurrent-repolls        | concurrentRepolls     |
+| --consensus-optimal-processing        | `optimalProcessing`   |
+| --consensus-max-processing            | maxOutstandingItems   |
+| --consensus-max-time-processing       | maxItemProcessingTime |
+| --consensus-lux-batch-size      | `batchSize`           |
+| --consensus-lux-num-parents     | `parentSize`          |
 
 ### Gossip Configs
 

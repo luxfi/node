@@ -17,9 +17,9 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -27,8 +27,8 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/keystore"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -156,7 +156,7 @@ type GetBalanceResponse struct {
 	Unlockeds           map[ids.ID]avajson.Uint64 `json:"unlockeds"`
 	LockedStakeables    map[ids.ID]avajson.Uint64 `json:"lockedStakeables"`
 	LockedNotStakeables map[ids.ID]avajson.Uint64 `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID            `json:"utxoIDs"`
+	UTXOIDs             []*lux.UTXOID             `json:"utxoIDs"`
 }
 
 // GetBalance gets the balance of an address

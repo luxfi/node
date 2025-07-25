@@ -21,13 +21,13 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -56,7 +56,7 @@ import (
 )
 
 var (
-	_ linearblock.ChainVM       = (*VM)(nil)
+	_ linearblock.ChainVM        = (*VM)(nil)
 	_ secp256k1fx.VM             = (*VM)(nil)
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
@@ -76,7 +76,7 @@ type VM struct {
 	uptimeManager uptime.Manager
 
 	// The context of this vm
-	ctx *snow.Context
+	ctx *consensus.Context
 	db  database.Database
 
 	state state.State
@@ -99,7 +99,7 @@ type VM struct {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -299,7 +299,7 @@ func (vm *VM) checkExistingChains() error {
 	vm.ctx.Log.Info("checking for existing chains in chainData directory",
 		zap.String("chainDataDir", chainDataDir),
 	)
-	
+
 	entries, err := os.ReadDir(chainDataDir)
 	if err != nil {
 		vm.ctx.Log.Info("chainData directory read error",
@@ -308,20 +308,20 @@ func (vm *VM) checkExistingChains() error {
 		// Directory might not exist yet, that's ok
 		return nil
 	}
-	
+
 	vm.ctx.Log.Info("found chainData entries",
 		zap.Int("count", len(entries)),
 	)
-	
+
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
 		}
-		
+
 		vm.ctx.Log.Info("checking chainData entry",
 			zap.String("name", entry.Name()),
 		)
-		
+
 		// Try to parse as chain ID
 		chainID, err := ids.FromString(entry.Name())
 		if err != nil {
@@ -331,18 +331,18 @@ func (vm *VM) checkExistingChains() error {
 			)
 			continue
 		}
-		
+
 		// Check if this chain has a config.json indicating it's an EVM chain
 		configPath := filepath.Join(chainDataDir, entry.Name(), "config.json")
 		configData, err := os.ReadFile(configPath)
 		if err != nil {
 			continue
 		}
-		
+
 		// Determine VM type based on directory contents
 		var vmID ids.ID
 		var subnetID ids.ID = constants.PrimaryNetworkID // Default to primary network
-		
+
 		// Check for EVM chain (C-Chain)
 		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
 			vmID = constants.EVMID
@@ -357,10 +357,10 @@ func (vm *VM) checkExistingChains() error {
 			)
 			continue
 		}
-		
+
 		// Check if we need to determine subnet ID from somewhere
 		// For now, assume primary network for orphaned chains
-		
+
 		// Check if this chain is already known
 		chains, err := vm.state.GetChains(subnetID)
 		if err != nil {
@@ -370,7 +370,7 @@ func (vm *VM) checkExistingChains() error {
 			)
 			continue
 		}
-		
+
 		chainExists := false
 		for _, chain := range chains {
 			if chain.ID() == chainID {
@@ -378,7 +378,7 @@ func (vm *VM) checkExistingChains() error {
 				break
 			}
 		}
-		
+
 		if !chainExists {
 			// This is an orphaned chain, queue it for creation
 			vm.ctx.Log.Info("found orphaned chain, queuing for creation",
@@ -387,7 +387,7 @@ func (vm *VM) checkExistingChains() error {
 				zap.String("subnetID", subnetID.String()),
 				zap.String("path", filepath.Join(chainDataDir, entry.Name())),
 			)
-			
+
 			// For existing chains, we need to provide a minimal but valid genesis
 			// The EVM will match this against the existing chain data
 			// Extract chainId from config if possible
@@ -395,7 +395,7 @@ func (vm *VM) checkExistingChains() error {
 			if bytes.Contains(configData, []byte(`"chainId": 96369`)) || bytes.Contains(configData, []byte(`"chainId":96369`)) {
 				chainIDNum = 96369
 			}
-			
+
 			minimalGenesis := fmt.Sprintf(`{
 				"config": {
 					"chainId": %d,
@@ -424,7 +424,7 @@ func (vm *VM) checkExistingChains() error {
 				"difficulty": "0x0",
 				"alloc": {}
 			}`, chainIDNum)
-			
+
 			vm.Config.QueueExistingChainWithGenesis(chainID, subnetID, vmID, []byte(minimalGenesis))
 		} else {
 			vm.ctx.Log.Debug("chain already registered",
@@ -438,7 +438,7 @@ func (vm *VM) checkExistingChains() error {
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
 	vm.ctx.Log.Info("initBlockchains called")
-	
+
 	// Check for existing chains in chainData directory
 	if err := vm.checkExistingChains(); err != nil {
 		vm.ctx.Log.Warn("failed to check existing chains", zap.Error(err))
@@ -481,9 +481,9 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 		if !ok {
 			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chain.Unsigned)
 		}
-		
+
 		chainID := chain.ID()
-		
+
 		// Check for chain ID mapping override
 		// Support mapping for C-Chain to use existing blockchain ID
 		vm.ctx.Log.Info("Checking chain ID mapping",
@@ -492,7 +492,7 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 			zap.String("originalChainID", chainID.String()),
 			zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
 		)
-		
+
 		if tx.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
 			mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
 			parsedID, err := ids.FromString(mappedID)
@@ -509,7 +509,7 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 				)
 			}
 		}
-		
+
 		vm.Config.CreateChain(chainID, tx)
 	}
 	return nil
@@ -559,14 +559,14 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	switch state {
-	case snow.Bootstrapping:
+	case consensus.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case snow.NormalOp:
+	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return snow.ErrUnknownState
+		return consensus.ErrUnknownState
 	}
 }
 

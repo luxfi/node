@@ -20,17 +20,17 @@ import (
 	"github.com/luxfi/node/api/keystore/gkeystore"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/appsender"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/validators/gvalidators"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
@@ -43,6 +43,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
@@ -53,7 +54,6 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	dto "github.com/prometheus/client_model/go"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -76,7 +76,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ linear.Block           = (*blockClient)(nil)
+	_ linear.Block            = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -125,7 +125,7 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -200,7 +200,7 @@ func (vm *VMClient) Initialize(
 		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
 		XChainId:     chainCtx.XChainID[:],
 		CChainId:     chainCtx.CChainID[:],
-		LuxAssetId:  chainCtx.LUXAssetID[:],
+		LuxAssetId:   chainCtx.LUXAssetID[:],
 		ChainDataDir: chainCtx.ChainDataDir,
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
@@ -306,7 +306,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
+func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(state),
 	})

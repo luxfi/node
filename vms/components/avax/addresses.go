@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
@@ -38,10 +38,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *snow.Context
+	ctx *consensus.Context
 }
 
-func NewAddressManager(ctx *snow.Context) AddressManager {
+func NewAddressManager(ctx *consensus.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

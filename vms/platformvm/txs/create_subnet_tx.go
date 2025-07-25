@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
@@ -21,13 +21,13 @@ type CreateSubnetTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [CreateSubnetTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *CreateSubnetTx) InitCtx(ctx *snow.Context) {
+func (tx *CreateSubnetTx) InitCtx(ctx *consensus.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	tx.Owner.InitCtx(ctx)
 }
 
 // SyntacticVerify verifies that this transaction is well-formed
-func (tx *CreateSubnetTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *CreateSubnetTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

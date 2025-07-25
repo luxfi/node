@@ -952,50 +952,50 @@ Fraction of time a validator must be online to receive rewards. Defaults to
 
 Frequency of renewing this node's average uptime metric. Defaults to `30s`.
 
-#### Snow Parameters
+#### Consensus Parameters
 
-##### `--snow-concurrent-repolls` (int)
+##### `--consensus-concurrent-repolls` (int)
 
-Snow consensus requires repolling transactions that are issued during low time
+Consensus consensus requires repolling transactions that are issued during low time
 of network usage. This parameter lets one define how aggressive the client will
 be in finalizing these pending transactions. This should only be changed after
-careful consideration of the tradeoffs of Snow consensus. The value must be at
-least `1` and at most `--snow-commit-threshold`. Defaults to `4`.
+careful consideration of the tradeoffs of Consensus consensus. The value must be at
+least `1` and at most `--consensus-commit-threshold`. Defaults to `4`.
 
-##### `--snow-sample-size` (int)
+##### `--consensus-sample-size` (int)
 
-Snow consensus defines `k` as the number of validators that are sampled during
+Consensus consensus defines `k` as the number of validators that are sampled during
 each network poll. This parameter lets one define the `k` value used for
 consensus. This should only be changed after careful consideration of the
-tradeoffs of Snow consensus. The value must be at least `1`. Defaults to `20`.
+tradeoffs of Consensus consensus. The value must be at least `1`. Defaults to `20`.
 
-##### `--snow-quorum-size` (int)
+##### `--consensus-quorum-size` (int)
 
-Snow consensus defines `alpha` as the number of validators that must prefer a
+Consensus consensus defines `alpha` as the number of validators that must prefer a
 transaction during each network poll to increase the confidence in the
 transaction. This parameter lets us define the `alpha` value used for consensus.
-This should only be changed after careful consideration of the tradeoffs of Snow
+This should only be changed after careful consideration of the tradeoffs of Consensus
 consensus. The value must be at greater than `k/2`. Defaults to `15`.
 
-##### `--snow-commit-threshold` (int)
+##### `--consensus-commit-threshold` (int)
 
-Snow consensus defines `beta` as the number of consecutive polls that a
+Consensus consensus defines `beta` as the number of consecutive polls that a
 container must increase its confidence for it to be accepted. This
 parameter lets us define the `beta` value used for consensus. This should only
-be changed after careful consideration of the tradeoffs of Snow consensus. The
+be changed after careful consideration of the tradeoffs of Consensus consensus. The
 value must be at least `1`. Defaults to `20`.
 
-##### `--snow-optimal-processing` (int)
+##### `--consensus-optimal-processing` (int)
 
 Optimal number of processing items in consensus. The value must be at least `1`. Defaults to `50`.
 
-##### `--snow-max-processing` (int)
+##### `--consensus-max-processing` (int)
 
 Maximum number of processing items to be considered healthy. Reports unhealthy
 if more than this number of items are outstanding. The value must be at least
 `1`. Defaults to `1024`.
 
-##### `--snow-max-time-processing` (duration)
+##### `--consensus-max-time-processing` (duration)
 
 Maximum amount of time an item should be processing and still be healthy.
 Reports unhealthy if there is an item processing for longer than this duration.

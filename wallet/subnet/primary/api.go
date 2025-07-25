@@ -16,17 +16,17 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/x"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -41,7 +41,7 @@ const (
 // perform their own assertions.
 var (
 	_ UTXOClient = platformvm.Client(nil)
-	_ UTXOClient = avm.Client(nil)
+	_ UTXOClient = xvm.Client(nil)
 )
 
 type UTXOClient interface {
@@ -59,7 +59,7 @@ type UTXOClient interface {
 type LUXState struct {
 	PClient platformvm.Client
 	PCTX    *pbuilder.Context
-	XClient avm.Client
+	XClient xvm.Client
 	XCTX    *xbuilder.Context
 	CClient evm.Client
 	CCTX    *c.Context
@@ -76,7 +76,7 @@ func FetchState(
 ) {
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
-	xClient := avm.NewClient(uri, "X")
+	xClient := xvm.NewClient(uri, "X")
 	cClient := evm.NewCChainClient(uri)
 
 	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)

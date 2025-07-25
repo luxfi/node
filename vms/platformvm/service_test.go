@@ -20,13 +20,13 @@ import (
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -226,7 +226,7 @@ func TestGetTx(t *testing.T) {
 				utx, err := builder.NewCreateChainTx(
 					testSubnet1.ID(),
 					[]byte{},
-					constants.AVMID,
+					constants.XVMID,
 					[]ids.ID{},
 					"chain name",
 					common.WithChangeOwner(&secp256k1fx.OutputOwners{
@@ -776,7 +776,7 @@ func TestGetBlock(t *testing.T) {
 			utx, err := builder.NewCreateChainTx(
 				testSubnet1.ID(),
 				[]byte{},
-				constants.AVMID,
+				constants.XVMID,
 				[]ids.ID{},
 				"chain name",
 				common.WithChangeOwner(&secp256k1fx.OutputOwners{
@@ -891,7 +891,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -912,7 +912,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -936,7 +936,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -964,7 +964,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -992,7 +992,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},
@@ -1020,7 +1020,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &snow.Context{
+						ctx: &consensus.Context{
 							Log: logging.NoLog{},
 						},
 					},

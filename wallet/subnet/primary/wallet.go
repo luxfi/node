@@ -72,7 +72,7 @@ type WalletConfig struct {
 	URI string // required
 	// Keys to use for signing all transactions.
 	LUXKeychain keychain.Keychain // required
-	EthKeychain  c.EthKeychain     // required
+	EthKeychain c.EthKeychain     // required
 	// Set of P-chain transactions that the wallet should know about to be able
 	// to generate transactions.
 	PChainTxs map[ids.ID]*txs.Tx // optional

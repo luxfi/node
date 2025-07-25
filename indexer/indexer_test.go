@@ -14,13 +14,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -56,9 +56,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  logging.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -97,9 +97,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 logging.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:     snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup: snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -136,9 +136,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -152,8 +152,8 @@ func TestIndexer(t *testing.T) {
 	idxr.clock.Set(now)
 
 	// Assert state is right
-	snow1Ctx := snowtest.Context(t, snowtest.CChainID)
-	chain1Ctx := snowtest.ConsensusContext(snow1Ctx)
+	consensus1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(consensus1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -257,8 +257,8 @@ func TestIndexer(t *testing.T) {
 	require.Contains(server.endpoints, "/block")
 
 	// Register a DAG chain
-	snow2Ctx := snowtest.Context(t, snowtest.XChainID)
-	chain2Ctx := snowtest.ConsensusContext(snow2Ctx)
+	consensus2Ctx := consensustest.Context(t, consensustest.XChainID)
+	chain2Ctx := consensustest.ConsensusContext(consensus2Ctx)
 	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -404,9 +404,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -417,8 +417,8 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(idxr.indexingEnabled)
 
 	// Register a chain
-	snow1Ctx := snowtest.Context(t, snowtest.CChainID)
-	chain1Ctx := snowtest.ConsensusContext(snow1Ctx)
+	consensus1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(consensus1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -486,9 +486,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  logging.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   snow.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      snow.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  snow.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -500,7 +500,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := snowtest.ConsensusContext(&snow.Context{
+	chain1Ctx := consensustest.ConsensusContext(&consensus.Context{
 		ChainID:  ids.GenerateTestID(),
 		SubnetID: ids.GenerateTestID(),
 	})

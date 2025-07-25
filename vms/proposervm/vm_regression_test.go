@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
 )
 
 func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *testing.T) {
@@ -37,7 +37,7 @@ func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *test
 		return customError
 	}
 
-	innerVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
@@ -58,7 +58,7 @@ func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *test
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	ctx := snow.DefaultContextTest()
+	ctx := consensus.DefaultContextTest()
 	initialState := []byte("genesis state")
 
 	err := proVM.Initialize(

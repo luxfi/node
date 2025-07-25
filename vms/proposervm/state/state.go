@@ -20,7 +20,7 @@ type State interface {
 	ChainState
 	BlockState
 	HeightIndex
-	
+
 	// Commit writes all pending changes to the underlying database.
 	Commit() error
 }

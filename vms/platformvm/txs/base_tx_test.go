@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -71,9 +71,9 @@ func TestBaseTxSerialization(t *testing.T) {
 			Memo: types.JSONByteSlice{},
 		},
 	}
-	require.NoError(simpleBaseTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(simpleBaseTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -217,9 +217,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	require.NoError(complexBaseTx.SyntacticVerify(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(complexBaseTx.SyntacticVerify(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -365,11 +365,11 @@ func TestBaseTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexBaseTx.InitCtx(&snow.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	unsignedComplexBaseTx.InitCtx(&consensus.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:    aliaser,
+		BCLookup:   aliaser,
 	})
 
 	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")

@@ -8,14 +8,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
 // AutominingScheduler is a scheduler that continuously produces blocks at a fixed interval
 type AutominingScheduler interface {
 	Scheduler
-	
+
 	// StartAutomining starts continuous block production
 	StartAutomining(interval time.Duration)
 	// StopAutomining stops continuous block production
@@ -24,7 +24,7 @@ type AutominingScheduler interface {
 
 type autominingScheduler struct {
 	*scheduler
-	
+
 	// Channel to control automining
 	autominingControl chan autominingCommand
 	// Whether automining is currently active
@@ -47,7 +47,7 @@ func NewAutomining(log logging.Logger, toEngine chan<- common.Message) (Automini
 		toEngine:          toEngine,
 		newBuildBlockTime: make(chan time.Time),
 	}
-	
+
 	return &autominingScheduler{
 		scheduler:         baseScheduler,
 		autominingControl: make(chan autominingCommand, 1),
@@ -57,25 +57,25 @@ func NewAutomining(log logging.Logger, toEngine chan<- common.Message) (Automini
 func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 	timer := time.NewTimer(time.Until(buildBlockTime))
 	defer timer.Stop()
-	
+
 	// Automining ticker - initially stopped
 	autominingTicker := time.NewTicker(time.Hour)
 	autominingTicker.Stop()
 	defer autominingTicker.Stop()
-	
+
 	for {
 		select {
 		case <-timer.C: // It's time to tell the engine to try to build a block
 			s.handleBuildRequest()
-			
+
 			// If automining is active, reset the timer for the next block
 			if s.autominingActive {
 				timer.Reset(s.autominingInterval)
 			}
-			
+
 		case <-autominingTicker.C: // Automining interval elapsed
 			s.handleBuildRequest()
-			
+
 		case cmd := <-s.autominingControl:
 			if cmd.start {
 				s.log.Info("starting automining",
@@ -83,7 +83,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 				)
 				s.autominingActive = true
 				s.autominingInterval = cmd.interval
-				
+
 				// Stop the regular timer and start automining ticker
 				if !timer.Stop() {
 					select {
@@ -91,17 +91,17 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 					default:
 					}
 				}
-				
+
 				autominingTicker.Reset(cmd.interval)
 			} else {
 				s.log.Info("stopping automining")
 				s.autominingActive = false
 				autominingTicker.Stop()
-				
+
 				// Reset the regular timer
 				timer.Reset(time.Until(buildBlockTime))
 			}
-			
+
 		case buildBlockTime, ok := <-s.newBuildBlockTime:
 			// Stop the timer and clear [timer.C] if needed
 			if !timer.Stop() {
@@ -110,17 +110,17 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 				default:
 				}
 			}
-			
+
 			if !ok {
 				// s.Close() was called
 				return
 			}
-			
+
 			// Only update the timer if automining is not active
 			if !s.autominingActive {
 				timer.Reset(time.Until(buildBlockTime))
 			}
-			
+
 		case msg := <-s.fromVM:
 			// Forward the message from VM to engine
 			select {

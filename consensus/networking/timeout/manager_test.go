@@ -11,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/timer"
 )
 

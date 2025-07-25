@@ -539,7 +539,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.backend.LUXAssetID()
+		luxAssetID      = b.backend.LUXAssetID()
 		txFee           = b.backend.BaseTxFee()
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -586,8 +586,8 @@ func (b *builder) NewImportTx(
 	}
 
 	var (
-		inputs       []*lux.TransferableInput
-		outputs      = make([]*lux.TransferableOutput, 0, len(importedAmounts))
+		inputs      []*lux.TransferableInput
+		outputs     = make([]*lux.TransferableOutput, 0, len(importedAmounts))
 		importedLUX = importedAmounts[luxAssetID]
 	)
 	if importedLUX > txFee {
@@ -688,7 +688,7 @@ func (b *builder) NewTransformSubnetTx(
 ) (*txs.TransformSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.backend.LUXAssetID(): b.backend.TransformSubnetTxFee(),
-		assetID:                 maxSupply - initialSupply,
+		assetID:                maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -1081,7 +1081,7 @@ func (b *builder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                     // sort inputs
+	utils.Sort(inputs)                                    // sort inputs
 	lux.SortTransferableOutputs(changeOutputs, txs.Codec) // sort the change outputs
 	lux.SortTransferableOutputs(stakeOutputs, txs.Codec)  // sort stake outputs
 	return inputs, changeOutputs, stakeOutputs, nil

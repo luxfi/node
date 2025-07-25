@@ -190,18 +190,18 @@ if [ -n "$NODE_ID" ]; then
     CMD_ARGS+=(
         "--staking-enabled=true"
         "--sybil-protection-enabled=true"
-        "--snow-sample-size=5"
-        "--snow-quorum-size=3"
-        "--snow-virtuous-commit-threshold=5"
-        "--snow-rogue-commit-threshold=10"
+        "--consensus-sample-size=5"
+        "--consensus-quorum-size=3"
+        "--consensus-virtuous-commit-threshold=5"
+        "--consensus-rogue-commit-threshold=10"
     )
 else
     # Single node or dev mode
     CMD_ARGS+=(
         "--staking-enabled=false"
         "--sybil-protection-enabled=false"
-        "--snow-sample-size=1"
-        "--snow-quorum-size=1"
+        "--consensus-sample-size=1"
+        "--consensus-quorum-size=1"
     )
 fi
 

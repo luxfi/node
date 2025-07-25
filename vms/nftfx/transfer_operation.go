@@ -6,7 +6,7 @@ package nftfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -18,7 +18,7 @@ type TransferOperation struct {
 	Output TransferOutput    `serialize:"true" json:"output"`
 }
 
-func (op *TransferOperation) InitCtx(ctx *snow.Context) {
+func (op *TransferOperation) InitCtx(ctx *consensus.Context) {
 	op.Output.OutputOwners.InitCtx(ctx)
 }
 

@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 
@@ -163,12 +163,12 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 
-			snowCtx := snowtest.Context(t, ids.Empty)
+			consensusCtx := consensustest.Context(t, ids.Empty)
 			n, err := New(
-				snowCtx.Log,
-				snowCtx.NodeID,
-				snowCtx.SubnetID,
-				snowCtx.ValidatorState,
+				consensusCtx.Log,
+				consensusCtx.NodeID,
+				consensusCtx.SubnetID,
+				consensusCtx.ValidatorState,
 				tt.txVerifier,
 				tt.mempoolFunc(ctrl),
 				tt.partialSyncPrimaryNetwork,

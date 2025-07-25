@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -357,7 +357,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.backend.LUXAssetID()
+		luxAssetID      = b.backend.LUXAssetID()
 		txFee           = b.backend.BaseTxFee()
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -405,8 +405,8 @@ func (b *builder) NewImportTx(
 	}
 
 	var (
-		inputs       []*lux.TransferableInput
-		outputs      = make([]*lux.TransferableOutput, 0, len(importedAmounts))
+		inputs      []*lux.TransferableInput
+		outputs     = make([]*lux.TransferableOutput, 0, len(importedAmounts))
 		importedLUX = importedAmounts[luxAssetID]
 	)
 	if importedLUX > txFee {
@@ -615,7 +615,7 @@ func (b *builder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                    // sort inputs
+	utils.Sort(inputs)                                   // sort inputs
 	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the change outputs
 	return inputs, outputs, nil
 }

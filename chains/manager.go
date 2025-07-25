@@ -20,19 +20,11 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/meterdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/common/queue"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core/queue"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/graph/state"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/common/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
@@ -40,6 +32,14 @@ import (
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/meterdb"
+	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -61,15 +61,15 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/linear"
 	aveng "github.com/luxfi/node/consensus/engine/graph"
 	avbootstrap "github.com/luxfi/node/consensus/engine/graph/bootstrap"
 	avagetter "github.com/luxfi/node/consensus/engine/graph/getter"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
-	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	smcon "github.com/luxfi/node/consensus/linear"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 const (
@@ -78,13 +78,13 @@ const (
 	defaultChannelSize = 1
 	initialQueueSize   = 3
 
-	luxNamespace    = constants.PlatformName + metric.NamespaceSeparator + "lux"
+	luxNamespace          = constants.PlatformName + metric.NamespaceSeparator + "lux"
 	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
 	meterchainvmNamespace = constants.PlatformName + metric.NamespaceSeparator + "meterchainvm"
 	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
-	linearNamespace      = constants.PlatformName + metric.NamespaceSeparator + "linear"
+	linearNamespace       = constants.PlatformName + metric.NamespaceSeparator + "linear"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
 
@@ -168,7 +168,7 @@ type ChainParameters struct {
 
 type chain struct {
 	Name    string
-	Context *snow.ConsensusContext
+	Context *consensus.ConsensusContext
 	VM      common.VM
 	Handler handler.Handler
 }
@@ -192,9 +192,9 @@ type ManagerConfig struct {
 	Log                       logging.Logger
 	LogFactory                logging.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
-	BlockAcceptorGroup        snow.AcceptorGroup
-	TxAcceptorGroup           snow.AcceptorGroup
-	VertexAcceptorGroup       snow.AcceptorGroup
+	BlockAcceptorGroup        consensus.AcceptorGroup
+	TxAcceptorGroup           consensus.AcceptorGroup
+	VertexAcceptorGroup       consensus.AcceptorGroup
 	DB                        database.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
 	Router                    router.Router              // Routes incoming messages to the appropriate chain
@@ -206,9 +206,9 @@ type ManagerConfig struct {
 	Server                    server.Server // Handles HTTP API calls
 	Keystore                  keystore.Keystore
 	AtomicMemory              *atomic.Memory
-	LUXAssetID               ids.ID
-	SkipBootstrap             bool // Skip bootstrapping and start processing immediately
-	EnableAutomining          bool // Enable automining in POA mode
+	LUXAssetID                ids.ID
+	SkipBootstrap             bool            // Skip bootstrapping and start processing immediately
+	EnableAutomining          bool            // Enable automining in POA mode
 	XChainID                  ids.ID          // ID of the X-Chain,
 	CChainID                  ids.ID          // ID of the C-Chain,
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
@@ -274,13 +274,13 @@ type manager struct {
 	// linear++ related interface to allow validators retrieval
 	validatorState validators.State
 
-	luxGatherer    metrics.MultiGatherer            // chainID
+	luxGatherer          metrics.MultiGatherer            // chainID
 	handlerGatherer      metrics.MultiGatherer            // chainID
 	meterChainVMGatherer metrics.MultiGatherer            // chainID
 	meterDAGVMGatherer   metrics.MultiGatherer            // chainID
 	proposervmGatherer   metrics.MultiGatherer            // chainID
 	p2pGatherer          metrics.MultiGatherer            // chainID
-	linearGatherer      metrics.MultiGatherer            // chainID
+	linearGatherer       metrics.MultiGatherer            // chainID
 	stakeGatherer        metrics.MultiGatherer            // chainID
 	vmGatherer           map[ids.ID]metrics.MultiGatherer // vmID -> chainID
 }
@@ -335,13 +335,13 @@ func New(config *ManagerConfig) (Manager, error) {
 		unblockChainCreatorCh:  make(chan struct{}),
 		chainCreatorShutdownCh: make(chan struct{}),
 
-		luxGatherer:    luxGatherer,
+		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
 		meterChainVMGatherer: meterChainVMGatherer,
 		meterDAGVMGatherer:   meterDAGVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
-		linearGatherer:      linearGatherer,
+		linearGatherer:       linearGatherer,
 		stakeGatherer:        stakeGatherer,
 		vmGatherer:           make(map[ids.ID]metrics.MultiGatherer),
 	}, nil
@@ -357,7 +357,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		zap.Bool("vmIDEqualsEVMID", chainParams.VMID == constants.EVMID),
 		zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
 	)
-	
+
 	if chainParams.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
 		mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
 		parsedID, err := ids.FromString(mappedID)
@@ -374,7 +374,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 			)
 		}
 	}
-	
+
 	if sb, _ := m.Subnets.GetOrCreate(chainParams.SubnetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			zap.String("reason", "chain already staged"),
@@ -531,16 +531,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, err
 	}
 
-	ctx := &snow.ConsensusContext{
-		Context: &snow.Context{
+	ctx := &consensus.ConsensusContext{
+		Context: &consensus.Context{
 			NetworkID: m.NetworkID,
 			SubnetID:  chainParams.SubnetID,
 			ChainID:   chainParams.ID,
 			NodeID:    m.NodeID,
 			PublicKey: bls.PublicFromSecretKey(m.StakingBLSKey),
 
-			XChainID:    m.XChainID,
-			CChainID:    m.CChainID,
+			XChainID:   m.XChainID,
+			CChainID:   m.CChainID,
 			LUXAssetID: m.LUXAssetID,
 
 			Log:          chainLog,
@@ -606,7 +606,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		if chainParams.ID == constants.PlatformChainID {
 			beacons = chainParams.CustomBeacons
 		}
-		
+
 		// In skip-bootstrap mode, use empty beacons for all chains
 		// This enables single-node development mode
 		if m.SkipBootstrap {
@@ -644,7 +644,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 
 // Create a DAG-based blockchain that uses Lux
 func (m *manager) createLuxChain(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.ConsensusContext,
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
@@ -654,9 +654,9 @@ func (m *manager) createLuxChain(
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
-		State: snow.Initializing,
+		State: consensus.Initializing,
 	})
 
 	primaryAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
@@ -952,7 +952,7 @@ func (m *manager) createLuxChain(
 	}
 	vdrs.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
-	snowGetHandler, err := snowgetter.New(
+	consensusGetHandler, err := consensusgetter.New(
 		vmWrappingProposerVM,
 		linearMessageSender,
 		ctx.Log,
@@ -961,7 +961,7 @@ func (m *manager) createLuxChain(
 		ctx.Registerer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
 	var linearConsensus smcon.Consensus = &smcon.Topological{}
@@ -973,7 +973,7 @@ func (m *manager) createLuxChain(
 	// to make sure start callbacks are duly initialized
 	linearEngineConfig := smeng.Config{
 		Ctx:                 ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       consensusGetHandler,
 		VM:                  vmWrappingProposerVM,
 		Sender:              linearMessageSender,
 		Validators:          vdrs,
@@ -997,9 +997,9 @@ func (m *manager) createLuxChain(
 	if m.SkipBootstrap {
 		bootstrapBeacons = validators.NewManager()
 	}
-	
+
 	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        bootstrapBeacons,
 		SampleK:                        sampleK,
@@ -1050,7 +1050,7 @@ func (m *manager) createLuxChain(
 		beacons = validators.NewManager()
 		ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
 	}
-	
+
 	luxBootstrapperConfig := avbootstrap.Config{
 		AllGetsServer:                  avaGetHandler,
 		Ctx:                            ctx,
@@ -1107,7 +1107,7 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Linear consensus engine
 func (m *manager) createLinearChain(
-	ctx *snow.ConsensusContext,
+	ctx *consensus.ConsensusContext,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
@@ -1118,9 +1118,9 @@ func (m *manager) createLinearChain(
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	ctx.State.Set(snow.EngineState{
+	ctx.State.Set(consensus.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
-		State: snow.Initializing,
+		State: consensus.Initializing,
 	})
 
 	primaryAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
@@ -1362,7 +1362,7 @@ func (m *manager) createLinearChain(
 	startupTracker := tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
-	snowGetHandler, err := snowgetter.New(
+	consensusGetHandler, err := consensusgetter.New(
 		vm,
 		messageSender,
 		ctx.Log,
@@ -1371,7 +1371,7 @@ func (m *manager) createLinearChain(
 		ctx.Registerer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
 	var consensus smcon.Consensus = &smcon.Topological{}
@@ -1383,7 +1383,7 @@ func (m *manager) createLinearChain(
 	// to make sure start callbacks are duly initialized
 	engineConfig := smeng.Config{
 		Ctx:                 ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       consensusGetHandler,
 		VM:                  vm,
 		Sender:              messageSender,
 		Validators:          vdrs,
@@ -1404,7 +1404,7 @@ func (m *manager) createLinearChain(
 
 	// create bootstrap gear
 	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        beacons,
 		SampleK:                        sampleK,
@@ -1433,7 +1433,7 @@ func (m *manager) createLinearChain(
 
 	// create state sync gear
 	stateSyncCfg, err := syncer.NewConfig(
-		snowGetHandler,
+		consensusGetHandler,
 		ctx,
 		startupTracker,
 		messageSender,
@@ -1485,7 +1485,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	return chain.Context().State.Get().State == snow.NormalOp
+	return chain.Context().State.Get().State == consensus.NormalOp
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {
@@ -1587,7 +1587,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm common.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensus.ConsensusContext, vm common.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

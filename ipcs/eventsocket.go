@@ -8,15 +8,15 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ipcs/socket"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
-var _ snow.Acceptor = (*EventSockets)(nil)
+var _ consensus.Acceptor = (*EventSockets)(nil)
 
 // EventSockets is a set of named eventSockets
 type EventSockets struct {
@@ -28,9 +28,9 @@ type EventSockets struct {
 func newEventSockets(
 	ctx context,
 	chainID ids.ID,
-	blockAcceptorGroup snow.AcceptorGroup,
-	txAcceptorGroup snow.AcceptorGroup,
-	vertexAcceptorGroup snow.AcceptorGroup,
+	blockAcceptorGroup consensus.AcceptorGroup,
+	txAcceptorGroup consensus.AcceptorGroup,
+	vertexAcceptorGroup consensus.AcceptorGroup,
 ) (*EventSockets, error) {
 	consensusIPC, err := newEventIPCSocket(
 		ctx,
@@ -61,7 +61,7 @@ func newEventSockets(
 }
 
 // Accept delivers a message to the underlying eventSockets
-func (ipcs *EventSockets) Accept(ctx *snow.ConsensusContext, containerID ids.ID, container []byte) error {
+func (ipcs *EventSockets) Accept(ctx *consensus.ConsensusContext, containerID ids.ID, container []byte) error {
 	if ipcs.consensusSocket != nil {
 		if err := ipcs.consensusSocket.Accept(ctx, containerID, container); err != nil {
 			return err
@@ -116,8 +116,8 @@ func newEventIPCSocket(
 	ctx context,
 	chainID ids.ID,
 	name string,
-	linearAcceptorGroup snow.AcceptorGroup,
-	luxAcceptorGroup snow.AcceptorGroup,
+	linearAcceptorGroup consensus.AcceptorGroup,
+	luxAcceptorGroup consensus.AcceptorGroup,
 ) (*eventSocket, error) {
 	var (
 		url     = ipcURL(ctx, chainID, name)
@@ -166,7 +166,7 @@ func newEventIPCSocket(
 }
 
 // Accept delivers a message to the eventSocket
-func (eis *eventSocket) Accept(_ *snow.ConsensusContext, _ ids.ID, container []byte) error {
+func (eis *eventSocket) Accept(_ *consensus.ConsensusContext, _ ids.ID, container []byte) error {
 	eis.socket.Send(container)
 	return nil
 }

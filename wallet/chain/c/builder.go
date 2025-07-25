@@ -97,9 +97,9 @@ type BuilderBackend interface {
 
 type builder struct {
 	luxAddrs set.Set[ids.ShortID]
-	ethAddrs  set.Set[ethcommon.Address]
-	context   *Context
-	backend   BuilderBackend
+	ethAddrs set.Set[ethcommon.Address]
+	context  *Context
+	backend  BuilderBackend
 }
 
 // NewBuilder returns a new transaction builder.
@@ -118,9 +118,9 @@ func NewBuilder(
 ) Builder {
 	return &builder{
 		luxAddrs: luxAddrs,
-		ethAddrs:  ethAddrs,
-		context:   context,
-		backend:   backend,
+		ethAddrs: ethAddrs,
+		context:  context,
+		backend:  backend,
 	}
 }
 
@@ -161,7 +161,7 @@ func (b *builder) GetImportableBalance(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 		balance         uint64
 	)
 	for _, utxo := range utxos {
@@ -195,7 +195,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 
 		importedInputs = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmount uint64
@@ -269,7 +269,7 @@ func (b *builder) NewExportTx(
 	options ...common.Option,
 ) (*evm.UnsignedExportTx, error) {
 	var (
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 		exportedOutputs = make([]*lux.TransferableOutput, len(outputs))
 		exportedAmount  uint64
 	)
@@ -387,12 +387,12 @@ func (b *builder) NewExportTx(
 	utils.Sort(inputs)
 	tx.Ins = inputs
 
-	snowCtx, err := newSnowContext(b.context)
+	consensusCtx, err := newConsensusContext(b.context)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range tx.ExportedOutputs {
-		out.InitCtx(snowCtx)
+		out.InitCtx(consensusCtx)
 	}
 	return tx, nil
 }

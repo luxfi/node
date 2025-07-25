@@ -13,21 +13,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
+	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/node/consensus/engine/dag/getter"
+	"github.com/luxfi/node/consensus/engine/dag/vertex/vertextest"
+	"github.com/luxfi/node/consensus/engine/enginetest"
+	dag "github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
-	"github.com/luxfi/node/consensus/engine/dag/getter"
-	"github.com/luxfi/node/consensus/engine/dag/vertex/vertextest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -59,8 +59,8 @@ func (t *testTx) Accept(ctx context.Context) error {
 func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextest.Manager, *vertextest.VM) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 
 	vdrs := validators.NewManager()
 	db := memdb.New()

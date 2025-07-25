@@ -90,7 +90,7 @@ func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, err
 
 	return primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain:     keychain,
+		LUXKeychain:      keychain,
 		EthKeychain:      keychain,
 		PChainTxsToFetch: txIDs,
 	})

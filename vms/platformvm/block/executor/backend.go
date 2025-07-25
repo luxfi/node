@@ -7,8 +7,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -33,7 +33,7 @@ type backend struct {
 	blkIDToState map[ids.ID]*blockState
 	state        state.State
 
-	ctx *snow.Context
+	ctx *consensus.Context
 }
 
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {

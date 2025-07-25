@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"

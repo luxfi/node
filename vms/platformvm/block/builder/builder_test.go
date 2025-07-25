@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -43,7 +43,7 @@ func TestBuildBlockBasic(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -255,7 +255,7 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)
@@ -430,7 +430,7 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 	utx, err := builder.NewCreateChainTx(
 		testSubnet1.ID(),
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)

@@ -13,21 +13,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap/interval"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -39,8 +39,8 @@ var errUnknownBlock = errors.New("unknown block")
 func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest.VM, func()) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 
 	vdrs := validators.NewManager()
 
@@ -76,7 +76,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 
 	require.NoError(startupTracker.Connected(context.Background(), peer, version.CurrentApp))
 
-	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
+	consensusGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
@@ -95,7 +95,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 	return Config{
 		Haltable:                       &core.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        vdrs,
 		SampleK:                        vdrs.NumValidators(ctx.SubnetID),
@@ -119,8 +119,8 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	sender.Default(true)
 	vm.Default(true)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	// create boostrapper configuration
 	peers := validators.NewManager()
 	sampleK := 2
@@ -130,7 +130,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	startupTracker := tracker.NewStartup(tracker.NewPeers(), startupAlpha)
 	peers.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
-	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
+	consensusGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
@@ -144,7 +144,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	cfg := Config{
 		Haltable:                       &core.Halter{},
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,
 		SampleK:                        sampleK,
@@ -620,8 +620,8 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 func TestBootstrapNoParseOnNew(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(consensusCtx)
 	peers := validators.NewManager()
 
 	sender := &enginetest.Sender{}
@@ -655,7 +655,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peers.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 	require.NoError(startupTracker.Connected(context.Background(), peer, version.CurrentApp))
 
-	snowGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
+	consensusGetHandler, err := getter.New(vm, sender, ctx.Log, time.Second, 2000, ctx.Registerer)
 	require.NoError(err)
 
 	blk1 := lineartest.BuildChild(lineartest.Genesis)
@@ -686,7 +686,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 
 	config := Config{
 		Haltable:                       &core.Halter{},
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,
 		SampleK:                        peers.NumValidators(ctx.SubnetID),

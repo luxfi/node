@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/ids"
 )
 
 var (

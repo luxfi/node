@@ -11,12 +11,12 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -39,7 +39,7 @@ var (
 type VM struct {
 	common.AppHandler
 
-	chainContext *snow.Context
+	chainContext *consensus.Context
 	db           database.Database
 	genesis      *genesis.Genesis
 	engineChan   chan<- common.Message
@@ -50,7 +50,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *snow.Context,
+	chainContext *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -96,7 +96,7 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state snow.State) error {
+func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	vm.chain.SetChainState(state)
 	return nil
 }

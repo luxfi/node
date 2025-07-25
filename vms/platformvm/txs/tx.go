@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
@@ -127,7 +127,7 @@ func (tx *Tx) InputIDs() set.Set[ids.ID] {
 	return tx.Unsigned.InputIDs()
 }
 
-func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *Tx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx

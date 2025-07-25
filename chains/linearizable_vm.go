@@ -6,12 +6,12 @@ package chains
 import (
 	"context"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/core"
 )
 
 var (
@@ -28,7 +28,7 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize common.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx          *snow.Context
+	ctx          *consensus.Context
 	db           database.Database
 	genesisBytes []byte
 	upgradeBytes []byte
@@ -69,7 +69,7 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOn
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *snow.Context,
+	_ *consensus.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,

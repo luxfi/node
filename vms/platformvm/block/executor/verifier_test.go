@@ -12,9 +12,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -52,7 +52,7 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -138,7 +138,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -227,7 +227,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -334,7 +334,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -407,7 +407,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -468,7 +468,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -542,7 +542,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &snow.Context{
+				ctx: &consensus.Context{
 					Log: logging.NoLog{},
 				},
 			}
@@ -640,7 +640,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &snow.Context{
+				ctx: &consensus.Context{
 					Log: logging.NoLog{},
 				},
 			}
@@ -721,7 +721,7 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -812,7 +812,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -871,7 +871,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &snow.Context{
+		ctx: &consensus.Context{
 			Log: logging.NoLog{},
 		},
 	}
@@ -930,7 +930,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -976,7 +976,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -1021,7 +1021,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},
@@ -1067,7 +1067,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 		},

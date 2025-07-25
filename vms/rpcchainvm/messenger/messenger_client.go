@@ -6,9 +6,8 @@ package messenger
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/common"
-
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
+	"github.com/luxfi/node/consensus/engine/core"
 )
 
 // Client is an implementation of a messenger channel that talks over RPC.

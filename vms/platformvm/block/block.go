@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	snow.ContextInitializable
+	consensus.ContextInitializable
 	ID() ids.ID
 	Parent() ids.ID
 	Bytes() []byte

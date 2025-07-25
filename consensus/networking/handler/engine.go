@@ -4,9 +4,9 @@
 package handler
 
 import (
-	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus"
-	
+	"github.com/luxfi/node/proto/pb/p2p"
+
 	"github.com/luxfi/node/consensus/engine/core"
 )
 

@@ -13,13 +13,13 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"
@@ -48,9 +48,9 @@ type Config struct {
 	Log                  logging.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
-	BlockAcceptorGroup   snow.AcceptorGroup
-	TxAcceptorGroup      snow.AcceptorGroup
-	VertexAcceptorGroup  snow.AcceptorGroup
+	BlockAcceptorGroup   consensus.AcceptorGroup
+	TxAcceptorGroup      consensus.AcceptorGroup
+	VertexAcceptorGroup  consensus.AcceptorGroup
 	APIServer            server.PathAdder
 	ShutdownF            func()
 }
@@ -121,15 +121,15 @@ type indexer struct {
 	txIndices map[ids.ID]*index
 
 	// Notifies of newly accepted blocks
-	blockAcceptorGroup snow.AcceptorGroup
+	blockAcceptorGroup consensus.AcceptorGroup
 	// Notifies of newly accepted transactions
-	txAcceptorGroup snow.AcceptorGroup
+	txAcceptorGroup consensus.AcceptorGroup
 	// Notifies of newly accepted vertices
-	vertexAcceptorGroup snow.AcceptorGroup
+	vertexAcceptorGroup consensus.AcceptorGroup
 }
 
 // Assumes [ctx.Lock] is not held
-func (i *indexer) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx *consensus.ConsensusContext, vm common.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -310,7 +310,7 @@ func (i *indexer) registerChainHelper(
 	chainID ids.ID,
 	prefixEnd byte,
 	name, endpoint string,
-	acceptorGroup snow.AcceptorGroup,
+	acceptorGroup consensus.AcceptorGroup,
 ) (*index, error) {
 	prefix := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(prefix, chainID[:])

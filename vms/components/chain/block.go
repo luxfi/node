@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 var (
-	_ linear.Block           = (*BlockWrapper)(nil)
+	_ linear.Block            = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")

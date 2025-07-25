@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/utils/bag"
 )
 
-// Consensus represents a general snow instance that can be used directly to
+// Consensus represents a general consensus instance that can be used directly to
 // process the results of network queries.
 type Consensus interface {
 	fmt.Stringer
@@ -32,7 +32,7 @@ type Consensus interface {
 	// return true or false.
 	RecordPoll(votes bag.Bag[ids.ID]) bool
 
-	// RecordUnsuccessfulPoll resets the snowflake counters of this consensus
+	// RecordUnsuccessfulPoll resets the consensusflake counters of this consensus
 	// instance
 	RecordUnsuccessfulPoll()
 
@@ -46,7 +46,7 @@ type Factory interface {
 	NewUnary(params Parameters) Unary
 }
 
-// Nnary is a snow instance deciding between an unbounded number of values.
+// Nnary is a consensus instance deciding between an unbounded number of values.
 // The caller samples k nodes and calls RecordPoll with the result.
 // RecordUnsuccessfulPoll resets the confidence counters when one or
 // more consecutive polls fail to reach alphaPreference votes.
@@ -62,14 +62,14 @@ type Nnary interface {
 	// RecordPoll records the results of a network poll
 	RecordPoll(count int, choice ids.ID)
 
-	// RecordUnsuccessfulPoll resets the snowflake counter of this instance
+	// RecordUnsuccessfulPoll resets the consensusflake counter of this instance
 	RecordUnsuccessfulPoll()
 
 	// Return whether a choice has been finalized
 	Finalized() bool
 }
 
-// Binary is a snow instance deciding between two values.
+// Binary is a consensus instance deciding between two values.
 // The caller samples k nodes and calls RecordPoll with the result.
 // RecordUnsuccessfulPoll resets the confidence counters when one or
 // more consecutive polls fail to reach alphaPreference votes.
@@ -82,14 +82,14 @@ type Binary interface {
 	// RecordPoll records the results of a network poll
 	RecordPoll(count, choice int)
 
-	// RecordUnsuccessfulPoll resets the snowflake counter of this instance
+	// RecordUnsuccessfulPoll resets the consensusflake counter of this instance
 	RecordUnsuccessfulPoll()
 
 	// Return whether a choice has been finalized
 	Finalized() bool
 }
 
-// Unary is a snow instance deciding on one value.
+// Unary is a consensus instance deciding on one value.
 // The caller samples k nodes and calls RecordPoll with the result.
 // RecordUnsuccessfulPoll resets the confidence counters when one or
 // more consecutive polls fail to reach alphaPreference votes.
@@ -99,7 +99,7 @@ type Unary interface {
 	// RecordPoll records the results of a network poll
 	RecordPoll(count int)
 
-	// RecordUnsuccessfulPoll resets the snowflake counter of this instance
+	// RecordUnsuccessfulPoll resets the consensusflake counter of this instance
 	RecordUnsuccessfulPoll()
 
 	// Return whether a choice has been finalized
@@ -108,6 +108,6 @@ type Unary interface {
 	// Returns a new binary confidence instance with the original choice.
 	Extend(originalPreference int) Binary
 
-	// Returns a new unary snowflake instance with the same state
+	// Returns a new unary consensusflake instance with the same state
 	Clone() Unary
 }

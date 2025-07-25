@@ -8,12 +8,12 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -159,7 +159,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == snow.Bootstrapping,
+		b.chain.chainState == consensus.Bootstrapping,
 		blockContext,
 		b.Stateless,
 	)

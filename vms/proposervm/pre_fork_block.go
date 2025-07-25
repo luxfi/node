@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -188,10 +188,10 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
-	
+
 	// Check if automining is enabled via environment variable
 	autominingEnabled := os.Getenv("LUX_ENABLE_AUTOMINING") == "true"
-	
+
 	if parentTimestamp.Before(b.vm.ActivationTime) && !autominingEnabled {
 		// The chain hasn't forked yet (unless automining is enabled)
 		innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)

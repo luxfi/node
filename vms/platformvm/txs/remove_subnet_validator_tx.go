@@ -6,8 +6,8 @@ package txs
 import (
 	"errors"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -29,7 +29,7 @@ type RemoveSubnetValidatorTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

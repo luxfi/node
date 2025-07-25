@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -39,7 +39,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(&secp256k1fx.TestVM{}))
 	require.NoError(t, fx.Bootstrapped())
 
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	h := &verifier{
 		ctx: ctx,
@@ -1046,7 +1046,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 			},
 			producedAmounts: map[ids.ID]uint64{
 				h.ctx.LUXAssetID: 1,
-				customAssetID:     1,
+				customAssetID:    1,
 			},
 			expectedErr: nil,
 		},

@@ -162,7 +162,7 @@ curl -X POST --data '{
   "result": {
     "aliases": [
       "X",
-      "avm",
+      "xvm",
       "2eNy1mUFdmaxXNj1eQHUe7Np4gju9sJsEtWQ4MX3ToiNKuADed"
     ]
   },

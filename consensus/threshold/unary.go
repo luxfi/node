@@ -12,7 +12,7 @@ import (
 
 var _ sampling.Unary = (*unaryThreshold)(nil)
 
-func newUnarySnowflake(alphaPreference int, terminationConditions []terminationCondition) unaryThreshold {
+func newUnaryConsensusflake(alphaPreference int, terminationConditions []terminationCondition) unaryThreshold {
 	return unaryThreshold{
 		alphaPreference:       alphaPreference,
 		terminationConditions: terminationConditions,
@@ -20,7 +20,7 @@ func newUnarySnowflake(alphaPreference int, terminationConditions []terminationC
 	}
 }
 
-// unaryThreshold is the implementation of a unary snowflake instance
+// unaryThreshold is the implementation of a unary consensusflake instance
 // Invariant:
 // len(terminationConditions) == len(confidence)
 // terminationConditions[i].alphaConfidence < terminationConditions[i+1].alphaConfidence
@@ -84,9 +84,9 @@ func (sf *unaryThreshold) Extend(choice int) sampling.Binary {
 }
 
 func (sf *unaryThreshold) Clone() sampling.Unary {
-	newSnowflake := *sf
-	newSnowflake.confidence = slices.Clone(sf.confidence)
-	return &newSnowflake
+	newConsensusflake := *sf
+	newConsensusflake.confidence = slices.Clone(sf.confidence)
+	return &newConsensusflake
 }
 
 func (sf *unaryThreshold) String() string {

@@ -17,7 +17,7 @@ import (
 
 var _ keystorepb.KeystoreServer = (*Server)(nil)
 
-// Server is a snow.Keystore that is managed over RPC.
+// Server is a consensus.Keystore that is managed over RPC.
 type Server struct {
 	keystorepb.UnsafeKeystoreServer
 	ks keystore.BlockchainKeystore

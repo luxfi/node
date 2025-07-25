@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -34,7 +34,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext *snow.Context
+	ChainContext *consensus.Context
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -127,7 +127,7 @@ func TestRejectBlock(t *testing.T) {
 			}
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &snow.Context{
+					ctx: &consensus.Context{
 						Log: logging.NoLog{},
 					},
 					blkIDToState: blkIDToState,

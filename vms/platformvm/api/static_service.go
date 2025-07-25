@@ -179,7 +179,7 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	LuxAssetID   ids.ID                           `json:"luxAssetID"`
+	LuxAssetID    ids.ID                           `json:"luxAssetID"`
 	NetworkID     json.Uint32                      `json:"networkID"`
 	UTXOs         []UTXO                           `json:"utxos"`
 	Validators    []GenesisPermissionlessValidator `json:"validators"`

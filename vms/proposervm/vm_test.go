@@ -12,22 +12,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/snowtest"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -97,7 +97,7 @@ func initTestProposerVM(
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
@@ -173,7 +173,7 @@ func initTestProposerVM(
 		}, nil
 	}
 
-	ctx := snowtest.Context(t, ids.ID{1})
+	ctx := consensustest.Context(t, ids.ID{1})
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -194,7 +194,7 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 
 	proVM.Set(lineartest.GenesisTimestamp)
@@ -308,12 +308,12 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 	}
 
 	// test
-	snowBlock, err := proVM.BuildBlock(context.Background())
+	consensusBlock, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
 	// checks
-	require.IsType(&postForkBlock{}, snowBlock)
-	proBlock := snowBlock.(*postForkBlock)
+	require.IsType(&postForkBlock{}, consensusBlock)
+	proBlock := consensusBlock.(*postForkBlock)
 
 	require.Equal(coreBlk, proBlock.innerBlk)
 }
@@ -837,7 +837,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 		}, nil
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -846,7 +846,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		_ context.Context,
-		_ *snow.Context,
+		_ *consensus.Context,
 		_ database.Database,
 		_ []byte,
 		_ []byte,
@@ -878,7 +878,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 
 	// Notify the proposer VM of a new block on the inner block side
@@ -1101,13 +1101,13 @@ func TestInnerVMRollback(t *testing.T) {
 		}
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*snow.Context,
+		*consensus.Context,
 		database.Database,
 		[]byte,
 		[]byte,
@@ -1147,7 +1147,7 @@ func TestInnerVMRollback(t *testing.T) {
 		nil,
 	))
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 
 	coreBlk := lineartest.BuildChild(lineartest.Genesis)
@@ -1577,7 +1577,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
@@ -1653,7 +1653,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		}, nil
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -1675,7 +1675,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 
@@ -1749,7 +1749,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *snow.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte, chan<- common.Message,
 		[]*common.Fx, common.AppSender,
 	) error {
@@ -1825,7 +1825,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		}, nil
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = valState
 
@@ -1847,7 +1847,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
 
@@ -1944,7 +1944,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
@@ -2158,12 +2158,12 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	snowCtx := snowtest.Context(t, snowtest.CChainID)
-	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert)
+	consensusCtx := consensustest.Context(t, consensustest.CChainID)
+	consensusCtx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		snowCtx,
+		consensusCtx,
 		db,
 		nil,
 		nil,
@@ -2274,7 +2274,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &block.TestVM{
 		TestVM: common.TestVM{
 			T: t,
-			InitializeF: func(context.Context, *snow.Context, database.Database, []byte, []byte, []byte, chan<- common.Message, []*common.Fx, common.AppSender) error {
+			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, chan<- common.Message, []*common.Fx, common.AppSender) error {
 				return nil
 			},
 		},
@@ -2305,7 +2305,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 		},
 	}
 
-	ctx := snowtest.Context(t, snowtest.CChainID)
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 	ctx.ValidatorState = &validators.TestState{
 		T: t,
@@ -2352,7 +2352,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2444,7 +2444,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2492,7 +2492,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), snow.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point

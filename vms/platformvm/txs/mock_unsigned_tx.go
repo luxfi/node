@@ -12,8 +12,8 @@ package txs
 import (
 	reflect "reflect"
 
+	consensus "github.com/luxfi/node/consensus"
 	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
@@ -57,7 +57,7 @@ func (mr *MockUnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockUnsignedTx) InitCtx(ctx *snow.Context) {
+func (m *MockUnsignedTx) InitCtx(ctx *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }
@@ -109,7 +109,7 @@ func (mr *MockUnsignedTxMockRecorder) SetBytes(unsignedBytes any) *gomock.Call {
 }
 
 // SyntacticVerify mocks base method.
-func (m *MockUnsignedTx) SyntacticVerify(ctx *snow.Context) error {
+func (m *MockUnsignedTx) SyntacticVerify(ctx *consensus.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyntacticVerify", ctx)
 	ret0, _ := ret[0].(error)

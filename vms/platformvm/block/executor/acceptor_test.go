@@ -11,9 +11,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -52,7 +52,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log: logging.NoLog{},
 			},
 			blkIDToState: map[ids.ID]*blockState{
@@ -90,7 +90,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log:          logging.NoLog{},
 				SharedMemory: sharedMemory,
 			},
@@ -170,7 +170,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log:          logging.NoLog{},
 				SharedMemory: sharedMemory,
 			},
@@ -259,7 +259,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log:          logging.NoLog{},
 				SharedMemory: sharedMemory,
 			},
@@ -369,7 +369,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
+			ctx: &consensus.Context{
 				Log:          logging.NoLog{},
 				SharedMemory: sharedMemory,
 			},

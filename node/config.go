@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -108,7 +108,7 @@ type BootstrapConfig struct {
 
 	// Skip bootstrapping and start processing immediately
 	SkipBootstrap bool `json:"skipBootstrap"`
-	
+
 	// Enable automining in POA mode
 	EnableAutomining bool `json:"enableAutomining"`
 }
@@ -139,7 +139,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	LuxAssetID  ids.ID `json:"luxAssetID"`
+	LuxAssetID   ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

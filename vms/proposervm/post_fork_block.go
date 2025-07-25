@@ -6,9 +6,9 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

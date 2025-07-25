@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
 
 	pb "github.com/luxfi/node/proto/pb/validatorstate"

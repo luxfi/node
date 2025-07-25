@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -27,7 +27,7 @@ import (
 )
 
 func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	type test struct {
 		name        string
@@ -535,7 +535,7 @@ func TestGetValidatorRules(t *testing.T) {
 			MaxStakeDuration:  2 * time.Second,
 			MinDelegationFee:  1337,
 		}
-		luxAssetID   = ids.GenerateTestID()
+		luxAssetID    = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 	)
@@ -546,7 +546,7 @@ func TestGetValidatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &snow.Context{
+				Ctx: &consensus.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},
@@ -653,7 +653,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			MinStakeDuration:  time.Second,
 			MaxStakeDuration:  2 * time.Second,
 		}
-		luxAssetID   = ids.GenerateTestID()
+		luxAssetID    = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
 		subnetID      = ids.GenerateTestID()
 	)
@@ -663,7 +663,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &snow.Context{
+				Ctx: &consensus.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},

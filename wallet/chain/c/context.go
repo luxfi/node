@@ -7,11 +7,11 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 )
 
 const Alias = "C"
@@ -19,19 +19,19 @@ const Alias = "C"
 type Context struct {
 	NetworkID    uint32
 	BlockchainID ids.ID
-	LUXAssetID  ids.ID
+	LUXAssetID   ids.ID
 }
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := avm.NewClient(uri, "X")
+	xChainClient := xvm.NewClient(uri, "X")
 	return NewContextFromClients(ctx, infoClient, xChainClient)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient info.Client,
-	xChainClient avm.Client,
+	xChainClient xvm.Client,
 ) (*Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -51,19 +51,19 @@ func NewContextFromClients(
 	return &Context{
 		NetworkID:    networkID,
 		BlockchainID: blockchainID,
-		LUXAssetID:  luxAsset.AssetID,
+		LUXAssetID:   luxAsset.AssetID,
 	}, nil
 }
 
-func newSnowContext(c *Context) (*snow.Context, error) {
+func newConsensusContext(c *Context) (*consensus.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
-		NetworkID:   c.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     c.BlockchainID,
-		CChainID:    c.BlockchainID,
+	return &consensus.Context{
+		NetworkID:  c.NetworkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    c.BlockchainID,
+		CChainID:   c.BlockchainID,
 		LUXAssetID: c.LUXAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		Log:        logging.NoLog{},
+		BCLookup:   lookup,
 	}, lookup.Alias(c.BlockchainID, Alias)
 }

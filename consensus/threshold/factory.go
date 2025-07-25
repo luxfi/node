@@ -10,12 +10,12 @@ import (
 
 // NewNnaryThreshold returns a new nnary threshold instance
 func NewNnaryThreshold(alphaPreference, alphaConfidence, beta int, choice ids.ID) sampling.Nnary {
-	sf := newNnarySnowflake(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
+	sf := NewNetwork(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
 	return &sf
 }
 
 // NewUnaryThreshold returns a new unary threshold instance
 func NewUnaryThreshold(alphaPreference, alphaConfidence, beta int) sampling.Unary {
-	sf := newUnarySnowflake(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
+	sf := newUnaryConsensusflake(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
 	return &sf
 }

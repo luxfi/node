@@ -38,14 +38,14 @@ func main() {
 			log.Fatalf("failed to parse proposervm block: %s\n", err)
 		}
 
-		avmBlockBytes := proposerVMBlock.Block()
-		avmBlock, err := builder.Parser.ParseBlock(avmBlockBytes)
+		xvmBlockBytes := proposerVMBlock.Block()
+		xvmBlock, err := builder.Parser.ParseBlock(xvmBlockBytes)
 		if err != nil {
-			log.Fatalf("failed to parse avm block: %s\n", err)
+			log.Fatalf("failed to parse xvm block: %s\n", err)
 		}
 
-		acceptedTxs := avmBlock.Txs()
-		log.Printf("accepted block %s with %d transactions\n", avmBlock.ID(), len(acceptedTxs))
+		acceptedTxs := xvmBlock.Txs()
+		log.Printf("accepted block %s with %d transactions\n", xvmBlock.ID(), len(acceptedTxs))
 
 		for _, tx := range acceptedTxs {
 			log.Printf("accepted transaction %s\n", tx.ID())
