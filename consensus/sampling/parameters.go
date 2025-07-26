@@ -17,13 +17,7 @@ const (
 	// 1 means MinPercentConnected = 1 (fully connected).
 	MinPercentConnectedBuffer = .2
 
-	errMsg = `__________                    .___
-\______   \____________     __| _/__.__.
- |    |  _/\_  __ \__  \   / __ <   |  |
- |    |   \ |  | \// __ \_/ /_/ |\___  |
- |______  / |__|  (____  /\____ |/ ____|
-        \/             \/      \/\/
-
+	errMsg = `
   🏆    🏆    🏆    🏆    🏆    🏆    🏆
   ________ ________      ________________
  /  _____/ \_____  \    /  _  \__    ___/
@@ -36,14 +30,14 @@ const (
 
 var (
 	DefaultParameters = Parameters{
-		K:                     19,
-		AlphaPreference:       16,
-		AlphaConfidence:       13,
-		Beta:                  9,
-		ConcurrentRepolls:     6,
-		OptimalProcessing:     11,
-		MaxOutstandingItems:   111,
-		MaxItemProcessingTime: 11 * time.Second,
+		K:                     21,
+		AlphaPreference:       13, // liveness can tolerate up to 8 failures
+		AlphaConfidence:       18, // commit can tolerate up to 3 failures
+		Beta:                  9,  // 9 rounds → 8×50 ms + 100 ms = 550 ms finality
+		ConcurrentRepolls:     9,  // match β so you can fully pipeline all rounds
+		OptimalProcessing:     10,
+		MaxOutstandingItems:   369,
+		MaxItemProcessingTime: time.Duration(9630) * time.Millisecond, // 9.63s
 	}
 
 	ErrParametersInvalid = errors.New("parameters invalid")
