@@ -988,16 +988,16 @@ func (m *manager) createLuxChain(
 	}
 
 	// create bootstrap gear
-	// bootstrapBeacons := vdrs // Not used
+	bootstrapBeacons := vdrs
 	// In skip-bootstrap mode, use empty beacons for single-node development
-	// if m.SkipBootstrap {
-	// 	bootstrapBeacons = validators.NewManager()
-	// }
+	if m.SkipBootstrap {
+		bootstrapBeacons = validators.NewManager()
+	}
 
 	bootstrapCfg := smbootstrap.Config{
 		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            ctx,
-		// Beacons field removed - bootstrapBeacons,
+		Beacons:                        bootstrapBeacons,
 		SampleK:                        sampleK,
 		StartupTracker:                 startupTracker,
 		Sender:                         linearMessageSender,
@@ -1007,6 +1007,7 @@ func (m *manager) createLuxChain(
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
+		Haltable:                       &core.Halter{},
 	}
 	var linearBootstrapper core.BootstrapableEngine
 	linearBootstrapper, err = smbootstrap.New(
@@ -1052,6 +1053,7 @@ func (m *manager) createLuxChain(
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
+		PeerTracker:                    peerTracker,
 		// Beacons field removed - beacons,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
