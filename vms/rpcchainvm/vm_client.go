@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
-	"github.com/luxfi/node/ids/galiasreader"
+	"github.com/luxfi/node/utils/galiasreader"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
