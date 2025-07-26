@@ -12,6 +12,6 @@ import (
 type Registrant interface {
 	// Called when a chain is created
 	// This function is called before the chain starts processing messages
-	// [vm] should be a vertex.DAGVM or block.ChainVM
+	// [vm] should be a vertex.GRAPHVM or block.ChainVM
 	RegisterChain(chainName string, ctx *consensus.Context, vm core.VM)
 }

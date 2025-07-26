@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/vms/xvm"
 )
 
-var _ Context = (*context)(nil)
+var _ Context = (*pContext)(nil)
 
 type Context interface {
 	NetworkID() uint32
@@ -26,7 +26,7 @@ type Context interface {
 	AddSubnetDelegatorFee() uint64
 }
 
-type context struct {
+type pContext struct {
 	networkID                     uint32
 	luxAssetID                    ids.ID
 	baseTxFee                     uint64
@@ -91,7 +91,7 @@ func NewContext(
 	addSubnetValidatorFee uint64,
 	addSubnetDelegatorFee uint64,
 ) Context {
-	return &context{
+	return &pContext{
 		networkID:                     networkID,
 		luxAssetID:                    luxAssetID,
 		baseTxFee:                     baseTxFee,
@@ -105,42 +105,42 @@ func NewContext(
 	}
 }
 
-func (c *context) NetworkID() uint32 {
+func (c *pContext) NetworkID() uint32 {
 	return c.networkID
 }
 
-func (c *context) LUXAssetID() ids.ID {
+func (c *pContext) LUXAssetID() ids.ID {
 	return c.luxAssetID
 }
 
-func (c *context) BaseTxFee() uint64 {
+func (c *pContext) BaseTxFee() uint64 {
 	return c.baseTxFee
 }
 
-func (c *context) CreateSubnetTxFee() uint64 {
+func (c *pContext) CreateSubnetTxFee() uint64 {
 	return c.createSubnetTxFee
 }
 
-func (c *context) TransformSubnetTxFee() uint64 {
+func (c *pContext) TransformSubnetTxFee() uint64 {
 	return c.transformSubnetTxFee
 }
 
-func (c *context) CreateBlockchainTxFee() uint64 {
+func (c *pContext) CreateBlockchainTxFee() uint64 {
 	return c.createBlockchainTxFee
 }
 
-func (c *context) AddPrimaryNetworkValidatorFee() uint64 {
+func (c *pContext) AddPrimaryNetworkValidatorFee() uint64 {
 	return c.addPrimaryNetworkValidatorFee
 }
 
-func (c *context) AddPrimaryNetworkDelegatorFee() uint64 {
+func (c *pContext) AddPrimaryNetworkDelegatorFee() uint64 {
 	return c.addPrimaryNetworkDelegatorFee
 }
 
-func (c *context) AddSubnetValidatorFee() uint64 {
+func (c *pContext) AddSubnetValidatorFee() uint64 {
 	return c.addSubnetValidatorFee
 }
 
-func (c *context) AddSubnetDelegatorFee() uint64 {
+func (c *pContext) AddSubnetDelegatorFee() uint64 {
 	return c.addSubnetDelegatorFee
 }

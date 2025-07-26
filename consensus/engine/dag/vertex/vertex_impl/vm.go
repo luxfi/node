@@ -12,7 +12,7 @@ import (
 )
 
 type LinearizableVMWithEngine interface {
-	DAGVM
+	GRAPHVM
 
 	// Linearize is called after [Initialize] and after the DAG has been
 	// finalized. After Linearize is called:
@@ -33,7 +33,7 @@ type LinearizableVMWithEngine interface {
 }
 
 type LinearizableVM interface {
-	DAGVM
+	GRAPHVM
 
 	// Linearize is called after [Initialize] and after the DAG has been
 	// finalized. After Linearize is called:
@@ -50,9 +50,9 @@ type LinearizableVM interface {
 	Linearize(ctx context.Context, stopVertexID ids.ID) error
 }
 
-// DAGVM defines the minimum functionality that an lux VM must
+// GRAPHVM defines the minimum functionality that an lux VM must
 // implement
-type DAGVM interface {
+type GRAPHVM interface {
 	block.ChainVM
 
 	// Convert a stream of bytes to a transaction or return an error

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-var _ Signer = (*signer)(nil)
+var _ Signer = (*txSigner)(nil)
 
 type Signer interface {
 	SignUnsigned(ctx stdcontext.Context, tx txs.UnsignedTx) (*txs.Tx, error)
@@ -23,24 +23,24 @@ type SignerBackend interface {
 	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
 }
 
-type signer struct {
+type txSigner struct {
 	kc      keychain.Keychain
 	backend SignerBackend
 }
 
 func NewSigner(kc keychain.Keychain, backend SignerBackend) Signer {
-	return &signer{
+	return &txSigner{
 		kc:      kc,
 		backend: backend,
 	}
 }
 
-func (s *signer) SignUnsigned(ctx stdcontext.Context, utx txs.UnsignedTx) (*txs.Tx, error) {
+func (s *txSigner) SignUnsigned(ctx stdcontext.Context, utx txs.UnsignedTx) (*txs.Tx, error) {
 	tx := &txs.Tx{Unsigned: utx}
 	return tx, s.Sign(ctx, tx)
 }
 
-func (s *signer) Sign(ctx stdcontext.Context, tx *txs.Tx) error {
+func (s *txSigner) Sign(ctx stdcontext.Context, tx *txs.Tx) error {
 	return tx.Unsigned.Visit(&signerVisitor{
 		kc:      s.kc,
 		backend: s.backend,

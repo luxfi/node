@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
@@ -260,7 +260,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 	i.blockIndices[chainID] = index
 
 	switch vm.(type) {
-	case vertex.DAGVM:
+	case vertex.GRAPHVM:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
 		if err != nil {
 			i.log.Fatal("couldn't create index",

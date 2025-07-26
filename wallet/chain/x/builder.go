@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
@@ -26,7 +27,7 @@ var (
 	errNoChangeAddress   = errors.New("no possible change address")
 	errInsufficientFunds = errors.New("insufficient funds")
 
-	_ Builder = (*builder)(nil)
+	_ Builder = (*txBuilder)(nil)
 )
 
 // Builder provides a convenient interface for building unsigned X-chain
@@ -148,15 +149,28 @@ type Builder interface {
 	) (*txs.ExportTx, error)
 }
 
+// Context represents the X-chain context
+type Context struct {
+	NetworkID        uint32
+	BlockchainID     ids.ID
+	LUXAssetID       ids.ID
+	BaseTxFee        uint64
+	CreateAssetTxFee uint64
+}
+
 // BuilderBackend specifies the required information needed to build unsigned
 // X-chain transactions.
 type BuilderBackend interface {
-	Context
+	Context() *builder.Context
+	BlockchainID() ids.ID
+	LUXAssetID() ids.ID
+	BaseTxFee() uint64
+	CreateAssetTxFee() uint64
 
 	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
 }
 
-type builder struct {
+type txBuilder struct {
 	addrs   set.Set[ids.ShortID]
 	backend BuilderBackend
 }
@@ -168,20 +182,20 @@ type builder struct {
 //   - [backend] provides the required access to the chain's context and state
 //     to build out the transactions.
 func NewBuilder(addrs set.Set[ids.ShortID], backend BuilderBackend) Builder {
-	return &builder{
+	return &txBuilder{
 		addrs:   addrs,
 		backend: backend,
 	}
 }
 
-func (b *builder) GetFTBalance(
+func (b *txBuilder) GetFTBalance(
 	options ...common.Option,
 ) (map[ids.ID]uint64, error) {
 	ops := common.NewOptions(options)
 	return b.getBalance(b.backend.BlockchainID(), ops)
 }
 
-func (b *builder) GetImportableBalance(
+func (b *txBuilder) GetImportableBalance(
 	chainID ids.ID,
 	options ...common.Option,
 ) (map[ids.ID]uint64, error) {
@@ -189,7 +203,7 @@ func (b *builder) GetImportableBalance(
 	return b.getBalance(chainID, ops)
 }
 
-func (b *builder) NewBaseTx(
+func (b *txBuilder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.BaseTx, error) {
@@ -214,7 +228,7 @@ func (b *builder) NewBaseTx(
 	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the outputs
 
 	return &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    b.backend.NetworkID(),
+		NetworkID:    b.backend.Context().NetworkID,
 		BlockchainID: b.backend.BlockchainID(),
 		Ins:          inputs,
 		Outs:         outputs,
@@ -222,7 +236,7 @@ func (b *builder) NewBaseTx(
 	}}, nil
 }
 
-func (b *builder) NewCreateAssetTx(
+func (b *txBuilder) NewCreateAssetTx(
 	name string,
 	symbol string,
 	denomination byte,
@@ -251,7 +265,7 @@ func (b *builder) NewCreateAssetTx(
 
 	tx := &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.backend.Context().NetworkID,
 			BlockchainID: b.backend.BlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
@@ -266,7 +280,7 @@ func (b *builder) NewCreateAssetTx(
 	return tx, nil
 }
 
-func (b *builder) NewOperationTx(
+func (b *txBuilder) NewOperationTx(
 	operations []*txs.Operation,
 	options ...common.Option,
 ) (*txs.OperationTx, error) {
@@ -282,7 +296,7 @@ func (b *builder) NewOperationTx(
 	txs.SortOperations(operations, Parser.Codec())
 	return &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.backend.Context().NetworkID,
 			BlockchainID: b.backend.BlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
@@ -292,7 +306,7 @@ func (b *builder) NewOperationTx(
 	}, nil
 }
 
-func (b *builder) NewOperationTxMintFT(
+func (b *txBuilder) NewOperationTxMintFT(
 	outputs map[ids.ID]*secp256k1fx.TransferOutput,
 	options ...common.Option,
 ) (*txs.OperationTx, error) {
@@ -304,7 +318,7 @@ func (b *builder) NewOperationTxMintFT(
 	return b.NewOperationTx(operations, options...)
 }
 
-func (b *builder) NewOperationTxMintNFT(
+func (b *txBuilder) NewOperationTxMintNFT(
 	assetID ids.ID,
 	payload []byte,
 	owners []*secp256k1fx.OutputOwners,
@@ -318,7 +332,7 @@ func (b *builder) NewOperationTxMintNFT(
 	return b.NewOperationTx(operations, options...)
 }
 
-func (b *builder) NewOperationTxMintProperty(
+func (b *txBuilder) NewOperationTxMintProperty(
 	assetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -331,7 +345,7 @@ func (b *builder) NewOperationTxMintProperty(
 	return b.NewOperationTx(operations, options...)
 }
 
-func (b *builder) NewOperationTxBurnProperty(
+func (b *txBuilder) NewOperationTxBurnProperty(
 	assetID ids.ID,
 	options ...common.Option,
 ) (*txs.OperationTx, error) {
@@ -343,7 +357,7 @@ func (b *builder) NewOperationTxBurnProperty(
 	return b.NewOperationTx(operations, options...)
 }
 
-func (b *builder) NewImportTx(
+func (b *txBuilder) NewImportTx(
 	chainID ids.ID,
 	to *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -438,7 +452,7 @@ func (b *builder) NewImportTx(
 	lux.SortTransferableOutputs(outputs, Parser.Codec())
 	return &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.backend.Context().NetworkID,
 			BlockchainID: b.backend.BlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
@@ -449,7 +463,7 @@ func (b *builder) NewImportTx(
 	}, nil
 }
 
-func (b *builder) NewExportTx(
+func (b *txBuilder) NewExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
@@ -475,7 +489,7 @@ func (b *builder) NewExportTx(
 	lux.SortTransferableOutputs(outputs, Parser.Codec())
 	return &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.backend.Context().NetworkID,
 			BlockchainID: b.backend.BlockchainID(),
 			Ins:          inputs,
 			Outs:         changeOutputs,
@@ -486,7 +500,7 @@ func (b *builder) NewExportTx(
 	}, nil
 }
 
-func (b *builder) getBalance(
+func (b *txBuilder) getBalance(
 	chainID ids.ID,
 	options *common.Options,
 ) (
@@ -526,7 +540,7 @@ func (b *builder) getBalance(
 	return balance, nil
 }
 
-func (b *builder) spend(
+func (b *txBuilder) spend(
 	amountsToBurn map[ids.ID]uint64,
 	options *common.Options,
 ) (
@@ -620,7 +634,7 @@ func (b *builder) spend(
 	return inputs, outputs, nil
 }
 
-func (b *builder) mintFTs(
+func (b *txBuilder) mintFTs(
 	outputs map[ids.ID]*secp256k1fx.TransferOutput,
 	options *common.Options,
 ) (
@@ -680,7 +694,7 @@ func (b *builder) mintFTs(
 }
 
 // TODO: make this able to generate multiple NFT groups
-func (b *builder) mintNFTs(
+func (b *txBuilder) mintNFTs(
 	assetID ids.ID,
 	payload []byte,
 	owners []*secp256k1fx.OutputOwners,
@@ -737,7 +751,7 @@ func (b *builder) mintNFTs(
 	)
 }
 
-func (b *builder) mintProperty(
+func (b *txBuilder) mintProperty(
 	assetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options *common.Options,
@@ -794,7 +808,7 @@ func (b *builder) mintProperty(
 	)
 }
 
-func (b *builder) burnProperty(
+func (b *txBuilder) burnProperty(
 	assetID ids.ID,
 	options *common.Options,
 ) (

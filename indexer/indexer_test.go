@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
@@ -265,8 +265,8 @@ func TestIndexer(t *testing.T) {
 	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	dagVM := vertex.NewMockLinearizableVM(ctrl)
-	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
+	graphVM := vertex.NewMockLinearizableVM(ctrl)
+	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	require.NoError(err)
 	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
 	require.Contains(server.bases, "index/chain2")
@@ -378,7 +378,7 @@ func TestIndexer(t *testing.T) {
 	require.IsType(&indexer{}, idxrIntf)
 	idxr = idxrIntf.(*indexer)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
-	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
+	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 
 	// Verify state
 	lastAcceptedTx, err = idxr.txIndices[chain2Ctx.ChainID].GetLastAccepted()

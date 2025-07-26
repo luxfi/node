@@ -15,7 +15,10 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-const CodecVersion = 0
+const (
+	CodecVersion = 0
+	Version      = CodecVersion
+)
 
 var (
 	Codec codec.Manager

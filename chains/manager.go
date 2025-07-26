@@ -23,9 +23,9 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
-	"github.com/luxfi/node/consensus/engine/dag/state"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine/graph/bootstrap/queue"
+	"github.com/luxfi/node/consensus/engine/graph/state"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
@@ -61,9 +61,9 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	aveng "github.com/luxfi/node/consensus/engine/dag"
-	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
-	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
+	aveng "github.com/luxfi/node/consensus/engine/graph"
+	avbootstrap "github.com/luxfi/node/consensus/engine/graph/bootstrap"
+	avagetter "github.com/luxfi/node/consensus/engine/graph/getter"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
@@ -101,7 +101,7 @@ var (
 	// Bootstrapping prefixes for ChainVMs
 	ChainBootstrappingDBPrefix = []byte("interval_bs")
 
-	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or linear.ChainVM")
+	errUnknownVMType           = errors.New("the vm should have type lux.GRAPHVM or linear.ChainVM")
 	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped         = errors.New("subnets not bootstrapped")
 	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
@@ -277,7 +277,7 @@ type manager struct {
 	luxGatherer          metrics.MultiGatherer            // chainID
 	handlerGatherer      metrics.MultiGatherer            // chainID
 	meterChainVMGatherer metrics.MultiGatherer            // chainID
-	meterDAGVMGatherer   metrics.MultiGatherer            // chainID
+	meterGRAPHVMGatherer   metrics.MultiGatherer            // chainID
 	proposervmGatherer   metrics.MultiGatherer            // chainID
 	p2pGatherer          metrics.MultiGatherer            // chainID
 	linearGatherer       metrics.MultiGatherer            // chainID
@@ -302,8 +302,8 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	meterDAGVMGatherer := metrics.NewLabelGatherer(ChainLabel)
-	if err := config.Metrics.Register(meterdagvmNamespace, meterDAGVMGatherer); err != nil {
+	meterGRAPHVMGatherer := metrics.NewLabelGatherer(ChainLabel)
+	if err := config.Metrics.Register(meterdagvmNamespace, meterGRAPHVMGatherer); err != nil {
 		return nil, err
 	}
 
@@ -338,7 +338,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
 		meterChainVMGatherer: meterChainVMGatherer,
-		meterDAGVMGatherer:   meterDAGVMGatherer,
+		meterGRAPHVMGatherer:   meterGRAPHVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
 		linearGatherer:       linearGatherer,
@@ -640,7 +640,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
 }
 
-// Create a DAG-based blockchain that uses Lux
+// Create a Graph-based blockchain that uses Lux
 func (m *manager) createLuxChain(
 	ctx *consensus.Context,
 	genesisData []byte,
@@ -738,20 +738,20 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error while fetching chain config: %w", err)
 	}
 
-	dagVM := vm
+	graphVM := vm
 	if m.MeterVMEnabled {
 		meterdagvmReg, err := metrics.MakeAndRegister(
-			m.meterDAGVMGatherer,
+			m.meterGRAPHVMGatherer,
 			primaryAlias,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		dagVM = metervm.NewVertexVM(dagVM, meterdagvmReg)
+		graphVM = metervm.NewVertexVM(graphVM, meterdagvmReg)
 	}
 	if m.TracingEnabled {
-		dagVM = tracedvm.NewVertexVM(dagVM, m.Tracer)
+		graphVM = tracedvm.NewVertexVM(graphVM, m.Tracer)
 	}
 
 	// Handles serialization/deserialization of vertices and also the
@@ -759,7 +759,7 @@ func (m *manager) createLuxChain(
 	vtxManager := state.NewSerializer(
 		state.SerializerConfig{
 			ChainID: ctx.ChainID,
-			VM:      dagVM,
+			VM:      graphVM,
 			DB:      vertexDB,
 			Log:     ctx.Log,
 		},
@@ -773,7 +773,7 @@ func (m *manager) createLuxChain(
 	// linearMessageSender here is where the metrics will be placed. Because we
 	// end up using this sender after the linearization, we pass in
 	// linearMessageSender here.
-	err = dagVM.Initialize(
+	err = graphVM.Initialize(
 		context.TODO(),
 		ctx,
 		vmDB,
@@ -803,7 +803,7 @@ func (m *manager) createLuxChain(
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
-	// Note: this does not use [dagVM] to ensure we use the [vm]'s height index.
+	// Note: this does not use [graphVM] to ensure we use the [vm]'s height index.
 	untracedVMWrappedInsideProposerVM := NewLinearizeOnInitializeVM(vm)
 
 	var vmWrappedInsideProposerVM block.ChainVM = untracedVMWrappedInsideProposerVM
@@ -853,7 +853,7 @@ func (m *manager) createLuxChain(
 	// Note: linearizableVM is the VM that the Lux engines should be
 	// using.
 	linearizableVM := &initializeOnLinearizeVM{
-		DAGVM:          dagVM,
+		GRAPHVM:          graphVM,
 		vmToInitialize: vmWrappingProposerVM,
 		vmToLinearize:  untracedVMWrappedInsideProposerVM,
 
@@ -1101,7 +1101,7 @@ func (m *manager) createLuxChain(
 	return &chain{
 		Name:    primaryAlias,
 		Context: ctx,
-		VM:      dagVM,
+		VM:      graphVM,
 		Handler: h,
 	}, nil
 }

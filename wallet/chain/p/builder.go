@@ -30,7 +30,7 @@ var (
 	errInsufficientAuthorization = errors.New("insufficient authorization")
 	errInsufficientFunds         = errors.New("insufficient funds")
 
-	_ Builder = (*builder)(nil)
+	_ Builder = (*txBuilder)(nil)
 )
 
 // Builder provides a convenient interface for building unsigned P-chain
@@ -253,7 +253,7 @@ type BuilderBackend interface {
 	GetTx(ctx stdcontext.Context, txID ids.ID) (*txs.Tx, error)
 }
 
-type builder struct {
+type txBuilder struct {
 	addrs   set.Set[ids.ShortID]
 	backend BuilderBackend
 }
@@ -265,20 +265,20 @@ type builder struct {
 //   - [backend] provides the required access to the chain's context and state
 //     to build out the transactions.
 func NewBuilder(addrs set.Set[ids.ShortID], backend BuilderBackend) Builder {
-	return &builder{
+	return &txBuilder{
 		addrs:   addrs,
 		backend: backend,
 	}
 }
 
-func (b *builder) GetBalance(
+func (b *txBuilder) GetBalance(
 	options ...common.Option,
 ) (map[ids.ID]uint64, error) {
 	ops := common.NewOptions(options)
 	return b.getBalance(constants.PlatformChainID, ops)
 }
 
-func (b *builder) GetImportableBalance(
+func (b *txBuilder) GetImportableBalance(
 	chainID ids.ID,
 	options ...common.Option,
 ) (map[ids.ID]uint64, error) {
@@ -286,7 +286,7 @@ func (b *builder) GetImportableBalance(
 	return b.getBalance(chainID, ops)
 }
 
-func (b *builder) NewBaseTx(
+func (b *txBuilder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.CreateSubnetTx, error) {
@@ -323,7 +323,7 @@ func (b *builder) NewBaseTx(
 	}, nil
 }
 
-func (b *builder) NewAddValidatorTx(
+func (b *txBuilder) NewAddValidatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
@@ -358,7 +358,7 @@ func (b *builder) NewAddValidatorTx(
 	}, nil
 }
 
-func (b *builder) NewAddSubnetValidatorTx(
+func (b *txBuilder) NewAddSubnetValidatorTx(
 	vdr *txs.SubnetValidator,
 	options ...common.Option,
 ) (*txs.AddSubnetValidatorTx, error) {
@@ -390,7 +390,7 @@ func (b *builder) NewAddSubnetValidatorTx(
 	}, nil
 }
 
-func (b *builder) NewRemoveSubnetValidatorTx(
+func (b *txBuilder) NewRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	options ...common.Option,
@@ -424,7 +424,7 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 	}, nil
 }
 
-func (b *builder) NewAddDelegatorTx(
+func (b *txBuilder) NewAddDelegatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -457,7 +457,7 @@ func (b *builder) NewAddDelegatorTx(
 	}, nil
 }
 
-func (b *builder) NewCreateChainTx(
+func (b *txBuilder) NewCreateChainTx(
 	subnetID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
@@ -498,7 +498,7 @@ func (b *builder) NewCreateChainTx(
 	}, nil
 }
 
-func (b *builder) NewCreateSubnetTx(
+func (b *txBuilder) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.CreateSubnetTx, error) {
@@ -525,7 +525,7 @@ func (b *builder) NewCreateSubnetTx(
 	}, nil
 }
 
-func (b *builder) NewImportTx(
+func (b *txBuilder) NewImportTx(
 	sourceChainID ids.ID,
 	to *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -631,7 +631,7 @@ func (b *builder) NewImportTx(
 	}, nil
 }
 
-func (b *builder) NewExportTx(
+func (b *txBuilder) NewExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
@@ -669,7 +669,7 @@ func (b *builder) NewExportTx(
 	}, nil
 }
 
-func (b *builder) NewTransformSubnetTx(
+func (b *txBuilder) NewTransformSubnetTx(
 	subnetID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
@@ -728,7 +728,7 @@ func (b *builder) NewTransformSubnetTx(
 	}, nil
 }
 
-func (b *builder) NewAddPermissionlessValidatorTx(
+func (b *txBuilder) NewAddPermissionlessValidatorTx(
 	vdr *txs.SubnetValidator,
 	signer signer.Signer,
 	assetID ids.ID,
@@ -773,7 +773,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	}, nil
 }
 
-func (b *builder) NewAddPermissionlessDelegatorTx(
+func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
@@ -811,7 +811,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	}, nil
 }
 
-func (b *builder) getBalance(
+func (b *txBuilder) getBalance(
 	chainID ids.ID,
 	options *common.Options,
 ) (
@@ -870,7 +870,7 @@ func (b *builder) getBalance(
 //     place into the staked outputs. First locked UTXOs are attempted to be
 //     used for these funds, and then unlocked UTXOs will be attempted to be
 //     used. There is no preferential ordering on the unlock times.
-func (b *builder) spend(
+func (b *txBuilder) spend(
 	amountsToBurn map[ids.ID]uint64,
 	amountsToStake map[ids.ID]uint64,
 	options *common.Options,
@@ -1087,7 +1087,7 @@ func (b *builder) spend(
 	return inputs, changeOutputs, stakeOutputs, nil
 }
 
-func (b *builder) authorizeSubnet(subnetID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
+func (b *txBuilder) authorizeSubnet(subnetID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
 	subnetTx, err := b.backend.GetTx(options.Context(), subnetID)
 	if err != nil {
 		return nil, fmt.Errorf(

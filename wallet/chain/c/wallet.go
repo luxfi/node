@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/rpc"

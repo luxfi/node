@@ -6,7 +6,7 @@ package vertextest
 import (
 	"testing"
 
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
 )
 
 var _ vertex.Manager = (*Manager)(nil)

@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/database"
