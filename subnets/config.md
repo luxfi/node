@@ -12,10 +12,26 @@ Here is an example of Subnet config file:
 ```json
 {
   "validatorOnly": false,
+
+  // --- Consensus ---
   "consensusParameters": {
-    "k": 25,
-    "alpha": 18
-  }
+    "k": 12,              // sample 12 validators
+    "alpha": 8,           // need 8 matching votes
+    "beta": 10,           // Snowman commit threshold
+    "concurrentRepolls": 16,
+    "optimalProcessing": 2048,
+    "maxOutstandingItems": 4096,
+    "maxItemProcessingTime": "250ms",
+
+    // DAG-specific fast path
+    "betaVirtuous": 4,    // 4 rounds for conflict-free txs
+    "betaRogue": 12,      // 12 for conflicts
+    "batchSize": 40,
+    "parentSize": 2
+  },
+
+  // --- Block production cadence ---
+  "proposerMinBlockDelay": "200ms"   // see §5
 }
 ```
 
@@ -83,6 +99,10 @@ As one of the ways to control network congestion, Linear++ will only build a
 block `proposerMinBlockDelay` after the parent block's timestamp. Some
 high-performance custom VM may find this too strict. This flag allows tuning the
 frequency at which blocks are built.
+
+- The flag enforces `parent.Timestamp + delay` before the next block can be built; default is 1 second.
+- 200 ms > 50 ms RTT × a 2–3× jitter guard; keeps uncle/orphan rate comfortably low while still allowing ≈4–5 blocks s⁻¹.
+- Pushing to 100 ms is possible but expect a sharp rise in parallel proposals and wasted work.
 
 ### Gossip Configs
 
