@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/ids"
 )
 
@@ -33,7 +34,7 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "same chain",
 			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
-				state := validators.NewMockState(ctrl)
+				state := validatorsmock.NewState(ctrl)
 				return &consensus.Context{
 					SubnetID:       subnetID0,
 					ChainID:        chainID0,
@@ -46,7 +47,7 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "unknown chain",
 			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
-				state := validators.NewMockState(ctrl)
+				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, errMissing)
 				return &consensus.Context{
 					SubnetID:       subnetID0,
@@ -60,7 +61,7 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "wrong subnet",
 			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
-				state := validators.NewMockState(ctrl)
+				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, nil)
 				return &consensus.Context{
 					SubnetID:       subnetID0,
@@ -74,7 +75,7 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "same subnet",
 			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
-				state := validators.NewMockState(ctrl)
+				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID0, nil)
 				return &consensus.Context{
 					SubnetID:       subnetID0,
