@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var (
@@ -54,11 +54,11 @@ func TestNewIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: true,
-		Log:                  luxlog.NewNoOpLogger(){},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -95,11 +95,11 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 	shutdown.Add(1)
 	config := Config{
 		IndexingEnabled:     true,
-		Log:                 luxlog.NewNoOpLogger(){},
+		Log:                 log.NewNoOpLogger(),
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -134,11 +134,11 @@ func TestIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  luxlog.NewNoOpLogger(){},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -402,11 +402,11 @@ func TestIncompleteIndex(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      false,
 		AllowIncompleteIndex: false,
-		Log:                  luxlog.NewNoOpLogger(){},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -484,11 +484,11 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  luxlog.NewNoOpLogger(){},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(luxlog.NewNoOpLogger(){}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}

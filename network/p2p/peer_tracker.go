@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/heap"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -60,7 +60,7 @@ type PeerTracker struct {
 
 	// The below fields are assumed to be constant and are not protected by the
 	// lock.
-	log          luxlog.Logger
+	log          log.Logger
 	ignoredNodes set.Set[ids.NodeID]
 	minVersion   *version.Application
 	metrics      peerTrackerMetrics
@@ -73,7 +73,7 @@ type peerTrackerMetrics struct {
 }
 
 func NewPeerTracker(
-	log luxlog.Logger,
+	log log.Logger,
 	metricsNamespace string,
 	registerer prometheus.Registerer,
 	ignoredNodes set.Set[ids.NodeID],

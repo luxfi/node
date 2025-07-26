@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var ErrFailedToReachTargetTPS = errors.New("failed to reach target TPS")
@@ -97,7 +97,7 @@ type Orchestrator[T TxID] struct {
 	agents  []Agent[T]
 	tracker *Tracker[T]
 
-	log luxlog.Logger
+	log log.Logger
 
 	maxObservedTPS atomic.Int64
 
@@ -110,7 +110,7 @@ type Orchestrator[T TxID] struct {
 func NewOrchestrator[T TxID](
 	agents []Agent[T],
 	tracker *Tracker[T],
-	log luxlog.Logger,
+	log log.Logger,
 	config OrchestratorConfig,
 ) *Orchestrator[T] {
 	return &Orchestrator[T]{

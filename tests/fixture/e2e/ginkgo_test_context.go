@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/luxfi/node/tests"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
@@ -42,11 +42,11 @@ var ginkgoEncoderConfig = zapcore.EncoderConfig{
 }
 
 // NewGinkgoLogger returns a logger with limited output
-func newGinkgoLogger(cfg zapcore.Encoder) luxlog.Logger {
-	return luxlog.NewZapLogger(
+func newGinkgoLogger(cfg zapcore.Encoder) log.Logger {
+	return log.NewZapLogger(
 		"",
 		logging.NewWrappedCore(
-			luxlog.LevelInfo,
+			log.LevelInfo,
 			&ginkgoWriteCloser{},
 			cfg,
 		),
@@ -54,7 +54,7 @@ func newGinkgoLogger(cfg zapcore.Encoder) luxlog.Logger {
 }
 
 type GinkgoTestContext struct {
-	logger luxlog.Logger
+	logger log.Logger
 }
 
 // NewEventHandlerTestContext provides a logger with full output to
@@ -84,7 +84,7 @@ func (*GinkgoTestContext) FailNow() {
 	ginkgo.GinkgoT().FailNow()
 }
 
-func (tc *GinkgoTestContext) Log() luxlog.Logger {
+func (tc *GinkgoTestContext) Log() log.Logger {
 	return tc.logger
 }
 

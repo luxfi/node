@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
@@ -158,7 +158,7 @@ type Config struct {
 
 	ProfilerConfig profiler.Config `json:"profilerConfig"`
 
-	LoggingConfig logging.Config `json:"loggingConfig"`
+	LoggingConfig log.Config `json:"loggingConfig"`
 
 	PluginDir string `json:"pluginDir"`
 

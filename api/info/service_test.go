@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/vmsmock"
 )
 
@@ -30,7 +30,7 @@ func initGetVMsTest(t *testing.T) *getVMsTest {
 			Parameters: Parameters{
 				VMManager: mockVMManager,
 			},
-			log: luxlog.NewNoOpLogger(){},
+			log: log.NewNoOpLogger(),
 		},
 		mockVMManager: mockVMManager,
 	}

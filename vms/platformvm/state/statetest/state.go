@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -49,7 +49,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Context = &consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
-			Log:       luxlog.NewNoOpLogger(){},
+			Log:       log.NewNoOpLogger(),
 		}
 	}
 	if len(c.Genesis) == 0 {

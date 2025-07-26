@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -44,7 +44,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	db, err := leveldb.New(
 		b.TempDir(),
 		nil,
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 	)
 	require.NoError(err)

@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 // Subscription is a function that blocks until either the given context is cancelled, or a message is returned.
@@ -28,7 +28,7 @@ type Notifier interface {
 type NotificationForwarder struct {
 	Engine    Notifier
 	Subscribe Subscription
-	Log       luxlog.Logger
+	Log       log.Logger
 
 	lock          sync.Mutex
 	executing     sync.WaitGroup
@@ -40,7 +40,7 @@ type NotificationForwarder struct {
 func NewNotificationForwarder(
 	engine Notifier,
 	subscribe Subscription,
-	log luxlog.Logger,
+	log log.Logger,
 ) *NotificationForwarder {
 	nf := &NotificationForwarder{
 		Engine:    engine,

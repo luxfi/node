@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
@@ -139,7 +139,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response 
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBalance"),
-		logging.UserStrings("addresses", args.Addresses),
+		log.UserStrings("addresses", args.Addresses),
 	)
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)

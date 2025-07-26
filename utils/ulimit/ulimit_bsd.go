@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 const DefaultFDLimit = 32 * 1024
@@ -23,7 +23,7 @@ const DefaultFDLimit = 32 * 1024
 // privileges. Bumping the Max limit further would require superuser privileges.
 // If the value is below the recommendation warn on start.
 // see: http://0pointer.net/blog/file-descriptor-limits.html
-func Set(limit uint64, log luxlog.Logger) error {
+func Set(limit uint64, log log.Logger) error {
 	// Note: BSD Rlimit is type int64
 	// ref: https://cs.opensource.google/go/x/sys/+/b874c991:unix/ztypes_freebsd_amd64.go
 	bsdMax := int64(limit)

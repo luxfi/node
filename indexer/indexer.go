@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -45,7 +45,7 @@ var (
 // Config for an indexer
 type Config struct {
 	DB                   db.Database
-	Log                  luxlog.Logger
+	Log                  log.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
 	BlockAcceptorGroup   consensus.AcceptorGroup
@@ -93,7 +93,7 @@ func NewIndexer(config Config) (Indexer, error) {
 type indexer struct {
 	clock  mockable.Clock
 	lock   sync.RWMutex
-	log    luxlog.Logger
+	log    log.Logger
 	db     db.Database
 	closed bool
 

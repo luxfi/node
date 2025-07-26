@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/bimap"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
@@ -653,16 +654,22 @@ func (b *Bootstrapper) tryStartExecuting(ctx context.Context) error {
 		return err
 	}
 
-	log := b.Ctx.Log.Info
+	var logFunc log.Func
 	if b.restarted {
-		log = b.Ctx.Log.Debug
+		logFunc = func(msg string, fields ...zap.Field) {
+			b.Ctx.Log.Debug(msg, fields)
+		}
+	} else {
+		logFunc = func(msg string, fields ...zap.Field) {
+			b.Ctx.Log.Info(msg, fields)
+		}
 	}
 
 	numToExecute := b.tree.Len()
 	err = execute(
 		ctx,
 		b.Halted,
-		log,
+		logFunc,
 		b.DB,
 		&parseAcceptor{
 			parser:      b.nonVerifyingParser,
@@ -711,7 +718,7 @@ func (b *Bootstrapper) tryStartExecuting(ctx context.Context) error {
 	// If the subnet hasn't finished bootstrapping, this chain should remain
 	// syncing.
 	if !b.Config.BootstrapTracker.IsBootstrapped() {
-		log("waiting for the remaining chains in this subnet to finish syncing")
+		b.Ctx.Log.Info("waiting for the remaining chains in this subnet to finish syncing")
 		// Restart bootstrapping after [bootstrappingDelay] to keep up to date
 		// on the latest tip.
 		b.awaitingTimeout = true

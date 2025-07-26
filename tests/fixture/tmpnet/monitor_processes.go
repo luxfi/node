@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -47,7 +47,7 @@ const (
 )
 
 // StartPrometheus ensures prometheus is running to collect metrics from local nodes.
-func StartPrometheus(ctx context.Context, log luxlog.Logger) error {
+func StartPrometheus(ctx context.Context, log log.Logger) error {
 	if _, ok := ctx.Deadline(); !ok {
 		return errors.New("unable to start prometheus with a context without a deadline")
 	}
@@ -62,7 +62,7 @@ func StartPrometheus(ctx context.Context, log luxlog.Logger) error {
 }
 
 // StartPromtail ensures promtail is running to collect logs from local nodes.
-func StartPromtail(ctx context.Context, log luxlog.Logger) error {
+func StartPromtail(ctx context.Context, log log.Logger) error {
 	if _, ok := ctx.Deadline(); !ok {
 		return errors.New("unable to start promtail with a context without a deadline")
 	}
@@ -76,22 +76,22 @@ func StartPromtail(ctx context.Context, log luxlog.Logger) error {
 
 // WaitForPromtailReadiness waits until prometheus is ready. It can only succeed after
 // one or more nodes have written their service discovery configuration.
-func WaitForPromtailReadiness(ctx context.Context, log luxlog.Logger) error {
+func WaitForPromtailReadiness(ctx context.Context, log log.Logger) error {
 	return waitForReadiness(ctx, log, promtailCmd, promtailReadinessURL)
 }
 
 // StopMetricsCollector ensures prometheus is not running.
-func StopMetricsCollector(ctx context.Context, log luxlog.Logger) error {
+func StopMetricsCollector(ctx context.Context, log log.Logger) error {
 	return stopCollector(ctx, log, prometheusCmd)
 }
 
 // StopLogsCollector ensures promtail is not running.
-func StopLogsCollector(ctx context.Context, log luxlog.Logger) error {
+func StopLogsCollector(ctx context.Context, log log.Logger) error {
 	return stopCollector(ctx, log, promtailCmd)
 }
 
 // stopCollector stops the collector process if it is running.
-func stopCollector(ctx context.Context, log luxlog.Logger, cmdName string) error {
+func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 	if _, ok := ctx.Deadline(); !ok {
 		return errors.New("unable to start collectors with a context without a deadline")
 	}
@@ -158,7 +158,7 @@ func stopCollector(ctx context.Context, log luxlog.Logger, cmdName string) error
 }
 
 // startPrometheus ensures an agent-mode prometheus process is running to collect metrics from local nodes.
-func startPrometheus(ctx context.Context, log luxlog.Logger) error {
+func startPrometheus(ctx context.Context, log log.Logger) error {
 	cmdName := prometheusCmd
 
 	args := fmt.Sprintf(
@@ -204,7 +204,7 @@ remote_write:
 }
 
 // startPromtail ensures a promtail process is running to collect logs from local nodes.
-func startPromtail(ctx context.Context, log luxlog.Logger) error {
+func startPromtail(ctx context.Context, log log.Logger) error {
 	cmdName := promtailCmd
 
 	args := fmt.Sprintf("-config.file=%s.yaml", cmdName)
@@ -341,7 +341,7 @@ func getPIDPath(workingDir string) string {
 // startCollector starts a collector process if it is not already running.
 func startCollector(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	cmdName string,
 	args string,
 	config string,
@@ -425,7 +425,7 @@ func getPID(cmdName string, pidPath string) (int, error) {
 }
 
 // clearStalePIDFile remove an existing pid file to avoid conflicting with a new process.
-func clearStalePIDFile(log luxlog.Logger, cmdName string, pidPath string) error {
+func clearStalePIDFile(log log.Logger, cmdName string, pidPath string) error {
 	if err := os.Remove(pidPath); err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("failed to remove stale pid file: %w", err)
@@ -481,7 +481,7 @@ func getCollectorCredentials(cmdName string) (string, string, error) {
 // process exits. Attempting to do so resulted in an empty log file.
 func startCollectorProcess(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	cmdName string,
 	args string,
 	workingDir string,
@@ -570,7 +570,7 @@ func checkReadiness(ctx context.Context, url string) (bool, string, error) {
 }
 
 // waitForReadiness waits until the given readiness URL returns 200
-func waitForReadiness(ctx context.Context, log luxlog.Logger, cmdName string, readinessURL string) error {
+func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readinessURL string) error {
 	logPath, err := getLogPath(cmdName)
 	if err != nil {
 		return err

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -34,7 +34,7 @@ var (
 // options supports build new option blocks
 type options struct {
 	// inputs populated before calling this struct's methods:
-	log                     luxlog.Logger
+	log                     log.Logger
 	primaryUptimePercentage float64
 	uptimes                 uptime.Calculator
 	state                   state.Chain

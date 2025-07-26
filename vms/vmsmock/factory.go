@@ -12,7 +12,7 @@ package vmsmock
 import (
 	reflect "reflect"
 
-	logging luxlog "github.com/luxfi/log"
+	logging log "github.com/luxfi/log"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +41,7 @@ func (m *Factory) EXPECT() *FactoryMockRecorder {
 }
 
 // New mocks base method.
-func (m *Factory) New(arg0 luxlog.Logger) (any, error) {
+func (m *Factory) New(arg0 log.Logger) (any, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "New", arg0)
 	ret0, _ := ret[0].(any)

@@ -21,14 +21,14 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
 
 func TestGossiperShutdown(*testing.T) {
 	gossiper := NewPullGossiper[*testTx](
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 		nil,
 		nil,
 		nil,
@@ -41,7 +41,7 @@ func TestGossiperShutdown(*testing.T) {
 	wg.Add(1)
 
 	go func() {
-		Every(ctx, luxlog.NewNoOpLogger(){}, gossiper, time.Second)
+		Every(ctx, log.NewNoOpLogger(), gossiper, time.Second)
 		wg.Done()
 	}()
 
@@ -108,7 +108,7 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &enginetest.SenderStub{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(luxlog.NewNoOpLogger(){}, responseSender, prometheus.NewRegistry(), "")
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			responseBloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
@@ -125,7 +125,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				marshaller,
 				responseSet,
 				metrics,
@@ -138,7 +138,7 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(luxlog.NewNoOpLogger(){}, requestSender, prometheus.NewRegistry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
@@ -156,7 +156,7 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				marshaller,
 				requestSet,
 				requestClient,
@@ -200,7 +200,7 @@ func TestEvery(*testing.T) {
 		},
 	}
 
-	go Every(ctx, luxlog.NewNoOpLogger(){}, gossiper, time.Millisecond)
+	go Every(ctx, log.NewNoOpLogger(), gossiper, time.Millisecond)
 	<-ctx.Done()
 }
 
@@ -514,7 +514,7 @@ func TestPushGossiper(t *testing.T) {
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				sender,
 				prometheus.NewRegistry(),
 				"",
@@ -523,7 +523,7 @@ func TestPushGossiper(t *testing.T) {
 			client := network.NewClient(0)
 			validators := p2p.NewValidators(
 				&p2p.Peers{},
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				constants.PrimaryNetworkID,
 				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {

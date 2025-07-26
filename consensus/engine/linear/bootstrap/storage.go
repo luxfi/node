@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap/interval"
 	"github.com/luxfi/node/consensus/linear"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
 )
@@ -127,7 +127,7 @@ func process(
 func execute(
 	ctx context.Context,
 	shouldHalt func() bool,
-	log logging.Func,
+	log log.Func,
 	db db.Database,
 	nonVerifyingParser block.Parser,
 	tree *interval.Tree,

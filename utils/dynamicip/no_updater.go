@@ -3,7 +3,7 @@
 
 package dynamicip
 
-import luxlog "github.com/luxfi/log"
+import log "github.com/luxfi/log"
 
 var _ Updater = noUpdater{}
 
@@ -13,6 +13,6 @@ func NewNoUpdater() Updater {
 
 type noUpdater struct{}
 
-func (noUpdater) Dispatch(luxlog.Logger) {}
+func (noUpdater) Dispatch(log.Logger) {}
 
 func (noUpdater) Stop() {}

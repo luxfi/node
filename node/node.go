@@ -65,8 +65,7 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	luxlog "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/logging/logadapter"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
@@ -120,8 +119,8 @@ var (
 // New returns an instance of Node
 func New(
 	config *node.Config,
-	logFactory luxlog.Factory,
-	logger luxlog.Logger,
+	logFactory log.Factory,
+	logger log.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
 	stakingCert, err := staking.ParseCertificate(tlsCert.Raw)
@@ -153,10 +152,7 @@ func New(
 		zap.Reflect("config", n.Config),
 	)
 
-	n.VMFactoryLog, err = logFactory.Make("vm-factory")
-	if err != nil {
-		return nil, fmt.Errorf("problem creating vm logger: %w", err)
-	}
+	n.VMFactoryLog = logFactory.New("vm-factory")
 
 	n.VMAliaser = ids.NewAliaser()
 	for vmID, aliases := range config.VMAliases {
@@ -278,9 +274,9 @@ func New(
 
 // Node is an instance of an Lux node.
 type Node struct {
-	Log          luxlog.Logger
-	VMFactoryLog luxlog.Logger
-	LogFactory   luxlog.Factory
+	Log          log.Logger
+	VMFactoryLog log.Logger
+	LogFactory   log.Factory
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -765,16 +761,13 @@ func (n *Node) initDatabase() error {
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 
 	var err error
-	// Create log adapter for database factory
-	dbLogger := logadapter.ToLogLogger(n.Log)
-
 	n.DB, err = databasefactory.New(
 		n.Config.DatabaseConfig.Name,
 		dbFullPath,
 		n.Config.DatabaseConfig.ReadOnly,
 		n.Config.DatabaseConfig.Config,
 		n.MetricsGatherer,
-		dbLogger,
+		n.Log,
 		dbNamespace,
 		"all",
 	)
@@ -1306,6 +1299,24 @@ func (n *Node) initAdminAPI() error {
 		return nil
 	}
 	n.Log.Info("initializing admin API")
+	
+	// Create log factory from config
+	loggingFactory := log.NewFactoryWithConfig(log.Config{
+		RotatingWriterConfig: log.RotatingWriterConfig{
+			MaxSize:   n.Config.LoggingConfig.MaxSize,
+			MaxFiles:  n.Config.LoggingConfig.MaxFiles,
+			MaxAge:    n.Config.LoggingConfig.MaxAge,
+			Directory: n.Config.LoggingConfig.Directory,
+			Compress:  n.Config.LoggingConfig.Compress,
+		},
+		DisableWriterDisplaying: n.Config.LoggingConfig.DisableWriterDisplaying,
+		LogLevel:                log.Level(n.Config.LoggingConfig.LogLevel),
+		DisplayLevel:            log.Level(n.Config.LoggingConfig.DisplayLevel),
+		LogFormat:               log.Format(n.Config.LoggingConfig.LogFormat),
+		MsgPrefix:               n.Config.LoggingConfig.MsgPrefix,
+		LoggerName:              n.Config.LoggingConfig.LoggerName,
+	})
+	
 	service, err := admin.NewService(
 		admin.Config{
 			Log:          n.Log,
@@ -1313,7 +1324,7 @@ func (n *Node) initAdminAPI() error {
 			ChainManager: n.chainManager,
 			HTTPServer:   n.APIServer,
 			ProfileDir:   n.Config.ProfilerConfig.Dir,
-			LogFactory:   n.LogFactory,
+			LogFactory:   loggingFactory,
 			NodeConfig:   n.Config,
 			VMManager:    n.VMManager,
 			VMRegistry:   n.VMRegistry,
@@ -1739,7 +1750,7 @@ func (n *Node) ExitCode() int {
 // devModeRegistrant adds simplified routing for C-Chain in dev mode
 type devModeRegistrant struct {
 	apiServer server.PathAdder
-	log       luxlog.Logger
+	log       log.Logger
 }
 
 func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {

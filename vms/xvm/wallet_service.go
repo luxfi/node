@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -97,7 +97,7 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "issueTx"),
-		logging.UserString("tx", args.Tx),
+		log.UserString("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)

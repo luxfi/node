@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"
 
@@ -90,7 +90,7 @@ func New(config nodeconfig.Config) (App, error) {
 		return nil, fmt.Errorf("failed to restrict the permissions of the log directory with: %w", err)
 	}
 
-	logFactory := logging.NewFactory(config.LoggingConfig)
+	logFactory := log.NewFactoryWithConfig(config.LoggingConfig)
 	log, err := logFactory.Make("main")
 	if err != nil {
 		logFactory.Close()
@@ -166,10 +166,10 @@ func Run(app App) int {
 
 // app is a wrapper around a node that runs in this process
 type app struct {
-	node       *node.Node
-	log        luxlog.Logger
-	logFactory luxlog.Factory
-	exitWG     sync.WaitGroup
+	node             *node.Node
+	log              log.Logger
+	logFactory       log.Factory
+	exitWG           sync.WaitGroup
 }
 
 // Start the business logic of the node (as opposed to config reading, etc).

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -26,14 +26,14 @@ var _ Poll = (*Minority)(nil)
 type Minority struct {
 	requests
 
-	log luxlog.Logger
+	log log.Logger
 
 	receivedSet set.Set[ids.ID]
 	received    []ids.ID
 }
 
 func NewMinority(
-	log luxlog.Logger,
+	log log.Logger,
 	frontierNodes set.Set[ids.NodeID],
 	maxOutstanding int,
 ) *Minority {

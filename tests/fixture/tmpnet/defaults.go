@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/config"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
@@ -52,7 +52,7 @@ func DefaultE2EFlags() FlagsMap {
 		config.ProposerVMUseCurrentHeightKey: "true",
 		// Reducing this from the 1s default speeds up tx acceptance
 		config.ProposerVMMinBlockDelayKey: "0s",
-		config.LogLevelKey:                luxlog.LevelDebug.String(),
+		config.LogLevelKey:                log.LevelDebug.String(),
 	}
 }
 
@@ -64,7 +64,7 @@ func DefaultChainConfigs() map[string]ConfigMap {
 		// defined in the `github.com/luxfi/evm/evm` package.
 		"C": {
 			"warp-api-enabled": true,
-			"log-level":        luxlog.LevelTrace.String(),
+			"log-level":        log.LevelTrace.String(),
 		},
 	}
 }

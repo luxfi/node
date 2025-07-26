@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -273,7 +273,7 @@ func defaultClock(f upgradetest.Fork) *mockable.Clock {
 type fxVMInt struct {
 	registry codec.Registry
 	clk      *mockable.Clock
-	log      luxlog.Logger
+	log      log.Logger
 }
 
 func (fvi *fxVMInt) CodecRegistry() codec.Registry {
@@ -284,11 +284,11 @@ func (fvi *fxVMInt) Clock() *mockable.Clock {
 	return fvi.clk
 }
 
-func (fvi *fxVMInt) Logger() luxlog.Logger {
+func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(clk *mockable.Clock, log luxlog.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
 		clk:      clk,

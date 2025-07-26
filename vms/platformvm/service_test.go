@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/gas"
@@ -1068,7 +1068,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -1089,7 +1089,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -1113,7 +1113,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, block
@@ -1141,7 +1141,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -1169,7 +1169,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -1197,7 +1197,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected

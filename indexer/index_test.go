@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -27,7 +27,7 @@ func TestIndex(t *testing.T) {
 	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(ctx)
 
-	idx, err := newIndex(db, luxlog.NewNoOpLogger(){}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Populate "containers" with random IDs/bytes
@@ -79,7 +79,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(db.Commit())
 	require.NoError(idx.Close())
 	db = versiondb.New(baseDB)
-	idx, err = newIndex(db, luxlog.NewNoOpLogger(){}, mockable.Clock{})
+	idx, err = newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Get all of the containers
@@ -111,7 +111,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(ctx)
-	idx, err := newIndex(db, luxlog.NewNoOpLogger(){}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
@@ -149,7 +149,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	ctx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(ctx)
-	idx, err := newIndex(db, luxlog.NewNoOpLogger(){}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice

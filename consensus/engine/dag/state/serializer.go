@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 )
@@ -45,7 +45,7 @@ type SerializerConfig struct {
 	ChainID ids.ID
 	VM      vertex.DAGVM
 	DB      db.Database
-	Log     luxlog.Logger
+	Log     log.Logger
 }
 
 func NewSerializer(config SerializerConfig) vertex.Manager {

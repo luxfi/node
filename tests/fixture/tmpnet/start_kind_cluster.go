@@ -21,7 +21,7 @@ import (
 
 	_ "embed"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ var tmpnetRBACManifest []byte
 // StartKindCluster starts a new kind cluster with integrated registry if one is not already running.
 func StartKindCluster(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	configPath string,
 	startMetricsCollector bool,
 	startLogsCollector bool,
@@ -104,7 +104,7 @@ func StartKindCluster(
 }
 
 // isKindClusterRunning determines if a kind cluster is running
-func isKindClusterRunning(log luxlog.Logger, configPath string, configContext string) (bool, error) {
+func isKindClusterRunning(log log.Logger, configPath string, configContext string) (bool, error) {
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
@@ -147,7 +147,7 @@ func isKindClusterRunning(log luxlog.Logger, configPath string, configContext st
 }
 
 // ensureNamespace ensures that the specified namespace exists in cluster targeted by the clientset.
-func ensureNamespace(ctx context.Context, log luxlog.Logger, clientset *kubernetes.Clientset, namespace string) error {
+func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.Clientset, namespace string) error {
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
@@ -180,7 +180,7 @@ func ensureNamespace(ctx context.Context, log luxlog.Logger, clientset *kubernet
 // deployRBAC deploys the RBAC resources for tmpnet to a Kubernetes cluster.
 func deployRBAC(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,
@@ -215,7 +215,7 @@ func deployRBAC(
 // This function is called from StartKindCluster after the kubeconfig and context have been verified.
 func createServiceAccountKubeconfig(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,

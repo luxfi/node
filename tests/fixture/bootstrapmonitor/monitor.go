@@ -20,7 +20,7 @@ import (
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +40,7 @@ type bootstrapTestDetails struct {
 }
 
 // setImageDetails updates the pod's owning statefulset with the image of the specified container and associated version details
-func setImageDetails(ctx context.Context, log luxlog.Logger, clientset *kubernetes.Clientset, namespace string, podName string, imageDetails *ImageDetails) error {
+func setImageDetails(ctx context.Context, log log.Logger, clientset *kubernetes.Clientset, namespace string, podName string, imageDetails *ImageDetails) error {
 	// Determine the name of the statefulset to update
 	pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
@@ -96,7 +96,7 @@ func setImageDetails(ctx context.Context, log luxlog.Logger, clientset *kubernet
 }
 
 // getBaseImageName removes the tag from the image name
-func getBaseImageName(log luxlog.Logger, imageName string) (string, error) {
+func getBaseImageName(log log.Logger, imageName string) (string, error) {
 	if strings.Contains(imageName, "@") {
 		// Image name contains a digest, remove it
 		return strings.Split(imageName, "@")[0], nil
@@ -130,7 +130,7 @@ type ImageDetails struct {
 // GetLatestImageDetails retrieves the image details for the luxd image with tag `latest`.
 func getLatestImageDetails(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	clientset *kubernetes.Clientset,
 	namespace string,
 	imageName string,
@@ -220,7 +220,7 @@ func getLatestImageDetails(
 	}, nil
 }
 
-func getClientset(log luxlog.Logger) (*kubernetes.Clientset, error) {
+func getClientset(log log.Logger) (*kubernetes.Clientset, error) {
 	log.Info("Initializing clientset")
 	kubeconfigPath := os.Getenv(flags.KubeconfigPathEnvVar)
 	return tmpnet.GetClientset(log, kubeconfigPath, "")
