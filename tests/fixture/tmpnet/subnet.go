@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
@@ -116,7 +116,7 @@ func (s *Subnet) Create(ctx context.Context, uri string) error {
 	return nil
 }
 
-func (s *Subnet) CreateChains(ctx context.Context, log luxlog.Logger, uri string) error {
+func (s *Subnet) CreateChains(ctx context.Context, log log.Logger, uri string) error {
 	wallet, err := s.GetWallet(ctx, uri)
 	if err != nil {
 		return err
@@ -151,7 +151,7 @@ func (s *Subnet) CreateChains(ctx context.Context, log luxlog.Logger, uri string
 }
 
 // Add validators to the subnet
-func (s *Subnet) AddValidators(ctx context.Context, log luxlog.Logger, apiURI string, nodes ...*Node) error {
+func (s *Subnet) AddValidators(ctx context.Context, log log.Logger, apiURI string, nodes ...*Node) error {
 	wallet, err := s.GetWallet(ctx, apiURI)
 	if err != nil {
 		return err
@@ -250,7 +250,7 @@ func (s *Subnet) HasChainConfig() bool {
 
 func WaitForActiveValidators(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	pChainClient *platformvm.Client,
 	subnet *Subnet,
 ) error {

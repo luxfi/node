@@ -8,11 +8,11 @@ import (
 	"os/exec"
 	"sync"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
 
-func NewStopper(logger luxlog.Logger, cmd *exec.Cmd) runtime.Stopper {
+func NewStopper(logger log.Logger, cmd *exec.Cmd) runtime.Stopper {
 	return &stopper{
 		cmd:    cmd,
 		logger: logger,
@@ -22,7 +22,7 @@ func NewStopper(logger luxlog.Logger, cmd *exec.Cmd) runtime.Stopper {
 type stopper struct {
 	once   sync.Once
 	cmd    *exec.Cmd
-	logger luxlog.Logger
+	logger log.Logger
 }
 
 func (s *stopper) Stop(ctx context.Context) {

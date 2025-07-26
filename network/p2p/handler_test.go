@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -63,7 +63,7 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.validatorSet,
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 			)
 
 			handler.AppGossip(context.Background(), tt.nodeID, []byte("foobar"))
@@ -104,7 +104,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 			handler := NewValidatorHandler(
 				NoOpHandler{},
 				tt.validatorSet,
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 			)
 
 			_, err := handler.AppRequest(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))

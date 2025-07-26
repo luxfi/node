@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/metrics"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -41,7 +41,7 @@ func NewFactory(
 	}
 }
 
-func (f *factory) New(log luxlog.Logger) (interface{}, error) {
+func (f *factory) New(log log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
 		Stderr:           log,
 		Stdout:           log,

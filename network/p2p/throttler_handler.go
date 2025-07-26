@@ -11,12 +11,12 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)
 
-func NewThrottlerHandler(handler Handler, throttler Throttler, log luxlog.Logger) *ThrottlerHandler {
+func NewThrottlerHandler(handler Handler, throttler Throttler, log log.Logger) *ThrottlerHandler {
 	return &ThrottlerHandler{
 		handler:   handler,
 		throttler: throttler,
@@ -27,7 +27,7 @@ func NewThrottlerHandler(handler Handler, throttler Throttler, log luxlog.Logger
 type ThrottlerHandler struct {
 	handler   Handler
 	throttler Throttler
-	log       luxlog.Logger
+	log       log.Logger
 }
 
 func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {

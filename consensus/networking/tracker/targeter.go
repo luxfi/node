@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var _ Targeter = (*targeter)(nil)
@@ -34,7 +34,7 @@ type TargeterConfig struct {
 }
 
 func NewTargeter(
-	logger luxlog.Logger,
+	logger log.Logger,
 	config *TargeterConfig,
 	vdrs validators.Manager,
 	tracker Tracker,
@@ -51,7 +51,7 @@ func NewTargeter(
 
 type targeter struct {
 	vdrs               validators.Manager
-	log                luxlog.Logger
+	log                log.Logger
 	tracker            Tracker
 	vdrAlloc           float64
 	maxNonVdrUsage     float64

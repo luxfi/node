@@ -39,7 +39,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
@@ -2488,7 +2488,7 @@ func TestLocalParse(t *testing.T) {
 	db := prefixdb.New([]byte{}, memdb.New())
 
 	_ = vm.Initialize(context.Background(), &consensus.Context{
-		Log:     luxlog.NewNoOpLogger(){},
+		Log:     log.NewNoOpLogger(),
 		ChainID: chainID,
 	}, db, nil, nil, nil, nil, nil)
 

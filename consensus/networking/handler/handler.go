@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 
@@ -443,7 +443,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
-	if h.ctx.Log.EnabledLevel(luxlog.LevelVerbo) {
+	if h.ctx.Log.EnabledLevel(log.LevelVerbo) {
 		h.ctx.Log.Verbo("forwarding sync message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
@@ -790,7 +790,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		body      = msg.Message()
 		startTime = h.clock.Time()
 	)
-	if h.ctx.Log.EnabledLevel(luxlog.LevelVerbo) {
+	if h.ctx.Log.EnabledLevel(log.LevelVerbo) {
 		h.ctx.Log.Verbo("forwarding async message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
@@ -879,7 +879,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
-	if h.ctx.Log.EnabledLevel(luxlog.LevelVerbo) {
+	if h.ctx.Log.EnabledLevel(log.LevelVerbo) {
 		h.ctx.Log.Verbo("forwarding chan message to consensus",
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),

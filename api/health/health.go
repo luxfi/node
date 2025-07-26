@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 const (
@@ -59,13 +59,13 @@ type Reporter interface {
 }
 
 type health struct {
-	log       luxlog.Logger
+	log       log.Logger
 	readiness *worker
 	health    *worker
 	liveness  *worker
 }
 
-func New(log luxlog.Logger, registerer prometheus.Registerer) (Health, error) {
+func New(log log.Logger, registerer prometheus.Registerer) (Health, error) {
 	failingChecks := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "checks_failing",

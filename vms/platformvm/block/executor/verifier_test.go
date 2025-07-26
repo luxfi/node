@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/iterator"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -90,7 +90,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 	)
 	require.NoError(fx.InitializeVM(&secp256k1fx.TestVM{
 		Clk: *clock,
-		Log: luxlog.NewNoOpLogger(){},
+		Log: log.NewNoOpLogger(),
 	}))
 
 	return &verifier{
@@ -477,7 +477,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		Mempool: mempool,
 		state:   s,
 		ctx: &consensus.Context{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	manager := &manager{
@@ -551,7 +551,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		Mempool: mempool,
 		state:   s,
 		ctx: &consensus.Context{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	manager := &manager{
@@ -613,7 +613,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		Mempool:      mempool,
 		state:        s,
 		ctx: &consensus.Context{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -686,7 +686,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				Mempool:      mempool,
 				state:        s,
 				ctx: &consensus.Context{
-					Log: luxlog.NewNoOpLogger(){},
+					Log: log.NewNoOpLogger(),
 				},
 			}
 			verifier := &verifier{
@@ -787,7 +787,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				Mempool:      mempool,
 				state:        s,
 				ctx: &consensus.Context{
-					Log: luxlog.NewNoOpLogger(){},
+					Log: log.NewNoOpLogger(),
 				},
 			}
 			verifier := &verifier{
@@ -865,7 +865,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		Mempool: mempool,
 		state:   s,
 		ctx: &consensus.Context{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -923,7 +923,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		Mempool: mempool,
 		state:   s,
 		ctx: &consensus.Context{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -978,7 +978,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 			},
 			state: s,
 			ctx: &consensus.Context{
-				Log: luxlog.NewNoOpLogger(){},
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1022,7 +1022,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 			},
 			state: s,
 			ctx: &consensus.Context{
-				Log: luxlog.NewNoOpLogger(){},
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1065,7 +1065,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 			},
 			state: s,
 			ctx: &consensus.Context{
-				Log: luxlog.NewNoOpLogger(){},
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1109,7 +1109,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 			},
 			state: s,
 			ctx: &consensus.Context{
-				Log: luxlog.NewNoOpLogger(){},
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}

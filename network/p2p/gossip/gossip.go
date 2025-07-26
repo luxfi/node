@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -193,7 +193,7 @@ func (v ValidatorGossiper) Gossip(ctx context.Context) error {
 }
 
 func NewPullGossiper[T Gossipable](
-	log luxlog.Logger,
+	log log.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	client *p2p.Client,
@@ -211,7 +211,7 @@ func NewPullGossiper[T Gossipable](
 }
 
 type PullGossiper[T Gossipable] struct {
-	log        luxlog.Logger
+	log        log.Logger
 	marshaller Marshaller[T]
 	set        Set[T]
 	client     *p2p.Client
@@ -581,7 +581,7 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 }
 
 // Every calls [Gossip] every [frequency] amount of time.
-func Every(ctx context.Context, log luxlog.Logger, gossiper Gossiper, frequency time.Duration) {
+func Every(ctx context.Context, log log.Logger, gossiper Gossiper, frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 

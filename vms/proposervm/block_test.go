@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/proposer/proposermock"
@@ -85,7 +85,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            luxlog.NewNoOpLogger(){},
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}
@@ -395,7 +395,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            luxlog.NewNoOpLogger(){},
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}

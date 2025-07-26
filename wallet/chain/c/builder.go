@@ -387,12 +387,12 @@ func (b *builder) NewExportTx(
 	utils.Sort(inputs)
 	tx.Ins = inputs
 
-	ctx, err := newLinearContext(b.context)
+	linearCtx, err := newLinearContext(b.context)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range tx.ExportedOutputs {
-		out.InitCtx(ctx)
+		out.InitCtx(linearCtx)
 	}
 	return tx, nil
 }

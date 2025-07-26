@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 // Test that canceling a context passed into Dial results
@@ -22,7 +22,7 @@ func TestDialerDialCanceledContext(t *testing.T) {
 	require := require.New(t)
 
 	listenAddrPort := netip.AddrPortFrom(netip.IPv4Unspecified(), 0)
-	dialer := NewDialer("tcp", Config{}, luxlog.NewNoOpLogger(){})
+	dialer := NewDialer("tcp", Config{}, log.NewNoOpLogger())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -45,7 +45,7 @@ func TestDialerDial(t *testing.T) {
 			ThrottleRps:       10,
 			ConnectionTimeout: 30 * time.Second,
 		},
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 	)
 
 	eg := errgroup.Group{}

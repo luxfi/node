@@ -13,7 +13,7 @@ import (
 
 	_ "embed"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +39,7 @@ type kubeCollectorConfig struct {
 // DeployKubeCollectors deploys collectors of logs and metrics to a Kubernetes cluster.
 func DeployKubeCollectors(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	startMetricsCollector bool,
@@ -103,7 +103,7 @@ func DeployKubeCollectors(
 // deployKubeCollector deploys a named collector to a Kubernetes cluster via the provided manifest bytes.
 func deployKubeCollector(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	clientset *kubernetes.Clientset,
 	dynamicClient dynamic.Interface,
 	collectorConfig kubeCollectorConfig,
@@ -126,7 +126,7 @@ func deployKubeCollector(
 // createCredentialSecret creates a secret with the provided username and password for a collector
 func createCredentialSecret(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	clientset *kubernetes.Clientset,
 	namePrefix string,
 	username string,

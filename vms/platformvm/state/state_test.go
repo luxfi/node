@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/iterator"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
@@ -67,7 +67,7 @@ func newTestState(t testing.TB, db db.Database) *state {
 		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log:       luxlog.NewNoOpLogger(){},
+			Log:       log.NewNoOpLogger(),
 		},
 		metrics.Noop,
 		reward.NewCalculator(reward.Config{
@@ -1150,7 +1150,7 @@ func TestReindexBlocks(t *testing.T) {
 	}
 
 	// Convert the indices to the new format.
-	require.NoError(s.ReindexBlocks(&sync.Mutex{}, luxlog.NewNoOpLogger(){}))
+	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NewNoOpLogger()))
 
 	// Verify that the blocks are stored in the new format.
 	for _, blk := range blks {

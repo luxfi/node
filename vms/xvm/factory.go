@@ -4,7 +4,7 @@
 package xvm
 
 import (
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/xvm/config"
 )
@@ -15,6 +15,6 @@ type Factory struct {
 	config.Config
 }
 
-func (f *Factory) New(luxlog.Logger) (interface{}, error) {
+func (f *Factory) New(log.Logger) (interface{}, error) {
 	return &VM{Config: f.Config}, nil
 }

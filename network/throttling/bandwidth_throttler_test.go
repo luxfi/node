@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 func TestBandwidthThrottler(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(luxlog.NewNoOpLogger(){}, prometheus.NewRegistry(), config)
+	throttlerIntf, err := newBandwidthThrottler(log.NewNoOpLogger(), prometheus.NewRegistry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

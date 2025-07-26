@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -28,7 +28,7 @@ var (
 )
 
 type worker struct {
-	log           luxlog.Logger
+	log           log.Logger
 	name          string
 	failingChecks *prometheus.GaugeVec
 	checksLock    sync.RWMutex
@@ -52,7 +52,7 @@ type taggedChecker struct {
 }
 
 func newWorker(
-	log luxlog.Logger,
+	log log.Logger,
 	name string,
 	failingChecks *prometheus.GaugeVec,
 ) *worker {

@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -138,9 +138,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "happy path",
 			config: &subprocess.Config{
-				Stderr:           luxlog.NewNoOpLogger(){},
-				Stdout:           luxlog.NewNoOpLogger(){},
-				Log:              luxlog.NewNoOpLogger(){},
+				Stderr:           log.NewNoOpLogger(),
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -151,8 +151,8 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "invalid stderr",
 			config: &subprocess.Config{
-				Stdout:           luxlog.NewNoOpLogger(){},
-				Log:              luxlog.NewNoOpLogger(){},
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -163,9 +163,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "handshake timeout",
 			config: &subprocess.Config{
-				Stderr:           luxlog.NewNoOpLogger(){},
-				Stdout:           luxlog.NewNoOpLogger(){},
-				Log:              luxlog.NewNoOpLogger(){},
+				Stderr:           log.NewNoOpLogger(),
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -247,7 +247,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		123,
 		nil,
 		metrics.NewLabelGatherer(""),
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 	)
 
 	handler, err := client.NewHTTPHandler(context.Background())

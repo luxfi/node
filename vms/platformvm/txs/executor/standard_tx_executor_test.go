@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -2359,7 +2359,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -2677,7 +2677,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3201,7 +3201,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3700,7 +3700,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3989,7 +3989,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: luxlog.NewNoOpLogger(){},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))

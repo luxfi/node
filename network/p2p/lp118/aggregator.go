@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -36,7 +36,7 @@ type result struct {
 }
 
 // NewSignatureAggregator returns an instance of SignatureAggregator
-func NewSignatureAggregator(log luxlog.Logger, client *p2p.Client) *SignatureAggregator {
+func NewSignatureAggregator(log log.Logger, client *p2p.Client) *SignatureAggregator {
 	return &SignatureAggregator{
 		log:    log,
 		client: client,
@@ -45,7 +45,7 @@ func NewSignatureAggregator(log luxlog.Logger, client *p2p.Client) *SignatureAgg
 
 // SignatureAggregator aggregates validator signatures for warp messages
 type SignatureAggregator struct {
-	log    luxlog.Logger
+	log    log.Logger
 	client *p2p.Client
 }
 

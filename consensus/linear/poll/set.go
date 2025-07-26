@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/linked"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 )
 
@@ -43,7 +43,7 @@ func (p poll) StartTime() time.Time {
 }
 
 type set struct {
-	log      luxlog.Logger
+	log      log.Logger
 	numPolls prometheus.Gauge
 	durPolls metric.Averager
 	factory  Factory
@@ -54,7 +54,7 @@ type set struct {
 // NewSet returns a new empty set of polls
 func NewSet(
 	factory Factory,
-	log luxlog.Logger,
+	log log.Logger,
 	reg prometheus.Registerer,
 ) (Set, error) {
 	numPolls := prometheus.NewGauge(prometheus.GaugeOpts{

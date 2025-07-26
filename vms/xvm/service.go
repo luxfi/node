@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/formatting"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -185,7 +185,7 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSO
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "issueTx"),
-		logging.UserString("tx", args.Tx),
+		log.UserString("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -286,7 +286,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getUTXOs"),
-		logging.UserStrings("addresses", args.Addresses),
+		log.UserStrings("addresses", args.Addresses),
 	)
 
 	if len(args.Addresses) == 0 {
@@ -404,7 +404,7 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAssetDescription"),
-		logging.UserString("assetID", args.AssetID),
+		log.UserString("assetID", args.AssetID),
 	)
 
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
@@ -454,8 +454,8 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBalance"),
-		logging.UserString("address", args.Address),
-		logging.UserString("assetID", args.AssetID),
+		log.UserString("address", args.Address),
+		log.UserString("assetID", args.AssetID),
 	)
 
 	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -531,7 +531,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAllBalances"),
-		logging.UserString("address", args.Address),
+		log.UserString("address", args.Address),
 	)
 
 	address, err := lux.ParseServiceAddress(s.vm, args.Address)

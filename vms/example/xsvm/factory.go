@@ -4,7 +4,7 @@
 package xsvm
 
 import (
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -12,6 +12,6 @@ var _ vms.Factory = (*Factory)(nil)
 
 type Factory struct{}
 
-func (*Factory) New(luxlog.Logger) (interface{}, error) {
+func (*Factory) New(log.Logger) (interface{}, error) {
 	return &VM{}, nil
 }

@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var _ p2p.Handler = (*Handler[*testTx])(nil)
 
 func NewHandler[T Gossipable](
-	log luxlog.Logger,
+	log log.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	metrics Metrics,
@@ -38,7 +38,7 @@ func NewHandler[T Gossipable](
 type Handler[T Gossipable] struct {
 	p2p.Handler
 	marshaller         Marshaller[T]
-	log                luxlog.Logger
+	log                log.Logger
 	set                Set[T]
 	metrics            Metrics
 	targetResponseSize int

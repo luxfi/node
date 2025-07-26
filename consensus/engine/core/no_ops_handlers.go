@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -30,10 +30,10 @@ var (
 )
 
 type noOpStateSummaryFrontierHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpStateSummaryFrontierHandler(log luxlog.Logger) StateSummaryFrontierHandler {
+func NewNoOpStateSummaryFrontierHandler(log log.Logger) StateSummaryFrontierHandler {
 	return &noOpStateSummaryFrontierHandler{log: log}
 }
 
@@ -58,10 +58,10 @@ func (nop *noOpStateSummaryFrontierHandler) GetStateSummaryFrontierFailed(_ cont
 }
 
 type noOpAcceptedStateSummaryHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpAcceptedStateSummaryHandler(log luxlog.Logger) AcceptedStateSummaryHandler {
+func NewNoOpAcceptedStateSummaryHandler(log log.Logger) AcceptedStateSummaryHandler {
 	return &noOpAcceptedStateSummaryHandler{log: log}
 }
 
@@ -86,10 +86,10 @@ func (nop *noOpAcceptedStateSummaryHandler) GetAcceptedStateSummaryFailed(_ cont
 }
 
 type noOpAcceptedFrontierHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpAcceptedFrontierHandler(log luxlog.Logger) AcceptedFrontierHandler {
+func NewNoOpAcceptedFrontierHandler(log log.Logger) AcceptedFrontierHandler {
 	return &noOpAcceptedFrontierHandler{log: log}
 }
 
@@ -115,10 +115,10 @@ func (nop *noOpAcceptedFrontierHandler) GetAcceptedFrontierFailed(_ context.Cont
 }
 
 type noOpAcceptedHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpAcceptedHandler(log luxlog.Logger) AcceptedHandler {
+func NewNoOpAcceptedHandler(log log.Logger) AcceptedHandler {
 	return &noOpAcceptedHandler{log: log}
 }
 
@@ -143,10 +143,10 @@ func (nop *noOpAcceptedHandler) GetAcceptedFailed(_ context.Context, nodeID ids.
 }
 
 type noOpAncestorsHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpAncestorsHandler(log luxlog.Logger) AncestorsHandler {
+func NewNoOpAncestorsHandler(log log.Logger) AncestorsHandler {
 	return &noOpAncestorsHandler{log: log}
 }
 
@@ -171,10 +171,10 @@ func (nop *noOpAncestorsHandler) GetAncestorsFailed(_ context.Context, nodeID id
 }
 
 type noOpPutHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpPutHandler(log luxlog.Logger) PutHandler {
+func NewNoOpPutHandler(log log.Logger) PutHandler {
 	return &noOpPutHandler{log: log}
 }
 
@@ -199,10 +199,10 @@ func (nop *noOpPutHandler) GetFailed(_ context.Context, nodeID ids.NodeID, reque
 }
 
 type noOpQueryHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpQueryHandler(log luxlog.Logger) QueryHandler {
+func NewNoOpQueryHandler(log log.Logger) QueryHandler {
 	return &noOpQueryHandler{log: log}
 }
 
@@ -230,10 +230,10 @@ func (nop *noOpQueryHandler) PushQuery(_ context.Context, nodeID ids.NodeID, req
 }
 
 type noOpChitsHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpChitsHandler(log luxlog.Logger) ChitsHandler {
+func NewNoOpChitsHandler(log log.Logger) ChitsHandler {
 	return &noOpChitsHandler{log: log}
 }
 
@@ -262,10 +262,10 @@ func (nop *noOpChitsHandler) QueryFailed(_ context.Context, nodeID ids.NodeID, r
 }
 
 type noOpAppHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpAppHandler(log luxlog.Logger) AppHandler {
+func NewNoOpAppHandler(log log.Logger) AppHandler {
 	return &noOpAppHandler{log: log}
 }
 
@@ -310,10 +310,10 @@ func (nop *noOpAppHandler) AppGossip(_ context.Context, nodeID ids.NodeID, _ []b
 }
 
 type noOpInternalHandler struct {
-	log luxlog.Logger
+	log log.Logger
 }
 
-func NewNoOpInternalHandler(log luxlog.Logger) InternalHandler {
+func NewNoOpInternalHandler(log log.Logger) InternalHandler {
 	return &noOpInternalHandler{log: log}
 }
 

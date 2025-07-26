@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +49,8 @@ func DefaultPodFlags(networkName string, dataDir string) map[string]string {
 		config.NetworkNameKey:            networkName,
 		config.SybilProtectionEnabledKey: "false",
 		config.HealthCheckFreqKey:        "500ms", // Ensure rapid detection of a healthy state
-		config.LogDisplayLevelKey:        luxlog.LevelDebug.String(),
-		config.LogLevelKey:               luxlog.LevelDebug.String(),
+		config.LogDisplayLevelKey:        log.LevelDebug.String(),
+		config.LogLevelKey:               log.LevelDebug.String(),
 		config.HTTPHostKey:               "0.0.0.0", // Need to bind to pod IP to ensure kubelet can access the http port for the readiness check
 	}
 }
@@ -199,7 +199,7 @@ func sortEnvVars(envVars []corev1.EnvVar) {
 // WaitForNodeHealthy waits for the node running in the specified pod to report healthy.
 func WaitForNodeHealthy(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	kubeconfig *restclient.Config,
 	namespace string,
 	podName string,
@@ -354,7 +354,7 @@ func enableLocalForwardForPod(
 // GetClientConfig replicates the behavior of clientcmd.BuildConfigFromFlags with zap logging and
 // support for an optional config context. If path is not provided, use of in-cluster config will
 // be attempted.
-func GetClientConfig(log luxlog.Logger, path string, context string) (*restclient.Config, error) {
+func GetClientConfig(log log.Logger, path string, context string) (*restclient.Config, error) {
 	if len(path) == 0 {
 		log.Warn("--kubeconfig not set.  Using the inClusterConfig.  This might not work.")
 		kubeconfig, err := restclient.InClusterConfig()
@@ -378,7 +378,7 @@ func GetClientConfig(log luxlog.Logger, path string, context string) (*restclien
 }
 
 // GetClientset returns a kubernetes clientset for the provided kubeconfig path and context.
-func GetClientset(log luxlog.Logger, path string, context string) (*kubernetes.Clientset, error) {
+func GetClientset(log log.Logger, path string, context string) (*kubernetes.Clientset, error) {
 	clientConfig, err := GetClientConfig(log, path, context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client config: %w", err)
@@ -395,7 +395,7 @@ func GetClientset(log luxlog.Logger, path string, context string) (*kubernetes.C
 // If namespace is empty, the namespace from the manifest will be used for namespaced resources.
 func applyManifest(
 	ctx context.Context,
-	log luxlog.Logger,
+	log log.Logger,
 	dynamicClient dynamic.Interface,
 	manifest []byte,
 	namespace string,

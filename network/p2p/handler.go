@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/message"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 // Standardized identifiers for application protocol handlers
@@ -60,7 +60,7 @@ func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([
 func NewValidatorHandler(
 	handler Handler,
 	validatorSet ValidatorSet,
-	log luxlog.Logger,
+	log log.Logger,
 ) *ValidatorHandler {
 	return &ValidatorHandler{
 		handler:      handler,
@@ -73,7 +73,7 @@ func NewValidatorHandler(
 type ValidatorHandler struct {
 	handler      Handler
 	validatorSet ValidatorSet
-	log          luxlog.Logger
+	log          log.Logger
 }
 
 func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -100,7 +100,7 @@ func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, dea
 type responder struct {
 	Handler
 	handlerID uint64
-	log       luxlog.Logger
+	log       log.Logger
 	sender    core.AppSender
 }
 

@@ -25,7 +25,7 @@ import (
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -449,7 +449,7 @@ func (p *ProcessRuntime) saveAPIPort() error {
 // Errors encountered while looking for FATAL log entries are considered potential rather
 // than positive indications of failure and are printed to the provided writer instead of
 // being provided to the cancelWithCause function.
-func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCauseFunc, log luxlog.Logger, path string) {
+func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCauseFunc, log log.Logger, path string) {
 	waitInterval := 100 * time.Millisecond
 	// Wait for the file to exist
 	fileExists := false

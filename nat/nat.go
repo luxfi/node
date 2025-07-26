@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 const (
@@ -46,14 +46,14 @@ func GetRouter() Router {
 
 // Mapper attempts to open a set of ports on a router
 type Mapper struct {
-	log    luxlog.Logger
+	log    log.Logger
 	r      Router
 	closer chan struct{}
 	wg     sync.WaitGroup
 }
 
 // NewPortMapper returns an initialized mapper
-func NewPortMapper(log luxlog.Logger, r Router) *Mapper {
+func NewPortMapper(log log.Logger, r Router) *Mapper {
 	return &Mapper{
 		log:    log,
 		r:      r,

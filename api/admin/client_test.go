@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 )
 
@@ -210,7 +210,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			logLevel:     "INFO",
 			displayLevel: "INFO",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"Happy path": {LogLevel: luxlog.LevelInfo, DisplayLevel: luxlog.LevelInfo},
+				"Happy path": {LogLevel: log.LevelInfo, DisplayLevel: log.LevelInfo},
 			},
 			serviceErr: nil,
 			clientErr:  nil,
@@ -280,7 +280,7 @@ func TestGetLoggerLevel(t *testing.T) {
 			name:       "Happy Path",
 			loggerName: "foo",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"foo": {LogLevel: luxlog.LevelInfo, DisplayLevel: luxlog.LevelInfo},
+				"foo": {LogLevel: log.LevelInfo, DisplayLevel: log.LevelInfo},
 			},
 			serviceErr: nil,
 			clientErr:  nil,

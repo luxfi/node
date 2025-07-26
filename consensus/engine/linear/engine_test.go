@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/validators"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -3222,7 +3222,7 @@ func TestEngineAbortQueryWhenInPartition(t *testing.T) {
 
 	conf := DefaultConfig(t)
 	// Overwrite the log to record what it says
-	conf.Ctx.Log = luxlog.NewZapLogger("", logging.NewWrappedCore(luxlog.LevelVerbo, &buff, logging.Plain.ConsoleEncoder()))
+	conf.Ctx.Log = log.NewZapLogger("", logging.NewWrappedCore(log.LevelVerbo, &buff, logging.Plain.ConsoleEncoder()))
 	conf.Params = sampling.DefaultParameters
 	conf.ConnectedValidators = &mockConnVDR{percent: 0.7, Peers: conf.ConnectedValidators}
 

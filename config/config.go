@@ -39,7 +39,7 @@ import (
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
@@ -103,11 +103,11 @@ func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
-	loggingConfig := logging.Config{}
+func getLoggingConfig(v *viper.Viper) (log.Config, error) {
+	loggingConfig := log.Config{}
 	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
 	var err error
-	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
+	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
 	if err != nil {
 		return loggingConfig, err
 	}
@@ -115,11 +115,11 @@ func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	if v.IsSet(LogDisplayLevelKey) {
 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
 	}
-	loggingConfig.DisplayLevel, err = logging.ToLevel(logDisplayLevel)
+	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
 	if err != nil {
 		return loggingConfig, err
 	}
-	loggingConfig.LogFormat, err = logging.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))

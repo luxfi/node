@@ -14,7 +14,7 @@ import (
 
 	"go.uber.org/zap"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -29,7 +29,7 @@ func NodeDataDir(path string) string {
 	return path + "/luxd"
 }
 
-func InitBootstrapTest(log luxlog.Logger, namespace string, podName string, nodeContainerName string, dataDir string) error {
+func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeContainerName string, dataDir string) error {
 	clientset, err := getClientset(log)
 	if err != nil {
 		return fmt.Errorf("failed to get clientset: %w", err)

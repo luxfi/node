@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var _ Issuer[ids.ID] = (*mockIssuer)(nil)
@@ -82,7 +82,7 @@ func TestOrchestratorTPS(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				agents,
 				tracker,
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				tt.config,
 			)
 
@@ -153,7 +153,7 @@ func TestOrchestratorExecution(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				tt.agents,
 				tracker,
-				luxlog.NewNoOpLogger(){},
+				log.NewNoOpLogger(),
 				NewOrchestratorConfig(),
 			)
 			r.NoError(err)

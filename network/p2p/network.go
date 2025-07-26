@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -57,7 +57,7 @@ type clientOptions struct {
 
 // NewNetwork returns an instance of Network
 func NewNetwork(
-	log luxlog.Logger,
+	log log.Logger,
 	sender core.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
@@ -102,7 +102,7 @@ func NewNetwork(
 type Network struct {
 	Peers *Peers
 
-	log    luxlog.Logger
+	log    log.Logger
 	sender core.AppSender
 
 	router *router

@@ -14,14 +14,14 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
 	tracker, err := newIPTracker(
 		nil,
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 	)
 	require.NoError(t, err)

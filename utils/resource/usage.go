@@ -14,7 +14,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 	"go.uber.org/zap"
 
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/storage"
 )
 
@@ -67,7 +67,7 @@ type Manager interface {
 }
 
 type manager struct {
-	log            luxlog.Logger
+	log            log.Logger
 	processMetrics *metrics
 
 	processesLock sync.Mutex
@@ -87,7 +87,7 @@ type manager struct {
 }
 
 func NewManager(
-	log luxlog.Logger,
+	log log.Logger,
 	diskPath string,
 	frequency,
 	cpuHalflife,
@@ -234,7 +234,7 @@ func (m *manager) getActiveUsage(secondsSinceLastUpdate float64) (float64, float
 
 type proc struct {
 	p   *process.Process
-	log luxlog.Logger
+	log log.Logger
 
 	initialized bool
 

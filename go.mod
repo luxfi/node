@@ -26,11 +26,11 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/crypto v1.0.0
-	github.com/luxfi/database v1.1.1
+	github.com/luxfi/crypto v1.0.2
+	github.com/luxfi/database v1.1.3
 	github.com/luxfi/evm v0.7.12
 	github.com/luxfi/geth v1.16.2
-	github.com/luxfi/ids v0.0.0-00010101000000-000000000000
+	github.com/luxfi/ids v1.0.1
 	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53
 	github.com/mitchellh/mapstructure v1.5.0
@@ -207,15 +207,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/luxfi/database => ../database
-
-replace github.com/luxfi/ids => ../ids
-
-replace github.com/luxfi/crypto => ../crypto
-
-replace github.com/luxfi/geth => ../geth
-
-replace github.com/luxfi/evm => ../evm
-
-replace github.com/luxfi/log => ../log

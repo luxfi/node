@@ -8,13 +8,13 @@ import (
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/message"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 // Config wraps all the parameters needed for a simplex engine
 type Config struct {
 	Ctx SimplexChainContext
-	Log luxlog.Logger
+	Log log.Logger
 
 	Sender             sender.ExternalSender
 	OutboundMsgBuilder message.OutboundMsgBuilder

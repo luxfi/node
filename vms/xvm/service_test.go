@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -2322,7 +2322,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -2339,7 +2339,7 @@ func TestServiceGetBlock(t *testing.T) {
 					vm: &VM{
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -2360,7 +2360,7 @@ func TestServiceGetBlock(t *testing.T) {
 					vm: &VM{
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, block
@@ -2384,7 +2384,7 @@ func TestServiceGetBlock(t *testing.T) {
 					vm: &VM{
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2408,7 +2408,7 @@ func TestServiceGetBlock(t *testing.T) {
 					vm: &VM{
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2432,7 +2432,7 @@ func TestServiceGetBlock(t *testing.T) {
 					vm: &VM{
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2488,7 +2488,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -2508,7 +2508,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -2529,7 +2529,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -2554,7 +2554,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, block
@@ -2582,7 +2582,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2610,7 +2610,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2638,7 +2638,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -2693,7 +2693,7 @@ func TestServiceGetHeight(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}
@@ -2713,7 +2713,7 @@ func TestServiceGetHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}
@@ -2736,7 +2736,7 @@ func TestServiceGetHeight(t *testing.T) {
 						state:        state,
 						chainManager: manager,
 						ctx: &consensus.Context{
-							Log: luxlog.NewNoOpLogger(){},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}

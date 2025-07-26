@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -67,7 +67,7 @@ type Config struct {
 }
 
 // TODO: Add metrics
-func New(file string, configBytes []byte, log luxlog.Logger, _ prometheus.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log log.Logger, _ prometheus.Registerer) (database.Database, error) {
 	cfg := DefaultConfig
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &cfg); err != nil {

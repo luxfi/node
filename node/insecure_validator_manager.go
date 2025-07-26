@@ -10,13 +10,13 @@ import (
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
 type insecureValidatorManager struct {
 	router.Router
-	log    luxlog.Logger
+	log    log.Logger
 	vdrs   validators.Manager
 	weight uint64
 }

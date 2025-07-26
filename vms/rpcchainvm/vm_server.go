@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/galiasreader"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -72,7 +72,7 @@ type VMServer struct {
 
 	metrics metrics.MultiGatherer
 	db      db.Database
-	log     luxlog.Logger
+	log     log.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
@@ -190,7 +190,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	
 	zapLogger, _ := zapConfig.Build()
-	vm.log = luxlog.NewZapLogger(zapLogger.Named(fmt.Sprintf("<%s Chain>", chainID)))
+	vm.log = log.NewZapLogger(zapLogger.Named(fmt.Sprintf("<%s Chain>", chainID)))
 
 	// Create a no-op logger for corruptabledb since it expects a different interface
 	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))

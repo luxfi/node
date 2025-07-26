@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/constants"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -92,7 +92,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		luxlog.NewNoOpLogger(){},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,

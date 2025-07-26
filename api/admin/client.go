@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 
 	dbpb "github.com/luxfi/node/proto/pb/rpcdb"
@@ -82,18 +82,18 @@ func (c *Client) SetLoggerLevel(
 	options ...rpc.Option,
 ) (map[string]LogAndDisplayLevels, error) {
 	var (
-		logLevelArg     logging.Level
-		displayLevelArg logging.Level
+		logLevelArg     log.Level
+		displayLevelArg log.Level
 		err             error
 	)
 	if len(logLevel) > 0 {
-		logLevelArg, err = logging.ToLevel(logLevel)
+		logLevelArg, err = log.ToLevel(logLevel)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(displayLevel) > 0 {
-		displayLevelArg, err = logging.ToLevel(displayLevel)
+		displayLevelArg, err = log.ToLevel(displayLevel)
 		if err != nil {
 			return nil, err
 		}

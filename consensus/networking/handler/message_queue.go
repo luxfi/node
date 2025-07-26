@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/buffer"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -60,7 +60,7 @@ type messageQueue struct {
 	clock   mockable.Clock
 	metrics messageQueueMetrics
 
-	log      luxlog.Logger
+	log      log.Logger
 	subnetID ids.ID
 	// Validator set for the chain associated with this
 	vdrs validators.Manager
@@ -76,7 +76,7 @@ type messageQueue struct {
 }
 
 func NewMessageQueue(
-	log luxlog.Logger,
+	log log.Logger,
 	subnetID ids.ID,
 	vdrs validators.Manager,
 	cpuTracker tracker.Tracker,

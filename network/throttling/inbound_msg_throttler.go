@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)
@@ -52,7 +52,7 @@ type InboundMsgThrottlerConfig struct {
 
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
-	log luxlog.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	throttlerConfig InboundMsgThrottlerConfig,

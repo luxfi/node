@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	luxlog "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/set"
 )
@@ -42,7 +42,7 @@ var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	trackedSubnets set.Set[ids.ID],
-	log luxlog.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
@@ -206,7 +206,7 @@ func (s *gossipableSubnet) canDelete() bool {
 type ipTracker struct {
 	// trackedSubnets does not include the primary network.
 	trackedSubnets    set.Set[ids.ID]
-	log               luxlog.Logger
+	log               log.Logger
 	numTrackedPeers   prometheus.Gauge
 	numGossipableIPs  prometheus.Gauge // IPs are not deduplicated across subnets
 	numTrackedSubnets prometheus.Gauge
