@@ -17,8 +17,8 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/sampling"
@@ -2416,7 +2416,7 @@ func TestEngineVoteStallRegression(t *testing.T) {
 			InitializeF: func(
 				context.Context,
 				*consensus.Context,
-				database.Database,
+				db.Database,
 				[]byte,
 				[]byte,
 				[]byte,
@@ -2640,7 +2640,7 @@ func TestEngineEarlyTerminateVoterRegression(t *testing.T) {
 			InitializeF: func(
 				context.Context,
 				*consensus.Context,
-				database.Database,
+				db.Database,
 				[]byte,
 				[]byte,
 				[]byte,
@@ -2790,7 +2790,7 @@ func TestEngineRegistersInvalidVoterDependencyRegression(t *testing.T) {
 			InitializeF: func(
 				context.Context,
 				*consensus.Context,
-				database.Database,
+				db.Database,
 				[]byte,
 				[]byte,
 				[]byte,

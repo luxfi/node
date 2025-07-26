@@ -5,7 +5,7 @@ package threshold
 
 import (
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // NewNnaryThreshold returns a new nnary threshold instance

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 type ParseResult struct {

@@ -20,10 +20,10 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/meterdb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/meterdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
@@ -198,7 +198,7 @@ type ManagerConfig struct {
 	BlockAcceptorGroup        consensus.AcceptorGroup
 	TxAcceptorGroup           consensus.AcceptorGroup
 	VertexAcceptorGroup       consensus.AcceptorGroup
-	DB                        database.Database
+	DB                        db.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
 	Router                    router.Router              // Routes incoming messages to the appropriate chain
 	Net                       network.Network            // Sends consensus messages to other validators

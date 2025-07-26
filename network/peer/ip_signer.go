@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

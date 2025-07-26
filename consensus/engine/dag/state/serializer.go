@@ -10,9 +10,9 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
@@ -44,7 +44,7 @@ type Serializer struct {
 type SerializerConfig struct {
 	ChainID ids.ID
 	VM      vertex.DAGVM
-	DB      database.Database
+	DB      db.Database
 	Log     logging.Logger
 }
 

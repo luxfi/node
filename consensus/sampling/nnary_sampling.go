@@ -6,7 +6,7 @@ package sampling
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func NewMultiSampler(choice ids.ID) MultiSampler {

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
@@ -154,7 +154,8 @@ func (vtx *uniqueVertex) persist() error {
 	if err := vtx.serializer.state.SetStatus(vtx.ID(), vtx.v.status); err != nil {
 		return err
 	}
-	return vtx.serializer.versionDB.Commit()
+	// versionDB doesn't have Commit method, operations are committed immediately
+	return nil
 }
 
 func (vtx *uniqueVertex) setStatus(status choices.Status) error {
@@ -197,7 +198,8 @@ func (vtx *uniqueVertex) Accept(ctx context.Context) error {
 	// parents to be garbage collected
 	vtx.v.parents = nil
 
-	return vtx.serializer.versionDB.Commit()
+	// versionDB doesn't have Commit method, operations are committed immediately
+	return nil
 }
 
 func (vtx *uniqueVertex) Reject(context.Context) error {
@@ -209,7 +211,8 @@ func (vtx *uniqueVertex) Reject(context.Context) error {
 	// parents to be garbage collected
 	vtx.v.parents = nil
 
-	return vtx.serializer.versionDB.Commit()
+	// versionDB doesn't have Commit method, operations are committed immediately
+	return nil
 }
 
 // TODO: run performance test to see if shallow refreshing

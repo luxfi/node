@@ -6,11 +6,11 @@ package c
 import (
 	"github.com/luxfi/evm/plugin/evm/atomic"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	walletutil "github.com/luxfi/node/wallet"
-
-	"github.com/luxfi/evm"
+	
+	geth "github.com/luxfi/geth/common"
 )
 
 var _ Wallet = (*walletWithOptions)(nil)

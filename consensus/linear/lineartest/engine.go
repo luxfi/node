@@ -6,8 +6,8 @@ package lineartest
 import (
 	"context"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/consensustest"
 )
 

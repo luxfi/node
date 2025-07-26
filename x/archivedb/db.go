@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 	_ io.Closer          = (*Database)(nil)
 )
 
-// Database implements an ArchiveDB on top of a database.Database. An ArchiveDB
+// Database implements an ArchiveDB on top of a db.Database. An ArchiveDB
 // is an append only database which stores all state changes happening at every
 // height. Each record is stored in such way to perform both fast insertions and
 // lookups.
@@ -58,10 +58,10 @@ var (
 // height 99 it will return a tuple `("foo's value is bar", 10)` returning the
 // value of `foo` at height 99 (which was set at height 10).
 type Database struct {
-	db database.Database
+	db db.Database
 }
 
-func New(db database.Database) *Database {
+func New(db db.Database) *Database {
 	return &Database{
 		db: db,
 	}

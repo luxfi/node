@@ -17,10 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/linearmock"
@@ -89,7 +89,7 @@ func initTestProposerVM(
 	*fullVM,
 	*validatorstest.State,
 	*VM,
-	database.Database,
+	db.Database,
 ) {
 	require := require.New(t)
 
@@ -105,7 +105,7 @@ func initTestProposerVM(
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -857,7 +857,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 	coreVM.InitializeF = func(
 		_ context.Context,
 		_ *consensus.Context,
-		_ database.Database,
+		_ db.Database,
 		_ []byte,
 		_ []byte,
 		_ []byte,
@@ -1084,7 +1084,7 @@ func TestInnerVMRollback(t *testing.T) {
 			InitializeF: func(
 				context.Context,
 				*consensus.Context,
-				database.Database,
+				db.Database,
 				[]byte,
 				[]byte,
 				[]byte,
@@ -1557,7 +1557,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -1725,7 +1725,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -2142,7 +2142,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
+			InitializeF: func(context.Context, *consensus.Context, db.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},
@@ -2670,7 +2670,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
+			InitializeF: func(_ context.Context, _ *consensus.Context, _ db.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
 				return nil
 			},
 		},

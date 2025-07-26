@@ -18,8 +18,8 @@ import (
 	consensus "github.com/luxfi/node/consensus"
 	core "github.com/luxfi/node/consensus/engine/core"
 	linear "github.com/luxfi/node/consensus/linear"
-	database "github.com/luxfi/db"
-	ids "github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -208,7 +208,7 @@ func (mr *ChainVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *ChainVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
+func (m *ChainVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db db.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)

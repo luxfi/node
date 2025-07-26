@@ -14,9 +14,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/utils/logging"
@@ -573,7 +573,7 @@ func TestFindNextKeyRandom(t *testing.T) {
 	)
 
 	// Put random keys into the databases
-	for _, db := range []database.Database{remoteDB, localDB} {
+	for _, db := range []db.Database{remoteDB, localDB} {
 		for i := 0; i < numKeyValues; i++ {
 			key := make([]byte, rand.Intn(maxKeyLen))
 			_, _ = rand.Read(key)

@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/luxfi/node/chains/atomic/atomictest"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 
 	. "github.com/luxfi/node/chains/atomic"
 )

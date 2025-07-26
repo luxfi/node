@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/maybe"

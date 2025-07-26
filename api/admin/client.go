@@ -7,11 +7,13 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/db/rpcdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/rpc"
+
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 type Client struct {
@@ -137,7 +139,7 @@ func (c *Client) DBGet(ctx context.Context, key []byte, options ...rpc.Option) (
 		return nil, err
 	}
 
-	if err := rpcdb.ErrEnumToError[res.ErrorCode]; err != nil {
+	if err := rpcdb.ErrEnumToError[dbpb.Error(res.ErrorCode)]; err != nil {
 		return nil, err
 	}
 	return formatting.Decode(formatting.HexNC, res.Value)

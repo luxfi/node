@@ -3,7 +3,7 @@
 
 package warp
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // AnycastID is a special DestinationChainID that is used to indicate that the
 // message is intended to be able to be received by any chain.

@@ -6,7 +6,7 @@ package merkledb
 import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
 )
 
@@ -18,7 +18,7 @@ type intermediateNodeDB struct {
 
 	// The underlying storage.
 	// Keys written to [baseDB] are prefixed with [intermediateNodePrefix].
-	baseDB database.Database
+	baseDB db.Database
 
 	// The write buffer contains nodes that have been changed but have not been written to disk.
 	// Note that a call to Put may cause a node to be evicted
@@ -38,7 +38,7 @@ type intermediateNodeDB struct {
 }
 
 func newIntermediateNodeDB(
-	db database.Database,
+	db db.Database,
 	bufferPool *utils.BytesPool,
 	metrics metrics,
 	cacheSize int,

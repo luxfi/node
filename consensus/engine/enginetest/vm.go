@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/version"
@@ -46,7 +46,7 @@ type VM struct {
 	CantHealthCheck, CantConnected, CantDisconnected, CantVersion,
 	CantAppRequest, CantAppResponse, CantAppGossip, CantAppRequestFailed bool
 
-	InitializeF       func(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error
+	InitializeF       func(ctx context.Context, chainCtx *consensus.Context, db db.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error
 	SetStateF         func(ctx context.Context, state consensus.State) error
 	ShutdownF         func(context.Context) error
 	CreateHandlersF   func(context.Context) (map[string]http.Handler, error)
@@ -89,7 +89,7 @@ func (vm *VM) Default(cant bool) {
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	database db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
@@ -100,7 +100,7 @@ func (vm *VM) Initialize(
 		return vm.InitializeF(
 			ctx,
 			chainCtx,
-			db,
+			database,
 			genesisBytes,
 			upgradeBytes,
 			configBytes,

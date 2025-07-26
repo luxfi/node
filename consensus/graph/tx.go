@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/set"
 )

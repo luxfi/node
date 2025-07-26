@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 )
 
-func newTree(require *require.Assertions, db database.Database, intervals []*Interval) *Tree {
+func newTree(require *require.Assertions, db db.Database, intervals []*Interval) *Tree {
 	tree, err := NewTree(db)
 	require.NoError(err)
 

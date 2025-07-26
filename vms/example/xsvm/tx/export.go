@@ -3,7 +3,7 @@
 
 package tx
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 var _ Unsigned = (*Export)(nil)
 

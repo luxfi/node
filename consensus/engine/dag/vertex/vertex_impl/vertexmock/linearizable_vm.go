@@ -15,8 +15,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/db"
-	ids "github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/graph"
@@ -209,7 +209,7 @@ func (mr *LinearizableVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *LinearizableVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
+func (m *LinearizableVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db db.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)

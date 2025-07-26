@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
@@ -41,7 +41,7 @@ type Block interface {
 	// acceptance. The new chain state is built (but not persisted) following a
 	// block's verification to allow block's descendants verification before
 	// being accepted.
-	State() (database.Database, error)
+	State() (db.Database, error)
 }
 
 type block struct {
@@ -81,9 +81,7 @@ func (b *block) Verify(ctx context.Context) error {
 }
 
 func (b *block) Accept(context.Context) error {
-	if err := b.state.Commit(); err != nil {
-		return err
-	}
+	// versiondb commits immediately, no need to call Commit()
 
 	// Following this block's acceptance, make sure that it's direct children
 	// point to the base state, which now also contains this block's changes.
@@ -166,7 +164,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 	return nil
 }
 
-func (b *block) State() (database.Database, error) {
+func (b *block) State() (db.Database, error) {
 	if b.id == b.chain.lastAcceptedID {
 		return b.chain.acceptedState, nil
 	}

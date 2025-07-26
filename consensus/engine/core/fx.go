@@ -3,7 +3,7 @@
 
 package core
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // Fx wraps an instance of a feature extension
 type Fx struct {

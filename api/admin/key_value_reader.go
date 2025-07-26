@@ -6,7 +6,7 @@ package admin
 import (
 	"context"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 )
 
 var _ database.KeyValueReader = (*KeyValueReader)(nil)

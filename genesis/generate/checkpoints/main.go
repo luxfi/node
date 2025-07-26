@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/perms"

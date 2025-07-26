@@ -3,7 +3,7 @@
 
 package threshold
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 var (
 	Red   = ids.Empty.Prefix(0)

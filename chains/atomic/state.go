@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/linkeddb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/linkeddb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
 )
@@ -42,14 +42,14 @@ type dbElement struct {
 // maps traits to the keys with those traits.
 type state struct {
 	// valueDB contains a mapping from key to the corresponding dbElement.
-	valueDB database.Database
+	valueDB db.Database
 
 	// indexDB stores the trait -> key mappings.
 	// To get this mapping, we construct a prefixdb using the trait as a prefix
 	// and then construct a linkeddb on the result.
 	// The linkeddb contains the keys that the trait maps to as the key and map
 	// to nil values.
-	indexDB database.Database
+	indexDB db.Database
 }
 
 // Value returns the Element associated with [key].
@@ -60,9 +60,9 @@ func (s *state) Value(key []byte) (*Element, error) {
 	}
 
 	// If [key] is indexed, but has been marked as deleted, return
-	// [database.ErrNotFound].
+	// [db.ErrNotFound].
 	if !value.Present {
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 
 	return &Element{
@@ -92,7 +92,7 @@ func (s *state) SetValue(e *Element) error {
 		// This key was written twice, which is invalid
 		return fmt.Errorf("%w: Key=0x%x Value=0x%x", errDuplicatePut, e.Key, e.Value)
 	}
-	if err != database.ErrNotFound {
+	if err != db.ErrNotFound {
 		// An unexpected error occurred, so we should propagate that error
 		return err
 	}
@@ -147,7 +147,7 @@ func (s *state) SetValue(e *Element) error {
 // current engine state.
 func (s *state) RemoveValue(key []byte) error {
 	value, err := s.loadValue(key)
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// The value doesn't exist, so we should optimistically delete it
 		dbElem := dbElement{Present: false}
 		valueBytes, err := Codec.Marshal(CodecVersion, &dbElem)

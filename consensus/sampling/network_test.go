@@ -4,7 +4,7 @@
 package sampling
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/sampler"
 )

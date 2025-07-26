@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/xvm/txs"

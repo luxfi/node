@@ -3,7 +3,7 @@
 
 package bootstrapper
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 var (
 	nodeID0 = ids.GenerateTestNodeID()

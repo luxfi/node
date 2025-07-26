@@ -17,10 +17,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/dbtest"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/dbtest"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
@@ -28,7 +28,7 @@ import (
 )
 
 // newDB returns a new merkle database with the underlying type so that tests can access unexported fields
-func newDB(ctx context.Context, db database.Database, config Config) (*merkleDB, error) {
+func newDB(ctx context.Context, db db.Database, config Config) (*merkleDB, error) {
 	db, err := New(ctx, db, config)
 	if err != nil {
 		return nil, err
@@ -778,7 +778,7 @@ func TestMerkleDBClear(t *testing.T) {
 	insertRandomKeyValues(
 		require,
 		r,
-		[]database.Database{db},
+		[]db.Database{db},
 		1_000,
 		0.25,
 	)
@@ -1207,7 +1207,7 @@ func generateRandTest(require *require.Assertions, r *rand.Rand, size uint, perc
 func insertRandomKeyValues(
 	require *require.Assertions,
 	rand *rand.Rand,
-	dbs []database.Database,
+	dbs []db.Database,
 	numKeyValues uint,
 	deletePortion float64,
 ) {

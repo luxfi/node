@@ -6,7 +6,7 @@ package ledger
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"

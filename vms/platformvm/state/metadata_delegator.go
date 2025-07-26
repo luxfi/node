@@ -4,8 +4,8 @@
 package state
 
 import (
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
 type delegatorMetadata struct {

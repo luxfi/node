@@ -12,7 +12,7 @@ package txsmock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	set "github.com/luxfi/node/utils/set"
 	txs "github.com/luxfi/node/vms/xvm/txs"

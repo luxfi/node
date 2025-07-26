@@ -6,7 +6,7 @@ package x
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 )
@@ -29,6 +29,18 @@ func (*backendVisitor) CreateAssetTx(*txs.CreateAssetTx) error {
 }
 
 func (*backendVisitor) OperationTx(*txs.OperationTx) error {
+	return nil
+}
+
+func (*backendVisitor) BurnTx(*txs.BurnTx) error {
+	return nil
+}
+
+func (*backendVisitor) MintTx(*txs.MintTx) error {
+	return nil
+}
+
+func (*backendVisitor) NFTTransferTx(*txs.NFTTransferTx) error {
 	return nil
 }
 

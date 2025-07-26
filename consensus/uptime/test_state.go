@@ -6,8 +6,8 @@ package uptime
 import (
 	"time"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
 var _ State = (*TestState)(nil)
@@ -41,7 +41,7 @@ func (s *TestState) AddNode(nodeID ids.NodeID, startTime time.Time) {
 func (s *TestState) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, error) {
 	up, exists := s.nodes[nodeID]
 	if !exists {
-		return 0, time.Time{}, database.ErrNotFound
+		return 0, time.Time{}, db.ErrNotFound
 	}
 	return up.upDuration, up.lastUpdated, s.dbReadError
 }
@@ -49,7 +49,7 @@ func (s *TestState) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, erro
 func (s *TestState) SetUptime(nodeID ids.NodeID, upDuration time.Duration, lastUpdated time.Time) error {
 	up, exists := s.nodes[nodeID]
 	if !exists {
-		return database.ErrNotFound
+		return db.ErrNotFound
 	}
 	up.upDuration = upDuration
 	up.lastUpdated = time.Unix(lastUpdated.Unix(), 0)
@@ -59,7 +59,7 @@ func (s *TestState) SetUptime(nodeID ids.NodeID, upDuration time.Duration, lastU
 func (s *TestState) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
 	up, exists := s.nodes[nodeID]
 	if !exists {
-		return time.Time{}, database.ErrNotFound
+		return time.Time{}, db.ErrNotFound
 	}
 	return up.startTime, s.dbReadError
 }

@@ -6,7 +6,7 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/graph"
 )
 

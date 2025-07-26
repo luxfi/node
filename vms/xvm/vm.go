@@ -16,9 +16,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/graph"
@@ -84,7 +84,7 @@ type VM struct {
 	// asset id that will be used for fees
 	feeAssetID ids.ID
 
-	baseDB database.Database
+	baseDB db.Database
 	db     *versiondb.Database
 
 	typeToFxIndex map[reflect.Type]int
@@ -136,7 +136,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 func (vm *VM) Initialize(
 	_ context.Context,
 	ctx *consensus.Context,
-	db database.Database,
+	database db.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
@@ -172,8 +172,8 @@ func (vm *VM) Initialize(
 
 	vm.ctx = ctx
 	vm.appSender = appSender
-	vm.baseDB = db
-	vm.db = versiondb.New(db)
+	vm.baseDB = database
+	vm.db = versiondb.New(database)
 
 	typedFxs := make([]extensions.Fx, len(fxs))
 	vm.fxs = make([]*extensions.ParsedFx, len(fxs))

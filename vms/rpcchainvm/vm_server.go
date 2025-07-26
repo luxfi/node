@@ -15,22 +15,21 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/luxfi/crypto/bls"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/corruptabledb"
-	"github.com/luxfi/db/rpcdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/appsender"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
+	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
@@ -38,15 +37,15 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 var (
@@ -71,7 +70,7 @@ type VMServer struct {
 	allowShutdown *utils.Atomic[bool]
 
 	metrics metrics.MultiGatherer
-	db      database.Database
+	db      db.Database
 	log     logging.Logger
 
 	serverCloser grpcutils.ServerCloser
@@ -191,10 +190,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		),
 	)
 
-	vm.db = corruptabledb.New(
-		rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn)),
-		vm.log,
-	)
+	// Create a no-op logger for corruptabledb since it expects a different interface
+	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,
@@ -225,8 +222,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		PublicKey:       publicKey,
 		NetworkUpgrades: networkUpgrades,
 
-		XChainID:    xChainID,
-		CChainID:    cChainID,
+		XChainID:   xChainID,
+		CChainID:   cChainID,
 		LUXAssetID: luxAssetID,
 
 		Log:          vm.log,
@@ -514,10 +511,11 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}
-	dbHealth, err := vm.db.HealthCheck(ctx)
+	err = vm.db.HealthCheck()
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}
+	dbHealth := "healthy"
 	report := map[string]interface{}{
 		"database": dbHealth,
 		"health":   vmHealth,

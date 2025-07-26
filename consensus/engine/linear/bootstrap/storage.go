@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap/interval"
@@ -36,7 +36,7 @@ const (
 // blocks [3, 5].
 func getMissingBlockIDs(
 	ctx context.Context,
-	db database.KeyValueReader,
+	db db.KeyValueReader,
 	nonVerifyingParser block.Parser,
 	tree *interval.Tree,
 	lastAcceptedHeight uint64,
@@ -78,7 +78,7 @@ func getMissingBlockIDs(
 //
 // Returns a newly discovered blockID that should be fetched.
 func process(
-	db database.KeyValueWriterDeleter,
+	db db.KeyValueWriterDeleter,
 	tree *interval.Tree,
 	missingBlockIDs set.Set[ids.ID],
 	lastAcceptedHeight uint64,
@@ -128,7 +128,7 @@ func execute(
 	ctx context.Context,
 	shouldHalt func() bool,
 	log logging.Func,
-	db database.Database,
+	db db.Database,
 	nonVerifyingParser block.Parser,
 	tree *interval.Tree,
 	lastAcceptedHeight uint64,

@@ -8,8 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -97,7 +97,7 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 func (vm *blockVM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,

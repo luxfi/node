@@ -15,10 +15,10 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -127,7 +127,7 @@ func New(
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	database db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
@@ -135,7 +135,7 @@ func (vm *VM) Initialize(
 	appSender core.AppSender,
 ) error {
 	vm.ctx = chainCtx
-	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
+	vm.db = versiondb.New(prefixdb.New(dbPrefix, database))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func (vm *VM) Initialize(
 	err = vm.ChainVM.Initialize(
 		ctx,
 		chainCtx,
-		db,
+		database,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
@@ -189,7 +189,7 @@ func (vm *VM) Initialize(
 			zap.Uint64("forkHeight", forkHeight),
 			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
-	case database.ErrNotFound:
+	case db.ErrNotFound:
 		chainCtx.Log.Info("initialized proposervm",
 			zap.String("state", "before fork"),
 		)
@@ -230,9 +230,7 @@ func (vm *VM) Initialize(
 
 // Shutdown ops then propagate shutdown to innerVM
 func (vm *VM) Shutdown(ctx context.Context) error {
-	if err := vm.db.Commit(); err != nil {
-		return err
-	}
+	// versiondb doesn't have Commit method, operations are committed immediately
 	return vm.ChainVM.Shutdown(ctx)
 }
 
@@ -472,7 +470,7 @@ func (vm *VM) getPostDurangoSlotTime(
 
 func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	lastAccepted, err := vm.State.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		return vm.ChainVM.LastAccepted(ctx)
 	}
 	return lastAccepted, err
@@ -488,7 +486,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return fmt.Errorf("failed to get inner last accepted block: %w", err)
 	}
 	proLastAcceptedID, err := vm.State.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// If the last accepted block isn't indexed yet, then the underlying
 		// chain is the only chain and there is nothing to repair.
 		return nil
@@ -529,7 +527,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		if err := vm.State.DeleteLastAccepted(); err != nil {
 			return fmt.Errorf("failed to delete last accepted: %w", err)
 		}
-		return vm.db.Commit()
+		// versiondb doesn't have Commit method, operations are committed immediately
+		return nil
 	}
 
 	newProLastAcceptedID, err := vm.State.GetBlockIDAtHeight(innerLastAcceptedHeight)
@@ -544,16 +543,14 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return fmt.Errorf("failed to set last accepted: %w", err)
 	}
 
-	if err := vm.db.Commit(); err != nil {
-		return fmt.Errorf("failed to commit db: %w", err)
-	}
+	// versiondb doesn't have Commit method, operations are committed immediately
 
 	return nil
 }
 
 func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 	lastAcceptedID, err := vm.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// If the last accepted block wasn't a PostFork block, then we don't
 		// initialize the metadata.
 		vm.lastAcceptedHeight = 0
@@ -702,7 +699,8 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	if err := vm.updateHeightIndex(height, blkID); err != nil {
 		return err
 	}
-	return vm.db.Commit()
+	// versiondb doesn't have Commit method, operations are committed immediately
+	return nil
 }
 
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {

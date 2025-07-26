@@ -4,7 +4,7 @@
 package bootstrap
 
 import (
-	"github.com/luxfi/db"
+	db "github.com/luxfi/database"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -33,7 +33,7 @@ type Config struct {
 
 	// Database used to track the fetched, but not yet executed, blocks during
 	// bootstrapping.
-	DB database.Database
+	DB db.Database
 
 	VM block.ChainVM
 

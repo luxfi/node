@@ -6,7 +6,7 @@ package state
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // subnetIDNodeID = [subnetID] + [nodeID]

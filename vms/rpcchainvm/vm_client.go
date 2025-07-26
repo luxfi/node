@@ -17,6 +17,10 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/luxfi/crypto/bls"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/consensus"
@@ -25,11 +29,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/rpcdb"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
@@ -45,7 +45,7 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
@@ -123,7 +123,7 @@ func NewClient(
 func (vm *VMClient) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
@@ -269,7 +269,7 @@ func (vm *VMClient) Initialize(
 	return err
 }
 
-func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
+func (vm *VMClient) newDBServer(db db.Database) *grpc.Server {
 	server := grpcutils.NewServer(
 		grpcutils.WithUnaryInterceptor(vm.grpcServerMetrics.UnaryServerInterceptor()),
 		grpcutils.WithStreamInterceptor(vm.grpcServerMetrics.StreamServerInterceptor()),

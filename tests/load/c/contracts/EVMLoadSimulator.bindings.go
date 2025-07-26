@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/evm/core/types"
 	"github.com/luxfi/geth/event"
-	"github.com/luxfi/evm/iface"
+	interfaces "github.com/luxfi/evm/iface"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

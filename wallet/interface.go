@@ -8,7 +8,7 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // ChainType represents different blockchain architectures
