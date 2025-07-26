@@ -59,11 +59,11 @@ func NewBackend(
 
 func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 	// TODO: Implement proper atomic transaction handling
-	switch tx := tx.(type) {
+	switch utx := tx.UnsignedAtomicTx.(type) {
 	case *UnsignedImportTx:
-		for _, input := range tx.ImportedInputs {
+		for _, input := range utx.ImportedInputs {
 			utxoID := input.InputID()
-			if err := b.RemoveUTXO(ctx, tx.SourceChain, utxoID); err != nil {
+			if err := b.RemoveUTXO(ctx, utx.SourceChain, utxoID); err != nil {
 				return err
 			}
 		}
@@ -71,7 +71,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 		b.accountsLock.Lock()
 		defer b.accountsLock.Unlock()
 
-		for _, output := range tx.Outs {
+		for _, output := range utx.Outs {
 			account, ok := b.accounts[output.Address]
 			if !ok {
 				continue
@@ -82,11 +82,11 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 			account.Balance.Add(account.Balance, balance)
 		}
 	case *UnsignedExportTx:
-		txID := tx.ID()
-		for i, out := range tx.ExportedOutputs {
+		txID := tx.ID
+		for i, out := range utx.ExportedOutputs {
 			err := b.AddUTXO(
 				ctx,
-				tx.DestinationChain,
+				utx.DestinationChain,
 				&lux.UTXO{
 					UTXOID: lux.UTXOID{
 						TxID:        txID,
@@ -104,7 +104,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 		b.accountsLock.Lock()
 		defer b.accountsLock.Unlock()
 
-		for _, input := range tx.Ins {
+		for _, input := range utx.Ins {
 			account, ok := b.accounts[input.Address]
 			if !ok {
 				continue
@@ -124,7 +124,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 			account.Nonce = newNonce
 		}
 	default:
-		return fmt.Errorf("%w: %T", errUnknownTxType, tx)
+		return fmt.Errorf("%w: %T", errUnknownTxType, utx)
 	}
 	return nil
 }

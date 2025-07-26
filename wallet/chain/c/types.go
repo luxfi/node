@@ -4,8 +4,16 @@
 package c
 
 import (
+	"errors"
+	"math/big"
+
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -13,6 +21,8 @@ import (
 // TODO: Implement proper C-chain transaction types
 type Tx struct {
 	ID ids.ID
+	UnsignedAtomicTx UnsignedAtomicTx
+	Creds []verify.Verifiable
 }
 
 // UnsignedImportTx is an unsigned import transaction
@@ -22,6 +32,21 @@ type UnsignedImportTx struct {
 	SourceChain ids.ID
 	ImportedInputs []*lux.TransferableInput
 	Outs []*EVMOutput
+}
+
+// InputUTXOs implements UnsignedAtomicTx
+func (tx *UnsignedImportTx) InputUTXOs() []ids.ID {
+	utxos := make([]ids.ID, len(tx.ImportedInputs))
+	for i, input := range tx.ImportedInputs {
+		utxos[i] = input.InputID()
+	}
+	return utxos
+}
+
+// GasUsed returns the gas used by this transaction
+// TODO: Implement proper gas calculation
+func (tx *UnsignedImportTx) GasUsed(fixedFee bool) (uint64, error) {
+	return 100000, nil // placeholder gas value
 }
 
 // EVMOutput represents an output on the C-chain
@@ -53,6 +78,18 @@ func (tx *UnsignedExportTx) ID() ids.ID {
 	return ids.Empty
 }
 
+// InputUTXOs implements UnsignedAtomicTx
+func (tx *UnsignedExportTx) InputUTXOs() []ids.ID {
+	// Export transactions don't consume UTXOs directly
+	return nil
+}
+
+// GasUsed returns the gas used by this transaction
+// TODO: Implement proper gas calculation
+func (tx *UnsignedExportTx) GasUsed(fixedFee bool) (uint64, error) {
+	return 100000, nil // placeholder gas value
+}
+
 // UnsignedAtomicTx is the interface for unsigned atomic transactions
 // TODO: Implement proper atomic transaction interface
 type UnsignedAtomicTx interface {
@@ -73,3 +110,57 @@ type BaseTx struct {
 type Client interface {
 	IssueTx(tx *Tx) (ids.ID, error)
 }
+
+// Constants
+const (
+	codecVersion = 0
+	EVMOutputGas = 100 // TODO: Set proper gas value
+	EVMInputGas = 100  // TODO: Set proper gas value
+	
+	// Transaction status
+	Accepted = "Accepted"
+)
+
+// Variables
+var (
+	// Codec is the codec used for serialization
+	Codec codec.Manager
+)
+
+func init() {
+	// Initialize codec
+	// TODO: Register proper types
+	Codec = codec.NewDefaultManager()
+	lcodec := linearcodec.NewDefault()
+	Codec.RegisterCodec(codecVersion, lcodec)
+}
+
+// CalculateDynamicFee calculates the dynamic fee
+// TODO: Implement proper fee calculation
+func CalculateDynamicFee(gasUsed uint64, baseFee *big.Int) (uint64, error) {
+	fee := new(big.Int).Mul(baseFee, new(big.Int).SetUint64(gasUsed))
+	if !fee.IsUint64() {
+		return 0, errInsufficientFunds
+	}
+	return fee.Uint64(), nil
+}
+
+// Sign signs the transaction
+// TODO: Implement proper signing
+func (tx *Tx) Sign(codec codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+	return nil
+}
+
+// Initialize initializes the transaction
+// TODO: Implement proper initialization
+func (tx *Tx) Initialize(unsignedBytes, signedBytes []byte) {
+	// Calculate transaction ID from signed bytes using hash
+	tx.ID = ids.ID(hashing.ComputeHash256(signedBytes))
+}
+
+// UnsignedAtomicTx field for Tx
+type UnsignedAtomicTxWrapper struct {
+	UnsignedAtomicTx UnsignedAtomicTx
+}
+
+// errInsufficientFunds is defined in builder.go

@@ -99,7 +99,7 @@ func (w *wallet) IssueImportTx(
 	chainID ids.ID,
 	to ethcommon.Address,
 	options ...common.Option,
-) (*evm.Tx, error) {
+) (*Tx, error) {
 	baseFee, err := w.baseFee(options)
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (w *wallet) IssueExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
 	options ...common.Option,
-) (*evm.Tx, error) {
+) (*Tx, error) {
 	baseFee, err := w.baseFee(options)
 	if err != nil {
 		return nil, err
@@ -130,9 +130,9 @@ func (w *wallet) IssueExportTx(
 }
 
 func (w *wallet) IssueUnsignedAtomicTx(
-	utx evm.UnsignedAtomicTx,
+	utx UnsignedAtomicTx,
 	options ...common.Option,
-) (*evm.Tx, error) {
+) (*Tx, error) {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
 	tx, err := SignUnsignedAtomic(ctx, w.signer, utx)
@@ -144,7 +144,7 @@ func (w *wallet) IssueUnsignedAtomicTx(
 }
 
 func (w *wallet) IssueAtomicTx(
-	tx *evm.Tx,
+	tx *Tx,
 	options ...common.Option,
 ) error {
 	ops := common.NewOptions(options)
@@ -182,7 +182,7 @@ func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
 
 // TODO: Upstream this function into coreth.
 func awaitTxAccepted(
-	c evm.Client,
+	c Client,
 	ctx context.Context,
 	txID ids.ID,
 	freq time.Duration,
@@ -197,7 +197,7 @@ func awaitTxAccepted(
 			return err
 		}
 
-		if status == evm.Accepted {
+		if status == Accepted {
 			return nil
 		}
 
