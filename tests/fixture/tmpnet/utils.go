@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 )
 

@@ -4,8 +4,8 @@
 package state
 
 import (
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
 const (
@@ -26,10 +26,10 @@ type ChainState interface {
 
 type chainState struct {
 	lastAccepted ids.ID
-	db           database.Database
+	db           db.Database
 }
 
-func NewChainState(db database.Database) ChainState {
+func NewChainState(db db.Database) ChainState {
 	return &chainState{db: db}
 }
 

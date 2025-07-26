@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 )
 
@@ -75,6 +75,9 @@ func connToIDAndCert(conn *tls.Conn, invalidCerts prometheus.Counter) (ids.NodeI
 		return ids.EmptyNodeID, nil, nil, err
 	}
 
-	nodeID := ids.NodeIDFromCert(peerCert)
+	nodeID := ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       peerCert.Raw,
+		PublicKey: peerCert.PublicKey,
+	})
 	return nodeID, conn, peerCert, nil
 }

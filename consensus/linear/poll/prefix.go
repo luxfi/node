@@ -3,7 +3,7 @@
 
 package poll
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // prefixGroup represents a bunch of IDs (stored in the members field),
 // with a bit prefix.

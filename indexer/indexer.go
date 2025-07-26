@@ -13,9 +13,9 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -44,7 +44,7 @@ var (
 
 // Config for an indexer
 type Config struct {
-	DB                   database.Database
+	DB                   db.Database
 	Log                  logging.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
@@ -94,7 +94,7 @@ type indexer struct {
 	clock  mockable.Clock
 	lock   sync.RWMutex
 	log    logging.Logger
-	db     database.Database
+	db     db.Database
 	closed bool
 
 	// Called in a goroutine on shutdown

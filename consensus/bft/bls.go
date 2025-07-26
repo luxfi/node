@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/simplex"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/bls"
 )
 
 var (

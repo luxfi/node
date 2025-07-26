@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/db"
+	db "github.com/luxfi/database"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
@@ -41,7 +41,7 @@ type vertexVM struct {
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,

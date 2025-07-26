@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 )

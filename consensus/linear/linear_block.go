@@ -4,7 +4,7 @@
 package linear
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	sampling "github.com/luxfi/node/consensus/sampling"
 )
 

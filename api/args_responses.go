@@ -6,7 +6,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 
 	avajson "github.com/luxfi/node/utils/json"

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	binaryvote "github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/set"
 )

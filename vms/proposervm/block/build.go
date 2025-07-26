@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -58,7 +58,10 @@ func Build(
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer:  ids.NodeIDFromCert(cert),
+		proposer:  ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       cert.Raw,
+			PublicKey: cert.PublicKey,
+		}),
 	}
 	var blockIntf SignedBlock = block
 

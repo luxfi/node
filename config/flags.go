@@ -13,9 +13,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/db/leveldb"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/trace"
@@ -130,7 +127,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
 	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
 	// Database
-	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name))
+	fs.String(DBTypeKey, "leveldb", fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", "leveldb", "memdb", "pebbledb"))
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))

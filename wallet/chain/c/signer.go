@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/evm/plugin/evm/atomic"
 	"github.com/luxfi/geth/common"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"

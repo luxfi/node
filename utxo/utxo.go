@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // ChainType represents different blockchain architectures

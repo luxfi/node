@@ -35,12 +35,12 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/leveldb"
-	"github.com/luxfi/db/pebbledb"
-	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"
@@ -60,7 +60,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
@@ -81,7 +81,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
 	geth "github.com/luxfi/evm/plugin/evm"
-	databasefactory "github.com/luxfi/db/factory"
+	databasefactory "github.com/luxfi/database/factory"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
@@ -289,7 +289,7 @@ type Node struct {
 	StakingTLSCert   *staking.Certificate
 
 	// Storage for this node
-	DB database.Database
+	DB db.Database
 
 	router     nat.Router
 	portMapper *nat.Mapper

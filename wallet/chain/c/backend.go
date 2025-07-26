@@ -12,12 +12,12 @@ import (
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	walletutil "github.com/luxfi/node/wallet"
 
-	"github.com/luxfi/evm"
+	geth "github.com/luxfi/geth/common"
 )
 
 var (

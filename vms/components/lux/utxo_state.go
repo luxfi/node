@@ -10,10 +10,10 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/linkeddb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/linkeddb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 )
 
 const (
@@ -76,9 +76,9 @@ type utxoState struct {
 
 	// UTXO ID -> *UTXO. If the *UTXO is nil the UTXO doesn't exist
 	utxoCache cache.Cacher[ids.ID, *UTXO]
-	utxoDB    database.Database
+	utxoDB    db.Database
 
-	indexDB    database.Database
+	indexDB    db.Database
 	indexCache cache.Cacher[string, linkeddb.LinkedDB]
 
 	trackChecksum bool
@@ -86,7 +86,7 @@ type utxoState struct {
 }
 
 func NewUTXOState(
-	db database.Database,
+	db db.Database,
 	codec codec.Manager,
 	trackChecksum bool,
 ) (UTXOState, error) {
@@ -105,7 +105,7 @@ func NewUTXOState(
 }
 
 func NewMeteredUTXOState(
-	db database.Database,
+	db db.Database,
 	codec codec.Manager,
 	metrics prometheus.Registerer,
 	trackChecksum bool,
@@ -145,15 +145,15 @@ func NewMeteredUTXOState(
 func (s *utxoState) GetUTXO(utxoID ids.ID) (*UTXO, error) {
 	if utxo, found := s.utxoCache.Get(utxoID); found {
 		if utxo == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return utxo, nil
 	}
 
 	bytes, err := s.utxoDB.Get(utxoID[:])
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		s.utxoCache.Put(utxoID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (s *utxoState) PutUTXO(utxo *UTXO) error {
 
 func (s *utxoState) DeleteUTXO(utxoID ids.ID) error {
 	utxo, err := s.GetUTXO(utxoID)
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		return nil
 	}
 	if err != nil {

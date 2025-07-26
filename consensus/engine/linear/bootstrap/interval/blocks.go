@@ -3,12 +3,12 @@
 
 package interval
 
-import "github.com/luxfi/db"
+import db "github.com/luxfi/database"
 
 // Add the block to the tree and return if the parent block should be fetched,
 // but wasn't desired before.
 func Add(
-	db database.KeyValueWriterDeleter,
+	database db.KeyValueWriterDeleter,
 	tree *Tree,
 	lastAcceptedHeight uint64,
 	height uint64,
@@ -18,10 +18,10 @@ func Add(
 		return false, nil
 	}
 
-	if err := PutBlock(db, height, blkBytes); err != nil {
+	if err := PutBlock(database, height, blkBytes); err != nil {
 		return false, err
 	}
-	if err := tree.Add(db, height); err != nil {
+	if err := tree.Add(database, height); err != nil {
 		return false, err
 	}
 
@@ -33,12 +33,12 @@ func Add(
 
 // Remove the block from the tree.
 func Remove(
-	db database.KeyValueWriterDeleter,
+	database db.KeyValueWriterDeleter,
 	tree *Tree,
 	height uint64,
 ) error {
-	if err := DeleteBlock(db, height); err != nil {
+	if err := DeleteBlock(database, height); err != nil {
 		return err
 	}
-	return tree.Remove(db, height)
+	return tree.Remove(database, height)
 }

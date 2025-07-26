@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -54,7 +54,7 @@ func NewBlockVM(
 func (vm *blockVM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,

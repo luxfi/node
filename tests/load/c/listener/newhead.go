@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/evm/iface"
+	interfaces "github.com/luxfi/evm/iface"
 )
 
 type NewHeadSubscriber interface {

@@ -6,7 +6,7 @@ package core
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 type Request struct {

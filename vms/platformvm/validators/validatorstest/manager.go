@@ -6,7 +6,7 @@ package validatorstest
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 
 	snowvalidators "github.com/luxfi/node/consensus/validators"
 	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"

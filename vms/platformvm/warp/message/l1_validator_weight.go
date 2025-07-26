@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var ErrNonceReservedForRemoval = errors.New("maxUint64 nonce is reserved for removal")

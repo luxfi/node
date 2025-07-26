@@ -11,10 +11,10 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomictest"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
@@ -43,7 +43,7 @@ func TestInterface(t *testing.T) {
 	}
 }
 
-func wrapSharedMemory(t *testing.T, sm atomic.SharedMemory, db database.Database) (atomic.SharedMemory, io.Closer) {
+func wrapSharedMemory(t *testing.T, sm atomic.SharedMemory, db db.Database) (atomic.SharedMemory, io.Closer) {
 	require := require.New(t)
 
 	listener, err := grpcutils.NewListener()

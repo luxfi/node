@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/rpcdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
@@ -48,7 +48,7 @@ type Config struct {
 	ProfileDir   string
 	LogFactory   logging.Factory
 	NodeConfig   interface{}
-	DB           database.Database
+	DB           db.Database
 	ChainManager chains.Manager
 	HTTPServer   server.PathAdderWithReadLock
 	VMRegistry   registry.VMRegistry
@@ -406,7 +406,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 
 	value, err := a.DB.Get(key)
 	if err != nil {
-		reply.ErrorCode = rpcdb.ErrorToErrEnum[err]
+		reply.ErrorCode = rpcdbpb.Error(rpcdb.ErrorToErrEnum[err])
 		return rpcdb.ErrorToRPCError(err)
 	}
 

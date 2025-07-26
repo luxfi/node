@@ -12,7 +12,7 @@ package registrymock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	vms "github.com/luxfi/node/vms"
 	gomock "go.uber.org/mock/gomock"
 )

@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/iterator"
 )
 

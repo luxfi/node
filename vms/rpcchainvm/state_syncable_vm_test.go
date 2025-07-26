@@ -13,9 +13,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/engine/linear/block"

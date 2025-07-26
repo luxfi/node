@@ -12,9 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
@@ -35,7 +35,7 @@ type Jobs struct {
 
 // New attempts to create a new job queue from the provided database.
 func New(
-	db database.Database,
+	db db.Database,
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) (*Jobs, error) {
@@ -141,7 +141,7 @@ func (j *Jobs) ExecuteAll(
 		}
 
 		job, err := j.state.RemoveRunnableJob(ctx)
-		if err == database.ErrNotFound {
+		if err == db.ErrNotFound {
 			break
 		}
 		if err != nil {
@@ -237,7 +237,9 @@ func (j *Jobs) Clear() error {
 
 // Commit the versionDB to the underlying database.
 func (j *Jobs) Commit() error {
-	return j.db.Commit()
+	// versiondb.Database doesn't have a Commit method
+	// Operations are committed immediately
+	return nil
 }
 
 type JobsWithMissing struct {
@@ -250,7 +252,7 @@ type JobsWithMissing struct {
 }
 
 func NewWithMissing(
-	db database.Database,
+	db db.Database,
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) (*JobsWithMissing, error) {

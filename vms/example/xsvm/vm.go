@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/utils/constants"
@@ -44,7 +44,7 @@ type VM struct {
 	*p2p.Network
 
 	chainContext *consensus.Context
-	db           database.Database
+	db           db.Database
 	genesis      *genesis.Genesis
 
 	chain   chain.Chain
@@ -54,7 +54,7 @@ type VM struct {
 func (vm *VM) Initialize(
 	_ context.Context,
 	chainContext *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,

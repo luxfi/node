@@ -15,9 +15,9 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/constants"

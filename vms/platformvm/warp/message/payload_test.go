@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/bls"
 )
 
 func TestParse(t *testing.T) {

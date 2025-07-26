@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -73,7 +73,7 @@ type VM struct {
 
 	// The context of this vm
 	ctx *consensus.Context
-	db  database.Database
+	db  db.Database
 
 	state state.State
 
@@ -96,7 +96,7 @@ type VM struct {
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db database.Database,
+	db db.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,

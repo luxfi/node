@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/db"
+	db "github.com/luxfi/database"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 )
@@ -47,7 +47,7 @@ type VM interface {
 	Initialize(
 		ctx context.Context,
 		chainCtx *consensus.Context,
-		db database.Database,
+		db db.Database,
 		genesisBytes []byte,
 		upgradeBytes []byte,
 		configBytes []byte,

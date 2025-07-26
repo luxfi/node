@@ -7,8 +7,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -186,7 +186,7 @@ func (m *manager) CalculateUptimePercentFrom(nodeID ids.NodeID, startTime time.T
 // time that the node has been connected.
 func (m *manager) updateUptime(nodeID ids.NodeID) error {
 	newDuration, newLastUpdated, err := m.CalculateUptime(nodeID)
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// We don't track the uptimes of non-validators.
 		return nil
 	}

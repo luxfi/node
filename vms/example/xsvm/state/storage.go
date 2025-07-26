@@ -6,8 +6,8 @@ package state
 import (
 	"errors"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -36,92 +36,92 @@ var (
 
 // Chain state
 
-func IsInitialized(db database.KeyValueReader) (bool, error) {
-	return db.Has(initializedKey)
+func IsInitialized(database db.KeyValueReader) (bool, error) {
+	return database.Has(initializedKey)
 }
 
-func SetInitialized(db database.KeyValueWriter) error {
-	return db.Put(initializedKey, nil)
+func SetInitialized(database db.KeyValueWriter) error {
+	return database.Put(initializedKey, nil)
 }
 
 // Block state
 
-func GetLastAccepted(db database.KeyValueReader) (ids.ID, error) {
-	return database.GetID(db, blockPrefix)
+func GetLastAccepted(database db.KeyValueReader) (ids.ID, error) {
+	return db.GetID(database, blockPrefix)
 }
 
-func SetLastAccepted(db database.KeyValueWriter, blkID ids.ID) error {
-	return database.PutID(db, blockPrefix, blkID)
+func SetLastAccepted(database db.KeyValueWriter, blkID ids.ID) error {
+	return db.PutID(database, blockPrefix, blkID)
 }
 
-func GetBlockIDByHeight(db database.KeyValueReader, height uint64) (ids.ID, error) {
-	key := Flatten(blockPrefix, database.PackUInt64(height))
-	return database.GetID(db, key)
+func GetBlockIDByHeight(database db.KeyValueReader, height uint64) (ids.ID, error) {
+	key := Flatten(blockPrefix, db.PackUInt64(height))
+	return db.GetID(database, key)
 }
 
-func GetBlock(db database.KeyValueReader, blkID ids.ID) ([]byte, error) {
+func GetBlock(database db.KeyValueReader, blkID ids.ID) ([]byte, error) {
 	key := Flatten(blockPrefix, blkID[:])
-	return db.Get(key)
+	return database.Get(key)
 }
 
-func AddBlock(db database.KeyValueWriter, height uint64, blkID ids.ID, blk []byte) error {
-	heightToIDKey := Flatten(blockPrefix, database.PackUInt64(height))
-	if err := database.PutID(db, heightToIDKey, blkID); err != nil {
+func AddBlock(database db.KeyValueWriter, height uint64, blkID ids.ID, blk []byte) error {
+	heightToIDKey := Flatten(blockPrefix, db.PackUInt64(height))
+	if err := db.PutID(database, heightToIDKey, blkID); err != nil {
 		return err
 	}
 	idToBlockKey := Flatten(blockPrefix, blkID[:])
-	return db.Put(idToBlockKey, blk)
+	return database.Put(idToBlockKey, blk)
 }
 
 // Address state
 
-func GetNonce(db database.KeyValueReader, address ids.ShortID) (uint64, error) {
+func GetNonce(database db.KeyValueReader, address ids.ShortID) (uint64, error) {
 	key := Flatten(addressPrefix, address[:])
-	return database.WithDefault(database.GetUInt64, db, key, 0)
+	return db.WithDefault(db.GetUInt64, database, key, 0)
 }
 
-func SetNonce(db database.KeyValueWriter, address ids.ShortID, nonce uint64) error {
+func SetNonce(database db.KeyValueWriter, address ids.ShortID, nonce uint64) error {
 	key := Flatten(addressPrefix, address[:])
-	return database.PutUInt64(db, key, nonce)
+	return db.PutUInt64(database, key, nonce)
 }
 
-func IncrementNonce(db database.KeyValueReaderWriter, address ids.ShortID, nonce uint64) error {
-	expectedNonce, err := GetNonce(db, address)
+func IncrementNonce(database db.KeyValueReaderWriter, address ids.ShortID, nonce uint64) error {
+	expectedNonce, err := GetNonce(database, address)
 	if err != nil {
 		return err
 	}
 	if nonce != expectedNonce {
 		return errWrongNonce
 	}
-	return SetNonce(db, address, nonce+1)
+	return SetNonce(database, address, nonce+1)
 }
 
-func GetBalance(db database.KeyValueReader, address ids.ShortID, chainID ids.ID) (uint64, error) {
+func GetBalance(database db.KeyValueReader, address ids.ShortID, chainID ids.ID) (uint64, error) {
 	key := Flatten(addressPrefix, address[:], chainID[:])
-	return database.WithDefault(database.GetUInt64, db, key, 0)
+	return db.WithDefault(db.GetUInt64, database, key, 0)
 }
 
-func SetBalance(db database.KeyValueWriterDeleter, address ids.ShortID, chainID ids.ID, balance uint64) error {
+func SetBalance(database db.KeyValueWriterDeleter, address ids.ShortID, chainID ids.ID, balance uint64) error {
 	key := Flatten(addressPrefix, address[:], chainID[:])
 	if balance == 0 {
-		return db.Delete(key)
+		return database.Delete(key)
 	}
-	return database.PutUInt64(db, key, balance)
+	return db.PutUInt64(database, key, balance)
 }
 
-func DecreaseBalance(db database.KeyValueReaderWriterDeleter, address ids.ShortID, chainID ids.ID, amount uint64) error {
-	balance, err := GetBalance(db, address, chainID)
+func DecreaseBalance(database db.KeyValueReaderWriterDeleter, address ids.ShortID, chainID ids.ID, amount uint64) error {
+	balance, err := GetBalance(database, address, chainID)
 	if err != nil {
 		return err
 	}
 	if balance < amount {
 		return errInsufficientBalance
 	}
-	return SetBalance(db, address, chainID, balance-amount)
+	return SetBalance(database, address, chainID, balance-amount)
 }
 
-func IncreaseBalance(db database.KeyValueReaderWriterDeleter, address ids.ShortID, chainID ids.ID, amount uint64) error {
-	balance, err := GetBalance(db, address, chainID)
+func IncreaseBalance(database db.KeyValueReaderWriterDeleter, address ids.ShortID, chainID ids.ID, amount uint64) error {
+	balance, err := GetBalance(database, address, chainID)
 	if err != nil {
 		return err
 	}
@@ -129,47 +129,47 @@ func IncreaseBalance(db database.KeyValueReaderWriterDeleter, address ids.ShortI
 	if err != nil {
 		return err
 	}
-	return SetBalance(db, address, chainID, balance)
+	return SetBalance(database, address, chainID, balance)
 }
 
 // Chain state
 
-func HasLoanID(db database.KeyValueReader, chainID ids.ID, loanID ids.ID) (bool, error) {
+func HasLoanID(database db.KeyValueReader, chainID ids.ID, loanID ids.ID) (bool, error) {
 	key := Flatten(chainPrefix, chainID[:], loanID[:])
-	return db.Has(key)
+	return database.Has(key)
 }
 
-func AddLoanID(db database.KeyValueWriter, chainID ids.ID, loanID ids.ID) error {
+func AddLoanID(database db.KeyValueWriter, chainID ids.ID, loanID ids.ID) error {
 	key := Flatten(chainPrefix, chainID[:], loanID[:])
-	return db.Put(key, nil)
+	return database.Put(key, nil)
 }
 
-func GetLoan(db database.KeyValueReader, chainID ids.ID) (uint64, error) {
+func GetLoan(database db.KeyValueReader, chainID ids.ID) (uint64, error) {
 	key := Flatten(chainPrefix, chainID[:])
-	return database.WithDefault(database.GetUInt64, db, key, 0)
+	return db.WithDefault(db.GetUInt64, database, key, 0)
 }
 
-func SetLoan(db database.KeyValueWriterDeleter, chainID ids.ID, balance uint64) error {
+func SetLoan(database db.KeyValueWriterDeleter, chainID ids.ID, balance uint64) error {
 	key := Flatten(chainPrefix, chainID[:])
 	if balance == 0 {
-		return db.Delete(key)
+		return database.Delete(key)
 	}
-	return database.PutUInt64(db, key, balance)
+	return db.PutUInt64(database, key, balance)
 }
 
-func DecreaseLoan(db database.KeyValueReaderWriterDeleter, chainID ids.ID, amount uint64) error {
-	balance, err := GetLoan(db, chainID)
+func DecreaseLoan(database db.KeyValueReaderWriterDeleter, chainID ids.ID, amount uint64) error {
+	balance, err := GetLoan(database, chainID)
 	if err != nil {
 		return err
 	}
 	if balance < amount {
 		return errInsufficientBalance
 	}
-	return SetLoan(db, chainID, balance-amount)
+	return SetLoan(database, chainID, balance-amount)
 }
 
-func IncreaseLoan(db database.KeyValueReaderWriterDeleter, chainID ids.ID, amount uint64) error {
-	balance, err := GetLoan(db, chainID)
+func IncreaseLoan(database db.KeyValueReaderWriterDeleter, chainID ids.ID, amount uint64) error {
+	balance, err := GetLoan(database, chainID)
 	if err != nil {
 		return err
 	}
@@ -177,22 +177,22 @@ func IncreaseLoan(db database.KeyValueReaderWriterDeleter, chainID ids.ID, amoun
 	if err != nil {
 		return err
 	}
-	return SetLoan(db, chainID, balance)
+	return SetLoan(database, chainID, balance)
 }
 
 // Message state
 
-func GetMessage(db database.KeyValueReader, txID ids.ID) (*warp.UnsignedMessage, error) {
+func GetMessage(database db.KeyValueReader, txID ids.ID) (*warp.UnsignedMessage, error) {
 	key := Flatten(messagePrefix, txID[:])
-	bytes, err := db.Get(key)
+	bytes, err := database.Get(key)
 	if err != nil {
 		return nil, err
 	}
 	return warp.ParseUnsignedMessage(bytes)
 }
 
-func SetMessage(db database.KeyValueWriter, txID ids.ID, message *warp.UnsignedMessage) error {
+func SetMessage(database db.KeyValueWriter, txID ids.ID, message *warp.UnsignedMessage) error {
 	key := Flatten(messagePrefix, txID[:])
 	bytes := message.Bytes()
-	return db.Put(key, bytes)
+	return database.Put(key, bytes)
 }

@@ -6,8 +6,8 @@ package executor
 import (
 	"time"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/state"

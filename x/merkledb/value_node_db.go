@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
 )
 
@@ -23,7 +23,7 @@ type valueNodeDB struct {
 
 	// The underlying storage.
 	// Keys written to [baseDB] are prefixed with [valueNodePrefix].
-	baseDB database.Database
+	baseDB db.Database
 
 	// If a value is nil, the corresponding key isn't in the trie.
 	// Paths in [nodeCache] aren't prefixed with [valueNodePrefix].
@@ -36,7 +36,7 @@ type valueNodeDB struct {
 }
 
 func newValueNodeDB(
-	db database.Database,
+	db db.Database,
 	bufferPool *utils.BytesPool,
 	metrics metrics,
 	cacheSize int,

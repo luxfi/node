@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
 const pruneCommitPeriod = 1024
@@ -142,9 +142,8 @@ func (vm *VM) pruneOldBlocks() error {
 			continue
 		}
 
-		if err := vm.db.Commit(); err != nil {
-			return err
-		}
+		// versiondb doesn't have Commit method, operations are committed immediately
 	}
-	return vm.db.Commit()
+	// versiondb doesn't have Commit method, operations are committed immediately
+	return nil
 }

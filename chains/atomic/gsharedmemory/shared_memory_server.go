@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
@@ -19,11 +19,11 @@ var _ sharedmemorypb.SharedMemoryServer = (*Server)(nil)
 type Server struct {
 	sharedmemorypb.UnsafeSharedMemoryServer
 	sm atomic.SharedMemory
-	db database.Database
+	db db.Database
 }
 
 // NewServer returns shared memory connected to remote shared memory
-func NewServer(sm atomic.SharedMemory, db database.Database) *Server {
+func NewServer(sm atomic.SharedMemory, db db.Database) *Server {
 	return &Server{
 		sm: sm,
 		db: db,
@@ -93,7 +93,7 @@ func (s *Server) Apply(
 		requests[peerChainID] = r
 	}
 
-	batches := make([]database.Batch, len(req.Batches))
+	batches := make([]db.Batch, len(req.Batches))
 	for i, reqBatch := range req.Batches {
 		batch := s.db.NewBatch()
 		for _, putReq := range reqBatch.Puts {

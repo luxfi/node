@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"

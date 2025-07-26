@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/utils/hashing"

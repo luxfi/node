@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
 	handler "github.com/luxfi/node/consensus/networking/handler"

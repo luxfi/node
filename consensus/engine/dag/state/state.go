@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/db"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/utils/logging"
@@ -20,7 +20,7 @@ type state struct {
 	log        logging.Logger
 
 	dbCache cache.Cacher[ids.ID, any]
-	db      database.Database
+	db      db.Database
 }
 
 // Vertex retrieves the vertex with the given id from cache/disk.
@@ -75,7 +75,7 @@ func (s *state) Status(id ids.ID) choices.Status {
 		return status
 	}
 
-	if val, err := database.GetUInt32(s.db, id[:]); err == nil {
+	if val, err := db.GetUInt32(s.db, id[:]); err == nil {
 		// The key was in the database
 		status := choices.Status(val)
 		s.dbCache.Put(id, status)
@@ -93,7 +93,7 @@ func (s *state) SetStatus(id ids.ID, status choices.Status) error {
 	if status == choices.Unknown {
 		return s.db.Delete(id[:])
 	}
-	return database.PutUInt32(s.db, id[:], uint32(status))
+	return db.PutUInt32(s.db, id[:], uint32(status))
 }
 
 func (s *state) Edge(id ids.ID) []ids.ID {

@@ -13,10 +13,10 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/linkeddb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/linkeddb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/set"
 )
@@ -40,11 +40,11 @@ type state struct {
 	runnableJobIDs linkeddb.LinkedDB
 	cachingEnabled bool
 	jobsCache      cache.Cacher[ids.ID, Job]
-	jobsDB         database.Database
+	jobsDB         db.Database
 	// Should be prefixed with the jobID that we are attempting to find the
 	// dependencies of. This prefixdb.Database should then be wrapped in a
 	// linkeddb.LinkedDB to read the dependencies.
-	dependenciesDB database.Database
+	dependenciesDB db.Database
 	// This is a cache that tracks LinkedDB iterators that have recently been
 	// made.
 	dependentsCache cache.Cacher[ids.ID, linkeddb.LinkedDB]
@@ -52,14 +52,14 @@ type state struct {
 	// This tracks the summary values of this state. Currently, this only
 	// contains the last known checkpoint of how many jobs are currently in the
 	// queue to execute.
-	metadataDB database.Database
+	metadataDB db.Database
 	// This caches the number of jobs that are currently in the queue to
 	// execute.
 	numJobs uint64
 }
 
 func newState(
-	db database.Database,
+	db db.Database,
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) (*state, error) {
@@ -92,11 +92,11 @@ func newState(
 	}, nil
 }
 
-func getNumJobs(d database.Database, jobs database.Iteratee) (uint64, error) {
-	numJobs, err := database.GetUInt64(d, numJobsKey)
-	if err == database.ErrNotFound {
+func getNumJobs(d db.Database, jobs db.Iteratee) (uint64, error) {
+	numJobs, err := db.GetUInt64(d, numJobsKey)
+	if err == db.ErrNotFound {
 		// If we don't have a checkpoint, we need to initialize it.
-		count, err := database.Count(jobs)
+		count, err := db.Count(jobs)
 		return uint64(count), err
 	}
 	return numJobs, err
@@ -148,7 +148,7 @@ func (s *state) Clear() error {
 
 	// clear number of pending jobs
 	s.numJobs = 0
-	if err := database.PutUInt64(s.metadataDB, numJobsKey, s.numJobs); err != nil {
+	if err := db.PutUInt64(s.metadataDB, numJobsKey, s.numJobs); err != nil {
 		return err
 	}
 
@@ -200,7 +200,7 @@ func (s *state) RemoveRunnableJob(ctx context.Context) (Job, error) {
 	}
 	s.numJobs--
 
-	return job, database.PutUInt64(s.metadataDB, numJobsKey, s.numJobs)
+	return job, db.PutUInt64(s.metadataDB, numJobsKey, s.numJobs)
 }
 
 // PutJob adds the job to the queue
@@ -215,7 +215,7 @@ func (s *state) PutJob(job Job) error {
 	}
 
 	s.numJobs++
-	return database.PutUInt64(s.metadataDB, numJobsKey, s.numJobs)
+	return db.PutUInt64(s.metadataDB, numJobsKey, s.numJobs)
 }
 
 // HasJob returns true if the job [id] is in the queue
