@@ -37,7 +37,7 @@ type Wallet interface {
 		chainID ids.ID,
 		to ethcommon.Address,
 		options ...common.Option,
-	) (*evm.Tx, error)
+	) (*Tx, error)
 
 	// IssueExportTx creates, signs, and issues an export transaction that
 	// attempts to send all the provided [outputs] to the requested [chainID].
@@ -48,17 +48,17 @@ type Wallet interface {
 		chainID ids.ID,
 		outputs []*secp256k1fx.TransferOutput,
 		options ...common.Option,
-	) (*evm.Tx, error)
+	) (*Tx, error)
 
 	// IssueUnsignedTx signs and issues the unsigned tx.
 	IssueUnsignedAtomicTx(
-		utx evm.UnsignedAtomicTx,
+		utx UnsignedAtomicTx,
 		options ...common.Option,
-	) (*evm.Tx, error)
+	) (*Tx, error)
 
 	// IssueAtomicTx issues the signed tx.
 	IssueAtomicTx(
-		tx *evm.Tx,
+		tx *Tx,
 		options ...common.Option,
 	) error
 }
@@ -66,7 +66,7 @@ type Wallet interface {
 func NewWallet(
 	builder Builder,
 	signer Signer,
-	luxClient evm.Client,
+	luxClient Client,
 	ethClient ethclient.Client,
 	backend Backend,
 ) Wallet {
@@ -83,7 +83,7 @@ type wallet struct {
 	Backend
 	builder   Builder
 	signer    Signer
-	luxClient evm.Client
+	luxClient Client
 	ethClient ethclient.Client
 }
 
