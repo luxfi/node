@@ -28,11 +28,12 @@ require (
 	github.com/leanovate/gopter v0.2.11
 	github.com/luxfi/crypto v1.0.2
 	github.com/luxfi/database v1.1.3
-	github.com/luxfi/evm v0.7.12
+	github.com/luxfi/evm v0.8.1
 	github.com/luxfi/geth v1.16.2
-	github.com/luxfi/ids v1.0.1
+	github.com/luxfi/ids v0.1.0
 	github.com/luxfi/ledger-lux-go v0.0.2
-	github.com/luxfi/simplex v0.0.0-20250717030653-d8ccfc50fe53
+	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/trace v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
@@ -207,3 +208,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+

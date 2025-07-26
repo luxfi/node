@@ -43,7 +43,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"

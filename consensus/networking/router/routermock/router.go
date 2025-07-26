@@ -20,7 +20,7 @@ import (
 	timeout "github.com/luxfi/node/consensus/networking/timeout"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
-	logging log "github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	set "github.com/luxfi/node/utils/set"
 	version "github.com/luxfi/node/version"
 	prometheus "github.com/prometheus/client_golang/prometheus"

@@ -48,7 +48,7 @@ func TestRejectMiddleware(t *testing.T) {
 			require := require.New(t)
 
 			ctx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(ctx)
+			ctx = consensustest.ConsensusContext(ctx)
 			ctx.State.Set(consensus.EngineState{
 				State: tt.state,
 			})
