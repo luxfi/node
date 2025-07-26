@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 type Test interface {
@@ -63,7 +63,7 @@ func NewLoadGenerator(
 
 func (l LoadGenerator) Run(
 	ctx context.Context,
-	log logging.Logger,
+	log luxlog.Logger,
 	loadTimeout time.Duration,
 	testTimeout time.Duration,
 ) {
@@ -94,7 +94,7 @@ func (l LoadGenerator) Run(
 
 // execTestWithRecovery ensures assertion-related panics encountered during test execution are recovered
 // and that deferred cleanups are always executed before returning.
-func execTestWithRecovery(ctx context.Context, log logging.Logger, test Test, wallet *Wallet, testTimeout time.Duration) {
+func execTestWithRecovery(ctx context.Context, log luxlog.Logger, test Test, wallet *Wallet, testTimeout time.Duration) {
 	tc := tests.NewTestContext(log)
 	defer tc.Recover()
 	contextWithTimeout, cancel := context.WithTimeout(ctx, testTimeout)

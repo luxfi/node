@@ -11,13 +11,13 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
 type state struct {
 	serializer *Serializer
-	log        logging.Logger
+	log        luxlog.Logger
 
 	dbCache cache.Cacher[ids.ID, any]
 	db      db.Database

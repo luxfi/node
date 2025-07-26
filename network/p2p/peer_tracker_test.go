@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
 func TestPeerTracker(t *testing.T) {
 	require := require.New(t)
 	p, err := NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,

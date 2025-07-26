@@ -39,7 +39,7 @@ import (
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"

@@ -4,7 +4,7 @@
 package platformvm
 
 import (
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm/config"
 )
@@ -17,6 +17,6 @@ type Factory struct {
 }
 
 // New returns a new instance of the Platform Chain
-func (f *Factory) New(logging.Logger) (interface{}, error) {
+func (f *Factory) New(luxlog.Logger) (interface{}, error) {
 	return &VM{Internal: f.Internal}, nil
 }

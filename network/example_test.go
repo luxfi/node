@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -28,7 +28,7 @@ var _ router.ExternalHandler = (*testExternalHandler)(nil)
 // is possible for multiple concurrent calls to happen with different NodeIDs.
 // However, a given NodeID will only be performing one call at a time.
 type testExternalHandler struct {
-	log logging.Logger
+	log luxlog.Logger
 }
 
 // Note: HandleInbound will be called with raw P2P messages, the networking
@@ -67,10 +67,10 @@ func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
 }
 
 func ExampleNewTestNetwork() {
-	log := logging.NewLogger(
+	log := luxlog.NewZapLogger(
 		"networking",
 		logging.NewWrappedCore(
-			logging.Info,
+			luxlog.LevelInfo,
 			os.Stdout,
 			logging.Colors.ConsoleEncoder(),
 		),

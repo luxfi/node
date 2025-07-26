@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/message/messagemock"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -173,7 +173,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -219,7 +219,7 @@ func TestBypassThrottling(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,

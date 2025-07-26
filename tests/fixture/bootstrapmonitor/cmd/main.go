@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -122,11 +122,11 @@ func checkArgs(namespace string, podName string, nodeContainerName string, dataD
 	return nil
 }
 
-func newLogger(rawLogFormat string) (logging.Logger, error) {
+func newLogger(rawLogFormat string) (luxlog.Logger, error) {
 	writeCloser := os.Stdout
 	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
 	if err != nil {
 		return nil, err
 	}
-	return logging.NewLogger("", logging.NewWrappedCore(logging.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
+	return luxlog.NewZapLogger("", logging.NewWrappedCore(luxlog.LevelVerbo, writeCloser, logFormat.ConsoleEncoder())), nil
 }

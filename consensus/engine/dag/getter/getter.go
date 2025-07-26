@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
@@ -29,7 +29,7 @@ var _ core.AllGetsServer = (*getter)(nil)
 func New(
 	storage vertex.Storage,
 	sender core.Sender,
-	log logging.Logger,
+	log luxlog.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
 	reg prometheus.Registerer,
@@ -54,7 +54,7 @@ func New(
 type getter struct {
 	storage                   vertex.Storage
 	sender                    core.Sender
-	log                       logging.Logger
+	log                       luxlog.Logger
 	maxTimeGetAncestors       time.Duration
 	maxContainersGetAncestors int
 

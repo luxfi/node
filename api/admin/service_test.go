@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
 
@@ -34,7 +34,7 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
-			Log:        logging.NoLog{},
+			Log:        luxlog.NewNoOpLogger(){},
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
@@ -115,7 +115,7 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 
 func TestServiceDBGet(t *testing.T) {
 	a := &Admin{Config: Config{
-		Log: logging.NoLog{},
+		Log: luxlog.NewNoOpLogger(){},
 		DB:  memdb.New(),
 	}}
 

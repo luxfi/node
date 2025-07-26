@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"

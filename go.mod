@@ -217,3 +217,5 @@ replace github.com/luxfi/crypto => ../crypto
 replace github.com/luxfi/geth => ../geth
 
 replace github.com/luxfi/evm => ../evm
+
+replace github.com/luxfi/log => ../log

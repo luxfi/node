@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -78,7 +78,7 @@ func newConfig(t *testing.T) *Config {
 		WriteBufferSize:      constants.DefaultNetworkPeerWriteBufferSize,
 		Metrics:              metrics,
 		MessageCreator:       newMessageCreator(t),
-		Log:                  logging.NoLog{},
+		Log:                  luxlog.NewNoOpLogger(){},
 		InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 		Network:              TestNetwork,
 		Router:               nil,
@@ -138,7 +138,7 @@ func startTestPeer(self *rawTestPeer, peer *rawTestPeer, conn net.Conn) *testPee
 			NewThrottledMessageQueue(
 				self.config.Metrics,
 				peer.config.MyNodeID,
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 				throttling.NewNoOutboundThrottler(),
 			),
 			false,
@@ -373,7 +373,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is reporting old version",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 				},
 				version: &version.Application{
@@ -385,7 +385,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 				},
 				version: &version.Application{
@@ -401,7 +401,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is not a validator",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators:           validators.NewManager(),
 				},
@@ -409,7 +409,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators:           validators.NewManager(),
 				},
@@ -421,7 +421,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is a validator without a BLS key",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -440,7 +440,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -463,7 +463,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "already verified peer",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -483,7 +483,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -507,7 +507,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer without signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -527,7 +527,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -551,7 +551,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer with invalid signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -573,7 +573,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -599,7 +599,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer with valid signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -621,7 +621,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  logging.NoLog{},
+					Log:                  luxlog.NewNoOpLogger(){},
 					VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()

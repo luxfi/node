@@ -36,14 +36,14 @@ const (
 
 var (
 	DefaultParameters = Parameters{
-		K:                     12,
-		AlphaPreference:       8,
-		AlphaConfidence:       8,
-		Beta:                  10,
-		ConcurrentRepolls:     16,
-		OptimalProcessing:     2048,
-		MaxOutstandingItems:   4096,
-		MaxItemProcessingTime: 250 * time.Millisecond,
+		K:                     19,
+		AlphaPreference:       16,
+		AlphaConfidence:       13,
+		Beta:                  9,
+		ConcurrentRepolls:     6,
+		OptimalProcessing:     11,
+		MaxOutstandingItems:   111,
+		MaxItemProcessingTime: 11 * time.Second,
 	}
 
 	ErrParametersInvalid = errors.New("parameters invalid")

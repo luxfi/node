@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -98,7 +98,7 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
-		Log:          logging.NoLog{},
+		Log:          luxlog.NewNoOpLogger(){},
 		SharedMemory: sharedMemory,
 		BCLookup:     aliaser,
 		Metrics:      metrics.NewPrefixGatherer(),

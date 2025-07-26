@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 const DefaultFDLimit = 32 * 1024
@@ -23,7 +23,7 @@ const DefaultFDLimit = 32 * 1024
 // privileges. Bumping the Max limit further would require superuser privileges.
 // If the current Max is below our recommendation we will warn on start.
 // see: http://0pointer.net/blog/file-descriptor-limits.html
-func Set(limit uint64, log logging.Logger) error {
+func Set(limit uint64, log luxlog.Logger) error {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {

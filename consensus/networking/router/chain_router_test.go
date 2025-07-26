@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -75,7 +75,7 @@ func TestShutdown(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -97,7 +97,7 @@ func TestShutdown(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -224,7 +224,7 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -338,7 +338,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -358,7 +358,7 @@ func TestShutdownTimesOut(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -488,7 +488,7 @@ func TestRouterTimeout(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -528,7 +528,7 @@ func TestRouterTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -821,7 +821,7 @@ func TestRouterHonorsRequestedEngine(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1030,7 +1030,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1061,7 +1061,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -1193,7 +1193,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1228,7 +1228,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -1455,7 +1455,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	chainRouter := &ChainRouter{}
 	require.NoError(t, chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1481,7 +1481,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	require.NoError(t, err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -1557,7 +1557,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 func TestHandleSimplexMessage(t *testing.T) {
 	chainRouter := ChainRouter{}
 	log := tests.NewDefaultLogger("test")
-	log.SetLevel(logging.Debug)
+	log.SetLevel(luxlog.LevelDebug)
 	require.NoError(t,
 		chainRouter.Initialize(
 			ids.EmptyNodeID,

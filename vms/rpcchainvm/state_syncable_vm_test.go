@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -266,10 +266,10 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	process := helperProcess(testKey)
 
-	log := logging.NewLogger(
+	log := luxlog.NewZapLogger(
 		testKey,
 		logging.NewWrappedCore(
-			logging.Info,
+			luxlog.LevelInfo,
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),
@@ -294,7 +294,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), &logging.NoLog{})
+	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), &luxlog.NewNoOpLogger(){})
 }
 
 func TestStateSyncEnabled(t *testing.T) {

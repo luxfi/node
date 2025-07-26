@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -57,7 +57,7 @@ func TestMessageRouting(t *testing.T) {
 		SentAppRequest: make(chan []byte, 1),
 	}
 
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(1, testHandler))
 	client := network.NewClient(1)
@@ -87,7 +87,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 		SentAppGossip:  make(chan []byte, 1),
 	}
 
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.Connected(ctx, ids.EmptyNodeID, nil))
 	client := network.NewClient(handlerID)
@@ -133,7 +133,7 @@ func TestAppRequestResponse(t *testing.T) {
 	sender := enginetest.SenderStub{
 		SentAppRequest: make(chan []byte, 1),
 	}
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -172,7 +172,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 			return nil
 		},
 	}
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -209,7 +209,7 @@ func TestAppRequestFailed(t *testing.T) {
 	sender := enginetest.SenderStub{
 		SentAppRequest: make(chan []byte, 1),
 	}
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -260,7 +260,7 @@ func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
 					require.Fail("should not be called")
 				},
 			}
-			network, err := NewNetwork(logging.NoLog{}, nil, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(luxlog.NewNoOpLogger(){}, nil, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 			require.NoError(network.AppGossip(ctx, ids.EmptyNodeID, tt.msg))
@@ -315,7 +315,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 
 				return nil
 			}
-			network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
@@ -354,7 +354,7 @@ func TestAppError(t *testing.T) {
 
 		return nil
 	}
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(handlerID, handler))
 	msg := PrefixMessage(ProtocolPrefix(handlerID), []byte("message"))
@@ -396,7 +396,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 					return nil, nil
 				},
 			}
-			network, err := NewNetwork(logging.NoLog{}, nil, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(luxlog.NewNoOpLogger(){}, nil, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
@@ -419,7 +419,7 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 		SentAppRequest: make(chan []byte, 1),
 	}
 
-	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+	network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(0x1)
 
@@ -501,7 +501,7 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(luxlog.NewNoOpLogger(){}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -551,7 +551,7 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 				},
 			}
 
-			n, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+			n, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			for _, peer := range tt.peers {
 				require.NoError(n.Connected(context.Background(), peer, &version.Application{}))
@@ -646,7 +646,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 					return nil
 				},
 			}
-			network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(luxlog.NewNoOpLogger(){}, sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			ctx := context.Background()
 			for _, peer := range tt.peers {
@@ -669,7 +669,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	n, err := NewNetwork(logging.NoLog{}, &enginetest.Sender{}, prometheus.NewRegistry(), "")
+	n, err := NewNetwork(luxlog.NewNoOpLogger(){}, &enginetest.Sender{}, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	_ = n.NewClient(0)
 	_ = n.NewClient(0)

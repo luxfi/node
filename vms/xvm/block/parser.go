@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -50,7 +50,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 func NewCustomParser(
 	typeToFxIndex map[reflect.Type]int,
 	clock *mockable.Clock,
-	log logging.Logger,
+	log luxlog.Logger,
 	fxs []fxs.Fx,
 ) (Parser, error) {
 	p, err := txs.NewCustomParser(typeToFxIndex, clock, log, fxs)

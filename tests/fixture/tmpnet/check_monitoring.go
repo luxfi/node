@@ -23,13 +23,13 @@ import (
 	"github.com/prometheus/common/model"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 type getCountFunc func() (int, error)
 
 // waitForCount waits until the provided function returns greater than zero.
-func waitForCount(ctx context.Context, log logging.Logger, name string, getCount getCountFunc) error {
+func waitForCount(ctx context.Context, log luxlog.Logger, name string, getCount getCountFunc) error {
 	err := pollUntilContextCancel(
 		ctx,
 		func(_ context.Context) (bool, error) {
@@ -59,7 +59,7 @@ func waitForCount(ctx context.Context, log logging.Logger, name string, getCount
 // CheckLogsExist checks if logs exist for the given network. If no network UUID is
 // provided, an attempt will be made to derive selectors from env vars (GH_*) identifying
 // a github actions run.
-func CheckLogsExist(ctx context.Context, log logging.Logger, networkUUID string) error {
+func CheckLogsExist(ctx context.Context, log luxlog.Logger, networkUUID string) error {
 	username, password, err := getCollectorCredentials(promtailCmd)
 	if err != nil {
 		return fmt.Errorf("failed to get collector credentials: %w", err)
@@ -166,7 +166,7 @@ func queryLoki(
 
 // CheckMetricsExist checks if metrics exist for the given network. Github labels are also
 // used as filters if provided as env vars (GH_*).
-func CheckMetricsExist(ctx context.Context, log logging.Logger, networkUUID string) error {
+func CheckMetricsExist(ctx context.Context, log luxlog.Logger, networkUUID string) error {
 	username, password, err := getCollectorCredentials(prometheusCmd)
 	if err != nil {
 		return fmt.Errorf("failed to get collector credentials: %w", err)
@@ -200,7 +200,7 @@ func CheckMetricsExist(ctx context.Context, log logging.Logger, networkUUID stri
 
 func queryPrometheus(
 	ctx context.Context,
-	log logging.Logger,
+	log luxlog.Logger,
 	url string,
 	username string,
 	password string,

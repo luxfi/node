@@ -36,7 +36,7 @@ import (
 
 const (
 	// DefaultMinBlockDelay defines the minimum delay to throttle block production.
-	DefaultMinBlockDelay = 200 * time.Millisecond
+	DefaultMinBlockDelay = 100 * time.Millisecond
 	// DefaultNumHistoricalBlocks as 0 results in never deleting any historical
 	// blocks.
 	DefaultNumHistoricalBlocks uint64 = 0

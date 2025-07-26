@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/utils/galiasreader"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
@@ -81,7 +81,7 @@ var (
 // VMClient is an implementation of a VM that talks over RPC.
 type VMClient struct {
 	*chain.State
-	logger          logging.Logger
+	logger          luxlog.Logger
 	client          vmpb.VMClient
 	runtime         runtime.Stopper
 	pid             int
@@ -107,7 +107,7 @@ func NewClient(
 	pid int,
 	processTracker resource.ProcessTracker,
 	metricsGatherer metrics.MultiGatherer,
-	logger logging.Logger,
+	logger luxlog.Logger,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),

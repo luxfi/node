@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 
 	dbpb "github.com/luxfi/node/proto/pb/rpcdb"

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 
@@ -36,7 +36,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -67,7 +67,7 @@ func TestMempoolDuplicate(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		testMempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -97,7 +97,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,

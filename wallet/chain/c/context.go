@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
 )
 
@@ -63,7 +63,7 @@ func newLinearContext(c *Context) (*consensus.Context, error) {
 		ChainID:    c.BlockchainID,
 		CChainID:   c.BlockchainID,
 		LUXAssetID: c.LUXAssetID,
-		Log:        logging.NoLog{},
+		Log:        luxlog.NewNoOpLogger(){},
 		BCLookup:   lookup,
 	}, lookup.Alias(c.BlockchainID, Alias)
 }

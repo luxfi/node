@@ -47,7 +47,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
@@ -191,8 +191,8 @@ type ManagerConfig struct {
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
-	Log                       logging.Logger
-	LogFactory                logging.Factory
+	Log                       luxlog.Logger
+	LogFactory                luxlog.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        consensus.AcceptorGroup
 	TxAcceptorGroup           consensus.AcceptorGroup

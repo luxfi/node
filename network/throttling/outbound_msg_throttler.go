@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var (
@@ -42,7 +42,7 @@ type outboundMsgThrottler struct {
 }
 
 func NewSybilOutboundMsgThrottler(
-	log logging.Logger,
+	log luxlog.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,

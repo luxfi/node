@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -42,7 +42,7 @@ type Context struct {
 	CChainID   ids.ID
 	LUXAssetID ids.ID
 
-	Log logging.Logger
+	Log luxlog.Logger
 	// Deprecated: This lock should not be used unless absolutely necessary.
 	// This lock will be removed in a future release once it is replaced with
 	// more granular locks.

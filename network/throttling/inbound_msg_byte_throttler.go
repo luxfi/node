@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -22,7 +22,7 @@ import (
 // See inbound_msg_throttler.go
 
 func newInboundMsgByteThrottler(
-	log logging.Logger,
+	log luxlog.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,

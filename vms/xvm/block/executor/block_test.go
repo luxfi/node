@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -942,7 +942,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 		Bootstrapped: bootstrapped,
 		Ctx: &consensus.Context{
 			SharedMemory: sharedMemory,
-			Log:          logging.NoLog{},
+			Log:          luxlog.NewNoOpLogger(){},
 		},
 		Config: &config.Config{
 			Upgrades:         upgradetest.GetConfig(upgradetest.Durango),

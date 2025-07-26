@@ -16,7 +16,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
@@ -27,7 +27,7 @@ func NewCmd(path string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func stop(ctx context.Context, log logging.Logger, cmd *exec.Cmd) {
+func stop(ctx context.Context, log luxlog.Logger, cmd *exec.Cmd) {
 	waitChan := make(chan error)
 	go func() {
 		// attempt graceful shutdown

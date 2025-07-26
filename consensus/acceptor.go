@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var (
@@ -53,14 +53,14 @@ type AcceptorGroup interface {
 }
 
 type acceptorGroup struct {
-	log logging.Logger
+	log luxlog.Logger
 
 	lock sync.RWMutex
 	// Chain ID --> Acceptor Name --> Acceptor
 	acceptors map[ids.ID]map[string]acceptorWrapper
 }
 
-func NewAcceptorGroup(log logging.Logger) AcceptorGroup {
+func NewAcceptorGroup(log luxlog.Logger) AcceptorGroup {
 	return &acceptorGroup{
 		log:       log,
 		acceptors: make(map[ids.ID]map[string]acceptorWrapper),

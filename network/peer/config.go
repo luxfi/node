@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
@@ -29,7 +29,7 @@ type Config struct {
 	Metrics         *Metrics
 	MessageCreator  message.Creator
 
-	Log                  logging.Logger
+	Log                  luxlog.Logger
 	InboundMsgThrottler  throttling.InboundMsgThrottler
 	Network              Network
 	Router               router.InboundHandler

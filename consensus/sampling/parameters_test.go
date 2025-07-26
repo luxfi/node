@@ -229,7 +229,7 @@ func TestParametersMinPercentConnectedHealthy(t *testing.T) {
 		{
 			name:                        "default",
 			params:                      DefaultParameters,
-			expectedMinPercentConnected: 0.8,
+			expectedMinPercentConnected: 0.747368421, // (13/19) * 0.8 + 0.2 ≈ 0.747
 		},
 		{
 			name: "custom",

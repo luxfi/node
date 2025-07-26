@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 
 	. "github.com/luxfi/node/consensus/engine/linear/block"
 )
@@ -31,7 +31,7 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 		require.Equal(someID, id)
 		return nil, database.ErrNotFound
 	}
-	containers, err := GetAncestors(context.Background(), logging.NoLog{}, vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), luxlog.NewNoOpLogger(){}, vm, someID, 10, 10, 1*time.Second)
 	require.NoError(err)
 	require.Empty(containers)
 }
@@ -47,7 +47,7 @@ func TestGetAncestorsPropagatesErrors(t *testing.T) {
 		require.Equal(someID, id)
 		return nil, errTest
 	}
-	containers, err := GetAncestors(context.Background(), logging.NoLog{}, vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), luxlog.NewNoOpLogger(){}, vm, someID, 10, 10, 1*time.Second)
 	require.Nil(containers)
 	require.ErrorIs(err, errTest)
 }

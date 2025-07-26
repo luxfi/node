@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 // Used by the sybil-safe inbound and outbound message throttlers
@@ -20,7 +20,7 @@ type MsgByteThrottlerConfig struct {
 
 // Used by the sybil-safe inbound and outbound message throttlers
 type commonMsgThrottler struct {
-	log  logging.Logger
+	log  luxlog.Logger
 	lock sync.Mutex
 	vdrs validators.Manager
 	// Max number of bytes that can be taken from the

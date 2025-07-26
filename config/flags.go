@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/ulimit"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"

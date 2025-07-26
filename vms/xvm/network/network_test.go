@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
@@ -228,7 +228,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			n, err := New(
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 				ids.EmptyNodeID,
 				ids.Empty,
 				&validatorstest.State{
@@ -302,7 +302,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			}
 
 			n, err := New(
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 				ids.EmptyNodeID,
 				ids.Empty,
 				&validatorstest.State{

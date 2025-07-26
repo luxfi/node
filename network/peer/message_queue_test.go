@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMessageQueue(t *testing.T) {
 		SendFailedFunc(func(message.OutboundMessage) {
 			require.True(expectFail)
 		}),
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		0,
 	)
 

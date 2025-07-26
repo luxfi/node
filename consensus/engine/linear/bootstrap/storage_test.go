@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/bootstrap/interval"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -270,7 +270,7 @@ func TestExecute(t *testing.T) {
 			require.NoError(execute(
 				context.Background(),
 				test.haltable.Halted,
-				logging.NoLog{}.Info,
+				luxlog.NewNoOpLogger(){}.Info,
 				db,
 				parser,
 				tree,

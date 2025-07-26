@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -183,7 +183,7 @@ func NewTestNetworkConfig(
 		PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
 		ResourceTracker:              resourceTracker,
 		CPUTargeter: tracker.NewTargeter(
-			logging.NoLog{},
+			luxlog.NewNoOpLogger(){},
 			&tracker.TargeterConfig{
 				VdrAlloc:           float64(runtime.NumCPU()),
 				MaxNonVdrUsage:     .8 * float64(runtime.NumCPU()),
@@ -193,7 +193,7 @@ func NewTestNetworkConfig(
 			resourceTracker.CPUTracker(),
 		),
 		DiskTargeter: tracker.NewTargeter(
-			logging.NoLog{},
+			luxlog.NewNoOpLogger(){},
 			&tracker.TargeterConfig{
 				VdrAlloc:           1000 * units.GiB,
 				MaxNonVdrUsage:     1000 * units.GiB,
@@ -206,7 +206,7 @@ func NewTestNetworkConfig(
 }
 
 func NewTestNetwork(
-	log logging.Logger,
+	log luxlog.Logger,
 	metrics prometheus.Registerer,
 	cfg *Config,
 	router router.ExternalHandler,
