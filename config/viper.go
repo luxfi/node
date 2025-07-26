@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const EnvPrefix = "avago"
+const EnvPrefix = "luxd"
 
 var DashesToUnderscores = strings.NewReplacer("-", "_")
 
