@@ -58,3 +58,19 @@ func Mul64(a, b uint64) (uint64, error) {
 func AbsDiff[T constraints.Unsigned](a, b T) T {
 	return max(a, b) - min(a, b)
 }
+
+// Min returns the minimum of two uint64 values
+func Min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Max returns the maximum of two uint64 values
+func Max(a, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
+}

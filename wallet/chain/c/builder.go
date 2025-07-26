@@ -8,7 +8,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/luxfi/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
@@ -71,7 +71,7 @@ type Builder interface {
 		to ethcommon.Address,
 		baseFee *big.Int,
 		options ...common.Option,
-	) (*evm.UnsignedImportTx, error)
+	) (*UnsignedImportTx, error)
 
 	// NewExportTx creates an export transaction that attempts to send all the
 	// provided [outputs] to the requested [chainID].
@@ -84,7 +84,7 @@ type Builder interface {
 		outputs []*secp256k1fx.TransferOutput,
 		baseFee *big.Int,
 		options ...common.Option,
-	) (*evm.UnsignedExportTx, error)
+	) (*UnsignedExportTx, error)
 }
 
 // BuilderBackend specifies the required information needed to build unsigned

@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/math"
@@ -32,7 +32,7 @@ type Backend interface {
 	BuilderBackend
 	SignerBackend
 
-	AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error
+	AcceptAtomicTx(ctx context.Context, tx *Tx) error
 }
 
 type backend struct {
@@ -57,9 +57,10 @@ func NewBackend(
 	}
 }
 
-func (b *backend) AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error {
-	switch tx := tx.UnsignedAtomicTx.(type) {
-	case *evm.UnsignedImportTx:
+func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
+	// TODO: Implement proper atomic transaction handling
+	switch tx := tx.(type) {
+	case *UnsignedImportTx:
 		for _, input := range tx.ImportedInputs {
 			utxoID := input.InputID()
 			if err := b.RemoveUTXO(ctx, tx.SourceChain, utxoID); err != nil {
@@ -80,7 +81,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *evm.Tx) error {
 			balance.Mul(balance, luxConversionRate)
 			account.Balance.Add(account.Balance, balance)
 		}
-	case *evm.UnsignedExportTx:
+	case *UnsignedExportTx:
 		txID := tx.ID()
 		for i, out := range tx.ExportedOutputs {
 			err := b.AddUTXO(

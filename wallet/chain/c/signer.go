@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/luxfi/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
@@ -44,7 +44,7 @@ type Signer interface {
 	//
 	// If the signer doesn't have the ability to provide a required signature,
 	// the signature slot will be skipped without reporting an error.
-	SignAtomic(ctx context.Context, tx *evm.Tx) error
+	SignAtomic(ctx context.Context, tx *Tx) error
 }
 
 type EthKeychain interface {
