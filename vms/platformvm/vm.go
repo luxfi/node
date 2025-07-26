@@ -73,7 +73,7 @@ type VM struct {
 
 	// The context of this vm
 	ctx *consensus.Context
-	db  db.Database
+	db  database.Database
 
 	state state.State
 
@@ -96,7 +96,7 @@ type VM struct {
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
-	db db.Database,
+	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
