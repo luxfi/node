@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/filesystem/filesystemmock"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/vmsmock"
@@ -144,7 +144,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	mockManager := vmsmock.NewManager(ctrl)
 	mockRegistry := prometheus.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		time.Hour,
 		time.Hour,

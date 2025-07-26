@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
@@ -228,7 +228,7 @@ type State interface {
 	// db.
 	//
 	// TODO: Remove after v1.14.x is activated
-	ReindexBlocks(lock sync.Locker, log logging.Logger) error
+	ReindexBlocks(lock sync.Locker, log luxlog.Logger) error
 
 	// Commit changes to the base db.
 	Commit() error
@@ -3098,7 +3098,7 @@ func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	return blk, true, err
 }
 
-func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+func (s *state) ReindexBlocks(lock sync.Locker, log luxlog.Logger) error {
 	has, err := s.singletonDB.Has(BlocksReindexedKey)
 	if err != nil {
 		return err

@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -58,7 +58,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -168,7 +168,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -277,7 +277,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -370,7 +370,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -558,7 +558,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker, err := p2p.NewPeerTracker(
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 				"",
 				prometheus.NewRegistry(),
 				nil,
@@ -644,7 +644,7 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		"",
 		prometheus.NewRegistry(),
 		nil,

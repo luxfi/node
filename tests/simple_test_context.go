@@ -11,18 +11,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"
 
 type SimpleTestContext struct {
-	log           logging.Logger
+	log           luxlog.Logger
 	cleanupFuncs  []func()
 	cleanupCalled bool
 }
 
-func NewTestContext(log logging.Logger) *SimpleTestContext {
+func NewTestContext(log luxlog.Logger) *SimpleTestContext {
 	return &SimpleTestContext{
 		log: log,
 	}
@@ -88,7 +88,7 @@ func (tc *SimpleTestContext) By(_ string, _ ...func()) {
 	tc.FailNow()
 }
 
-func (tc *SimpleTestContext) Log() logging.Logger {
+func (tc *SimpleTestContext) Log() luxlog.Logger {
 	return tc.log
 }
 

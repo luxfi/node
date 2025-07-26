@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -22,7 +22,7 @@ type processingStart struct {
 }
 
 type metrics struct {
-	log logging.Logger
+	log luxlog.Logger
 
 	currentMaxVerifiedHeight uint64
 	maxVerifiedHeight        prometheus.Gauge
@@ -63,7 +63,7 @@ type metrics struct {
 }
 
 func newMetrics(
-	log logging.Logger,
+	log luxlog.Logger,
 	reg prometheus.Registerer,
 	lastAcceptedHeight uint64,
 	lastAcceptedTime time.Time,

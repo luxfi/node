@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var (
@@ -58,7 +58,7 @@ func (m *metrics) observe(labels prometheus.Labels, start time.Time) error {
 // app handler. App messages must be made using the registered handler's
 // corresponding Client.
 type router struct {
-	log     logging.Logger
+	log     luxlog.Logger
 	sender  core.AppSender
 	metrics metrics
 
@@ -70,7 +70,7 @@ type router struct {
 
 // newRouter returns a new instance of Router
 func newRouter(
-	log logging.Logger,
+	log luxlog.Logger,
 	sender core.AppSender,
 	metrics metrics,
 ) *router {

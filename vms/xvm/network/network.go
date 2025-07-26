@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -27,7 +27,7 @@ var (
 type Network struct {
 	*p2p.Network
 
-	log     logging.Logger
+	log     luxlog.Logger
 	mempool *gossipMempool
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
@@ -37,7 +37,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log luxlog.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,

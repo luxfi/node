@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -26,7 +26,7 @@ var (
 )
 
 type vtxParser struct {
-	log         logging.Logger
+	log         luxlog.Logger
 	numAccepted prometheus.Counter
 	manager     vertex.Manager
 }
@@ -44,7 +44,7 @@ func (p *vtxParser) Parse(ctx context.Context, vtxBytes []byte) (queue.Job, erro
 }
 
 type vertexJob struct {
-	log         logging.Logger
+	log         luxlog.Logger
 	numAccepted prometheus.Counter
 	vtx         graph.Vertex
 }

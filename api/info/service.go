@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
@@ -68,7 +68,7 @@ var (
 // Info is the API service for unprivileged info on a node
 type Info struct {
 	Parameters
-	log          logging.Logger
+	log          luxlog.Logger
 	validators   validators.Manager
 	myIP         *utils.Atomic[netip.AddrPort]
 	networking   network.Network
@@ -91,7 +91,7 @@ type Parameters struct {
 
 func NewService(
 	parameters Parameters,
-	log logging.Logger,
+	log luxlog.Logger,
 	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,

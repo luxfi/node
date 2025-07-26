@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 func TestQueue(t *testing.T) {
@@ -30,7 +30,7 @@ func TestQueue(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	mIntf, err := NewMessageQueue(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		constants.PrimaryNetworkID,
 		vdrs,
 		cpuTracker,

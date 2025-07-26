@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var (
@@ -32,7 +32,7 @@ func TestNewSetErrorOnPollsMetrics(t *testing.T) {
 
 	alpha := 1
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 
 	require.NoError(registerer.Register(prometheus.NewCounter(prometheus.CounterOpts{
@@ -48,7 +48,7 @@ func TestNewSetErrorOnPollDurationMetrics(t *testing.T) {
 
 	alpha := 1
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 
 	require.NoError(registerer.Register(prometheus.NewCounter(prometheus.CounterOpts{
@@ -66,7 +66,7 @@ func TestCreateAndFinishPollOutOfOrder_NewerFinishesFirst(t *testing.T) {
 	alpha := 3
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
@@ -102,7 +102,7 @@ func TestCreateAndFinishPollOutOfOrder_OlderFinishesFirst(t *testing.T) {
 	alpha := 3
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
@@ -138,7 +138,7 @@ func TestCreateAndFinishPollOutOfOrder_UnfinishedPollsGaps(t *testing.T) {
 	alpha := 3
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
@@ -182,7 +182,7 @@ func TestCreateAndFinishSuccessfulPoll(t *testing.T) {
 	alpha := 2
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
@@ -214,7 +214,7 @@ func TestCreateAndFinishFailedPoll(t *testing.T) {
 	alpha := 1
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
@@ -243,7 +243,7 @@ func TestSetString(t *testing.T) {
 	alpha := 1
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
-	log := logging.NoLog{}
+	log := luxlog.NewNoOpLogger(){}
 	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)

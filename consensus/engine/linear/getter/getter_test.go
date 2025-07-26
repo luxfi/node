@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -47,7 +47,7 @@ func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetes
 	bs, err := New(
 		vm,
 		sender,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),

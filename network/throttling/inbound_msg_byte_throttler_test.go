@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
@@ -29,7 +29,7 @@ func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -58,7 +58,7 @@ func TestInboundMsgByteThrottlerCancelContext(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -115,7 +115,7 @@ func TestInboundMsgByteThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -329,7 +329,7 @@ func TestSybilMsgThrottlerMaxNonVdr(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -379,7 +379,7 @@ func TestMsgThrottlerNextMsg(t *testing.T) {
 	maxVdrBytes := config.VdrAllocSize + config.AtLargeAllocSize
 	maxBytes := maxVdrBytes
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		prometheus.NewRegistry(),
 		vdrs,
 		config,

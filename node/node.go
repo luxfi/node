@@ -65,7 +65,7 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/logging/logadapter"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/metric"
@@ -120,8 +120,8 @@ var (
 // New returns an instance of Node
 func New(
 	config *node.Config,
-	logFactory logging.Factory,
-	logger logging.Logger,
+	logFactory luxlog.Factory,
+	logger luxlog.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
 	stakingCert, err := staking.ParseCertificate(tlsCert.Raw)
@@ -278,9 +278,9 @@ func New(
 
 // Node is an instance of an Lux node.
 type Node struct {
-	Log          logging.Logger
-	VMFactoryLog logging.Logger
-	LogFactory   logging.Factory
+	Log          luxlog.Logger
+	VMFactoryLog luxlog.Logger
+	LogFactory   luxlog.Factory
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -1739,7 +1739,7 @@ func (n *Node) ExitCode() int {
 // devModeRegistrant adds simplified routing for C-Chain in dev mode
 type devModeRegistrant struct {
 	apiServer server.PathAdder
-	log       logging.Logger
+	log       luxlog.Logger
 }
 
 func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -36,7 +36,7 @@ type BatchedChainVM interface {
 
 func GetAncestors(
 	ctx context.Context,
-	log logging.Logger,
+	log luxlog.Logger,
 	vm Getter, // fetch blocks
 	blkID ids.ID, // first requested block
 	maxBlocksNum int, // max number of blocks to be retrieved

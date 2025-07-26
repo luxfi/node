@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"
 
@@ -167,8 +167,8 @@ func Run(app App) int {
 // app is a wrapper around a node that runs in this process
 type app struct {
 	node       *node.Node
-	log        logging.Logger
-	logFactory logging.Factory
+	log        luxlog.Logger
+	logFactory luxlog.Factory
 	exitWG     sync.WaitGroup
 }
 

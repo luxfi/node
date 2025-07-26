@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 func TestNetworkSerialization(t *testing.T) {
@@ -26,12 +26,12 @@ func TestNetworkSerialization(t *testing.T) {
 	network.PrimarySubnetConfig = ConfigMap{
 		"validatorOnly": true,
 	}
-	require.NoError(network.EnsureDefaultConfig(logging.NoLog{}))
+	require.NoError(network.EnsureDefaultConfig(luxlog.NewNoOpLogger(){}))
 	require.NoError(network.Create(tmpDir))
 	// Ensure node runtime is initialized
 	require.NoError(network.readNodes(ctx))
 
-	loadedNetwork, err := ReadNetwork(ctx, logging.NoLog{}, network.Dir)
+	loadedNetwork, err := ReadNetwork(ctx, luxlog.NewNoOpLogger(){}, network.Dir)
 	require.NoError(err)
 	for _, key := range loadedNetwork.PreFundedKeys {
 		// Address() enables comparison with the original network by

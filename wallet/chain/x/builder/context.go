@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 const Alias = "X"
@@ -32,7 +32,7 @@ func NewLinearContext(
 		ChainID:    blockchainID,
 		XChainID:   blockchainID,
 		LUXAssetID: luxAssetID,
-		Log:        logging.NoLog{},
+		Log:        luxlog.NewNoOpLogger(){},
 		BCLookup:   lookup,
 	}, lookup.Alias(blockchainID, Alias)
 }

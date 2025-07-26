@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -49,7 +49,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err := getter.New(
 		nonStateSyncableVM,
 		sender,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),
@@ -78,7 +78,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err = getter.New(
 		fullVM,
 		sender,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		time.Second,
 		2000,
 		prometheus.NewRegistry())

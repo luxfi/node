@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/tracker/trackermock"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 // Assert fields are set correctly.
@@ -30,7 +30,7 @@ func TestNewTargeter(t *testing.T) {
 	tracker := trackermock.NewTracker(ctrl)
 
 	targeterIntf := NewTargeter(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		config,
 		vdrs,
 		tracker,
@@ -62,7 +62,7 @@ func TestTarget(t *testing.T) {
 	}
 
 	targeter := NewTargeter(
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		config,
 		vdrs,
 		tracker,

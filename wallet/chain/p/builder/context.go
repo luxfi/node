@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/gas"
 )
 
@@ -27,7 +27,7 @@ func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, 
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		Log:        logging.NoLog{},
+		Log:        luxlog.NewNoOpLogger(){},
 		BCLookup:   lookup,
 	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

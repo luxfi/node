@@ -19,7 +19,7 @@ import (
 	ids "github.com/luxfi/ids"
 	validators "github.com/luxfi/node/consensus/validators"
 	iterator "github.com/luxfi/node/utils/iterator"
-	logging "github.com/luxfi/node/utils/logging"
+	logging luxlog "github.com/luxfi/log"
 	gas "github.com/luxfi/node/vms/components/gas"
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/platformvm/block"
@@ -863,7 +863,7 @@ func (mr *MockStateMockRecorder) PutPendingValidator(staker any) *gomock.Call {
 }
 
 // ReindexBlocks mocks base method.
-func (m *MockState) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+func (m *MockState) ReindexBlocks(lock sync.Locker, log luxlog.Logger) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReindexBlocks", lock, log)
 	ret0, _ := ret[0].(error)

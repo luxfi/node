@@ -14,13 +14,13 @@ import (
 
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var _ xsvmconnect.PingHandler = (*PingService)(nil)
 
 type PingService struct {
-	Log logging.Logger
+	Log luxlog.Logger
 }
 
 func (p *PingService) Ping(_ context.Context, request *connect.Request[xsvm.PingRequest]) (*connect.Response[xsvm.PingReply], error) {

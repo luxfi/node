@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/x/merkledb"
@@ -146,7 +146,7 @@ type ManagerConfig struct {
 	RangeProofClient      *p2p.Client
 	ChangeProofClient     *p2p.Client
 	SimultaneousWorkLimit int
-	Log                   logging.Logger
+	Log                   luxlog.Logger
 	TargetRoot            ids.ID
 	BranchFactor          merkledb.BranchFactor
 	StateSyncNodes        []ids.NodeID

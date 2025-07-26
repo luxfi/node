@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -191,7 +191,7 @@ func (ss *stateSyncer) StateSummaryFrontier(ctx context.Context, nodeID ids.Node
 			ss.uniqueSummariesHeights = append(ss.uniqueSummariesHeights, height)
 		}
 	} else {
-		if ss.Ctx.Log.Enabled(logging.Verbo) {
+		if ss.Ctx.Log.EnabledLevel(luxlog.LevelVerbo) {
 			ss.Ctx.Log.Verbo("failed to parse summary",
 				zap.Binary("summary", summaryBytes),
 				zap.Error(err),

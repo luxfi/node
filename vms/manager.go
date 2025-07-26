@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 
 // A Factory creates new instances of a VM
 type Factory interface {
-	New(logging.Logger) (interface{}, error)
+	New(luxlog.Logger) (interface{}, error)
 }
 
 // Manager tracks a collection of VM factories, their aliases, and their
@@ -62,7 +62,7 @@ type manager struct {
 	// alias of the VM. That is, [vmID].String() is an alias for [vmID].
 	ids.Aliaser
 
-	log logging.Logger
+	log luxlog.Logger
 
 	lock sync.RWMutex
 
@@ -76,7 +76,7 @@ type manager struct {
 }
 
 // NewManager returns an instance of a VM manager
-func NewManager(log logging.Logger, aliaser ids.Aliaser) Manager {
+func NewManager(log luxlog.Logger, aliaser ids.Aliaser) Manager {
 	return &manager{
 		Aliaser:   aliaser,
 		log:       log,

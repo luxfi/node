@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -28,7 +28,7 @@ type Router interface {
 
 	Initialize(
 		nodeID ids.NodeID,
-		log logging.Logger,
+		log luxlog.Logger,
 		timeouts timeout.Manager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],

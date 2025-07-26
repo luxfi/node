@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var _ Handler = (*TestHandler)(nil)
@@ -45,7 +45,7 @@ func TestThrottlerHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.Throttler,
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 			)
 
 			handler.AppGossip(context.Background(), ids.GenerateTestNodeID(), []byte("foobar"))
@@ -77,7 +77,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 			handler := NewThrottlerHandler(
 				NoOpHandler{},
 				tt.Throttler,
-				logging.NoLog{},
+				luxlog.NewNoOpLogger(){},
 			)
 			_, err := handler.AppRequest(context.Background(), ids.GenerateTestNodeID(), time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expectedErr)

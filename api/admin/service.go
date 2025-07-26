@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -44,9 +44,9 @@ var (
 )
 
 type Config struct {
-	Log          logging.Logger
+	Log          luxlog.Logger
 	ProfileDir   string
-	LogFactory   logging.Factory
+	LogFactory   luxlog.Factory
 	NodeConfig   interface{}
 	DB           db.Database
 	ChainManager chains.Manager

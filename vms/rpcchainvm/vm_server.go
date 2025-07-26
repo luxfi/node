@@ -13,6 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/crypto/bls"
@@ -30,7 +31,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/galiasreader"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -71,7 +72,7 @@ type VMServer struct {
 
 	metrics metrics.MultiGatherer
 	db      db.Database
-	log     logging.Logger
+	log     luxlog.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
@@ -181,14 +182,15 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.connCloser.Add(dbClientConn)
 
 	// TODO: Allow the logger to be configured by the client
-	vm.log = logging.NewLogger(
-		fmt.Sprintf("<%s Chain>", chainID),
-		logging.NewWrappedCore(
-			logging.Info,
-			originalStderr,
-			logging.Colors.ConsoleEncoder(),
-		),
-	)
+	// Create a zap logger directly
+	zapConfig := zap.NewProductionConfig()
+	zapConfig.DisableStacktrace = true
+	zapConfig.Encoding = "console"
+	zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	
+	zapLogger, _ := zapConfig.Build()
+	vm.log = luxlog.NewZapLogger(zapLogger.Named(fmt.Sprintf("<%s Chain>", chainID)))
 
 	// Create a no-op logger for corruptabledb since it expects a different interface
 	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))

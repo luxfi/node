@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -39,7 +39,7 @@ type fxVM struct {
 	typeToFxIndex map[reflect.Type]int
 
 	clock         *mockable.Clock
-	log           logging.Logger
+	log           luxlog.Logger
 	codecRegistry codec.Registry
 }
 
@@ -51,6 +51,6 @@ func (vm *fxVM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }
 
-func (vm *fxVM) Logger() logging.Logger {
+func (vm *fxVM) Logger() luxlog.Logger {
 	return vm.log
 }

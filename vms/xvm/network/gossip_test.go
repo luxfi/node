@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/fxs"
@@ -64,7 +64,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		testVerifier{},
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -96,7 +96,7 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		luxlog.NewNoOpLogger(){},
 		testVerifier{
 			err: errTest, // We shouldn't be attempting to verify the tx in this flow
 		},

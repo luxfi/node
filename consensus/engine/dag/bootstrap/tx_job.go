@@ -16,14 +16,14 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
 var errMissingTxDependenciesOnAccept = errors.New("attempting to accept a transaction with missing dependencies")
 
 type txParser struct {
-	log         logging.Logger
+	log         luxlog.Logger
 	numAccepted prometheus.Counter
 	vm          vertex.LinearizableVM
 }
@@ -41,7 +41,7 @@ func (p *txParser) Parse(ctx context.Context, txBytes []byte) (queue.Job, error)
 }
 
 type txJob struct {
-	log         logging.Logger
+	log         luxlog.Logger
 	numAccepted prometheus.Counter
 	tx          graph.Tx
 }

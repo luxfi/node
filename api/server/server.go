@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 const (
@@ -78,7 +78,7 @@ type HTTPConfig struct {
 
 type server struct {
 	// log this server writes to
-	log logging.Logger
+	log luxlog.Logger
 
 	shutdownTimeout time.Duration
 
@@ -98,7 +98,7 @@ type server struct {
 
 // New returns an instance of a Server.
 func New(
-	log logging.Logger,
+	log luxlog.Logger,
 	listener net.Listener,
 	allowedOrigins []string,
 	shutdownTimeout time.Duration,

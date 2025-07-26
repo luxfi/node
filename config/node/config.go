@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"

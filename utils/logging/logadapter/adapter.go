@@ -9,17 +9,17 @@ import (
 	"os"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"go.uber.org/zap"
 )
 
-// ToLogLogger adapts a logging.Logger to a log.Logger
-func ToLogLogger(logger logging.Logger) log.Logger {
+// ToLogLogger adapts a luxlog.Logger to a log.Logger
+func ToLogLogger(logger luxlog.Logger) log.Logger {
 	return &adapter{logger: logger}
 }
 
 type adapter struct {
-	logger logging.Logger
+	logger luxlog.Logger
 }
 
 func (a *adapter) With(ctx ...interface{}) log.Logger {

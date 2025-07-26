@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 type newBlockConfig struct {
@@ -104,7 +104,7 @@ func newNetworkConfigs(t *testing.T, numNodes uint64) []*Config {
 				ChainID:   chainID,
 				NetworkID: constants.UnitTestID,
 			},
-			Log:        logging.NoLog{},
+			Log:        luxlog.NewNoOpLogger(){},
 			Validators: newTestValidatorInfo(testNodes),
 			SignBLS:    node.signFunc,
 		}

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/vertex/vertextest"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 )
 
 var errUnknownTx = errors.New("unknown tx")
@@ -35,7 +35,7 @@ func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (graph.
 			ChainID: ids.Empty,
 			VM:      &vm,
 			DB:      baseDB,
-			Log:     logging.NoLog{},
+			Log:     luxlog.NewNoOpLogger(){},
 		},
 	)
 

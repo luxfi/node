@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/utils/logging"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -53,7 +53,7 @@ type index struct {
 	indexToContainer db.Database
 	// Container ID --> Index
 	containerToIndex db.Database
-	log              logging.Logger
+	log              luxlog.Logger
 }
 
 // Create a new thread-safe index.
@@ -61,7 +61,7 @@ type index struct {
 // Invariant: Closes [baseDB] on close.
 func newIndex(
 	baseDB db.Database,
-	log logging.Logger,
+	log luxlog.Logger,
 	clock mockable.Clock,
 ) (*index, error) {
 	vDB := versiondb.New(baseDB)
