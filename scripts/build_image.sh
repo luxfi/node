@@ -5,7 +5,7 @@ set -euo pipefail
 # e.g.,
 # ./scripts/build_image.sh                                           # Build local single-arch image
 # DOCKER_IMAGE=mynode ./scripts/build_image.sh                # Build local single arch image with a custom image name
-# DOCKER_IMAGE=avaplatform/node ./scripts/build_image.sh      # Build and push multi-arch image to docker hub
+# DOCKER_IMAGE=luxfi/node ./scripts/build_image.sh      # Build and push multi-arch image to docker hub
 # DOCKER_IMAGE=localhost:5001/node ./scripts/build_image.sh   # Build and push multi-arch image to private registry
 # DOCKER_IMAGE=localhost:5001/mynode ./scripts/build_image.sh # Build and push multi-arch image to private registry with a custom image name
 
@@ -33,7 +33,7 @@ if [[ $image_tag == *"-race" ]]; then
   exit 1
 fi
 
-# The published name should be 'avaplatform/node', but to avoid unintentional
+# The published name should be 'luxfi/node', but to avoid unintentional
 # pushes it is defaulted to 'node' (without a repo or registry name) which can
 # only be used to create local images.
 DOCKER_IMAGE=${DOCKER_IMAGE:-"node"}
