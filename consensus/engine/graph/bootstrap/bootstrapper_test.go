@@ -88,7 +88,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	startupTracker := tracker.NewStartup(peerTracker, totalWeight/2+1)
 	vdrs.RegisterSetCallbackListener(constants.PrimaryNetworkID, startupTracker)
 
-	avaGetHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, prometheus.NewRegistry())
+	getHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, prometheus.NewRegistry())
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
@@ -103,7 +103,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	p2pTracker.Connected(peer, version.CurrentApp)
 
 	return Config{
-		AllGetsServer:                  avaGetHandler,
+		AllGetsServer:                  getHandler,
 		Ctx:                            ctx,
 		StartupTracker:                 startupTracker,
 		Sender:                         sender,

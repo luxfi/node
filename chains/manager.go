@@ -62,8 +62,8 @@ import (
 	"github.com/luxfi/node/vms/tracedvm"
 
 	aveng "github.com/luxfi/node/consensus/engine/graph"
-	avbootstrap "github.com/luxfi/node/consensus/engine/graph/bootstrap"
-	avagetter "github.com/luxfi/node/consensus/engine/graph/getter"
+	graphbootstrap "github.com/luxfi/node/consensus/engine/graph/bootstrap"
+	graphgetter "github.com/luxfi/node/consensus/engine/graph/getter"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
@@ -277,7 +277,7 @@ type manager struct {
 	luxGatherer          metrics.MultiGatherer            // chainID
 	handlerGatherer      metrics.MultiGatherer            // chainID
 	meterChainVMGatherer metrics.MultiGatherer            // chainID
-	meterGRAPHVMGatherer   metrics.MultiGatherer            // chainID
+	meterGRAPHVMGatherer metrics.MultiGatherer            // chainID
 	proposervmGatherer   metrics.MultiGatherer            // chainID
 	p2pGatherer          metrics.MultiGatherer            // chainID
 	linearGatherer       metrics.MultiGatherer            // chainID
@@ -338,7 +338,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
 		meterChainVMGatherer: meterChainVMGatherer,
-		meterGRAPHVMGatherer:   meterGRAPHVMGatherer,
+		meterGRAPHVMGatherer: meterGRAPHVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
 		linearGatherer:       linearGatherer,
@@ -853,7 +853,7 @@ func (m *manager) createLuxChain(
 	// Note: linearizableVM is the VM that the Lux engines should be
 	// using.
 	linearizableVM := &initializeOnLinearizeVM{
-		GRAPHVM:          graphVM,
+		GRAPHVM:        graphVM,
 		vmToInitialize: vmWrappingProposerVM,
 		vmToLinearize:  untracedVMWrappedInsideProposerVM,
 
@@ -995,13 +995,13 @@ func (m *manager) createLuxChain(
 	}
 
 	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:                  consensusGetHandler,
-		Ctx:                            ctx,
-		Beacons:                        bootstrapBeacons,
-		SampleK:                        sampleK,
-		StartupTracker:                 startupTracker,
-		Sender:                         linearMessageSender,
-		BootstrapTracker:               sb,
+		AllGetsServer:    consensusGetHandler,
+		Ctx:              ctx,
+		Beacons:          bootstrapBeacons,
+		SampleK:          sampleK,
+		StartupTracker:   startupTracker,
+		Sender:           linearMessageSender,
+		BootstrapTracker: sb,
 		// Timer field removed - h,
 		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
@@ -1022,7 +1022,7 @@ func (m *manager) createLuxChain(
 		linearBootstrapper = core.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
 	}
 
-	avaGetHandler, err := avagetter.New(
+	getHandler, err := graphgetter.New(
 		vtxManager,
 		luxMessageSender,
 		ctx.Log,
@@ -1035,7 +1035,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// create engine gear
-	luxEngine := aveng.New(ctx, avaGetHandler)
+	luxEngine := aveng.New(ctx, getHandler)
 	if m.TracingEnabled {
 		luxEngine = core.TraceEngine(luxEngine, m.Tracer)
 	}
@@ -1048,12 +1048,12 @@ func (m *manager) createLuxChain(
 	// 	ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
 	// }
 
-	luxBootstrapperConfig := avbootstrap.Config{
-		AllGetsServer:                  avaGetHandler,
-		Ctx:                            ctx,
-		StartupTracker:                 startupTracker,
-		Sender:                         luxMessageSender,
-		PeerTracker:                    peerTracker,
+	luxBootstrapperConfig := graphbootstrap.Config{
+		AllGetsServer:  getHandler,
+		Ctx:            ctx,
+		StartupTracker: startupTracker,
+		Sender:         luxMessageSender,
+		PeerTracker:    peerTracker,
 		// Beacons field removed - beacons,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
@@ -1066,7 +1066,7 @@ func (m *manager) createLuxChain(
 		luxBootstrapperConfig.StopVertexID = version.CortinaXChainStopVertexID[ctx.NetworkID]
 	}
 
-	luxBootstrapper, err := avbootstrap.New(
+	luxBootstrapper, err := graphbootstrap.New(
 		luxBootstrapperConfig,
 		linearBootstrapper.Start,
 		ctx.Registerer,
@@ -1417,13 +1417,13 @@ func (m *manager) createLinearChain(
 
 	// create bootstrap gear
 	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:                  consensusGetHandler,
-		Ctx:                            ctx,
-		Beacons:                        beacons,
-		SampleK:                        sampleK,
-		StartupTracker:                 startupTracker,
-		Sender:                         messageSender,
-		BootstrapTracker:               sb,
+		AllGetsServer:    consensusGetHandler,
+		Ctx:              ctx,
+		Beacons:          beacons,
+		SampleK:          sampleK,
+		StartupTracker:   startupTracker,
+		Sender:           messageSender,
+		BootstrapTracker: sb,
 		// Timer field removed - h,
 		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
