@@ -43,6 +43,46 @@
         {
             "id": "NodeID-Fh7dFdzt1QYQDTKJfZTVBLMyPipP99AmH",
             "host": "node11.lux.network:443"
+        },
+        {
+            "id": "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg",
+            "host": "node12.lux.network:443"
+        },
+        {
+            "id": "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ",
+            "host": "node13.lux.network:443"
+        },
+        {
+            "id": "NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN",
+            "host": "node14.lux.network:443"
+        },
+        {
+            "id": "NodeID-GWPcbFJZFfZreETSoWjPimr846mXEKCtu",
+            "host": "node15.lux.network:443"
+        },
+        {
+            "id": "NodeID-P7oB2McjBGgW2NXXWVYjV8JEDFoW9xDE5",
+            "host": "node16.lux.network:443"
+        },
+        {
+            "id": "NodeID-2V9RoMRrN5eqjeATgvBqJuXZCckYXMCwu",
+            "host": "node17.lux.network:443"
+        },
+        {
+            "id": "NodeID-KDLYZTw7HHxUC1rXqYDe17CkJR5dfCxGd",
+            "host": "node18.lux.network:443"
+        },
+        {
+            "id": "NodeID-CEbTgmJKnsCTMQBqDMfb5dMpSyB5CYTXv",
+            "host": "node19.lux.network:443"
+        },
+        {
+            "id": "NodeID-AaVTDJk8W3Nmv5RhhzKmR6Mjr4gtefCvK",
+            "host": "node20.lux.network:443"
+        },
+        {
+            "id": "NodeID-EZGaEhrY7xgpq5TFgNbXJ1j8qA5Ei1m87",
+            "host": "node21.lux.network:443"
         }
     ],
     "testnet": [
@@ -89,6 +129,46 @@
         {
             "id": "NodeID-Fh7dFdzt1QYQDTKJfZTVBLMyPipP99AmH",
             "host": "node11.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg",
+            "host": "node12.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ",
+            "host": "node13.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN",
+            "host": "node14.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-GWPcbFJZFfZreETSoWjPimr846mXEKCtu",
+            "host": "node15.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-P7oB2McjBGgW2NXXWVYjV8JEDFoW9xDE5",
+            "host": "node16.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-2V9RoMRrN5eqjeATgvBqJuXZCckYXMCwu",
+            "host": "node17.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-KDLYZTw7HHxUC1rXqYDe17CkJR5dfCxGd",
+            "host": "node18.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-CEbTgmJKnsCTMQBqDMfb5dMpSyB5CYTXv",
+            "host": "node19.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-AaVTDJk8W3Nmv5RhhzKmR6Mjr4gtefCvK",
+            "host": "node20.lux-test.network:443"
+        },
+        {
+            "id": "NodeID-EZGaEhrY7xgpq5TFgNbXJ1j8qA5Ei1m87",
+            "host": "node21.lux-test.network:443"
         }
     ],
     "local": []

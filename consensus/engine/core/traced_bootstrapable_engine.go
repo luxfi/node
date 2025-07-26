@@ -6,7 +6,7 @@ package core
 import (
 	"context"
 
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 )
 
 var _ BootstrapableEngine = (*tracedBootstrapableEngine)(nil)

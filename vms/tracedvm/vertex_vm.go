@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )

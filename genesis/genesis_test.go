@@ -134,6 +134,11 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 12345,
 			config: func() *Config {
 				thisConfig := LocalConfig
+				// LocalConfig has empty InitialStakedFunds, so create a test scenario
+				if len(thisConfig.InitialStakedFunds) == 0 {
+					// Use a dummy address
+					thisConfig.InitialStakedFunds = []ids.ShortID{{1, 2, 3}}
+				}
 				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, thisConfig.InitialStakedFunds[0])
 				return &thisConfig
 			}(),
@@ -143,7 +148,9 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 5,
 			config: func() *Config {
 				thisConfig := TestnetConfig
-				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, LocalConfig.InitialStakedFunds[0])
+				// Use a dummy address that's not in the allocations
+				dummyAddr := ids.ShortID{9, 8, 7, 6, 5}
+				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, dummyAddr)
 				return &thisConfig
 			}(),
 			expectedErr: errNoAllocationToStake,

@@ -25,5 +25,5 @@ func LoggerForFormat(prefix string, rawLogFormat string) (log.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return log.NewLogger(prefix, log.NewWrappedCore(log.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
+	return log.NewLogger(prefix, *log.NewWrappedCore(log.Info, writeCloser, logFormat.ConsoleEncoder())), nil
 }
