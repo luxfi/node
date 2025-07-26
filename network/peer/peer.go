@@ -17,6 +17,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -24,7 +25,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/set"
@@ -289,8 +289,8 @@ func (p *peer) Info() Info {
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
 		TrackedSubnets: p.trackedSubnets,
-		SupportedLPs:  p.supportedLPs,
-		ObjectedLPs:   p.objectedLPs,
+		SupportedLPs:   p.supportedLPs,
+		ObjectedLPs:    p.objectedLPs,
 	}
 }
 

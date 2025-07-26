@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/ethclient"
+	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -113,7 +113,7 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 	pBalances, err := pBuilder.GetBalance()
 	require.NoError(err, "failed to fetch P-chain balances")
 	var (
-		xContext    = xBuilder.Context()
+		xContext   = xBuilder.Context()
 		luxAssetID = xContext.LUXAssetID
 		xLUX       = xBalances[luxAssetID]
 		pLUX       = pBalances[luxAssetID]

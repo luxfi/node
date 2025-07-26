@@ -7,8 +7,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/luxfi/node/api/health"
 	db "github.com/luxfi/database"
+	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 )

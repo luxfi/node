@@ -6,8 +6,8 @@ package confidence
 import (
 	"fmt"
 
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 var _ sampling.Nnary = (*nnaryConfidence)(nil)

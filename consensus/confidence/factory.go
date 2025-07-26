@@ -4,8 +4,8 @@
 package confidence
 
 import (
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 // NewNnaryConfidence returns a new nnary confidence instance

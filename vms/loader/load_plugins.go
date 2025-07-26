@@ -5,7 +5,7 @@ package loader
 
 import (
 	"fmt"
-	
+
 	"github.com/luxfi/node/vms/registry"
 )
 
@@ -13,17 +13,17 @@ import (
 func LoadPlugins() error {
 	// For compiled-in plugins, they register themselves via init()
 	// For dynamic plugins, load them here
-	
+
 	// Example of loading a dynamic plugin:
 	// p, err := plugin.Open("path/to/plugin.so")
 	// if err != nil {
 	//     return err
 	// }
-	
+
 	// Check if EVM is registered
 	if vms := registry.List(); len(vms) == 0 {
 		return fmt.Errorf("no VMs registered")
 	}
-	
+
 	return nil
 }

@@ -8,18 +8,18 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
@@ -130,10 +130,10 @@ type Config struct {
 	StateSyncConfig     `json:"stateSyncConfig"`
 	BootstrapConfig     `json:"bootstrapConfig"`
 	DatabaseConfig      `json:"databaseConfig"`
-	
+
 	// DevMode enables single-node development mode with simplified routing
 	DevMode bool `json:"devMode"`
-	
+
 	// ImportMode enables one-time blockchain data import with pruning disabled
 	ImportMode bool `json:"importMode"`
 
@@ -141,7 +141,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	LuxAssetID  ids.ID `json:"luxAssetID"`
+	LuxAssetID   ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

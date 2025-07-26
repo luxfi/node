@@ -12,6 +12,6 @@ func newAverager(initial float64, halfLife time.Duration, now time.Time) *averag
 }
 
 func (a *averager) Observe(value float64, now time.Time) {}
-func (a *averager) Read() float64 { return 0 }
+func (a *averager) Read() float64                        { return 0 }
 
 func estimateETA(start time.Time, done, total uint64) time.Duration { return 0 }

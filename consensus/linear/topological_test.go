@@ -6,9 +6,9 @@ package linear
 import (
 	"testing"
 
-	"github.com/luxfi/node/consensus/factories"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 func TestTopological(t *testing.T) {
-	runConsensusTests(t, TopologicalFactory{factory: factories.SnowflakeFactory})
+	runConsensusTests(t, TopologicalFactory{factory: sampling.Factory})
 }

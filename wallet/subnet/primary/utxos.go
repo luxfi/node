@@ -12,6 +12,6 @@ type UTXOs = wallet.UTXOs
 type ChainUTXOs = wallet.ChainUTXOs
 
 var (
-	NewUTXOs = wallet.NewUTXOs
+	NewUTXOs      = wallet.NewUTXOs
 	NewChainUTXOs = wallet.NewChainUTXOs
 )

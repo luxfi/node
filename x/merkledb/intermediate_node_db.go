@@ -4,9 +4,9 @@
 package merkledb
 
 import (
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
 )
 

@@ -36,7 +36,7 @@ func TestConvergenceSampling(t *testing.T) {
 			for i := 0; i < numNodes; i++ {
 				var sbFactory sampling.Factory
 				if i%2 == 0 {
-					sbFactory = factories.SnowflakeFactory
+					sbFactory = sampling.Factory
 				} else {
 					sbFactory = factories.ConfidenceFactory
 				}

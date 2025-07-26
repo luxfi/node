@@ -13,10 +13,10 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/linear/linearmock"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear/linearmock"
 	"github.com/luxfi/node/vms/components/chain"
 )
 

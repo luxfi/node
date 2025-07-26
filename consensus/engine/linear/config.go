@@ -5,11 +5,11 @@ package linear
 
 import (
 	"github.com/luxfi/node/consensus"
-	sampling "github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	sampling "github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/validators"
 )
 

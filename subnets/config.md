@@ -17,7 +17,7 @@ Here is an example of Subnet config file:
   "consensusParameters": {
     "k": 12,              // sample 12 validators
     "alpha": 8,           // need 8 matching votes
-    "beta": 10,           // Snowman commit threshold
+    "beta": 10,           // Linear commit threshold
     "concurrentRepolls": 16,
     "optimalProcessing": 2048,
     "maxOutstandingItems": 4096,
@@ -77,19 +77,19 @@ this configuration in order to properly allow a node in the private Subnet.
 Subnet configs supports loading new consensus parameters. JSON keys are
 different from their matching `CLI` keys. These parameters must be grouped under
 `consensusParameters` key. The consensus parameters of a Subnet default to the
-same values used for the Primary Network, which are given [CLI Snow Parameters](https://build.lux.network/docs/nodes/configure/configs-flags#snow-parameters).
+same values used for the Primary Network, which are given [CLI Consensus Parameters](https://build.lux.network/docs/nodes/configure/configs-flags#parameters).
 
 | CLI Key                          | JSON Key              |
 | :------------------------------- | :-------------------- |
-| --snow-sample-size               | k                     |
-| --snow-quorum-size               | alpha                 |
-| --snow-commit-threshold          | `beta`                |
-| --snow-concurrent-repolls        | concurrentRepolls     |
-| --snow-optimal-processing        | `optimalProcessing`   |
-| --snow-max-processing            | maxOutstandingItems   |
-| --snow-max-time-processing       | maxItemProcessingTime |
-| --snow-lux-batch-size      | `batchSize`           |
-| --snow-lux-num-parents     | `parentSize`          |
+| --sample-size               | k                     |
+| --quorum-size               | alpha                 |
+| --commit-threshold          | `beta`                |
+| --concurrent-repolls        | concurrentRepolls     |
+| --optimal-processing        | `optimalProcessing`   |
+| --max-processing            | maxOutstandingItems   |
+| --max-time-processing       | maxItemProcessingTime |
+| --lux-batch-size      | `batchSize`           |
+| --lux-num-parents     | `parentSize`          |
 
 #### `proposerMinBlockDelay` (duration)
 

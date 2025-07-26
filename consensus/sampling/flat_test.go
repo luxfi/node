@@ -34,7 +34,7 @@ func TestFlat(t *testing.T) {
 
 	twoGreen := bag.Of(Green, Green)
 	require.True(f.RecordPoll(twoGreen))
-	require.Equal(Blue, f.Preference())  // Preference stays Blue (2 < AlphaConfidence)
+	require.Equal(Blue, f.Preference()) // Preference stays Blue (2 < AlphaConfidence)
 	require.False(f.Finalized())
 
 	threeGreen := bag.Of(Green, Green, Green)
@@ -54,7 +54,7 @@ func TestFlat(t *testing.T) {
 
 	require.True(f.RecordPoll(threeGreen))
 	require.Equal(Green, f.Preference())
-	require.True(f.Finalized())  // Finalized after Beta rounds
+	require.True(f.Finalized()) // Finalized after Beta rounds
 
 	expected := "SB(Preference = 2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w, PreferenceStrength = 4, SF(Confidence = [2], Finalized = true, SL(Preference = 2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w)))"
 	require.Equal(expected, f.String())

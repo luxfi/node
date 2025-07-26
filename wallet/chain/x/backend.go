@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/luxfi/node/vms/xvm/txs"
+	walletutil "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	walletutil "github.com/luxfi/node/wallet"
 )
 
 var _ Backend = (*backend)(nil)

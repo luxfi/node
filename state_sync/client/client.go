@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
-	
-	"github.com/luxfi/node/state_sync/client/stats"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/log"
+
 	"github.com/luxfi/evm/core/types"
 	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/log"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/state_sync/client/stats"
 )
 
 const (
@@ -134,7 +134,7 @@ func parseLeafsResponse(reqIntf message.Request, data []byte) (interface{}, int,
 
 	// TODO: Add merkle proof validation once trie package is properly imported
 	// For now, skip the proof validation
-	
+
 	return leafsResponse, len(leafsResponse.Keys), nil
 }
 
@@ -144,12 +144,12 @@ func (c *client) GetBlocks(ctx context.Context, hash common.Hash, height uint64,
 		Height:  height,
 		Parents: parents,
 	}
-	
+
 	data, err := c.get(ctx, req, c.parseBlocks)
 	if err != nil {
 		return nil, fmt.Errorf("could not get blocks (%s) due to %w", hash, err)
 	}
-	
+
 	return data.(types.Blocks), nil
 }
 
@@ -166,7 +166,7 @@ func (c *client) parseBlocks(req message.Request, data []byte) (interface{}, int
 	if len(response.Blocks) == 0 {
 		return nil, 0, errEmptyResponse
 	}
-	
+
 	blockRequest := req.(message.BlockRequest)
 	numParentsRequested := blockRequest.Parents
 	if len(response.Blocks) > int(numParentsRequested) {
@@ -223,7 +223,7 @@ func parseCode(req message.Request, data []byte) (interface{}, int, error) {
 
 	// TODO: Add code validation once we have proper crypto imports
 	// For now, skip hash validation
-	
+
 	totalBytes := 0
 	for _, code := range response.Data {
 		totalBytes += len(code)

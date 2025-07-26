@@ -5,22 +5,22 @@ package threshold
 
 import (
 	"fmt"
-	
+
 	"github.com/luxfi/node/consensus/sampling"
 )
 
 var _ sampling.Binary = (*binaryThreshold)(nil)
 
-func newBinarySnowflake(alphaPreference int, terminationConditions []terminationCondition, choice int) binaryThreshold {
+func newBinaryThreshold(alphaPreference int, terminationConditions []terminationCondition, choice int) binaryThreshold {
 	return binaryThreshold{
-		BinarySampler:           sampling.NewBinarySampler(choice),
+		BinarySampler:         sampling.NewBinarySampler(choice),
 		alphaPreference:       alphaPreference,
 		terminationConditions: terminationConditions,
 		confidence:            make([]int, len(terminationConditions)),
 	}
 }
 
-// binaryThreshold is the implementation of a binary snowflake instance
+// binaryThreshold is the implementation of a binary threshold instance
 // Invariant:
 // len(terminationConditions) == len(confidence)
 // terminationConditions[i].alphaConfidence < terminationConditions[i+1].alphaConfidence

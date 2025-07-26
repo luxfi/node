@@ -17,36 +17,36 @@ import (
 // Wallet provides XRP Ledger wallet functionality
 type XRPLWallet interface {
 	wallet.Wallet
-	
+
 	// GetAccountInfo returns account information including sequence number
 	GetAccountInfo(ctx context.Context) (*AccountInfo, error)
-	
+
 	// CreatePayment creates an XRP payment transaction
 	CreatePayment(ctx context.Context, destination string, amount *big.Int, tag *uint32) (*Transaction, error)
-	
+
 	// CreateTrustline creates a trustline for a token
 	CreateTrustline(ctx context.Context, issuer string, currency string, limit *big.Int) (*Transaction, error)
-	
+
 	// GetTrustlines returns all trustlines for the account
 	GetTrustlines(ctx context.Context) ([]*Trustline, error)
 }
 
 // AccountInfo represents XRP Ledger account information
 type AccountInfo struct {
-	Account         string
-	Balance         *big.Int
-	Sequence        uint32
-	PreviousTxnID   string
+	Account           string
+	Balance           *big.Int
+	Sequence          uint32
+	PreviousTxnID     string
 	PreviousTxnLgrSeq uint32
 }
 
 // Trustline represents a trust line on XRP Ledger
 type Trustline struct {
-	Account    string
-	Currency   string
-	Issuer     string
-	Balance    *big.Int
-	Limit      *big.Int
+	Account  string
+	Currency string
+	Issuer   string
+	Balance  *big.Int
+	Limit    *big.Int
 }
 
 // Transaction represents an XRP Ledger transaction
@@ -82,7 +82,7 @@ func NewWallet(privateKey *ecdsa.PrivateKey, client Client) (XRPLWallet, error) 
 	// TODO: Derive XRP address from private key
 	// This requires implementing XRP address generation
 	address := "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" // placeholder
-	
+
 	return &xrplWallet{
 		privateKey: privateKey,
 		address:    address,
@@ -107,24 +107,24 @@ func (w *xrplWallet) GetBalance(ctx context.Context, assetID ids.ID) (*big.Int, 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// For native XRP (empty assetID)
 	if assetID == ids.Empty {
 		return info.Balance, nil
 	}
-	
+
 	// For IOUs, need to check trustlines
 	trustlines, err := w.client.GetAccountLines(ctx, w.address)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// TODO: Map assetID to currency/issuer and find matching trustline
 	for _, tl := range trustlines {
 		// Match logic here
 		_ = tl
 	}
-	
+
 	return big.NewInt(0), nil
 }
 
@@ -134,17 +134,17 @@ func (w *xrplWallet) CreateTransaction(ctx context.Context, req *wallet.Transact
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create payment transaction
 	tx := &Transaction{
 		TransactionType: "Payment",
-		Account:        w.address,
-		Destination:    req.To,
-		Amount:         req.Amount.String(), // XRP amount in drops
-		Fee:            "12",                // Standard fee
-		Sequence:       info.Sequence,
+		Account:         w.address,
+		Destination:     req.To,
+		Amount:          req.Amount.String(), // XRP amount in drops
+		Fee:             "12",                // Standard fee
+		Sequence:        info.Sequence,
 	}
-	
+
 	return &unsignedTransaction{tx: tx}, nil
 }
 
@@ -153,13 +153,13 @@ func (w *xrplWallet) SignTransaction(ctx context.Context, tx wallet.UnsignedTran
 	if !ok {
 		return nil, wallet.ErrInvalidTransaction
 	}
-	
+
 	// TODO: Implement XRP Ledger transaction signing
 	// This requires implementing XRP signature generation
 	signature := hex.EncodeToString([]byte{}) // placeholder
-	
+
 	utx.tx.TxnSignature = signature
-	
+
 	return &signedTransaction{tx: utx.tx}, nil
 }
 
@@ -168,15 +168,15 @@ func (w *xrplWallet) BroadcastTransaction(ctx context.Context, tx wallet.SignedT
 	if !ok {
 		return ids.Empty, wallet.ErrInvalidTransaction
 	}
-	
+
 	// TODO: Serialize transaction to blob
 	txBlob := hex.EncodeToString([]byte{}) // placeholder
-	
+
 	txHash, err := w.client.SubmitTransaction(ctx, txBlob)
 	if err != nil {
 		return ids.Empty, err
 	}
-	
+
 	// Convert XRP txHash to ids.ID
 	return ids.FromString(txHash)
 }
@@ -186,7 +186,7 @@ func (w *xrplWallet) GetTransactionStatus(ctx context.Context, txID ids.ID) (wal
 	if err != nil {
 		return wallet.TransactionStatus{}, err
 	}
-	
+
 	// TODO: Map XRP transaction status
 	return wallet.TransactionStatus{
 		ID:     txID,
@@ -204,21 +204,21 @@ func (w *xrplWallet) CreatePayment(ctx context.Context, destination string, amou
 	if err != nil {
 		return nil, err
 	}
-	
+
 	tx := &Transaction{
 		TransactionType: "Payment",
-		Account:        w.address,
-		Destination:    destination,
-		Amount:         amount.String(),
-		Fee:            "12",
-		Sequence:       info.Sequence,
+		Account:         w.address,
+		Destination:     destination,
+		Amount:          amount.String(),
+		Fee:             "12",
+		Sequence:        info.Sequence,
 	}
-	
+
 	// Add destination tag if provided
 	if tag != nil {
 		// TODO: Add DestinationTag field
 	}
-	
+
 	return tx, nil
 }
 
@@ -227,15 +227,15 @@ func (w *xrplWallet) CreateTrustline(ctx context.Context, issuer string, currenc
 	if err != nil {
 		return nil, err
 	}
-	
+
 	tx := &Transaction{
 		TransactionType: "TrustSet",
-		Account:        w.address,
-		Fee:            "12",
-		Sequence:       info.Sequence,
+		Account:         w.address,
+		Fee:             "12",
+		Sequence:        info.Sequence,
 		// TODO: Add LimitAmount field
 	}
-	
+
 	return tx, nil
 }
 

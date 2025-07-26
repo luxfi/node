@@ -6,8 +6,8 @@ package linear
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/ancestor"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 var _ linear.Block = (*memoryBlock)(nil)

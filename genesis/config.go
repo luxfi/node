@@ -37,7 +37,7 @@ type LockedAmount struct {
 
 type Allocation struct {
 	ETHAddr        ids.ShortID    `json:"ethAddr"`
-	LUXAddr       ids.ShortID    `json:"luxAddr"`
+	LUXAddr        ids.ShortID    `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -230,7 +230,7 @@ func init() {
 	// and chain ID. The actual genesis will be loaded from chain data.
 	LuxMainnetConfig = LocalConfig
 	LuxMainnetConfig.NetworkID = constants.LuxMainnetID
-	
+
 	// Update C-Chain genesis to use chain ID 96369
 	if cChainGenesis, err := parseCChainGenesis([]byte(LocalConfig.CChainGenesis)); err == nil {
 		if config, ok := cChainGenesis["config"].(map[string]interface{}); ok {
@@ -244,7 +244,7 @@ func init() {
 	// Initialize Lux testnet config
 	LuxTestnetConfig = LocalConfig
 	LuxTestnetConfig.NetworkID = constants.LuxTestnetID
-	
+
 	// Update C-Chain genesis to use chain ID 96368
 	if cChainGenesis, err := parseCChainGenesis([]byte(LocalConfig.CChainGenesis)); err == nil {
 		if config, ok := cChainGenesis["config"].(map[string]interface{}); ok {
@@ -262,14 +262,14 @@ func parseCChainGenesis(data []byte) (map[string]interface{}, error) {
 	if err := json.Unmarshal(data, &genesis); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse the config section
 	if configData, ok := genesis["config"]; ok {
 		if configMap, ok := configData.(map[string]interface{}); ok {
 			genesis["config"] = configMap
 		}
 	}
-	
+
 	return genesis, nil
 }
 

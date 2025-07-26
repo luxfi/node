@@ -9,12 +9,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 var (
-	_ block.Parser  = (*parseAcceptor)(nil)
+	_ block.Parser = (*parseAcceptor)(nil)
 	_ linear.Block = (*blockAcceptor)(nil)
 )
 

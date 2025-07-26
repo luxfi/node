@@ -10,20 +10,22 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
-	"github.com/stretchr/testify/assert"
-	"github.com/luxfi/evm/iface"
+
 	"github.com/luxfi/evm/consensus/dummy"
 	"github.com/luxfi/evm/core"
+	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/ethdb/memorydb"
 	"github.com/luxfi/evm/params"
 	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/evm/sync/syncutils"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/geth/triedb"
+	"github.com/luxfi/ids"
 	clientstats "github.com/luxfi/node/state_sync/client/stats"
 	"github.com/luxfi/node/state_sync/handlers"
 	handlerstats "github.com/luxfi/node/state_sync/handlers/stats"
-	"github.com/luxfi/geth/trie"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/crypto"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetCode(t *testing.T) {

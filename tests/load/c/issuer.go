@@ -12,11 +12,11 @@ import (
 	"math/rand/v2"
 
 	"github.com/luxfi/evm/accounts/abi/bind"
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/params"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/evm/ethclient"
-	"github.com/luxfi/evm/params"
 
 	"github.com/luxfi/node/tests/load/c/contracts"
 )

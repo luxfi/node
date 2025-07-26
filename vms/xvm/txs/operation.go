@@ -8,13 +8,13 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/xvm/fxs"
 )
 
 var (
@@ -25,9 +25,9 @@ var (
 
 type Operation struct {
 	lux.Asset `serialize:"true"`
-	UTXOIDs    []*lux.UTXOID  `serialize:"true"  json:"inputIDs"`
-	FxID       ids.ID          `serialize:"false" json:"fxID"`
-	Op         fxs.FxOperation `serialize:"true"  json:"operation"`
+	UTXOIDs   []*lux.UTXOID   `serialize:"true"  json:"inputIDs"`
+	FxID      ids.ID          `serialize:"false" json:"fxID"`
+	Op        fxs.FxOperation `serialize:"true"  json:"operation"`
 }
 
 func (op *Operation) Verify() error {

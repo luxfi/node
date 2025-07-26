@@ -23,4 +23,3 @@ func ContextWithTimeout(tc TestContext, duration time.Duration) context.Context 
 func DefaultContext(tc TestContext) context.Context {
 	return ContextWithTimeout(tc, DefaultTimeout)
 }
-

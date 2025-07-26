@@ -66,13 +66,3 @@ The consensus protocols are used by the Lux Virtual Machines (VMs) to achieve ag
 - **DAG consensus**: Fast massively parallelizable consensus X-Chain transactions
 - **Binary vote**: Core primitive used internally by other protocols
 
-## Migrating from Snow Family Consensus
-
-For developers familiar with the previous "Snow" naming:
-- `confidence` → `binaryvote`
-- `snowman` → `linear`
-- `snowstorm` → `graph`
-- `avalanche` → `graph` (vertex definitions merged)
-- `snow/choices` → `consensus/common/choices`
-
-This restructuring provides clearer semantics while maintaining full compatibility with the existing consensus algorithms.

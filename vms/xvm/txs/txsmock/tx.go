@@ -15,8 +15,8 @@ import (
 	ids "github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	set "github.com/luxfi/node/utils/set"
-	txs "github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"
+	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

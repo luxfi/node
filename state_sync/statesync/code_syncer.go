@@ -8,13 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"github.com/luxfi/evm/iface"
+
 	"github.com/luxfi/evm/core/rawdb"
-	"github.com/luxfi/geth/ethdb"
+	"github.com/luxfi/evm/iface"
 	"github.com/luxfi/evm/plugin/evm/customrawdb"
 	"github.com/luxfi/evm/plugin/evm/message"
-	statesyncclient "github.com/luxfi/node/state_sync/client"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethdb"
+	statesyncclient "github.com/luxfi/node/state_sync/client"
 )
 
 const (
@@ -45,8 +46,8 @@ type codeSyncer struct {
 
 	CodeSyncerConfig
 
-	outstandingCodeHashes map[iface.ID]struct{}  // Set of code hashes that we need to fetch from the network.
-	codeHashes            chan common.Hash // Channel of incoming code hash requests
+	outstandingCodeHashes map[iface.ID]struct{} // Set of code hashes that we need to fetch from the network.
+	codeHashes            chan common.Hash      // Channel of incoming code hash requests
 
 	// Used to set terminal error or pass nil to [errChan] if successful.
 	errOnce sync.Once

@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/evm/params"
 	ethparams "github.com/luxfi/geth/params"
 
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -95,7 +95,7 @@ func NewTestGenesis(
 		Allocations: []genesis.UnparsedAllocation{
 			{
 				ETHAddr:       ethAddress,
-				LUXAddr:      stakeAddress,
+				LUXAddr:       stakeAddress,
 				InitialAmount: 0,
 				UnlockSchedule: []genesis.LockedAmount{ // Provides stake to validators
 					{
@@ -133,7 +133,7 @@ func NewTestGenesis(
 			config.Allocations,
 			genesis.UnparsedAllocation{
 				ETHAddr:       ethAddress,
-				LUXAddr:      luxAddr,
+				LUXAddr:       luxAddr,
 				InitialAmount: balance,
 				UnlockSchedule: []genesis.LockedAmount{
 					{
@@ -151,7 +151,7 @@ func NewTestGenesis(
 	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		Config:     &params.ChainConfig{
+		Config: &params.ChainConfig{
 			ChainConfig: &ethparams.ChainConfig{
 				ChainID: chainID,
 			},

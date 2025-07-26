@@ -7,14 +7,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
 )

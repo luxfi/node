@@ -40,9 +40,9 @@ type BootstrapperRaw struct {
 // Represents the relationship between the nodeID and the nodeIP.
 // The bootstrapper is sometimes called "anchor" or "beacon" node.
 type Bootstrapper struct {
-	ID   ids.NodeID      `json:"-"`
-	Host string          `json:"-"` // Original host string for reference
-	IP   netip.AddrPort  `json:"-"` // Resolved IP address
+	ID   ids.NodeID     `json:"-"`
+	Host string         `json:"-"` // Original host string for reference
+	IP   netip.AddrPort `json:"-"` // Resolved IP address
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling to support hostnames
@@ -51,27 +51,27 @@ func (b *Bootstrapper) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	
+
 	b.ID = raw.ID
 	b.Host = raw.Host
-	
+
 	// Try to parse as IP:port first
 	if addr, err := netip.ParseAddrPort(raw.Host); err == nil {
 		b.IP = addr
 		return nil
 	}
-	
+
 	// If not a raw IP, try to resolve hostname
 	host, portStr, err := net.SplitHostPort(raw.Host)
 	if err != nil {
 		return fmt.Errorf("invalid host format %q: %w", raw.Host, err)
 	}
-	
+
 	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
 		return fmt.Errorf("invalid port in %q: %w", raw.Host, err)
 	}
-	
+
 	// Resolve hostname to IP
 	ipAddr, err := ips.Lookup(host)
 	if err != nil {
@@ -80,7 +80,7 @@ func (b *Bootstrapper) UnmarshalJSON(data []byte) error {
 		b.IP = netip.AddrPort{}
 		return nil
 	}
-	
+
 	b.IP = netip.AddrPortFrom(ipAddr, uint16(port))
 	return nil
 }
@@ -90,22 +90,22 @@ func (b *Bootstrapper) ResolveIP() error {
 	if b.IP.IsValid() {
 		return nil // Already resolved
 	}
-	
+
 	host, portStr, err := net.SplitHostPort(b.Host)
 	if err != nil {
 		return fmt.Errorf("invalid host format %q: %w", b.Host, err)
 	}
-	
+
 	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
 		return fmt.Errorf("invalid port in %q: %w", b.Host, err)
 	}
-	
+
 	ipAddr, err := ips.Lookup(host)
 	if err != nil {
 		return fmt.Errorf("failed to resolve hostname %q: %w", host, err)
 	}
-	
+
 	b.IP = netip.AddrPortFrom(ipAddr, uint16(port))
 	return nil
 }

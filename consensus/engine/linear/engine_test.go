@@ -15,22 +15,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/factories"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/ancestor"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -86,7 +85,7 @@ func setup(t *testing.T, config Config) (ids.NodeID, validators.Manager, *engine
 	vm.T = t
 	config.VM = vm
 
-	snowGetHandler, err := getter.New(
+	getHandler, err := getter.New(
 		vm,
 		sender,
 		config.Ctx.Log,
@@ -95,7 +94,7 @@ func setup(t *testing.T, config Config) (ids.NodeID, validators.Manager, *engine
 		config.Ctx.Registerer,
 	)
 	require.NoError(err)
-	config.AllGetsServer = snowGetHandler
+	config.AllGetsServer = getHandler
 
 	vm.Default(true)
 	vm.CantSetState = false
@@ -3025,7 +3024,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 				ctx = consensustest.ConsensusContext(
 					consensustest.Context(t, consensustest.PChainID),
 				)
-				consensus = &linear.Topological{Factory: factories.SnowflakeFactory}
+				consensus = &linear.Topological{Factory: sampling.Factory}
 			)
 			require.NoError(consensus.Initialize(
 				ctx,
@@ -3099,7 +3098,7 @@ func TestShouldIssueBlock(t *testing.T) {
 
 	require.NoError(t, blocks[0].Accept(context.Background()))
 
-	c := &linear.Topological{Factory: factories.SnowflakeFactory}
+	c := &linear.Topological{Factory: sampling.Factory}
 	require.NoError(t, c.Initialize(
 		ctx,
 		sampling.DefaultParameters,
@@ -3273,8 +3272,8 @@ func TestEngineAcceptedHeight(t *testing.T) {
 		return blk1, nil
 	}
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	params := sampling.Parameters{
 		K:                     1,
 		AlphaPreference:       1,

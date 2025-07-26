@@ -16,23 +16,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/crypto/bls"
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/meterdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/state"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
@@ -40,13 +38,15 @@ import (
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
@@ -61,16 +61,16 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/linear"
 	aveng "github.com/luxfi/node/consensus/engine/dag"
 	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
 	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
-	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	lineargetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	smcon "github.com/luxfi/node/consensus/linear"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/factories"
+	"github.com/luxfi/node/consensus/sampling"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 const (
@@ -79,17 +79,16 @@ const (
 	defaultChannelSize = 1
 	initialQueueSize   = 3
 
-	luxNamespace    = constants.PlatformName + metric.NamespaceSeparator + "lux"
+	luxNamespace          = constants.PlatformName + metric.NamespaceSeparator + "lux"
 	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
 	meterchainvmNamespace = constants.PlatformName + metric.NamespaceSeparator + "meterchainvm"
 	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
 	chainNamespace        = constants.PlatformName + metric.NamespaceSeparator + "chain"
-	linearNamespace      = constants.PlatformName + metric.NamespaceSeparator + "linear"
+	linearNamespace       = constants.PlatformName + metric.NamespaceSeparator + "linear"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
-
 
 var (
 	// Commonly shared VM DB prefix
@@ -208,7 +207,7 @@ type ManagerConfig struct {
 	PartialSyncPrimaryNetwork bool
 	Server                    server.Server // Handles HTTP API calls
 	AtomicMemory              *atomic.Memory
-	LUXAssetID               ids.ID
+	LUXAssetID                ids.ID
 	XChainID                  ids.ID          // ID of the X-Chain,
 	CChainID                  ids.ID          // ID of the C-Chain,
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
@@ -274,13 +273,13 @@ type manager struct {
 	// chain++ related interface to allow validators retrieval
 	validatorState validators.State
 
-	luxGatherer    metrics.MultiGatherer            // chainID
+	luxGatherer          metrics.MultiGatherer            // chainID
 	handlerGatherer      metrics.MultiGatherer            // chainID
 	meterChainVMGatherer metrics.MultiGatherer            // chainID
 	meterDAGVMGatherer   metrics.MultiGatherer            // chainID
 	proposervmGatherer   metrics.MultiGatherer            // chainID
 	p2pGatherer          metrics.MultiGatherer            // chainID
-	linearGatherer      metrics.MultiGatherer            // chainID
+	linearGatherer       metrics.MultiGatherer            // chainID
 	stakeGatherer        metrics.MultiGatherer            // chainID
 	vmGatherer           map[ids.ID]metrics.MultiGatherer // vmID -> chainID
 }
@@ -340,13 +339,13 @@ func New(config *ManagerConfig) (Manager, error) {
 		unblockChainCreatorCh:  make(chan struct{}),
 		chainCreatorShutdownCh: make(chan struct{}),
 
-		luxGatherer:    luxGatherer,
+		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
 		meterChainVMGatherer: meterChainVMGatherer,
 		meterDAGVMGatherer:   meterDAGVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
-		linearGatherer:      linearGatherer,
+		linearGatherer:       linearGatherer,
 		stakeGatherer:        stakeGatherer,
 		vmGatherer:           make(map[ids.ID]metrics.MultiGatherer),
 	}, nil
@@ -506,8 +505,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		PublicKey:       m.StakingBLSKey.PublicKey(),
 		NetworkUpgrades: m.Upgrades,
 
-		XChainID:    m.XChainID,
-		CChainID:    m.CChainID,
+		XChainID:   m.XChainID,
+		CChainID:   m.CChainID,
 		LUXAssetID: m.LUXAssetID,
 
 		Log:          chainLog,
@@ -912,7 +911,7 @@ func (m *manager) createLuxChain(
 	startupTracker := tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
 	vdrs.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
-	snowGetHandler, err := snowgetter.New(
+	linearGetHandler, err := lineargetter.New(
 		vmWrappingProposerVM,
 		linearMessageSender,
 		ctx.Log,
@@ -921,10 +920,10 @@ func (m *manager) createLuxChain(
 		ctx.Registerer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize linear base message handler: %w", err)
 	}
 
-	var linearConsensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
+	var linearConsensus smcon.Consensus = &smcon.Topological{Factory: sampling.Factory}
 	if m.TracingEnabled {
 		linearConsensus = smcon.Trace(linearConsensus, m.Tracer)
 	}
@@ -933,7 +932,7 @@ func (m *manager) createLuxChain(
 	// to make sure start callbacks are duly initialized
 	linearEngineConfig := smeng.Config{
 		Ctx:                 ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       linearGetHandler,
 		VM:                  vmWrappingProposerVM,
 		Sender:              linearMessageSender,
 		Validators:          vdrs,
@@ -955,7 +954,7 @@ func (m *manager) createLuxChain(
 	bootstrapCfg := smbootstrap.Config{
 		Haltable:                       &halter,
 		NonVerifyingParse:              block.ParseFunc(proposerVM.ParseLocalBlock),
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  linearGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        vdrs,
 		SampleK:                        sampleK,
@@ -1305,7 +1304,7 @@ func (m *manager) createLinearChain(
 	startupTracker := tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 
-	snowGetHandler, err := snowgetter.New(
+	linearGetHandler, err := lineargetter.New(
 		vm,
 		messageSender,
 		ctx.Log,
@@ -1314,10 +1313,10 @@ func (m *manager) createLinearChain(
 		ctx.Registerer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
+		return nil, fmt.Errorf("couldn't initialize linear base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{Factory: factories.SnowflakeFactory}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: sampling.Factory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}
@@ -1326,7 +1325,7 @@ func (m *manager) createLinearChain(
 	// to make sure start callbacks are duly initialized
 	engineConfig := smeng.Config{
 		Ctx:                 ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       linearGetHandler,
 		VM:                  vm,
 		Sender:              messageSender,
 		Validators:          vdrs,
@@ -1349,7 +1348,7 @@ func (m *manager) createLinearChain(
 	bootstrapCfg := smbootstrap.Config{
 		Haltable:                       &halter,
 		NonVerifyingParse:              block.ParseFunc(proposerVM.ParseLocalBlock),
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  linearGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        beacons,
 		SampleK:                        sampleK,
@@ -1377,7 +1376,7 @@ func (m *manager) createLinearChain(
 
 	// create state sync gear
 	stateSyncCfg, err := syncer.NewConfig(
-		snowGetHandler,
+		linearGetHandler,
 		ctx,
 		startupTracker,
 		messageSender,

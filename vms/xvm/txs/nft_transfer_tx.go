@@ -8,17 +8,17 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (
 	_ UnsignedTx             = (*NFTTransferTx)(nil)
 	_ secp256k1fx.UnsignedTx = (*NFTTransferTx)(nil)
 
-	ErrInvalidNFTID        = errors.New("invalid NFT ID")
-	ErrInvalidRecipient    = errors.New("invalid recipient")
-	ErrUnsupportedChain    = errors.New("unsupported destination chain for NFT")
+	ErrInvalidNFTID     = errors.New("invalid NFT ID")
+	ErrInvalidRecipient = errors.New("invalid recipient")
+	ErrUnsupportedChain = errors.New("unsupported destination chain for NFT")
 )
 
 // NFTTransferTx transfers NFTs from X-Chain to C-Chain or other subnets

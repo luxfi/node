@@ -9,16 +9,16 @@ import (
 	"encoding/binary"
 	"math/rand"
 	"testing"
-	
+
+	"github.com/holiman/uint256"
+	"github.com/luxfi/evm/core/types"
+	"github.com/luxfi/evm/internal/testutils"
+	"github.com/luxfi/evm/trie"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/rlp"
-	"github.com/luxfi/geth/triedb"
 	"github.com/luxfi/geth/trie/trienode"
-	"github.com/holiman/uint256"
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/trie"
-	"github.com/luxfi/evm/internal/testutils"
+	"github.com/luxfi/geth/triedb"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/stretchr/testify/assert"
 )

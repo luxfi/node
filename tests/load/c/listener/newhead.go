@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/geth/core/types"
 	interfaces "github.com/luxfi/evm/iface"
+	"github.com/luxfi/geth/core/types"
 )
 
 type NewHeadSubscriber interface {

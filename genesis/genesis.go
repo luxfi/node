@@ -13,15 +13,15 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/fxs"
 
-	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
+	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 )
 
 const (
@@ -471,7 +471,7 @@ func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
 	if numSplits == 0 {
 		return [][]Allocation{}
 	}
-	
+
 	totalAmount := uint64(0)
 	for _, allocation := range allocations {
 		for _, unlock := range allocation.UnlockSchedule {

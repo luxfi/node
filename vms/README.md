@@ -8,13 +8,13 @@ There is a special subnet inherent to the Lux Network called the Primary Network
 
 For each blockchain, consensus is driven by the consensus engine. For each subnet, the P-Chain, or Platform Chain, defines the validator set and the set of blockchains that are validated by the subnet.
 
-A blockchain consists of two components: a consensus engine and a Virtual Machine (VM). The consensus engine samples validators, handles the responses, and pushes the results of the completed polls into the consensus [code](../snow/consensus/) to decide which containers to Accept/Reject. The VM encodes the application logic for the blockchain. The VM defines the contents of a block, the rules for determining whether a block is valid, the APIs exposed to users, the state transition that occurs if a given block is accepted, and so on.
+A blockchain consists of two components: a consensus engine and a Virtual Machine (VM). The consensus engine samples validators, handles the responses, and pushes the results of the completed polls into the consensus [code](../consensus/) to decide which containers to Accept/Reject. The VM encodes the application logic for the blockchain. The VM defines the contents of a block, the rules for determining whether a block is valid, the APIs exposed to users, the state transition that occurs if a given block is accepted, and so on.
 
 The consensus engine is general and agnostic to the application semantics of the blockchain. There are two consensus engine implementations in Lux: Linear and Lux. Linear provides a consensus engine for linear chains and Lux provides a consensus engine for DAGs. These consensus engine implementations can be re-used for multiple different blockchains in the Lux ecosystem, and each blockchain actually runs its own independent instance of consensus.
 
 To launch a blockchain on Lux, you just need to write a VM that defines your application; the consensus part is handled by the existing consensus engine implementations.
 
-This document will go into the details of implementing a ChainVM to run on the Linear consensus engine. To implement a VM for linear, we just need to implement the `ChainVM` interface defined [here.](../snow/engine/linear/block/vm.go)
+This document will go into the details of implementing a ChainVM to run on the Linear consensus engine. To implement a VM for linear, we just need to implement the `ChainVM` interface defined [here.](../consensus/engine/linear/block/vm.go)
 
 VMs are reusable. Arbitrarily many blockchains can run the same VM. Each blockchain has its own state. In this way, a VM is to a blockchain what a class is to an instance of a class in an object-oriented programming language.
 
@@ -113,7 +113,7 @@ Therefore, if the tree of blocks in consensus (with root L, the last accepted bl
  A     B
  |    / \
  C   D   G
-    / \ 
+    / \
    E   F
 ```
 
@@ -123,7 +123,7 @@ If the consensus engine decides A and C simultaneously, the consensus engine wou
 2. Reject(B), Reject(D), Reject(E), Reject(F), and Reject(G)
 3. Accept(C)
 
-To see the actual code where Accept/Reject are performed, look [here.](../snow/consensus/linear/topological.go)
+To see the actual code where Accept/Reject are performed, look [here.](../consensus/linear/topological.go)
 
 ### Block Statuses
 

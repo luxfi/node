@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/sampler"

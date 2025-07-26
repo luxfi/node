@@ -6,8 +6,8 @@ package executor
 import (
 	"time"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"

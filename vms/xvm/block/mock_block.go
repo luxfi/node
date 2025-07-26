@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	codec "github.com/luxfi/node/codec"
 	ids "github.com/luxfi/ids"
+	codec "github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"

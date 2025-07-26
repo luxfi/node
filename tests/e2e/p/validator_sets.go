@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm"
@@ -37,12 +37,12 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 
 		tc.By("creating wallet with a funded key to source delegated funds from")
 		var (
-			keychain    = env.NewKeychain()
-			nodeURI     = env.GetRandomNodeURI()
-			baseWallet  = e2e.NewWallet(tc, keychain, nodeURI)
-			pWallet     = baseWallet.P()
-			pBuilder    = pWallet.Builder()
-			pContext    = pBuilder.Context()
+			keychain   = env.NewKeychain()
+			nodeURI    = env.GetRandomNodeURI()
+			baseWallet = e2e.NewWallet(tc, keychain, nodeURI)
+			pWallet    = baseWallet.P()
+			pBuilder   = pWallet.Builder()
+			pContext   = pBuilder.Context()
 			luxAssetID = pContext.LUXAssetID
 		)
 

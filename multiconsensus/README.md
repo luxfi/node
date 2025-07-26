@@ -30,32 +30,32 @@ package multiconsensus
 import (
     "context"
     "github.com/luxfi/node/ids"
-    "github.com/luxfi/node/snow/engine/common"
+    "github.com/luxfi/node/consensus/engine/common"
 )
 
 // ConsensusModule represents a single blockchain consensus implementation
 type ConsensusModule interface {
     // Initialize prepares the module with configuration
     Initialize(config ModuleConfig) error
-    
+
     // Start begins consensus participation
     Start(ctx context.Context) error
-    
+
     // Stop gracefully shuts down the module
     Stop() error
-    
+
     // GetChainID returns the blockchain identifier
     GetChainID() ids.ID
-    
+
     // GetNetworkID returns the network identifier
     GetNetworkID() uint32
-    
+
     // GetEngine returns the consensus engine
     GetEngine() common.Engine
-    
+
     // Health returns the module's health status
     Health() (interface{}, error)
-    
+
     // Bootstrapped returns whether the module has finished bootstrapping
     Bootstrapped() bool
 }
@@ -114,7 +114,7 @@ func NewAvalancheModule() multiconsensus.ConsensusModule {
 
 func (m *AvalancheModule) Initialize(config multiconsensus.ModuleConfig) error {
     m.config = config
-    
+
     // Create Avalanche node configuration
     nodeConfig := avalanchenode.Config{
         NetworkID:    config.NetworkID,
@@ -124,16 +124,16 @@ func (m *AvalancheModule) Initialize(config multiconsensus.ModuleConfig) error {
         StakingPort:  config.StakingPort,
         LogLevel:     config.LogLevel,
     }
-    
+
     // Initialize Avalanche node
     node, err := avalanchenode.New(&nodeConfig)
     if err != nil {
         return err
     }
-    
+
     m.node = node
     m.ctx, m.cancel = context.WithCancel(context.Background())
-    
+
     return nil
 }
 
@@ -165,7 +165,7 @@ type Manager struct {
 
 func NewManager(config *Config) (*Manager, error) {
     ctx, cancel := context.WithCancel(context.Background())
-    
+
     return &Manager{
         modules: make(map[string]ConsensusModule),
         config:  config,
@@ -177,11 +177,11 @@ func NewManager(config *Config) (*Manager, error) {
 func (m *Manager) RegisterModule(name string, module ConsensusModule) error {
     m.mu.Lock()
     defer m.mu.Unlock()
-    
+
     if _, exists := m.modules[name]; exists {
         return ErrModuleAlreadyRegistered
     }
-    
+
     m.modules[name] = module
     return nil
 }
@@ -189,20 +189,20 @@ func (m *Manager) RegisterModule(name string, module ConsensusModule) error {
 func (m *Manager) Start() error {
     m.mu.RLock()
     defer m.mu.RUnlock()
-    
+
     // Start each module in a separate goroutine
     for name, module := range m.modules {
         m.wg.Add(1)
         go func(n string, mod ConsensusModule) {
             defer m.wg.Done()
-            
+
             log.Info("Starting consensus module", "name", n)
             if err := mod.Start(m.ctx); err != nil {
                 log.Error("Failed to start module", "name", n, "error", err)
             }
         }(name, module)
     }
-    
+
     return nil
 }
 ```
@@ -224,32 +224,32 @@ func main() {
     if err != nil {
         panic(err)
     }
-    
+
     // Create manager
     manager, err := multiconsensus.NewManager(config)
     if err != nil {
         panic(err)
     }
-    
+
     // Register Lux v2 module
     luxModule := lux.NewLuxModule()
     if err := luxModule.Initialize(config.Modules["lux-v2"]); err != nil {
         panic(err)
     }
     manager.RegisterModule("lux-v2", luxModule)
-    
+
     // Register Avalanche module
     avalancheModule := avalanche.NewAvalancheModule()
     if err := avalancheModule.Initialize(config.Modules["avalanche"]); err != nil {
         panic(err)
     }
     manager.RegisterModule("avalanche", avalancheModule)
-    
+
     // Start all modules
     if err := manager.Start(); err != nil {
         panic(err)
     }
-    
+
     // Wait for shutdown
     manager.Wait()
 }
@@ -274,15 +274,15 @@ type NetworkConfig struct {
 func (r *NetworkRouter) Route(port uint16) (string, error) {
     r.mu.RLock()
     defer r.mu.RUnlock()
-    
+
     for module, config := range r.modules {
-        if config.APIPort == port || 
-           config.StakingPort == port || 
+        if config.APIPort == port ||
+           config.StakingPort == port ||
            config.P2PPort == port {
             return module, nil
         }
     }
-    
+
     return "", ErrNoRouteFound
 }
 ```
@@ -301,17 +301,17 @@ func TestMultiConsensusManager(t *testing.T) {
             },
         },
     }
-    
+
     manager, err := NewManager(config)
     require.NoError(t, err)
-    
+
     mockModule := &MockConsensusModule{}
     err = manager.RegisterModule("test", mockModule)
     require.NoError(t, err)
-    
+
     err = manager.Start()
     require.NoError(t, err)
-    
+
     // Verify module was started
     assert.True(t, mockModule.Started)
 }
@@ -342,10 +342,10 @@ type ModuleMetrics struct {
 // Combined health endpoint
 func (m *Manager) Health() map[string]interface{} {
     health := make(map[string]interface{})
-    
+
     m.mu.RLock()
     defer m.mu.RUnlock()
-    
+
     for name, module := range m.modules {
         moduleHealth, err := module.Health()
         if err != nil {
@@ -357,7 +357,7 @@ func (m *Manager) Health() map[string]interface{} {
             health[name] = moduleHealth
         }
     }
-    
+
     return health
 }
 ```

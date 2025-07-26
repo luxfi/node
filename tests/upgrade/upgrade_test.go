@@ -25,9 +25,9 @@ func TestUpgrade(t *testing.T) {
 var (
 	luxExecPath            string
 	luxExecPathToUpgradeTo string
-	collectorVars                  *flags.CollectorVars
-	checkMetricsCollected          bool
-	checkLogsCollected             bool
+	collectorVars          *flags.CollectorVars
+	checkMetricsCollected  bool
+	checkLogsCollected     bool
 )
 
 func init() {

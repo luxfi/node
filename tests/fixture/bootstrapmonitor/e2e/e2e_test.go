@@ -18,8 +18,8 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/luxfi/node/config"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
 	"github.com/luxfi/node/tests/fixture/e2e"
@@ -45,10 +45,10 @@ const (
 	// of this file.
 	repoRelativePath = "tests/fixture/bootstrapmonitor/e2e"
 
-	luxdImage       = "localhost:5001/luxd"
-	latestLuxgoImage = luxdImage + ":latest"
-	monitorImage           = "localhost:5001/bootstrap-monitor"
-	latestMonitorImage     = monitorImage + ":latest"
+	luxdImage          = "localhost:5001/luxd"
+	latestLuxgoImage   = luxdImage + ":latest"
+	monitorImage       = "localhost:5001/bootstrap-monitor"
+	latestMonitorImage = monitorImage + ":latest"
 
 	initContainerName    = "init"
 	monitorContainerName = "monitor"
@@ -61,9 +61,9 @@ const (
 )
 
 var (
-	kubeconfigVars            *flags.KubeconfigVars
-	skipLuxgoImageBuild bool
-	skipMonitorImageBuild     bool
+	kubeconfigVars        *flags.KubeconfigVars
+	skipLuxgoImageBuild   bool
+	skipMonitorImageBuild bool
 
 	nodeDataDir = bootstrapmonitor.NodeDataDir(dataDir) // Use a subdirectory of the data path so that os.RemoveAll can be used when starting a new test
 )

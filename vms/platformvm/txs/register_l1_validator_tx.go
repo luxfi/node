@@ -4,8 +4,8 @@
 package txs
 
 import (
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/types"
 )
 

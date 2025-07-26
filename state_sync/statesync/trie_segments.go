@@ -9,19 +9,20 @@ import (
 	"encoding/binary"
 	"fmt"
 	"sync"
-	"github.com/luxfi/geth/ethdb"
-	"github.com/luxfi/node/state_sync/client"
-	"github.com/luxfi/geth/trie"
+
+	"github.com/luxfi/evm/plugin/evm/customrawdb"
 	"github.com/luxfi/evm/utils"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/log"
-	"github.com/luxfi/evm/plugin/evm/customrawdb"
+	"github.com/luxfi/geth/trie"
+	statesyncclient "github.com/luxfi/node/state_sync/client"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
 var (
 	_ statesyncclient.LeafSyncTask = &trieSegment{}
-	_ fmt.Stringer            = &trieSegment{}
+	_ fmt.Stringer                 = &trieSegment{}
 )
 
 // trieToSync keeps the state of a single trie syncing

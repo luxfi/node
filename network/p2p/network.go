@@ -23,7 +23,7 @@ import (
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"

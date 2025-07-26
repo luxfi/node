@@ -9,8 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/job"
+	"github.com/luxfi/node/consensus/linear"
 )
 
 var _ job.Job[ids.ID] = (*issuer)(nil)

@@ -17,12 +17,12 @@ func NewFlat(factory Factory, params Parameters, choice ids.ID) Consensus {
 	}
 }
 
-// Flat is a naive implementation of a multi-choice snow instance
+// Flat is a naive implementation of a multi-choice sampler instance
 type Flat struct {
-	// wraps the n-nary snow logic
+	// wraps the n-nary sampler logic
 	Nnary
 
-	// params contains all the configurations of a snow instance
+	// params contains all the configurations of a sampler instance
 	params Parameters
 }
 

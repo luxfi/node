@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 )

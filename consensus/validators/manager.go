@@ -11,9 +11,9 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )
 

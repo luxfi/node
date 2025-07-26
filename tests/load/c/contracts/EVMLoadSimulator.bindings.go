@@ -10,10 +10,10 @@ import (
 
 	"github.com/luxfi/evm/accounts/abi"
 	"github.com/luxfi/evm/accounts/abi/bind"
-	"github.com/luxfi/geth/common"
 	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/geth/event"
 	interfaces "github.com/luxfi/evm/iface"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -481,10 +481,10 @@ type EVMLoadSimulatorHashCalculatesIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
+	logs chan types.Log          // Log channel receiving the found contract events
 	sub  interfaces.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
+	done bool                    // Whether the subscription completed delivering logs
+	fail error                   // Occurred error to stop iteration
 }
 
 // Next advances the iterator to the subsequent event, returning whether there
@@ -615,10 +615,10 @@ type EVMLoadSimulatorLargeLogIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
+	logs chan types.Log          // Log channel receiving the found contract events
 	sub  interfaces.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
+	done bool                    // Whether the subscription completed delivering logs
+	fail error                   // Occurred error to stop iteration
 }
 
 // Next advances the iterator to the subsequent event, returning whether there
@@ -749,10 +749,10 @@ type EVMLoadSimulatorMemoryWrittenIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
+	logs chan types.Log          // Log channel receiving the found contract events
 	sub  interfaces.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
+	done bool                    // Whether the subscription completed delivering logs
+	fail error                   // Occurred error to stop iteration
 }
 
 // Next advances the iterator to the subsequent event, returning whether there
@@ -883,10 +883,10 @@ type EVMLoadSimulatorStorageUpdateIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
+	logs chan types.Log          // Log channel receiving the found contract events
 	sub  interfaces.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
+	done bool                    // Whether the subscription completed delivering logs
+	fail error                   // Occurred error to stop iteration
 }
 
 // Next advances the iterator to the subsequent event, returning whether there
@@ -1028,10 +1028,10 @@ type EVMLoadSimulatorSumCalculatedIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
+	logs chan types.Log          // Log channel receiving the found contract events
 	sub  interfaces.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
+	done bool                    // Whether the subscription completed delivering logs
+	fail error                   // Occurred error to stop iteration
 }
 
 // Next advances the iterator to the subsequent event, returning whether there

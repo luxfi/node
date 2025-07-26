@@ -6,9 +6,9 @@ package state
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/utils/logging"

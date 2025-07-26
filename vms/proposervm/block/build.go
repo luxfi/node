@@ -58,7 +58,7 @@ func Build(
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer:  ids.NodeIDFromCert(&ids.Certificate{
+		proposer: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       cert.Raw,
 			PublicKey: cert.PublicKey,
 		}),

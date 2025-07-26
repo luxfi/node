@@ -17,7 +17,7 @@ func newContext(
 	state state.State,
 ) *builder.Context {
 	builderContext := &builder.Context{
-		NetworkID:   ctx.NetworkID,
+		NetworkID:  ctx.NetworkID,
 		LUXAssetID: ctx.LUXAssetID,
 	}
 

@@ -15,19 +15,19 @@ const Alias = "P"
 
 type Context struct {
 	NetworkID         uint32
-	LUXAssetID       ids.ID
+	LUXAssetID        ids.ID
 	ComplexityWeights gas.Dimensions
 	GasPrice          gas.Price
 }
 
-func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
+func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
 	lookup := ids.NewAliaser()
 	return &consensus.Context{
-		NetworkID:   networkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     constants.PlatformChainID,
+		NetworkID:  networkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		Log:        logging.NoLog{},
+		BCLookup:   lookup,
 	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

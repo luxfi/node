@@ -18,19 +18,20 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/database"
+	db "github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/linearmock"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/linearmock"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/staking"
@@ -317,12 +318,12 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 	}
 
 	// test
-	snowBlock, err := proVM.BuildBlock(context.Background())
+	block, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
 	// checks
-	require.IsType(&postForkBlock{}, snowBlock)
-	proBlock := snowBlock.(*postForkBlock)
+	require.IsType(&postForkBlock{}, block)
+	proBlock := block.(*postForkBlock)
 
 	require.Equal(coreBlk, proBlock.innerBlk)
 }
@@ -2027,12 +2028,12 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		snowCtx,
+		ctx,
 		db,
 		nil,
 		nil,

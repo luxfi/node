@@ -17,15 +17,15 @@ import (
 )
 
 const (
-	testnetURI    = "http://localhost:9650"
+	testnetURI = "http://localhost:9650"
 	mainnetURI = "http://localhost:9660"
 
 	maxNumCheckpoints = 100
 )
 
 var (
-	testnetXChainID    = ids.FromStringOrPanic("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
-	testnetCChainID    = ids.FromStringOrPanic("yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp")
+	testnetXChainID = ids.FromStringOrPanic("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
+	testnetCChainID = ids.FromStringOrPanic("yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp")
 	mainnetXChainID = ids.FromStringOrPanic("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
 	mainnetCChainID = ids.FromStringOrPanic("2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5")
 )
@@ -67,8 +67,8 @@ func main() {
 	checkpoints := map[string]map[ids.ID]set.Set[ids.ID]{
 		constants.TestnetName: {
 			constants.PlatformChainID: testnetPChainCheckpoints,
-			testnetXChainID:              testnetXChainCheckpoints,
-			testnetCChainID:              testnetCChainCheckpoints,
+			testnetXChainID:           testnetXChainCheckpoints,
+			testnetCChainID:           testnetCChainCheckpoints,
 		},
 		constants.MainnetName: {
 			constants.PlatformChainID: mainnetPChainCheckpoints,

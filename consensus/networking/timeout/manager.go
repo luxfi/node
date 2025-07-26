@@ -11,9 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/timer"
 )
 

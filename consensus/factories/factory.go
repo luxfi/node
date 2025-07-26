@@ -4,15 +4,15 @@
 package factories
 
 import (
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/confidence"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/threshold"
-	"github.com/luxfi/ids"
 )
 
 var (
-	ConfidenceFactory  sampling.Factory = confidenceFactory{}
-	SnowflakeFactory sampling.Factory = snowflakeFactory{}
+	ConfidenceFactory sampling.Factory = confidenceFactory{}
+	FlatFactory  sampling.Factory = flatFactory{}
 )
 
 type confidenceFactory struct{}
@@ -25,12 +25,12 @@ func (confidenceFactory) NewUnary(params sampling.Parameters) sampling.Unary {
 	return confidence.NewUnaryConfidence(params.AlphaPreference, params.AlphaConfidence, params.Beta)
 }
 
-type snowflakeFactory struct{}
+type flatFactory struct{}
 
-func (snowflakeFactory) NewNnary(params sampling.Parameters, choice ids.ID) sampling.Nnary {
+func (flatFactory) NewNnary(params sampling.Parameters, choice ids.ID) sampling.Nnary {
 	return threshold.NewNnaryThreshold(params.AlphaPreference, params.AlphaConfidence, params.Beta, choice)
 }
 
-func (snowflakeFactory) NewUnary(params sampling.Parameters) sampling.Unary {
+func (flatFactory) NewUnary(params sampling.Parameters) sampling.Unary {
 	return threshold.NewUnaryThreshold(params.AlphaPreference, params.AlphaConfidence, params.Beta)
 }

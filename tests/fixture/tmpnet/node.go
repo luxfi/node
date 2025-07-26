@@ -18,10 +18,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 

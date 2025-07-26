@@ -27,16 +27,16 @@ type TeleportEngine struct {
 
 // TeleportIntent represents a user's intent to transfer assets cross-chain
 type TeleportIntent struct {
-	ID              ids.ID
-	SourceChain     ids.ID
-	DestChain       ids.ID
-	AssetID         ids.ID
-	Amount          uint64
-	Sender          ids.ShortID
-	Recipient       common.Address // Can be on any chain
-	Deadline        time.Time
-	Signature       []byte
-	Metadata        []byte
+	ID          ids.ID
+	SourceChain ids.ID
+	DestChain   ids.ID
+	AssetID     ids.ID
+	Amount      uint64
+	Sender      ids.ShortID
+	Recipient   common.Address // Can be on any chain
+	Deadline    time.Time
+	Signature   []byte
+	Metadata    []byte
 }
 
 // TeleportTransfer represents an active transfer

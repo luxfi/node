@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -222,12 +222,12 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 
-			snowCtx := consensustest.Context(t, ids.Empty)
+			ctx := consensustest.Context(t, ids.Empty)
 			n, err := New(
-				snowCtx.Log,
-				snowCtx.NodeID,
-				snowCtx.SubnetID,
-				snowCtx.ValidatorState,
+				ctx.Log,
+				ctx.NodeID,
+				ctx.SubnetID,
+				ctx.ValidatorState,
 				tt.txVerifier,
 				tt.mempool,
 				false,

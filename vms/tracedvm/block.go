@@ -10,15 +10,15 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (
-	_ linear.Block           = (*tracedBlock)(nil)
-	_ linear.OracleBlock     = (*tracedBlock)(nil)
+	_ linear.Block            = (*tracedBlock)(nil)
+	_ linear.OracleBlock      = (*tracedBlock)(nil)
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")

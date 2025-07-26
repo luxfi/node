@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database"
 )
 
 func newTree(require *require.Assertions, db db.Database, intervals []*Interval) *Tree {
