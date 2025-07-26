@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/rpc"
 
-	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	dbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type Client struct {

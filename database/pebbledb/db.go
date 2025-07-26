@@ -233,12 +233,13 @@ func (d *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database.
 		iter:       pebbleIter,
 		lowerBound: slices.Clone(opts.LowerBound),
 		upperBound: slices.Clone(opts.UpperBound),
-		release: func() {
-			defer d.openIterators.Remove(it)
-			if err := it.iter.Close(); err != nil {
-				it.err = err
-			}
-		},
+	}
+
+	it.release = func() {
+		defer d.openIterators.Remove(it)
+		if err := it.iter.Close(); err != nil {
+			it.err = err
+		}
 	}
 
 	d.openIterators.Add(it)
@@ -281,7 +282,8 @@ func prefixToUpperBound(prefix []byte) []byte {
 		return nil
 	}
 	upperBound := slices.Clone(prefix)
-	for i := len(upperBound) - 1; i >= 0; i-- {
+	i := len(upperBound) - 1
+	for ; i >= 0; i-- {
 		if upperBound[i] < 0xff {
 			upperBound[i]++
 			break

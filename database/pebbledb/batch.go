@@ -28,7 +28,7 @@ func (b *batch) Size() int {
 	// TODO: Implement a more accurate size calculation, this only returns the
 	// number of operations not the size of the data. The Pebble batch doesn't
 	// expose the size of the data like the goleveldb batch does.
-	return b.Count()
+	return int(b.Count())
 }
 
 func (b *batch) Write() error {
@@ -49,7 +49,10 @@ func (b *batch) Reset() {
 func (b *batch) Replay(w database.KeyValueWriterDeleter) error {
 	reader := b.Reader()
 	for {
-		kind, key, value, ok := reader.Next()
+		kind, key, value, ok, err := reader.Next()
+		if err != nil {
+			return err
+		}
 		if !ok {
 			break
 		}

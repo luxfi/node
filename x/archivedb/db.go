@@ -58,10 +58,10 @@ var (
 // height 99 it will return a tuple `("foo's value is bar", 10)` returning the
 // value of `foo` at height 99 (which was set at height 10).
 type Database struct {
-	db db.Database
+	db database.Database
 }
 
-func New(db db.Database) *Database {
+func New(db database.Database) *Database {
 	return &Database{
 		db: db,
 	}

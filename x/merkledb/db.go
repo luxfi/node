@@ -148,7 +148,7 @@ type Prefetcher interface {
 }
 
 type MerkleDB interface {
-	db.Database
+	database.Database
 	Clearer
 	View
 	MerkleRootGetter
@@ -222,7 +222,7 @@ type merkleDB struct {
 
 	// Contains all the key-value pairs stored by this database,
 	// including metadata, intermediate nodes and value nodes.
-	baseDB db.Database
+	baseDB database.Database
 
 	valueNodeDB        *valueNodeDB
 	intermediateNodeDB *intermediateNodeDB
@@ -259,7 +259,7 @@ type merkleDB struct {
 }
 
 // New returns a new merkle database.
-func New(ctx context.Context, db db.Database, config Config) (MerkleDB, error) {
+func New(ctx context.Context, db database.Database, config Config) (MerkleDB, error) {
 	metrics, err := newMetrics(config.Namespace, config.Reg)
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func New(ctx context.Context, db db.Database, config Config) (MerkleDB, error) {
 
 func newDatabase(
 	ctx context.Context,
-	db db.Database,
+	db database.Database,
 	config Config,
 	metrics metrics,
 ) (*merkleDB, error) {

@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/luxfi/evm/ethclient"
-	"github.com/luxfi/evm/plugin/evm/atomic"
 	"github.com/luxfi/evm/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
@@ -77,7 +76,7 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := xvm.NewClient(uri, "X")
-	cClient := client.NewCChainClient(uri)
+	cClient := client.NewClient(uri, "C")
 
 	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
@@ -96,6 +95,7 @@ func FetchState(
 
 	utxos := wallet.NewUTXOs()
 	addrList := addrs.List()
+	// Only P-chain and X-chain support atomic UTXOs
 	chains := []struct {
 		id     ids.ID
 		client UTXOClient
@@ -110,11 +110,6 @@ func FetchState(
 			id:     xCTX.BlockchainID,
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
-		},
-		{
-			id:     cCTX.BlockchainID,
-			client: cClient,
-			codec:  atomic.Codec,
 		},
 	}
 	for _, destinationChain := range chains {

@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/core"
+	"github.com/luxfi/evm/core/types"
 	"github.com/luxfi/evm/params"
+	ethparams "github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
@@ -116,7 +118,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[key.EthAddress()] = core.GenesisAccount{
+		cChainBalances[key.EthAddress()] = types.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}
@@ -149,7 +151,11 @@ func NewTestGenesis(
 	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		Config:     &params.ChainConfig{ChainID: chainID},      // The rest of the config is set in geth on VM initialization
+		Config:     &params.ChainConfig{
+			ChainConfig: &ethparams.ChainConfig{
+				ChainID: chainID,
+			},
+		}, // The rest of the config is set in geth on VM initialization
 		Difficulty: big.NewInt(0),                              // Difficulty is a mandatory field
 		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()), // This time enables Lux upgrades by default
 		GasLimit:   defaultGasLimit,
