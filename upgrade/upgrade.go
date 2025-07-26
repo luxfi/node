@@ -165,27 +165,33 @@ func (c *Config) IsApricotPhasePost6Activated(t time.Time) bool {
 }
 
 func (c *Config) IsBanffActivated(t time.Time) bool {
-	return !t.Before(c.BanffTime)
+	// All forks enabled: always treat Banff as activated
+	return true
 }
 
 func (c *Config) IsCortinaActivated(t time.Time) bool {
-	return !t.Before(c.CortinaTime)
+	// All forks enabled: always treat Cortina as activated
+	return true
 }
 
 func (c *Config) IsDurangoActivated(t time.Time) bool {
-	return !t.Before(c.DurangoTime)
+	// All forks enabled: always treat Durango as activated
+	return true
 }
 
 func (c *Config) IsEtnaActivated(t time.Time) bool {
-	return !t.Before(c.EtnaTime)
+	// All forks enabled: always treat Etna as activated
+	return true
 }
 
 func (c *Config) IsFortunaActivated(t time.Time) bool {
-	return !t.Before(c.FortunaTime)
+	// All forks enabled: always treat Fortuna as activated
+	return true
 }
 
 func (c *Config) IsGraniteActivated(t time.Time) bool {
-	return !t.Before(c.GraniteTime)
+	// All forks enabled: always treat Granite as activated
+	return true
 }
 
 func GetConfig(networkID uint32) Config {

@@ -18,7 +18,7 @@ type intermediateNodeDB struct {
 
 	// The underlying storage.
 	// Keys written to [baseDB] are prefixed with [intermediateNodePrefix].
-	baseDB db.Database
+	baseDB database.Database
 
 	// The write buffer contains nodes that have been changed but have not been written to disk.
 	// Note that a call to Put may cause a node to be evicted
@@ -38,7 +38,7 @@ type intermediateNodeDB struct {
 }
 
 func newIntermediateNodeDB(
-	db db.Database,
+	db database.Database,
 	bufferPool *utils.BytesPool,
 	metrics metrics,
 	cacheSize int,

@@ -41,7 +41,7 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"

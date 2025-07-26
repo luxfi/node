@@ -139,7 +139,6 @@ lux network start
 lux network status
 ```
 
-<<<<<<< HEAD
 ### Single-Node Development Mode
 
 For quick local development, you can run a single-node Lux network with sybil protection disabled:
@@ -174,8 +173,6 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}
 ```
 
 **Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Testnet).
-
-=======
 
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 

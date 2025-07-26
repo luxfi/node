@@ -467,6 +467,11 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 }
 
 func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
+	// If there are no splits, return empty allocations
+	if numSplits == 0 {
+		return [][]Allocation{}
+	}
+	
 	totalAmount := uint64(0)
 	for _, allocation := range allocations {
 		for _, unlock := range allocation.UnlockSchedule {

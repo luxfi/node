@@ -23,7 +23,7 @@ type valueNodeDB struct {
 
 	// The underlying storage.
 	// Keys written to [baseDB] are prefixed with [valueNodePrefix].
-	baseDB db.Database
+	baseDB database.Database
 
 	// If a value is nil, the corresponding key isn't in the trie.
 	// Paths in [nodeCache] aren't prefixed with [valueNodePrefix].
@@ -36,7 +36,7 @@ type valueNodeDB struct {
 }
 
 func newValueNodeDB(
-	db db.Database,
+	db database.Database,
 	bufferPool *utils.BytesPool,
 	metrics metrics,
 	cacheSize int,

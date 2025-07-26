@@ -347,7 +347,12 @@ func (n *Node) EnsureNodeID() error {
 	if err != nil {
 		return fmt.Errorf("failed to ensure node ID: failed to parse staking cert: %w", err)
 	}
-	n.NodeID = ids.NodeIDFromCert(stakingCert)
+	// Convert staking.Certificate to ids.Certificate
+	idsCert := &ids.Certificate{
+		Raw:       stakingCert.Raw,
+		PublicKey: stakingCert.PublicKey,
+	}
+	n.NodeID = ids.NodeIDFromCert(idsCert)
 
 	return nil
 }

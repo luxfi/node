@@ -66,6 +66,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/logging/logadapter"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
@@ -133,7 +134,7 @@ func New(
 		LogFactory:       logFactory,
 		StakingTLSSigner: config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:   stakingCert,
-		ID:               ids.NodeIDFromCert(stakingCert),
+		ID:               ids.NodeIDFromCert(&ids.Certificate{Raw: stakingCert.Raw, PublicKey: stakingCert.PublicKey}),
 		Config:           config,
 	}
 
@@ -289,7 +290,7 @@ type Node struct {
 	StakingTLSCert   *staking.Certificate
 
 	// Storage for this node
-	DB db.Database
+	DB database.Database
 
 	router     nat.Router
 	portMapper *nat.Mapper
@@ -764,13 +765,16 @@ func (n *Node) initDatabase() error {
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 
 	var err error
+	// Create log adapter for database factory
+	dbLogger := logadapter.ToLogLogger(n.Log)
+	
 	n.DB, err = databasefactory.New(
 		n.Config.DatabaseConfig.Name,
 		dbFullPath,
 		n.Config.DatabaseConfig.ReadOnly,
 		n.Config.DatabaseConfig.Config,
 		n.MetricsGatherer,
-		n.Log,
+		dbLogger,
 		dbNamespace,
 		"all",
 	)
@@ -1425,7 +1429,14 @@ func (n *Node) initHealthAPI() error {
 	}
 
 	// TODO: add database health to liveness check
-	err = n.health.RegisterHealthCheck("database", n.DB, health.ApplicationTag)
+	// Create a wrapper to adapt database health check interface
+	dbHealthChecker := health.CheckerFunc(func(context.Context) (interface{}, error) {
+		if err := n.DB.HealthCheck(); err != nil {
+			return nil, err
+		}
+		return map[string]string{"status": "healthy"}, nil
+	})
+	err = n.health.RegisterHealthCheck("database", dbHealthChecker, health.ApplicationTag)
 	if err != nil {
 		return fmt.Errorf("couldn't register database health check: %w", err)
 	}

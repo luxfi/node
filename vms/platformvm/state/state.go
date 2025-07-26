@@ -1620,17 +1620,27 @@ func (s *state) load() error {
 func (s *state) loadMetadata() error {
 	timestamp, err := db.GetTimestamp(s.singletonDB, TimestampKey)
 	if err != nil {
-		return err
+		if err != db.ErrNotFound {
+			return err
+		}
+		// If timestamp is not found, we're initializing from genesis
+		// The timestamp will be set during syncGenesis
+	} else {
+		s.persistedTimestamp = timestamp
+		s.SetTimestamp(timestamp)
 	}
-	s.persistedTimestamp = timestamp
-	s.SetTimestamp(timestamp)
 
 	feeState, err := getFeeState(s.singletonDB)
 	if err != nil {
-		return err
+		if err != db.ErrNotFound {
+			return err
+		}
+		// If fee state is not found, we're initializing from genesis
+		// The fee state will be set during initialization
+	} else {
+		s.persistedFeeState = feeState
+		s.SetFeeState(feeState)
 	}
-	s.persistedFeeState = feeState
-	s.SetFeeState(feeState)
 
 	l1ValidatorExcess, err := db.WithDefault(db.GetUInt64, s.singletonDB, L1ValidatorExcessKey, 0)
 	if err != nil {
