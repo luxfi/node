@@ -13,15 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	enginepkg "github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
@@ -29,8 +29,8 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 const testThreadPoolSize = 2
@@ -42,8 +42,8 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	called := make(chan struct{})
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
 	vdrs := validators.NewManager()
 	vdr0 := ids.GenerateTestNodeID()
@@ -153,8 +153,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require := require.New(t)
 
 	closed := make(chan struct{}, 1)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
@@ -263,8 +263,8 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require := require.New(t)
 
 	closed := make(chan struct{}, 1)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -356,8 +356,8 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 func TestHandlerDispatchInternal(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -544,8 +544,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require := require.New(t)
 
 			messageReceived := make(chan struct{})
-			snowCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(snowCtx)
+			ctx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(ctx)
 			vdrs := validators.NewManager()
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
@@ -633,8 +633,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 func TestHandlerStartError(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,

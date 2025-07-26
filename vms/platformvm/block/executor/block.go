@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	_ linear.Block             = (*Block)(nil)
-	_ linear.OracleBlock       = (*Block)(nil)
+	_ linear.Block              = (*Block)(nil)
+	_ linear.OracleBlock        = (*Block)(nil)
 	_ smblock.WithVerifyContext = (*Block)(nil)
 )
 

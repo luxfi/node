@@ -102,7 +102,6 @@ func (tc *SimpleTestContext) DefaultContext() context.Context {
 	return DefaultContext(tc)
 }
 
-
 func (tc *SimpleTestContext) Eventually(condition func() bool, waitFor time.Duration, tick time.Duration, msg string) {
 	require.Eventually(tc, condition, waitFor, tick, msg)
 }

@@ -10,15 +10,15 @@ import (
 
 	db "github.com/luxfi/database"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ graph.Tx                    = (*meterTx)(nil)
+	_ graph.Tx                        = (*meterTx)(nil)
 )
 
 func NewVertexVM(

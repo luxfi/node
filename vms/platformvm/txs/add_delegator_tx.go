@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -23,7 +23,7 @@ var (
 	_ ScheduledStaker = (*AddDelegatorTx)(nil)
 
 	errDelegatorWeightMismatch = errors.New("delegator weight is not equal to total stake weight")
-	errStakeMustBeLUX         = errors.New("stake must be LUX")
+	errStakeMustBeLUX          = errors.New("stake must be LUX")
 )
 
 // AddDelegatorTx is an unsigned addDelegatorTx

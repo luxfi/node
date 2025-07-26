@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
@@ -27,8 +27,8 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
 func TestHealthCheckSubnet(t *testing.T) {
@@ -51,8 +51,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			require := require.New(t)
 
-			snowCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(snowCtx)
+			ctx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(ctx)
 
 			vdrs := validators.NewManager()
 

@@ -18,26 +18,26 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/perms"
@@ -63,8 +63,8 @@ var (
 	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	deprecatedKeys = map[string]string{}
 
-	errConflictingLPOpinion                  = errors.New("supporting and objecting to the same LP")
-	errConflictingImplicitLPOpinion          = errors.New("objecting to enabled LP")
+	errConflictingLPOpinion                   = errors.New("supporting and objecting to the same LP")
+	errConflictingImplicitLPOpinion           = errors.New("objecting to enabled LP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
 	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
@@ -87,17 +87,17 @@ var (
 
 func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	p := sampling.Parameters{
-		K:                     v.GetInt(SnowSampleSizeKey),
-		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
-		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(SnowCommitThresholdKey),
-		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
-		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
-		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
-		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
+		K:                     v.GetInt(SampleSizeKey),
+		AlphaPreference:       v.GetInt(PreferenceQuorumSizeKey),
+		AlphaConfidence:       v.GetInt(ConfidenceQuorumSizeKey),
+		Beta:                  v.GetInt(CommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(ConcurrentRepollsKey),
+		OptimalProcessing:     v.GetInt(OptimalProcessingKey),
+		MaxOutstandingItems:   v.GetInt(MaxProcessingKey),
+		MaxItemProcessingTime: v.GetDuration(MaxTimeProcessingKey),
 	}
-	if v.IsSet(SnowQuorumSizeKey) {
-		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+	if v.IsSet(QuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(QuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
 	}
 	return p
@@ -1271,10 +1271,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		nodeConfig node.Config
 		err        error
 	)
-	
+
 	// Set dev mode flag
 	nodeConfig.DevMode = v.GetBool(DevModeKey)
-	
+
 	// Set import mode flag
 	nodeConfig.ImportMode = v.GetBool(ImportModeKey)
 

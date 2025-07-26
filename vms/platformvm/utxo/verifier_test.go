@@ -1046,7 +1046,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 			},
 			producedAmounts: map[ids.ID]uint64{
 				h.ctx.LUXAssetID: 1,
-				customAssetID:     1,
+				customAssetID:    1,
 			},
 			expectedErr: nil,
 		},

@@ -8,8 +8,8 @@ import (
 	"net/netip"
 	"sync"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

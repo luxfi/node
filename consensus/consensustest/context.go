@@ -11,24 +11,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 var (
-	PChainID    = constants.PlatformChainID
-	XChainID    = ids.GenerateTestID()
-	CChainID    = ids.GenerateTestID()
+	PChainID   = constants.PlatformChainID
+	XChainID   = ids.GenerateTestID()
+	CChainID   = ids.GenerateTestID()
 	LUXAssetID = ids.GenerateTestID()
 
 	errMissing = errors.New("missing")
@@ -94,8 +94,8 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		PublicKey:       publicKey,
 		NetworkUpgrades: upgradetest.GetConfig(upgradetest.Latest),
 
-		XChainID:    XChainID,
-		CChainID:    CChainID,
+		XChainID:   XChainID,
+		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
 		Log:          logging.NoLog{},

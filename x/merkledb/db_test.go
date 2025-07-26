@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/dbtest"
 	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"

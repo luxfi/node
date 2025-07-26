@@ -6,8 +6,8 @@ package confidence
 import (
 	"fmt"
 
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 // nnaryThreshold is the implementation of an n-nary threshold instance

@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 )

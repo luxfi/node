@@ -8,11 +8,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 

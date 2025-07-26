@@ -5,12 +5,12 @@ package bootstrap
 
 import (
 	db "github.com/luxfi/database"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/linear/block"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/p2p"
 )
 
 type Config struct {

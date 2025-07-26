@@ -12,17 +12,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/cache/metercacher"
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -35,9 +35,8 @@ import (
 )
 
 const (
-	// DefaultMinBlockDelay should be kept as whole seconds because block
-	// timestamps are only specific to the second.
-	DefaultMinBlockDelay = time.Second
+	// DefaultMinBlockDelay defines the minimum delay to throttle block production.
+	DefaultMinBlockDelay = 200 * time.Millisecond
 	// DefaultNumHistoricalBlocks as 0 results in never deleting any historical
 	// blocks.
 	DefaultNumHistoricalBlocks uint64 = 0

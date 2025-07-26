@@ -1,9 +1,12 @@
 package main
+
 import (
-  "fmt"
-  "github.com/luxfi/ids"
+	"fmt"
+
+	"github.com/luxfi/ids"
 )
+
 func main() {
-  id := ids.ID{'m','v','m'}
-  fmt.Println(id.String())
+	id := ids.ID{'m', 'v', 'm'}
+	fmt.Println(id.String())
 }

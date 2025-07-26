@@ -76,7 +76,7 @@ func determineDescendant(pg *prefixGroup) *prefixGroup {
 // and applies f() on the block IDs of each prefix group.
 // Prefix groups with no descendants are skipped, as they do not represent any prefix.
 // Prefix group without a prefix (root prefix group) are also skipped as they do not correspond
-// to any instance of snowflake.
+// to any instance of threshold.
 func (pg *prefixGroup) bifurcationsWithCommonPrefix(f func([]ids.ID)) {
 	pg.traverse(func(prefixGroup *prefixGroup) {
 		if prefixGroup.isBifurcation() && prefixGroup.index > 0 {

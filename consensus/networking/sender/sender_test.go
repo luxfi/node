@@ -16,10 +16,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/message/messagemock"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/engine/linear/block"
@@ -32,8 +30,10 @@ import (
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/networking/timeout/timeoutmock"
 	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/message/messagemock"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -43,8 +43,8 @@ import (
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 
 	. "github.com/luxfi/node/consensus/networking/sender"
 )
@@ -54,8 +54,8 @@ const testThreadPoolSize = 2
 func TestTimeout(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -112,7 +112,7 @@ func TestTimeout(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx2 := consensustest.ConsensusContext(snowCtx)
+	ctx2 := consensustest.ConsensusContext(ctx)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -312,8 +312,8 @@ func TestTimeout(t *testing.T) {
 func TestReliableMessages(t *testing.T) {
 	require := require.New(t)
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.BuildTestNodeID([]byte{1}), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -371,7 +371,7 @@ func TestReliableMessages(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx2 := consensustest.ConsensusContext(snowCtx)
+	ctx2 := consensustest.ConsensusContext(ctx)
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -472,8 +472,8 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require := require.New(t)
 
 			benchlist := benchlist.NewNoBenchlist()
-			snowCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(snowCtx)
+			ctx := consensustest.Context(t, consensustest.CChainID)
+			ctx := consensustest.ConsensusContext(ctx)
 			vdrs := validators.NewManager()
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 			tm, err := timeout.NewManager(
@@ -533,7 +533,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			)
 			require.NoError(err)
 
-			ctx2 := consensustest.ConsensusContext(snowCtx)
+			ctx2 := consensustest.ConsensusContext(ctx)
 			resourceTracker, err := tracker.NewResourceTracker(
 				prometheus.NewRegistry(),
 				resource.NoUsage,
@@ -639,8 +639,8 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		heights       = []uint64{1, 2, 3}
 		containerIDs  = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 	)
-	snowCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
 	type test struct {
 		name                    string
@@ -894,8 +894,8 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
 	)
-	snowCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
 	type test struct {
 		name                    string
@@ -1091,8 +1091,8 @@ func TestSender_Single_Request(t *testing.T) {
 		containerID       = ids.GenerateTestID()
 		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
 	)
-	snowCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.PChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
 	type test struct {
 		name                    string

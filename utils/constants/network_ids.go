@@ -15,38 +15,38 @@ import (
 
 // Const variables to be exported
 const (
-	MainnetID uint32 = 1
-	CascadeID uint32 = 2
-	DenaliID  uint32 = 3
-	EverestID uint32 = 4
-	TestnetID    uint32 = 5
+	MainnetID  uint32 = 1
+	CascadeID  uint32 = 2
+	DenaliID   uint32 = 3
+	EverestID  uint32 = 4
+	TestnetID  uint32 = 5
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
-	
+
 	// Lux Network IDs
 	LuxMainnetID uint32 = 96369
 	LuxTestnetID uint32 = 96368
 
-	MainnetName  = "mainnet"
-	CascadeName  = "cascade"
-	DenaliName   = "denali"
-	EverestName  = "everest"
-	TestnetName     = "testnet"
-	UnitTestName = "testing"
-	LocalName    = "local"
+	MainnetName    = "mainnet"
+	CascadeName    = "cascade"
+	DenaliName     = "denali"
+	EverestName    = "everest"
+	TestnetName    = "testnet"
+	UnitTestName   = "testing"
+	LocalName      = "local"
 	LuxMainnetName = "lux-mainnet"
 	LuxTestnetName = "lux-testnet"
 
-	MainnetHRP  = "lux"
-	CascadeHRP  = "cascade"
-	DenaliHRP   = "denali"
-	EverestHRP  = "everest"
-	TestnetHRP     = "testnet"
-	UnitTestHRP = "testing"
-	LocalHRP    = "local"
+	MainnetHRP    = "lux"
+	CascadeHRP    = "cascade"
+	DenaliHRP     = "denali"
+	EverestHRP    = "everest"
+	TestnetHRP    = "testnet"
+	UnitTestHRP   = "testing"
+	LocalHRP      = "local"
 	LuxMainnetHRP = "lux"
 	LuxTestnetHRP = "lux-test"
-	FallbackHRP = "custom"
+	FallbackHRP   = "custom"
 )
 
 // Variables to be exported
@@ -55,36 +55,36 @@ var (
 	PlatformChainID  = ids.Empty
 
 	NetworkIDToNetworkName = map[uint32]string{
-		MainnetID:  MainnetName,
-		CascadeID:  CascadeName,
-		DenaliID:   DenaliName,
-		EverestID:  EverestName,
-		TestnetID:     TestnetName,
-		UnitTestID: UnitTestName,
-		LocalID:    LocalName,
+		MainnetID:    MainnetName,
+		CascadeID:    CascadeName,
+		DenaliID:     DenaliName,
+		EverestID:    EverestName,
+		TestnetID:    TestnetName,
+		UnitTestID:   UnitTestName,
+		LocalID:      LocalName,
 		LuxMainnetID: LuxMainnetName,
 		LuxTestnetID: LuxTestnetName,
 	}
 	NetworkNameToNetworkID = map[string]uint32{
-		MainnetName:  MainnetID,
-		CascadeName:  CascadeID,
-		DenaliName:   DenaliID,
-		EverestName:  EverestID,
-		TestnetName:     TestnetID,
-		UnitTestName: UnitTestID,
-		LocalName:    LocalID,
+		MainnetName:    MainnetID,
+		CascadeName:    CascadeID,
+		DenaliName:     DenaliID,
+		EverestName:    EverestID,
+		TestnetName:    TestnetID,
+		UnitTestName:   UnitTestID,
+		LocalName:      LocalID,
 		LuxMainnetName: LuxMainnetID,
 		LuxTestnetName: LuxTestnetID,
 	}
 
 	NetworkIDToHRP = map[uint32]string{
-		MainnetID:  MainnetHRP,
-		CascadeID:  CascadeHRP,
-		DenaliID:   DenaliHRP,
-		EverestID:  EverestHRP,
-		TestnetID:     TestnetHRP,
-		UnitTestID: UnitTestHRP,
-		LocalID:    LocalHRP,
+		MainnetID:    MainnetHRP,
+		CascadeID:    CascadeHRP,
+		DenaliID:     DenaliHRP,
+		EverestID:    EverestHRP,
+		TestnetID:    TestnetHRP,
+		UnitTestID:   UnitTestHRP,
+		LocalID:      LocalHRP,
 		LuxMainnetID: LuxMainnetHRP,
 		LuxTestnetID: LuxTestnetHRP,
 	}
@@ -93,7 +93,7 @@ var (
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
-		TestnetHRP:     TestnetID,
+		TestnetHRP:  TestnetID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}

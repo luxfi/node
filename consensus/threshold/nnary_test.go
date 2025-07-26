@@ -11,14 +11,14 @@ import (
 	"github.com/luxfi/ids"
 )
 
-func TestNnarySnowflake(t *testing.T) {
+func TestNnaryThreshold(t *testing.T) {
 	require := require.New(t)
 
 	alphaPreference, alphaConfidence := 1, 2
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sf := newNnarySnowflake(alphaPreference, terminationConditions, Red)
+	sf := NewNetwork(alphaPreference, terminationConditions, Red)
 	sf.Add(Blue)
 	sf.Add(Green)
 
@@ -50,14 +50,14 @@ func TestNnarySnowflake(t *testing.T) {
 	require.True(sf.Finalized())
 }
 
-func TestNnarySnowflakeConfidenceReset(t *testing.T) {
+func TestNnaryThresholdConfidenceReset(t *testing.T) {
 	require := require.New(t)
 
 	alphaPreference, alphaConfidence := 1, 2
 	beta := 4
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sf := newNnarySnowflake(alphaPreference, terminationConditions, Red)
+	sf := NewNetwork(alphaPreference, terminationConditions, Red)
 	sf.Add(Blue)
 	sf.Add(Green)
 
@@ -84,14 +84,14 @@ func TestNnarySnowflakeConfidenceReset(t *testing.T) {
 	require.True(sf.Finalized())
 }
 
-func TestVirtuousNnarySnowflake(t *testing.T) {
+func TestVirtuousNnaryThreshold(t *testing.T) {
 	require := require.New(t)
 
 	alphaPreference, alphaConfidence := 1, 2
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sb := newNnarySnowflake(alphaPreference, terminationConditions, Red)
+	sb := NewNetwork(alphaPreference, terminationConditions, Red)
 	require.Equal(Red, sb.Preference())
 	require.False(sb.Finalized())
 
@@ -110,12 +110,12 @@ type multiThresholdTest struct {
 	multiThreshold
 }
 
-func newNnarySnowflakeTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) snowflakeTest[ids.ID] {
+func NewNetworkTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) thresholdTest[ids.ID] {
 	require := require.New(t)
 
 	return &multiThresholdTest{
 		require:        require,
-		multiThreshold: newNnarySnowflake(alphaPreference, terminationConditions, Red),
+		multiThreshold: NewNetwork(alphaPreference, terminationConditions, Red),
 	}
 }
 
@@ -129,18 +129,18 @@ func (sf *multiThresholdTest) AssertEqual(expectedConfidences []int, expectedFin
 	sf.require.Equal(expectedFinalized, sf.Finalized())
 }
 
-func TestNnarySnowflakeErrorDrivenSingleChoice(t *testing.T) {
-	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[ids.ID]() {
+func TestNnaryThresholdErrorDrivenSingleChoice(t *testing.T) {
+	for _, test := range getErrorDrivenThresholdSingleChoiceSuite[ids.ID]() {
 		t.Run(test.name, func(t *testing.T) {
-			test.f(t, newNnarySnowflakeTest, Red)
+			test.f(t, NewNetworkTest, Red)
 		})
 	}
 }
 
-func TestNnarySnowflakeErrorDrivenMultiChoice(t *testing.T) {
-	for _, test := range getErrorDrivenSnowflakeMultiChoiceSuite[ids.ID]() {
+func TestNnaryThresholdErrorDrivenMultiChoice(t *testing.T) {
+	for _, test := range getErrorDrivenThresholdMultiChoiceSuite[ids.ID]() {
 		t.Run(test.name, func(t *testing.T) {
-			test.f(t, newNnarySnowflakeTest, Red, Green)
+			test.f(t, NewNetworkTest, Red, Green)
 		})
 	}
 }

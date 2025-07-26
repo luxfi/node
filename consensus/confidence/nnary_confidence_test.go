@@ -117,7 +117,7 @@ func TestNaryConfidenceRecordUnsuccessfulPoll(t *testing.T) {
 	}
 }
 
-func TestNaryConfidenceDifferentSnowflakeColor(t *testing.T) {
+func TestNaryConfidenceDifferentThresholdColor(t *testing.T) {
 	require := require.New(t)
 
 	alphaPreference, alphaConfidence := 1, 2

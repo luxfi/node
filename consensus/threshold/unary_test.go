@@ -9,36 +9,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func UnarySnowflakeStateTest(t *testing.T, sf *unaryThreshold, expectedConfidences []int, expectedFinalized bool) {
+func UnaryFlatStateTest(t *testing.T, sf *unaryThreshold, expectedConfidences []int, expectedFinalized bool) {
 	require := require.New(t)
 
 	require.Equal(expectedConfidences, sf.confidence)
 	require.Equal(expectedFinalized, sf.Finalized())
 }
 
-func TestUnarySnowflake(t *testing.T) {
+func TestUnaryThreshold(t *testing.T) {
 	require := require.New(t)
 
 	alphaPreference, alphaConfidence := 1, 2
 	beta := 2
 	terminationConditions := newSingleTerminationCondition(alphaConfidence, beta)
 
-	sf := newUnarySnowflake(alphaPreference, terminationConditions)
+	sf := NewFlat(alphaPreference, terminationConditions)
 
 	sf.RecordPoll(alphaConfidence)
-	UnarySnowflakeStateTest(t, &sf, []int{1}, false)
+	UnaryFlatStateTest(t, &sf, []int{1}, false)
 
 	sf.RecordUnsuccessfulPoll()
-	UnarySnowflakeStateTest(t, &sf, []int{0}, false)
+	UnaryFlatStateTest(t, &sf, []int{0}, false)
 
 	sf.RecordPoll(alphaConfidence)
-	UnarySnowflakeStateTest(t, &sf, []int{1}, false)
+	UnaryFlatStateTest(t, &sf, []int{1}, false)
 
 	sfCloneIntf := sf.Clone()
 	require.IsType(&unaryThreshold{}, sfCloneIntf)
 	sfClone := sfCloneIntf.(*unaryThreshold)
 
-	UnarySnowflakeStateTest(t, sfClone, []int{1}, false)
+	UnaryFlatStateTest(t, sfClone, []int{1}, false)
 
 	binaryThreshold := sfClone.Extend(0)
 
@@ -54,13 +54,13 @@ func TestUnarySnowflake(t *testing.T) {
 	require.True(binaryThreshold.Finalized())
 
 	sf.RecordPoll(alphaConfidence)
-	UnarySnowflakeStateTest(t, &sf, []int{2}, true)
+	UnaryFlatStateTest(t, &sf, []int{2}, true)
 
 	sf.RecordUnsuccessfulPoll()
-	UnarySnowflakeStateTest(t, &sf, []int{0}, true)
+	UnaryFlatStateTest(t, &sf, []int{0}, true)
 
 	sf.RecordPoll(alphaConfidence)
-	UnarySnowflakeStateTest(t, &sf, []int{1}, true)
+	UnaryFlatStateTest(t, &sf, []int{1}, true)
 }
 
 type unaryThresholdTest struct {
@@ -69,12 +69,12 @@ type unaryThresholdTest struct {
 	unaryThreshold
 }
 
-func newUnarySnowflakeTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) snowflakeTest[struct{}] {
+func NewFlatTest(t *testing.T, alphaPreference int, terminationConditions []terminationCondition) thresholdTest[struct{}] {
 	require := require.New(t)
 
 	return &unaryThresholdTest{
 		require:        require,
-		unaryThreshold: newUnarySnowflake(alphaPreference, terminationConditions),
+		unaryThreshold: NewFlat(alphaPreference, terminationConditions),
 	}
 }
 
@@ -92,10 +92,10 @@ func (sf *unaryThresholdTest) Preference() struct{} {
 }
 
 // TODO: Fix these tests after refactoring is complete
-func TestUnarySnowflakeErrorDriven(t *testing.T) {
-	for _, test := range getErrorDrivenSnowflakeSingleChoiceSuite[struct{}]() {
+func TestUnaryThresholdErrorDriven(t *testing.T) {
+	for _, test := range getErrorDrivenThresholdSingleChoiceSuite[struct{}]() {
 		t.Run(test.name, func(t *testing.T) {
-			test.f(t, newUnarySnowflakeTest, struct{}{})
+			test.f(t, NewFlatTest, struct{}{})
 		})
 	}
 }

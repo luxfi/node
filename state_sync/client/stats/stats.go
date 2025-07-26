@@ -6,8 +6,9 @@ package stats
 import (
 	"fmt"
 	"time"
-	"github.com/luxfi/geth/metrics"
+
 	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/geth/metrics"
 )
 
 var (

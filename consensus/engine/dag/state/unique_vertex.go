@@ -9,18 +9,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/hashing"
 )
 
 var (
 	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
-	_ graph.Vertex      = (*uniqueVertex)(nil)
+	_ graph.Vertex          = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")
 	errGetHeight  = errors.New("failed to get height for vertex")

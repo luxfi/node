@@ -50,7 +50,7 @@ func NewClaimedIPPort(
 		AddrPort:  ipPort,
 		Timestamp: timestamp,
 		Signature: signature,
-		NodeID:    ids.NodeIDFromCert(&ids.Certificate{
+		NodeID: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       cert.Raw,
 			PublicKey: cert.PublicKey,
 		}),

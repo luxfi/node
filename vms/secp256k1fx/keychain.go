@@ -26,7 +26,7 @@ var (
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex  map[geth.Address]int
+	ethAddrToKeyIndex map[geth.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
@@ -39,7 +39,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex:  make(map[geth.Address]int),
+		ethAddrToKeyIndex: make(map[geth.Address]int),
 	}
 	for _, key := range keys {
 		kc.Add(key)

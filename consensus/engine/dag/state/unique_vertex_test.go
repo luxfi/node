@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/engine/dag/vertex/vertextest"
+	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/logging"
 )

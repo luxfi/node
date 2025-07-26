@@ -39,7 +39,7 @@ type Config struct {
 }
 
 func NewConfig(
-	snowGetHandler core.AllGetsServer,
+	getHandler core.AllGetsServer,
 	ctx *consensus.Context,
 	startupTracker tracker.Startup,
 	sender core.Sender,
@@ -70,7 +70,7 @@ func NewConfig(
 		alpha = stateSyncingWeight/2 + 1 // must be > 50%
 	}
 	return Config{
-		AllGetsServer:    snowGetHandler,
+		AllGetsServer:    getHandler,
 		Ctx:              ctx,
 		StartupTracker:   startupTracker,
 		Sender:           sender,

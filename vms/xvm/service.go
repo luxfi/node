@@ -12,16 +12,16 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
 	safemath "github.com/luxfi/node/utils/math"
@@ -442,7 +442,7 @@ type GetBalanceArgs struct {
 // GetBalanceReply defines the GetBalance replies returned from the API
 type GetBalanceReply struct {
 	Balance avajson.Uint64 `json:"balance"`
-	UTXOIDs []lux.UTXOID  `json:"utxoIDs"`
+	UTXOIDs []lux.UTXOID   `json:"utxoIDs"`
 }
 
 // GetBalance returns the balance of an asset held by an address.

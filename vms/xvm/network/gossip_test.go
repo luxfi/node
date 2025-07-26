@@ -11,11 +11,11 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var _ TxVerifier = (*testVerifier)(nil)

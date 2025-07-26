@@ -8,13 +8,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -38,8 +38,8 @@ type Context struct {
 	PublicKey       *bls.PublicKey
 	NetworkUpgrades upgrade.Config
 
-	XChainID    ids.ID
-	CChainID    ids.ID
+	XChainID   ids.ID
+	CChainID   ids.ID
 	LUXAssetID ids.ID
 
 	Log logging.Logger

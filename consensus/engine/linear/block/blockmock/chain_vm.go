@@ -15,11 +15,11 @@ import (
 	reflect "reflect"
 	time "time"
 
+	db "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	consensus "github.com/luxfi/node/consensus"
 	core "github.com/luxfi/node/consensus/engine/core"
 	linear "github.com/luxfi/node/consensus/linear"
-	db "github.com/luxfi/database"
-	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )

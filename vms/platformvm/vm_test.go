@@ -12,17 +12,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/factories"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/enginetest"
@@ -33,13 +32,14 @@ import (
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/consensus/networking/sender/sendertest"
 	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -47,8 +47,8 @@ import (
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -63,12 +63,12 @@ import (
 	pwallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/linear"
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smblock "github.com/luxfi/node/consensus/engine/linear/block"
-	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	"github.com/luxfi/node/consensus/engine/linear/getter"
+	smcon "github.com/luxfi/node/consensus/linear"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -1260,7 +1260,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	// The engine handles consensus
-	snowGetHandler, err := snowgetter.New(
+	getHandler, err := getter.New(
 		vm,
 		sender,
 		ctx.Log,
@@ -1282,7 +1282,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	bootstrapConfig := bootstrap.Config{
 		Haltable:                       &core.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  getHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
 		SampleK:                        1,
@@ -1327,7 +1327,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	engineConfig := smeng.Config{
 		Ctx:                 bootstrapConfig.Ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       getHandler,
 		VM:                  bootstrapConfig.VM,
 		Sender:              bootstrapConfig.Sender,
 		Validators:          beacons,
@@ -1342,7 +1342,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &smcon.Topological{Factory: factories.SnowflakeFactory},
+		Consensus: &smcon.Topological{Factory: sampling.Factory},
 	}
 	consensusEngine, err := smeng.New(engineConfig)
 	require.NoError(err)

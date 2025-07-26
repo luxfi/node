@@ -13,14 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -152,8 +152,8 @@ func TestIndexer(t *testing.T) {
 	idxr.clock.Set(now)
 
 	// Assert state is right
-	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
+	c1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(c1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -257,8 +257,8 @@ func TestIndexer(t *testing.T) {
 	require.Contains(server.endpoints, "/block")
 
 	// Register a DAG chain
-	snow2Ctx := consensustest.Context(t, consensustest.XChainID)
-	chain2Ctx := consensustest.ConsensusContext(snow2Ctx)
+	c2Ctx := consensustest.Context(t, consensustest.XChainID)
+	chain2Ctx := consensustest.ConsensusContext(c2Ctx)
 	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -417,8 +417,8 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(idxr.indexingEnabled)
 
 	// Register a chain
-	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
+	c1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(c1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)

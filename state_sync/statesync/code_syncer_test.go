@@ -7,15 +7,17 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"github.com/luxfi/evm/iface"
+
 	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/evm/ethdb/memorydb"
+	"github.com/luxfi/evm/plugin/evm/customrawdb"
 	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/crypto"
 	statesyncclient "github.com/luxfi/node/state_sync/client"
 	"github.com/luxfi/node/state_sync/handlers"
 	handlerstats "github.com/luxfi/node/state_sync/handlers/stats"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/node/utils"
 	"github.com/stretchr/testify/assert"
 )
 

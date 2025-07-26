@@ -6,8 +6,8 @@ package config
 import (
 	"time"
 
-	"github.com/luxfi/node/chains"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade"

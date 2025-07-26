@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/maybe"

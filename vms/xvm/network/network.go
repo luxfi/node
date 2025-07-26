@@ -10,17 +10,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var (
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ validators.Connector = (*Network)(nil)
 )
 

@@ -16,18 +16,18 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/config"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
@@ -38,11 +38,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
+	validators "github.com/luxfi/node/consensus/validators"
 	p2pmessage "github.com/luxfi/node/message"
 	p2psdk "github.com/luxfi/node/network/p2p"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	platformvmpb "github.com/luxfi/node/proto/pb/platformvm"
-	snowvalidators "github.com/luxfi/node/consensus/validators"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 	platformvmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -141,7 +141,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			chainID = chainTx.ID()
 		})
 
-		verifyValidatorSet := func(expectedValidators map[ids.NodeID]*snowvalidators.GetValidatorOutput) {
+		verifyValidatorSet := func(expectedValidators map[ids.NodeID]*validators.GetValidatorOutput) {
 			height, err := pClient.GetHeight(tc.DefaultContext())
 			require.NoError(err)
 
@@ -166,7 +166,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			})
 
 			tc.By("verifying the validator set is empty", func() {
-				verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{})
+				verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{})
 			})
 		})
 
@@ -274,7 +274,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			})
 
 			tc.By("verifying the validator set was updated", func() {
-				verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+				verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
 						PublicKey: genesisNodePK,
@@ -442,7 +442,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 		tc.By("verifying the validator was registered", func() {
 			tc.By("verifying the validator set was updated", func() {
-				verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+				verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
 						PublicKey: genesisNodePK,
@@ -586,7 +586,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 		tc.By("verifying the validator weight was increased", func() {
 			tc.By("verifying the validator set was updated", func() {
-				verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+				verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
 						PublicKey: genesisNodePK,
@@ -665,7 +665,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		})
 
 		tc.By("verifying the validator was activated", func() {
-			verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+			verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 				subnetGenesisNode.NodeID: {
 					NodeID:    subnetGenesisNode.NodeID,
 					PublicKey: genesisNodePK,
@@ -687,7 +687,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		})
 
 		tc.By("verifying the validator was deactivated", func() {
-			verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+			verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 				subnetGenesisNode.NodeID: {
 					NodeID:    subnetGenesisNode.NodeID,
 					PublicKey: genesisNodePK,
@@ -708,7 +708,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 		tc.By("verifying the validator was removed", func() {
 			tc.By("verifying the validator set was updated", func() {
-				verifyValidatorSet(map[ids.NodeID]*snowvalidators.GetValidatorOutput{
+				verifyValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
 						PublicKey: genesisNodePK,

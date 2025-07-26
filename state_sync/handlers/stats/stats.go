@@ -5,6 +5,7 @@ package stats
 
 import (
 	"time"
+
 	"github.com/luxfi/geth/metrics"
 )
 

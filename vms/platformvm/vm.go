@@ -13,15 +13,15 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
@@ -54,8 +54,8 @@ import (
 var (
 	_ linearblock.ChainVM                      = (*VM)(nil)
 	_ linearblock.BuildBlockWithContextChainVM = (*VM)(nil)
-	_ secp256k1fx.VM                            = (*VM)(nil)
-	_ validators.State                          = (*VM)(nil)
+	_ secp256k1fx.VM                           = (*VM)(nil)
+	_ validators.State                         = (*VM)(nil)
 )
 
 type VM struct {

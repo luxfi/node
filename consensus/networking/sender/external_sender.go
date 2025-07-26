@@ -5,8 +5,8 @@ package sender
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
 )

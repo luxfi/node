@@ -7,14 +7,14 @@ import (
 	"context"
 	"crypto/rand"
 	"testing"
-	"github.com/luxfi/evm/params"
-	"github.com/luxfi/evm/iface"
+
 	"github.com/luxfi/evm/core/rawdb"
 	"github.com/luxfi/evm/ethdb/memorydb"
 	"github.com/luxfi/evm/plugin/evm/message"
-	"github.com/luxfi/node/state_sync/handlers/stats"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/state_sync/handlers/stats"
 	"github.com/stretchr/testify/assert"
 )
 

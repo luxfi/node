@@ -7,11 +7,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
 	"github.com/luxfi/evm/core/state/snapshot"
-	"github.com/luxfi/geth/ethdb"
-	"github.com/luxfi/node/state_sync/client"
-	"github.com/luxfi/geth/triedb"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethdb"
+	"github.com/luxfi/geth/triedb"
+	statesyncclient "github.com/luxfi/node/state_sync/client"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -39,12 +40,12 @@ type stateSync struct {
 	trieDB    *triedb.Database          // trieDB on top of db we are syncing. used to restore any existing tries.
 	snapshot  snapshot.SnapshotIterable // used to access the database we are syncing as a snapshot.
 	batchSize int                       // write batches when they reach this size
-	client    statesyncclient.Client         // used to contact peers over the network
+	client    statesyncclient.Client    // used to contact peers over the network
 
 	segments   chan statesyncclient.LeafSyncTask   // channel of tasks to sync
 	syncer     *statesyncclient.CallbackLeafSyncer // performs the sync, looping over each task's range and invoking specified callbacks
-	codeSyncer *codeSyncer                    // manages the asynchronous download and batching of code hashes
-	trieQueue  *trieQueue                     // manages a persistent list of storage tries we need to sync and any segments that are created for them
+	codeSyncer *codeSyncer                         // manages the asynchronous download and batching of code hashes
+	trieQueue  *trieQueue                          // manages a persistent list of storage tries we need to sync and any segments that are created for them
 
 	// track the main account trie specifically to commit its root at the end of the operation
 	mainTrie *trieToSync

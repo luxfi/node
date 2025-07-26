@@ -4,18 +4,18 @@
 package threshold
 
 import (
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/sampling"
 )
 
 // NewNnaryThreshold returns a new nnary threshold instance
 func NewNnaryThreshold(alphaPreference, alphaConfidence, beta int, choice ids.ID) sampling.Nnary {
-	sf := newNnarySnowflake(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
+	sf := NewNetwork(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta), choice)
 	return &sf
 }
 
 // NewUnaryThreshold returns a new unary threshold instance
 func NewUnaryThreshold(alphaPreference, alphaConfidence, beta int) sampling.Unary {
-	sf := newUnarySnowflake(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
+	sf := NewFlat(alphaPreference, newSingleTerminationCondition(alphaConfidence, beta))
 	return &sf
 }

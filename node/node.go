@@ -27,6 +27,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
@@ -35,19 +41,6 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/pebbledb"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/nat"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/networking/benchlist"
@@ -56,11 +49,18 @@ import (
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/indexer"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/nat"
+	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
@@ -75,16 +75,16 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	xvm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	xvm "github.com/luxfi/node/vms/xvm"
 
-	geth "github.com/luxfi/evm/plugin/evm"
 	databasefactory "github.com/luxfi/database/factory"
-	xvmconfig "github.com/luxfi/node/vms/xvm/config"
+	geth "github.com/luxfi/evm/plugin/evm"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
+	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
 
 const (
@@ -767,7 +767,7 @@ func (n *Node) initDatabase() error {
 	var err error
 	// Create log adapter for database factory
 	dbLogger := logadapter.ToLogLogger(n.Log)
-	
+
 	n.DB, err = databasefactory.New(
 		n.Config.DatabaseConfig.Name,
 		dbFullPath,
