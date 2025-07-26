@@ -753,7 +753,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
-	validatorState := validators.NewMockState(ctrl)
+	validatorState := validatorsmock.NewState(ctrl)
 	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
 	ctx.ValidatorState = validatorState
 

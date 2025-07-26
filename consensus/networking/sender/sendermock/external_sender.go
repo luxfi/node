@@ -12,7 +12,7 @@ package sendermock
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/node/consensus/engine/core"
+	core "github.com/luxfi/node/consensus/engine/core"
 	ids "github.com/luxfi/node/ids"
 	message "github.com/luxfi/node/message"
 	subnets "github.com/luxfi/node/subnets"

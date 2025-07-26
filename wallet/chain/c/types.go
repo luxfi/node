@@ -23,6 +23,12 @@ type Tx struct {
 	ID ids.ID
 	UnsignedAtomicTx UnsignedAtomicTx
 	Creds []verify.Verifiable
+	signedBytes []byte
+}
+
+// SignedBytes returns the signed bytes of the transaction
+func (tx *Tx) SignedBytes() []byte {
+	return tx.signedBytes
 }
 
 // UnsignedImportTx is an unsigned import transaction
@@ -61,6 +67,23 @@ type EVMInput struct {
 	Amount  uint64
 	AssetID ids.ID
 	Nonce   uint64
+}
+
+// Compare implements utils.Sortable
+func (e *EVMInput) Compare(other *EVMInput) int {
+	addrCmp := e.Address.Cmp(other.Address)
+	if addrCmp != 0 {
+		return addrCmp
+	}
+	
+	if e.Amount < other.Amount {
+		return -1
+	}
+	if e.Amount > other.Amount {
+		return 1
+	}
+	
+	return e.AssetID.Compare(other.AssetID)
 }
 
 // UnsignedExportTx is an unsigned export transaction  
@@ -109,7 +132,11 @@ type BaseTx struct {
 // TODO: Implement proper C-chain client
 type Client interface {
 	IssueTx(tx *Tx) (ids.ID, error)
+	GetAtomicTxStatus(txID ids.ID) (Status, error)
 }
+
+// Status represents the status of a transaction
+type Status string
 
 // Constants
 const (
@@ -125,6 +152,9 @@ const (
 var (
 	// Codec is the codec used for serialization
 	Codec codec.Manager
+	
+	// Errors
+	errInsufficientFunds = errors.New("insufficient funds")
 )
 
 func init() {
@@ -156,6 +186,7 @@ func (tx *Tx) Sign(codec codec.Manager, signers [][]*secp256k1.PrivateKey) error
 func (tx *Tx) Initialize(unsignedBytes, signedBytes []byte) {
 	// Calculate transaction ID from signed bytes using hash
 	tx.ID = ids.ID(hashing.ComputeHash256(signedBytes))
+	tx.signedBytes = signedBytes
 }
 
 // UnsignedAtomicTx field for Tx

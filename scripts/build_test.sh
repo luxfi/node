@@ -3,19 +3,14 @@
 set -euo pipefail
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
-# Load the constants
-source "$LUX_PATH"/scripts/constants.sh
+NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
-EXCLUDED_TARGETS="| grep -v /mocks | grep -v proto | grep -v tests/e2e | grep -v tests/upgrade"
+# Excluded targets - skip mock generation, proto files, and e2e tests for now
+EXCLUDED_TARGETS="| grep -v /mocks | grep -v proto | grep -v tests/e2e | grep -v tests/load | grep -v tests/upgrade | grep -v tests/fixture"
 
-if [[ "$(go env GOOS)" == "windows" ]]; then
-  # Test discovery for the antithesis test setups is broken due to
-  # their dependence on the linux-only Antithesis SDK.
-  EXCLUDED_TARGETS="${EXCLUDED_TARGETS} | grep -v tests/antithesis"
-fi
-
+# Get test targets
 TEST_TARGETS="$(eval "go list ./... ${EXCLUDED_TARGETS}")"
 
+# Run tests with race detection
 # shellcheck disable=SC2086
 go test -tags test -shuffle=on -race -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/ids/idstest"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -17,7 +18,7 @@ import (
 func TestInterface(t *testing.T) {
 	require := require.New(t)
 
-	for _, test := range ids.AliasTests {
+	for _, test := range idstest.AliasTests {
 		listener, err := grpcutils.NewListener()
 		require.NoError(err)
 		serverCloser := grpcutils.ServerCloser{}
@@ -33,7 +34,7 @@ func TestInterface(t *testing.T) {
 		require.NoError(err)
 
 		r := NewClient(aliasreaderpb.NewAliasReaderClient(conn))
-		test(require, r, w)
+		test.Test(t, r, w)
 
 		serverCloser.Stop()
 		_ = conn.Close()
