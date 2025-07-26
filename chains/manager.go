@@ -67,9 +67,9 @@ import (
 	smeng "github.com/luxfi/node/consensus/engine/linear"
 	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
 	lineargetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	factories "github.com/luxfi/node/consensus/factories"
 	smcon "github.com/luxfi/node/consensus/linear"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/sampling"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
@@ -923,7 +923,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize linear base message handler: %w", err)
 	}
 
-	var linearConsensus smcon.Consensus = &smcon.Topological{Factory: sampling.Factory}
+	var linearConsensus smcon.Consensus = &smcon.Topological{Factory: factories.ConfidenceFactory}
 	if m.TracingEnabled {
 		linearConsensus = smcon.Trace(linearConsensus, m.Tracer)
 	}
@@ -1316,7 +1316,7 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("couldn't initialize linear base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{Factory: sampling.Factory}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: factories.ConfidenceFactory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}
