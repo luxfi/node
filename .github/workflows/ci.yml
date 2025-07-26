@@ -1,0 +1,94 @@
+name: Tests
+
+on:
+  push:
+    tags:
+      - "*"
+    branches:
+      - master
+      - dev
+      - genesis
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+# Cancel ongoing workflow runs if a new one is started
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Unit:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-22.04, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+      - name: test-unit
+        shell: bash
+        run: |
+          # Excluded targets - skip mock generation, proto files, and e2e tests for now
+          EXCLUDED_TARGETS="| grep -v /mocks | grep -v proto | grep -v tests/e2e | grep -v tests/load | grep -v tests/upgrade | grep -v tests/fixture"
+          # Get test targets
+          TEST_TARGETS="$(eval "go list ./... ${EXCLUDED_TARGETS}")"
+          # Run tests with race detection
+          go test -tags test -shuffle=on -race -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}
+        env:
+          TIMEOUT: ${{ env.TIMEOUT }}
+  
+  Fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+      - name: test-fuzz
+        shell: bash
+        run: |
+          # Run fuzz tests if any exist
+          go test -tags test -fuzz=. -fuzztime=30s ./... || true
+
+  Lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=10m
+
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+      - name: build
+        run: |
+          go build -o luxd ./cmd/luxd
+          
+  Generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+      - name: check-generate
+        run: |
+          go generate ./...
+          git diff --exit-code

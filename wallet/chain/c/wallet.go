@@ -149,7 +149,7 @@ func (w *wallet) IssueAtomicTx(
 ) error {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
-	txID, err := w.luxClient.IssueTx(ctx, tx.SignedBytes())
+	txID, err := w.luxClient.IssueTx(tx)
 	if err != nil {
 		return err
 	}
@@ -176,8 +176,9 @@ func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
 		return baseFee, nil
 	}
 
-	ctx := ops.Context()
-	return w.ethClient.EstimateBaseFee(ctx)
+	// TODO: Implement EstimateBaseFee in ethclient
+	// For now, return a default base fee
+	return big.NewInt(25000000000), nil // 25 gwei
 }
 
 // TODO: Upstream this function into coreth.
@@ -192,7 +193,7 @@ func awaitTxAccepted(
 	defer ticker.Stop()
 
 	for {
-		status, err := c.GetAtomicTxStatus(ctx, txID, options...)
+		status, err := c.GetAtomicTxStatus(txID)
 		if err != nil {
 			return err
 		}

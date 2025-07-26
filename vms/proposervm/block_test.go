@@ -61,7 +61,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		PChainHeight: pChainHeight - 1,
 	}).Return(builtBlk, nil).AnyTimes()
 
-	vdrState := validators.NewMockState(ctrl)
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
 	windower := proposer.NewMockWindower(ctrl)
@@ -371,7 +371,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 	innerBlk := lineartest.NewMockBlock(ctrl)
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	vdrState := validators.NewMockState(ctrl)
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
 	windower := proposer.NewMockWindower(ctrl)
