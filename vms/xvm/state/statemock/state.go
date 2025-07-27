@@ -58,15 +58,15 @@ func (mr *StateMockRecorder) Abort() *gomock.Call {
 }
 
 // AddBlock mocks base method.
-func (m *State) AddBlock(block block.Block) {
+func (m *State) AddBlock(arg0 block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", block)
+	m.ctrl.Call(m, "AddBlock", arg0)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *StateMockRecorder) AddBlock(block any) *gomock.Call {
+func (mr *StateMockRecorder) AddBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), arg0)
 }
 
 // AddTx mocks base method.

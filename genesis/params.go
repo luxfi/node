@@ -6,6 +6,7 @@ package genesis
 import (
 	"time"
 
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -45,6 +46,7 @@ type TxFeeConfig struct {
 type Params struct {
 	StakingConfig
 	TxFeeConfig
+	ConsensusParameters sampling.Parameters `json:"consensusParameters"`
 }
 
 func GetTxFeeConfig(networkID uint32) TxFeeConfig {
@@ -70,5 +72,18 @@ func GetStakingConfig(networkID uint32) StakingConfig {
 		return LocalParams.StakingConfig
 	default:
 		return LocalParams.StakingConfig
+	}
+}
+
+func GetConsensusParameters(networkID uint32) sampling.Parameters {
+	switch networkID {
+	case constants.MainnetID:
+		return MainnetParams.ConsensusParameters
+	case constants.TestnetID:
+		return TestnetParams.ConsensusParameters
+	case constants.LocalID:
+		return LocalParams.ConsensusParameters
+	default:
+		return LocalParams.ConsensusParameters
 	}
 }

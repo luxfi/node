@@ -31,13 +31,35 @@ const (
 var (
 	DefaultParameters = Parameters{
 		K:                     21,
-		AlphaPreference:       13, // liveness can tolerate up to 8 failures
-		AlphaConfidence:       18, // commit can tolerate up to 3 failures
-		Beta:                  9,  // 9 rounds → 8×50 ms + 100 ms = 550 ms finality
-		ConcurrentRepolls:     9,  // match β so you can fully pipeline all rounds
+		AlphaPreference:       13,   // liveness can tolerate up to 8 failures
+		AlphaConfidence:       18,   // commit can tolerate up to 3 failures
+		Beta:                  8,    // 8 rounds → 8×50 ms + 100 ms = 500 ms finality
+		ConcurrentRepolls:     8,    // pipeline all 8 rounds
 		OptimalProcessing:     10,
 		MaxOutstandingItems:   369,
-		MaxItemProcessingTime: time.Duration(9630) * time.Millisecond, // 9.63s
+		MaxItemProcessingTime: 9630 * time.Millisecond, // 9.63s
+	}
+
+	TestnetParameters = Parameters{
+		K:                     11,
+		AlphaPreference:       8,    // liveness can lose up to 3 nodes (11–8)
+		AlphaConfidence:       9,    // commit can lose up to 2 nodes (11–9)
+		Beta:                  10,   // 10×50 ms + 100 ms = 600 ms finality
+		ConcurrentRepolls:     10,   // pipeline all 10 rounds
+		OptimalProcessing:     10,
+		MaxOutstandingItems:   256,
+		MaxItemProcessingTime: 6300 * time.Millisecond, // 6.3s
+	}
+
+	LocalTestnetParameters = Parameters{
+		K:                     5,
+		AlphaPreference:       3,
+		AlphaConfidence:       4,
+		Beta:                  5,
+		ConcurrentRepolls:     5,
+		OptimalProcessing:     5,
+		MaxOutstandingItems:   128,
+		MaxItemProcessingTime: 3690 * time.Millisecond, // 3.69s
 	}
 
 	ErrParametersInvalid = errors.New("parameters invalid")

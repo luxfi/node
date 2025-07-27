@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	codec "github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	consensus "github.com/luxfi/node/consensus"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )

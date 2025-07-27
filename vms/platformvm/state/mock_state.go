@@ -17,9 +17,9 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 	validators "github.com/luxfi/node/consensus/validators"
 	iterator "github.com/luxfi/node/utils/iterator"
-	log "github.com/luxfi/log"
 	gas "github.com/luxfi/node/vms/components/gas"
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/platformvm/block"
@@ -90,15 +90,15 @@ func (mr *MockStateMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
 }
 
 // AddStatelessBlock mocks base method.
-func (m *MockState) AddStatelessBlock(block block.Block) {
+func (m *MockState) AddStatelessBlock(arg0 block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddStatelessBlock", block)
+	m.ctrl.Call(m, "AddStatelessBlock", arg0)
 }
 
 // AddStatelessBlock indicates an expected call of AddStatelessBlock.
-func (mr *MockStateMockRecorder) AddStatelessBlock(block any) *gomock.Call {
+func (mr *MockStateMockRecorder) AddStatelessBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddStatelessBlock", reflect.TypeOf((*MockState)(nil).AddStatelessBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddStatelessBlock", reflect.TypeOf((*MockState)(nil).AddStatelessBlock), arg0)
 }
 
 // AddSubnet mocks base method.
@@ -126,15 +126,15 @@ func (mr *MockStateMockRecorder) AddSubnetTransformation(transformSubnetTx any) 
 }
 
 // AddTx mocks base method.
-func (m *MockState) AddTx(tx *txs.Tx, status status.Status) {
+func (m *MockState) AddTx(tx *txs.Tx, arg1 status.Status) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", tx, status)
+	m.ctrl.Call(m, "AddTx", tx, arg1)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockStateMockRecorder) AddTx(tx, status any) *gomock.Call {
+func (mr *MockStateMockRecorder) AddTx(tx, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), tx, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), tx, arg1)
 }
 
 // AddUTXO mocks base method.
@@ -150,31 +150,31 @@ func (mr *MockStateMockRecorder) AddUTXO(utxo any) *gomock.Call {
 }
 
 // ApplyValidatorPublicKeyDiffs mocks base method.
-func (m *MockState) ApplyValidatorPublicKeyDiffs(ctx context.Context, validators map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64, subnetID ids.ID) error {
+func (m *MockState) ApplyValidatorPublicKeyDiffs(ctx context.Context, arg1 map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64, subnetID ids.ID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyValidatorPublicKeyDiffs", ctx, validators, startHeight, endHeight, subnetID)
+	ret := m.ctrl.Call(m, "ApplyValidatorPublicKeyDiffs", ctx, arg1, startHeight, endHeight, subnetID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ApplyValidatorPublicKeyDiffs indicates an expected call of ApplyValidatorPublicKeyDiffs.
-func (mr *MockStateMockRecorder) ApplyValidatorPublicKeyDiffs(ctx, validators, startHeight, endHeight, subnetID any) *gomock.Call {
+func (mr *MockStateMockRecorder) ApplyValidatorPublicKeyDiffs(ctx, arg1, startHeight, endHeight, subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorPublicKeyDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorPublicKeyDiffs), ctx, validators, startHeight, endHeight, subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorPublicKeyDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorPublicKeyDiffs), ctx, arg1, startHeight, endHeight, subnetID)
 }
 
 // ApplyValidatorWeightDiffs mocks base method.
-func (m *MockState) ApplyValidatorWeightDiffs(ctx context.Context, validators map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64, subnetID ids.ID) error {
+func (m *MockState) ApplyValidatorWeightDiffs(ctx context.Context, arg1 map[ids.NodeID]*validators.GetValidatorOutput, startHeight, endHeight uint64, subnetID ids.ID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyValidatorWeightDiffs", ctx, validators, startHeight, endHeight, subnetID)
+	ret := m.ctrl.Call(m, "ApplyValidatorWeightDiffs", ctx, arg1, startHeight, endHeight, subnetID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ApplyValidatorWeightDiffs indicates an expected call of ApplyValidatorWeightDiffs.
-func (mr *MockStateMockRecorder) ApplyValidatorWeightDiffs(ctx, validators, startHeight, endHeight, subnetID any) *gomock.Call {
+func (mr *MockStateMockRecorder) ApplyValidatorWeightDiffs(ctx, arg1, startHeight, endHeight, subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorWeightDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorWeightDiffs), ctx, validators, startHeight, endHeight, subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyValidatorWeightDiffs", reflect.TypeOf((*MockState)(nil).ApplyValidatorWeightDiffs), ctx, arg1, startHeight, endHeight, subnetID)
 }
 
 // Checksum mocks base method.
@@ -863,17 +863,17 @@ func (mr *MockStateMockRecorder) PutPendingValidator(staker any) *gomock.Call {
 }
 
 // ReindexBlocks mocks base method.
-func (m *MockState) ReindexBlocks(lock sync.Locker, log log.Logger) error {
+func (m *MockState) ReindexBlocks(lock sync.Locker, arg1 log.Logger) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReindexBlocks", lock, log)
+	ret := m.ctrl.Call(m, "ReindexBlocks", lock, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReindexBlocks indicates an expected call of ReindexBlocks.
-func (mr *MockStateMockRecorder) ReindexBlocks(lock, log any) *gomock.Call {
+func (mr *MockStateMockRecorder) ReindexBlocks(lock, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReindexBlocks", reflect.TypeOf((*MockState)(nil).ReindexBlocks), lock, log)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReindexBlocks", reflect.TypeOf((*MockState)(nil).ReindexBlocks), lock, arg1)
 }
 
 // SetAccruedFees mocks base method.

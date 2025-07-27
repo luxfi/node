@@ -12,7 +12,7 @@ package luxmock
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/node/consensus"
+	consensus "github.com/luxfi/node/consensus"
 	gomock "go.uber.org/mock/gomock"
 )
 

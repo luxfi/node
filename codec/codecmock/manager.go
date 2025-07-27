@@ -56,17 +56,17 @@ func (mr *ManagerMockRecorder) Marshal(version, source any) *gomock.Call {
 }
 
 // RegisterCodec mocks base method.
-func (m *Manager) RegisterCodec(version uint16, codec codec.Codec) error {
+func (m *Manager) RegisterCodec(version uint16, arg1 codec.Codec) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterCodec", version, codec)
+	ret := m.ctrl.Call(m, "RegisterCodec", version, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterCodec indicates an expected call of RegisterCodec.
-func (mr *ManagerMockRecorder) RegisterCodec(version, codec any) *gomock.Call {
+func (mr *ManagerMockRecorder) RegisterCodec(version, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCodec", reflect.TypeOf((*Manager)(nil).RegisterCodec), version, codec)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCodec", reflect.TypeOf((*Manager)(nil).RegisterCodec), version, arg1)
 }
 
 // Size mocks base method.

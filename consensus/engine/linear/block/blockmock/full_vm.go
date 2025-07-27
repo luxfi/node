@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	db "github.com/luxfi/database"
+	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	consensus "github.com/luxfi/node/consensus"
 	core "github.com/luxfi/node/consensus/engine/core"
@@ -284,7 +284,7 @@ func (mr *FullVMMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *FullVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db db.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
+func (m *FullVM) Initialize(ctx context.Context, chainCtx *consensus.Context, db database.Database, genesisBytes, upgradeBytes, configBytes []byte, fxs []*core.Fx, appSender core.AppSender) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 	ret0, _ := ret[0].(error)

@@ -15,12 +15,12 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 	handler "github.com/luxfi/node/consensus/networking/handler"
 	router "github.com/luxfi/node/consensus/networking/router"
 	timeout "github.com/luxfi/node/consensus/networking/timeout"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
-	log "github.com/luxfi/log"
 	set "github.com/luxfi/node/utils/set"
 	version "github.com/luxfi/node/version"
 	prometheus "github.com/prometheus/client_golang/prometheus"
@@ -139,17 +139,17 @@ func (mr *RouterMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *Router) Initialize(nodeID ids.NodeID, log log.Logger, timeouts timeout.Manager, shutdownTimeout time.Duration, criticalChains set.Set[ids.ID], sybilProtectionEnabled bool, trackedSubnets set.Set[ids.ID], onFatal func(int), healthConfig router.HealthConfig, reg prometheus.Registerer) error {
+func (m *Router) Initialize(nodeID ids.NodeID, arg1 log.Logger, timeouts timeout.Manager, shutdownTimeout time.Duration, criticalChains set.Set[ids.ID], sybilProtectionEnabled bool, trackedSubnets set.Set[ids.ID], onFatal func(int), healthConfig router.HealthConfig, reg prometheus.Registerer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Initialize", nodeID, log, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg)
+	ret := m.ctrl.Call(m, "Initialize", nodeID, arg1, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Initialize indicates an expected call of Initialize.
-func (mr *RouterMockRecorder) Initialize(nodeID, log, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg any) *gomock.Call {
+func (mr *RouterMockRecorder) Initialize(nodeID, arg1, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*Router)(nil).Initialize), nodeID, log, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*Router)(nil).Initialize), nodeID, arg1, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg)
 }
 
 // RegisterRequest mocks base method.
