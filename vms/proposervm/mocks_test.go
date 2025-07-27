@@ -10,14 +10,14 @@
 package proposervm
 
 import (
-	"context"
-	"reflect"
-	"time"
+	context "context"
+	reflect "reflect"
+	time "time"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/vms/proposervm/block"
-	"go.uber.org/mock/gomock"
+	ids "github.com/luxfi/ids"
+	linear "github.com/luxfi/node/consensus/linear"
+	block "github.com/luxfi/node/vms/proposervm/block"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPostForkBlock is a mock of PostForkBlock interface.

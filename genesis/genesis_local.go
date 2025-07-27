@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
@@ -36,8 +37,19 @@ var (
 	//go:embed genesis_local.json
 	localGenesisConfigJSON []byte
 
+	// LocalConsensusParameters are the consensus parameters for local networks (5 nodes)
+	// Optimized for 10Gbps local network with maximum pipelining
+	LocalConsensusParameters = sampling.Parameters{
+		K:               5, // Sample all 5 nodes
+		AlphaPreference: 4, // 80% quorum - can tolerate 1 failure
+		AlphaConfidence: 4, // 80% quorum - can tolerate 1 failure  
+		Beta:            4, // 4 rounds → minimum latency on fast network
+		ConcurrentRepolls: 4, // Pipeline all 4 rounds for maximum throughput
+	}
+
 	// LocalParams are the params used for local networks
 	LocalParams = Params{
+		ConsensusParameters: LocalConsensusParameters,
 		TxFeeConfig: TxFeeConfig{
 			CreateAssetTxFee: units.MilliLux,
 			TxFee:            units.MilliLux,

@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -18,8 +19,18 @@ var (
 	//go:embed genesis_mainnet.json
 	mainnetGenesisConfigJSON []byte
 
+	// MainnetConsensusParameters are the consensus parameters for mainnet (21 nodes)
+	MainnetConsensusParameters = sampling.Parameters{
+		K:               21, // Sample all 21 nodes
+		AlphaPreference: 13, // ~62% quorum - can tolerate up to 8 failures
+		AlphaConfidence: 18, // ~86% quorum - can tolerate up to 3 failures
+		Beta:            8,  // 8 rounds → 8×50ms + 100ms = 500ms finality
+		ConcurrentRepolls: 8, // Pipeline all 8 rounds for maximum throughput
+	}
+
 	// MainnetParams are the params used for mainnet
 	MainnetParams = Params{
+		ConsensusParameters: MainnetConsensusParameters,
 		TxFeeConfig: TxFeeConfig{
 			CreateAssetTxFee: 10 * units.MilliLux,
 			TxFee:            units.MilliLux,

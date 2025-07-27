@@ -46,15 +46,15 @@ func (m *Diff) EXPECT() *DiffMockRecorder {
 }
 
 // AddBlock mocks base method.
-func (m *Diff) AddBlock(block block.Block) {
+func (m *Diff) AddBlock(arg0 block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", block)
+	m.ctrl.Call(m, "AddBlock", arg0)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *DiffMockRecorder) AddBlock(block any) *gomock.Call {
+func (mr *DiffMockRecorder) AddBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Diff)(nil).AddBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Diff)(nil).AddBlock), arg0)
 }
 
 // AddTx mocks base method.
