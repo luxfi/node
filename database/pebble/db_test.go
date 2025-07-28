@@ -50,10 +50,12 @@ func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
 func BenchmarkInterface(b *testing.B) {
 	for _, size := range database.BenchmarkSizes {
 		keys, values := database.SetupBenchmark(b, size[0], size[1], size[2])
-		for _, bench := range database.Benchmarks {
-			db := newDB(b)
-			bench(b, db, "pebble", keys, values)
-			_ = db.Close()
+		for name, bench := range database.Benchmarks {
+			b.Run(name, func(b *testing.B) {
+				db := newDB(b)
+				bench(b, db, keys, values)
+				_ = db.Close()
+			})
 		}
 	}
 }

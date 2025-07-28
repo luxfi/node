@@ -108,7 +108,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		},
 	})
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -232,7 +232,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	// assume bootstrapping is ongoing so that InboundGetAcceptedFrontier
 	// should normally be handled
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping,
 	})
 
@@ -325,7 +325,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		},
 	})
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -428,7 +428,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	})
 
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.NormalOp, // assumed bootstrap is done
 	})
 
@@ -460,7 +460,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 	}{
 		{
 			name:                "current - lux, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_GRAPH,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -475,8 +475,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - lux, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_GRAPH,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_GRAPH,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LUX,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
@@ -490,7 +490,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - linear, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
@@ -505,8 +505,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - linear, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_GRAPH,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LUX,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: &Engine{
@@ -524,8 +524,8 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		},
 		{
 			name:                "current - linear, requested - linear",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
 				h.SetEngineManager(&EngineManager{
 					Dag: nil,
@@ -674,7 +674,7 @@ func TestHandlerStartError(t *testing.T) {
 	// handler to shutdown.
 	handler.SetEngineManager(&EngineManager{})
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Initializing,
 	})
 	handler.Start(context.Background(), false)

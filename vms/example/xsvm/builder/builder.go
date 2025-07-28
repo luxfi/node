@@ -32,14 +32,14 @@ type Builder interface {
 
 type builder struct {
 	chainContext *consensus.Context
-	engineChan   chan<- common.Message
+	engineChan   chan<- core.Message
 	chain        chain.Chain
 
 	pendingTxs *linked.Hashmap[ids.ID, *tx.Tx]
 	preference ids.ID
 }
 
-func New(chainContext *consensus.Context, engineChan chan<- common.Message, chain chain.Chain) Builder {
+func New(chainContext *consensus.Context, engineChan chan<- core.Message, chain chain.Chain) Builder {
 	return &builder{
 		chainContext: chainContext,
 		engineChan:   engineChan,
@@ -62,7 +62,7 @@ func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
 	}
 	b.pendingTxs.Put(txID, newTx)
 	select {
-	case b.engineChan <- common.PendingTxs:
+	case b.engineChan <- core.PendingTxs:
 	default:
 	}
 	return nil
@@ -84,7 +84,7 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 			return
 		}
 		select {
-		case b.engineChan <- common.PendingTxs:
+		case b.engineChan <- core.PendingTxs:
 		default:
 		}
 	}()

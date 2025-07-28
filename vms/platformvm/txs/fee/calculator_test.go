@@ -31,7 +31,7 @@ func TestTxFees(t *testing.T) {
 
 	latestForkTime := time.Unix(1713945427, 0)
 	upgrades := upgrade.Config{
-		EUpgradeTime:      latestForkTime,
+		EtnaTime:      latestForkTime,
 		DurangoTime:       latestForkTime.Add(-1 * time.Hour),
 		CortinaTime:       latestForkTime.Add(-2 * time.Hour),
 		BanffTime:         latestForkTime.Add(-3 * time.Hour),
@@ -40,7 +40,7 @@ func TestTxFees(t *testing.T) {
 	}
 
 	// chain times needed to have specific upgrades active
-	preEUpgradeTime := upgrades.EUpgradeTime.Add(-1 * time.Second)
+	preEtnaTime := upgrades.EtnaTime.Add(-1 * time.Second)
 	preApricotPhase3Time := upgrades.ApricotPhase3Time.Add(-1 * time.Second)
 
 	tests := []struct {
@@ -51,19 +51,19 @@ func TestTxFees(t *testing.T) {
 	}{
 		{
 			name:       "AddValidatorTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: addValidatorTx,
 			expected:   feeTestsDefaultCfg.AddPrimaryNetworkValidatorFee,
 		},
 		{
 			name:       "AddSubnetValidatorTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: addSubnetValidatorTx,
 			expected:   feeTestsDefaultCfg.AddSubnetValidatorFee,
 		},
 		{
 			name:       "AddDelegatorTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: addDelegatorTx,
 			expected:   feeTestsDefaultCfg.AddPrimaryNetworkDelegatorFee,
 		},
@@ -75,7 +75,7 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:       "CreateChainTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: createChainTx,
 			expected:   feeTestsDefaultCfg.CreateBlockchainTxFee,
 		},
@@ -87,31 +87,31 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:       "CreateSubnetTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: createSubnetTx,
 			expected:   feeTestsDefaultCfg.CreateSubnetTxFee,
 		},
 		{
 			name:       "RemoveSubnetValidatorTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: removeSubnetValidatorTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
 			name:       "TransformSubnetTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: transformSubnetTx,
 			expected:   feeTestsDefaultCfg.TransformSubnetTxFee,
 		},
 		{
 			name:       "TransferSubnetOwnershipTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: transferSubnetOwnershipTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
 			name:      "AddPermissionlessValidatorTx Primary Network pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				return addPermissionlessValidatorTx(constants.PrimaryNetworkID)
 			},
@@ -119,7 +119,7 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:      "AddPermissionlessValidatorTx Subnet pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				subnetID := ids.GenerateTestID()
 				require.NotEqual(t, constants.PrimaryNetworkID, subnetID)
@@ -129,7 +129,7 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:      "AddPermissionlessDelegatorTx Primary Network pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				return addPermissionlessDelegatorTx(constants.PrimaryNetworkID)
 			},
@@ -137,7 +137,7 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:      "AddPermissionlessDelegatorTx pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				subnetID := ids.GenerateTestID()
 				require.NotEqual(t, constants.PrimaryNetworkID, subnetID)
@@ -147,25 +147,25 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:       "BaseTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: baseTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
 			name:       "ImportTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: importTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
 			name:       "ExportTx pre EUpgrade",
-			chainTime:  preEUpgradeTime,
+			chainTime:  preEtnaTime,
 			unsignedTx: exportTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
 			name:      "RewardValidatorTx pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				return &txs.RewardValidatorTx{
 					TxID: ids.GenerateTestID(),
@@ -175,7 +175,7 @@ func TestTxFees(t *testing.T) {
 		},
 		{
 			name:      "AdvanceTimeTx pre EUpgrade",
-			chainTime: upgrades.EUpgradeTime.Add(-1 * time.Second),
+			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
 				return &txs.AdvanceTimeTx{
 					Time: uint64(time.Now().Unix()),

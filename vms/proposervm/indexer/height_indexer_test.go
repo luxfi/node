@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
@@ -52,10 +54,10 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &linear.TestBlock{
-			TestDecidable: choices.TestDecidable{
-				IDV:     postForkStatelessBlk.ID(),
-				StatusV: choices.Accepted,
+		postForkBlk := &lineartest.Block{
+			Decidable: consensustest.Decidable{
+				IDV:    postForkStatelessBlk.ID(),
+				Status: consensustest.Accepted,
 			},
 			HeightV: blkHeight,
 		}
@@ -132,10 +134,10 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &linear.TestBlock{
-			TestDecidable: choices.TestDecidable{
-				IDV:     postForkStatelessBlk.ID(),
-				StatusV: choices.Accepted,
+		postForkBlk := &lineartest.Block{
+			Decidable: consensustest.Decidable{
+				IDV:    postForkStatelessBlk.ID(),
+				Status: consensustest.Accepted,
 			},
 			HeightV: blkHeight,
 		}
@@ -216,10 +218,10 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &linear.TestBlock{
-			TestDecidable: choices.TestDecidable{
-				IDV:     postForkStatelessBlk.ID(),
-				StatusV: choices.Accepted,
+		postForkBlk := &lineartest.Block{
+			Decidable: consensustest.Decidable{
+				IDV:    postForkStatelessBlk.ID(),
+				Status: consensustest.Accepted,
 			},
 			HeightV: blkHeight,
 		}

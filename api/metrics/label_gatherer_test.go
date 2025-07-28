@@ -123,6 +123,14 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			} else {
 				require.NoError(err)
 			}
+			
+			// Strip timestamps from metrics to avoid comparison issues
+			for _, mf := range metrics {
+				for _, m := range mf.Metric {
+					m.Counter.CreatedTimestamp = nil
+				}
+			}
+			
 			require.Equal(
 				[]*dto.MetricFamily{
 					{

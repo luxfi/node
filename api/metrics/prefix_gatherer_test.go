@@ -36,6 +36,16 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 
 	metrics, err := gatherer.Gather()
 	require.NoError(err)
+	
+	// Strip timestamps from metrics to avoid comparison issues
+	for _, mf := range metrics {
+		for _, m := range mf.Metric {
+			if m.Counter != nil {
+				m.Counter.CreatedTimestamp = nil
+			}
+		}
+	}
+	
 	require.Equal(
 		[]*dto.MetricFamily{
 			{

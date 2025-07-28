@@ -10,9 +10,10 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/params"
-	"github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
@@ -34,18 +35,13 @@ var (
 	// Arbitrarily large amount of LUX (10^12) to fund keys on the C-Chain for testing
 	defaultFundedKeyCChainAmount = new(big.Int).Exp(big.NewInt(10), big.NewInt(30), nil)
 
-	errNoKeysForGenesis           = errors.New("no keys to fund for genesis")
-	errInvalidNetworkIDForGenesis = errors.New("network ID can't be mainnet, testnet or local network ID for genesis")
-	errMissingStakersForGenesis   = errors.New("no stakers provided for genesis")
+	errMissingStakersForGenesis = errors.New("no stakers provided for genesis")
 )
-
-// Helper type to simplify configuring X-Chain genesis balances
-type XChainBalanceMap map[ids.ShortID]uint64
 
 // Create a genesis struct valid for bootstrapping a test
 // network. Note that many of the genesis fields (e.g. reward
 // addresses) are randomly generated or hard-coded.
-func NewTestGenesis(
+func NewTestGenesisWithFunds(
 	networkID uint32,
 	nodes []*Node,
 	keysToFund []*secp256k1.PrivateKey,
@@ -116,7 +112,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[evm.GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[getEthAddress(key)] = core.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}

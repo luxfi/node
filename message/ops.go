@@ -65,6 +65,8 @@ const (
 	NotifyOp
 	GossipRequestOp
 	TimeoutOp
+	// BFT:
+	BFTOp
 )
 
 var (

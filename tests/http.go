@@ -14,23 +14,23 @@ import (
 )
 
 // "metric name" -> "metric value"
-type NodeMetrics map[string]float64
+type SimpleNodeMetrics map[string]float64
 
 // URI -> "metric name" -> "metric value"
-type NodesMetrics map[string]NodeMetrics
+type SimpleNodesMetrics map[string]SimpleNodeMetrics
 
-// GetNodeMetrics retrieves the specified metrics the provided node URI.
-func GetNodeMetrics(nodeURI string, metricNames ...string) (NodeMetrics, error) {
+// GetSimpleNodeMetrics retrieves the specified metrics the provided node URI.
+func GetSimpleNodeMetrics(nodeURI string, metricNames ...string) (SimpleNodeMetrics, error) {
 	uri := nodeURI + "/ext/metrics"
 	return GetMetricsValue(uri, metricNames...)
 }
 
-// GetNodesMetrics retrieves the specified metrics for the provided node URIs.
-func GetNodesMetrics(nodeURIs []string, metricNames ...string) (NodesMetrics, error) {
-	metrics := make(NodesMetrics, len(nodeURIs))
+// GetSimpleNodesMetrics retrieves the specified metrics for the provided node URIs.
+func GetSimpleNodesMetrics(nodeURIs []string, metricNames ...string) (SimpleNodesMetrics, error) {
+	metrics := make(SimpleNodesMetrics, len(nodeURIs))
 	for _, u := range nodeURIs {
 		var err error
-		metrics[u], err = GetNodeMetrics(u, metricNames...)
+		metrics[u], err = GetSimpleNodeMetrics(u, metricNames...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve metrics for %s: %w", u, err)
 		}
@@ -38,7 +38,7 @@ func GetNodesMetrics(nodeURIs []string, metricNames ...string) (NodesMetrics, er
 	return metrics, nil
 }
 
-func GetMetricsValue(url string, metrics ...string) (map[string]float64, error) {
+func GetMetricsValue(url string, metrics ...string) (SimpleNodeMetrics, error) {
 	lines, err := getHTTPLines(url)
 	if err != nil {
 		return nil, err

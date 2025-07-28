@@ -26,6 +26,8 @@ exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
+replace github.com/ethereum/go-ethereum => ../geth
+
 require (
 	github.com/DataDog/zstd v1.5.7
 	github.com/Microsoft/go-winio v0.6.2

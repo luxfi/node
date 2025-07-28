@@ -422,3 +422,88 @@ message AppGossip {
   // Message body
   bytes app_bytes = 2;
 }
+
+// BFT consensus messages
+message BFT {
+  // Chain the message is for
+  bytes chain_id = 1;
+  // BFT message content
+  oneof message {
+    BlockProposal block_proposal = 2;
+    Vote vote = 3;
+    EmptyVote empty_vote = 4;
+    Vote finalize_vote = 5;
+    QuorumCertificate notarization = 6;
+    EmptyNotarization empty_notarization = 7;
+    QuorumCertificate finalization = 8;
+    ReplicationRequest replication_request = 9;
+    ReplicationResponse replication_response = 10;
+  }
+}
+
+// BlockProposal represents a proposed block with its vote
+message BlockProposal {
+  bytes block = 1;
+  Vote vote = 2;
+}
+
+// Vote represents a vote on a block
+message Vote {
+  BlockHeader block_header = 1;
+  Signature signature = 2;
+}
+
+// EmptyVote represents a vote for no block
+message EmptyVote {
+  ProtocolMetadata metadata = 1;
+  Signature signature = 2;
+}
+
+// QuorumCertificate represents a quorum certificate for a block
+message QuorumCertificate {
+  BlockHeader block_header = 1;
+  bytes quorum_certificate = 2;
+}
+
+// EmptyNotarization represents a notarization for no block
+message EmptyNotarization {
+  ProtocolMetadata metadata = 1;
+  bytes quorum_certificate = 2;
+}
+
+// ReplicationRequest requests replicated data
+message ReplicationRequest {
+  repeated uint64 seqs = 1;
+  uint64 latest_round = 2;
+}
+
+// ReplicationResponse contains replicated data
+message ReplicationResponse {
+  repeated bytes data = 1;
+  uint64 latest_round = 2;
+}
+
+// BlockHeader represents a block header
+message BlockHeader {
+  bytes block_id = 1;
+  uint64 round = 2;
+  uint64 parent_round = 3;
+}
+
+// ProtocolMetadata represents protocol metadata
+message ProtocolMetadata {
+  uint64 round = 1;
+  bytes parent_hash = 2;
+}
+
+// Signature represents a cryptographic signature
+message Signature {
+  bytes signer = 1;
+  bytes value = 2;
+}
+
+// QuorumRound represents a quorum round
+message QuorumRound {
+  bytes quorum_certificate = 1;
+  uint64 round = 2;
+}

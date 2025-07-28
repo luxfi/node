@@ -23,14 +23,12 @@ const (
 
 	DefaultNetworkTimeout = 2 * time.Minute
 
-	// Minimum required to ensure connectivity-based health checks will pass
-	DefaultNodeCount = 2
+	// These constants are defined in config.go to avoid circular dependencies
+	// DefaultNodeCount = 2
+	// DefaultMinStakeDuration = time.Second
 
 	// Arbitrary number of pre-funded keys to create by default
 	DefaultPreFundedKeyCount = 50
-
-	// A short minimum stake duration enables testing of staking logic.
-	DefaultMinStakeDuration = time.Second
 
 	defaultConfigFilename = "config.json"
 )

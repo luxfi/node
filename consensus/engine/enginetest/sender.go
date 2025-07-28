@@ -19,10 +19,13 @@ var (
 	_ core.Sender    = (*Sender)(nil)
 	_ core.AppSender = (*SenderStub)(nil)
 
-	errSendAppRequest  = errors.New("unexpectedly called SendAppRequest")
-	errSendAppResponse = errors.New("unexpectedly called SendAppResponse")
-	errSendAppError    = errors.New("unexpectedly called SendAppError")
-	errSendAppGossip   = errors.New("unexpectedly called SendAppGossip")
+	errSendAppRequest             = errors.New("unexpectedly called SendAppRequest")
+	errSendAppResponse            = errors.New("unexpectedly called SendAppResponse")
+	errSendAppError               = errors.New("unexpectedly called SendAppError")
+	errSendAppGossip              = errors.New("unexpectedly called SendAppGossip")
+	errSendCrossChainAppRequest   = errors.New("unexpectedly called SendCrossChainAppRequest")
+	errSendCrossChainAppResponse  = errors.New("unexpectedly called SendCrossChainAppResponse")
+	errSendCrossChainAppError     = errors.New("unexpectedly called SendCrossChainAppError")
 )
 
 // Sender is a test sender
@@ -36,7 +39,8 @@ type Sender struct {
 	CantSendGet, CantSendGetAncestors, CantSendPut, CantSendAncestors,
 	CantSendPullQuery, CantSendPushQuery, CantSendChits,
 	CantSendAppRequest, CantSendAppResponse, CantSendAppError,
-	CantSendAppGossip bool
+	CantSendAppGossip, CantSendCrossChainAppRequest, CantSendCrossChainAppResponse,
+	CantSendCrossChainAppError bool
 
 	SendGetStateSummaryFrontierF func(context.Context, set.Set[ids.NodeID], uint32)
 	SendStateSummaryFrontierF    func(context.Context, ids.NodeID, uint32, []byte)
@@ -57,6 +61,9 @@ type Sender struct {
 	SendAppResponseF             func(context.Context, ids.NodeID, uint32, []byte) error
 	SendAppErrorF                func(context.Context, ids.NodeID, uint32, int32, string) error
 	SendAppGossipF               func(context.Context, core.SendConfig, []byte) error
+	SendCrossChainAppRequestF    func(context.Context, ids.ID, uint32, []byte)
+	SendCrossChainAppResponseF   func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppErrorF      func(context.Context, ids.ID, uint32, int32, string) error
 }
 
 // Default set the default callable value to [cant]
@@ -78,7 +85,11 @@ func (s *Sender) Default(cant bool) {
 	s.CantSendChits = cant
 	s.CantSendAppRequest = cant
 	s.CantSendAppResponse = cant
+	s.CantSendAppError = cant
 	s.CantSendAppGossip = cant
+	s.CantSendCrossChainAppRequest = cant
+	s.CantSendCrossChainAppResponse = cant
+	s.CantSendCrossChainAppError = cant
 }
 
 // SendGetStateSummaryFrontier calls SendGetStateSummaryFrontierF if it was
@@ -302,6 +313,45 @@ func (s *Sender) SendAppGossip(
 	return errSendAppGossip
 }
 
+// SendCrossChainAppRequest calls SendCrossChainAppRequestF if it was initialized.
+// If it wasn't initialized and this function shouldn't be called and testing was
+// initialized, then testing will fail.
+func (s *Sender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
+	if s.SendCrossChainAppRequestF != nil {
+		s.SendCrossChainAppRequestF(ctx, chainID, requestID, appRequestBytes)
+		return nil
+	} else if s.CantSendCrossChainAppRequest && s.T != nil {
+		require.FailNow(s.T, "Unexpectedly called SendCrossChainAppRequest")
+	}
+	return nil
+}
+
+// SendCrossChainAppResponse calls SendCrossChainAppResponseF if it was initialized.
+// If it wasn't initialized and this function shouldn't be called and testing was
+// initialized, then testing will fail.
+func (s *Sender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
+	switch {
+	case s.SendCrossChainAppResponseF != nil:
+		return s.SendCrossChainAppResponseF(ctx, chainID, requestID, appResponseBytes)
+	case s.CantSendCrossChainAppResponse && s.T != nil:
+		require.FailNow(s.T, "Unexpectedly called SendCrossChainAppResponse")
+	}
+	return errors.New("unexpectedly called SendCrossChainAppResponse")
+}
+
+// SendCrossChainAppError calls SendCrossChainAppErrorF if it was initialized.
+// If it wasn't initialized and this function shouldn't be called and testing was
+// initialized, then testing will fail.
+func (s *Sender) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+	switch {
+	case s.SendCrossChainAppErrorF != nil:
+		return s.SendCrossChainAppErrorF(ctx, chainID, requestID, errorCode, errorMessage)
+	case s.CantSendCrossChainAppError && s.T != nil:
+		require.FailNow(s.T, "Unexpectedly called SendCrossChainAppError")
+	}
+	return errors.New("unexpectedly called SendCrossChainAppError")
+}
+
 // SenderStub is a stub sender that returns values received on method-specific channels.
 type SenderStub struct {
 	SentAppRequest, SentAppResponse,
@@ -346,5 +396,18 @@ func (f SenderStub) SendAppGossip(_ context.Context, _ core.SendConfig, bytes []
 	}
 
 	f.SentAppGossip <- bytes
+	return nil
+}
+
+func (f SenderStub) SendCrossChainAppRequest(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {
+	// Stub implementation
+	return nil
+}
+
+func (f SenderStub) SendCrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {
+	return nil
+}
+
+func (f SenderStub) SendCrossChainAppError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error {
 	return nil
 }

@@ -49,7 +49,7 @@ type NodeRuntime interface {
 
 // Configuration required to configure a node runtime.
 type NodeRuntimeConfig struct {
-	Lux NodePath string
+	LuxNodePath string
 }
 
 // Node supports configuring and running a node participating in a temporary network.

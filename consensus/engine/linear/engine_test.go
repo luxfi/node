@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/linear/ancestor"
 	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/linear/getter"
+	"github.com/luxfi/node/consensus/factories"
 	"github.com/luxfi/node/consensus/linear"
 	"github.com/luxfi/node/consensus/linear/lineartest"
 	"github.com/luxfi/node/consensus/sampling"
@@ -3024,7 +3025,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 				ctx = consensustest.ConsensusContext(
 					consensustest.Context(t, consensustest.PChainID),
 				)
-				consensus = &linear.Topological{Factory: factories.sampling.Factory}
+				consensus = &linear.Topological{Factory: factories.ConsensusflakeFactory}
 			)
 			require.NoError(consensus.Initialize(
 				ctx,
@@ -3098,7 +3099,7 @@ func TestShouldIssueBlock(t *testing.T) {
 
 	require.NoError(t, blocks[0].Accept(context.Background()))
 
-	c := &linear.Topological{Factory: factories.sampling.Factory}
+	c := &linear.Topological{Factory: factories.ConsensusflakeFactory}
 	require.NoError(t, c.Initialize(
 		ctx,
 		sampling.DefaultParameters,

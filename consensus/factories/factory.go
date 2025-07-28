@@ -6,13 +6,13 @@ package factories
 import (
 	"github.com/luxfi/node/consensus/confidence"
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/consensus/threshold"
 	"github.com/luxfi/node/ids"
 )
 
 var (
-	ConfidenceFactory  sampling.Factory = confidenceFactory{}
-	sampling.Factory sampling.Factory = consensusflakeFactory{}
+	ConfidenceFactory     sampling.Factory = confidenceFactory{}
+	ConsensusflakeFactory sampling.Factory = consensusflakeFactory{}
 )
 
 type confidenceFactory struct{}

@@ -28,19 +28,19 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 	nodeID0 := ids.GenerateTestNodeID()
 	sk0, err := localsigner.New()
 	require.NoError(t, err)
-	pk0 := sk0.PublicKey()
+	pk0 := bls.PublicFromSecretKey(sk0)
 	signer0 := warp.NewSigner(sk0, networkID, chainID)
 
 	nodeID1 := ids.GenerateTestNodeID()
 	sk1, err := localsigner.New()
 	require.NoError(t, err)
-	pk1 := sk1.PublicKey()
+	pk1 := bls.PublicFromSecretKey(sk1)
 	signer1 := warp.NewSigner(sk1, networkID, chainID)
 
 	nodeID2 := ids.GenerateTestNodeID()
 	sk2, err := localsigner.New()
 	require.NoError(t, err)
-	pk2 := sk2.PublicKey()
+	pk2 := bls.PublicFromSecretKey(sk2)
 	signer2 := warp.NewSigner(sk2, networkID, chainID)
 
 	tests := []struct {
