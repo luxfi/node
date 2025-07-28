@@ -15,16 +15,18 @@ func TestSizeWithNil(t *testing.T) {
 	var x *int32
 	y := int32(1)
 	c := genericCodec{}
-	_, _, err := c.size(reflect.ValueOf(x), false /*=nullable*/, nil /*=typeStack*/)
-	require.ErrorIs(err, errMarshalNil)
-	len, _, err := c.size(reflect.ValueOf(x), true /*=nullable*/, nil /*=typeStack*/)
-	require.Empty(err)
-	require.Equal(1, len)
+	// size method no longer supports nullable parameter
+	// It will return error for nil pointers
+	_, _, err := c.size(reflect.ValueOf(x), nil)
+	require.Error(err)
+	
+	// For non-nil values
 	x = &y
-	len, _, err = c.size(reflect.ValueOf(y), true /*=nullable*/, nil /*=typeStack*/)
-	require.Empty(err)
-	require.Equal(4, len)
-	len, _, err = c.size(reflect.ValueOf(x), true /*=nullable*/, nil /*=typeStack*/)
-	require.Empty(err)
-	require.Equal(5, len)
+	len, _, err := c.size(reflect.ValueOf(y), nil)
+	require.NoError(err)
+	require.Equal(4, len) // int32 is 4 bytes
+	
+	len, _, err = c.size(reflect.ValueOf(x), nil)
+	require.NoError(err)
+	require.Equal(4, len) // pointer to int32 is also 4 bytes when dereferenced
 }

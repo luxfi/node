@@ -1,0 +1,434 @@
+// (c) 2019-2024, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package cchainvm
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/big"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/luxfi/geth/common"
+	gethcore "github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/core/txpool"
+	"github.com/luxfi/geth/eth/ethconfig"
+	"github.com/luxfi/geth/ethdb"
+	"github.com/luxfi/geth/params"
+	"github.com/luxfi/geth/rlp"
+	"github.com/luxfi/geth/rpc"
+
+	consensusNode "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/version"
+	"go.uber.org/zap"
+)
+
+var (
+	_ block.ChainVM = (*VM)(nil)
+
+	errNilBlock = errors.New("nil block")
+	errInvalidBlock = errors.New("invalid block")
+)
+
+// VM implements the C-Chain VM interface using geth
+type VM struct {
+	ctx          *consensusNode.Context
+	db           database.Database
+	genesisBytes []byte
+	lastAccepted ids.ID
+
+	// geth components
+	ethConfig   ethconfig.Config
+	chainConfig *params.ChainConfig
+	genesisHash common.Hash
+
+	// Minimal backend
+	backend    *MinimalEthBackend
+	txPool     *txpool.TxPool
+	blockChain *gethcore.BlockChain
+
+	// Database wrappers
+	ethDB ethdb.Database
+
+	// Synchronization
+	mu           sync.RWMutex
+	building     ids.ID
+	builtBlocks  map[ids.ID]*Block
+	shutdownChan chan struct{}
+}
+
+// Initialize implements the block.ChainVM interface
+func (vm *VM) Initialize(
+	ctx context.Context,
+	chainCtx *consensusNode.Context,
+	db database.Database,
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	fxs []*core.Fx,
+	appSender core.AppSender,
+) error {
+	vm.ctx = chainCtx
+	vm.db = db
+	vm.genesisBytes = genesisBytes
+	vm.shutdownChan = make(chan struct{})
+	vm.builtBlocks = make(map[ids.ID]*Block)
+	
+	// DEBUG: Log database path and check contents
+	fmt.Printf("DEBUG: C-Chain VM Initialize called\n")
+	fmt.Printf("DEBUG: Database type: %T\n", db)
+	fmt.Printf("DEBUG: Genesis bytes length: %d\n", len(genesisBytes))
+
+	// Parse genesis or use default
+	var genesis *gethcore.Genesis
+	if len(genesisBytes) > 0 {
+		genesis = &gethcore.Genesis{}
+		if err := json.Unmarshal(genesisBytes, genesis); err != nil {
+			return fmt.Errorf("failed to unmarshal genesis: %w", err)
+		}
+		
+		// Set terminal total difficulty for PoS transition
+		if genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
+			genesis.Config.TerminalTotalDifficulty = common.Big0
+		}
+	} else {
+		// Use a default dev genesis if none provided
+		genesis = &gethcore.Genesis{
+			Config:     params.AllEthashProtocolChanges,
+			Difficulty: big.NewInt(0),
+			GasLimit:   8000000,
+			Alloc: gethcore.GenesisAlloc{
+				common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): {
+					Balance: new(big.Int).Mul(big.NewInt(1000000), big.NewInt(params.Ether)),
+				},
+			},
+		}
+		genesis.Config.TerminalTotalDifficulty = common.Big0
+	}
+	
+	// Initialize chain config
+	vm.chainConfig = genesis.Config
+	if vm.chainConfig == nil {
+		vm.chainConfig = params.AllEthashProtocolChanges
+		genesis.Config = vm.chainConfig
+	}
+
+	// Create a database wrapper
+	// TODO: Consider using prefixed database in the future
+	vm.ethDB = WrapDatabase(db)
+
+	// Initialize eth config
+	vm.ethConfig = ethconfig.Defaults
+	vm.ethConfig.Genesis = genesis
+	vm.ethConfig.NetworkId = vm.chainConfig.ChainID.Uint64()
+	vm.ethConfig.Miner.Etherbase = common.Address{}
+
+	// Create minimal Ethereum backend
+	var err error
+	vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+	if err != nil {
+		return fmt.Errorf("failed to create eth backend: %w", err)
+	}
+
+	vm.blockChain = vm.backend.BlockChain()
+	vm.txPool = vm.backend.TxPool()
+
+	// Get genesis hash
+	genesisBlock := vm.blockChain.Genesis()
+	if genesisBlock == nil {
+		return fmt.Errorf("genesis block not found")
+	}
+	vm.genesisHash = genesisBlock.Hash()
+
+	// Check if we have existing blocks beyond genesis
+	currentBlock := vm.blockChain.CurrentBlock()
+	if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
+		// We have migrated data, set last accepted to current block
+		vm.lastAccepted = ids.ID(currentBlock.Hash())
+		
+		vm.ctx.Log.Info("C-Chain VM found existing blockchain data",
+			zap.String("currentHash", currentBlock.Hash().Hex()),
+			zap.Uint64("currentHeight", currentBlock.Number.Uint64()),
+			zap.String("lastAccepted", vm.lastAccepted.String()),
+		)
+	} else {
+		// Fresh start, use genesis
+		vm.lastAccepted = ids.ID(vm.genesisHash)
+		
+		vm.ctx.Log.Info("C-Chain VM starting from genesis",
+			zap.String("genesisHash", vm.genesisHash.Hex()),
+			zap.String("lastAccepted", vm.lastAccepted.String()),
+		)
+	}
+	
+	// Log database statistics
+	vm.logDatabaseStatus()
+
+	vm.ctx.Log.Info("C-Chain VM initialized")
+	vm.ctx.Log.Info("Chain configuration",
+		zap.String("chainID", vm.chainConfig.ChainID.String()),
+		zap.String("genesisHash", vm.genesisHash.Hex()),
+	)
+
+	return nil
+}
+
+// logDatabaseStatus logs information about the current database state
+func (vm *VM) logDatabaseStatus() {
+	// Get current block info
+	currentBlock := vm.blockChain.CurrentBlock()
+	if currentBlock != nil {
+		vm.ctx.Log.Info("Current blockchain state",
+			zap.Uint64("height", currentBlock.Number.Uint64()),
+			zap.String("hash", currentBlock.Hash().Hex()),
+			zap.Uint64("timestamp", currentBlock.Time),
+		)
+	}
+	
+	// Get head block info
+	headBlock := vm.blockChain.CurrentHeader()
+	if headBlock != nil {
+		vm.ctx.Log.Info("Head block state",
+			zap.Uint64("height", headBlock.Number.Uint64()),
+			zap.String("hash", headBlock.Hash().Hex()),
+		)
+	}
+	
+	// Log database type
+	vm.ctx.Log.Info("Database info",
+		zap.String("type", fmt.Sprintf("%T", vm.ethDB)),
+	)
+}
+
+// SetState implements the block.ChainVM interface
+func (vm *VM) SetState(ctx context.Context, state consensusNode.State) error {
+	return nil
+}
+
+// Shutdown implements the block.ChainVM interface
+func (vm *VM) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+// Version implements the block.ChainVM interface
+func (vm *VM) Version(ctx context.Context) (string, error) {
+	return "1.0.0", nil
+}
+
+// CreateHandlers implements the block.ChainVM interface
+func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	handlers := make(map[string]http.Handler)
+
+	// Create RPC server and register APIs
+	rpcServer := rpc.NewServer()
+	
+	// Manually register our minimal APIs to avoid any auto-start issues
+	ethAPI := NewEthAPI(vm.backend)
+	netAPI := &NetAPI{networkID: vm.ethConfig.NetworkId}
+	web3API := &Web3API{}
+	
+	// Register each API namespace
+	if err := rpcServer.RegisterName("eth", ethAPI); err != nil {
+		return nil, fmt.Errorf("failed to register eth API: %w", err)
+	}
+	if err := rpcServer.RegisterName("net", netAPI); err != nil {
+		return nil, fmt.Errorf("failed to register net API: %w", err)
+	}
+	if err := rpcServer.RegisterName("web3", web3API); err != nil {
+		return nil, fmt.Errorf("failed to register web3 API: %w", err)
+	}
+	
+	vm.ctx.Log.Info("Registered API namespaces")
+
+	// Create HTTP handler
+	httpHandler := rpcServer
+
+	// Register the handler at both /rpc and / for compatibility
+	handlers["/rpc"] = httpHandler
+	handlers["/"] = httpHandler
+
+	vm.ctx.Log.Info("Created RPC handlers")
+
+	return handlers, nil
+}
+
+// NewHTTPHandler implements the block.ChainVM interface
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return nil, nil
+}
+
+// WaitForEvent implements the block.ChainVM interface
+func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+	<-ctx.Done()
+	return core.PendingTxs, ctx.Err()
+}
+
+// HealthCheck implements the block.ChainVM interface
+func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+	return map[string]string{"status": "healthy"}, nil
+}
+
+// Connected implements the block.ChainVM interface
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+	return nil
+}
+
+// Disconnected implements the block.ChainVM interface
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	return nil
+}
+
+// GetBlock implements the block.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	// Check if it's a built block
+	if blk, ok := vm.builtBlocks[blkID]; ok {
+		return blk, nil
+	}
+
+	// Get block from blockchain
+	hash := common.Hash(blkID)
+	ethBlock := vm.blockChain.GetBlockByHash(hash)
+	if ethBlock == nil {
+		return nil, database.ErrNotFound
+	}
+
+	return vm.newBlock(ethBlock)
+}
+
+// ParseBlock implements the block.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error) {
+	ethBlock := new(types.Block)
+	if err := rlp.DecodeBytes(blockBytes, ethBlock); err != nil {
+		return nil, fmt.Errorf("failed to decode block: %w", err)
+	}
+
+	return vm.newBlock(ethBlock)
+}
+
+// BuildBlock implements the block.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Get current block as parent
+	parent := vm.blockChain.CurrentBlock()
+	if parent == nil {
+		return nil, fmt.Errorf("no parent block available")
+	}
+
+	// Create a new block header
+	header := &types.Header{
+		ParentHash:  parent.Hash(),
+		Number:      new(big.Int).Add(parent.Number, common.Big1),
+		GasLimit:    parent.GasLimit,
+		Time:        uint64(time.Now().Unix()),
+		Coinbase:    vm.ethConfig.Miner.Etherbase,
+		Difficulty:  big.NewInt(1), // PoS difficulty
+		MixDigest:   common.Hash{},
+		Nonce:       types.EncodeNonce(0),
+		Extra:       []byte{},
+		BaseFee:     parent.BaseFee,
+	}
+
+	// Get pending transactions from the pool
+	pending := vm.txPool.Pending(txpool.PendingFilter{})
+	var txs []*types.Transaction
+	for _, batch := range pending {
+		for _, lazyTx := range batch {
+			// Resolve the lazy transaction
+			tx := lazyTx.Resolve()
+			if tx != nil {
+				txs = append(txs, tx)
+			}
+		}
+	}
+
+	// Create a new block with transactions
+	block := types.NewBlock(header, &types.Body{
+		Transactions: txs,
+		Uncles:       []*types.Header{},
+		Withdrawals:  []*types.Withdrawal{},
+	}, []*types.Receipt{}, nil)
+
+	// Create a new block wrapper
+	blk, err := vm.newBlock(block)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store built block
+	vm.builtBlocks[blk.ID()] = blk
+	vm.building = blk.ID()
+
+	return blk, nil
+}
+
+// AppGossip implements the block.ChainVM interface
+func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return nil
+}
+
+// AppRequest implements the block.ChainVM interface
+func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	return nil
+}
+
+// AppRequestFailed implements the block.ChainVM interface
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+	return nil
+}
+
+// AppResponse implements the block.ChainVM interface
+func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return nil
+}
+
+// CrossChainAppRequest implements the block.ChainVM interface
+func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+	return nil
+}
+
+// CrossChainAppRequestFailed implements the block.ChainVM interface
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *core.AppError) error {
+	return nil
+}
+
+// CrossChainAppResponse implements the block.ChainVM interface
+func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+	return nil
+}
+
+// SetPreference implements the block.ChainVM interface
+func (vm *VM) SetPreference(ctx context.Context, blkID ids.ID) error {
+	return nil
+}
+
+// LastAccepted implements the block.ChainVM interface
+func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	return vm.lastAccepted, nil
+}
+
+// GetBlockIDAtHeight implements the block.ChainVM interface
+func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	block := vm.blockChain.GetBlockByNumber(height)
+	if block == nil {
+		return ids.Empty, database.ErrNotFound
+	}
+	return ids.ID(block.Hash()), nil
+}

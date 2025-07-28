@@ -7,8 +7,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
+)
+
+var (
+	hello      = "hello"
+	world      = "world"
+	helloWorld = "hello_world" // The prefix gatherer adds underscore between prefix and name
 )
 
 func TestMultiGathererEmptyGather(t *testing.T) {
@@ -27,12 +34,15 @@ func TestMultiGathererDuplicatedPrefix(t *testing.T) {
 	g := NewMultiGatherer()
 	og := NewOptionalGatherer()
 
-	require.NoError(g.Register("", og))
+	require.NoError(g.Register("foo", og))
 
-	err := g.Register("", og)
-	require.ErrorIs(err, errReregisterGatherer)
+	// When using NewMultiGatherer (which returns a PrefixGatherer),
+	// duplicate registrations with the same prefix should fail with errOverlappingNamespaces
+	err := g.Register("foo", og)
+	require.ErrorIs(err, errOverlappingNamespaces)
 
-	require.NoError(g.Register("lol", og))
+	// Registering with a different prefix should work
+	require.NoError(g.Register("bar", og))
 }
 
 func TestMultiGathererAddedError(t *testing.T) {
@@ -59,6 +69,14 @@ func TestMultiGathererNoAddedPrefix(t *testing.T) {
 	tg := &testGatherer{
 		mfs: []*dto.MetricFamily{{
 			Name: &hello,
+			Type: dto.MetricType_COUNTER.Enum(),
+			Metric: []*dto.Metric{
+				{
+					Counter: &dto.Counter{
+						Value: proto.Float64(0),
+					},
+				},
+			},
 		}},
 	}
 
@@ -78,6 +96,14 @@ func TestMultiGathererAddedPrefix(t *testing.T) {
 	tg := &testGatherer{
 		mfs: []*dto.MetricFamily{{
 			Name: &world,
+			Type: dto.MetricType_COUNTER.Enum(),
+			Metric: []*dto.Metric{
+				{
+					Counter: &dto.Counter{
+						Value: proto.Float64(0),
+					},
+				},
+			},
 		}},
 	}
 
@@ -86,7 +112,8 @@ func TestMultiGathererAddedPrefix(t *testing.T) {
 	mfs, err := g.Gather()
 	require.NoError(err)
 	require.Len(mfs, 1)
-	require.Equal(&helloWorld, mfs[0].Name)
+	// The prefix gatherer combines "hello" + "_" + "world" = "hello_world"
+	require.Equal(helloWorld, *mfs[0].Name)
 }
 
 func TestMultiGathererJustPrefix(t *testing.T) {
@@ -94,8 +121,19 @@ func TestMultiGathererJustPrefix(t *testing.T) {
 
 	g := NewMultiGatherer()
 
+	emptyName := ""
 	tg := &testGatherer{
-		mfs: []*dto.MetricFamily{{}},
+		mfs: []*dto.MetricFamily{{
+			Name: &emptyName,
+			Type: dto.MetricType_COUNTER.Enum(),
+			Metric: []*dto.Metric{
+				{
+					Counter: &dto.Counter{
+						Value: proto.Float64(0),
+					},
+				},
+			},
+		}},
 	}
 
 	require.NoError(g.Register(hello, tg))
@@ -113,13 +151,30 @@ func TestMultiGathererSorted(t *testing.T) {
 
 	name0 := "a"
 	name1 := "z"
+	// Create metrics with proper structure
 	tg := &testGatherer{
 		mfs: []*dto.MetricFamily{
 			{
 				Name: &name1,
+				Type: dto.MetricType_COUNTER.Enum(),
+				Metric: []*dto.Metric{
+					{
+						Counter: &dto.Counter{
+							Value: proto.Float64(0),
+						},
+					},
+				},
 			},
 			{
 				Name: &name0,
+				Type: dto.MetricType_COUNTER.Enum(),
+				Metric: []*dto.Metric{
+					{
+						Counter: &dto.Counter{
+							Value: proto.Float64(0),
+						},
+					},
+				},
 			},
 		},
 	}

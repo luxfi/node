@@ -4,7 +4,6 @@
 package c
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/luxfi/node/codec"
@@ -14,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/common"
 )
 
 // Tx represents a transaction on the C-Chain
@@ -152,9 +151,6 @@ const (
 var (
 	// Codec is the codec used for serialization
 	Codec codec.Manager
-	
-	// Errors
-	errInsufficientFunds = errors.New("insufficient funds")
 )
 
 func init() {

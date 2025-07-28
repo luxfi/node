@@ -81,7 +81,7 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	coreth "github.com/luxfi/evm"
+	"github.com/luxfi/node/vms/cchainvm"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 )
@@ -1256,7 +1256,7 @@ func (n *Node) initVMs() error {
 				EtnaTime:         etnaTime,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{}),
 	)
 	if err != nil {
 		return err

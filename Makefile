@@ -108,7 +108,7 @@ docker-logs:
 # Run tests
 test:
 	@echo "🧪 Running tests..."
-	go test $(GO_BUILD_FLAGS) ./...
+	go test -tags "pebbledb debug vmdebug test" ./...
 
 # Clean build artifacts
 clean:

@@ -234,8 +234,8 @@ func (n *Network) EnsureDefaultConfig(w io.Writer, luxNodePath string, pluginDir
 	}
 
 	// Ensure runtime is configured
-	if len(n.DefaultRuntimeConfig.Lux NodePath) == 0 {
-		n.DefaultRuntimeConfig.Lux NodePath = luxNodePath
+	if len(n.DefaultRuntimeConfig.LuxNodePath) == 0 {
+		n.DefaultRuntimeConfig.LuxNodePath = luxNodePath
 	}
 
 	// Ensure nodes are configured
@@ -609,7 +609,7 @@ func (n *Network) EnsureNodeConfig(node *Node) error {
 	// Ensure the node runtime is configured
 	if node.RuntimeConfig == nil {
 		node.RuntimeConfig = &NodeRuntimeConfig{
-			Lux NodePath: n.DefaultRuntimeConfig.Lux NodePath,
+			LuxNodePath: n.DefaultRuntimeConfig.LuxNodePath,
 		}
 	}
 

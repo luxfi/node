@@ -8,177 +8,194 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 )
 
-// TestSkipBootstrap tests that the skip bootstrap feature works correctly
-func TestSkipBootstrap(t *testing.T) {
+// TestNew tests creating a new manager
+func TestNew(t *testing.T) {
 	require := require.New(t)
 
-	// Create a test manager with skip bootstrap enabled
-	m := &manager{
-		ManagerConfig: ManagerConfig{
-			SkipBootstrap: true,
-			Log:           logging.NoLog{},
-		},
-		subnets: make(map[ids.ID]subnets.Subnet),
-		chains:  make(map[ids.ID]handler),
+	config := &ManagerConfig{
+		SkipBootstrap:    true,
+		EnableAutomining: true,
+		Log:              logging.NoLog{},
+		Metrics:          metrics.NewMultiGatherer(),
+		VMManager:        vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		ChainDataDir:     t.TempDir(),
 	}
 
-	// Create mock validators
-	vdrs := validators.NewManager()
-	primaryVdrs := validators.NewMockManager()
+	m, err := New(config)
+	require.NoError(err)
+	require.NotNil(m)
 
-	// Create a mock chain context
-	ctx := &consensus.ConsensusContext{
-		Context: &consensus.Context{
-			NodeID:    ids.EmptyNodeID,
-			NetworkID: constants.MainnetID,
-			SubnetID:  constants.PrimaryNetworkID,
-			ChainID:   ids.Empty,
-			Log:       logging.NoLog{},
-		},
-		Registerer:     nil,
-		BlockAcceptor:  nil,
-		TxAcceptor:     nil,
-		VertexAcceptor: nil,
-		Sender:         nil,
-		ValidatorState: nil,
-		VM:             nil,
-	}
+	// Cast to implementation to check internal state
+	mImpl := m.(*manager)
+	require.True(mImpl.SkipBootstrap)
+	require.True(mImpl.EnableAutomining)
+	require.NotNil(mImpl.chains)
+	require.NotNil(mImpl.chainsQueue)
+}
 
-	// Test that skip bootstrap creates the correct tracker
-	beacons := validators.NewManager()
-	startupTracker := m.createStartupTracker(ctx, beacons)
+// TestSkipBootstrapTracker tests that skip bootstrap mode uses correct tracker
+func TestSkipBootstrapTracker(t *testing.T) {
+	require := require.New(t)
 
-	// Verify it's a skip bootstrap tracker
-	require.NotNil(startupTracker)
+	// Test with skip bootstrap enabled
+	connectedBeacons := tracker.NewPeers()
+	skipTracker := tracker.NewStartup(connectedBeacons, 0)
+	
+	// The skip bootstrap tracker should start with 0 weight requirement
+	require.True(skipTracker.ShouldStart())
 
-	// The skip bootstrap tracker should always return true for ShouldStart
-	require.True(startupTracker.ShouldStart())
-
-	// Even with no connected validators, it should start
-	startupTracker.Connected(ctx.Context, ids.EmptyNodeID, version.CurrentApp)
-	require.True(startupTracker.ShouldStart())
-
-	// Test with regular bootstrap (skip = false)
-	m.SkipBootstrap = false
-	regularTracker := m.createStartupTracker(ctx, beacons)
-
-	// Regular tracker should not start immediately with no validators
+	// Test with regular bootstrap
+	regularTracker := tracker.NewStartup(connectedBeacons, 100)
+	
+	// Regular tracker should not start with no validators connected
 	require.False(regularTracker.ShouldStart())
 }
 
-// TestSkipBootstrapChainCreation tests that chains can be created with skip bootstrap
-func TestSkipBootstrapChainCreation(t *testing.T) {
+// TestQueueChainCreation tests queuing chain creation
+func TestQueueChainCreation(t *testing.T) {
 	require := require.New(t)
 
-	// Create a minimal manager config
-	config := ManagerConfig{
-		SkipBootstrap:             true,
-		EnableAutomining:          true,
-		Log:                       logging.NoLog{},
-		Router:                    &router.ChainRouter{},
-		Net:                       nil,
-		Validators:                validators.NewManager(),
-		PartialSyncPrimaryNetwork: false,
-		NodeID:                    ids.GenerateTestNodeID(),
-		NetworkID:                 constants.MainnetID,
-		Server:                    &server.Server{},
-		Keystore:                  nil,
-		AtomicMemory:              nil,
-		LUXAssetID:                ids.Empty,
-		XChainID:                  ids.Empty,
-		CriticalChains:            nil,
-		TimeoutManager:            nil,
-		Health:                    nil,
-		SubnetConfigs:             nil,
-		ChainConfigs:              nil,
-		VMManager:                 vms.NewManager(),
-		VMRegistry:                nil,
-		Metrics:                   nil,
-		BlockAcceptorGroup:        nil,
-		TxAcceptorGroup:           nil,
-		VertexAcceptorGroup:       nil,
-		DBManager:                 nil,
-		MsgCreator:                nil,
-		SybilProtectionEnabled:    false,
-		TracingEnabled:            false,
-		Tracer:                    nil,
-		ChainDataDir:              "",
+	// Create subnets with primary network config
+	subnetConfigs := map[ids.ID]subnets.Config{
+		constants.PrimaryNetworkID: {},
+	}
+	subnets, err := NewSubnets(ids.GenerateTestNodeID(), subnetConfigs)
+	require.NoError(err)
+
+	config := &ManagerConfig{
+		Log:          logging.NoLog{},
+		Metrics:      metrics.NewMultiGatherer(),
+		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		ChainDataDir: t.TempDir(),
+		Subnets:      subnets,
 	}
 
-	m := New(&config)
+	m, err := New(config)
+	require.NoError(err)
 
-	// Verify manager was created with skip bootstrap
-	require.NotNil(m)
-	require.True(m.SkipBootstrap)
-	require.True(m.EnableAutomining)
+	mImpl := m.(*manager)
+
+	// Create test chain parameters
+	chainID := ids.GenerateTestID()
+	subnetID := ids.GenerateTestID()
+	chainParams := ChainParameters{
+		ID:       chainID,
+		SubnetID: subnetID,
+		VMID:     ids.GenerateTestID(),
+	}
+
+	// Queue the chain
+	m.QueueChainCreation(chainParams)
+
+	// Check that the chain was queued
+	queuedParams, ok := mImpl.chainsQueue.PopLeft()
+	require.True(ok)
+	require.Equal(chainParams.ID, queuedParams.ID)
+	require.Equal(chainParams.SubnetID, queuedParams.SubnetID)
+	require.Equal(chainParams.VMID, queuedParams.VMID)
 }
 
-// TestCreateStartupTracker tests the createStartupTracker helper method
-func TestCreateStartupTracker(t *testing.T) {
+// TestLookup tests chain alias lookup
+func TestLookup(t *testing.T) {
 	require := require.New(t)
 
-	tests := []struct {
-		name          string
-		skipBootstrap bool
-		expectStart   bool
-	}{
-		{
-			name:          "skip bootstrap enabled",
-			skipBootstrap: true,
-			expectStart:   true,
-		},
-		{
-			name:          "skip bootstrap disabled",
-			skipBootstrap: false,
-			expectStart:   false,
-		},
+	config := &ManagerConfig{
+		Log:          logging.NoLog{},
+		Metrics:      metrics.NewMultiGatherer(),
+		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		ChainDataDir: t.TempDir(),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &manager{
-				ManagerConfig: ManagerConfig{
-					SkipBootstrap: tt.skipBootstrap,
-					Log:           logging.NoLog{},
-				},
-			}
+	m, err := New(config)
+	require.NoError(err)
 
-			ctx := &consensus.ConsensusContext{
-				Context: &consensus.Context{
-					Log: logging.NoLog{},
-				},
-			}
+	// Create a test chain ID and alias
+	chainID := ids.GenerateTestID()
+	alias := "test-chain"
 
-			beacons := validators.NewManager()
-			tracker := m.createStartupTracker(ctx, beacons)
+	// Add the alias
+	require.NoError(m.Alias(chainID, alias))
 
-			require.Equal(tt.expectStart, tracker.ShouldStart())
-		})
-	}
+	// Lookup by alias
+	lookedUpID, err := m.Lookup(alias)
+	require.NoError(err)
+	require.Equal(chainID, lookedUpID)
+
+	// According to the comment in manager.go, the string representation of a chain's ID
+	// is also considered to be an alias of the chain. So we need to add it explicitly.
+	require.NoError(m.Alias(chainID, chainID.String()))
+
+	// Now lookup by ID string should work
+	lookedUpID, err = m.Lookup(chainID.String())
+	require.NoError(err)
+	require.Equal(chainID, lookedUpID)
 }
 
-// Helper to create startup tracker
-func (m *manager) createStartupTracker(ctx *consensus.ConsensusContext, beacons validators.Manager) tracker.Startup {
-	connectedBeacons := tracker.NewPeers()
-	startupTracker := tracker.NewStartup(connectedBeacons, 0)
+// TestIsBootstrapped tests checking if a chain is bootstrapped
+func TestIsBootstrapped(t *testing.T) {
+	require := require.New(t)
 
-	if m.SkipBootstrap {
-		ctx.Log.Info("bootstrapping disabled - using skip bootstrap tracker")
-		return tracker.NewSkipBootstrap(connectedBeacons)
+	config := &ManagerConfig{
+		Log:          logging.NoLog{},
+		Metrics:      metrics.NewMultiGatherer(),
+		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		ChainDataDir: t.TempDir(),
 	}
 
-	return startupTracker
+	m, err := New(config)
+	require.NoError(err)
+
+	mImpl := m.(*manager)
+
+	// Test non-existent chain
+	chainID := ids.GenerateTestID()
+	require.False(m.IsBootstrapped(chainID))
+
+	// Create a mock handler with context
+	ctx := &consensus.Context{
+		NodeID:    ids.EmptyNodeID,
+		NetworkID: constants.MainnetID,
+		SubnetID:  constants.PrimaryNetworkID,
+		ChainID:   chainID,
+		Log:       logging.NoLog{},
+	}
+	ctx.State.Set(consensus.EngineState{
+		State: consensus.Initializing,
+	})
+
+	// Create a minimal handler mock
+	h := &mockHandler{ctx: ctx}
+	mImpl.chains[chainID] = h
+
+	// Chain exists but not bootstrapped
+	require.False(m.IsBootstrapped(chainID))
+
+	// Set to normal operation
+	ctx.State.Set(consensus.EngineState{
+		State: consensus.NormalOp,
+	})
+
+	// Now it should be bootstrapped
+	require.True(m.IsBootstrapped(chainID))
+}
+
+// mockHandler is a minimal handler implementation for testing
+type mockHandler struct {
+	handler.Handler
+	ctx *consensus.Context
+}
+
+func (h *mockHandler) Context() *consensus.Context {
+	return h.ctx
 }

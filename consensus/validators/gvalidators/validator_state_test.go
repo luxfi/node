@@ -140,7 +140,7 @@ func TestGetValidatorSet(t *testing.T) {
 	require.NoError(err)
 	vdr0 := &validators.GetValidatorOutput{
 		NodeID:    ids.GenerateTestNodeID(),
-		PublicKey: sk0.PublicKey(),
+		PublicKey: bls.PublicFromSecretKey(sk0),
 		Weight:    1,
 	}
 
@@ -148,7 +148,7 @@ func TestGetValidatorSet(t *testing.T) {
 	require.NoError(err)
 	vdr1 := &validators.GetValidatorOutput{
 		NodeID:    ids.GenerateTestNodeID(),
-		PublicKey: sk1.PublicKey(),
+		PublicKey: bls.PublicFromSecretKey(sk1),
 		Weight:    2,
 	}
 
@@ -184,7 +184,7 @@ func TestPublicKeyDeserialize(t *testing.T) {
 
 	sk, err := localsigner.New()
 	require.NoError(err)
-	pk := sk.PublicKey()
+	pk := bls.PublicFromSecretKey(sk)
 
 	pkBytes := bls.PublicKeyToUncompressedBytes(pk)
 	pkDe := bls.PublicKeyFromValidUncompressedBytes(pkBytes)
@@ -225,7 +225,7 @@ func setupValidatorSet(b *testing.B, size int) map[ids.NodeID]*validators.GetVal
 	set := make(map[ids.NodeID]*validators.GetValidatorOutput, size)
 	sk, err := localsigner.New()
 	require.NoError(b, err)
-	pk := sk.PublicKey()
+	pk := bls.PublicFromSecretKey(sk)
 	for i := 0; i < size; i++ {
 		id := ids.GenerateTestNodeID()
 		set[id] = &validators.GetValidatorOutput{

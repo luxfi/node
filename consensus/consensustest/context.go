@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -56,7 +57,7 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 
 	secretKey, err := localsigner.New()
 	require.NoError(err)
-	publicKey := secretKey.PublicKey()
+	publicKey := bls.PublicFromSecretKey(secretKey)
 
 	memory := atomic.NewMemory(memdb.New())
 	sharedMemory := memory.NewSharedMemory(chainID)

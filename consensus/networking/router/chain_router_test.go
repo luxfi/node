@@ -28,7 +28,6 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -41,7 +40,7 @@ import (
 )
 
 const (
-	engineType         = p2ppb.EngineType_ENGINE_TYPE_GRAPH
+	engineType         = p2ppb.EngineType_ENGINE_TYPE_LUX
 	testThreadPoolSize = 2
 )
 
@@ -609,7 +608,7 @@ func TestRouterTimeout(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -647,7 +646,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -665,7 +664,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -683,7 +682,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -701,7 +700,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -718,9 +717,9 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -738,7 +737,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -756,7 +755,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -776,7 +775,7 @@ func TestRouterTimeout(t *testing.T) {
 				core.ErrTimeout.Code,
 				core.ErrTimeout.Message,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		)
 	}
 
@@ -1100,7 +1099,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -1533,7 +1532,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		},
 	})
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 
@@ -1556,8 +1555,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 // Tests that HandleInbound correctly handles BFT Messages
 func TestHandleBFTMessage(t *testing.T) {
 	chainRouter := ChainRouter{}
-	log := tests.NewDefaultLogger("test")
-	log.SetLevel(logging.Debug)
+	log := logging.NoLog{}
 	require.NoError(t,
 		chainRouter.Initialize(
 			ids.EmptyNodeID,

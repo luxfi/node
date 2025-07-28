@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/evm/plugin/evm"
+	gethcommon "github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/x"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
@@ -61,8 +61,8 @@ type LUXState struct {
 	PCTX    *pbuilder.Context
 	XClient xvm.Client
 	XCTX    *xbuilder.Context
-	CClient evm.Client
-	CCTX    *c.Context
+	// CClient evm.Client // TODO: Implement C-Chain client
+	// CCTX    *c.Context
 	UTXOs   walletcommon.UTXOs
 }
 
@@ -77,7 +77,7 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := xvm.NewClient(uri, "X")
-	cClient := evm.NewCChainClient(uri)
+	// cClient := evm.NewCChainClient(uri) // TODO: Implement C-Chain client
 
 	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
 	if err != nil {
@@ -89,10 +89,10 @@ func FetchState(
 		return nil, err
 	}
 
-	cCTX, err := c.NewContextFromClients(ctx, infoClient, xClient)
-	if err != nil {
-		return nil, err
-	}
+	// cCTX, err := c.NewContextFromClients(ctx, infoClient, xClient)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	utxos := walletcommon.NewUTXOs()
 	addrList := addrs.List()
@@ -111,11 +111,11 @@ func FetchState(
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
 		},
-		{
-			id:     cCTX.BlockchainID,
-			client: cClient,
-			codec:  evm.Codec,
-		},
+		// {
+		// 	id:     cCTX.BlockchainID,
+		// 	client: cClient,
+		// 	codec:  evm.Codec,
+		// },
 	}
 	for _, destinationChain := range chains {
 		for _, sourceChain := range chains {
@@ -138,14 +138,14 @@ func FetchState(
 		PCTX:    pCTX,
 		XClient: xClient,
 		XCTX:    xCTX,
-		CClient: cClient,
-		CCTX:    cCTX,
+		// CClient: cClient,
+		// CCTX:    cCTX,
 		UTXOs:   utxos,
 	}, nil
 }
 
 type EthState struct {
-	Client   ethclient.Client
+	Client   *ethclient.Client
 	Accounts map[ethcommon.Address]*c.Account
 }
 
@@ -166,11 +166,13 @@ func FetchEthState(
 
 	accounts := make(map[ethcommon.Address]*c.Account, addrs.Len())
 	for addr := range addrs {
-		balance, err := client.BalanceAt(ctx, addr, nil)
+		// Convert ethereum address to geth address
+		gethAddr := gethcommon.Address(addr)
+		balance, err := client.BalanceAt(ctx, gethAddr, nil)
 		if err != nil {
 			return nil, err
 		}
-		nonce, err := client.NonceAt(ctx, addr, nil)
+		nonce, err := client.NonceAt(ctx, gethAddr, nil)
 		if err != nil {
 			return nil, err
 		}

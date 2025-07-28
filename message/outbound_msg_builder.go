@@ -7,6 +7,8 @@ import (
 	"net/netip"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
@@ -178,6 +180,10 @@ type OutboundMsgBuilder interface {
 	AppGossip(
 		chainID ids.ID,
 		msg []byte,
+	) (OutboundMessage, error)
+
+	BFTMessage(
+		msg *p2p.BFT,
 	) (OutboundMessage, error)
 }
 
@@ -722,4 +728,18 @@ func (b *outMsgBuilder) AppGossip(chainID ids.ID, msg []byte) (OutboundMessage, 
 		b.compressionType,
 		false,
 	)
+}
+
+func (b *outMsgBuilder) BFTMessage(msg *p2p.BFT) (OutboundMessage, error) {
+	// BFT messages are not part of the standard p2p.Message oneof
+	// They need to be handled separately
+	msgBytes, err := proto.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return &outboundMessage{
+		op:    BFTOp,
+		bytes: msgBytes,
+		bypassThrottling: true,
+	}, nil
 }

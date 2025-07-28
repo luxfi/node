@@ -78,6 +78,7 @@ func TestTimeout(t *testing.T) {
 
 	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -106,7 +107,7 @@ func TestTimeout(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		prometheus.NewRegistry(),
 	)
@@ -172,7 +173,7 @@ func TestTimeout(t *testing.T) {
 		},
 	})
 	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -337,6 +338,7 @@ func TestReliableMessages(t *testing.T) {
 
 	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -365,7 +367,7 @@ func TestReliableMessages(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		prometheus.NewRegistry(),
 	)
@@ -441,7 +443,7 @@ func TestReliableMessages(t *testing.T) {
 		},
 	})
 	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -496,6 +498,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			metrics := prometheus.NewRegistry()
 			mc, err := message.NewCreator(
+		logging.NoLog{},
 				metrics,
 				constants.DefaultNetworkCompressionType,
 				10*time.Second,
@@ -527,7 +530,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				externalSender,
 				&chainRouter,
 				tm,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 				subnet,
 				prometheus.NewRegistry(),
 			)
@@ -602,7 +605,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				},
 			})
 			ctx2.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 				State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 			})
 
@@ -843,7 +846,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				prometheus.NewRegistry(),
 			)
@@ -1050,7 +1053,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				prometheus.NewRegistry(),
 			)
@@ -1089,7 +1092,7 @@ func TestSender_Single_Request(t *testing.T) {
 		deadline          = time.Second
 		requestID         = uint32(1337)
 		containerID       = ids.GenerateTestID()
-		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
+		engineType        = p2ppb.EngineType_ENGINE_TYPE_LINEAR
 	)
 	consensusCtx := consensustest.Context(t, consensustest.PChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)

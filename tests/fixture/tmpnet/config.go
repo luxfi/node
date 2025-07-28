@@ -15,9 +15,10 @@ import (
 
 	"github.com/spf13/cast"
 
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/params"
-	"github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
@@ -58,6 +59,11 @@ var (
 	errMissingCertForNodeID        = fmt.Errorf("failed to ensure node ID: missing value for %q", config.StakingCertContentKey)
 	errInvalidKeypair              = fmt.Errorf("%q and %q must be provided together or not at all", config.StakingTLSKeyContentKey, config.StakingCertContentKey)
 )
+
+// getEthAddress converts a secp256k1 private key to an Ethereum address
+func getEthAddress(key *secp256k1.PrivateKey) common.Address {
+	return crypto.PubkeyToAddress(*(key.PublicKey().ToECDSA()))
+}
 
 // Defines a mapping of flag keys to values intended to be supplied to
 // an invocation of an luxd node.
@@ -146,7 +152,7 @@ func (c *NetworkConfig) EnsureGenesis(networkID uint32, validatorIDs []ids.NodeI
 	cChainBalances := make(core.GenesisAlloc, len(c.FundedKeys))
 	for _, key := range c.FundedKeys {
 		xChainBalances[key.Address()] = DefaultFundedKeyXChainAmount
-		cChainBalances[evm.GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[getEthAddress(key)] = core.GenesisAccount{
 			Balance: DefaultFundedKeyCChainAmount,
 		}
 	}

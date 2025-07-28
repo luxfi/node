@@ -2538,6 +2538,821 @@ func (x *AppGossip) GetAppBytes() []byte {
 	return nil
 }
 
+// BFT consensus messages
+type BFT struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Chain the message is for
+	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// BFT message content
+	//
+	// Types that are assignable to Message:
+	//
+	//	*BFT_BlockProposal
+	//	*BFT_Vote
+	//	*BFT_EmptyVote
+	//	*BFT_FinalizeVote
+	//	*BFT_Notarization
+	//	*BFT_EmptyNotarization
+	//	*BFT_Finalization
+	//	*BFT_ReplicationRequest
+	//	*BFT_ReplicationResponse
+	Message isBFT_Message `protobuf_oneof:"message"`
+}
+
+func (x *BFT) Reset() {
+	*x = BFT{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BFT) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BFT) ProtoMessage() {}
+
+func (x *BFT) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BFT.ProtoReflect.Descriptor instead.
+func (*BFT) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *BFT) GetChainId() []byte {
+	if x != nil {
+		return x.ChainId
+	}
+	return nil
+}
+
+func (m *BFT) GetMessage() isBFT_Message {
+	if m != nil {
+		return m.Message
+	}
+	return nil
+}
+
+func (x *BFT) GetBlockProposal() *BlockProposal {
+	if x, ok := x.GetMessage().(*BFT_BlockProposal); ok {
+		return x.BlockProposal
+	}
+	return nil
+}
+
+func (x *BFT) GetVote() *Vote {
+	if x, ok := x.GetMessage().(*BFT_Vote); ok {
+		return x.Vote
+	}
+	return nil
+}
+
+func (x *BFT) GetEmptyVote() *EmptyVote {
+	if x, ok := x.GetMessage().(*BFT_EmptyVote); ok {
+		return x.EmptyVote
+	}
+	return nil
+}
+
+func (x *BFT) GetFinalizeVote() *Vote {
+	if x, ok := x.GetMessage().(*BFT_FinalizeVote); ok {
+		return x.FinalizeVote
+	}
+	return nil
+}
+
+func (x *BFT) GetNotarization() *QuorumCertificate {
+	if x, ok := x.GetMessage().(*BFT_Notarization); ok {
+		return x.Notarization
+	}
+	return nil
+}
+
+func (x *BFT) GetEmptyNotarization() *EmptyNotarization {
+	if x, ok := x.GetMessage().(*BFT_EmptyNotarization); ok {
+		return x.EmptyNotarization
+	}
+	return nil
+}
+
+func (x *BFT) GetFinalization() *QuorumCertificate {
+	if x, ok := x.GetMessage().(*BFT_Finalization); ok {
+		return x.Finalization
+	}
+	return nil
+}
+
+func (x *BFT) GetReplicationRequest() *ReplicationRequest {
+	if x, ok := x.GetMessage().(*BFT_ReplicationRequest); ok {
+		return x.ReplicationRequest
+	}
+	return nil
+}
+
+func (x *BFT) GetReplicationResponse() *ReplicationResponse {
+	if x, ok := x.GetMessage().(*BFT_ReplicationResponse); ok {
+		return x.ReplicationResponse
+	}
+	return nil
+}
+
+type isBFT_Message interface {
+	isBFT_Message()
+}
+
+type BFT_BlockProposal struct {
+	BlockProposal *BlockProposal `protobuf:"bytes,2,opt,name=block_proposal,json=blockProposal,proto3,oneof"`
+}
+
+type BFT_Vote struct {
+	Vote *Vote `protobuf:"bytes,3,opt,name=vote,proto3,oneof"`
+}
+
+type BFT_EmptyVote struct {
+	EmptyVote *EmptyVote `protobuf:"bytes,4,opt,name=empty_vote,json=emptyVote,proto3,oneof"`
+}
+
+type BFT_FinalizeVote struct {
+	FinalizeVote *Vote `protobuf:"bytes,5,opt,name=finalize_vote,json=finalizeVote,proto3,oneof"`
+}
+
+type BFT_Notarization struct {
+	Notarization *QuorumCertificate `protobuf:"bytes,6,opt,name=notarization,proto3,oneof"`
+}
+
+type BFT_EmptyNotarization struct {
+	EmptyNotarization *EmptyNotarization `protobuf:"bytes,7,opt,name=empty_notarization,json=emptyNotarization,proto3,oneof"`
+}
+
+type BFT_Finalization struct {
+	Finalization *QuorumCertificate `protobuf:"bytes,8,opt,name=finalization,proto3,oneof"`
+}
+
+type BFT_ReplicationRequest struct {
+	ReplicationRequest *ReplicationRequest `protobuf:"bytes,9,opt,name=replication_request,json=replicationRequest,proto3,oneof"`
+}
+
+type BFT_ReplicationResponse struct {
+	ReplicationResponse *ReplicationResponse `protobuf:"bytes,10,opt,name=replication_response,json=replicationResponse,proto3,oneof"`
+}
+
+func (*BFT_BlockProposal) isBFT_Message() {}
+
+func (*BFT_Vote) isBFT_Message() {}
+
+func (*BFT_EmptyVote) isBFT_Message() {}
+
+func (*BFT_FinalizeVote) isBFT_Message() {}
+
+func (*BFT_Notarization) isBFT_Message() {}
+
+func (*BFT_EmptyNotarization) isBFT_Message() {}
+
+func (*BFT_Finalization) isBFT_Message() {}
+
+func (*BFT_ReplicationRequest) isBFT_Message() {}
+
+func (*BFT_ReplicationResponse) isBFT_Message() {}
+
+// BlockProposal represents a proposed block with its vote
+type BlockProposal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Block []byte `protobuf:"bytes,1,opt,name=block,proto3" json:"block,omitempty"`
+	Vote  *Vote  `protobuf:"bytes,2,opt,name=vote,proto3" json:"vote,omitempty"`
+}
+
+func (x *BlockProposal) Reset() {
+	*x = BlockProposal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BlockProposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlockProposal) ProtoMessage() {}
+
+func (x *BlockProposal) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlockProposal.ProtoReflect.Descriptor instead.
+func (*BlockProposal) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *BlockProposal) GetBlock() []byte {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+func (x *BlockProposal) GetVote() *Vote {
+	if x != nil {
+		return x.Vote
+	}
+	return nil
+}
+
+// Vote represents a vote on a block
+type Vote struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BlockHeader *BlockHeader `protobuf:"bytes,1,opt,name=block_header,json=blockHeader,proto3" json:"block_header,omitempty"`
+	Signature   *Signature   `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+}
+
+func (x *Vote) Reset() {
+	*x = Vote{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Vote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Vote) ProtoMessage() {}
+
+func (x *Vote) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Vote.ProtoReflect.Descriptor instead.
+func (*Vote) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Vote) GetBlockHeader() *BlockHeader {
+	if x != nil {
+		return x.BlockHeader
+	}
+	return nil
+}
+
+func (x *Vote) GetSignature() *Signature {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+// EmptyVote represents a vote for no block
+type EmptyVote struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Metadata  *ProtocolMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Signature *Signature        `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+}
+
+func (x *EmptyVote) Reset() {
+	*x = EmptyVote{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[32]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EmptyVote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmptyVote) ProtoMessage() {}
+
+func (x *EmptyVote) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[32]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmptyVote.ProtoReflect.Descriptor instead.
+func (*EmptyVote) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *EmptyVote) GetMetadata() *ProtocolMetadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *EmptyVote) GetSignature() *Signature {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+// QuorumCertificate represents a quorum certificate for a block
+type QuorumCertificate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BlockHeader       *BlockHeader `protobuf:"bytes,1,opt,name=block_header,json=blockHeader,proto3" json:"block_header,omitempty"`
+	QuorumCertificate []byte       `protobuf:"bytes,2,opt,name=quorum_certificate,json=quorumCertificate,proto3" json:"quorum_certificate,omitempty"`
+}
+
+func (x *QuorumCertificate) Reset() {
+	*x = QuorumCertificate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[33]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuorumCertificate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuorumCertificate) ProtoMessage() {}
+
+func (x *QuorumCertificate) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[33]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuorumCertificate.ProtoReflect.Descriptor instead.
+func (*QuorumCertificate) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *QuorumCertificate) GetBlockHeader() *BlockHeader {
+	if x != nil {
+		return x.BlockHeader
+	}
+	return nil
+}
+
+func (x *QuorumCertificate) GetQuorumCertificate() []byte {
+	if x != nil {
+		return x.QuorumCertificate
+	}
+	return nil
+}
+
+// EmptyNotarization represents a notarization for no block
+type EmptyNotarization struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Metadata          *ProtocolMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	QuorumCertificate []byte            `protobuf:"bytes,2,opt,name=quorum_certificate,json=quorumCertificate,proto3" json:"quorum_certificate,omitempty"`
+}
+
+func (x *EmptyNotarization) Reset() {
+	*x = EmptyNotarization{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[34]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EmptyNotarization) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmptyNotarization) ProtoMessage() {}
+
+func (x *EmptyNotarization) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[34]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmptyNotarization.ProtoReflect.Descriptor instead.
+func (*EmptyNotarization) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *EmptyNotarization) GetMetadata() *ProtocolMetadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *EmptyNotarization) GetQuorumCertificate() []byte {
+	if x != nil {
+		return x.QuorumCertificate
+	}
+	return nil
+}
+
+// ReplicationRequest requests replicated data
+type ReplicationRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Seqs        []uint64 `protobuf:"varint,1,rep,packed,name=seqs,proto3" json:"seqs,omitempty"`
+	LatestRound uint64   `protobuf:"varint,2,opt,name=latest_round,json=latestRound,proto3" json:"latest_round,omitempty"`
+}
+
+func (x *ReplicationRequest) Reset() {
+	*x = ReplicationRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[35]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicationRequest) ProtoMessage() {}
+
+func (x *ReplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[35]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicationRequest.ProtoReflect.Descriptor instead.
+func (*ReplicationRequest) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *ReplicationRequest) GetSeqs() []uint64 {
+	if x != nil {
+		return x.Seqs
+	}
+	return nil
+}
+
+func (x *ReplicationRequest) GetLatestRound() uint64 {
+	if x != nil {
+		return x.LatestRound
+	}
+	return 0
+}
+
+// ReplicationResponse contains replicated data
+type ReplicationResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Data        [][]byte `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	LatestRound uint64   `protobuf:"varint,2,opt,name=latest_round,json=latestRound,proto3" json:"latest_round,omitempty"`
+}
+
+func (x *ReplicationResponse) Reset() {
+	*x = ReplicationResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[36]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReplicationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicationResponse) ProtoMessage() {}
+
+func (x *ReplicationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[36]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicationResponse.ProtoReflect.Descriptor instead.
+func (*ReplicationResponse) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *ReplicationResponse) GetData() [][]byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *ReplicationResponse) GetLatestRound() uint64 {
+	if x != nil {
+		return x.LatestRound
+	}
+	return 0
+}
+
+// BlockHeader represents a block header
+type BlockHeader struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BlockId     []byte `protobuf:"bytes,1,opt,name=block_id,json=blockId,proto3" json:"block_id,omitempty"`
+	Round       uint64 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	ParentRound uint64 `protobuf:"varint,3,opt,name=parent_round,json=parentRound,proto3" json:"parent_round,omitempty"`
+}
+
+func (x *BlockHeader) Reset() {
+	*x = BlockHeader{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[37]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BlockHeader) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlockHeader) ProtoMessage() {}
+
+func (x *BlockHeader) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[37]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlockHeader.ProtoReflect.Descriptor instead.
+func (*BlockHeader) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *BlockHeader) GetBlockId() []byte {
+	if x != nil {
+		return x.BlockId
+	}
+	return nil
+}
+
+func (x *BlockHeader) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *BlockHeader) GetParentRound() uint64 {
+	if x != nil {
+		return x.ParentRound
+	}
+	return 0
+}
+
+// ProtocolMetadata represents protocol metadata
+type ProtocolMetadata struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Round      uint64 `protobuf:"varint,1,opt,name=round,proto3" json:"round,omitempty"`
+	ParentHash []byte `protobuf:"bytes,2,opt,name=parent_hash,json=parentHash,proto3" json:"parent_hash,omitempty"`
+}
+
+func (x *ProtocolMetadata) Reset() {
+	*x = ProtocolMetadata{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[38]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProtocolMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProtocolMetadata) ProtoMessage() {}
+
+func (x *ProtocolMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[38]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProtocolMetadata.ProtoReflect.Descriptor instead.
+func (*ProtocolMetadata) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ProtocolMetadata) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *ProtocolMetadata) GetParentHash() []byte {
+	if x != nil {
+		return x.ParentHash
+	}
+	return nil
+}
+
+// Signature represents a cryptographic signature
+type Signature struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Signer []byte `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Value  []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *Signature) Reset() {
+	*x = Signature{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[39]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Signature) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Signature) ProtoMessage() {}
+
+func (x *Signature) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[39]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Signature.ProtoReflect.Descriptor instead.
+func (*Signature) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *Signature) GetSigner() []byte {
+	if x != nil {
+		return x.Signer
+	}
+	return nil
+}
+
+func (x *Signature) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+// QuorumRound represents a quorum round
+type QuorumRound struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	QuorumCertificate []byte `protobuf:"bytes,1,opt,name=quorum_certificate,json=quorumCertificate,proto3" json:"quorum_certificate,omitempty"`
+	Round             uint64 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+}
+
+func (x *QuorumRound) Reset() {
+	*x = QuorumRound{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_p2p_proto_msgTypes[40]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuorumRound) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuorumRound) ProtoMessage() {}
+
+func (x *QuorumRound) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_p2p_proto_msgTypes[40]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuorumRound.ProtoReflect.Descriptor instead.
+func (*QuorumRound) Descriptor() ([]byte, []int) {
+	return file_p2p_p2p_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *QuorumRound) GetQuorumCertificate() []byte {
+	if x != nil {
+		return x.QuorumCertificate
+	}
+	return nil
+}
+
+func (x *QuorumRound) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
 var File_p2p_p2p_proto protoreflect.FileDescriptor
 
 var file_p2p_p2p_proto_rawDesc = []byte{
@@ -2852,15 +3667,115 @@ var file_p2p_p2p_proto_rawDesc = []byte{
 	0x69, 0x70, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x1b, 0x0a,
 	0x09, 0x61, 0x70, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
-	0x52, 0x08, 0x61, 0x70, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x2a, 0x56, 0x0a, 0x0a, 0x45, 0x6e,
-	0x67, 0x69, 0x6e, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1b, 0x0a, 0x17, 0x45, 0x4e, 0x47, 0x49,
-	0x4e, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
-	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f,
-	0x54, 0x59, 0x50, 0x45, 0x5f, 0x4c, 0x55, 0x58, 0x10, 0x01, 0x12, 0x16, 0x0a, 0x12, 0x45, 0x4e,
-	0x47, 0x49, 0x4e, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4c, 0x49, 0x4e, 0x45, 0x41, 0x52,
-	0x10, 0x02, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x6c, 0x75, 0x78, 0x66, 0x69, 0x2f, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x70, 0x62, 0x2f, 0x70, 0x32, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x08, 0x61, 0x70, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x22, 0xcc, 0x04, 0x0a, 0x03, 0x42,
+	0x46, 0x54, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x3b, 0x0a,
+	0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x48, 0x00, 0x52, 0x0d, 0x62, 0x6c, 0x6f,
+	0x63, 0x6b, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x1f, 0x0a, 0x04, 0x76, 0x6f,
+	0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x56,
+	0x6f, 0x74, 0x65, 0x48, 0x00, 0x52, 0x04, 0x76, 0x6f, 0x74, 0x65, 0x12, 0x2f, 0x0a, 0x0a, 0x65,
+	0x6d, 0x70, 0x74, 0x79, 0x5f, 0x76, 0x6f, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0e, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x48,
+	0x00, 0x52, 0x09, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x30, 0x0a, 0x0d,
+	0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x5f, 0x76, 0x6f, 0x74, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x48, 0x00,
+	0x52, 0x0c, 0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x3c,
+	0x0a, 0x0c, 0x6e, 0x6f, 0x74, 0x61, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x51, 0x75, 0x6f, 0x72, 0x75,
+	0x6d, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x48, 0x00, 0x52, 0x0c,
+	0x6e, 0x6f, 0x74, 0x61, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x47, 0x0a, 0x12,
+	0x65, 0x6d, 0x70, 0x74, 0x79, 0x5f, 0x6e, 0x6f, 0x74, 0x61, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x45,
+	0x6d, 0x70, 0x74, 0x79, 0x4e, 0x6f, 0x74, 0x61, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x48, 0x00, 0x52, 0x11, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x4e, 0x6f, 0x74, 0x61, 0x72, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3c, 0x0a, 0x0c, 0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70, 0x32,
+	0x70, 0x2e, 0x51, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x48, 0x00, 0x52, 0x0c, 0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x4a, 0x0a, 0x13, 0x72, 0x65, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x17, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x52, 0x65, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x12, 0x72, 0x65, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x4d, 0x0a, 0x14, 0x72, 0x65, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e,
+	0x70, 0x32, 0x70, 0x2e, 0x52, 0x65, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x00, 0x52, 0x13, 0x72, 0x65, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09,
+	0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x44, 0x0a, 0x0d, 0x42, 0x6c, 0x6f,
+	0x63, 0x6b, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x62, 0x6c,
+	0x6f, 0x63, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x12, 0x1d, 0x0a, 0x04, 0x76, 0x6f, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09,
+	0x2e, 0x70, 0x32, 0x70, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x52, 0x04, 0x76, 0x6f, 0x74, 0x65, 0x22,
+	0x69, 0x0a, 0x04, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x33, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e,
+	0x70, 0x32, 0x70, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52,
+	0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x2c, 0x0a, 0x09,
+	0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0e, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52,
+	0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x22, 0x6c, 0x0a, 0x09, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x31, 0x0a, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x32, 0x70, 0x2e,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0x52, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x2c, 0x0a, 0x09, 0x73, 0x69,
+	0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e,
+	0x70, 0x32, 0x70, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52, 0x09, 0x73,
+	0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x22, 0x77, 0x0a, 0x11, 0x51, 0x75, 0x6f, 0x72,
+	0x75, 0x6d, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x33, 0x0a,
+	0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x12, 0x2d, 0x0a, 0x12, 0x71, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x5f, 0x63, 0x65, 0x72,
+	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x11,
+	0x71, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x22, 0x75, 0x0a, 0x11, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x4e, 0x6f, 0x74, 0x61, 0x72, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x31, 0x0a, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x32, 0x70, 0x2e, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52,
+	0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x2d, 0x0a, 0x12, 0x71, 0x75, 0x6f,
+	0x72, 0x75, 0x6d, 0x5f, 0x63, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x11, 0x71, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x43, 0x65, 0x72,
+	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22, 0x4b, 0x0a, 0x12, 0x52, 0x65, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12,
+	0x0a, 0x04, 0x73, 0x65, 0x71, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x04, 0x73, 0x65,
+	0x71, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x6f, 0x75,
+	0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74,
+	0x52, 0x6f, 0x75, 0x6e, 0x64, 0x22, 0x4c, 0x0a, 0x13, 0x52, 0x65, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61,
+	0x12, 0x21, 0x0a, 0x0c, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x6f, 0x75, 0x6e, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x52, 0x6f,
+	0x75, 0x6e, 0x64, 0x22, 0x61, 0x0a, 0x0b, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x49, 0x64, 0x12, 0x14, 0x0a,
+	0x05, 0x72, 0x6f, 0x75, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x72, 0x6f,
+	0x75, 0x6e, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x72, 0x6f,
+	0x75, 0x6e, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x70, 0x61, 0x72, 0x65, 0x6e,
+	0x74, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x22, 0x49, 0x0a, 0x10, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63,
+	0x6f, 0x6c, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x6f,
+	0x75, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x72, 0x6f, 0x75, 0x6e, 0x64,
+	0x12, 0x1f, 0x0a, 0x0b, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x48, 0x61, 0x73,
+	0x68, 0x22, 0x39, 0x0a, 0x09, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x16,
+	0x0a, 0x06, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06,
+	0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x52, 0x0a, 0x0b,
+	0x51, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x12, 0x2d, 0x0a, 0x12, 0x71,
+	0x75, 0x6f, 0x72, 0x75, 0x6d, 0x5f, 0x63, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x11, 0x71, 0x75, 0x6f, 0x72, 0x75, 0x6d, 0x43,
+	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x6f,
+	0x75, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x72, 0x6f, 0x75, 0x6e, 0x64,
+	0x2a, 0x56, 0x0a, 0x0a, 0x45, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1b,
+	0x0a, 0x17, 0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e,
+	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x45,
+	0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4c, 0x55, 0x58, 0x10, 0x01,
+	0x12, 0x16, 0x0a, 0x12, 0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f,
+	0x4c, 0x49, 0x4e, 0x45, 0x41, 0x52, 0x10, 0x02, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x75, 0x78, 0x66, 0x69, 0x2f, 0x6e, 0x6f, 0x64,
+	0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x70, 0x62, 0x2f, 0x70, 0x32, 0x70, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2876,7 +3791,7 @@ func file_p2p_p2p_proto_rawDescGZIP() []byte {
 }
 
 var file_p2p_p2p_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_p2p_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_p2p_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_p2p_p2p_proto_goTypes = []interface{}{
 	(EngineType)(0),                 // 0: p2p.EngineType
 	(*Message)(nil),                 // 1: p2p.Message
@@ -2908,6 +3823,18 @@ var file_p2p_p2p_proto_goTypes = []interface{}{
 	(*AppResponse)(nil),             // 27: p2p.AppResponse
 	(*AppError)(nil),                // 28: p2p.AppError
 	(*AppGossip)(nil),               // 29: p2p.AppGossip
+	(*BFT)(nil),                     // 30: p2p.BFT
+	(*BlockProposal)(nil),           // 31: p2p.BlockProposal
+	(*Vote)(nil),                    // 32: p2p.Vote
+	(*EmptyVote)(nil),               // 33: p2p.EmptyVote
+	(*QuorumCertificate)(nil),       // 34: p2p.QuorumCertificate
+	(*EmptyNotarization)(nil),       // 35: p2p.EmptyNotarization
+	(*ReplicationRequest)(nil),      // 36: p2p.ReplicationRequest
+	(*ReplicationResponse)(nil),     // 37: p2p.ReplicationResponse
+	(*BlockHeader)(nil),             // 38: p2p.BlockHeader
+	(*ProtocolMetadata)(nil),        // 39: p2p.ProtocolMetadata
+	(*Signature)(nil),               // 40: p2p.Signature
+	(*QuorumRound)(nil),             // 41: p2p.QuorumRound
 }
 var file_p2p_p2p_proto_depIdxs = []int32{
 	2,  // 0: p2p.Message.ping:type_name -> p2p.Ping
@@ -2940,11 +3867,27 @@ var file_p2p_p2p_proto_depIdxs = []int32{
 	7,  // 27: p2p.GetPeerList.known_peers:type_name -> p2p.BloomFilter
 	8,  // 28: p2p.PeerList.claimed_ip_ports:type_name -> p2p.ClaimedIpPort
 	0,  // 29: p2p.GetAncestors.engine_type:type_name -> p2p.EngineType
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	31, // 30: p2p.BFT.block_proposal:type_name -> p2p.BlockProposal
+	32, // 31: p2p.BFT.vote:type_name -> p2p.Vote
+	33, // 32: p2p.BFT.empty_vote:type_name -> p2p.EmptyVote
+	32, // 33: p2p.BFT.finalize_vote:type_name -> p2p.Vote
+	34, // 34: p2p.BFT.notarization:type_name -> p2p.QuorumCertificate
+	35, // 35: p2p.BFT.empty_notarization:type_name -> p2p.EmptyNotarization
+	34, // 36: p2p.BFT.finalization:type_name -> p2p.QuorumCertificate
+	36, // 37: p2p.BFT.replication_request:type_name -> p2p.ReplicationRequest
+	37, // 38: p2p.BFT.replication_response:type_name -> p2p.ReplicationResponse
+	32, // 39: p2p.BlockProposal.vote:type_name -> p2p.Vote
+	38, // 40: p2p.Vote.block_header:type_name -> p2p.BlockHeader
+	40, // 41: p2p.Vote.signature:type_name -> p2p.Signature
+	39, // 42: p2p.EmptyVote.metadata:type_name -> p2p.ProtocolMetadata
+	40, // 43: p2p.EmptyVote.signature:type_name -> p2p.Signature
+	38, // 44: p2p.QuorumCertificate.block_header:type_name -> p2p.BlockHeader
+	39, // 45: p2p.EmptyNotarization.metadata:type_name -> p2p.ProtocolMetadata
+	46, // [46:46] is the sub-list for method output_type
+	46, // [46:46] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_p2p_p2p_proto_init() }
@@ -3301,6 +4244,150 @@ func file_p2p_p2p_proto_init() {
 				return nil
 			}
 		}
+		file_p2p_p2p_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BFT); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BlockProposal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Vote); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EmptyVote); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QuorumCertificate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EmptyNotarization); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReplicationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReplicationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BlockHeader); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProtocolMetadata); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Signature); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_p2p_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QuorumRound); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_p2p_p2p_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Message_CompressedZstd)(nil),
@@ -3329,13 +4416,24 @@ func file_p2p_p2p_proto_init() {
 		(*Message_AppGossip)(nil),
 		(*Message_AppError)(nil),
 	}
+	file_p2p_p2p_proto_msgTypes[29].OneofWrappers = []interface{}{
+		(*BFT_BlockProposal)(nil),
+		(*BFT_Vote)(nil),
+		(*BFT_EmptyVote)(nil),
+		(*BFT_FinalizeVote)(nil),
+		(*BFT_Notarization)(nil),
+		(*BFT_EmptyNotarization)(nil),
+		(*BFT_Finalization)(nil),
+		(*BFT_ReplicationRequest)(nil),
+		(*BFT_ReplicationResponse)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_p2p_p2p_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   29,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

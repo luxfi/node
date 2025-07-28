@@ -36,7 +36,7 @@ func TestConvergenceSampling(t *testing.T) {
 			for i := 0; i < numNodes; i++ {
 				var sbFactory sampling.Factory
 				if i%2 == 0 {
-					sbFactory = factories.sampling.Factory
+					sbFactory = factories.ConsensusflakeFactory
 				} else {
 					sbFactory = factories.ConfidenceFactory
 				}
