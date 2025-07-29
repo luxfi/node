@@ -12,7 +12,7 @@ package atomic
 import (
 	reflect "reflect"
 
-	database "github.com/luxfi/database"
+	database "github.com/luxfi/db"
 	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )

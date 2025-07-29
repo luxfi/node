@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"slices"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 )
 
 func (v *view) NewIterator() database.Iterator {

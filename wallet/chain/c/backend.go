@@ -12,7 +12,7 @@ import (
 
 	// "github.com/luxfi/evm/plugin/evm"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet/subnet/primary/common"

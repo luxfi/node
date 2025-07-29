@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/mock/mockgen/model"
 
-	pkg_ "github.com/luxfi/database"
+	pkg_ "github.com/luxfi/db"
 )
 
 var output = flag.String("output", "", "The output file name, or empty to use stdout.")
@@ -32,7 +32,7 @@ func main() {
 		// NOTE: This behaves contrary to documented behaviour if the
 		// package name is not the final component of the import path.
 		// The reflect package doesn't expose the package name, though.
-		Name: path.Base("github.com/luxfi/database"),
+		Name: path.Base("github.com/luxfi/db"),
 	}
 
 	for _, it := range its {

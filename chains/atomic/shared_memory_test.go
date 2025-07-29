@@ -8,8 +8,8 @@ package atomic
 import (
 	"testing"
 
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/ids"
 )
 

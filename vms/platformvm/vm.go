@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"

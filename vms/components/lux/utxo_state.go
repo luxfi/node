@@ -9,9 +9,9 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/linkeddb"
-	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/linkeddb"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/ids"
 )
 

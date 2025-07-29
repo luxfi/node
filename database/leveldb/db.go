@@ -22,7 +22,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 )

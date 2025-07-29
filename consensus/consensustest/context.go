@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"

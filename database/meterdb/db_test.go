@@ -12,8 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 )
 
 func TestInterface(t *testing.T) {
