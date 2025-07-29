@@ -16,9 +16,9 @@ import (
 	time "time"
 
 	consensus "github.com/luxfi/node/consensus"
+	chain "github.com/luxfi/node/consensus/chain"
 	core "github.com/luxfi/node/consensus/engine/core"
 	graph "github.com/luxfi/node/consensus/graph"
-	linear "github.com/luxfi/node/consensus/linear"
 	database "github.com/luxfi/node/database"
 	ids "github.com/luxfi/node/ids"
 	version "github.com/luxfi/node/version"
@@ -106,10 +106,10 @@ func (mr *LinearizableVMMockRecorder) AppResponse(ctx, nodeID, requestID, respon
 }
 
 // BuildBlock mocks base method.
-func (m *LinearizableVM) BuildBlock(arg0 context.Context) (linear.Block, error) {
+func (m *LinearizableVM) BuildBlock(arg0 context.Context) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildBlock", arg0)
-	ret0, _ := ret[0].(linear.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -164,10 +164,10 @@ func (mr *LinearizableVMMockRecorder) Disconnected(ctx, nodeID any) *gomock.Call
 }
 
 // GetBlock mocks base method.
-func (m *LinearizableVM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+func (m *LinearizableVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", ctx, blkID)
-	ret0, _ := ret[0].(linear.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -267,10 +267,10 @@ func (mr *LinearizableVMMockRecorder) NewHTTPHandler(ctx any) *gomock.Call {
 }
 
 // ParseBlock mocks base method.
-func (m *LinearizableVM) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error) {
+func (m *LinearizableVM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseBlock", ctx, blockBytes)
-	ret0, _ := ret[0].(linear.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

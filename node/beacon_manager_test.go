@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/router/routermock"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -36,7 +36,7 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	ctrl := gomock.NewController(t)
-	mockRouter := router.NewMockRouter(ctrl)
+	mockRouter := routermock.NewRouter(ctrl)
 
 	b := beaconManager{
 		Router:                  mockRouter,

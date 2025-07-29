@@ -7,26 +7,26 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/node/utils/units"
 )
 
 func TestNew(t *testing.T) {
 	var (
-		require         = require.New(t)
-		maxN     uint64 = 10000
-		p               = 0.1
-		maxBytes uint64 = 1 * units.MiB // 1 MiB
+		require = require.New(t)
+		count   = 10000
+		p       = 0.1
 	)
-	f, err := New(maxN, p, maxBytes)
+	
+	numHashes, numEntries := OptimalParameters(count, p)
+	f, err := New(numHashes, numEntries)
 	require.NoError(err)
 	require.NotNil(f)
 
-	f.Add([]byte("hello"))
+	salt := []byte("test salt")
+	Add(f, []byte("hello"), salt)
 
-	checked := f.Check([]byte("hello"))
-	require.True(checked, "should have contained the key")
+	contains := Contains(f, []byte("hello"), salt)
+	require.True(contains, "should have contained the key")
 
-	checked = f.Check([]byte("bye"))
-	require.False(checked, "shouldn't have contained the key")
+	contains = Contains(f, []byte("bye"), salt)
+	require.False(contains, "shouldn't have contained the key")
 }

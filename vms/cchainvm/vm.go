@@ -5,11 +5,15 @@ package cchainvm
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,8 +29,8 @@ import (
 
 	consensusNode "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/version"
@@ -84,6 +88,57 @@ func (vm *VM) Initialize(
 	vm.shutdownChan = make(chan struct{})
 	vm.builtBlocks = make(map[ids.ID]*Block)
 	
+	// MIGRATION DETECTION: Check if we have migrated data BEFORE any initialization
+	// We need to check at the C-Chain database level, not the wrapped level
+	hasMigratedData := false
+	migratedHeight := uint64(0)
+	migratedBlockHash := common.Hash{}
+	
+	// Create a database wrapper first
+	vm.ethDB = WrapDatabase(db)
+	
+	// Check environment variables for imported blockchain data
+	if importedHeight := os.Getenv("LUX_IMPORTED_HEIGHT"); importedHeight != "" {
+		if height, err := strconv.ParseUint(importedHeight, 10, 64); err == nil && height > 0 {
+			hasMigratedData = true
+			migratedHeight = height
+			
+			// Get the block hash if provided
+			if importedBlockID := os.Getenv("LUX_IMPORTED_BLOCK_ID"); importedBlockID != "" {
+				if blockIDBytes, err := hex.DecodeString(importedBlockID); err == nil && len(blockIDBytes) == 32 {
+					copy(migratedBlockHash[:], blockIDBytes)
+				}
+			}
+			
+			fmt.Printf("DETECTED IMPORTED DATA AT HEIGHT %d, HASH %s\n", height, migratedBlockHash.Hex())
+			
+			// Log to Avalanche logger too
+			vm.ctx.Log.Info("Detected imported blockchain data from environment",
+				zap.Uint64("height", height),
+				zap.String("blockHash", migratedBlockHash.Hex()),
+			)
+		}
+	}
+	
+	// Fallback: Check for migrated blockchain data in database
+	if !hasMigratedData {
+		if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+			height := binary.BigEndian.Uint64(heightBytes)
+			if height > 0 {
+				hasMigratedData = true
+				migratedHeight = height
+				fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
+				
+				// Log to Avalanche logger too
+				vm.ctx.Log.Info("Detected migrated blockchain data",
+					zap.Uint64("height", height),
+				)
+			}
+		}
+	}
+	
+	// If we have migrated data, skip normal genesis initialization
+	
 	// DEBUG: Log database path and check contents
 	fmt.Printf("DEBUG: C-Chain VM Initialize called\n")
 	fmt.Printf("DEBUG: Database type: %T\n", db)
@@ -123,9 +178,6 @@ func (vm *VM) Initialize(
 		genesis.Config = vm.chainConfig
 	}
 
-	// Create a database wrapper
-	// TODO: Consider using prefixed database in the future
-	vm.ethDB = WrapDatabase(db)
 
 	// Initialize eth config
 	vm.ethConfig = ethconfig.Defaults
@@ -133,9 +185,34 @@ func (vm *VM) Initialize(
 	vm.ethConfig.NetworkId = vm.chainConfig.ChainID.Uint64()
 	vm.ethConfig.Miner.Etherbase = common.Address{}
 
+	// CRITICAL: For migrated data, we must prevent normal genesis initialization
+	if hasMigratedData {
+		fmt.Printf("MIGRATION MODE: Skipping genesis, loading from height %d\n", migratedHeight)
+		
+		// Set a special genesis that won't overwrite our data
+		genesis.Alloc = nil // Clear allocations to prevent overwriting state
+		
+		// Mark database as already initialized to prevent SetupGenesisBlock
+		// Write a dummy genesis hash to satisfy the check
+		if err := vm.ethDB.Put([]byte("genesis"), []byte{1}); err == nil {
+			fmt.Printf("Marked database as initialized\n")
+		}
+	}
+
 	// Create minimal Ethereum backend
 	var err error
-	vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+	if hasMigratedData {
+		// CRITICAL: Skip all genesis processing for migrated data
+		fmt.Printf("MIGRATION MODE ACTIVE: Loading blockchain from height %d\n", migratedHeight)
+		
+		// Create a special backend that doesn't touch genesis
+		vm.backend, err = NewMigratedBackend(vm.ethDB, migratedHeight)
+		if err != nil {
+			return fmt.Errorf("failed to create migrated backend: %w", err)
+		}
+	} else {
+		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to create eth backend: %w", err)
 	}
@@ -151,6 +228,57 @@ func (vm *VM) Initialize(
 	vm.genesisHash = genesisBlock.Hash()
 
 	// Check if we have existing blocks beyond genesis
+	// If we detected migrated data via environment variables, use that
+	if hasMigratedData && migratedBlockHash != (common.Hash{}) {
+		vm.lastAccepted = ids.ID(migratedBlockHash)
+		vm.ctx.Log.Info("Using imported blockchain data from environment",
+			zap.Uint64("height", migratedHeight),
+			zap.String("hash", migratedBlockHash.Hex()),
+			zap.String("lastAccepted", vm.lastAccepted.String()),
+		)
+		
+		// Log database status after migration detection
+		vm.logDatabaseStatus()
+		return nil
+	}
+	
+	// First check our custom consensus keys for migrated data
+	if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+		height := binary.BigEndian.Uint64(heightBytes)
+		if height > 0 {
+			vm.ctx.Log.Info("Found Height consensus key",
+				zap.Uint64("height", height),
+			)
+			
+			// Try to get the block hash at this height
+			blockNumBytes := make([]byte, 8)
+			binary.BigEndian.PutUint64(blockNumBytes, height)
+			
+			// Check canonical hash
+			canonicalKey := append([]byte{0x68}, blockNumBytes...)
+			canonicalKey = append(canonicalKey, 0x6e)
+			
+			if hashBytes, err := vm.ethDB.Get(canonicalKey); err == nil && len(hashBytes) == 32 {
+				var hash common.Hash
+				copy(hash[:], hashBytes)
+				
+				// Force the blockchain to recognize this height
+				// Note: SetHead is not the right approach, we need to ensure the blockchain loads the data
+				
+				vm.lastAccepted = ids.ID(hash)
+				vm.ctx.Log.Info("Found migrated blockchain data",
+					zap.Uint64("height", height),
+					zap.String("hash", hash.Hex()),
+					zap.String("lastAccepted", vm.lastAccepted.String()),
+				)
+				
+				// Log database status after migration detection
+				vm.logDatabaseStatus()
+				return nil
+			}
+		}
+	}
+	
 	currentBlock := vm.blockChain.CurrentBlock()
 	if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
 		// We have migrated data, set last accepted to current block
@@ -289,7 +417,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // GetBlock implements the block.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
@@ -309,7 +437,7 @@ func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) 
 }
 
 // ParseBlock implements the block.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	ethBlock := new(types.Block)
 	if err := rlp.DecodeBytes(blockBytes, ethBlock); err != nil {
 		return nil, fmt.Errorf("failed to decode block: %w", err)
@@ -319,7 +447,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (linear.Block, 
 }
 
 // BuildBlock implements the block.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 

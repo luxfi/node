@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/bft"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/tree"
 )
@@ -36,7 +36,7 @@ type Block struct {
 	metadata bft.ProtocolMetadata
 
 	// the parsed block
-	vmBlock linear.Block
+	vmBlock chain.Block
 
 	blockTracker *blockTracker
 }

@@ -10,14 +10,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 var (
-	_ linear.Block       = (*Block)(nil)
-	_ linear.OracleBlock = (*Block)(nil)
+	_ chain.Block       = (*Block)(nil)
+	_ chain.OracleBlock = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.
@@ -81,7 +81,7 @@ func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())
 }
 
-func (b *Block) Options(context.Context) ([2]linear.Block, error) {
+func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
 		log:                     b.manager.ctx.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
@@ -89,10 +89,10 @@ func (b *Block) Options(context.Context) ([2]linear.Block, error) {
 		state:                   b.manager.backend.state,
 	}
 	if err := b.Block.Visit(&options); err != nil {
-		return [2]linear.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
-	return [2]linear.Block{
+	return [2]chain.Block{
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil

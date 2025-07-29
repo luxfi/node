@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -92,7 +93,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := core.FakeSender{
+	sender := &core.FakeSender{
 		SentAppRequest:           make(chan []byte, 1),
 		SentAppGossip:            make(chan []byte, 1),
 		SentCrossChainAppRequest: make(chan []byte, 1),
@@ -151,7 +152,7 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := core.FakeSender{
+	sender := &core.FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
@@ -227,7 +228,7 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := core.FakeSender{
+	sender := &core.FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
@@ -257,7 +258,7 @@ func TestCrossChainAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := core.FakeSender{
+	sender := &core.FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
 	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
@@ -290,9 +291,10 @@ func TestCrossChainAppRequestCancelledContext(t *testing.T) {
 
 	sentMessages := make(chan []byte, 1)
 	sender := &core.SenderTest{
-		SendCrossChainAppRequestF: func(ctx context.Context, _ ids.ID, _ uint32, msgBytes []byte) {
+		SendCrossChainAppRequestF: func(ctx context.Context, _ ids.ID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
+			return nil
 		},
 	}
 	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
@@ -326,7 +328,7 @@ func TestCrossChainAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := core.FakeSender{
+	sender := &core.FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
 	network, err := NewNetwork(logging.NoLog{}, sender, prometheus.NewRegistry(), "")
@@ -719,7 +721,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			name:  "validator connected",
 			peers: []ids.NodeID{nodeID0, nodeID1},
 			option: func(_ *testing.T, n *Network) ClientOption {
-				state := &validators.TestState{
+				state := &validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -742,7 +744,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			name:  "validator disconnected",
 			peers: []ids.NodeID{nodeID0},
 			option: func(_ *testing.T, n *Network) ClientOption {
-				state := &validators.TestState{
+				state := &validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},

@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/node/consensus/consensustest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {
@@ -18,7 +18,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 
 	tr := New()
 
-	block := lineartest.BuildChild(lineartest.Genesis)
+	block := chaintest.BuildChild(chaintest.Genesis)
 	_, contains := tr.Get(block)
 	require.False(contains)
 
@@ -28,7 +28,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 	require.True(contains)
 
 	require.NoError(tr.Accept(context.Background(), block))
-	require.Equal(choices.Accepted, block.Status)
+	require.Equal(consensustest.Accepted, block.Status)
 
 	_, contains = tr.Get(block)
 	require.False(contains)
@@ -39,8 +39,8 @@ func TestAcceptBlockConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
-	blockToReject := lineartest.BuildChild(lineartest.Genesis)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
 
 	// add conflicting blocks
 	tr.Add(blockToAccept)
@@ -55,11 +55,11 @@ func TestAcceptBlockConflict(t *testing.T) {
 	require.NoError(tr.Accept(context.Background(), blockToAccept))
 
 	// check their statuses and that they are removed from the tree
-	require.Equal(choices.Accepted, blockToAccept.Status)
+	require.Equal(consensustest.Accepted, blockToAccept.Status)
 	_, contains = tr.Get(blockToAccept)
 	require.False(contains)
 
-	require.Equal(choices.Rejected, blockToReject.Status)
+	require.Equal(consensustest.Rejected, blockToReject.Status)
 	_, contains = tr.Get(blockToReject)
 	require.False(contains)
 }
@@ -69,9 +69,9 @@ func TestAcceptChainConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
-	blockToReject := lineartest.BuildChild(lineartest.Genesis)
-	blockToRejectChild := lineartest.BuildChild(blockToReject)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
+	blockToRejectChild := chaintest.BuildChild(blockToReject)
 
 	// add conflicting blocks.
 	tr.Add(blockToAccept)
@@ -90,15 +90,15 @@ func TestAcceptChainConflict(t *testing.T) {
 	require.NoError(tr.Accept(context.Background(), blockToAccept))
 
 	// check their statuses and whether they are removed from tree
-	require.Equal(choices.Accepted, blockToAccept.Status)
+	require.Equal(consensustest.Accepted, blockToAccept.Status)
 	_, contains = tr.Get(blockToAccept)
 	require.False(contains)
 
-	require.Equal(choices.Rejected, blockToReject.Status)
+	require.Equal(consensustest.Rejected, blockToReject.Status)
 	_, contains = tr.Get(blockToReject)
 	require.False(contains)
 
-	require.Equal(choices.Rejected, blockToRejectChild.Status)
+	require.Equal(consensustest.Rejected, blockToRejectChild.Status)
 	_, contains = tr.Get(blockToRejectChild)
 	require.False(contains)
 }

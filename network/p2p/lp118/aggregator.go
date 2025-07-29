@@ -10,10 +10,11 @@ import (
 	"math/big"
 
 	"go.uber.org/zap"
-	"encoding/json"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
@@ -66,17 +67,12 @@ func (s *SignatureAggregator) AggregateSignatures(
 	totalStake *big.Int,
 	_ error,
 ) {
-	// TODO: sdk.SignatureRequest type is not defined
-	type SignatureRequest struct {
-		Message       []byte `json:"message"`
-		Justification []byte `json:"justification"`
-	}
-	request := &SignatureRequest{
+	request := &sdk.SignatureRequest{
 		Message:       message.UnsignedMessage.Bytes(),
 		Justification: justification,
 	}
 
-	requestBytes, err := json.Marshal(request)
+	requestBytes, err := proto.Marshal(request)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to marshal signature request: %w", err)
 	}
@@ -237,12 +233,8 @@ func (r *responseHandler) HandleResponse(
 		return
 	}
 
-	// TODO: sdk.SignatureResponse type is not defined
-	type SignatureResponse struct {
-		Signature []byte
-	}
-	response := &SignatureResponse{}
-	if err := json.Unmarshal(responseBytes, response); err != nil {
+	response := &sdk.SignatureResponse{}
+	if err := proto.Unmarshal(responseBytes, response); err != nil {
 		r.results <- result{NodeID: nodeID, Validator: validator, Err: err}
 		return
 	}

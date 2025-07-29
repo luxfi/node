@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/ids"
 )

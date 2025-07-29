@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -46,6 +47,7 @@ func TestCommSendMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	sender := sendermock.NewExternalSender(ctrl)
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -76,6 +78,7 @@ func TestCommBroadcast(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	sender := sendermock.NewExternalSender(ctrl)
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -111,6 +114,7 @@ func TestCommFailsWithoutCurrentNode(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mc, err := message.NewCreator(
+		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,

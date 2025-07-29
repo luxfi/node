@@ -182,10 +182,10 @@ func TestPackerUnpackFixedBytes(t *testing.T) {
 	require := require.New(t)
 
 	p := Packer{Bytes: []byte("Lux")}
-	require.Equal([]byte("Lux"), p.UnpackFixedBytes(4))
+	require.Equal([]byte("Lux"), p.UnpackFixedBytes(3))
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal(4, p.Offset)
+	require.Equal(3, p.Offset)
 
 	require.Nil(p.UnpackFixedBytes(4))
 	require.True(p.Errored())
@@ -199,7 +199,7 @@ func TestPackerPackBytes(t *testing.T) {
 	p.PackBytes([]byte("Lux"))
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal([]byte("\x00\x00\x00\x04Lux"), p.Bytes)
+	require.Equal([]byte("\x00\x00\x00\x03Lux"), p.Bytes)
 
 	p.PackBytes([]byte("Lux"))
 	require.True(p.Errored())
@@ -209,11 +209,11 @@ func TestPackerPackBytes(t *testing.T) {
 func TestPackerUnpackBytes(t *testing.T) {
 	require := require.New(t)
 
-	p := Packer{Bytes: []byte("\x00\x00\x00\x04Lux")}
+	p := Packer{Bytes: []byte("\x00\x00\x00\x03Lux")}
 	require.Equal([]byte("Lux"), p.UnpackBytes())
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal(8, p.Offset)
+	require.Equal(7, p.Offset)
 
 	require.Nil(p.UnpackBytes())
 	require.True(p.Errored())
@@ -223,11 +223,11 @@ func TestPackerUnpackBytes(t *testing.T) {
 func TestPackerUnpackLimitedBytes(t *testing.T) {
 	require := require.New(t)
 
-	p := Packer{Bytes: []byte("\x00\x00\x00\x04Lux")}
+	p := Packer{Bytes: []byte("\x00\x00\x00\x03Lux")}
 	require.Equal([]byte("Lux"), p.UnpackLimitedBytes(10))
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal(8, p.Offset)
+	require.Equal(7, p.Offset)
 
 	require.Nil(p.UnpackLimitedBytes(10))
 	require.True(p.Errored())
@@ -248,18 +248,18 @@ func TestPackerString(t *testing.T) {
 	p.PackStr("Lux")
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal([]byte{0x00, 0x04, 0x41, 0x76, 0x61, 0x78}, p.Bytes)
+	require.Equal([]byte{0x00, 0x03, 0x4c, 0x75, 0x78}, p.Bytes)
 }
 
 func TestPackerUnpackString(t *testing.T) {
 	require := require.New(t)
 
-	p := Packer{Bytes: []byte("\x00\x04Lux")}
+	p := Packer{Bytes: []byte("\x00\x03Lux")}
 
 	require.Equal("Lux", p.UnpackStr())
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal(6, p.Offset)
+	require.Equal(5, p.Offset)
 
 	require.Equal("", p.UnpackStr())
 	require.True(p.Errored())
@@ -269,11 +269,11 @@ func TestPackerUnpackString(t *testing.T) {
 func TestPackerUnpackLimitedString(t *testing.T) {
 	require := require.New(t)
 
-	p := Packer{Bytes: []byte("\x00\x04Lux")}
+	p := Packer{Bytes: []byte("\x00\x03Lux")}
 	require.Equal("Lux", p.UnpackLimitedStr(10))
 	require.False(p.Errored())
 	require.NoError(p.Err)
-	require.Equal(6, p.Offset)
+	require.Equal(5, p.Offset)
 
 	require.Equal("", p.UnpackLimitedStr(10))
 	require.True(p.Errored())

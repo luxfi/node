@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/ids"
 )
 
@@ -31,40 +31,40 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(linear.Block)
+	Add(chain.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(linear.Block) (linear.Block, bool)
+	Get(chain.Block) (chain.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
-	Accept(context.Context, linear.Block) error
+	Accept(context.Context, chain.Block) error
 }
 
 type tree struct {
 	// parentID -> childID -> childBlock
-	nodes map[ids.ID]map[ids.ID]linear.Block
+	nodes map[ids.ID]map[ids.ID]chain.Block
 }
 
 func New() Tree {
 	return &tree{
-		nodes: make(map[ids.ID]map[ids.ID]linear.Block),
+		nodes: make(map[ids.ID]map[ids.ID]chain.Block),
 	}
 }
 
-func (t *tree) Add(blk linear.Block) {
+func (t *tree) Add(blk chain.Block) {
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
-		children = make(map[ids.ID]linear.Block)
+		children = make(map[ids.ID]chain.Block)
 		t.nodes[parentID] = children
 	}
 	blkID := blk.ID()
 	children[blkID] = blk
 }
 
-func (t *tree) Get(blk linear.Block) (linear.Block, bool) {
+func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	blkID := blk.ID()
@@ -72,7 +72,7 @@ func (t *tree) Get(blk linear.Block) (linear.Block, bool) {
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk linear.Block) error {
+func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	// accept the provided block
 	if err := blk.Accept(ctx); err != nil {
 		return err

@@ -145,7 +145,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	baseState := defaultState(config, ctx, baseDB, rewards)
 
 	uptimes := uptime.NewManager(baseState, clk)
-	utxosVerifier := utxo.NewVerifier(ctx, clk, fx)
+	utxosHandler := utxo.NewHandler(ctx, clk, fx)
 
 	factory := txstest.NewWalletFactory(ctx, config, baseState)
 
@@ -155,7 +155,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		Clk:          clk,
 		Bootstrapped: &isBootstrapped,
 		Fx:           fx,
-		FlowChecker:  utxosVerifier,
+		FlowChecker:  utxosHandler,
 		Uptimes:      uptimes,
 		Rewards:      rewards,
 	}
@@ -171,7 +171,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		state:          baseState,
 		states:         make(map[ids.ID]state.Chain),
 		uptimes:        uptimes,
-		utxosHandler:   utxosVerifier,
+		utxosHandler:   utxosHandler,
 		factory:        factory,
 		backend:        backend,
 	}
@@ -187,12 +187,12 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		if env.isBootstrapped.Get() {
 			validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(env.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID))
+			require.NoError(env.uptimes.StopTracking(validatorIDs))
 
 			for subnetID := range env.config.TrackedSubnets {
 				validatorIDs := env.config.Validators.GetValidatorIDs(subnetID)
 
-				require.NoError(env.uptimes.StopTracking(validatorIDs, subnetID))
+				require.NoError(env.uptimes.StopTracking(validatorIDs))
 			}
 			env.state.SetHeight(math.MaxUint64)
 			require.NoError(env.state.Commit())

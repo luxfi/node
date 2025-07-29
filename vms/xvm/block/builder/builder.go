@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -32,7 +32,7 @@ var (
 
 type Builder interface {
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (linear.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -60,7 +60,7 @@ func New(
 }
 
 // BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (linear.Block, error) {
+func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	defer b.mempool.RequestBuildBlock()
 
 	ctx := b.backend.Ctx

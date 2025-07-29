@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -364,11 +364,11 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err

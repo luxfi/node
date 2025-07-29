@@ -13,6 +13,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/set"
@@ -329,7 +331,7 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 			validator := getValidatorOutputs[i]
 			getValidatorsOutput[validator.NodeID] = validator
 		}
-		validatorState := &validators.TestState{
+		validatorState := &validatorstest.State{
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 				return getValidatorsOutput, nil
 			},

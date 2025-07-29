@@ -71,7 +71,7 @@ func TestDecisionTxsInMempool(t *testing.T) {
 		// we can get it
 		require.True(mpool.Has(tx.ID()))
 
-		retrieved := mpool.Get(tx.ID())
+		retrieved, _ := mpool.Get(tx.ID())
 		require.NotNil(retrieved)
 		require.Equal(tx, retrieved)
 
@@ -90,10 +90,11 @@ func TestDecisionTxsInMempool(t *testing.T) {
 		require.True(found)
 
 		// once removed it cannot be there
-		mpool.Remove([]*txs.Tx{tx})
+		mpool.Remove(tx)
 
 		require.False(mpool.Has(tx.ID()))
-		require.Equal((*txs.Tx)(nil), mpool.Get(tx.ID()))
+		retrievedAfterRemove, _ := mpool.Get(tx.ID())
+		require.Equal((*txs.Tx)(nil), retrievedAfterRemove)
 
 		// we can reinsert it again to grow the mempool
 		require.NoError(mpool.Add(tx))
@@ -122,7 +123,7 @@ func TestProposalTxsInMempool(t *testing.T) {
 		// we can get it
 		require.True(mpool.Has(tx.ID()))
 
-		retrieved := mpool.Get(tx.ID())
+		retrieved, _ := mpool.Get(tx.ID())
 		require.NotNil(retrieved)
 		require.Equal(tx, retrieved)
 
@@ -144,10 +145,11 @@ func TestProposalTxsInMempool(t *testing.T) {
 		}
 
 		// once removed it cannot be there
-		mpool.Remove([]*txs.Tx{tx})
+		mpool.Remove(tx)
 
 		require.False(mpool.Has(tx.ID()))
-		require.Equal((*txs.Tx)(nil), mpool.Get(tx.ID()))
+		retrievedAfterRemove, _ := mpool.Get(tx.ID())
+		require.Equal((*txs.Tx)(nil), retrievedAfterRemove)
 
 		// we can reinsert it again to grow the mempool
 		require.NoError(mpool.Add(tx))

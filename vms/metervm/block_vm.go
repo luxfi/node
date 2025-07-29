@@ -9,8 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -74,7 +74,7 @@ func (vm *blockVM) Initialize(
 	return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.BuildBlock(ctx)
 	end := vm.clock.Time()
@@ -90,7 +90,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	}, nil
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (linear.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.ParseBlock(ctx, b)
 	end := vm.clock.Time()
@@ -106,7 +106,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (linear.Block, erro
 	}, nil
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (linear.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.GetBlock(ctx, id)
 	end := vm.clock.Time()

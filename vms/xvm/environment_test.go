@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
@@ -23,7 +23,6 @@ import (
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -36,7 +35,6 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs/txstest"
 
 	avajson "github.com/luxfi/node/utils/json"
-	keystoreutils "github.com/luxfi/node/vms/components/keystore"
 )
 
 type fork uint8
@@ -97,7 +95,7 @@ type envConfig struct {
 	keystoreUsers    []*user
 	vmStaticConfig   *config.Config
 	vmDynamicConfig  *Config
-	additionalFxs    []*common.Fx
+	additionalFxs    []*core.Fx
 	notLinearized    bool
 	notBootstrapped  bool
 }
@@ -106,7 +104,7 @@ type environment struct {
 	genesisBytes []byte
 	genesisTx    *txs.Tx
 	sharedMemory *atomic.Memory
-	issuer       chan common.Message
+	issuer       chan core.Message
 	vm           *VM
 	txBuilder    *txstest.Builder
 }
@@ -179,9 +177,8 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		genesisBytes,
 		nil,
 		configBytes,
-		nil,
 		append(
-			[]*common.Fx{
+			[]*core.Fx{
 				{
 					ID: secp256k1fx.ID,
 					Fx: &secp256k1fx.Fx{},
@@ -193,11 +190,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			},
 			c.additionalFxs...,
 		),
-		&common.SenderTest{},
+		nil, // AppSender
 	))
 
 	stopVertexID := ids.GenerateTestID()
-	issuer := make(chan common.Message, 1)
+	issuer := make(chan core.Message, 1)
 
 	env := &environment{
 		genesisBytes: genesisBytes,
@@ -213,7 +210,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		return env
 	}
 
-	require.NoError(vm.Linearize(context.Background(), stopVertexID, issuer))
+	require.NoError(vm.Linearize(context.Background(), stopVertexID))
 	if c.notBootstrapped {
 		return env
 	}
@@ -234,12 +231,12 @@ func staticConfig(tb testing.TB, f fork) config.Config {
 	c := config.Config{
 		TxFee:            testTxFee,
 		CreateAssetTxFee: testTxFee,
-		EUpgradeTime:     mockable.MaxTime,
+		EtnaTime:         mockable.MaxTime,
 	}
 
 	switch f {
 	case eUpgrade:
-		c.EUpgradeTime = time.Time{}
+		c.EtnaTime = time.Time{}
 	case durango:
 	default:
 		require.FailNow(tb, "unhandled fork", f)
@@ -512,7 +509,7 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 func issueAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan common.Message,
+	issuer <-chan core.Message,
 	tx *txs.Tx,
 ) {
 	txID, err := vm.issueTxFromRPC(tx)
@@ -526,10 +523,10 @@ func issueAndAccept(
 func buildAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan common.Message,
+	issuer <-chan core.Message,
 	txID ids.ID,
 ) {
-	require.Equal(common.PendingTxs, <-issuer)
+	require.Equal(core.PendingTxs, <-issuer)
 
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()

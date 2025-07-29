@@ -21,6 +21,9 @@ type Config struct {
 	// Time of the Durango network upgrade
 	DurangoTime time.Time
 
+	// Time of the E network upgrade
+	EUpgradeTime time.Time
+
 	// Time of the Etna network upgrade
 	EtnaTime time.Time
 }

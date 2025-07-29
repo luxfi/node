@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/geth/rlp"
 
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/ids"
 )
 
-var _ linear.Block = (*Block)(nil)
+var _ chain.Block = (*Block)(nil)
 
-// Block wraps an Ethereum block to implement the linear.Block interface
+// Block wraps an Ethereum block to implement the chain.Block interface
 type Block struct {
 	vm       *VM
 	ethBlock *types.Block
@@ -43,12 +43,12 @@ func (vm *VM) newBlock(ethBlock *types.Block) (*Block, error) {
 	}, nil
 }
 
-// ID implements the linear.Block interface
+// ID implements the chain.Block interface
 func (b *Block) ID() ids.ID {
 	return b.id
 }
 
-// Accept implements the linear.Block interface
+// Accept implements the chain.Block interface
 func (b *Block) Accept(ctx context.Context) error {
 	b.vm.mu.Lock()
 	defer b.vm.mu.Unlock()
@@ -63,7 +63,7 @@ func (b *Block) Accept(ctx context.Context) error {
 	return nil
 }
 
-// Reject implements the linear.Block interface
+// Reject implements the chain.Block interface
 func (b *Block) Reject(ctx context.Context) error {
 	b.vm.mu.Lock()
 	defer b.vm.mu.Unlock()
@@ -77,12 +77,12 @@ func (b *Block) Reject(ctx context.Context) error {
 	return nil
 }
 
-// Status implements the linear.Block interface
+// Status implements the chain.Block interface
 func (b *Block) Status() choices.Status {
 	return b.status
 }
 
-// Parent implements the linear.Block interface
+// Parent implements the chain.Block interface
 func (b *Block) Parent() ids.ID {
 	if b.ethBlock.NumberU64() == 0 {
 		// Genesis block has no parent
@@ -91,7 +91,7 @@ func (b *Block) Parent() ids.ID {
 	return ids.ID(b.ethBlock.ParentHash())
 }
 
-// Verify implements the linear.Block interface
+// Verify implements the chain.Block interface
 func (b *Block) Verify(ctx context.Context) error {
 	// Basic verification
 	if b.ethBlock == nil {
@@ -106,7 +106,7 @@ func (b *Block) Verify(ctx context.Context) error {
 	return nil
 }
 
-// Bytes implements the linear.Block interface
+// Bytes implements the chain.Block interface
 func (b *Block) Bytes() []byte {
 	bytes, err := rlp.EncodeToBytes(b.ethBlock)
 	if err != nil {
@@ -116,12 +116,12 @@ func (b *Block) Bytes() []byte {
 	return bytes
 }
 
-// Height implements the linear.Block interface
+// Height implements the chain.Block interface
 func (b *Block) Height() uint64 {
 	return b.ethBlock.NumberU64()
 }
 
-// Timestamp implements the linear.Block interface
+// Timestamp implements the chain.Block interface
 func (b *Block) Timestamp() time.Time {
 	return time.Unix(int64(b.ethBlock.Time()), 0)
 }

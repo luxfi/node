@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
@@ -22,43 +23,40 @@ import (
 func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *testing.T) {
 	require := require.New(t)
 
+	customError := errors.New("custom error")
 	innerVM := &fullVM{
-		TestVM: &block.TestVM{
-			TestVM: common.TestVM{
-				T: t,
+		VM: &blocktest.VM{
+			VerifyHeightIndexF: func(_ context.Context) error {
+				return customError
 			},
 		},
 	}
 
-	// let innerVM fail verifying its height index with
-	// a non-special error (like block.ErrIndexIncomplete)
-	customError := errors.New("custom error")
-	innerVM.VerifyHeightIndexF = func(_ context.Context) error {
-		return customError
-	}
-
 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
-		[]byte, []byte, []byte, chan<- common.Message,
-		[]*common.Fx, core.AppSender,
+		[]byte, []byte, []byte,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
 
 	proVM := New(
 		innerVM,
-		time.Time{},
-		0,
-		DefaultMinBlockDelay,
-		DefaultNumHistoricalBlocks,
-		pTestSigner,
-		pTestCert,
+		Config{
+			ActivationTime:      time.Time{},
+			DurangoTime:         time.Time{},
+			MinimumPChainHeight: 0,
+			MinBlkDelay:         DefaultMinBlockDelay,
+			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
+			StakingLeafSigner:   pTestSigner,
+			StakingCertLeaf:     pTestCert,
+		},
 	)
 	defer func() {
 		// avoids leaking goroutines
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	ctx := consensus.DefaultContextTest()
+	ctx := consensustest.Context(t, consensustest.CChainID)
 	initialState := []byte("genesis state")
 
 	err := proVM.Initialize(
@@ -66,7 +64,6 @@ func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *test
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
 		initialState,
-		nil,
 		nil,
 		nil,
 		nil,

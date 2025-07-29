@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -297,7 +297,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				// Assert created block has one tx, tx1,
 				// and other fields are set correctly.
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) linear.Block {
+					func(block *block.StandardBlock) chain.Block {
 						require.Len(t, block.Transactions, 1)
 						require.Equal(t, tx1, block.Transactions[0])
 						require.Equal(t, preferredHeight+1, block.Height())
@@ -362,7 +362,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) linear.Block {
+					func(block *block.StandardBlock) chain.Block {
 						require.Equal(t, preferredTimestamp.Unix(), block.Timestamp().Unix())
 						return nil
 					},
@@ -436,7 +436,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
-					func(block *block.StandardBlock) linear.Block {
+					func(block *block.StandardBlock) chain.Block {
 						require.Equal(t, now.Unix(), block.Timestamp().Unix())
 						return nil
 					},

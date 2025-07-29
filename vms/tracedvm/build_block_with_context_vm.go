@@ -8,13 +8,13 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {
 	if vm.buildBlockVM == nil {
 		return vm.BuildBlock(ctx)
 	}

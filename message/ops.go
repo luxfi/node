@@ -199,6 +199,7 @@ var (
 		CrossChainAppRequestOp,
 		GetStateSummaryFrontierOp,
 		GetAcceptedStateSummaryOp,
+		BFTOp,
 	)
 
 	errUnknownMessageType = errors.New("unknown message type")

@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/graph/vertex/vertexmock"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -162,7 +162,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := block.NewMockChainVM(ctrl)
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -265,7 +265,7 @@ func TestIndexer(t *testing.T) {
 	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	graphVM := vertex.NewMockLinearizableVM(ctrl)
+	graphVM := vertexmock.NewLinearizableVM(ctrl)
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	require.NoError(err)
 	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -425,7 +425,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := block.NewMockChainVM(ctrl)
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -506,7 +506,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	})
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := block.NewMockChainVM(ctrl)
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

@@ -81,6 +81,21 @@ type Config struct {
 	// on recently created subnets (without this, users need to wait for
 	// [recentlyAcceptedWindowTTL] to pass for activation to occur).
 	UseCurrentHeight bool
+
+	// Direct fee accessors for backward compatibility
+	TxFee                         uint64
+	AddPrimaryNetworkValidatorFee uint64
+	AddPrimaryNetworkDelegatorFee uint64
+}
+
+// GetCreateBlockchainTxFee returns the fee for creating a blockchain
+func (c *Config) GetCreateBlockchainTxFee(timestamp time.Time) uint64 {
+	return c.StaticFeeConfig.CreateBlockchainTxFee
+}
+
+// GetCreateSubnetTxFee returns the fee for creating a subnet
+func (c *Config) GetCreateSubnetTxFee(timestamp time.Time) uint64 {
+	return c.StaticFeeConfig.CreateSubnetTxFee
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of

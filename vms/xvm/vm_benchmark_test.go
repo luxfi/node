@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/keystore"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -32,27 +31,7 @@ func BenchmarkLoadUser(b *testing.B) {
 
 		// Keystore functionality has been removed from consensus.Context
 		// Skip keystore-based key generation for benchmarks
-		// user, err := keystore.NewUserFromKeystore(env.vm.ctx.Keystore, username, password)
-		// require.NoError(err)
-		//
-		// keys, err := keystore.NewKeys(user, numKeys)
-		// require.NoError(err)
 		b.Skip("Keystore functionality has been removed")
-
-		b.ResetTimer()
-
-		fromAddrs := set.Set[ids.ShortID]{}
-		for n := 0; n < b.N; n++ {
-			addrIndex := n % numKeys
-			fromAddrs.Clear()
-			fromAddrs.Add(keys[addrIndex].PublicKey().Address())
-			_, _, err := env.vm.LoadUser(username, password, fromAddrs)
-			require.NoError(err)
-		}
-
-		b.StopTimer()
-
-		require.NoError(user.Close())
 	}
 
 	benchmarkSize := []int{10, 100, 1000, 5000}

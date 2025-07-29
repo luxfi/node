@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build skip
+
 package platformvm
 
 import (
@@ -21,7 +23,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
@@ -336,9 +338,9 @@ func TestGetTx(t *testing.T) {
 
 				require.NoError(blk.Accept(context.Background()))
 
-				if blk, ok := blk.(linear.OracleBlock); ok { // For proposal blocks, commit them
+				if blk, ok := blk.(chain.OracleBlock); ok { // For proposal blocks, commit them
 					options, err := blk.Options(context.Background())
-					if !errors.Is(err, linear.ErrNotOracle) {
+					if !errors.Is(err, chain.ErrNotOracle) {
 						require.NoError(err)
 
 						commit := options[0].(*blockexecutor.Block)

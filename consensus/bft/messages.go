@@ -5,6 +5,7 @@ package bft
 
 import (
 	"github.com/luxfi/bft"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -153,16 +154,26 @@ func newReplicationResponse(
 	data := replicationResponse.Data
 	latestRound := replicationResponse.LatestRound
 
-	qrs := make([]*p2p.QuorumRound, 0, len(data))
+	qrs := make([][]byte, 0, len(data))
 	for _, qr := range data {
 		p2pQR, err := quorumRoundToP2P(&qr)
 		if err != nil {
 			return nil, err
 		}
-		qrs = append(qrs, p2pQR)
+		// Serialize the QuorumRound to bytes
+		qrBytes, err := proto.Marshal(p2pQR)
+		if err != nil {
+			return nil, err
+		}
+		qrs = append(qrs, qrBytes)
 	}
 
 	latestQR, err := quorumRoundToP2P(latestRound)
+	if err != nil {
+		return nil, err
+	}
+	
+	latestQRBytes, err := proto.Marshal(latestQR)
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +182,9 @@ func newReplicationResponse(
 		ChainId: chainID[:],
 		Message: &p2p.BFT_ReplicationResponse{
 			ReplicationResponse: &p2p.ReplicationResponse{
+				LatestQr: latestQRBytes,
 				Data:        qrs,
-				LatestRound: latestQR,
+				LatestRound: extractRoundFromVerifiedQuorumRound(latestRound),
 			},
 		},
 	}, nil
@@ -180,49 +192,53 @@ func newReplicationResponse(
 
 func blockHeaderToP2P(bh bft.BlockHeader) *p2p.BlockHeader {
 	return &p2p.BlockHeader{
-		Metadata: protocolMetadataToP2P(bh.ProtocolMetadata),
-		Digest:   bh.Digest[:],
+		BlockId:     bh.Digest[:],
+		Round:       bh.ProtocolMetadata.Round,
+		ParentRound: 0, // TODO: This needs to be extracted from the BFT BlockHeader
 	}
 }
 
 func protocolMetadataToP2P(md bft.ProtocolMetadata) *p2p.ProtocolMetadata {
 	return &p2p.ProtocolMetadata{
-		Version: uint32(md.Version),
-		Epoch:   md.Epoch,
-		Round:   md.Round,
-		Seq:     md.Seq,
-		Prev:    md.Prev[:],
+		Round:      md.Round,
+		ParentHash: md.Prev[:],
 	}
 }
 
-func quorumRoundToP2P(qr *bft.VerifiedQuorumRound) (*p2p.QuorumRound, error) {
-	p2pQR := &p2p.QuorumRound{}
-
-	if qr.VerifiedBlock != nil {
-		bytes, err := qr.VerifiedBlock.Bytes()
-		if err != nil {
-			return nil, err
-		}
-
-		p2pQR.Block = bytes
-	}
+func extractRoundFromVerifiedQuorumRound(qr *bft.VerifiedQuorumRound) uint64 {
 	if qr.Notarization != nil {
-		p2pQR.Notarization = &p2p.QuorumCertificate{
-			BlockHeader:       blockHeaderToP2P(qr.Notarization.Vote.BlockHeader),
-			QuorumCertificate: qr.Notarization.QC.Bytes(),
-		}
+		return qr.Notarization.Vote.BlockHeader.ProtocolMetadata.Round
+	} else if qr.Finalization != nil {
+		return qr.Finalization.Finalization.BlockHeader.ProtocolMetadata.Round
+	} else if qr.EmptyNotarization != nil {
+		return qr.EmptyNotarization.Vote.ProtocolMetadata.Round
 	}
-	if qr.Finalization != nil {
-		p2pQR.Finalization = &p2p.QuorumCertificate{
-			BlockHeader:       blockHeaderToP2P(qr.Finalization.Finalization.BlockHeader),
-			QuorumCertificate: qr.Finalization.QC.Bytes(),
-		}
+	return 0
+}
+
+func quorumRoundToP2P(qr *bft.VerifiedQuorumRound) (*p2p.QuorumRound, error) {
+	// Extract the round number from the VerifiedQuorumRound
+	var round uint64
+	if qr.Notarization != nil {
+		round = qr.Notarization.Vote.BlockHeader.ProtocolMetadata.Round
+	} else if qr.Finalization != nil {
+		round = qr.Finalization.Finalization.BlockHeader.ProtocolMetadata.Round
+	} else if qr.EmptyNotarization != nil {
+		round = qr.EmptyNotarization.Vote.ProtocolMetadata.Round
 	}
-	if qr.EmptyNotarization != nil {
-		p2pQR.EmptyNotarization = &p2p.EmptyNotarization{
-			Metadata:          protocolMetadataToP2P(qr.EmptyNotarization.Vote.ProtocolMetadata),
-			QuorumCertificate: qr.EmptyNotarization.QC.Bytes(),
-		}
+
+	// Extract the quorum certificate bytes
+	var qcBytes []byte
+	if qr.Notarization != nil {
+		qcBytes = qr.Notarization.QC.Bytes()
+	} else if qr.Finalization != nil {
+		qcBytes = qr.Finalization.QC.Bytes()
+	} else if qr.EmptyNotarization != nil {
+		qcBytes = qr.EmptyNotarization.QC.Bytes()
 	}
-	return p2pQR, nil
+
+	return &p2p.QuorumRound{
+		QuorumCertificate: qcBytes,
+		Round:             round,
+	}, nil
 }

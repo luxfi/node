@@ -13,8 +13,9 @@ import (
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/chain/chainmock"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/components/chain"
@@ -40,17 +41,16 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 
 	// create mock
 	ctrl := gomock.NewController(t)
-	vm := block.NewMockChainVM(ctrl)
+	vm := blockmock.NewChainVM(ctrl)
 
 	if loadExpectations {
-		blk1 := lineartest.NewMockBlock(ctrl)
-		blk2 := lineartest.NewMockBlock(ctrl)
+		blk1 := chainmock.NewBlock(ctrl)
+		blk2 := chainmock.NewBlock(ctrl)
 		gomock.InOrder(
 			// Initialize
 			vm.EXPECT().Initialize(
 				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(),
 			).Return(nil).Times(1),
 			vm.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
 			vm.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(preSummaryBlk, nil).Times(1),
@@ -59,7 +59,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes1).Return(blk1, nil).Times(1),
 			blk1.EXPECT().ID().Return(blkID1).Times(1),
 			blk1.EXPECT().Parent().Return(blkID0).Times(1),
-			blk1.EXPECT().Status().Return(status1).Times(1),
+			// Status is no longer a method on Block
 			blk1.EXPECT().Height().Return(uint64(1)).Times(1),
 			blk1.EXPECT().Timestamp().Return(time1).Times(1),
 
@@ -67,7 +67,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes2).Return(blk2, nil).Times(1),
 			blk2.EXPECT().ID().Return(blkID2).Times(1),
 			blk2.EXPECT().Parent().Return(blkID1).Times(1),
-			blk2.EXPECT().Status().Return(status2).Times(1),
+			// Status is no longer a method on Block
 			blk2.EXPECT().Height().Return(uint64(2)).Times(1),
 			blk2.EXPECT().Timestamp().Return(time2).Times(1),
 		)
@@ -86,7 +86,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
 
-	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

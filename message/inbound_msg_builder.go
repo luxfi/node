@@ -314,6 +314,18 @@ func InboundAppResponse(
 	}
 }
 
+func InboundBFTMessage(
+	nodeID ids.NodeID,
+	msg *p2p.BFT,
+) InboundMessage {
+	return &inboundMessage{
+		nodeID:     nodeID,
+		op:         BFTOp,
+		message:    msg,
+		expiration: mockable.MaxTime,
+	}
+}
+
 func encodeIDs(ids []ids.ID, result [][]byte) {
 	for i, id := range ids {
 		id := id

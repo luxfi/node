@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/wrappers"
@@ -82,7 +82,7 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -93,7 +93,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Bl
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]linear.Block, len(blks))
+		blocks      = make([]chain.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))

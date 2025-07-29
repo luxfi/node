@@ -21,7 +21,8 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database/memdb"
@@ -392,7 +393,7 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	proposalBlk := blk.(linear.OracleBlock)
+	proposalBlk := blk.(chain.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed retrieving options: %w", err)
@@ -675,7 +676,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 
-	msgChan := make(chan common.Message, 1)
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
@@ -683,10 +683,10 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
-	appSender := &common.SenderTest{}
-	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
-		return nil
+	appSender := &core.SenderTest{
+		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
+			return nil
+		},
 	}
 
 	genesisBytes, err := buildCustomGenesis(ctx.LUXAssetID)
@@ -701,7 +701,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		genesisBytes,
 		nil,
 		nil,
-		msgChan,
 		nil,
 		appSender,
 	)

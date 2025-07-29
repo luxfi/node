@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -26,7 +26,7 @@ var (
 )
 
 type preForkBlock struct {
-	linear.Block
+	chain.Block
 	vm *VM
 }
 
@@ -76,18 +76,18 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	oracleBlk, ok := b.Block.(linear.OracleBlock)
+func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+	oracleBlk, ok := b.Block.(chain.OracleBlock)
 	if !ok {
-		return [2]linear.Block{}, linear.ErrNotOracle
+		return [2]chain.Block{}, chain.ErrNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
 	if err != nil {
-		return [2]linear.Block{}, err
+		return [2]chain.Block{}, err
 	}
 	// A pre-fork block's child options are always pre-fork blocks
-	return [2]linear.Block{
+	return [2]chain.Block{
 		&preForkBlock{
 			Block: options[0],
 			vm:    b.vm,
@@ -99,7 +99,7 @@ func (b *preForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
 	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() linear.Block {
+func (b *preForkBlock) getInnerBlk() chain.Block {
 	return b.Block
 }
 

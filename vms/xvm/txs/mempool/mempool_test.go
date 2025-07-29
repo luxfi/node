@@ -16,14 +16,14 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-func newMempool(toEngine chan<- common.Message) (Mempool, error) {
+func newMempool(toEngine chan<- core.Message) (Mempool, error) {
 	return New("mempool", prometheus.NewRegistry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {
 	require := require.New(t)
 
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 	mempool, err := newMempool(toEngine)
 	require.NoError(err)
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
+	consensuschain "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -37,7 +37,7 @@ var (
 )
 
 type Block interface {
-	linear.Block
+	consensuschain.Block
 	smblock.WithVerifyContext
 
 	// State intends to return the new chain state following this block's

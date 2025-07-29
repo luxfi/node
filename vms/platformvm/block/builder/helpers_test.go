@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
@@ -106,7 +107,7 @@ type environment struct {
 	blkManager blockexecutor.Manager
 	mempool    mempool.Mempool
 	network    *network.Network
-	sender     *common.SenderTest
+	sender     *core.SenderTest
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
@@ -151,7 +152,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	res.state = defaultState(t, res.config, res.ctx, res.baseDB, rewardsCalc)
 
 	res.uptimes = uptime.NewManager(res.state, res.clk)
-	res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+	res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 	res.factory = txstest.NewWalletFactory(res.ctx, res.config, res.state)
 
 	genesisID := res.state.GetLastAccepted()
@@ -167,8 +168,8 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = &common.SenderTest{T: t}
-	res.sender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	res.sender = &core.SenderTest{T: t}
+	res.sender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
 		return nil
 	}
 
@@ -220,7 +221,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		if res.isBootstrapped.Get() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(res.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID))
+			require.NoError(res.uptimes.StopTracking(validatorIDs))
 
 			require.NoError(res.state.Commit())
 		}

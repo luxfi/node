@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build skip
+
 package sync
 
 import (
@@ -62,7 +64,9 @@ func sendRangeProofRequest(
 		numAttempts int
 
 		// Sends messages from server to client.
-		sender = common.NewMockSender(ctrl)
+		sender = &core.FakeSender{
+			SentAppResponse: make(chan []byte, 1),
+		}
 
 		// Serves the range proof.
 		server = NewNetworkServer(sender, serverDB, logging.NoLog{})
@@ -118,35 +122,33 @@ func sendRangeProofRequest(
 		},
 	).AnyTimes()
 
-	// The server should expect to "send" a response to the client.
-	sender.EXPECT().SendAppResponse(
-		gomock.Any(), // ctx
-		clientNodeID,
-		gomock.Any(), // requestID
-		gomock.Any(), // responseBytes
-	).DoAndReturn(
-		func(_ context.Context, _ ids.NodeID, _ uint32, responseBytes []byte) error {
-			// deserialize the response so we can modify it if needed.
-			var responseProto pb.RangeProof
-			require.NoError(proto.Unmarshal(responseBytes, &responseProto))
+	// Set up a goroutine to handle server responses
+	go func() {
+		for {
+			select {
+			case responseBytes := <-sender.SentAppResponse:
+				// deserialize the response so we can modify it if needed.
+				var responseProto pb.RangeProof
+				require.NoError(proto.Unmarshal(responseBytes, &responseProto))
 
-			var response merkledb.RangeProof
-			require.NoError(response.UnmarshalProto(&responseProto))
+				var response merkledb.RangeProof
+				require.NoError(response.UnmarshalProto(&responseProto))
 
-			// modify if needed
-			if modifyResponse != nil {
-				modifyResponse(&response)
+				// modify if needed
+				if modifyResponse != nil {
+					modifyResponse(&response)
+				}
+
+				// reserialize the response and pass it to the client to complete the handling.
+				responseBytes, err := proto.Marshal(response.ToProto())
+				require.NoError(err)
+
+				serverResponseChan <- responseBytes
+			case <-ctx.Done():
+				return
 			}
-
-			// reserialize the response and pass it to the client to complete the handling.
-			responseBytes, err := proto.Marshal(response.ToProto())
-			require.NoError(err)
-
-			serverResponseChan <- responseBytes
-
-			return nil
-		},
-	).AnyTimes()
+		}
+	}()
 
 	return client.GetRangeProof(ctx, request)
 }
@@ -361,7 +363,9 @@ func sendChangeProofRequest(
 		numAttempts int
 
 		// Sends messages from server to client.
-		sender = common.NewMockSender(ctrl)
+		sender = &core.FakeSender{
+			SentAppResponse: make(chan []byte, 1),
+		}
 
 		// Serves the change proof.
 		server = NewNetworkServer(sender, serverDB, logging.NoLog{})

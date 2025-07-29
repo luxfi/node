@@ -11,18 +11,33 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
+
+func newDefaultDBConfig() merkledb.Config {
+	return merkledb.Config{
+		IntermediateWriteBatchSize:  100,
+		HistoryLength:               defaultRequestKeyLimit,
+		ValueNodeCacheSize:          defaultRequestKeyLimit,
+		IntermediateWriteBufferSize: defaultRequestKeyLimit,
+		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
+		Reg:                         prometheus.NewRegistry(),
+		Tracer:                      trace.Noop,
+		BranchFactor:                merkledb.BranchFactor16,
+	}
+}
 
 func newCallthroughSyncClient(ctrl *gomock.Controller, db merkledb.MerkleDB) *MockClient {
 	syncClient := NewMockClient(ctrl)

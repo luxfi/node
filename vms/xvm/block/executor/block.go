@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -24,7 +24,7 @@ import (
 const SyncBound = 10 * time.Second
 
 var (
-	_ linear.Block = (*Block)(nil)
+	_ chain.Block = (*Block)(nil)
 
 	ErrUnexpectedMerkleRoot        = errors.New("unexpected merkle root")
 	ErrTimestampBeyondSyncBound    = errors.New("proposed timestamp is too far in the future relative to local time")

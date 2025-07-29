@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 )
 
 var (
-	_ linear.Block            = (*BlockWrapper)(nil)
+	_ chain.Block            = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -22,7 +22,7 @@ var (
 // BlockWrapper wraps a linear Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
-	linear.Block
+	chain.Block
 
 	state *State
 }

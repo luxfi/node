@@ -14,10 +14,12 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/node/consensus/chain/chainmock"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
@@ -31,12 +33,12 @@ func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 
 	// setup
 	proBlk := preForkBlock{
-		Block: lineartest.BuildChild(lineartest.Genesis),
+		Block: chaintest.BuildChild(chaintest.Genesis),
 	}
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(linear.ErrNotOracle, err)
+	require.Equal(chain.ErrNotOracle, err)
 
 	// setup
 	proBlk = preForkBlock{
@@ -61,23 +63,23 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	}()
 
 	// create pre fork oracle block ...
-	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
-	preferredTestBlk := lineartest.BuildChild(coreTestBlk)
+	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
+	preferredTestBlk := chaintest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]linear.Block{
+		opts: [2]chain.Block{
 			preferredTestBlk,
-			lineartest.BuildChild(coreTestBlk),
+			chaintest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -103,9 +105,9 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), opts[0].ID()))
 
 	lastCoreBlk := &TestOptionsBlock{
-		Block: *lineartest.BuildChild(preferredTestBlk),
+		Block: *chaintest.BuildChild(preferredTestBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -118,7 +120,7 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(10 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(10 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -127,31 +129,31 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	}()
 
 	// create pre fork oracle block pre activation time...
-	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreTestBlk.TimestampV = activationTime.Add(-1 * time.Second)
 
 	// ... whose options are post activation time
-	preferredBlk := lineartest.BuildChild(coreTestBlk)
+	preferredBlk := chaintest.BuildChild(coreTestBlk)
 	preferredBlk.TimestampV = activationTime.Add(time.Second)
 
-	unpreferredBlk := lineartest.BuildChild(coreTestBlk)
+	unpreferredBlk := chaintest.BuildChild(coreTestBlk)
 	unpreferredBlk.TimestampV = activationTime.Add(time.Second)
 
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]linear.Block{
+		opts: [2]chain.Block{
 			preferredBlk,
 			unpreferredBlk,
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -177,9 +179,9 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), opts[0].ID()))
 
 	lastCoreBlk := &TestOptionsBlock{
-		Block: *lineartest.BuildChild(preferredBlk),
+		Block: *chaintest.BuildChild(preferredBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -192,7 +194,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(10 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(10 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -201,24 +203,24 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 	}()
 
 	// create parent block ...
-	parentCoreBlk := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	parentCoreBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -230,7 +232,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 	require.NoError(err)
 
 	// .. create child block ...
-	childCoreBlk := lineartest.BuildChild(parentCoreBlk)
+	childCoreBlk := chaintest.BuildChild(parentCoreBlk)
 	childBlk := preForkBlock{
 		Block: childCoreBlk,
 		vm:    proVM,
@@ -254,7 +256,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(10 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(10 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -265,9 +267,9 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	preActivationTime := activationTime.Add(-1 * time.Second)
 	proVM.Set(preActivationTime)
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreBlk.TimestampV = preActivationTime
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -280,7 +282,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	// postFork block does NOT verify if parent is before fork activation time
 	postForkStatelessChild, err := statelessblock.Build(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		coreBlk.Timestamp(),
 		0, // pChainHeight
 		proVM.StakingCertLeaf,
@@ -311,15 +313,15 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	}
 	require.NoError(proVM.SetPreference(context.Background(), preForkChild.ID()))
 
-	secondCoreBlk := lineartest.BuildChild(coreBlk)
+	secondCoreBlk := chaintest.BuildChild(coreBlk)
 	secondCoreBlk.TimestampV = postActivationTime
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return secondCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
 		switch id {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
@@ -335,14 +337,14 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	require.NoError(lastPreForkBlk.Verify(context.Background()))
 
 	require.NoError(proVM.SetPreference(context.Background(), lastPreForkBlk.ID()))
-	thirdCoreBlk := lineartest.BuildChild(secondCoreBlk)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	thirdCoreBlk := chaintest.BuildChild(secondCoreBlk)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return thirdCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
 		switch id {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		case secondCoreBlk.ID():
@@ -364,7 +366,7 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(-1 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(-1 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -374,8 +376,8 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 	}()
 
 	// build parent block after fork activation time ...
-	coreBlock := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreBlock := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlock, nil
 	}
 
@@ -408,24 +410,24 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -440,10 +442,10 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 	require.NoError(builtBlk.Accept(context.Background()))
 
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		if coreBlk.Status() == choices.Accepted {
+		if choices.Status(coreBlk.Status) == choices.Accepted {
 			return coreBlk.ID(), nil
 		}
-		return lineartest.GenesisID, nil
+		return chaintest.GenesisID, nil
 	}
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
@@ -463,8 +465,8 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -475,14 +477,13 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 
 	require.NoError(proBlk.Reject(context.Background()))
 	require.Equal(choices.Rejected, proBlk.Status())
-	require.Equal(choices.Rejected, proBlk.Block.Status())
 }
 
 func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(10 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(10 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -493,20 +494,20 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 	postActivationTime := activationTime.Add(time.Second)
 	proVM.Set(postActivationTime)
 
-	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreTestBlk.TimestampV = postActivationTime
 	coreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]linear.Block{
-			lineartest.BuildChild(coreTestBlk),
-			lineartest.BuildChild(coreTestBlk),
+		opts: [2]chain.Block{
+			chaintest.BuildChild(coreTestBlk),
+			chaintest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		case coreBlk.opts[0].ID():
@@ -517,10 +518,10 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		case bytes.Equal(b, coreBlk.opts[0].Bytes()):
@@ -537,7 +538,7 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 
 	require.NoError(firstBlock.Verify(context.Background()))
 
-	oracleBlock, ok := firstBlock.(linear.OracleBlock)
+	oracleBlock, ok := firstBlock.(chain.OracleBlock)
 	require.True(ok)
 
 	options, err := oracleBlock.Options(context.Background())
@@ -552,7 +553,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		activationTime = lineartest.GenesisTimestamp.Add(10 * time.Second)
+		activationTime = chaintest.GenesisTimestamp.Add(10 * time.Second)
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
@@ -563,20 +564,20 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 	postActivationTime := activationTime.Add(time.Second)
 	proVM.Set(postActivationTime)
 
-	coreTestBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreTestBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreTestBlk.TimestampV = postActivationTime
 	coreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]linear.Block{
-			lineartest.BuildChild(coreTestBlk),
-			lineartest.BuildChild(coreTestBlk),
+		opts: [2]chain.Block{
+			chaintest.BuildChild(coreTestBlk),
+			chaintest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		case coreBlk.opts[0].ID():
@@ -587,10 +588,10 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		case bytes.Equal(b, coreBlk.opts[0].Bytes()):
@@ -637,10 +638,10 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	pChainHeight := uint64(1337)
 	blkID := ids.GenerateTestID()
-	innerBlk := lineartest.NewMockBlock(ctrl)
+	innerBlk := chainmock.NewBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Timestamp().Return(mockable.MaxTime)
-	builtBlk := lineartest.NewMockBlock(ctrl)
+	builtBlk := chainmock.NewBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()

@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
@@ -45,11 +45,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -98,15 +98,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -133,11 +133,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {

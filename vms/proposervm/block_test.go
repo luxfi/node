@@ -17,10 +17,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/chainmock"
+	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/logging"
@@ -46,17 +49,17 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blkID                  = ids.GenerateTestID()
 	)
 
-	innerBlk := lineartest.NewMockBlock(ctrl)
+	innerBlk := chainmock.NewBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := lineartest.NewMockBlock(ctrl)
+	builtBlk := chainmock.NewBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
 	innerVM := block.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := block.NewMockBuildBlockWithContextChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
 		PChainHeight: pChainHeight - 1,
 	}).Return(builtBlk, nil).AnyTimes()
@@ -120,26 +123,26 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -170,8 +173,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := lineartest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -250,26 +253,26 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -302,8 +305,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := lineartest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
+	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -368,7 +371,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		parentHeight     uint64 = 1234
 	)
 
-	innerBlk := lineartest.NewMockBlock(ctrl)
+	innerBlk := chainmock.NewBlock(ctrl)
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
 	vdrState := validatorsmock.NewState(ctrl)

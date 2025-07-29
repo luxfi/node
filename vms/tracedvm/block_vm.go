@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -119,7 +119,7 @@ func (vm *blockVM) Initialize(
 	)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.buildBlockTag)
 	defer span.End()
 
@@ -130,7 +130,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	}, err
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (linear.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.parseBlockTag, oteltrace.WithAttributes(
 		attribute.Int("blockLen", len(block)),
 	))
@@ -143,7 +143,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (linear.Block, 
 	}, err
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.getBlockTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", blkID),
 	))
