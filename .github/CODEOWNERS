@@ -1,20 +1,20 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax
 
-* @zeekay
-/app/ @zeekay
-/codec/ @zeekay
-/database/corruptabledb/ @zeekay
-/ids/ @zeekay
-/indexer/ @zeekay
-/message/ @zeekay
-/network/ @zeekay
-/network/throttling/ @zeekay
-/proto/ @zeekay
-/consensus/ @zeekay
-/utils/logging/ @zeekay
-/vms/xvm/ @zeekay
-/vms/platformvm/ @zeekay
-/vms/proposervm/ @zeekay
-/vms/rpcchainvm/ @zeekay
-/vms/registry/ @zeekay
-/tests/ @zeekay
+# Code owners are the final gate for PR approval to their named section of code.
+# If a single PR modifies multiple files with different code owner groups, at
+# least one code owner of the touched file should approve the PR prior to
+# merging.
+
+* @hanzo-dev
+*.md @hanzo-dev
+/.dockerignore @hanzo-dev
+/.envrc @hanzo-dev
+/.github/ @hanzo-dev
+/.github/CODEOWNERS @hanzo-dev
+/.gitignore @hanzo-dev @hanzo-dev
+/.golangci.yml @hanzo-dev @hanzo-dev
+/Dockerfile @hanzo-dev
+/Taskfile.yml @hanzo-dev
+/flake.lock @hanzo-dev
+/flake.nix @hanzo-dev
+/tests/ @hanzo-dev
