@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/network/p2p"
 )
 

@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
 )

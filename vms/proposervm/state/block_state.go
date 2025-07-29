@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/metric"

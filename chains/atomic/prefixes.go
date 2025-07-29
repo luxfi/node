@@ -6,8 +6,8 @@ package atomic
 import (
 	"bytes"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 )
 

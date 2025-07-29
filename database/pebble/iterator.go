@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 )
 
 var (

@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/db"
+	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"

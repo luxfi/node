@@ -6,7 +6,7 @@ package uptime
 import (
 	"time"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 

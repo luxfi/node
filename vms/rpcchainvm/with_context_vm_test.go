@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chainmock"
-	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 )
 
