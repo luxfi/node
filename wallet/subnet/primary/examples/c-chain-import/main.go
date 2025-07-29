@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	// "github.com/luxfi/evm"
+	// "github.com/luxfi/node/evm"
 	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/genesis"
