@@ -13,11 +13,11 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	chaincon "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 const (
@@ -41,9 +41,9 @@ var (
 )
 
 type Block interface {
-	linear.Block
+	chaincon.Block
 
-	getInnerBlk() linear.Block
+	getInnerBlk() chaincon.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -65,13 +65,13 @@ type PostForkBlock interface {
 	Block
 
 	getStatelessBlk() block.Block
-	setInnerBlk(linear.Block)
+	setInnerBlk(chaincon.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk linear.Block
+	innerBlk chaincon.Block
 }
 
 // Return the inner block's height
@@ -104,8 +104,12 @@ func (p *postForkCommonComponents) Verify(
 		return errPChainHeightNotMonotonic
 	}
 
-	expectedInnerParentID := p.innerBlk.ID()
+	expectedInnerParentIDStr := p.innerBlk.ID()
 	innerParentID := child.innerBlk.Parent()
+	expectedInnerParentID, err := ids.FromString(expectedInnerParentIDStr)
+	if err != nil {
+		return err
+	}
 	if innerParentID != expectedInnerParentID {
 		return errInnerParentMismatch
 	}
@@ -127,7 +131,7 @@ func (p *postForkCommonComponents) Verify(
 		if err != nil {
 			p.vm.ctx.Log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),
-				zap.Stringer("blkID", child.ID()),
+				zap.String("blkID", child.ID()),
 				zap.Error(err),
 			)
 			return err
@@ -156,7 +160,7 @@ func (p *postForkCommonComponents) Verify(
 		}
 
 		p.vm.ctx.Log.Debug("verified post-fork block",
-			zap.Stringer("blkID", child.ID()),
+			zap.String("blkID", child.ID()),
 			zap.Time("parentTimestamp", parentTimestamp),
 			zap.Time("blockTimestamp", childTimestamp),
 		)
@@ -232,7 +236,7 @@ func (p *postForkCommonComponents) buildChild(
 		contextPChainHeight = parentPChainHeight
 	}
 
-	var innerBlock linear.Block
+	var innerBlock chaincon.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: contextPChainHeight,
@@ -268,7 +272,7 @@ func (p *postForkCommonComponents) buildChild(
 		p.vm.ctx.Log.Error("unexpected build block failure",
 			zap.String("reason", "failed to generate proposervm block header"),
 			zap.Stringer("parentID", parentID),
-			zap.Stringer("blkID", innerBlock.ID()),
+			zap.String("blkID", innerBlock.ID()),
 			zap.Error(err),
 		)
 		return nil, err
@@ -283,8 +287,8 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 	p.vm.ctx.Log.Info("built block",
-		zap.Stringer("blkID", child.ID()),
-		zap.Stringer("innerBlkID", innerBlock.ID()),
+		zap.String("blkID", child.ID()),
+		zap.String("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", child.Height()),
 		zap.Uint64("pChainHeight", pChainHeight),
 		zap.Time("parentTimestamp", parentTimestamp),
@@ -293,19 +297,19 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() linear.Block {
+func (p *postForkCommonComponents) getInnerBlk() chaincon.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk linear.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk chaincon.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b linear.Block) error {
-	oracle, ok := b.(linear.OracleBlock)
+func verifyIsOracleBlock(ctx context.Context, b chaincon.Block) error {
+	oracle, ok := b.(chaincon.OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a linear.OracleBlock but it's a %T",
+			"%w: expected block %s to be a chaincon.OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -313,8 +317,8 @@ func verifyIsOracleBlock(ctx context.Context, b linear.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b linear.Block) error {
-	oracle, ok := b.(linear.OracleBlock)
+func verifyIsNotOracleBlock(ctx context.Context, b chaincon.Block) error {
+	oracle, ok := b.(chaincon.OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -325,7 +329,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b linear.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case linear.ErrNotOracle:
+	case chaincon.ErrNotOracle:
 		return nil
 	default:
 		return err
@@ -353,7 +357,7 @@ func (p *postForkCommonComponents) verifyPreDurangoBlockDelay(
 	if err != nil {
 		p.vm.ctx.Log.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate required timestamp delay"),
-			zap.Stringer("blkID", blk.ID()),
+			zap.String("blkID", blk.ID()),
 			zap.Error(err),
 		)
 		return false, err
@@ -395,7 +399,7 @@ func (p *postForkCommonComponents) verifyPostDurangoBlockDelay(
 	case err != nil:
 		p.vm.ctx.Log.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate expected proposer"),
-			zap.Stringer("blkID", blk.ID()),
+			zap.String("blkID", blk.ID()),
 			zap.Error(err),
 		)
 		return false, err

@@ -8,13 +8,9 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
@@ -94,6 +90,8 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 	}
 }
 
+// TODO: Fix interface mismatch - ChainVM doesn't have Initialize method
+/*
 func (vm *blockVM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
@@ -118,8 +116,9 @@ func (vm *blockVM) Initialize(
 		appSender,
 	)
 }
+*/
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.buildBlockTag)
 	defer span.End()
 
@@ -130,7 +129,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	}, err
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (linear.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (block.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.parseBlockTag, oteltrace.WithAttributes(
 		attribute.Int("blockLen", len(block)),
 	))
@@ -143,7 +142,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, block []byte) (linear.Block, 
 	}, err
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.getBlockTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", blkID),
 	))
@@ -172,6 +171,8 @@ func (vm *blockVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.ChainVM.LastAccepted(ctx)
 }
 
+// TODO: Fix interface mismatch - ChainVM doesn't have GetBlockIDAtHeight method
+/*
 func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	ctx, span := vm.tracer.Start(ctx, vm.getBlockIDAtHeightTag, oteltrace.WithAttributes(
 		attribute.Int64("height", int64(height)),
@@ -180,3 +181,4 @@ func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.I
 
 	return vm.ChainVM.GetBlockIDAtHeight(ctx, height)
 }
+*/

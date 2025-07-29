@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"

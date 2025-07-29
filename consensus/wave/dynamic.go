@@ -6,7 +6,7 @@ package wave
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -45,7 +45,9 @@ func (d *DynamicWaveThreshold) AddVote(nodeID ids.NodeID, choice ids.ID) bool {
 	}
 
 	// Add vote if not already present
-	if d.votes[choice].Add(nodeID) {
+	votesSet := d.votes[choice]
+	if !votesSet.Contains(nodeID) {
+		votesSet.Add(nodeID)
 		d.totalVotes++
 	}
 

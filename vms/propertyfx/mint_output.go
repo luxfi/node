@@ -15,3 +15,11 @@ type MintOutput struct {
 
 	secp256k1fx.OutputOwners `serialize:"true"`
 }
+
+func (out *MintOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *MintOutput) Initialize(ctx interface{}) error {
+	return nil
+}

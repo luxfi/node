@@ -15,10 +15,23 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
 	"github.com/luxfi/node/consensus/validators"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
+)
+
+// EngineType represents the type of consensus engine
+type EngineType uint8
+
+const (
+	// EngineTypeUnknown is an unknown engine type
+	EngineTypeUnknown EngineType = iota
+	// EngineTypeLinear is a linear consensus engine
+	EngineTypeLinear
+	// EngineTypeDAG is a DAG consensus engine
+	EngineTypeDAG
 )
 
 var (
@@ -58,7 +71,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log log.Logger,
-	sender core.AppSender,
+	sender appsender.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -103,7 +116,7 @@ type Network struct {
 	Peers *Peers
 
 	log    log.Logger
-	sender core.AppSender
+	sender appsender.AppSender
 
 	router *router
 }

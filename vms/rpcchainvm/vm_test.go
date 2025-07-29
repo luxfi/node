@@ -23,9 +23,9 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

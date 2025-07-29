@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // UnaryFocusTracker tracks confidence for unary consensus

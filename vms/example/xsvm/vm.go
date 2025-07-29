@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/utils/constants"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

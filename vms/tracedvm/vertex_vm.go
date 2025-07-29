@@ -4,18 +4,8 @@
 package tracedvm
 
 import (
-	"context"
-
-	"go.opentelemetry.io/otel/attribute"
-
-	db "github.com/luxfi/database"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/trace"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"github.com/luxfi/node/trace"
 )
 
 var _ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
@@ -32,6 +22,8 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 	}
 }
 
+// TODO: Fix interface mismatch - LinearizableVMWithEngine doesn't have Initialize method
+/*
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
 	chainCtx *consensus.Context,
@@ -56,7 +48,10 @@ func (vm *vertexVM) Initialize(
 		appSender,
 	)
 }
+*/
 
+// TODO: Fix interface mismatch - LinearizableVMWithEngine doesn't have ParseTx method
+/*
 func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
@@ -69,3 +64,4 @@ func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, erro
 		tracer: vm.tracer,
 	}, err
 }
+*/

@@ -7,6 +7,7 @@ import (
 	"os"
 
 	log "github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 )
 
 func NewDefaultLogger(prefix string) log.Logger {
@@ -25,5 +26,5 @@ func LoggerForFormat(prefix string, rawLogFormat string) (log.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return log.NewLogger(prefix, *log.NewWrappedCore(log.Info, writeCloser, logFormat.ConsoleEncoder())), nil
+	return log.NewLogger(prefix, *log.NewWrappedCore(level.Info, writeCloser, logFormat.ConsoleEncoder())), nil
 }

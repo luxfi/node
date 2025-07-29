@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
 )

@@ -42,6 +42,15 @@ func (out *TransferOutput) Amount() uint64 {
 	return out.Amt
 }
 
+func (out *TransferOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *TransferOutput) Initialize(ctx interface{}) error {
+	// No initialization needed
+	return nil
+}
+
 func (out *TransferOutput) Verify() error {
 	switch {
 	case out == nil:

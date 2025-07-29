@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/appsender"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
@@ -518,11 +518,9 @@ func (p *PushGossiper[T]) gossip(
 
 	return p.client.AppGossip(
 		ctx,
-		core.SendConfig{
-			NodeIDs:       set.Of(validatorsByStake...),
-			Validators:    gossipParams.Validators,
-			NonValidators: gossipParams.NonValidators,
-			Peers:         gossipParams.Peers,
+		appsender.SendConfig{
+			Validators:    set.Of(validatorsByStake...),
+			NonValidators: set.Set[ids.NodeID]{},
 		},
 		msgBytes,
 	)

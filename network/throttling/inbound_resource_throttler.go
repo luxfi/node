@@ -13,7 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/network/throttling/tracker"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	timerpkg "github.com/luxfi/node/utils/timer"
@@ -142,7 +142,7 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		}
 		// See how long it will take for actual usage to drop to the target,
 		// assuming this node uses no more resources.
-		waitDuration := t.tracker.TimeUntilUsage(nodeID, now, target)
+		waitDuration := t.tracker.TimeUntilUsage(nodeID, target)
 		if waitDuration < epsilon {
 			// If the amount of time until we reach the target is very small,
 			// just return to avoid a situation where we excessively re-check.

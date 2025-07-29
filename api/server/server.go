@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/constants"
 	log "github.com/luxfi/log"
 )
@@ -179,13 +179,24 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 			)
 			continue
 		}
-		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
+		httpHandler, ok := handler.(http.Handler)
+		if !ok {
+			s.log.Error("handler does not implement http.Handler",
+				zap.String("chainName", chainName),
+				zap.String("extension", extension),
+			)
+			continue
+		}
+		if err := s.addChainRoute(chainName, httpHandler, ctx, defaultEndpoint, extension); err != nil {
 			s.log.Error("error adding route",
 				zap.Error(err),
 			)
 		}
 	}
 
+	// TODO: NewHTTPHandler is not part of core.VM interface
+	// Need to check if the VM implements it via type assertion
+	/*
 	ctx.Lock.Lock()
 	headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
 	ctx.Lock.Unlock()
@@ -200,7 +211,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 	if headerRouteHandler == nil {
 		return
 	}
-
+	
 	headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
 	if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
 		s.log.Error(
@@ -208,6 +219,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 			zap.String("chainName", chainName),
 		)
 	}
+	*/
 }
 
 func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *consensus.Context, base, endpoint string) error {
@@ -258,7 +270,7 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx *consensus.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.State.Get().State != consensus.NormalOp {
+		if ctx.State != nil && ctx.State.Get() != consensus.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)

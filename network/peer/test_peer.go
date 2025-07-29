@@ -122,7 +122,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
-			UptimeCalculator:     uptime.NoOpCalculator,
+			UptimeCalculator:     uptime.NoOpCalculator{},
 			IPSigner: NewIPSigner(
 				utils.NewAtomic(netip.AddrPortFrom(
 					netip.IPv6Loopback(),

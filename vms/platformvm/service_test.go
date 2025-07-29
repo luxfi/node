@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"

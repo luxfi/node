@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"

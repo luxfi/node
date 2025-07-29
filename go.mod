@@ -34,6 +34,10 @@ require (
 	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/trace v0.1.0
+	github.com/luxfi/ringtail v0.0.0-20250411211253-1e181c356492
+	github.com/luxfi/consensus v0.1.0
+	github.com/luxfi/log v0.1.0
+	github.com/luxfi/metrics v1.0.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
@@ -209,3 +213,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
+
+replace github.com/luxfi/ringtail => ../ringtail
+replace github.com/luxfi/consensus => ../consensus
+replace github.com/luxfi/crypto => ../crypto
+replace github.com/luxfi/log => ../log
+replace github.com/luxfi/metrics => ../metrics
+replace github.com/luxfi/ids => ../ids

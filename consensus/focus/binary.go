@@ -6,7 +6,7 @@ package focus
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // BinaryFocusTracker tracks confidence for binary consensus

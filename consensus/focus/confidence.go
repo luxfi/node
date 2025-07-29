@@ -4,7 +4,7 @@
 package focus
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Confidence represents focus intensity for beta-round tracking

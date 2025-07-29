@@ -31,3 +31,15 @@ func (out *MintOutput) MarshalJSON() ([]byte, error) {
 	result["groupID"] = out.GroupID
 	return json.Marshal(result)
 }
+
+// InitCtx implements the verify.State interface
+func (out *MintOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+// Initialize implements the verify.State interface
+func (out *MintOutput) Initialize(ctx interface{}) error {
+	// The MintOutput initialization is handled by the embedded OutputOwners
+	// and the GroupID field is set during unmarshaling
+	return nil
+}

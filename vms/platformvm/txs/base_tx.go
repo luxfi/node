@@ -76,7 +76,9 @@ func (tx *BaseTx) SyntacticVerify(ctx *consensus.Context) error {
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
 	}
-	if err := tx.BaseTx.Verify(ctx); err != nil {
+	// Convert consensus.Context to quasar.Context for lux.BaseTx verification
+	quasarCtx := adaptToQuasarContext(ctx)
+	if err := tx.BaseTx.Verify(quasarCtx); err != nil {
 		return fmt.Errorf("metadata failed verification: %w", err)
 	}
 	for _, out := range tx.Outs {

@@ -8,12 +8,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	chaincon "github.com/luxfi/node/consensus/chain"
 )
 
 var (
-	_ linear.Block            = (*BlockWrapper)(nil)
+	_ chaincon.Block            = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -22,7 +23,7 @@ var (
 // BlockWrapper wraps a linear Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
-	linear.Block
+	chaincon.Block
 
 	state *State
 }
@@ -40,7 +41,10 @@ func (bw *BlockWrapper) Verify(ctx context.Context) error {
 		return err
 	}
 
-	blkID := bw.ID()
+	blkIDStr := bw.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	bw.state.unverifiedBlocks.Evict(blkID)
 	bw.state.verifiedBlocks[blkID] = bw
 	return nil
@@ -82,7 +86,10 @@ func (bw *BlockWrapper) VerifyWithContext(ctx context.Context, blockCtx *block.C
 		return err
 	}
 
-	blkID := bw.ID()
+	blkIDStr := bw.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	bw.state.unverifiedBlocks.Evict(blkID)
 	bw.state.verifiedBlocks[blkID] = bw
 	return nil
@@ -90,20 +97,26 @@ func (bw *BlockWrapper) VerifyWithContext(ctx context.Context, blockCtx *block.C
 
 // Accept accepts the underlying block, removes it from verifiedBlocks, caches it as a decided
 // block, and updates the last accepted block.
-func (bw *BlockWrapper) Accept(ctx context.Context) error {
-	blkID := bw.ID()
+func (bw *BlockWrapper) Accept() error {
+	blkIDStr := bw.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	delete(bw.state.verifiedBlocks, blkID)
 	bw.state.decidedBlocks.Put(blkID, bw)
 	bw.state.lastAcceptedBlock = bw
 
-	return bw.Block.Accept(ctx)
+	return bw.Block.Accept()
 }
 
 // Reject rejects the underlying block, removes it from processing blocks, and caches it as a
 // decided block.
-func (bw *BlockWrapper) Reject(ctx context.Context) error {
-	blkID := bw.ID()
+func (bw *BlockWrapper) Reject() error {
+	blkIDStr := bw.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	delete(bw.state.verifiedBlocks, blkID)
 	bw.state.decidedBlocks.Put(blkID, bw)
-	return bw.Block.Reject(ctx)
+	return bw.Block.Reject()
 }
