@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/ethdb"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 )
 
 // DatabaseWrapper wraps a Lux database to implement ethdb.Database

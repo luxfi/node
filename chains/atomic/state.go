@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/linkeddb"
-	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/linkeddb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"

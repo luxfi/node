@@ -4,7 +4,7 @@
 package rpcdb
 
 import (
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )

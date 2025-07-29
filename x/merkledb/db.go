@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"

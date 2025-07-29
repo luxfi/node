@@ -3,7 +3,7 @@
 
 package atomic
 
-import "github.com/luxfi/db"
+import "github.com/luxfi/database"
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.
 // Assumes all batches have the same underlying database.

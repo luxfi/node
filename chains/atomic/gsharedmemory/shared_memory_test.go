@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
