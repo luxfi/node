@@ -5,7 +5,7 @@ package merkledb
 
 import (
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/utils"
 )
 

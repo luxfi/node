@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 )
 
 // VM describes the interface that all consensus VMs must implement

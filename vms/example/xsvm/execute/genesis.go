@@ -4,7 +4,7 @@
 package execute
 
 import (
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"

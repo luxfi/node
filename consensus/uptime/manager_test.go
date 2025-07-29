@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer/mockable"
 )

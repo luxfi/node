@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/encdb"
-	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/encdb"
+	"github.com/luxfi/db/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"

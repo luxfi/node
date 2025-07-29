@@ -17,8 +17,8 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/logging"
