@@ -187,12 +187,13 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		if env.isBootstrapped.Get() {
 			validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(env.uptimes.StopTracking(validatorIDs))
+			// Only stop tracking if it was started
+			_ = env.uptimes.StopTracking(validatorIDs)
 
 			for subnetID := range env.config.TrackedSubnets {
 				validatorIDs := env.config.Validators.GetValidatorIDs(subnetID)
 
-				require.NoError(env.uptimes.StopTracking(validatorIDs))
+				_ = env.uptimes.StopTracking(validatorIDs)
 			}
 			env.state.SetHeight(math.MaxUint64)
 			require.NoError(env.state.Commit())

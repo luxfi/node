@@ -1183,6 +1183,10 @@ func TestOptimisticAtomicImport(t *testing.T) {
 
 	require.NoError(blk.Accept(context.Background()))
 
+	// Stop tracking before transitioning back to NormalOp to avoid "already started tracking" error
+	validatorIDs := vm.Config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+	require.NoError(vm.uptimeManager.StopTracking(validatorIDs))
+	
 	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
@@ -1521,6 +1525,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		AncestorsMaxContainersReceived: 2000,
 		DB:                             bootstrappingDB,
 		VM:                             vm,
+		Haltable:                       &core.Halter{},
+		NonVerifyingParse:              vm.ParseBlock,
 	}
 
 	// Asynchronously passes messages from the network to the consensus engine
