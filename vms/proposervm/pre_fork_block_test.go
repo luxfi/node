@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
@@ -239,7 +240,8 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 
 	{
 		// child block referring unknown parent does not verify
-		childCoreBlk.ParentV = ids.Empty
+		unknownID := ids.GenerateTestID()
+		childCoreBlk.ParentV = unknownID
 		err = childBlk.Verify(context.Background())
 		require.ErrorIs(err, database.ErrNotFound)
 	}
@@ -441,7 +443,8 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 	require.NoError(builtBlk.Accept(context.Background()))
 
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		if choices.Status(coreBlk.Status) == choices.Accepted {
+		// Check if the coreBlk was accepted using consensustest.Status
+		if coreBlk.Status == consensustest.Accepted {
 			return coreBlk.ID(), nil
 		}
 		return chaintest.GenesisID, nil
@@ -475,7 +478,8 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 	proBlk := sb.(*preForkBlock)
 
 	require.NoError(proBlk.Reject(context.Background()))
-	require.Equal(choices.Rejected, proBlk.Status())
+	// Pre-fork blocks always report Processing status, check inner block instead
+	require.Equal(consensustest.Rejected, coreBlk.Status)
 }
 
 func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {

@@ -8,11 +8,11 @@ package x
 import (
 	"math/big"
 
-	"github.com/luxfi/evm"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/set"
@@ -43,7 +43,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		pWallet := baseWallet.P()
 
 		ginkgo.By("defining common configuration")
-		recipientEthAddress := evm.GetEthAddress(recipientKey)
+		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 		xBuilder := xWallet.Builder()
 		xContext := xBuilder.Context()
 		cBuilder := cWallet.Builder()

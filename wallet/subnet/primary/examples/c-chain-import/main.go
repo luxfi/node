@@ -71,7 +71,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue export transaction: %s\n", err)
 	}
-	log.Printf("issued export %s in %s\n", exportTx.ID, time.Since(exportStartTime))
+	log.Printf("issued export %s in %s\n", exportTx.ID(), time.Since(exportStartTime))
 
 	importStartTime := time.Now()
 	importTx, err := cWallet.IssueImportTx(constants.PlatformChainID, ethAddr)

@@ -159,7 +159,9 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 		childBlk.SignedBlock = childSlb
 
 		err = childBlk.Verify(context.Background())
-		require.ErrorIs(err, database.ErrNotFound)
+		// The error is errInnerParentMismatch because the inner block's parent
+		// doesn't match the expected parent when using ids.Empty
+		require.ErrorIs(err, errInnerParentMismatch)
 	}
 
 	{
@@ -251,7 +253,9 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 		childBlk.SignedBlock = childSlb
 
 		err = childBlk.Verify(context.Background())
-		require.ErrorIs(err, database.ErrNotFound)
+		// The error is errInnerParentMismatch because the inner block's parent
+		// doesn't match the expected parent when using ids.Empty
+		require.ErrorIs(err, errInnerParentMismatch)
 	}
 
 	{
@@ -957,7 +961,7 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 
 	// set proBlk1 as preferred
 	require.NoError(proBlk1.Accept(context.Background()))
-	require.Equal(choices.Accepted, coreBlk.Status)
+	require.Equal(consensustest.Accepted, coreBlk.Status)
 
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)

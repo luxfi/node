@@ -46,6 +46,12 @@ type LocalNode struct {
 	LocalConfig
 	node.NodeProcessContext
 
+	// Fields needed for tmpnet.Node compatibility
+	IsEphemeral    bool
+	RuntimeConfig  *tmpnet.NodeRuntimeConfig
+	URI            string
+	StakingAddress string
+
 	// Configuration is intended to be stored at the path identified in NodeConfig.Flags[config.DataDirKey]
 }
 

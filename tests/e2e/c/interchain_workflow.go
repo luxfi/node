@@ -9,11 +9,11 @@ import (
 	"math/big"
 
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/evm"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/set"
@@ -39,14 +39,14 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 
 		ginkgo.By("allocating a pre-funded key to send from and a recipient key to deliver to")
 		senderKey := e2e.Env.AllocatePreFundedKey()
-		senderEthAddress := evm.GetEthAddress(senderKey)
+		senderEthAddress := tmpnet.GetEthAddress(senderKey)
 		recipientKey, err := secp256k1.NewPrivateKey()
 		require.NoError(err)
-		recipientEthAddress := evm.GetEthAddress(recipientKey)
+		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 
 		ginkgo.By("sending funds from one address to another on the C-Chain", func() {
 			// Create transaction
-			acceptedNonce, err := ethClient.AcceptedNonceAt(e2e.DefaultContext(), senderEthAddress)
+			acceptedNonce, err := ethClient.NonceAt(e2e.DefaultContext(), senderEthAddress, nil)
 			require.NoError(err)
 			gasPrice := e2e.SuggestGasPrice(ethClient)
 			tx := types.NewTransaction(

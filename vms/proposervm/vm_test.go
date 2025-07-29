@@ -2014,23 +2014,29 @@ func TestVMInnerBlkCacheDeduplicationRegression(t *testing.T) {
 	require.NoError(aBlock.Accept(context.Background()))
 	require.NoError(bBlock.Reject(context.Background()))
 
-	// TODO: Fix these tests - postForkBlock type is not available
-	// require.Equal(
-	// 	choices.Accepted,
-	// 	aBlock.(*postForkBlock).innerBlk.Status(),
-	// )
+	// Check if innerBlk implements the test block type
+	aInnerBlk, ok := aBlock.(*postForkBlock).innerBlk.(*chaintest.Block)
+	require.True(ok, "aBlock innerBlk should be *chaintest.Block")
+	require.Equal(
+		consensustest.Accepted,
+		aInnerBlk.Status,
+	)
 
-	// require.Equal(
-	// 	choices.Accepted,
-	// 	bBlock.(*postForkBlock).innerBlk.Status(),
-	// )
+	bInnerBlk, ok := bBlock.(*postForkBlock).innerBlk.(*chaintest.Block)
+	require.True(ok, "bBlock innerBlk should be *chaintest.Block")
+	require.Equal(
+		consensustest.Accepted,
+		bInnerBlk.Status,
+	)
 
-	// cachedXBlock, ok := proVM.innerBlkCache.Get(bBlock.ID())
-	// require.True(ok)
-	// require.Equal(
-	// 	choices.Accepted,
-	// 	cachedXBlock.Status(),
-	// )
+	cachedXBlock, ok := proVM.innerBlkCache.Get(bBlock.ID())
+	require.True(ok)
+	cachedXBlockTest, ok := cachedXBlock.(*chaintest.Block)
+	require.True(ok, "cachedXBlock should be *chaintest.Block")
+	require.Equal(
+		consensustest.Accepted,
+		cachedXBlockTest.Status,
+	)
 }
 
 func TestVMInnerBlkMarkedAcceptedRegression(t *testing.T) {

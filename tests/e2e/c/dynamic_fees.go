@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/params"
-	"github.com/luxfi/evm"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"
@@ -44,7 +43,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 
 		ginkgo.By("allocating a pre-funded key")
 		key := privateNetwork.PreFundedKeys[0]
-		ethAddress := evm.GetEthAddress(key)
+		ethAddress := tmpnet.GetEthAddress(key)
 
 		ginkgo.By("initializing a coreth client")
 		node := privateNetwork.Nodes[0]
@@ -68,7 +67,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 		var contractAddress common.Address
 		ginkgo.By("deploying an expensive contract", func() {
 			// Create transaction
-			nonce, err := ethClient.AcceptedNonceAt(e2e.DefaultContext(), ethAddress)
+			nonce, err := ethClient.NonceAt(e2e.DefaultContext(), ethAddress, nil)
 			require.NoError(err)
 			compiledContract := common.Hex2Bytes(hashingCompiledContract)
 			tx := types.NewTx(&types.LegacyTx{
@@ -110,7 +109,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 				}
 
 				// Create the transaction
-				nonce, err := ethClient.AcceptedNonceAt(e2e.DefaultContext(), ethAddress)
+				nonce, err := ethClient.NonceAt(e2e.DefaultContext(), ethAddress, nil)
 				require.NoError(err)
 				tx := types.NewTx(&types.LegacyTx{
 					Nonce:    nonce,
@@ -146,10 +145,10 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 			// Create a recipient address
 			recipientKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
-			recipientEthAddress := evm.GetEthAddress(recipientKey)
+			recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 
 			// Create transaction
-			nonce, err := ethClient.AcceptedNonceAt(e2e.DefaultContext(), ethAddress)
+			nonce, err := ethClient.NonceAt(e2e.DefaultContext(), ethAddress, nil)
 			require.NoError(err)
 			tx := types.NewTx(&types.LegacyTx{
 				Nonce:    nonce,

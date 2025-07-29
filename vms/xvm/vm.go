@@ -458,19 +458,23 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	// handled asynchronously.
 	vm.Atomic.Set(vm.network)
 
-	vm.awaitShutdown.Add(2)
-	go func() {
-		defer vm.awaitShutdown.Done()
+	// Only start gossip goroutines if network is properly initialized
+	// (avoids panics in test environments)
+	if vm.network != nil {
+		vm.awaitShutdown.Add(2)
+		go func() {
+			defer vm.awaitShutdown.Done()
 
-		// Invariant: PushGossip must never grab the context lock.
-		vm.network.PushGossip(vm.onShutdownCtx)
-	}()
-	go func() {
-		defer vm.awaitShutdown.Done()
+			// Invariant: PushGossip must never grab the context lock.
+			vm.network.PushGossip(vm.onShutdownCtx)
+		}()
+		go func() {
+			defer vm.awaitShutdown.Done()
 
-		// Invariant: PullGossip must never grab the context lock.
-		vm.network.PullGossip(vm.onShutdownCtx)
-	}()
+			// Invariant: PullGossip must never grab the context lock.
+			vm.network.PullGossip(vm.onShutdownCtx)
+		}()
+	}
 
 	return nil
 }
