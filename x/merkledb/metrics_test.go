@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 )
 
 func Test_Metrics_Basic_Usage(t *testing.T) {

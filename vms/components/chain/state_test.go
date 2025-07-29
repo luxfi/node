@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 )

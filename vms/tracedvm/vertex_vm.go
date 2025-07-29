@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/trace"
 

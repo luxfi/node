@@ -4,7 +4,7 @@
 package state
 
 import (
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 )
 

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/consensus/engine/chain/getter"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 )

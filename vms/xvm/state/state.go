@@ -12,9 +12,9 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/prefixdb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"

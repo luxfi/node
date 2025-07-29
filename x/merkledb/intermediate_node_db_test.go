@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/units"

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/db/versiondb"
 	"github.com/luxfi/ids"
 )
 
