@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/vms/secp256k1fx"

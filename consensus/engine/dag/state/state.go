@@ -9,8 +9,8 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 )

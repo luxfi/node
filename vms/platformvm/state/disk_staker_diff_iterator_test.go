@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thepudds/fzgen/fuzzer"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 )
 
 func FuzzMarshalDiffKey(f *testing.F) {

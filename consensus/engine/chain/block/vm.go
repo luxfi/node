@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // ChainVM defines the required functionality of a Linear VM.

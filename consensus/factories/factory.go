@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/node/consensus/confidence"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/threshold"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var (

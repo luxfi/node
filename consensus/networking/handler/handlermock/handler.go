@@ -16,7 +16,7 @@ import (
 
 	consensus "github.com/luxfi/node/consensus"
 	handler "github.com/luxfi/node/consensus/networking/handler"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

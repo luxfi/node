@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/chain/job"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var _ job.Job[ids.ID] = (*issuer)(nil)

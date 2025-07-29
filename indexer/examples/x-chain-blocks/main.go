@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/wallet/chain/x/builder"

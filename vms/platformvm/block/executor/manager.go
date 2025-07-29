@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"

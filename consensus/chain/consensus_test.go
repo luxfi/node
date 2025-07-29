@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
 )
 

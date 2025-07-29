@@ -3,7 +3,7 @@
 
 package state
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 var _ StakerIterator = (*maskedIterator)(nil)
 

@@ -4,7 +4,7 @@
 package manager
 
 import (
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 // Manager manages database instances

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var (

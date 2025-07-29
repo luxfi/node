@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/reward"

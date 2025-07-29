@@ -4,7 +4,7 @@ package main
 
 import (
     "fmt"
-    "github.com/luxfi/node/ids"
+    "github.com/luxfi/ids"
 )
 
 func main() {

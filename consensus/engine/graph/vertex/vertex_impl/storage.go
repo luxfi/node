@@ -7,7 +7,7 @@ import (
 	"context"
 
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Storage defines the persistent storage that is required by the consensus

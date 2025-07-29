@@ -6,7 +6,7 @@ package block
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // StateSummary represents all the information needed to download, verify, and

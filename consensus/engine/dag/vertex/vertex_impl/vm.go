@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 type LinearizableVMWithEngine interface {

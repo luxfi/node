@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/fxs"

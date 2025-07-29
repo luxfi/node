@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var minimumFailingDuration = 5 * time.Minute

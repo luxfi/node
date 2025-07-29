@@ -3,7 +3,7 @@
 
 package chains
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // TestManager implements Manager but does nothing. Always returns nil error.
 // To be used only in tests

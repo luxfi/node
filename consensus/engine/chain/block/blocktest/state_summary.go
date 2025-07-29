@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var (

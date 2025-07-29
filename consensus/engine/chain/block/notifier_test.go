@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func TestChangeNotifierStateSyncableVM(t *testing.T) {

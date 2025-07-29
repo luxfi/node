@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/platformvm/signer"

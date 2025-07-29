@@ -17,7 +17,7 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/perms"

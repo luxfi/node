@@ -6,7 +6,7 @@ package choices
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Decidable represents element that can be decided.

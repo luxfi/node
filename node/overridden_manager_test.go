@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func TestOverriddenManager(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"

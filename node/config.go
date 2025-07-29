@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
