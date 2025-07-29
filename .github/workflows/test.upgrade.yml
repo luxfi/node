@@ -15,11 +15,7 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-          check-latest: true
+      - uses: ./.github/actions/setup-go-for-project
       - name: Build the node binary
         shell: bash
         run: ./scripts/build.sh
