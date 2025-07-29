@@ -6,7 +6,7 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/ids"
 )

@@ -2720,7 +2720,7 @@ func TestSendMultiple(t *testing.T) {
 					initialKeys: keys,
 				}},
 				vmStaticConfig: &config.Config{
-					EUpgradeTime: mockable.MaxTime,
+					EtnaTime: mockable.MaxTime,
 				},
 			})
 			service := &Service{vm: env.vm}

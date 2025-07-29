@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"

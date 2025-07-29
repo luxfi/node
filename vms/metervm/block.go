@@ -8,20 +8,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 )
 
 var (
-	_ linear.Block            = (*meterBlock)(nil)
-	_ linear.OracleBlock      = (*meterBlock)(nil)
+	_ chain.Block            = (*meterBlock)(nil)
+	_ chain.OracleBlock      = (*meterBlock)(nil)
 	_ block.WithVerifyContext = (*meterBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type meterBlock struct {
-	linear.Block
+	chain.Block
 
 	vm *blockVM
 }
@@ -57,17 +57,17 @@ func (mb *meterBlock) Reject(ctx context.Context) error {
 	return err
 }
 
-func (mb *meterBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	oracleBlock, ok := mb.Block.(linear.OracleBlock)
+func (mb *meterBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+	oracleBlock, ok := mb.Block.(chain.OracleBlock)
 	if !ok {
-		return [2]linear.Block{}, linear.ErrNotOracle
+		return [2]chain.Block{}, chain.ErrNotOracle
 	}
 
 	blks, err := oracleBlock.Options(ctx)
 	if err != nil {
-		return [2]linear.Block{}, err
+		return [2]chain.Block{}, err
 	}
-	return [2]linear.Block{
+	return [2]chain.Block{
 		&meterBlock{
 			Block: blks[0],
 			vm:    mb.vm,

@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	linearblock "github.com/luxfi/node/consensus/engine/linear/block"
+	linearblock "github.com/luxfi/node/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -608,7 +608,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -618,7 +618,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (linear.Block, error) {
 	return vm.manager.NewBlock(statelessBlk), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 

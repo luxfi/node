@@ -120,7 +120,7 @@ type test struct {
 type environment struct {
 	blkManager Manager
 	mempool    mempool.Mempool
-	sender     *common.SenderTest
+	sender     *core.SenderTest
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
@@ -159,7 +159,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	if ctrl == nil {
 		res.state = defaultState(res.config, res.ctx, res.baseDB, rewardsCalc)
 		res.uptimes = uptime.NewManager(res.state, res.clk)
-		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 		res.factory = txstest.NewWalletFactory(
 			res.ctx,
 			res.config,
@@ -169,7 +169,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		genesisBlkID = ids.GenerateTestID()
 		res.mockedState = state.NewMockState(ctrl)
 		res.uptimes = uptime.NewManager(res.mockedState, res.clk)
-		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 		res.factory = txstest.NewWalletFactory(
 			res.ctx,
 			res.config,
@@ -192,7 +192,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = &common.SenderTest{T: t}
+	res.sender = &core.SenderTest{}
 
 	metrics := metrics.Noop
 
@@ -237,7 +237,11 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		if res.isBootstrapped.Get() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(res.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID))
+			// Only stop tracking if there are validators to stop
+			if len(validatorIDs) > 0 {
+				// Ignore the error if tracking wasn't started
+				_ = res.uptimes.StopTracking(validatorIDs)
+			}
 			require.NoError(res.state.Commit())
 		}
 

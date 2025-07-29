@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 )

@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"

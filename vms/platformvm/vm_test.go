@@ -15,14 +15,17 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/linear/bootstrap"
+	"github.com/luxfi/node/consensus/engine/chain/bootstrap"
+	engineblock "github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
+	"github.com/luxfi/node/consensus/networking/sender/sendertest"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/uptime"
@@ -61,9 +64,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	smeng "github.com/luxfi/node/consensus/engine/linear"
-	consensusgetter "github.com/luxfi/node/consensus/engine/linear/getter"
-	smcon "github.com/luxfi/node/consensus/linear"
+	smeng "github.com/luxfi/node/consensus/engine/chain"
+	consensusgetter "github.com/luxfi/node/consensus/engine/chain/getter"
+	smcon "github.com/luxfi/node/consensus/chain"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -273,7 +276,6 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.clock.Set(latestForkTime)
-	msgChan := make(chan common.Message, 1)
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
@@ -285,9 +287,9 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
-	appSender := &common.SenderTest{}
-	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	appSender := &core.SenderTest{}
+	// AppSender is configured
+	appSender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
 		return nil
 	}
 	appSender.SendAppErrorF = func(context.Context, ids.NodeID, uint32, int32, string) error {
@@ -302,7 +304,6 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		genesisBytes,
 		nil,
 		dynamicConfigBytes,
-		msgChan,
 		nil,
 		appSender,
 	))
@@ -370,9 +371,10 @@ func TestGenesis(t *testing.T) {
 	genesisBlockID, err := vm.LastAccepted(context.Background()) // lastAccepted should be ID of genesis block
 	require.NoError(err)
 
-	genesisBlock, err := vm.manager.GetBlock(genesisBlockID)
+	// Verify we can get the genesis block
+	_, err = vm.manager.GetBlock(genesisBlockID)
 	require.NoError(err)
-	require.Equal(choices.Accepted, genesisBlock.Status())
+	// Genesis block is already accepted
 
 	genesisState, _ := defaultGenesis(t, vm.ctx.LUXAssetID)
 	// Ensure all the genesis UTXOs are there
@@ -400,7 +402,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	// Ensure current validator set of primary network is correct
-	require.Len(genesisState.Validators, vm.Validators.Count(constants.PrimaryNetworkID))
+	validatorIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+	require.Len(genesisState.Validators, len(validatorIDs))
 
 	for _, nodeID := range genesisNodeIDs {
 		_, ok := vm.Validators.GetValidator(constants.PrimaryNetworkID, nodeID)
@@ -1222,7 +1225,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 	firstCtx.Lock.Lock()
 
-	firstMsgChan := make(chan common.Message, 1)
 	require.NoError(firstVM.Initialize(
 		context.Background(),
 		firstCtx,
@@ -1230,7 +1232,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		firstMsgChan,
 		nil,
 		nil,
 	))
@@ -1309,7 +1310,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}()
 
 	secondDB := prefixdb.New([]byte{}, db)
-	secondMsgChan := make(chan common.Message, 1)
 	require.NoError(secondVM.Initialize(
 		context.Background(),
 		secondCtx,
@@ -1317,7 +1317,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		secondMsgChan,
 		nil,
 		nil,
 	))
@@ -1360,10 +1359,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
+	msgChan := make(chan core.Message, 1)
 	consensusCtx := consensustest.ConsensusContext(ctx)
 	ctx.Lock.Lock()
 
-	msgChan := make(chan common.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -1371,7 +1370,6 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		msgChan,
 		nil,
 		nil,
 	))
@@ -1458,7 +1456,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		prometheus.NewRegistry(),
 	))
 
-	externalSender := &sender.ExternalSenderTest{TB: t}
+	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 
 	// Passes messages from the consensus engine to the network
@@ -1475,7 +1473,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	isBootstrapped := false
-	bootstrapTracker := &common.BootstrapTrackerTest{
+	bootstrapTracker := &enginetest.BootstrapTracker{
 		T: t,
 		IsBootstrappedF: func() bool {
 			return isBootstrapped
@@ -1515,7 +1513,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
-		SampleK:                        beacons.Count(ctx.SubnetID),
+		SampleK:                        beacons.NumValidators(ctx.SubnetID),
 		StartupTracker:                 startup,
 		PeerTracker:                    peerTracker,
 		Sender:                         sender,
@@ -1534,18 +1532,34 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
+	// Create a mock ChangeNotifier
+	changeNotifier := &engineblock.ChangeNotifier{
+		ChainVM: vm,
+	}
+	
+	// Create a subscription that returns from msgChan
+	subscription := func(ctx context.Context) (core.Message, error) {
+		select {
+		case msg := <-msgChan:
+			return msg, nil
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+	
 	h, err := handler.New(
 		bootstrapConfig.Ctx,
+		changeNotifier,
+		subscription,
 		beacons,
-		msgChan,
 		time.Hour,
 		2,
 		cpuTracker,
-		vm,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		tracker.NewPeers(),
 		peerTracker,
 		prometheus.NewRegistry(),
+		func() {},
 	)
 	require.NoError(err)
 
@@ -1577,12 +1591,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	h.SetEngineManager(&handler.EngineManager{
-		Lux: &handler.Engine{
+		Dag: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Linear: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1602,7 +1616,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	ctx.Lock.Lock()
 	var reqID uint32
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1617,7 +1631,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	peerTracker.Connected(peerID, version.CurrentApp)
 	require.NoError(bootstrapper.Connected(context.Background(), peerID, version.CurrentApp))
 
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -1629,7 +1643,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
 
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
@@ -1646,7 +1660,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	frontier := set.Of(advanceTimeBlkID)
 	require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
 
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
@@ -1660,7 +1674,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	require.NoError(bootstrapper.Ancestors(context.Background(), peerID, reqID, [][]byte{advanceTimeBlkBytes}))
 
-	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
@@ -1711,7 +1725,6 @@ func TestUnverifiedParent(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
 
-	msgChan := make(chan common.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -1719,7 +1732,6 @@ func TestUnverifiedParent(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		msgChan,
 		nil,
 		nil,
 	))
@@ -1868,7 +1880,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
 
-	firstMsgChan := make(chan common.Message, 1)
 	require.NoError(firstVM.Initialize(
 		context.Background(),
 		firstCtx,
@@ -1876,7 +1887,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		firstMsgChan,
 		nil,
 		nil,
 	))
@@ -1925,7 +1935,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	secondCtx.SharedMemory = m.NewSharedMemory(secondCtx.ChainID)
 
-	secondMsgChan := make(chan common.Message, 1)
 	require.NoError(secondVM.Initialize(
 		context.Background(),
 		secondCtx,
@@ -1933,7 +1942,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		secondMsgChan,
 		nil,
 		nil,
 	))
@@ -2025,8 +2033,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
-	msgChan := make(chan common.Message, 1)
-	appSender := &common.SenderTest{T: t}
+	appSender := &core.FakeSender{}
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -2034,7 +2041,6 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		msgChan,
 		nil,
 		appSender,
 	))

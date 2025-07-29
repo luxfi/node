@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
@@ -55,7 +55,7 @@ var (
 	dbPrefix = []byte("proposervm")
 )
 
-func cachedBlockSize(_ ids.ID, blk linear.Block) int {
+func cachedBlockSize(_ ids.ID, blk chain.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
@@ -85,7 +85,7 @@ type VM struct {
 	// Only contains post-fork blocks near the tip so that the cache doesn't get
 	// filled with random blocks every time this node parses blocks while
 	// processing a GetAncestors message from a bootstrapping node.
-	innerBlkCache  cache.Cacher[ids.ID, linear.Block]
+	innerBlkCache  cache.Cacher[ids.ID, chain.Block]
 	preferred      ids.ID
 	consensusState consensus.State
 	context        context.Context
@@ -273,7 +273,7 @@ func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
 	return vm.setLastAcceptedMetadata(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
 		vm.ctx.Log.Error("unexpected build block failure",
@@ -287,14 +287,14 @@ func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	return preferredBlock.buildChild(ctx)
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, b []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b); err == nil {
 		return blk, nil
 	}
 	return vm.parsePreForkBlock(ctx, b)
 }
 
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	return vm.getBlock(ctx, id)
 }
 
@@ -725,7 +725,7 @@ func (vm *VM) optimalPChainHeight(ctx context.Context, minPChainHeight uint64) (
 // parseInnerBlock attempts to parse the provided bytes as an inner block. If
 // the inner block happens to be cached, then the inner block will not be
 // parsed.
-func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (linear.Block, error) {
+func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (chain.Block, error) {
 	if innerBlk, ok := vm.innerBlkCache.Get(outerBlkID); ok {
 		return innerBlk, nil
 	}
@@ -740,7 +740,7 @@ func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBy
 
 // Caches proposervm block ID --> inner block if the inner block's height
 // is within [innerBlkCacheSize] of the last accepted block's height.
-func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk linear.Block) {
+func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chain.Block) {
 	diff := math.AbsDiff(innerBlk.Height(), vm.lastAcceptedHeight)
 	if diff < innerBlkCacheSize {
 		vm.innerBlkCache.Put(outerBlkID, innerBlk)

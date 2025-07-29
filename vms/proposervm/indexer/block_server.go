@@ -6,7 +6,7 @@ package indexer
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 )
@@ -18,5 +18,5 @@ type BlockServer interface {
 
 	// Note: this is a contention heavy call that should be avoided
 	// for frequent/repeated indexer ops
-	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (linear.Block, error)
+	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error)
 }

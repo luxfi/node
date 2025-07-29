@@ -14,7 +14,9 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
@@ -523,7 +525,7 @@ func TestPushGossiper(t *testing.T) {
 				&p2p.Peers{},
 				logging.NoLog{},
 				constants.PrimaryNetworkID,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 1, nil
 					},

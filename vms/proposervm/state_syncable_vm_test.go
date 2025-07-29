@@ -15,9 +15,10 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
@@ -31,28 +32,22 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	require := require.New(t)
 
 	innerVM := &fullVM{
-		TestVM: &block.TestVM{
-			TestVM: common.TestVM{
-				T: t,
-			},
-		},
-		TestStateSyncableVM: &block.TestStateSyncableVM{
-			T: t,
-		},
+		VM: &blocktest.VM{},
+		StateSyncableVM: &blocktest.StateSyncableVM{},
 	}
 
 	// load innerVM expectations
 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
-		[]byte, []byte, []byte, chan<- common.Message,
-		[]*common.Fx, core.AppSender,
+		[]byte, []byte, []byte,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
 	innerVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return lineartest.GenesisID, nil
+		return chaintest.GenesisID, nil
 	}
-	innerVM.GetBlockF = func(context.Context, ids.ID) (linear.Block, error) {
-		return lineartest.Genesis, nil
+	innerVM.GetBlockF = func(context.Context, ids.ID) (chain.Block, error) {
+		return chaintest.Genesis, nil
 	}
 
 	// create the VM
@@ -77,8 +72,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
-		lineartest.GenesisBytes,
-		nil,
+		chaintest.GenesisBytes,
 		nil,
 		nil,
 		nil,
@@ -121,7 +115,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -162,12 +156,12 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}
@@ -205,7 +199,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -246,12 +240,12 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}
@@ -290,7 +284,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -333,12 +327,12 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}
@@ -376,7 +370,7 @@ func TestParseStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -405,12 +399,12 @@ func TestParseStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}
@@ -454,7 +448,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -463,7 +457,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -487,7 +481,7 @@ func TestStateSummaryAccept(t *testing.T) {
 		require.Equal(innerSummary.BytesV, summaryBytes)
 		return innerSummary, nil
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}
@@ -521,7 +515,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &block.TestStateSummary{
+	innerSummary := &blocktest.StateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -534,7 +528,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	vm.lastAcceptedHeight = innerSummary.Height() + 1
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -543,7 +537,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		require.Equal(reqHeight, h)
 		return innerSummary, nil
 	}
-	innerVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
+	innerVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
 	}

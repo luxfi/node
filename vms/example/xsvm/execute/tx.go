@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/hashing"

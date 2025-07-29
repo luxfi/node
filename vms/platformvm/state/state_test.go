@@ -160,10 +160,14 @@ func TestPersistStakers(t *testing.T) {
 				}, valOut)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.SubnetID)
-				r.NoError(err)
-				r.Equal(upDuration, time.Duration(0))
-				r.Equal(lastUpdated, staker.StartTime)
+				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID)
+				if staker.SubnetID == constants.PrimaryNetworkID {
+					r.NoError(err)
+					r.Equal(upDuration, time.Duration(0))
+					r.Equal(lastUpdated, staker.StartTime)
+				} else {
+					r.ErrorIs(err, database.ErrNotFound)
+				}
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
 				weightDiffBytes, err := s.validatorWeightDiffsDB.Get(marshalDiffKey(staker.SubnetID, height, staker.NodeID))
@@ -315,7 +319,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -437,7 +441,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -591,7 +595,7 @@ func TestPersistStakers(t *testing.T) {
 				r.Empty(valsMap)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {

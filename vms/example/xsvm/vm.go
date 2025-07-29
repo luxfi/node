@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	consensuschain "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -42,7 +42,6 @@ type VM struct {
 	chainContext *consensus.Context
 	db           database.Database
 	genesis      *genesis.Genesis
-	engineChan   chan<- common.Message
 
 	chain   chain.Chain
 	builder builder.Builder
@@ -55,11 +54,10 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
-	engineChan chan<- common.Message,
-	_ []*common.Fx,
+	_ []*core.Fx,
 	_ core.AppSender,
 ) error {
-	vm.AppHandler = common.NewNoOpAppHandler(chainContext.Log)
+	vm.AppHandler = core.NewNoOpAppHandler(chainContext.Log)
 
 	chainContext.Log.Info("initializing xsvm",
 		zap.Stringer("version", Version),
@@ -81,14 +79,13 @@ func (vm *VM) Initialize(
 	}
 
 	vm.genesis = g
-	vm.engineChan = engineChan
 
 	vm.chain, err = chain.New(chainContext, vm.db)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chain manager: %w", err)
 	}
 
-	vm.builder = builder.New(chainContext, engineChan, vm.chain)
+	vm.builder = builder.New(chainContext, vm.chain)
 
 	chainContext.Log.Info("initialized xsvm",
 		zap.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
@@ -140,11 +137,11 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
 	return nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensuschain.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -152,7 +149,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, erro
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (consensuschain.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -165,10 +162,19 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (linear.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
 	return state.GetBlockIDByHeight(vm.db, height)
+}
+
+func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
+	// xsvm doesn't need a custom HTTP handler
+	return nil, nil
+}
+
+func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+	return vm.builder.WaitForEvent(ctx)
 }

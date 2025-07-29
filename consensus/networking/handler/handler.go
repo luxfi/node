@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/consensus"
 	enginepkg "github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/ids"

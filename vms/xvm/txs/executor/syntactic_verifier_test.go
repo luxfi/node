@@ -30,7 +30,7 @@ var (
 	feeConfig = config.Config{
 		TxFee:            2,
 		CreateAssetTxFee: 3,
-		EUpgradeTime:     mockable.MaxTime,
+		EtnaTime:     mockable.MaxTime,
 	}
 )
 

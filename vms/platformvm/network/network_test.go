@@ -9,12 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/coremock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
@@ -76,7 +77,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				return common.NewMockSender(ctrl)
+				return &core.FakeSender{}
 			},
 			expectedErr: mempool.ErrDuplicateTx,
 		},
@@ -90,7 +91,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return common.NewMockSender(ctrl)
+				return &core.FakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -106,7 +107,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			txVerifier: testTxVerifier{err: errTest},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return common.NewMockSender(ctrl)
+				return &core.FakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -122,7 +123,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return common.NewMockSender(ctrl)
+				return &core.FakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -133,7 +134,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			partialSyncPrimaryNetwork: true,
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				return common.NewMockSender(ctrl)
+				return &core.FakeSender{}
 			},
 			expectedErr: errMempoolDisabledWithPartialSync,
 		},
@@ -150,7 +151,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := coremock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},

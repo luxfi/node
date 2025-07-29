@@ -41,7 +41,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
-	h := &verifier{
+	h := &handler{
 		ctx: ctx,
 		clk: &mockable.Clock{},
 		fx:  fx,

@@ -20,8 +20,8 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/appsender"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/corruptabledb"
@@ -248,7 +248,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		WarpSigner: warpSignerClient,
 
 		ValidatorState: validatorStateClient,
-		// TODO: support remaining linear++ fields
+		// TODO: support remaining chain++ fields
 
 		ChainDataDir: req.ChainDataDir,
 	}
@@ -379,7 +379,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
 	var (
-		blk linear.Block
+		blk chain.Block
 		err error
 	)
 	if vm.bVM == nil || req.PChainHeight == nil {
@@ -436,7 +436,7 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	return &vmpb.ParseBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
-		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on linear.Block
+		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,
@@ -467,7 +467,7 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	return &vmpb.GetBlockResponse{
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
-		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on linear.Block
+		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
 		VerifyWithContext: verifyWithCtx,

@@ -5,15 +5,16 @@ package lp118
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/p2p"
-	// "github.com/luxfi/node/proto/pb/sdk" // Commented out - types not available
+	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -76,13 +77,8 @@ func (h *Handler) AppRequest(
 	_ time.Time,
 	requestBytes []byte,
 ) ([]byte, *core.AppError) {
-	// TODO: sdk.SignatureRequest type is not defined
-	type SignatureRequest struct {
-		Message       []byte
-		Justification []byte
-	}
-	request := &SignatureRequest{}
-	if err := json.Unmarshal(requestBytes, request); err != nil {
+	request := &sdk.SignatureRequest{}
+	if err := proto.Unmarshal(requestBytes, request); err != nil {
 		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
@@ -122,15 +118,11 @@ func (h *Handler) AppRequest(
 }
 
 func signatureToResponse(signature []byte) ([]byte, *core.AppError) {
-	// TODO: sdk.SignatureResponse type is not defined
-	type SignatureResponse struct {
-		Signature []byte
-	}
-	response := &SignatureResponse{
+	response := &sdk.SignatureResponse{
 		Signature: signature,
 	}
 
-	responseBytes, err := json.Marshal(response)
+	responseBytes, err := proto.Marshal(response)
 	if err != nil {
 		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,

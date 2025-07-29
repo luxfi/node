@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

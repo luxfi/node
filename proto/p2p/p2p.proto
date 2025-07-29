@@ -481,6 +481,7 @@ message ReplicationRequest {
 message ReplicationResponse {
   repeated bytes data = 1;
   uint64 latest_round = 2;
+  bytes latest_qr = 3;
 }
 
 // BlockHeader represents a block header

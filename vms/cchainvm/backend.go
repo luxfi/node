@@ -4,6 +4,7 @@
 package cchainvm
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -32,6 +33,180 @@ type MinimalEthBackend struct {
 	chainDb     ethdb.Database
 	engine      consensus.Engine
 	networkID   uint64
+}
+
+// NewMigratedBackend creates a special backend for fully migrated data
+// This completely bypasses genesis initialization
+func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBackend, error) {
+	fmt.Printf("Creating migrated backend for height %d\n", migratedHeight)
+	
+	// Create a minimal chain config
+	chainConfig := &params.ChainConfig{
+		ChainID:                 big.NewInt(96369),
+		HomesteadBlock:          big.NewInt(0),
+		EIP150Block:             big.NewInt(0),
+		EIP155Block:             big.NewInt(0),
+		EIP158Block:             big.NewInt(0),
+		ByzantiumBlock:          big.NewInt(0),
+		ConstantinopleBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		IstanbulBlock:           big.NewInt(0),
+		BerlinBlock:             big.NewInt(0),
+		LondonBlock:             big.NewInt(0),
+		TerminalTotalDifficulty: common.Big0,
+	}
+	
+	// Create a dummy consensus engine
+	engine := &dummyEngine{}
+	
+	// Read the head hash from migrated data
+	blockNumBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(blockNumBytes, migratedHeight)
+	canonicalKey := append([]byte{0x68}, blockNumBytes...)
+	canonicalKey = append(canonicalKey, 0x6e)
+	
+	var headHash common.Hash
+	if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+		copy(headHash[:], val)
+		fmt.Printf("Found migrated head hash at height %d: %x\n", migratedHeight, headHash)
+		
+		// Set all head pointers
+		rawdb.WriteHeadBlockHash(db, headHash)
+		rawdb.WriteHeadHeaderHash(db, headHash)
+		rawdb.WriteHeadFastBlockHash(db, headHash)
+		rawdb.WriteLastPivotNumber(db, migratedHeight)
+		
+		// Also write the current block pointers
+		rawdb.WriteCanonicalHash(db, headHash, migratedHeight)
+	} else {
+		return nil, fmt.Errorf("could not find canonical hash at height %d", migratedHeight)
+	}
+	
+	// Create blockchain options that skip validation
+	options := &gethcore.BlockChainConfig{
+		TrieCleanLimit: 256,
+		NoPrefetch:     false,
+		StateScheme:    rawdb.HashScheme,
+	}
+	
+	// CRITICAL: Create blockchain WITHOUT genesis
+	// This prevents any genesis initialization
+	fmt.Printf("Creating blockchain without genesis...\n")
+	blockchain, err := gethcore.NewBlockChain(db, nil, engine, options)
+	if err != nil {
+		fmt.Printf("Failed to create blockchain: %v\n", err)
+		return nil, fmt.Errorf("failed to create blockchain from migrated data: %w", err)
+	}
+	
+	// Verify the blockchain loaded at the right height
+	currentBlock := blockchain.CurrentBlock()
+	fmt.Printf("Blockchain initialized at height: %d\n", currentBlock.Number.Uint64())
+	
+	// Create transaction pool
+	legacyPool := legacypool.New(ethconfig.Defaults.TxPool, blockchain)
+	txPool, err := txpool.New(ethconfig.Defaults.TxPool.PriceLimit, blockchain, []txpool.SubPool{legacyPool})
+	if err != nil {
+		return nil, err
+	}
+	
+	return &MinimalEthBackend{
+		chainConfig: chainConfig,
+		blockchain:  blockchain,
+		txPool:      txPool,
+		chainDb:     db,
+		engine:      engine,
+		networkID:   96369,
+	}, nil
+}
+
+// NewMinimalEthBackendForMigration creates a backend that loads from migrated data
+func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Config, genesis *gethcore.Genesis, migratedHeight uint64) (*MinimalEthBackend, error) {
+	var chainConfig *params.ChainConfig
+	if genesis != nil && genesis.Config != nil {
+		chainConfig = genesis.Config
+	} else {
+		// Use a default config for migrated data
+		chainConfig = &params.ChainConfig{
+			ChainID: big.NewInt(96369),
+			TerminalTotalDifficulty: common.Big0,
+		}
+	}
+
+	// Create consensus engine
+	var engine consensus.Engine
+	if chainConfig.Clique != nil {
+		engine = clique.New(chainConfig.Clique, db)
+	} else {
+		// Use a dummy engine for PoS
+		engine = &dummyEngine{}
+	}
+
+	// Set the head pointers to the migrated height
+	fmt.Printf("Setting blockchain to migrated height %d\n", migratedHeight)
+	
+	// Get the hash at the migrated height
+	blockNumBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(blockNumBytes, migratedHeight)
+	canonicalKey := append([]byte{0x68}, blockNumBytes...)
+	canonicalKey = append(canonicalKey, 0x6e)
+	
+	var headHash common.Hash
+	if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+		copy(headHash[:], val)
+		fmt.Printf("Found head hash at height %d: %x\n", migratedHeight, headHash)
+		
+		// Write head pointers
+		rawdb.WriteHeadBlockHash(db, headHash)
+		rawdb.WriteHeadHeaderHash(db, headHash)
+		rawdb.WriteHeadFastBlockHash(db, headHash)
+		rawdb.WriteLastPivotNumber(db, migratedHeight)
+	}
+
+	// Initialize blockchain - skip genesis since we have migrated data
+	options := &gethcore.BlockChainConfig{
+		TrieCleanLimit: config.TrieCleanCache,
+		NoPrefetch:     config.NoPrefetch,
+		StateScheme:    rawdb.HashScheme,
+	}
+
+	// IMPORTANT: Pass nil genesis to prevent overwriting migrated data
+	fmt.Printf("Creating blockchain from migrated data...\n")
+	blockchain, err := gethcore.NewBlockChain(db, nil, engine, options)
+	if err != nil {
+		// If it fails, it might be because it expects genesis
+		// Try creating a minimal genesis that won't overwrite data
+		fmt.Printf("First attempt failed: %v, trying with minimal genesis\n", err)
+		
+		minimalGenesis := &gethcore.Genesis{
+			Config:     chainConfig,
+			Difficulty: big.NewInt(0),
+			GasLimit:   8000000,
+			Alloc:      nil, // No allocations to prevent state overwrite
+		}
+		
+		blockchain, err = gethcore.NewBlockChain(db, minimalGenesis, engine, options)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create blockchain from migrated data: %w", err)
+		}
+	}
+	
+	fmt.Printf("Blockchain created, current height: %d\n", blockchain.CurrentBlock().Number.Uint64())
+
+	// Create transaction pool
+	legacyPool := legacypool.New(config.TxPool, blockchain)
+	txPool, err := txpool.New(config.TxPool.PriceLimit, blockchain, []txpool.SubPool{legacyPool})
+	if err != nil {
+		return nil, err
+	}
+
+	return &MinimalEthBackend{
+		chainConfig: chainConfig,
+		blockchain:  blockchain,
+		txPool:      txPool,
+		chainDb:     db,
+		engine:      engine,
+		networkID:   config.NetworkId,
+	}, nil
 }
 
 // NewMinimalEthBackend creates a new minimal Ethereum backend
@@ -81,27 +256,69 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 
 	// Check if we need to initialize genesis first
 	stored := rawdb.ReadCanonicalHash(db, 0)
+	fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n", 
+		append([]byte{0x68}, append(make([]byte, 8), 0x6e)...), stored, nil)
+	
 	if stored == (common.Hash{}) {
-		fmt.Printf("No genesis found in database, will initialize\n")
-		
-		// Create trie database for genesis initialization
-		tdb := triedb.NewDatabase(db, triedb.HashDefaults)
-		
-		// Initialize genesis block
-		_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to setup genesis: %w", err)
+		// Double check with direct key access for migrated data
+		canonicalKey := append([]byte{0x68}, make([]byte, 8)...)
+		canonicalKey = append(canonicalKey, 0x6e)
+		if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+			copy(stored[:], val)
+			fmt.Printf("Found canonical hash with direct key access: %x\n", stored)
 		}
 		
-		if genesisHash != (common.Hash{}) {
-			fmt.Printf("Genesis initialized with hash: %s\n", genesisHash.Hex())
+		if stored == (common.Hash{}) {
+			fmt.Printf("No genesis found in database, will initialize\n")
+			
+			// Create trie database for genesis initialization
+			tdb := triedb.NewDatabase(db, triedb.HashDefaults)
+			
+			// Initialize genesis block
+			_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to setup genesis: %w", err)
+			}
+			
+			if genesisHash != (common.Hash{}) {
+				fmt.Printf("Genesis initialized with hash: %s\n", genesisHash.Hex())
+			}
+			
+			// Check again
+			stored = rawdb.ReadCanonicalHash(db, 0)
+			fmt.Printf("After setup, canonical hash at 0: %s\n", stored.Hex())
 		}
-		
-		// Check again
-		stored = rawdb.ReadCanonicalHash(db, 0)
-		fmt.Printf("After setup, canonical hash at 0: %s\n", stored.Hex())
 	} else {
 		fmt.Printf("Found existing genesis in database: %s\n", stored.Hex())
+	}
+
+	// Check for highest block in migrated data
+	currentHash := rawdb.ReadHeadBlockHash(db)
+	if currentHash == (common.Hash{}) {
+		// Try to read from our custom keys
+		if val, err := db.Get([]byte("LastBlock")); err == nil && len(val) == 32 {
+			copy(currentHash[:], val)
+			fmt.Printf("Found head block from LastBlock key: %x\n", currentHash)
+			
+			// Write it to the standard location
+			rawdb.WriteHeadBlockHash(db, currentHash)
+			rawdb.WriteHeadHeaderHash(db, currentHash)
+			rawdb.WriteHeadFastBlockHash(db, currentHash)
+		}
+	}
+	
+	if currentHash != (common.Hash{}) {
+		if header := rawdb.ReadHeader(db, currentHash, 0); header != nil {
+			fmt.Printf("Found header at hash %x with number %d\n", currentHash, header.Number.Uint64())
+		} else {
+			// Try to read the header by iterating through possible block numbers
+			if heightBytes, err := db.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+				height := binary.BigEndian.Uint64(heightBytes)
+				if header := rawdb.ReadHeader(db, currentHash, height); header != nil {
+					fmt.Printf("Found header at height %d\n", height)
+				}
+			}
+		}
 	}
 
 	// Now create blockchain - it will use the already initialized genesis

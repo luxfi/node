@@ -12,7 +12,7 @@ package executor
 import (
 	reflect "reflect"
 
-	linear "github.com/luxfi/node/consensus/linear"
+	chain "github.com/luxfi/node/consensus/chain"
 	ids "github.com/luxfi/node/ids"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
@@ -45,10 +45,10 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // GetBlock mocks base method.
-func (m *MockManager) GetBlock(blkID ids.ID) (linear.Block, error) {
+func (m *MockManager) GetBlock(blkID ids.ID) (chain.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blkID)
-	ret0, _ := ret[0].(linear.Block)
+	ret0, _ := ret[0].(chain.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -104,10 +104,10 @@ func (mr *MockManagerMockRecorder) LastAccepted() *gomock.Call {
 }
 
 // NewBlock mocks base method.
-func (m *MockManager) NewBlock(arg0 block.Block) linear.Block {
+func (m *MockManager) NewBlock(arg0 block.Block) chain.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBlock", arg0)
-	ret0, _ := ret[0].(linear.Block)
+	ret0, _ := ret[0].(chain.Block)
 	return ret0
 }
 

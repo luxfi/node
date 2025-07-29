@@ -9,10 +9,11 @@ import (
 	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -27,7 +28,7 @@ type newBlockConfig struct {
 func newBlock(t *testing.T, config newBlockConfig) *Block {
 	if config.prev == nil {
 		block := &Block{
-			vmBlock: lineartest.Genesis,
+			vmBlock: chaintest.Genesis,
 			metadata: bft.ProtocolMetadata{
 				Version: 1,
 				Epoch:   1,
@@ -48,7 +49,7 @@ func newBlock(t *testing.T, config newBlockConfig) *Block {
 		config.round = config.prev.metadata.Round + 1
 	}
 
-	vmBlock := lineartest.BuildChild(config.prev.vmBlock.(*lineartest.Block))
+	vmBlock := chaintest.BuildChild(config.prev.vmBlock.(*chaintest.Block))
 	block := &Block{
 		vmBlock:      vmBlock,
 		blockTracker: config.prev.blockTracker,
@@ -124,9 +125,11 @@ func generateTestNodes(t *testing.T, num uint64) []*testNode {
 		nodes[i] = &testNode{
 			validator: validators.GetValidatorOutput{
 				NodeID:    nodeID,
-				PublicKey: ls.PublicKey(),
+				PublicKey: bls.PublicFromSecretKey(ls),
 			},
-			signFunc: ls.Sign,
+			signFunc: func(msg []byte) (*bls.Signature, error) {
+				return bls.Sign(ls, msg), nil
+			},
 		}
 	}
 	return nodes

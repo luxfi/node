@@ -1046,7 +1046,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 			Log:          logging.NoLog{},
 		},
 		Config: &config.Config{
-			EUpgradeTime:     mockable.MaxTime,
+			EtnaTime:         mockable.MaxTime,
 			TxFee:            0,
 			CreateAssetTxFee: 0,
 		},

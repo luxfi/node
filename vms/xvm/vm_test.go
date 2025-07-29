@@ -37,14 +37,13 @@ func TestInvalidGenesis(t *testing.T) {
 
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                        // context
-		memdb.New(),                // database
-		nil,                        // genesisState
-		nil,                        // upgradeBytes
-		nil,                        // configBytes
-		make(chan core.Message, 1), // engineMessenger
-		nil,                        // fxs
-		nil,                        // AppSender
+		ctx,         // context
+		memdb.New(), // database
+		nil,         // genesisState
+		nil,         // upgradeBytes
+		nil,         // configBytes
+		nil,         // fxs
+		nil,         // AppSender
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 }
@@ -63,16 +62,15 @@ func TestInvalidFx(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                        // context
-		memdb.New(),                // database
-		genesisBytes,               // genesisState
-		nil,                        // upgradeBytes
-		nil,                        // configBytes
-		make(chan core.Message, 1), // engineMessenger
-		[]*core.Fx{ // fxs
+		ctx,          // context
+		memdb.New(),  // database
+		genesisBytes, // genesisState
+		nil,          // upgradeBytes
+		nil,          // configBytes
+		[]*core.Fx{   // fxs
 			nil,
 		},
-		nil,
+		nil, // AppSender
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -91,13 +89,12 @@ func TestFxInitializationFailure(t *testing.T) {
 	genesisBytes := buildGenesisTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,                        // context
-		memdb.New(),                // database
-		genesisBytes,               // genesisState
-		nil,                        // upgradeBytes
-		nil,                        // configBytes
-		make(chan core.Message, 1), // engineMessenger
-		[]*core.Fx{{ // fxs
+		ctx,          // context
+		memdb.New(),  // database
+		genesisBytes, // genesisState
+		nil,          // upgradeBytes
+		nil,          // configBytes
+		[]*core.Fx{{  // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -105,7 +102,7 @@ func TestFxInitializationFailure(t *testing.T) {
 				},
 			},
 		}},
-		nil,
+		nil, // AppSender
 	)
 	require.ErrorIs(err, errUnknownFx)
 }

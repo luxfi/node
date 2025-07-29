@@ -61,12 +61,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue export transaction: %s\n", err)
 	}
-	log.Printf("issued export %s in %s\n", exportTx.ID(), time.Since(exportStartTime))
+	log.Printf("issued export %s in %s\n", exportTx.ID, time.Since(exportStartTime))
 
 	importStartTime := time.Now()
 	importTx, err := pWallet.IssueImportTx(cChainID, &owner)
 	if err != nil {
 		log.Fatalf("failed to issue import transaction: %s\n", err)
 	}
-	log.Printf("issued import %s in %s\n", importTx.ID(), time.Since(importStartTime))
+	log.Printf("issued import %s in %s\n", importTx.ID, time.Since(importStartTime))
 }

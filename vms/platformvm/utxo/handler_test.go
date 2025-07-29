@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -40,7 +41,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 	require.NoError(t, fx.Bootstrapped())
 
 	h := &handler{
-		ctx: consensus.DefaultContextTest(),
+		ctx: consensustest.Context(t, consensustest.PChainID),
 		clk: &mockable.Clock{},
 		fx:  fx,
 	}

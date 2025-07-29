@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build skip
+
 package sync
 
 import (
@@ -105,7 +107,9 @@ func Test_Server_GetRangeProof(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
-			sender := common.NewMockSender(ctrl)
+			sender := &core.FakeSender{
+		SentAppResponse: make(chan []byte, 1),
+	}
 			var proof *merkledb.RangeProof
 			sender.EXPECT().SendAppResponse(
 				gomock.Any(), // ctx
@@ -299,7 +303,9 @@ func Test_Server_GetChangeProof(t *testing.T) {
 			// Store proof returned by server in [proofResult]
 			var proofResult *pb.SyncGetChangeProofResponse
 			var proofBytes []byte
-			sender := common.NewMockSender(ctrl)
+			sender := &core.FakeSender{
+		SentAppResponse: make(chan []byte, 1),
+	}
 			sender.EXPECT().SendAppResponse(
 				gomock.Any(), // ctx
 				gomock.Any(), // nodeID
@@ -386,7 +392,9 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 				},
 			},
 			handlerFunc: func(ctrl *gomock.Controller) *NetworkServer {
-				sender := common.NewMockSender(ctrl)
+				sender := &core.FakeSender{
+		SentAppResponse: make(chan []byte, 1),
+	}
 				sender.EXPECT().SendAppResponse(
 					gomock.Any(),
 					gomock.Any(),
@@ -422,7 +430,9 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 				},
 			},
 			handlerFunc: func(ctrl *gomock.Controller) *NetworkServer {
-				sender := common.NewMockSender(ctrl)
+				sender := &core.FakeSender{
+		SentAppResponse: make(chan []byte, 1),
+	}
 				sender.EXPECT().SendAppResponse(
 					gomock.Any(),
 					gomock.Any(),

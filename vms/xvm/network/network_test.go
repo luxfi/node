@@ -15,6 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/xvm/block/executor"
@@ -131,7 +132,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := core.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -168,7 +169,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return common.NewMockSender(ctrl)
+				return core.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -178,7 +179,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -232,7 +233,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := core.NewMockSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -262,7 +263,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return common.NewMockSender(ctrl)
+				return core.NewMockSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -272,7 +273,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},

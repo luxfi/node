@@ -58,7 +58,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
 	metrics := prometheus.NewRegistry()
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
 	require.NoError(err)
@@ -95,7 +95,7 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
 	metrics := prometheus.NewRegistry()
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
 	require.NoError(err)

@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -59,7 +59,7 @@ type Builder interface {
 	ShutdownBlockTimer()
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (linear.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 
 	// PackBlockTxs returns an array of txs that can fit into a valid block of
 	// size [targetBlockSize]. The returned txs are all verified against the
@@ -197,7 +197,7 @@ func (b *builder) ShutdownBlockTimer() {
 // BuildBlock builds a block to be added to consensus.
 // This method removes the transactions from the returned
 // blocks from the mempool.
-func (b *builder) BuildBlock(context.Context) (linear.Block, error) {
+func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	// If there are still transactions in the mempool, then we need to
 	// re-trigger block building.
 	defer b.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
