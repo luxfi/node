@@ -4,7 +4,7 @@ module github.com/luxfi/node
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.21
+go 1.24.5
 
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
 
