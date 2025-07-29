@@ -18,7 +18,7 @@ import (
 
 func BenchmarkLoadUser(b *testing.B) {
 	runLoadUserBenchmark := func(b *testing.B, numKeys int) {
-		require := require.New(b)
+		_ = require.New(b) // TODO: use require for assertions
 
 		env := setup(b, &envConfig{
 			fork: latest,

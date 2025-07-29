@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/consensus/engine/core/coremock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -132,7 +133,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
+				appSender := coremock.NewMockAppSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -169,7 +170,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -233,7 +234,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
+				appSender := coremock.NewMockAppSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -263,7 +264,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc

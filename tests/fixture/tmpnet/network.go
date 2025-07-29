@@ -304,7 +304,7 @@ func (n *Network) Create(rootDir string) error {
 		}
 		keysToFund = append(keysToFund, n.PreFundedKeys...)
 
-		genesis, err := NewTestGenesis(defaultNetworkID, n.Nodes, keysToFund)
+		genesis, err := NewTestGenesisWithFunds(defaultNetworkID, n.Nodes, keysToFund)
 		if err != nil {
 			return err
 		}
@@ -394,10 +394,14 @@ func (n *Network) Bootstrap(ctx context.Context, w io.Writer) error {
 		}
 
 		// If sybil protection is enabled, it should be re-enabled before the node is used to bootstrap the other nodes
-		var err error
-		reEnableSybilProtection, err = bootstrapNode.Flags.GetBoolVal(config.SybilProtectionEnabledKey, true)
-		if err != nil {
-			return fmt.Errorf("failed to read sybil protection flag: %w", err)
+		val, ok := bootstrapNode.Flags[config.SybilProtectionEnabledKey]
+		if ok {
+			reEnableSybilProtection, ok = val.(bool)
+			if !ok {
+				return fmt.Errorf("sybil protection flag is not a bool")
+			}
+		} else {
+			reEnableSybilProtection = true // default value
 		}
 
 		// Ensure sybil protection is disabled for the bootstrap node.

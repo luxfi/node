@@ -5,7 +5,6 @@ package tmpnet
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -45,11 +44,11 @@ func WaitForHealthy(ctx context.Context, node *Node) error {
 	}
 }
 
-// NodeURI associates a node ID with its API URI.
-type NodeURI struct {
-	NodeID ids.NodeID
-	URI    string
-}
+// NodeURI is already defined in config.go
+// type NodeURI struct {
+// 	NodeID ids.NodeID
+// 	URI    string
+// }
 
 func GetNodeURIs(nodes []*Node) []NodeURI {
 	uris := make([]NodeURI, 0, len(nodes))
@@ -70,10 +69,10 @@ func GetNodeURIs(nodes []*Node) []NodeURI {
 	return uris
 }
 
-// Marshal to json with default prefix and indent.
-func DefaultJSONMarshal(v interface{}) ([]byte, error) {
-	return json.MarshalIndent(v, "", "  ")
-}
+// DefaultJSONMarshal is already defined in config.go
+// func DefaultJSONMarshal(v interface{}) ([]byte, error) {
+// 	return json.MarshalIndent(v, "", "  ")
+// }
 
 // Helper simplifying creation of a set of private keys
 func NewPrivateKeys(keyCount int) ([]*secp256k1.PrivateKey, error) {

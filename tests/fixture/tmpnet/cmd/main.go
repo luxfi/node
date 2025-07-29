@@ -21,7 +21,7 @@ import (
 const cliVersion = "0.0.1"
 
 var (
-	errLux NodeRequired = fmt.Errorf("--node-path or %s are required", tmpnet.Lux NodePathEnvName)
+	errLuxNodeRequired = fmt.Errorf("--node-path or %s are required", tmpnet.LuxNodePathEnvName)
 	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", tmpnet.NetworkDirEnvName)
 )
 
@@ -41,7 +41,7 @@ func main() {
 			if len(version.GitCommit) > 0 {
 				msg += ", commit=" + version.GitCommit
 			}
-			fmt.Fprintf(os.Stdout, msg+"\n")
+			fmt.Fprintf(os.Stdout, "%s\n", msg)
 			return nil
 		},
 	}
@@ -59,7 +59,7 @@ func main() {
 		Short: "Start a new temporary network",
 		RunE: func(*cobra.Command, []string) error {
 			if len(luxNodePath) == 0 {
-				return errLux NodeRequired
+				return errLuxNodeRequired
 			}
 
 			// Root dir will be defaulted on start if not provided
@@ -106,7 +106,7 @@ func main() {
 		},
 	}
 	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(tmpnet.RootDirEnvName), "The path to the root directory for temporary networks")
-	startNetworkCmd.PersistentFlags().StringVar(&luxNodePath, "node-path", os.Getenv(tmpnet.Lux NodePathEnvName), "The path to an node binary")
+	startNetworkCmd.PersistentFlags().StringVar(&luxNodePath, "node-path", os.Getenv(tmpnet.LuxNodePathEnvName), "The path to an node binary")
 	startNetworkCmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", os.ExpandEnv("$HOME/.node/plugins"), "[optional] the dir containing VM plugins")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
 	startNetworkCmd.PersistentFlags().StringVar(&networkOwner, "network-owner", "", "The string identifying the intended owner of the network")

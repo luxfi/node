@@ -111,7 +111,7 @@ func NewTestEnvironment(flagVars *FlagVars, desiredNetwork *tmpnet.Network) *Tes
 		network = desiredNetwork
 		StartNetwork(
 			network,
-			flagVars.Lux NodeExecPath(),
+			flagVars.LuxNodeExecPath(),
 			flagVars.PluginDir(),
 			flagVars.NetworkShutdownDelay(),
 			flagVars.ReuseNetwork(),
@@ -202,7 +202,7 @@ func (te *TestEnvironment) StartPrivateNetwork(network *tmpnet.Network) {
 
 	StartNetwork(
 		network,
-		sharedNetwork.DefaultRuntimeConfig.Lux NodePath,
+		sharedNetwork.DefaultRuntimeConfig.LuxNodePath,
 		pluginDir,
 		te.PrivateNetworkShutdownDelay,
 		false, /* reuseNetwork */
