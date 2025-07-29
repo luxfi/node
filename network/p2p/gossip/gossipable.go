@@ -3,7 +3,7 @@
 
 package gossip
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // Gossipable is an item that can be gossiped across the network
 type Gossipable interface {

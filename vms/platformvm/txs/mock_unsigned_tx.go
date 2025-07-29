@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	consensus "github.com/luxfi/node/consensus"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"

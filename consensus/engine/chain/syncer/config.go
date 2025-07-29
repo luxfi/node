@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 type Config struct {

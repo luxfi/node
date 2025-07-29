@@ -10,9 +10,9 @@ import (
 	"math/big"
 	"sync"
 
-	// "github.com/luxfi/node/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet/subnet/primary/common"

@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	blst "github.com/supranational/blst/bindings/go"
 	gomock "go.uber.org/mock/gomock"
 )

@@ -12,8 +12,8 @@ package atomic
 import (
 	reflect "reflect"
 
-	database "github.com/luxfi/node/database"
-	ids "github.com/luxfi/node/ids"
+	database "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

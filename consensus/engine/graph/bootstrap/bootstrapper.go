@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/core"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/heap"

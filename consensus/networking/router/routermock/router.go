@@ -17,7 +17,7 @@ import (
 	handler "github.com/luxfi/node/consensus/networking/handler"
 	router "github.com/luxfi/node/consensus/networking/router"
 	timeout "github.com/luxfi/node/consensus/networking/timeout"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
 	logging "github.com/luxfi/node/utils/logging"

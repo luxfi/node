@@ -12,7 +12,7 @@ package keychain
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )

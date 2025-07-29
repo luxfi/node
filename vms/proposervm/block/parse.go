@@ -6,7 +6,7 @@ package block
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Parse a block and verify that the signature attached to the block is valid

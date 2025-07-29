@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var _ Manager = (*manager)(nil)

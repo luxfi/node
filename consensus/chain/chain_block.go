@@ -5,7 +5,7 @@ package chain
 
 import (
 	sampling "github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Tracks the state of a chain block

@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 
 	safemath "github.com/luxfi/node/utils/math"
 )

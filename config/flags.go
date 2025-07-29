@@ -14,9 +14,9 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/pebbledb"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"

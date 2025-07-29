@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/utils"

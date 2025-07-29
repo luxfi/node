@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 

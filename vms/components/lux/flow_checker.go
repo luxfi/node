@@ -6,7 +6,7 @@ package lux
 import (
 	"errors"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/wrappers"
 )

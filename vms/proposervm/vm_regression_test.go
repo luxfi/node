@@ -15,9 +15,9 @@ package proposervm
 // 	"github.com/luxfi/node/consensus/consensustest"
 // 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 // 	"github.com/luxfi/node/consensus/engine/core"
-// 	"github.com/luxfi/node/database"
-// 	"github.com/luxfi/node/database/memdb"
-// 	"github.com/luxfi/node/database/prefixdb"
+// 	"github.com/luxfi/database"
+// 	"github.com/luxfi/database/memdb"
+// 	"github.com/luxfi/database/prefixdb"
 // )
 
 // TODO: This test is temporarily disabled as VerifyHeightIndexF no longer exists in blocktest.VM

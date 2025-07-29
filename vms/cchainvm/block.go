@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var _ chain.Block = (*Block)(nil)

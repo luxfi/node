@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Block is a possible decision that dictates the next canonical block.

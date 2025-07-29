@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/engine/graph/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 )
 

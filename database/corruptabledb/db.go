@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 var (

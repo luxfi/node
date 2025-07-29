@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/hashing"
 )

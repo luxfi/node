@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/luxfi/node/consensus/engine/core"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	subnets "github.com/luxfi/node/subnets"
 	set "github.com/luxfi/node/utils/set"

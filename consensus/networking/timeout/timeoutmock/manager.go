@@ -14,7 +14,7 @@ import (
 	time "time"
 
 	consensus "github.com/luxfi/node/consensus"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	gomock "go.uber.org/mock/gomock"
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 const (

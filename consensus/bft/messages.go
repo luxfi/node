@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/bft"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 )
 

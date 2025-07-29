@@ -8,9 +8,9 @@ import (
 	"errors"
 	"math/big"
 
-	// "github.com/luxfi/node/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"

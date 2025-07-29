@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // nnaryThreshold is the implementation of an n-nary threshold instance

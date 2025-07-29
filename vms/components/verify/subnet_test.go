@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var errMissing = errors.New("missing")

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
 )

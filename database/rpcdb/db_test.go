@@ -12,9 +12,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"

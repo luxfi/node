@@ -6,7 +6,7 @@ package beacon
 import (
 	"net/netip"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 var _ Beacon = (*beacon)(nil)

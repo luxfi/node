@@ -11,7 +11,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	secp256k1 "github.com/luxfi/node/utils/crypto/secp256k1"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	secp256k1fx "github.com/luxfi/node/vms/secp256k1fx"

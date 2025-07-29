@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 

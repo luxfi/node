@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs/socket"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"

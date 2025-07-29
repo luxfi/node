@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"

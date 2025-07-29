@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/luxfi/node/consensus/engine/core"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/node/utils/set"
 	gomock "go.uber.org/mock/gomock"
 )

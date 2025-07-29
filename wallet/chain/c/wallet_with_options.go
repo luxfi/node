@@ -4,9 +4,9 @@
 package c
 
 import (
-	// "github.com/luxfi/node/evm/plugin/evm"
+	// "github.com/luxfi/evm/plugin/evm"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/logging"

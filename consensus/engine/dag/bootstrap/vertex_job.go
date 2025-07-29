@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/graph/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	dag "github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
