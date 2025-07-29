@@ -91,6 +91,12 @@ type LocalNetwork struct {
 
 	// Path where network configuration will be stored
 	Dir string
+
+	// UUID uniquely identifies the network
+	UUID string
+
+	// Owner identifies the entity that started this network
+	Owner string
 }
 
 // Returns the configuration of the network in backend-agnostic form.
@@ -99,24 +105,49 @@ func (ln *LocalNetwork) GetConfig() tmpnet.NetworkConfig {
 }
 
 // Returns the nodes of the network in backend-agnostic form.
-func (ln *LocalNetwork) GetNodes() []tmpnet.Node {
-	nodes := make([]tmpnet.Node, 0, len(ln.Nodes))
-	for _, node := range ln.Nodes {
+func (ln *LocalNetwork) GetNodes() []*tmpnet.Node {
+	nodes := make([]*tmpnet.Node, 0, len(ln.Nodes))
+	for _, localNode := range ln.Nodes {
+		// Convert LocalNode to tmpnet.Node
+		node := &tmpnet.Node{
+			NetworkUUID:   ln.UUID,
+			NetworkOwner:  ln.Owner,
+			NodeID:        localNode.NodeID,
+			Flags:         localNode.Flags,
+			IsEphemeral:   localNode.IsEphemeral,
+			RuntimeConfig: localNode.RuntimeConfig,
+			URI:           localNode.URI,
+			StakingAddress: localNode.StakingAddress,
+		}
 		nodes = append(nodes, node)
 	}
 	return nodes
 }
 
 // Adds a backend-agnostic ephemeral node to the network
-func (ln *LocalNetwork) AddEphemeralNode(w io.Writer, flags tmpnet.FlagsMap) (tmpnet.Node, error) {
+func (ln *LocalNetwork) AddEphemeralNode(w io.Writer, flags tmpnet.FlagsMap) (*tmpnet.Node, error) {
 	if flags == nil {
 		flags = tmpnet.FlagsMap{}
 	}
-	return ln.AddLocalNode(w, &LocalNode{
+	localNode, err := ln.AddLocalNode(w, &LocalNode{
 		NodeConfig: tmpnet.NodeConfig{
 			Flags: flags,
 		},
 	}, true /* isEphemeral */)
+	if err != nil {
+		return nil, err
+	}
+	// Convert LocalNode to tmpnet.Node
+	return &tmpnet.Node{
+		NetworkUUID:   ln.UUID,
+		NetworkOwner:  ln.Owner,
+		NodeID:        localNode.NodeID,
+		Flags:         localNode.Flags,
+		IsEphemeral:   localNode.IsEphemeral,
+		RuntimeConfig: localNode.RuntimeConfig,
+		URI:           localNode.URI,
+		StakingAddress: localNode.StakingAddress,
+	}, nil
 }
 
 // Starts a new network stored under the provided root dir. Required

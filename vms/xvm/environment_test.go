@@ -190,7 +190,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			},
 			c.additionalFxs...,
 		),
-		nil, // AppSender
+		&core.FakeSender{}, // AppSender
 	))
 
 	stopVertexID := ids.GenerateTestID()

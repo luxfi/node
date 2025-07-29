@@ -26,18 +26,17 @@ const (
 func LocalFlags() tmpnet.FlagsMap {
 	// Supply only non-default configuration to ensure that default values will be used.
 	return tmpnet.FlagsMap{
-		config.NetworkPeerListGossipFreqKey: "250ms",
-		config.NetworkMaxReconnectDelayKey:  "1s",
-		config.PublicIPKey:                  "127.0.0.1",
-		config.HTTPHostKey:                  "127.0.0.1",
-		config.StakingHostKey:               "127.0.0.1",
-		config.HealthCheckFreqKey:           "2s",
-		config.AdminAPIEnabledKey:           true,
-		config.IpcAPIEnabledKey:             true,
-		config.IndexEnabledKey:              true,
-		config.LogDisplayLevelKey:           "INFO",
-		config.LogLevelKey:                  "DEBUG",
-		config.MinStakeDurationKey:          tmpnet.DefaultMinStakeDuration.String(),
+		config.NetworkPeerListPullGossipFreqKey: "250ms",
+		config.NetworkMaxReconnectDelayKey:      "1s",
+		config.PublicIPKey:                      "127.0.0.1",
+		config.HTTPHostKey:                      "127.0.0.1",
+		config.StakingHostKey:                   "127.0.0.1",
+		config.HealthCheckFreqKey:               "2s",
+		config.AdminAPIEnabledKey:               true,
+		config.IndexEnabledKey:                  true,
+		config.LogDisplayLevelKey:               "INFO",
+		config.LogLevelKey:                      "DEBUG",
+		config.MinStakeDurationKey:              tmpnet.DefaultMinStakeDuration.String(),
 	}
 }
 

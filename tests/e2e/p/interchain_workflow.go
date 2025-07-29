@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/evm"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 
@@ -66,7 +65,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		cContext := cBuilder.Context()
 
 		ginkgo.By("defining common configuration")
-		recipientEthAddress := evm.GetEthAddress(recipientKey)
+		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 		luxAssetID := xContext.LUXAssetID
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{

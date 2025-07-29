@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"
@@ -74,7 +75,7 @@ func NewWallet(keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.W
 }
 
 // Create a new eth client targeting the specified node URI.
-func NewEthClient(nodeURI tmpnet.NodeURI) ethclient.Client {
+func NewEthClient(nodeURI tmpnet.NodeURI) *ethclient.Client {
 	tests.Outf("{{blue}} initializing a new eth client for node %s with URI: %s {{/}}\n", nodeURI.NodeID, nodeURI.URI)
 	nodeAddress := strings.Split(nodeURI.URI, "//")[1]
 	uri := fmt.Sprintf("ws://%s/ext/bc/C/ws", nodeAddress)
@@ -157,7 +158,7 @@ func SendEthTransaction(ethClient ethclient.Client, signedTx *types.Transaction)
 	Eventually(func() bool {
 		var err error
 		receipt, err = ethClient.TransactionReceipt(DefaultContext(), txID)
-		if errors.Is(err, interfaces.NotFound) {
+		if errors.Is(err, ethereum.NotFound) {
 			return false // Transaction is still pending
 		}
 		require.NoError(err)

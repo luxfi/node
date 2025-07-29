@@ -65,6 +65,11 @@ func getEthAddress(key *secp256k1.PrivateKey) common.Address {
 	return crypto.PubkeyToAddress(*(key.PublicKey().ToECDSA()))
 }
 
+// GetEthAddress converts a secp256k1 private key to an Ethereum address (exported version)
+func GetEthAddress(key *secp256k1.PrivateKey) common.Address {
+	return getEthAddress(key)
+}
+
 // Defines a mapping of flag keys to values intended to be supplied to
 // an invocation of an luxd node.
 type FlagsMap map[string]interface{}
