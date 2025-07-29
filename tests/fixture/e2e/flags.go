@@ -22,7 +22,7 @@ type FlagVars struct {
 	nodeCount            int
 }
 
-func (v *FlagVars) Lux NodeExecPath() string {
+func (v *FlagVars) LuxNodeExecPath() string {
 	return v.luxNodeExecPath
 }
 
@@ -66,8 +66,8 @@ func RegisterFlags() *FlagVars {
 	flag.StringVar(
 		&vars.luxNodeExecPath,
 		"node-path",
-		os.Getenv(tmpnet.Lux NodePathEnvName),
-		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", tmpnet.Lux NodePathEnvName),
+		os.Getenv(tmpnet.LuxNodePathEnvName),
+		fmt.Sprintf("node executable path (required if not using an existing network). Also possible to configure via the %s env variable.", tmpnet.LuxNodePathEnvName),
 	)
 	flag.StringVar(
 		&vars.pluginDir,

@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/networking/sender/sendertest"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/database"
@@ -156,6 +155,10 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 	res.factory = txstest.NewWalletFactory(res.ctx, res.config, res.state)
 
+	// Start tracking uptimes for genesis validators
+	validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+	require.NoError(res.uptimes.StartTracking(validatorIDs))
+
 	genesisID := res.state.GetLastAccepted()
 	res.backend = txexecutor.Backend{
 		Config:       res.config,
@@ -169,9 +172,10 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = &core.SenderTest{T: t}
-	res.sender.SendAppGossipF = func(context.Context, core.SendConfig, []byte) error {
-		return nil
+	res.sender = &core.SenderTest{
+		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
+			return nil
+		},
 	}
 
 	metrics, err := metrics.New(registerer)

@@ -10,9 +10,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/genesis"

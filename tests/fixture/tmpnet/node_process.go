@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	Lux NodePathEnvName = "LUXD_PATH"
+	LuxNodePathEnvName = "LUXD_PATH"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )

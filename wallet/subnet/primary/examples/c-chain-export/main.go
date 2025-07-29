@@ -68,5 +68,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue import transaction: %s\n", err)
 	}
-	log.Printf("issued import %s in %s\n", importTx.ID, time.Since(importStartTime))
+	log.Printf("issued import %s in %s\n", importTx.ID(), time.Since(importStartTime))
 }

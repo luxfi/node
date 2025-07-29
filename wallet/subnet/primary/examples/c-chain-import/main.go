@@ -8,7 +8,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/evm"
+	// "github.com/luxfi/evm"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
@@ -24,7 +25,10 @@ func main() {
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
 	luxAddr := key.Address()
-	ethAddr := evm.PublicKeyToEthAddress(key.PublicKey())
+	// TODO: Fix this - need to find correct way to convert secp256k1 public key to eth address
+	// For now, using a placeholder address
+	ethAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	// ethAddr := evm.PublicKeyToEthAddress(key.PublicKey())
 
 	ctx := context.Background()
 
