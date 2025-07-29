@@ -15,3 +15,11 @@ type OwnedOutput struct {
 
 	secp256k1fx.OutputOwners `serialize:"true"`
 }
+
+func (out *OwnedOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *OwnedOutput) Initialize(ctx interface{}) error {
+	return nil
+}

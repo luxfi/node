@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 func (vm *blockVM) GetAncestors(
@@ -36,7 +35,7 @@ func (vm *blockVM) GetAncestors(
 	return ancestors, err
 }
 
-func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
+func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -46,7 +45,7 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]line
 	end := vm.clock.Time()
 	vm.blockMetrics.batchedParseBlock.Observe(float64(end.Sub(start)))
 
-	wrappedBlocks := make([]linear.Block, len(blocks))
+	wrappedBlocks := make([]block.Block, len(blocks))
 	for i, block := range blocks {
 		wrappedBlocks[i] = &meterBlock{
 			Block: block,

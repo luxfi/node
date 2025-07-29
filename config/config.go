@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"

@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"

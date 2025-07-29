@@ -1,0 +1,119 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package consensus
+
+import (
+	"fmt"
+
+	"github.com/luxfi/consensus/config"
+	"github.com/luxfi/consensus/confidence"
+	"github.com/luxfi/consensus/poll"
+	"github.com/luxfi/node/consensus/params"
+)
+
+// Engine represents the Lux consensus engine using the photonic framework
+type Engine struct {
+	// Core consensus components from luxfi/consensus
+	params      config.Parameters
+	pollFactory poll.Factory
+	confFactory confidence.Factory
+	
+	// Photonic components
+	sampler   Sampler   // photon - quantum sampling
+	threshold Threshold // wave - wave interference patterns
+	// Additional photonic components would be integrated here
+}
+
+// NewEngine creates a new Lux consensus engine
+func NewEngine(network string) (*Engine, error) {
+	// Get network-specific parameters
+	params := params.GetParams(network)
+	
+	// Validate parameters
+	if err := params.Valid(); err != nil {
+		return nil, fmt.Errorf("invalid consensus parameters: %w", err)
+	}
+	
+	// Initialize runtime parameters in consensus package
+	if err := config.InitializeRuntime(network); err != nil {
+		return nil, fmt.Errorf("failed to initialize runtime parameters: %w", err)
+	}
+	
+	// Create engine with photonic components
+	engine := &Engine{
+		params:      params,
+		pollFactory: poll.NewFactory(params),
+		confFactory: confidence.NewFactory(params),
+		// Initialize photonic components
+	}
+	
+	return engine, nil
+}
+
+// NewEngineWithParams creates a new engine with custom parameters
+func NewEngineWithParams(params config.Parameters) (*Engine, error) {
+	// Validate parameters
+	if err := params.Valid(); err != nil {
+		return nil, fmt.Errorf("invalid consensus parameters: %w", err)
+	}
+	
+	// Create engine
+	engine := &Engine{
+		params:      params,
+		pollFactory: poll.NewFactory(params),
+		confFactory: confidence.NewFactory(params),
+		// Initialize photonic components
+	}
+	
+	return engine, nil
+}
+
+// GetParameters returns the current consensus parameters
+func (e *Engine) GetParameters() config.Parameters {
+	return e.params
+}
+
+// UpdateParameters allows runtime parameter updates
+// This enables dynamic consensus tuning
+func (e *Engine) UpdateParameters(updates map[string]interface{}) error {
+	// Update runtime parameters
+	if err := config.OverrideRuntime(updates); err != nil {
+		return err
+	}
+	
+	// Get updated parameters
+	e.params = config.GetRuntime()
+	
+	// Recreate factories with new parameters
+	e.pollFactory = poll.NewFactory(e.params)
+	e.confFactory = confidence.NewFactory(e.params)
+	
+	return nil
+}
+
+// Example of how to use the consensus package in node implementation
+func Example() {
+	// Create mainnet consensus engine
+	engine, err := NewEngine("mainnet")
+	if err != nil {
+		panic(err)
+	}
+	
+	// Get current parameters
+	params := engine.GetParameters()
+	fmt.Printf("Mainnet K: %d, Beta: %d\n", params.K, params.Beta)
+	
+	// Update parameters at runtime
+	updates := map[string]interface{}{
+		"MinRoundInterval": "150ms", // Adjust round interval
+	}
+	if err := engine.UpdateParameters(updates); err != nil {
+		panic(err)
+	}
+	
+	// Load custom parameters from file
+	if err := config.LoadRuntimeFromFile("custom-params.json"); err != nil {
+		panic(err)
+	}
+}

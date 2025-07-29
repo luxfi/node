@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 var (

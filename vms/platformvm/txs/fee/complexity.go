@@ -21,9 +21,12 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
+
+// warpMessageParser is set by the warp package to avoid circular imports.
+// It must be set before using WarpComplexity.
+var warpMessageParser WarpMessageParser
 
 // Signature verification costs were conservatively based on benchmarks run on
 // an AWS c5.xlarge instance.
@@ -467,12 +470,16 @@ func SignerComplexity(s signer.Signer) (gas.Dimensions, error) {
 
 // WarpComplexity returns the complexity a warp message adds to a transaction.
 func WarpComplexity(message []byte) (gas.Dimensions, error) {
-	msg, err := warp.ParseMessage(message)
+	if warpMessageParser == nil {
+		return gas.Dimensions{}, errors.New("warp message parser not initialized")
+	}
+
+	msg, err := warpMessageParser(message)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
-	numSigners, err := msg.Signature.NumSigners()
+	numSigners, err := msg.GetSignature().NumSigners()
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -491,6 +498,13 @@ func WarpComplexity(message []byte) (gas.Dimensions, error) {
 		gas.DBRead:    intrinsicWarpDBReads,
 		gas.Compute:   compute,
 	}, nil
+}
+
+// SetWarpMessageParser sets the warp message parser function.
+// This must be called by the warp package during initialization
+// to avoid circular imports.
+func SetWarpMessageParser(parser WarpMessageParser) {
+	warpMessageParser = parser
 }
 
 type complexityVisitor struct {

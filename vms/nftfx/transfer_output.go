@@ -46,6 +46,14 @@ func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 	return json.Marshal(result)
 }
 
+func (out *TransferOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *TransferOutput) Initialize(ctx interface{}) error {
+	return nil
+}
+
 func (out *TransferOutput) Verify() error {
 	switch {
 	case out == nil:

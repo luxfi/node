@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/network/p2p"

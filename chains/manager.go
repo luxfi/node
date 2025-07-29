@@ -31,8 +31,8 @@ import (
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/node/consensus/engine/dag/state"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/syncer"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/syncer"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/sender"
@@ -43,7 +43,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
@@ -55,7 +55,7 @@ import (
 	"github.com/luxfi/node/vms/fx"
 	"github.com/luxfi/node/vms/metervm"
 	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	utilswarp "github.com/luxfi/node/utils/warp"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -64,11 +64,11 @@ import (
 	aveng "github.com/luxfi/node/consensus/engine/dag"
 	avbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
 	avagetter "github.com/luxfi/node/consensus/engine/dag/getter"
-	smeng "github.com/luxfi/node/consensus/engine/linear"
-	smbootstrap "github.com/luxfi/node/consensus/engine/linear/bootstrap"
-	lineargetter "github.com/luxfi/node/consensus/engine/linear/getter"
+	smeng "github.com/luxfi/node/consensus/engine/chain"
+	smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
+	lineargetter "github.com/luxfi/node/consensus/engine/chain/getter"
 	factories "github.com/luxfi/node/consensus/factories"
-	smcon "github.com/luxfi/node/consensus/linear"
+	smcon "github.com/luxfi/node/consensus/chain"
 	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
@@ -514,7 +514,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		BCLookup:     m,
 		Metrics:      metrics.NewPrefixGatherer(),
 
-		WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
+		WarpSigner: utilswarp.NewBasicSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
 
 		ValidatorState: m.validatorState,
 		ChainDataDir:   chainDataDir,

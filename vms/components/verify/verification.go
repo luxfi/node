@@ -3,16 +3,22 @@
 
 package verify
 
-import "github.com/luxfi/node/consensus"
-
 type Verifiable interface {
 	Verify() error
 }
 
+// ContextInitializable defines the interface for context initialization
+type ContextInitializable interface {
+	// Initialize initializes the state with the given context
+	Initialize(ctx interface{}) error
+}
+
 type State interface {
-	consensus.ContextInitializable
+	ContextInitializable
 	Verifiable
 	IsState
+	// InitCtx initializes the state with consensus context
+	InitCtx(ctx interface{})
 }
 
 type IsState interface {

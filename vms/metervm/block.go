@@ -8,20 +8,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 var (
-	_ linear.Block            = (*meterBlock)(nil)
-	_ linear.OracleBlock      = (*meterBlock)(nil)
+	_ block.Block            = (*meterBlock)(nil)
 	_ block.WithVerifyContext = (*meterBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type meterBlock struct {
-	linear.Block
+	block.Block
 
 	vm *blockVM
 }
@@ -39,44 +37,27 @@ func (mb *meterBlock) Verify(ctx context.Context) error {
 	return err
 }
 
-func (mb *meterBlock) Accept(ctx context.Context) error {
+func (mb *meterBlock) Accept() error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Accept(ctx)
+	err := mb.Block.Accept()
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.accept.Observe(duration)
 	return err
 }
 
-func (mb *meterBlock) Reject(ctx context.Context) error {
+func (mb *meterBlock) Reject() error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Reject(ctx)
+	err := mb.Block.Reject()
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.reject.Observe(duration)
 	return err
 }
 
-func (mb *meterBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	oracleBlock, ok := mb.Block.(linear.OracleBlock)
-	if !ok {
-		return [2]linear.Block{}, linear.ErrNotOracle
-	}
-
-	blks, err := oracleBlock.Options(ctx)
-	if err != nil {
-		return [2]linear.Block{}, err
-	}
-	return [2]linear.Block{
-		&meterBlock{
-			Block: blks[0],
-			vm:    mb.vm,
-		},
-		&meterBlock{
-			Block: blks[1],
-			vm:    mb.vm,
-		},
-	}, nil
+func (mb *meterBlock) Options(ctx context.Context) ([2]block.Block, error) {
+	// Oracle blocks are not supported in the engine/linear/block interface
+	return [2]block.Block{}, errors.New("oracle blocks not supported")
 }
 
 func (mb *meterBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {

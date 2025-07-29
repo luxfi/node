@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"

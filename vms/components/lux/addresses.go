@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
@@ -38,10 +38,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *consensus.Context
+	ctx *quasar.Context
 }
 
-func NewAddressManager(ctx *consensus.Context) AddressManager {
+func NewAddressManager(ctx *quasar.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

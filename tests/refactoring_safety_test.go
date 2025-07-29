@@ -195,17 +195,17 @@ func TestBuildFunctionConsistency(t *testing.T) {
 				return nil
 			}
 
-			// Check for old BuildChain usage with lineartest
-			if strings.Contains(string(content), "lineartest.BuildChain") {
-				t.Errorf("Found deprecated lineartest.BuildChain in %s. Use BuildLinear or BuildDescendants instead", path)
+			// Check for old BuildChain usage with chaintest
+			if strings.Contains(string(content), "chaintest.BuildChain") {
+				t.Errorf("Found deprecated chaintest.BuildChain in %s. Use BuildLinear or BuildDescendants instead", path)
 			}
 
 			// Check for correct usage of BuildDescendants
-			if strings.Contains(string(content), "BuildDescendants(lineartest.Genesis,") {
+			if strings.Contains(string(content), "BuildDescendants(chaintest.Genesis,") {
 				// Parse to check if it's being used correctly
 				lines := strings.Split(string(content), "\n")
 				for i, line := range lines {
-					if strings.Contains(line, "BuildDescendants(lineartest.Genesis,") &&
+					if strings.Contains(line, "BuildDescendants(chaintest.Genesis,") &&
 						strings.Contains(line, "initializeVMWithBlockchain") {
 						t.Logf("Warning: %s:%d might need BuildLinear instead of BuildDescendants when initializing VM", path, i+1)
 					}
@@ -222,8 +222,8 @@ func TestImportAliasConsistency(t *testing.T) {
 	// Common aliases that should be consistent
 	expectedAliases := map[string]string{
 		"github.com/luxfi/node/consensus/consensustest":     "", // Should not have alias
-		"github.com/luxfi/node/consensus/linear/lineartest": "", // Should not have alias
-		"github.com/luxfi/node/consensus/linear/linearmock": "", // Should not have alias
+		"github.com/luxfi/node/consensus/chain/chaintest": "", // Should not have alias
+		"github.com/luxfi/node/consensus/chain/chainmock": "", // Should not have alias
 	}
 
 	err := filepath.WalkDir("..", func(path string, d fs.DirEntry, err error) error {

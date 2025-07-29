@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	log "github.com/luxfi/log"

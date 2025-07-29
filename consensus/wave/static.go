@@ -6,7 +6,7 @@ package wave
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -41,7 +41,9 @@ func (s *StaticWaveThreshold) AddVote(nodeID ids.NodeID, choice ids.ID) bool {
 	}
 
 	// Add vote if not already present
-	if s.votes[choice].Add(nodeID) {
+	votesSet := s.votes[choice]
+	if !votesSet.Contains(nodeID) {
+		votesSet.Add(nodeID)
 		s.totalVotes++
 	}
 

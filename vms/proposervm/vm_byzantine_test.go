@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -41,7 +41,7 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xBlock := lineartest.BuildChild(lineartest.Genesis)
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
@@ -54,7 +54,7 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 	require.NoError(aBlock.Verify(context.Background()))
 	require.NoError(aBlock.Accept(context.Background()))
 
-	yBlock := lineartest.BuildChild(xBlock)
+	yBlock := chaintest.BuildChild(xBlock)
 	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (linear.Block, error) {
 		if !bytes.Equal(blockBytes, yBlock.Bytes()) {
 			return nil, errUnknownBlock
@@ -90,17 +90,17 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xTestBlock := lineartest.BuildChild(lineartest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*lineartest.Block{
-			lineartest.BuildChild(xTestBlock),
-			lineartest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
@@ -109,8 +109,8 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case xBlock.opts[0].ID():
@@ -123,8 +123,8 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(b, xBlock.opts[0].Bytes()):
@@ -178,16 +178,16 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xBlock := lineartest.BuildChild(lineartest.Genesis)
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
 	}
 
-	yBlock := lineartest.BuildChild(xBlock)
+	yBlock := chaintest.BuildChild(xBlock)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case yBlock.ID():
@@ -198,8 +198,8 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, blockBytes []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(blockBytes, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(blockBytes, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(blockBytes, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(blockBytes, yBlock.Bytes()):
@@ -241,16 +241,16 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	xBlock := &TestOptionsBlock{
-		Block: *lineartest.BuildChild(lineartest.Genesis),
-		opts: [2]*lineartest.Block{ // valid blocks should reference xBlock
-			lineartest.BuildChild(lineartest.Genesis),
-			lineartest.BuildChild(lineartest.Genesis),
+		Block: *chaintest.BuildChild(chaintest.Genesis),
+		opts: [2]*chaintest.Block{ // valid blocks should reference xBlock
+			chaintest.BuildChild(chaintest.Genesis),
+			chaintest.BuildChild(chaintest.Genesis),
 		},
 	}
 
@@ -259,8 +259,8 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case xBlock.ID():
 			return xBlock, nil
 		case xBlock.opts[0].ID():
@@ -273,8 +273,8 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, xBlock.Bytes()):
 			return xBlock, nil
 		case bytes.Equal(b, xBlock.opts[0].Bytes()):
@@ -320,18 +320,18 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 		durangoTime    = activationTime
 	)
 	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	// create an Oracle pre-fork block X
-	xTestBlock := lineartest.BuildChild(lineartest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*lineartest.Block{
-			lineartest.BuildChild(xTestBlock),
-			lineartest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
@@ -340,10 +340,10 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 	xInnerOption := xInnerOptions[0]
 
 	// create a non-Oracle pre-fork block Y
-	yBlock := lineartest.BuildChild(lineartest.Genesis)
+	yBlock := chaintest.BuildChild(chaintest.Genesis)
 	ySlb, err := block.BuildUnsigned(
-		lineartest.GenesisID,
-		lineartest.GenesisTimestamp,
+		chaintest.GenesisID,
+		chaintest.GenesisTimestamp,
 		uint64(2000),
 		yBlock.Bytes(),
 	)
@@ -405,12 +405,12 @@ func TestBlockVerify_InvalidPostForkOption(t *testing.T) {
 
 	// create an Oracle pre-fork block Z
 	// create post-fork block B from Y
-	zTestBlock := lineartest.BuildChild(lineartest.Genesis)
+	zTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	zBlock := &TestOptionsBlock{
 		Block: *zTestBlock,
-		opts: [2]*lineartest.Block{
-			lineartest.BuildChild(zTestBlock),
-			lineartest.BuildChild(zTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(zTestBlock),
+			chaintest.BuildChild(zTestBlock),
 		},
 	}
 
@@ -463,15 +463,15 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 		}, nil
 	}
 
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 
 	// Create valid core blocks to build our chain on.
-	coreBlk0 := lineartest.BuildChild(lineartest.Genesis)
-	coreBlk1 := lineartest.BuildChild(coreBlk0)
+	coreBlk0 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := chaintest.BuildChild(coreBlk0)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk0.ID():
 			return coreBlk0, nil
 		case coreBlk1.ID():
@@ -482,8 +482,8 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk0.Bytes()):
 			return coreBlk0, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):

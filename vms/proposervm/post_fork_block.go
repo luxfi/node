@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -24,11 +25,17 @@ type postForkBlock struct {
 	slot *uint64
 }
 
+// ID returns the block ID as string to satisfy choices.Decidable interface
+func (b *postForkBlock) ID() string {
+	return b.SignedBlock.ID().String()
+}
+
 // Accept:
 // 1) Sets this blocks status to Accepted.
 // 2) Persists this block in storage
 // 3) Calls Reject() on siblings of this block and their descendants.
-func (b *postForkBlock) Accept(ctx context.Context) error {
+func (b *postForkBlock) Accept() error {
+	ctx := context.Background()
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
@@ -66,7 +73,7 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkBlock) Reject(context.Context) error {
+func (b *postForkBlock) Reject() error {
 	// We do not reject the inner block here because it may be accepted later
 	delete(b.vm.verifiedBlocks, b.ID())
 	return nil
@@ -76,6 +83,16 @@ func (b *postForkBlock) Reject(context.Context) error {
 // we don't have the parent.
 func (b *postForkBlock) Parent() ids.ID {
 	return b.ParentID()
+}
+
+// Status returns the status of this block
+func (b *postForkBlock) Status() choices.Status {
+	return b.innerBlk.Status()
+}
+
+// Time returns the time as Unix timestamp to satisfy chain.Block interface
+func (b *postForkBlock) Time() uint64 {
+	return uint64(b.Timestamp().Unix())
 }
 
 // If Verify() returns nil, Accept() or Reject() will eventually be called on
@@ -89,21 +106,21 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 }
 
 // Return the two options for the block that follows [b]
-func (b *postForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	innerOracleBlk, ok := b.innerBlk.(linear.OracleBlock)
+func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+	innerOracleBlk, ok := b.innerBlk.(chain.OracleBlock)
 	if !ok {
 		// [b]'s innerBlk isn't an oracle block
-		return [2]linear.Block{}, linear.ErrNotOracle
+		return [2]chain.Block{}, chain.ErrNotOracle
 	}
 
 	// The inner block's child options
 	innerOptions, err := innerOracleBlk.Options(ctx)
 	if err != nil {
-		return [2]linear.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
 	parentID := b.ID()
-	outerOptions := [2]linear.Block{}
+	outerOptions := [2]chain.Block{}
 	for i, innerOption := range innerOptions {
 		// Wrap the inner block's child option
 		statelessOuterOption, err := block.BuildOption(
@@ -111,7 +128,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
 			innerOption.Bytes(),
 		)
 		if err != nil {
-			return [2]linear.Block{}, err
+			return [2]chain.Block{}, err
 		}
 
 		outerOptions[i] = &postForkOption{
@@ -147,7 +164,11 @@ func (b *postForkBlock) verifyPostForkOption(ctx context.Context, child *postFor
 	}
 
 	// Make sure [b]'s inner block is the parent of [child]'s inner block
-	expectedInnerParentID := b.innerBlk.ID()
+	expectedInnerParentIDStr := b.innerBlk.ID()
+	expectedInnerParentID, err := ids.FromString(expectedInnerParentIDStr)
+	if err != nil {
+		return err
+	}
 	innerParentID := child.innerBlk.Parent()
 	if innerParentID != expectedInnerParentID {
 		return errInnerParentMismatch

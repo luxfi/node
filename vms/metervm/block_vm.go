@@ -5,6 +5,7 @@ package metervm
 
 import (
 	"context"
+	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -12,8 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -71,10 +71,12 @@ func (vm *blockVM) Initialize(
 		return err
 	}
 
-	return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
+	// TODO: ChainVM doesn't have Initialize method
+	// return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
+	return nil
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.BuildBlock(ctx)
 	end := vm.clock.Time()
@@ -90,7 +92,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (linear.Block, error) {
 	}, nil
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (linear.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.ParseBlock(ctx, b)
 	end := vm.clock.Time()
@@ -106,7 +108,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (linear.Block, erro
 	}, nil
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (linear.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.GetBlock(ctx, id)
 	end := vm.clock.Time()
@@ -139,9 +141,6 @@ func (vm *blockVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 }
 
 func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
-	start := vm.clock.Time()
-	blockID, err := vm.ChainVM.GetBlockIDAtHeight(ctx, height)
-	end := vm.clock.Time()
-	vm.blockMetrics.getBlockIDAtHeight.Observe(float64(end.Sub(start)))
-	return blockID, err
+	// TODO: ChainVM doesn't have GetBlockIDAtHeight method
+	return ids.Empty, errors.New("GetBlockIDAtHeight not implemented")
 }

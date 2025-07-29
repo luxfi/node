@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	utilswarp "github.com/luxfi/node/utils/warp"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 	ErrWrongNetworkID     = errors.New("wrong networkID")
 )
 
+// Signer wraps the utils/warp.Signer interface to work with UnsignedMessage
 type Signer interface {
 	// Returns this node's BLS signature over an unsigned message. If the caller
 	// does not have the authority to sign the message, an error will be
@@ -27,17 +29,19 @@ type Signer interface {
 }
 
 func NewSigner(sk bls.Signer, networkID uint32, chainID ids.ID) Signer {
+	// Create a basic signer from utils/warp
+	basicSigner := utilswarp.NewBasicSigner(sk, networkID, chainID)
 	return &signer{
-		sk:        sk,
-		networkID: networkID,
-		chainID:   chainID,
+		basicSigner: basicSigner,
+		networkID:   networkID,
+		chainID:     chainID,
 	}
 }
 
 type signer struct {
-	sk        bls.Signer
-	networkID uint32
-	chainID   ids.ID
+	basicSigner utilswarp.Signer
+	networkID   uint32
+	chainID     ids.ID
 }
 
 func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
@@ -48,10 +52,6 @@ func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 		return nil, ErrWrongNetworkID
 	}
 
-	msgBytes := msg.Bytes()
-	sig, err := s.sk.Sign(msgBytes)
-	if err != nil {
-		return nil, err
-	}
-	return bls.SignatureToBytes(sig), nil
+	// Use the basic signer from utils/warp
+	return s.basicSigner.Sign(msg.NetworkID, msg.SourceChainID, msg.Payload)
 }

@@ -58,7 +58,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"

@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"

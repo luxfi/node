@@ -14,10 +14,10 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/linearmock"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/chain/chainmock"
 )
 
 var (
@@ -42,7 +42,7 @@ type ContextEnabledVMMock struct {
 }
 
 type ContextEnabledBlockMock struct {
-	*linearmock.Block
+	*chainmock.Block
 	*blockmock.WithVerifyContext
 }
 
@@ -58,7 +58,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			Block:             linearmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

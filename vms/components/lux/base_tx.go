@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/types"
 )
 
@@ -46,7 +46,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx *consensus.Context) error {
+func (t *BaseTx) Verify(ctx *quasar.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx

@@ -4,7 +4,7 @@
 package wave
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // Threshold represents wave interference patterns for vote counting

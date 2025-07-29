@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	// TODO: Import consensustest from the external consensus module
+	// "github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"

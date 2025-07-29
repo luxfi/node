@@ -10,29 +10,29 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (
-	_ linear.Block            = (*tracedBlock)(nil)
-	_ linear.OracleBlock      = (*tracedBlock)(nil)
+	_ block.Block            = (*tracedBlock)(nil)
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
 type tracedBlock struct {
-	linear.Block
+	block.Block
 
 	vm *blockVM
 }
 
 func (b *tracedBlock) Verify(ctx context.Context) error {
+	blkID := ids.ID(b.ID())
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
+		attribute.Stringer("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -40,52 +40,33 @@ func (b *tracedBlock) Verify(ctx context.Context) error {
 	return b.Block.Verify(ctx)
 }
 
-func (b *tracedBlock) Accept(ctx context.Context) error {
+func (b *tracedBlock) Accept() error {
+	ctx := context.Background()
+	blkID := ids.ID(b.ID())
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.acceptTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
+		attribute.Stringer("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Accept(ctx)
+	return b.Block.Accept()
 }
 
-func (b *tracedBlock) Reject(ctx context.Context) error {
+func (b *tracedBlock) Reject() error {
+	ctx := context.Background()
+	blkID := ids.ID(b.ID())
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.rejectTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
+		attribute.Stringer("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Reject(ctx)
+	return b.Block.Reject()
 }
 
-func (b *tracedBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	oracleBlock, ok := b.Block.(linear.OracleBlock)
-	if !ok {
-		return [2]linear.Block{}, linear.ErrNotOracle
-	}
-
-	ctx, span := b.vm.tracer.Start(ctx, b.vm.optionsTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
-		attribute.Int64("height", int64(b.Height())),
-	))
-	defer span.End()
-
-	blks, err := oracleBlock.Options(ctx)
-	if err != nil {
-		return [2]linear.Block{}, err
-	}
-	return [2]linear.Block{
-		&tracedBlock{
-			Block: blks[0],
-			vm:    b.vm,
-		},
-		&tracedBlock{
-			Block: blks[1],
-			vm:    b.vm,
-		},
-	}, nil
+func (b *tracedBlock) Options(ctx context.Context) ([2]block.Block, error) {
+	// Oracle blocks are not supported in the engine/linear/block interface
+	return [2]block.Block{}, errors.New("oracle blocks not supported")
 }
 
 func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
@@ -94,8 +75,9 @@ func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error)
 		return false, nil
 	}
 
+	blkID := ids.ID(b.ID())
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.shouldVerifyWithContextTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
+		attribute.Stringer("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -109,8 +91,9 @@ func (b *tracedBlock) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 		return fmt.Errorf("%w but got %T", errExpectedBlockWithVerifyContext, b.Block)
 	}
 
+	blkID := ids.ID(b.ID())
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyWithContextTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
+		attribute.Stringer("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 		attribute.Int64("pChainHeight", int64(blockCtx.PChainHeight)),
 	))

@@ -6,11 +6,10 @@ package metervm
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 )
 
-func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
+func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
 	if vm.buildBlockVM == nil {
 		return vm.BuildBlock(ctx)
 	}

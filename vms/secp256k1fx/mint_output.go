@@ -13,6 +13,15 @@ type MintOutput struct {
 	OutputOwners `serialize:"true"`
 }
 
+func (out *MintOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *MintOutput) Initialize(ctx interface{}) error {
+	// No initialization needed
+	return nil
+}
+
 func (out *MintOutput) Verify() error {
 	if out == nil {
 		return ErrNilOutput

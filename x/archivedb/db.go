@@ -97,7 +97,13 @@ func (db *Database) Compact(start []byte, limit []byte) error {
 }
 
 func (db *Database) HealthCheck(ctx context.Context) (interface{}, error) {
-	return db.db.HealthCheck(ctx)
+	err := db.db.HealthCheck()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"healthy": true,
+	}, nil
 }
 
 func (db *Database) Close() error {
