@@ -4,7 +4,6 @@
 package xvm
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 
@@ -16,31 +15,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-func BenchmarkLoadUser(b *testing.B) {
-	runLoadUserBenchmark := func(b *testing.B, numKeys int) {
-		_ = require.New(b) // TODO: use require for assertions
-
-		env := setup(b, &envConfig{
-			fork: latest,
-			keystoreUsers: []*user{{
-				username: username,
-				password: password,
-			}},
-		})
-		defer env.vm.ctx.Lock.Unlock()
-
-		// Keystore functionality has been removed from consensus.Context
-		// Skip keystore-based key generation for benchmarks
-		b.Skip("Keystore functionality has been removed")
-	}
-
-	benchmarkSize := []int{10, 100, 1000, 5000}
-	for _, numKeys := range benchmarkSize {
-		b.Run(fmt.Sprintf("NumKeys=%d", numKeys), func(b *testing.B) {
-			runLoadUserBenchmark(b, numKeys)
-		})
-	}
-}
+// BenchmarkLoadUser has been removed - keystore functionality is no longer supported
 
 // getAllUTXOsBenchmark is a helper func to benchmark the GetAllUTXOs depending on the size
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {

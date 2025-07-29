@@ -49,7 +49,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 
 		env.vm.ctx.Lock.Unlock()
 
-		issueAndAccept(require, env.vm, env.issuer, tx)
+		issueAndAccept(require, env.vm, tx)
 
 		env.vm.ctx.Lock.Lock()
 
@@ -89,7 +89,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		env.vm.ctx.Lock.Unlock()
 
 		// issue transaction
-		issueAndAccept(require, env.vm, env.issuer, tx)
+		issueAndAccept(require, env.vm, tx)
 
 		env.vm.ctx.Lock.Lock()
 
@@ -136,7 +136,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 
 	env.vm.ctx.Lock.Unlock()
 
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 
 	env.vm.ctx.Lock.Lock()
 

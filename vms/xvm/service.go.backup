@@ -991,15 +991,9 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 		logging.UserString("username", args.Username),
 	)
 
-	// TODO: Implement key management without consensus.Context keystore
-	sk, err := secp256k1.NewPrivateKey()
-	if err != nil {
-		return err
-	}
-
-	addr := sk.Address()
-	reply.Address, err = s.vm.FormatLocalAddress(addr)
-	return err
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ListAddresses returns all of the addresses controlled by user [args.Username]
@@ -1010,9 +1004,9 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 		logging.UserString("username", args.Username),
 	)
 
-	// TODO: Implement address tracking without consensus.Context keystore
-	response.Addresses = []string{}
-	return nil
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ExportKeyArgs are arguments for ExportKey
@@ -1040,8 +1034,9 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 		return fmt.Errorf("problem parsing address %q: %w", args.Address, err)
 	}
 
-	// TODO: Implement key retrieval without consensus.Context keystore
-	return fmt.Errorf("key export not available without keystore")
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // ImportKeyArgs are arguments for ImportKey
@@ -1068,15 +1063,9 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 		return errMissingPrivateKey
 	}
 
-	addr := args.PrivateKey.Address()
-	var err error
-	reply.Address, err = s.vm.FormatLocalAddress(addr)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Store imported key without consensus.Context keystore
-	return nil
+	// Keystore functionality has been removed from consensus.Context
+	// These deprecated APIs are no longer supported
+	return errors.New("keystore functionality is deprecated and has been removed")
 }
 
 // SendOutput specifies that [Amount] of asset [AssetID] be sent to [To]
@@ -1381,7 +1370,7 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 	}
 
 	// Get all UTXOs/keys for the user
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, nil)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1632,7 +1621,7 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 	}
 
 	// Get all UTXOs/keys
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, nil)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1715,7 +1704,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 	s.vm.ctx.Lock.Lock()
 	defer s.vm.ctx.Lock.Unlock()
 
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, nil)
 	if err != nil {
 		return nil, err
 	}

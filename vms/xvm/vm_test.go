@@ -116,7 +116,7 @@ func TestIssueTx(t *testing.T) {
 	env.vm.ctx.Lock.Unlock()
 
 	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "LUX")
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 }
 
 // Test issuing a transaction that creates an NFT family
@@ -155,7 +155,7 @@ func TestIssueNFT(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	// Mint the NFT
 	mintNFTTx, err := env.txBuilder.MintNFT(
@@ -169,7 +169,7 @@ func TestIssueNFT(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
+	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// Move the NFT
 	utxos, err := lux.GetAllUTXOs(env.vm.state, kc.Addresses())
@@ -189,7 +189,7 @@ func TestIssueNFT(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, transferNFTTx)
+	issueAndAccept(require, env.vm, transferNFTTx)
 }
 
 // Test issuing a transaction that creates an Property family
@@ -231,7 +231,7 @@ func TestIssueProperty(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	// mint the property
 	mintPropertyOp := &txs.Operation{
@@ -260,7 +260,7 @@ func TestIssueProperty(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, mintPropertyTx)
+	issueAndAccept(require, env.vm, mintPropertyTx)
 
 	// burn the property
 	burnPropertyOp := &txs.Operation{
@@ -278,7 +278,7 @@ func TestIssueProperty(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, burnPropertyTx)
+	issueAndAccept(require, env.vm, burnPropertyTx)
 }
 
 func TestIssueTxWithFeeAsset(t *testing.T) {
@@ -292,7 +292,7 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 
 	// send first asset
 	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, feeAssetName)
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 }
 
 func TestIssueTxWithAnotherAsset(t *testing.T) {
@@ -341,7 +341,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 }
 
 func TestVMFormat(t *testing.T) {
@@ -509,7 +509,7 @@ func TestIssueImportTx(t *testing.T) {
 
 	env.vm.ctx.Lock.Unlock()
 
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 
 	env.vm.ctx.Lock.Lock()
 
@@ -638,7 +638,7 @@ func TestIssueExportTx(t *testing.T) {
 
 	env.vm.ctx.Lock.Unlock()
 
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 
 	env.vm.ctx.Lock.Lock()
 
@@ -702,7 +702,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 
 	env.vm.ctx.Lock.Unlock()
 
-	issueAndAccept(require, env.vm, env.issuer, tx)
+	issueAndAccept(require, env.vm, tx)
 
 	env.vm.ctx.Lock.Lock()
 

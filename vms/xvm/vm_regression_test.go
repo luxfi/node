@@ -57,7 +57,7 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	// Mint the NFT
 	mintNFTTx, err := env.txBuilder.MintNFT(
@@ -71,7 +71,7 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
+	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// move the NFT
 	to := keys[2].PublicKey().Address()
@@ -91,5 +91,5 @@ func TestVerifyFxUsage(t *testing.T) {
 		key.Address(),
 	)
 	require.NoError(err)
-	issueAndAccept(require, env.vm, env.issuer, spendTx)
+	issueAndAccept(require, env.vm, spendTx)
 }
