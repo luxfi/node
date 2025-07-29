@@ -4,6 +4,7 @@
 package server
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"strings"
@@ -72,5 +73,16 @@ func (a *allowedHostsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	http.Error(w, "invalid host specified", http.StatusForbidden)
+	// Return error as JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"error": map[string]interface{}{
+			"code":    -32001,
+			"message": "invalid host specified",
+			"data":    map[string]string{"host": host},
+		},
+		"id": nil,
+	})
 }
