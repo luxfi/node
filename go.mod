@@ -4,7 +4,7 @@ module github.com/luxfi/node
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.21.12
+go 1.24.5
 
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
 
@@ -94,7 +94,7 @@ require (
 require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/holiman/uint256 v1.3.2
-	github.com/luxfi/bft v0.0.0-20250725034527-7f9105e62a1d
+	github.com/luxfi/bft v0.1.0
 	github.com/supranational/blst v0.3.15
 )
 
