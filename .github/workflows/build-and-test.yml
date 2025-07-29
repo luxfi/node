@@ -12,10 +12,7 @@ jobs:
         os: [macos-12, ubuntu-20.04, ubuntu-22.04, windows-latest, [self-hosted, linux, ARM64, focal],[self-hosted, linux, ARM64, jammy]]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.19.3'
-          check-latest: true
+      - uses: ./.github/actions/setup-go-for-project
       - name: build_test
         shell: bash
         run: .github/workflows/build_and_test.sh
