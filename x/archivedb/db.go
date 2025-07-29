@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 )
 
 var (

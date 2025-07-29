@@ -11,7 +11,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/db"
 )
 
 var (

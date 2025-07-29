@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/db"
+	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/db/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/summary"
 

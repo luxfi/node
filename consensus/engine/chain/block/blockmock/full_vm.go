@@ -19,7 +19,7 @@ import (
 	chain "github.com/luxfi/node/consensus/chain"
 	block "github.com/luxfi/node/consensus/engine/chain/block"
 	core "github.com/luxfi/node/consensus/engine/core"
-	database "github.com/luxfi/database"
+	database "github.com/luxfi/db"
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
