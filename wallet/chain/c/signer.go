@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/common"
-	// "github.com/luxfi/evm/plugin/evm"
+	// "github.com/luxfi/node/evm/plugin/evm"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"
