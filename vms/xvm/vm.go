@@ -590,23 +590,28 @@ func (vm *VM) initState(tx *txs.Tx) {
 	}
 }
 
-// LoadUser returns:
-// 1) The UTXOs that reference one or more addresses controlled by the given user
-// 2) A keychain that contains this user's keys
-// If [addrsToUse] has positive length, returns UTXOs that reference one or more
-// addresses controlled by the given user that are also in [addrsToUse].
+// LoadUser retrieves user keys from external storage
+// TODO: Implement proper key management without consensus.Context keystore
 func (vm *VM) LoadUser(
 	username string,
 	password string,
-	addrsToUse set.Set[ids.ShortID],
-) (
-	[]*lux.UTXO,
-	*secp256k1fx.Keychain,
-	error,
-) {
-	// Keystore functionality has been removed from consensus.Context
-	// These deprecated APIs are no longer supported
-	return nil, nil, errors.New("keystore functionality is deprecated and has been removed")
+	addresses set.Set[ids.ShortID],
+) ([]*lux.UTXO, *secp256k1fx.Keychain, error) {
+	// For now, return empty keychain and UTXOs
+	// This needs to be properly implemented with external key management
+	kc := secp256k1fx.NewKeychain()
+	utxos := []*lux.UTXO{}
+	
+	// If addresses provided, get their UTXOs
+	if addresses.Len() > 0 {
+		allUTXOs, err := lux.GetAllUTXOs(vm.state, addresses)
+		if err != nil {
+			return nil, nil, fmt.Errorf("problem retrieving UTXOs: %w", err)
+		}
+		utxos = allUTXOs
+	}
+	
+	return utxos, kc, nil
 }
 
 // selectChangeAddr returns the change address to be used for [kc] when [changeAddr] is given

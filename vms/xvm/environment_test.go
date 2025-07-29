@@ -92,7 +92,6 @@ type user struct {
 type envConfig struct {
 	fork             fork
 	isCustomFeeAsset bool
-	keystoreUsers    []*user
 	vmStaticConfig   *config.Config
 	vmDynamicConfig  *Config
 	additionalFxs    []*core.Fx
@@ -104,7 +103,6 @@ type environment struct {
 	genesisBytes []byte
 	genesisTx    *txs.Tx
 	sharedMemory *atomic.Memory
-	issuer       chan core.Message
 	vm           *VM
 	txBuilder    *txstest.Builder
 }
@@ -135,23 +133,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
 	ctx.Lock.Lock()
-
-	// Keystore functionality has been removed from consensus.Context
-	// Skip keystore initialization for tests
-	//
-	// userKeystore := keystore.New(logging.NoLog{}, memdb.New())
-	// ctx.Keystore = userKeystore.NewBlockchainKeyStore(ctx.ChainID)
-	//
-	// for _, user := range c.keystoreUsers {
-	//	require.NoError(userKeystore.CreateUser(user.username, user.password))
-	//
-	//	// Import the initially funded private keys
-	//	keystoreUser, err := keystoreutils.NewUserFromKeystore(ctx.Keystore, user.username, user.password)
-	//	require.NoError(err)
-	//
-	//	require.NoError(keystoreUser.PutKeys(user.initialKeys...))
-	//	require.NoError(keystoreUser.Close())
-	// }
 
 	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {
@@ -194,13 +175,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	))
 
 	stopVertexID := ids.GenerateTestID()
-	issuer := make(chan core.Message, 1)
 
 	env := &environment{
 		genesisBytes: genesisBytes,
 		genesisTx:    getCreateTxFromGenesisTest(tb, genesisBytes, assetName),
 		sharedMemory: m,
-		issuer:       issuer,
 		vm:           vm,
 		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
 	}
@@ -509,24 +488,25 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 func issueAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan core.Message,
 	tx *txs.Tx,
 ) {
 	txID, err := vm.issueTxFromRPC(tx)
 	require.NoError(err)
 	require.Equal(tx.ID(), txID)
 
-	buildAndAccept(require, vm, issuer, txID)
+	buildAndAccept(require, vm, txID)
 }
 
 // buildAndAccept expects the context lock not to be held
 func buildAndAccept(
 	require *require.Assertions,
 	vm *VM,
-	issuer <-chan core.Message,
 	txID ids.ID,
 ) {
-	require.Equal(core.PendingTxs, <-issuer)
+	// Wait for the VM to signal that there are pending transactions
+	msg, err := vm.WaitForEvent(context.Background())
+	require.NoError(err)
+	require.Equal(core.PendingTxs, msg)
 
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
