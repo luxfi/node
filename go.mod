@@ -47,7 +47,6 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/geth v1.16.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
@@ -96,6 +95,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/database v0.1.0
+	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v0.1.0
 	github.com/supranational/blst v0.3.15
 )
@@ -143,7 +143,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/crypto v1.0.0 // indirect
+	github.com/luxfi/node/crypto v1.0.0 // indirect
 	github.com/luxfi/log v0.1.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -184,14 +184,3 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
-
-// Temporary replace until packages are published with all sub-packages
-replace github.com/luxfi/geth => ../geth
-
-replace github.com/luxfi/database => ../database
-
-replace github.com/luxfi/ids => ../ids
-
-replace github.com/luxfi/bft => ../bft
-
-replace github.com/luxfi/crypto => ../crypto
