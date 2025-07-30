@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
 	"go.uber.org/zap"
@@ -254,11 +254,10 @@ func (vm *VM) Initialize(
 			blockNumBytes := make([]byte, 8)
 			binary.BigEndian.PutUint64(blockNumBytes, height)
 			
-			// Check canonical hash
-			canonicalKey := append([]byte{0x68}, blockNumBytes...)
-			canonicalKey = append(canonicalKey, 0x6e)
+			// Check canonical hash using 9-byte format
+			key := canonicalKey(height)
 			
-			if hashBytes, err := vm.ethDB.Get(canonicalKey); err == nil && len(hashBytes) == 32 {
+			if hashBytes, err := vm.ethDB.Get(key); err == nil && len(hashBytes) == 32 {
 				var hash common.Hash
 				copy(hash[:], hashBytes)
 				

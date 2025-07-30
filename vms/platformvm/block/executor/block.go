@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 

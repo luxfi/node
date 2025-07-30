@@ -4,12 +4,24 @@
 package cchainvm
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 
 	"github.com/luxfi/geth/ethdb"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 )
+
+// canonicalKey returns the **new** 9-byte key used after migration:
+//   0x68 | uint64(blockNumber)
+// This exactly matches what `genesis migrate rebuild-canonical`
+// just wrote into Pebble.
+func canonicalKey(number uint64) []byte {
+	key := make([]byte, 9)
+	key[0] = 0x68 // 'h'
+	binary.BigEndian.PutUint64(key[1:], number)
+	return key
+}
 
 // DatabaseWrapper wraps a Lux database to implement ethdb.Database
 type DatabaseWrapper struct {
@@ -28,8 +40,8 @@ func (d *DatabaseWrapper) Has(key []byte) (bool, error) {
 
 // Get retrieves the given key if it's present in the key-value data store
 func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
-	// Debug specific keys
-	if len(key) > 0 && key[0] == 'h' && len(key) == 10 && key[9] == 'n' {
+	// Debug specific keys (9-byte canonical format)
+	if len(key) > 0 && key[0] == 'h' && len(key) == 9 {
 		val, err := d.db.Get(key)
 		fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n", key, val, err)
 		return val, err
@@ -44,7 +56,7 @@ func (d *DatabaseWrapper) Put(key []byte, value []byte) error {
 		prefix := "unknown"
 		switch key[0] {
 		case 'h':
-			if len(key) == 10 && key[9] == 'n' {
+			if len(key) == 9 {
 				prefix = "canonical-hash"
 			} else if len(key) == 41 {
 				prefix = "header"
@@ -224,7 +236,7 @@ func (b *BatchWrapper) Write() error {
 	if err == nil {
 		// Debug: verify genesis was written
 		if b.db != nil {
-			has, _ := b.db.Has([]byte("h\x00\x00\x00\x00\x00\x00\x00\x00n")) // header key for block 0
+			has, _ := b.db.Has([]byte("h\x00\x00\x00\x00\x00\x00\x00\x00")) // 9-byte canonical key for block 0
 			if has {
 				fmt.Printf("Debug: Genesis header successfully written to database\n")
 			}

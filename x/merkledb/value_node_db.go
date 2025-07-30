@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
 )
 

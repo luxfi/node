@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 )
 
 var (

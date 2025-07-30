@@ -40,13 +40,13 @@ import (
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/leveldb"
-	"github.com/luxfi/db/memdb"
-	"github.com/luxfi/db/meterdb"
-	"github.com/luxfi/db/pebbledb"
-	"github.com/luxfi/db/prefixdb"
-	"github.com/luxfi/db/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/meterdb"
+	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
@@ -134,7 +134,10 @@ func New(
 		LogFactory:       logFactory,
 		StakingTLSSigner: config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:   stakingCert,
-		ID:               ids.NodeIDFromCert(stakingCert),
+		ID:               ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       stakingCert.Raw,
+			PublicKey: stakingCert.PublicKey,
+		}),
 		Config:           config,
 	}
 
@@ -770,29 +773,36 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	dbRegisterer, err := metrics.MakeAndRegister(
-		n.MetricsGatherer,
-		dbNamespace,
-	)
-	if err != nil {
-		return err
-	}
+	// TODO: Re-enable metrics when using database factory
+	// dbRegisterer, err := metrics.MakeAndRegister(
+	// 	n.MetricsGatherer,
+	// 	dbNamespace,
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	var err error
 
 	// start the db
+	dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
+	if n.Config.DatabaseConfig.Name == pebbledb.Name {
+		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
+	}
+	
+	// TODO: Use database factory once it's properly integrated
+	// For now, use the direct constructors with default parameters
 	switch n.Config.DatabaseConfig.Name {
 	case leveldb.Name:
-		// Prior to v1.10.15, the only on-disk database was leveldb, and its
-		// files went to [dbPath]/[networkID]/v1.4.5.
-		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
-		n.DB, err = leveldb.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, dbRegisterer)
+		// Use default cache sizes for leveldb
+		n.DB, err = leveldb.New(dbPath, 512, 512, 1024)
 		if err != nil {
 			return fmt.Errorf("couldn't create %s at %s: %w", leveldb.Name, dbPath, err)
 		}
 	case memdb.Name:
 		n.DB = memdb.New()
 	case pebbledb.Name:
-		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
-		n.DB, err = pebbledb.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, dbRegisterer)
+		// Use default parameters for pebbledb
+		n.DB, err = pebbledb.New(dbPath, 512, 512, "default", false)
 		if err != nil {
 			return fmt.Errorf("couldn't create %s at %s: %w", pebbledb.Name, dbPath, err)
 		}
