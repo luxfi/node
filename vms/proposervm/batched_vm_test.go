@@ -911,7 +911,10 @@ func initTestRemoteProposerVM(
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	require.NoError(proVM.Initialize(

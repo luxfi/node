@@ -17,7 +17,7 @@ func TestSecretKeyFromBytesZero(t *testing.T) {
 	var skArr [SecretKeyLen]byte
 	skBytes := skArr[:]
 	_, err := SecretKeyFromBytes(skBytes)
-	require.ErrorIs(err, errFailedSecretKeyDeserialize)
+	require.ErrorIs(err, ErrFailedSecretKeyDecompress)
 }
 
 func TestSecretKeyFromBytesWrongSize(t *testing.T) {
@@ -25,7 +25,7 @@ func TestSecretKeyFromBytesWrongSize(t *testing.T) {
 
 	skBytes := utils.RandomBytes(SecretKeyLen + 1)
 	_, err := SecretKeyFromBytes(skBytes)
-	require.ErrorIs(err, errFailedSecretKeyDeserialize)
+	require.ErrorIs(err, ErrFailedSecretKeyDecompress)
 }
 
 func TestSecretKeyBytes(t *testing.T) {
