@@ -321,6 +321,14 @@ func (e AppError) Error() string {
 	return e.Message
 }
 
+// Common application errors
+var (
+	ErrUndefined = &AppError{
+		Code:    -1,
+		Message: "undefined error",
+	}
+)
+
 // SendConfig configures sending behavior
 type SendConfig struct {
 	Validators []ids.NodeID

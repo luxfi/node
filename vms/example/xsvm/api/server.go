@@ -4,6 +4,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/luxfi/database"
@@ -153,9 +154,9 @@ type LastAcceptedReply struct {
 }
 
 func (s *server) LastAccepted(_ *http.Request, _ *struct{}, reply *LastAcceptedReply) error {
-	s.ctx.Lock.RLock()
+	s.ctx.Lock.Lock()
 	reply.BlockID = s.chain.LastAccepted()
-	s.ctx.Lock.RUnlock()
+	s.ctx.Lock.Unlock()
 	blkBytes, err := state.GetBlock(s.state, reply.BlockID)
 	if err != nil {
 		return err
@@ -199,6 +200,11 @@ func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply
 	}
 
 	reply.Message = message
-	reply.Signature, err = s.ctx.WarpSigner.Sign(message)
+	// Type assert WarpSigner to warp.Signer
+	signer, ok := s.ctx.WarpSigner.(warp.Signer)
+	if !ok {
+		return errors.New("WarpSigner does not implement warp.Signer interface")
+	}
+	reply.Signature, err = signer.Sign(message)
 	return err
 }

@@ -53,7 +53,7 @@ func New(
 	registerer prometheus.Registerer,
 	config config.Network,
 ) (*Network, error) {
-	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
+	p2pNetwork, err := p2p.NewNetwork(log, newAppSenderWrapper(appSender), registerer, "p2p")
 	if err != nil {
 		return nil, err
 	}

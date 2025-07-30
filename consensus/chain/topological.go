@@ -235,53 +235,6 @@ func (ts *Topological) RecordPoll(ctx context.Context, votes []ids.ID) error {
 	oldPreference := ts.preferenceID
 	newPreference := ts.calculatePreference(heightPreferences)
 	
-	// Immediate acceptance logic
-	// Use immediate acceptance when:
-	// 1. Unanimous AlphaConfidence votes OR split vote on height 1 blocks
-	// 2. No confidence built yet (first vote)
-	// 3. Appropriate conditions based on block height
-	
-	// Check if any block has built confidence
-	totalConfidence := 0
-	for _, conf := range ts.blockConfidence {
-		totalConfidence += conf
-	}
-	
-	if totalConfidence == 0 {
-		// First vote scenario - check various conditions for immediate acceptance
-		
-		// Find the block with the most votes (including aggregated)
-		var bestBlock ids.ID
-		maxVotes := 0
-		for id, count := range voteCounts {
-			if count > maxVotes {
-				maxVotes = count
-				bestBlock = id
-			}
-		}
-		
-		// Check if the best block has enough votes for immediate acceptance
-		if maxVotes >= ts.params.AlphaConfidence {
-			if blk, exists := ts.blocks[bestBlock.String()]; exists {
-				// Check conditions for immediate acceptance
-				height := blk.Height()
-				
-				// Case 1: Height 1 block (direct child of genesis)
-				if height == 1 {
-					ts.accept(ctx, blk)
-					return nil
-				}
-				
-				// Case 2: No competing chains from genesis
-				height1Blocks, exists := ts.nodesByHeight[1]
-				if !exists || height1Blocks.Len() <= 1 {
-					ts.accept(ctx, blk)
-					return nil
-				}
-			}
-		}
-	}
-	
 	if newPreference != oldPreference {
 		// Preference changed, reset confidence for all blocks
 		for id := range ts.blockConfidence {

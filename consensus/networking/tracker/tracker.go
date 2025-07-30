@@ -179,3 +179,61 @@ func (*noOpCPUTracker) UtilizeTime(time.Time, time.Time) {}
 func (*noOpCPUTracker) Utilization(time.Time, time.Duration) float64 { return 0 }
 func (*noOpCPUTracker) Len() int { return 0 }
 func (*noOpCPUTracker) TimeUntilUsage(time.Time, time.Duration, float64) time.Duration { return 0 }
+
+// TargeterConfig contains configuration for resource targeters
+type TargeterConfig struct {
+	// VdrAlloc is the number of nanoseconds of CPU time to allocate for use by validators
+	VdrAlloc int64 `json:"vdrAlloc"`
+
+	// MaxNonVdrUsage is the max percentage of CPU usage for non-validators
+	MaxNonVdrUsage float64 `json:"maxNonVdrUsage"`
+
+	// MaxNonVdrNodeUsage is the max percentage of CPU usage per non-validator node
+	MaxNonVdrNodeUsage float64 `json:"maxNonVdrNodeUsage"`
+
+	// Minimum proportion of validators that must be connected
+	MinimumConnectedValidatorProportion float64 `json:"minimumConnectedValidatorProportion"`
+
+	// TargetUsage is the target resource usage
+	TargetUsage float64 `json:"targetUsage"`
+
+	// TargetUtilization is the target utilization
+	TargetUtilization float64 `json:"targetUtilization"`
+
+	// DecreaseRatio is the decrease ratio when above target
+	DecreaseRatio float64 `json:"decreaseRatio"`
+
+	// IncreaseRatio is the increase ratio when below target
+	IncreaseRatio float64 `json:"increaseRatio"`
+}
+
+// Targeter calculates target resource allocation
+type Targeter interface {
+	// AdjustTargets adjusts target allocations based on current usage
+	AdjustTargets()
+}
+
+// NewTargeter creates a new targeter
+func NewTargeter(
+	log interface{},
+	config *TargeterConfig,
+	validators interface{},
+	tracker ResourceTracker,
+) Targeter {
+	return &targeter{
+		config:     config,
+		validators: validators,
+		tracker:    tracker,
+	}
+}
+
+// targeter implements Targeter
+type targeter struct {
+	config     *TargeterConfig
+	validators interface{}
+	tracker    ResourceTracker
+}
+
+func (t *targeter) AdjustTargets() {
+	// No-op implementation for now
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -54,9 +55,13 @@ func NewWallet(
 		))
 	}
 
+	// Type assert SharedMemory to atomic.SharedMemory
+	sharedMem, ok := ctx.SharedMemory.(atomic.SharedMemory)
+	require.True(ok, "shared memory does not implement atomic.SharedMemory")
+	
 	for _, chainID := range chainIDs {
 		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
-			ctx.SharedMemory,
+			sharedMem,
 			txs.Codec,
 			chainID,
 			addrs,

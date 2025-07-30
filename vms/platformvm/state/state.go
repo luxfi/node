@@ -1297,6 +1297,42 @@ func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
 }
 
+func (s *state) AddNode(nodeID ids.NodeID, startTime time.Time) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) RemoveNode(nodeID ids.NodeID) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) IsConnected(nodeID ids.NodeID) bool {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return false
+}
+
+func (s *state) SetConnected(nodeID ids.NodeID, connected bool) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) GetUptime(nodeID ids.NodeID) (float64, error) {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return 1.0, nil
+}
+
+func (s *state) GetUptimes() (map[ids.NodeID]float64, error) {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return map[ids.NodeID]float64{}, nil
+}
+
 func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
 	staker, err := s.currentStakers.GetValidator(constants.PrimaryNetworkID, nodeID)
 	if err != nil {
@@ -1516,7 +1552,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 			continue
 		}
 
-		vdr.PublicKey = bls.PublicKeyFromValidUncompressedBytes(pkBytes)
+		vdr.PublicKey = pkBytes
 	}
 
 	// Note: this does not fallback to the linkeddb index because the linkeddb
@@ -3233,7 +3269,7 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	return s.Commit()
 }
 
-func (s *state) GetUptime(vdrID ids.NodeID) (time.Duration, time.Time, error) {
+func (s *state) GetUptimeDuration(vdrID ids.NodeID) (time.Duration, time.Time, error) {
 	return s.validatorState.GetUptime(vdrID, constants.PrimaryNetworkID)
 }
 

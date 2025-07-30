@@ -37,3 +37,23 @@ func (manager) OnAcceptedBlockID(ids.ID) {}
 func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }
+
+func (manager) ApplyValidatorWeightDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
+}
+
+func (manager) ApplyValidatorPublicKeyDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
+}

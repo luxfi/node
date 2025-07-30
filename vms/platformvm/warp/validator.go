@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
@@ -83,15 +83,21 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 			return CanonicalValidatorSet{}, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}
 
-		if vdr.PublicKey == nil {
+		if vdr.PublicKey == nil || len(vdr.PublicKey) == 0 {
 			continue
 		}
 
-		pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
+		// Convert []byte to *bls.PublicKey
+		pk := bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey)
+		if pk == nil {
+			continue
+		}
+
+		pkBytes := bls.PublicKeyToUncompressedBytes(pk)
 		uniqueVdr, ok := vdrs[string(pkBytes)]
 		if !ok {
 			uniqueVdr = &Validator{
-				PublicKey:      vdr.PublicKey,
+				PublicKey:      pk,
 				PublicKeyBytes: pkBytes,
 			}
 			vdrs[string(pkBytes)] = uniqueVdr

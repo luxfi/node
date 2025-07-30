@@ -34,6 +34,9 @@ type Config struct {
 	// Threshold is the number of consecutive failures before benching.
 	Threshold int
 
+	// MinimumFailingDuration is the minimum amount of time a validator must be failing before benching.
+	MinimumFailingDuration time.Duration
+
 	// Duration is how long a validator is benched.
 	Duration time.Duration
 
@@ -130,6 +133,9 @@ type Manager interface {
 
 	// RegisterChain registers a new chain with the manager.
 	RegisterChain(chainID ids.ID, config Config) Benchlist
+
+	// GetBenched returns the chain IDs where the given node is benched.
+	GetBenched(nodeID ids.NodeID) []ids.ID
 }
 
 // manager implements Manager.
@@ -161,4 +167,18 @@ func (m *manager) RegisterChain(chainID ids.ID, config Config) Benchlist {
 	bl := NewBenchlist(config)
 	m.benchlists[chainID] = bl
 	return bl
+}
+
+// GetBenched implements Manager.
+func (m *manager) GetBenched(nodeID ids.NodeID) []ids.ID {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var benchedChains []ids.ID
+	for chainID, bl := range m.benchlists {
+		if bl.IsBenched(nodeID) {
+			benchedChains = append(benchedChains, chainID)
+		}
+	}
+	return benchedChains
 }

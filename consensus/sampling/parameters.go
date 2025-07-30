@@ -23,6 +23,9 @@ type Parameters struct {
 	// K is the number of nodes to poll
 	K int `json:"k" yaml:"k"`
 
+	// Alpha is the vote threshold (deprecated, use AlphaPreference/AlphaConfidence)
+	Alpha *int `json:"alpha,omitempty" yaml:"alpha,omitempty"`
+
 	// AlphaPreference is the vote threshold to change preference
 	AlphaPreference int `json:"alphaPreference" yaml:"alphaPreference"`
 
@@ -67,4 +70,16 @@ func (p Parameters) Valid() error {
 	default:
 		return nil
 	}
+}
+
+// DefaultParameters are the default consensus parameters
+var DefaultParameters = Parameters{
+	K:                     20,
+	AlphaPreference:       15,
+	AlphaConfidence:       15,
+	Beta:                  20,
+	ConcurrentRepolls:     4,
+	OptimalProcessing:     10,
+	MaxOutstandingItems:   1024,
+	MaxItemProcessingTime: 120 * time.Second,
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
@@ -47,6 +48,31 @@ type State interface {
 		height uint64,
 		subnetID ids.ID,
 	) (map[ids.NodeID]*GetValidatorOutput, error)
+
+	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
+	// block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
+	ApplyValidatorWeightDiffs(
+		ctx context.Context,
+		validators map[ids.NodeID]*GetValidatorOutput,
+		startHeight uint64,
+		endHeight uint64,
+		subnetID ids.ID,
+	) error
+
+	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
+	// genesis block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
+	ApplyValidatorPublicKeyDiffs(
+		ctx context.Context,
+		validators map[ids.NodeID]*GetValidatorOutput,
+		startHeight uint64,
+		endHeight uint64,
+		subnetID ids.ID,
+	) error
+
+	// GetCurrentValidatorSet returns the current validators
+	GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error)
 }
 
 // GetValidatorOutput is a struct that contains the publicly relevant
@@ -56,6 +82,20 @@ type GetValidatorOutput struct {
 	NodeID    ids.NodeID
 	PublicKey []byte
 	Weight    uint64
+}
+
+// GetCurrentValidatorOutput is the output for getting current validators
+type GetCurrentValidatorOutput struct {
+	ValidationID  ids.ID
+	NodeID        ids.NodeID
+	PublicKey     interface{} // Can be []byte or *bls.PublicKey
+	Weight        uint64
+	StartTime     uint64
+	EndTime       uint64
+	Delegated     uint64
+	IsL1Validator bool
+	MinNonce      uint64
+	IsActive      bool
 }
 
 // Set is a set of validators with each validator having a weight.
@@ -92,6 +132,9 @@ type Set interface {
 
 	// String returns a string representation of the set.
 	String() string
+
+	// GetMap returns a map of all validators in the set.
+	GetMap() map[ids.NodeID]*Validator
 }
 
 // Manager manages validator sets for different subnets.
@@ -128,6 +171,27 @@ type Manager interface {
 
 	// GetValidator returns information about a validator
 	GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*Validator, error)
+
+	// NumSubnets returns the number of subnets that have validator sets.
+	NumSubnets() int
+
+	// AddStaker adds a staker to the validator set for the given subnet.
+	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
+
+	// AddWeight adds weight to a validator in the set for the given subnet.
+	AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+
+	// RemoveWeight removes weight from a validator in the set for the given subnet.
+	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+
+	// GetMap returns a map of all validators for the given subnet.
+	GetMap(subnetID ids.ID) map[ids.NodeID]*Validator
+
+	// GetValidatorIDs returns all validator node IDs for the given subnet
+	GetValidatorIDs(subnetID ids.ID) []ids.NodeID
+
+	// RegisterSetCallbackListener registers a callback listener for validator set changes
+	RegisterSetCallbackListener(subnetID ids.ID, listener SetCallbackListener)
 }
 
 // TestState is a test validator state
@@ -152,6 +216,38 @@ func (ts *TestState) GetValidatorSet(
 		return ts.GetValidatorSetF(ctx, height, subnetID)
 	}
 	return nil, nil
+}
+
+func (ts *TestState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (ts *TestState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (ts *TestState) ApplyValidatorWeightDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
+}
+
+func (ts *TestState) ApplyValidatorPublicKeyDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
+}
+
+func (ts *TestState) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
+	return nil, 0, nil
 }
 
 // NewSet returns a new validator set
@@ -275,6 +371,27 @@ func (s *set) String() string {
 	return fmt.Sprintf("ValidatorSet{size:%d, weight:%d}", len(s.validators), s.totalWeight)
 }
 
+func (s *set) GetMap() map[ids.NodeID]*Validator {
+	// Return a copy of the map to prevent external modification
+	result := make(map[ids.NodeID]*Validator, len(s.validators))
+	for k, v := range s.validators {
+		result[k] = v
+	}
+	return result
+}
+
+// SetCallbackListener is called when the validator set changes
+type SetCallbackListener interface {
+	// OnValidatorAdded is called when a validator is added to the set
+	OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64)
+
+	// OnValidatorRemoved is called when a validator is removed from the set
+	OnValidatorRemoved(nodeID ids.NodeID, weight uint64)
+
+	// OnValidatorWeightChanged is called when a validator's weight changes
+	OnValidatorWeightChanged(nodeID ids.NodeID, oldWeight, newWeight uint64)
+}
+
 // Connector handles validator connection events
 type Connector interface {
 	// Connected is called when a validator connects
@@ -294,6 +411,7 @@ var (
 func NewManager() Manager {
 	return &manager{
 		subnetToValidators: make(map[ids.ID]Set),
+		callbacks:          make(map[ids.ID][]SetCallbackListener),
 	}
 }
 
@@ -301,6 +419,7 @@ func NewManager() Manager {
 type manager struct {
 	mu                 sync.RWMutex
 	subnetToValidators map[ids.ID]Set
+	callbacks          map[ids.ID][]SetCallbackListener
 }
 
 func (m *manager) Add(subnetID ids.ID, validators Set) error {
@@ -420,4 +539,94 @@ func (m *manager) String() string {
 	defer m.mu.RUnlock()
 	
 	return fmt.Sprintf("ValidatorManager{subnetCount:%d}", len(m.subnetToValidators))
+}
+
+func (m *manager) NumSubnets() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	
+	return len(m.subnetToValidators)
+}
+
+func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+	m.mu.RLock()
+	validators, exists := m.subnetToValidators[subnetID]
+	m.mu.RUnlock()
+	
+	if !exists {
+		return fmt.Errorf("subnet %s does not exist", subnetID)
+	}
+	
+	pkBytes := []byte(nil)
+	if pk != nil {
+		pkBytes = pk.Serialize()
+	}
+	
+	return validators.Add(nodeID, pkBytes, weight)
+}
+
+func (m *manager) AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	m.mu.RLock()
+	validators, exists := m.subnetToValidators[subnetID]
+	m.mu.RUnlock()
+	
+	if !exists {
+		return fmt.Errorf("subnet %s does not exist", subnetID)
+	}
+	
+	return validators.AddWeight(nodeID, weight)
+}
+
+func (m *manager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	m.mu.RLock()
+	validators, exists := m.subnetToValidators[subnetID]
+	m.mu.RUnlock()
+	
+	if !exists {
+		return fmt.Errorf("subnet %s does not exist", subnetID)
+	}
+	
+	return validators.RemoveWeight(nodeID, weight)
+}
+
+func (m *manager) GetMap(subnetID ids.ID) map[ids.NodeID]*Validator {
+	m.mu.RLock()
+	validators, exists := m.subnetToValidators[subnetID]
+	m.mu.RUnlock()
+	
+	if !exists {
+		return nil
+	}
+	
+	// Get all validators from the set
+	return validators.GetMap()
+}
+
+func (m *manager) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
+	m.mu.RLock()
+	validators, exists := m.subnetToValidators[subnetID]
+	m.mu.RUnlock()
+
+	if !exists {
+		return nil
+	}
+
+	// Get all validator IDs from the set
+	validatorList := validators.List()
+	nodeIDs := make([]ids.NodeID, len(validatorList))
+	for i, v := range validatorList {
+		nodeIDs[i] = v.NodeID
+	}
+	return nodeIDs
+}
+
+func (m *manager) RegisterSetCallbackListener(subnetID ids.ID, listener SetCallbackListener) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if listener == nil {
+		return
+	}
+
+	m.callbacks[subnetID] = append(m.callbacks[subnetID], listener)
 }

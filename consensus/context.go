@@ -63,6 +63,30 @@ type Context struct {
 
 	// State represents the current consensus state
 	State *EngineState
+
+	// XChainID is the ID of the X-Chain
+	XChainID ids.ID
+
+	// CChainID is the ID of the C-Chain
+	CChainID ids.ID
+
+	// NetworkUpgrades contains the network upgrade times
+	NetworkUpgrades interface{}
+
+	// PublicKey is the BLS public key of this node
+	PublicKey interface{}
+
+	// WarpSigner is the signer for warp messages
+	WarpSigner interface{}
+
+	// Metrics is the metrics gatherer
+	Metrics interface{}
+
+	// ChainDataDir is the directory for chain data
+	ChainDataDir string
+
+	// SharedMemory is the shared memory interface
+	SharedMemory SharedMemory
 }
 
 // ContextInitializable defines an interface for objects that need context initialization
@@ -88,6 +112,31 @@ type ValidatorState interface {
 		height uint64,
 		subnetID ids.ID,
 	) (map[ids.NodeID]*validators.GetValidatorOutput, error)
+
+	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
+	// block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
+	ApplyValidatorWeightDiffs(
+		ctx context.Context,
+		validators map[ids.NodeID]*validators.GetValidatorOutput,
+		startHeight uint64,
+		endHeight uint64,
+		subnetID ids.ID,
+	) error
+
+	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
+	// genesis block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
+	ApplyValidatorPublicKeyDiffs(
+		ctx context.Context,
+		validators map[ids.NodeID]*validators.GetValidatorOutput,
+		startHeight uint64,
+		endHeight uint64,
+		subnetID ids.ID,
+	) error
+
+	// GetCurrentValidatorSet returns the current validators
+	GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error)
 }
 
 
@@ -95,6 +144,7 @@ type ValidatorState interface {
 type BCLookup interface {
 	Lookup(alias string) (ids.ID, error)
 	PrimaryAlias(id ids.ID) (string, error)
+	Aliases(id ids.ID) ([]string, error)
 }
 
 // For missing imports
@@ -104,3 +154,34 @@ type (
 	Sender     interface{}
 	RequestID  struct{}
 )
+
+// SharedMemory interface for cross-chain communication
+type SharedMemory interface {
+	Get(peerChainID ids.ID, keys [][]byte) (values [][]byte, err error)
+	Indexed(
+		peerChainID ids.ID,
+		traits [][]byte,
+		startTrait,
+		startKey []byte,
+		limit int,
+	) (
+		values [][]byte,
+		lastTrait,
+		lastKey []byte,
+		err error,
+	)
+	Apply(requests map[ids.ID]*Requests, batches ...interface{}) error
+}
+
+// Requests represents atomic requests
+type Requests struct {
+	PutRequests    []Element
+	RemoveRequests [][]byte
+}
+
+// Element represents an atomic element
+type Element struct {
+	Key    []byte
+	Value  []byte
+	Traits [][]byte
+}

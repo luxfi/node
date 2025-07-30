@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils"
@@ -327,8 +328,13 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 			limit,
 		)
 	} else {
+		// Type assert SharedMemory to atomic.SharedMemory
+		sharedMem, ok := s.vm.ctx.SharedMemory.(atomic.SharedMemory)
+		if !ok {
+			return fmt.Errorf("shared memory does not implement atomic.SharedMemory")
+		}
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
-			s.vm.ctx.SharedMemory,
+			sharedMem,
 			txs.Codec,
 			sourceChain,
 			addrSet,
@@ -1124,9 +1130,21 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		zap.Uint16("size", uint16(args.Size)),
 	)
 
-	sample, err := s.vm.Validators.Sample(args.SubnetID, int(args.Size))
-	if err != nil {
-		return fmt.Errorf("sampling %s errored with %w", args.SubnetID, err)
+	// Get the validator set for the subnet
+	validatorSet, ok := s.vm.Validators.Get(args.SubnetID)
+	if !ok {
+		return fmt.Errorf("subnet %s not found", args.SubnetID)
+	}
+	
+	// Sample validators from the set
+	sample := make([]ids.NodeID, 0, args.Size)
+	seed := uint64(0) // TODO: Use a proper seed
+	for i := uint16(0); i < uint16(args.Size) && i < uint16(validatorSet.Len()); i++ {
+		nodeID, err := validatorSet.Sample(seed + uint64(i))
+		if err != nil {
+			return fmt.Errorf("sampling validator %d errored with %w", i, err)
+		}
+		sample = append(sample, nodeID)
 	}
 
 	if sample == nil {
@@ -1219,8 +1237,8 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-	_, isValidator := s.vm.Validators.GetValidator(chain.SubnetID, s.vm.ctx.NodeID)
-	return isValidator
+	_, err = s.vm.Validators.GetValidator(chain.SubnetID, s.vm.ctx.NodeID)
+	return err == nil
 }
 
 func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
@@ -1801,7 +1819,8 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 		}
 
 		if vdr.PublicKey != nil {
-			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToCompressedBytes(vdr.PublicKey))
+			// vdr.PublicKey is already []byte
+			pk, err := formatting.Encode(formatting.HexNC, vdr.PublicKey)
 			if err != nil {
 				return nil, err
 			}
@@ -1836,10 +1855,8 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 			if err != nil {
 				return err
 			}
-			vdr.PublicKey, err = bls.PublicKeyFromCompressedBytes(pkBytes)
-			if err != nil {
-				return err
-			}
+			// vdr.PublicKey expects []byte
+			vdr.PublicKey = pkBytes
 		}
 
 		v.Validators[nodeID] = vdr

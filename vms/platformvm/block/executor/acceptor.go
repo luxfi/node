@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -93,7 +94,8 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
+	wrapper := gsharedmemory.NewSharedMemoryWrapper(a.ctx.SharedMemory)
+	if err := wrapper.Apply(blkState.atomicRequests, batch); err != nil {
 		return fmt.Errorf(
 			"failed to atomically accept tx %s in block %s: %w",
 			b.Tx.ID(),
@@ -164,7 +166,8 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
+	wrapper := gsharedmemory.NewSharedMemoryWrapper(a.ctx.SharedMemory)
+	if err := wrapper.Apply(parentState.atomicRequests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 
@@ -243,7 +246,8 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
+	wrapper := gsharedmemory.NewSharedMemoryWrapper(a.ctx.SharedMemory)
+	if err := wrapper.Apply(blkState.atomicRequests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 

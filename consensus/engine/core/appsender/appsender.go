@@ -47,3 +47,15 @@ type SendConfig struct {
 	// NonValidators are the non-validators to send the message to
 	NonValidators set.Set[ids.NodeID]
 }
+
+// Server is a gRPC server implementation for AppSender
+type Server struct {
+	sender AppSender
+}
+
+// NewServer creates a new AppSender server
+func NewServer(sender AppSender) *Server {
+	return &Server{
+		sender: sender,
+	}
+}
