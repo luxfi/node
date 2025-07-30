@@ -349,13 +349,13 @@ func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			vm.ctx.Log.Debug("Aborting WaitForEvent, context is done", zap.Error(err))
-			return 0, err
+			return core.Message{}, err
 		}
 
 		timeToBuild, shouldWait, err := vm.timeToBuild(ctx)
 		if err != nil {
 			vm.ctx.Log.Debug("Aborting WaitForEvent", zap.Error(err))
-			return 0, err
+			return core.Message{}, err
 		}
 
 		// If we are pre-fork or haven't finished bootstrapping yet, we should
@@ -719,7 +719,8 @@ func (vm *VM) getPreForkBlock(ctx context.Context, blkID ids.ID) (*preForkBlock,
 
 func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	height := blk.Height()
-	blkID := blk.ID()
+	blkIDStr := blk.ID()
+	blkID, _ := ids.FromString(blkIDStr)
 
 	vm.lastAcceptedHeight = height
 	delete(vm.verifiedBlocks, blkID)
@@ -740,7 +741,8 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
-	postForkID := postFork.ID()
+	postForkIDStr := postFork.ID()
+	postForkID, _ := ids.FromString(postForkIDStr)
 	originalInnerBlock, previouslyVerified := vm.Tree.Get(innerBlk)
 	if previouslyVerified {
 		innerBlk = originalInnerBlock

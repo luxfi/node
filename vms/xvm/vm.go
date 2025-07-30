@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/gorilla/rpc/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,12 +19,12 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -52,6 +53,45 @@ var (
 
 	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
 )
+
+// noOpAppHandler is a simple handler that does nothing
+type noOpAppHandler struct{}
+
+func (n *noOpAppHandler) CrossChainAppRequest(context.Context, ids.ID, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) Connected(context.Context, ids.NodeID, *version.Application) error {
+	return nil
+}
+
+func (n *noOpAppHandler) Disconnected(context.Context, ids.NodeID) error {
+	return nil
+}
 
 type VM struct {
 	network.Atomic
@@ -143,7 +183,8 @@ func (vm *VM) Initialize(
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
-	noopMessageHandler := core.NewNoOpAppHandler(ctx.Log)
+	// Create a no-op handler that doesn't log messages
+	noopMessageHandler := &noOpAppHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)
@@ -154,10 +195,8 @@ func (vm *VM) Initialize(
 		zap.Reflect("config", xvmConfig),
 	)
 
-	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
-	if err != nil {
-		return err
-	}
+	// Create a metrics registry
+	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
@@ -167,7 +206,17 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	vm.AddressManager = lux.NewAddressManager(ctx)
+	// Create a minimal quasar.Context adapter
+	quasarCtx := &quasar.Context{
+		NetworkID:  ctx.NetworkID,
+		SubnetID:   ctx.SubnetID,
+		ChainID:    ctx.ChainID,
+		NodeID:     ctx.NodeID,
+		LUXAssetID: ctx.LUXAssetID,
+		Log:        ctx.Log,
+		BCLookup:   ctx.BCLookup,
+	}
+	vm.AddressManager = lux.NewAddressManager(quasarCtx)
 	vm.Aliaser = ids.NewAliaser()
 
 	vm.ctx = ctx
@@ -268,7 +317,7 @@ func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return consensus.ErrUnknownState
+		return fmt.Errorf("unknown state: %s", state)
 	}
 }
 
@@ -327,11 +376,11 @@ func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err
@@ -357,6 +406,26 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  *********************************** DAG VM ***********************************
  ******************************************************************************
  */
+
+// ParseVertex parses a vertex from bytes
+func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (vertex.Vertex, error) {
+	// Since we're linearizing the DAG, we don't actually parse vertices
+	// Return an error indicating this operation is not supported
+	return nil, fmt.Errorf("vertex parsing not supported after linearization")
+}
+
+// BuildVertex builds a new vertex to be added to consensus
+func (vm *VM) BuildVertex(ctx context.Context) (vertex.Vertex, error) {
+	// Since we're linearizing the DAG, we don't actually build vertices
+	// Return nil to indicate no vertex is available
+	return nil, nil
+}
+
+// GetEngine returns the consensus engine
+func (vm *VM) GetEngine() interface{} {
+	// Return nil as we don't have a DAG engine
+	return nil
+}
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	time := vm.Config.Upgrades.CortinaTime
@@ -393,7 +462,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 		vm.ctx.ValidatorState,
 		vm.parser,
 		network.NewLockedTxVerifier(
-			&vm.ctx.Lock,
+			vm.ctx.Lock,
 			vm.chainManager,
 		),
 		mempool,

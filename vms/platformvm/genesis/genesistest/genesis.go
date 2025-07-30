@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	// TODO: Import consensustest from the external consensus module
-	// "github.com/luxfi/node/consensus/consensustest"
+	// "github.com/luxfi/consensus/consensustest" // TODO: Use when AssetID is available
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -35,7 +34,10 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: consensustest.LUXAssetID}
+	// TODO: Get AssetID from consensustest when available
+	// For now, using a placeholder ID
+	AssetID = ids.Empty
+	LUXAsset = lux.Asset{ID: AssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -103,7 +105,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        consensustest.LUXAssetID,
+				TxID:        AssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,

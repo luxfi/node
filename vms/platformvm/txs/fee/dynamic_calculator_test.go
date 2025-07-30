@@ -13,6 +13,9 @@ import (
 )
 
 func TestDynamicCalculator(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	calculator := NewDynamicCalculator(testDynamicWeights, testDynamicPrice)
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {

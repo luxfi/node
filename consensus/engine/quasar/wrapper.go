@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/dag"
-	"github.com/luxfi/node/consensus/engine/chain"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/version"
@@ -28,7 +28,7 @@ type QuasarEngineWrapper struct {
 	
 	// Track vertices/blocks for the interfaces
 	vertices map[ids.ID]dag.Vertex
-	blocks   map[ids.ID]linear.Block
+	blocks   map[ids.ID]block.Block
 	
 	// Last accepted state
 	lastAcceptedID     ids.ID
@@ -37,7 +37,7 @@ type QuasarEngineWrapper struct {
 
 // Ensure we implement the interfaces
 var _ dag.Engine = (*QuasarEngineWrapper)(nil)
-// Note: Cannot implement both dag.Engine and linear.Engine due to conflicting Initialize methods
+// Note: Cannot implement both dag.Engine and chain.Engine due to conflicting Initialize methods
 
 // createQuasarEngine creates and initializes a Quasar engine
 func createQuasarEngine(ctx *core.Context, vm interface{}) (*QuasarEngineWrapper, error) {
@@ -64,7 +64,7 @@ func createQuasarEngine(ctx *core.Context, vm interface{}) (*QuasarEngineWrapper
 		vm:       vm,
 		quasar:   quasarEngine,
 		vertices: make(map[ids.ID]dag.Vertex),
-		blocks:   make(map[ids.ID]linear.Block),
+		blocks:   make(map[ids.ID]block.Block),
 	}
 	
 	// Initialize the Quasar engine
@@ -276,9 +276,9 @@ func (w *QuasarEngineWrapper) StopVertexAccepted() bool {
 	return false
 }
 
-// Linear Engine compatibility methods (not implementing linear.Engine to avoid conflicts)
+// Chain Engine compatibility methods (not implementing chain.Engine to avoid conflicts)
 
-func (w *QuasarEngineWrapper) GetBlock(blkID ids.ID) (linear.Block, error) {
+func (w *QuasarEngineWrapper) GetBlock(blkID ids.ID) (block.Block, error) {
 	if blk, ok := w.blocks[blkID]; ok {
 		return blk, nil
 	}

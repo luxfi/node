@@ -9,15 +9,15 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/chain"
 )
 
 // BeamBlock implements the Block interface for beam consensus
 // (Previously a concrete implementation of snowman.Block)
 type BeamBlock struct {
-	// Embedded linear block for compatibility
-	linear.Block
+	// Embedded chain block for compatibility
+	chain.Block
 
 	id          ids.ID
 	parentID    ids.ID
@@ -47,9 +47,9 @@ func NewBeamBlock(
 	}
 }
 
-// ID returns the block ID
-func (b *BeamBlock) ID() ids.ID {
-	return b.id
+// ID returns the block ID as string
+func (b *BeamBlock) ID() string {
+	return b.id.String()
 }
 
 // Parent returns the parent block ID
@@ -93,7 +93,7 @@ func (b *BeamBlock) Photons() int {
 }
 
 // Accept marks the block as accepted (finalized in the beam)
-func (b *BeamBlock) Accept(ctx context.Context) error {
+func (b *BeamBlock) Accept() error {
 	if b.status == choices.Accepted {
 		return fmt.Errorf("block %s already accepted", b.id)
 	}
@@ -102,7 +102,7 @@ func (b *BeamBlock) Accept(ctx context.Context) error {
 }
 
 // Reject marks the block as rejected (excluded from the beam)
-func (b *BeamBlock) Reject(ctx context.Context) error {
+func (b *BeamBlock) Reject() error {
 	if b.status == choices.Rejected {
 		return fmt.Errorf("block %s already rejected", b.id)
 	}
@@ -132,16 +132,16 @@ func (b *BeamBlock) UpdateBeamScore(score uint64) {
 	b.beamScore = score
 }
 
-// BeamBlockWrapper wraps an existing linear.Block for beam consensus
+// BeamBlockWrapper wraps an existing chain.Block for beam consensus
 type BeamBlockWrapper struct {
-	linear.Block
+	chain.Block
 	beamHeight   uint64
 	beamScore    uint64
 	photonCount  int
 }
 
-// WrapBlock wraps an existing linear block for beam consensus
-func WrapBlock(block linear.Block, height uint64) *BeamBlockWrapper {
+// WrapBlock wraps an existing chain block for beam consensus
+func WrapBlock(block chain.Block, height uint64) *BeamBlockWrapper {
 	return &BeamBlockWrapper{
 		Block:      block,
 		beamHeight: height,

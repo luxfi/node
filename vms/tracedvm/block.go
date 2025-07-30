@@ -10,7 +10,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/chain/block"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -30,9 +29,9 @@ type tracedBlock struct {
 }
 
 func (b *tracedBlock) Verify(ctx context.Context) error {
-	blkID := ids.ID(b.ID())
+	blkID := b.ID()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", blkID),
+		attribute.String("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -42,9 +41,9 @@ func (b *tracedBlock) Verify(ctx context.Context) error {
 
 func (b *tracedBlock) Accept() error {
 	ctx := context.Background()
-	blkID := ids.ID(b.ID())
+	blkID := b.ID()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.acceptTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", blkID),
+		attribute.String("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -54,9 +53,9 @@ func (b *tracedBlock) Accept() error {
 
 func (b *tracedBlock) Reject() error {
 	ctx := context.Background()
-	blkID := ids.ID(b.ID())
+	blkID := b.ID()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.rejectTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", blkID),
+		attribute.String("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -75,9 +74,9 @@ func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error)
 		return false, nil
 	}
 
-	blkID := ids.ID(b.ID())
+	blkID := b.ID()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.shouldVerifyWithContextTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", blkID),
+		attribute.String("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
@@ -91,9 +90,9 @@ func (b *tracedBlock) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 		return fmt.Errorf("%w but got %T", errExpectedBlockWithVerifyContext, b.Block)
 	}
 
-	blkID := ids.ID(b.ID())
+	blkID := b.ID()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyWithContextTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", blkID),
+		attribute.String("blkID", blkID),
 		attribute.Int64("height", int64(b.Height())),
 		attribute.Int64("pChainHeight", int64(blockCtx.PChainHeight)),
 	))

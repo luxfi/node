@@ -30,7 +30,6 @@ func NewLinearContext(
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    blockchainID,
-		XChainID:   blockchainID,
 		LUXAssetID: luxAssetID,
 		Log:        log.NewNoOpLogger(),
 		BCLookup:   lookup,

@@ -10,6 +10,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/version"
 )
 
 var _ Atomic = (*atomic)(nil)
@@ -88,6 +89,23 @@ func (a *atomic) AppGossip(
 		nodeID,
 		msg,
 	)
+}
+
+func (a *atomic) Connected(
+	ctx context.Context,
+	nodeID ids.NodeID,
+	nodeVersion *version.Application,
+) error {
+	h := a.handler.Get()
+	return h.Connected(ctx, nodeID, nodeVersion)
+}
+
+func (a *atomic) Disconnected(
+	ctx context.Context,
+	nodeID ids.NodeID,
+) error {
+	h := a.handler.Get()
+	return h.Disconnected(ctx, nodeID)
 }
 
 func (a *atomic) Set(h core.AppHandler) {

@@ -53,7 +53,7 @@ func NewDAGEngine(ctx *core.Context, vm interface{}) dag.Engine {
 
 // NewLinearEngine creates a new linear consensus engine using Pulsar
 // This is used for the C-Chain (EVM-compatible chain)
-func NewLinearEngine(ctx *core.Context, vm interface{}) linear.Engine {
+func NewLinearEngine(ctx *core.Context, vm interface{}) chain.Engine {
 	// TODO: Implement quantum consensus
 	/*
 	// Create parameters for Pulsar (linear consensus)
@@ -84,7 +84,7 @@ func NewLinearEngine(ctx *core.Context, vm interface{}) linear.Engine {
 
 // NewQChainEngine creates the quantum-safe platform chain engine
 // This replaces the P-Chain with Q-Chain for platform operations
-func NewQChainEngine(ctx *core.Context, vm interface{}) linear.Engine {
+func NewQChainEngine(ctx *core.Context, vm interface{}) chain.Engine {
 	// TODO: Implement quantum consensus
 	/*
 	// Q-Chain (formerly P-Chain) uses full Quasar consensus

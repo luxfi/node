@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"errors"
 
-	"github.com/luxfi/crypto/corona"
+	"github.com/luxfi/corona"
 )
 
 // Constants - estimated sizes based on Corona implementation

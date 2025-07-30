@@ -1,7 +1,7 @@
 // Copyright (C) 2025, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package flare
+package nova
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/utils/set"
 
 	"github.com/luxfi/node/consensus/focus"
@@ -77,7 +77,7 @@ func (e *Engine) Add(ctx context.Context, vertex Vertex) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	vertexID := vertex.ID()
+	vertexID := vertex.Vertex()
 	
 	// Check if already added
 	if _, exists := e.vertices[vertexID]; exists {
@@ -98,14 +98,16 @@ func (e *Engine) Add(ctx context.Context, vertex Vertex) error {
 		if _, exists := e.children[parentID]; !exists {
 			e.children[parentID] = set.NewSet[ids.ID](2)
 		}
-		e.children[parentID].Add(vertexID)
+		childrenSet := e.children[parentID]
+		childrenSet.Add(vertexID)
 	}
 
 	// Detect conflicts and assign to conflict sets
 	conflictSetID := e.detectConflicts(vertex)
-	if flareVertex, ok := vertex.(*FlareVertex); ok {
-		flareVertex.SetConflictSet(conflictSetID)
-	}
+	// TODO: Set conflict set when FlareVertex can be type asserted
+	// if flareVertex, ok := vertex.(*FlareVertex); ok {
+	// 	flareVertex.SetConflictSet(conflictSetID)
+	// }
 	e.vertexToCS[vertexID] = conflictSetID
 
 	// Initialize as virtuous if no conflicts
@@ -123,41 +125,44 @@ func (e *Engine) detectConflicts(vertex Vertex) ids.ID {
 	// In a real implementation, this would analyze transaction conflicts
 	// For now, we'll use a simple heuristic based on vertex data
 	
+	// vertexID := vertex.Vertex()
+	
+	// TODO: Implement transaction conflict detection when Txs() method is available
 	// Check if any transactions conflict with existing vertices
-	for _, tx := range vertex.Txs() {
-		for existingID, existing := range e.vertices {
-			if existingID == vertex.ID() {
-				continue
-			}
-			
-			for _, existingTx := range existing.Txs() {
-				if tx == existingTx {
-					// Found conflict - check if existing vertex has conflict set
-					if csID, exists := e.vertexToCS[existingID]; exists && csID != ids.Empty {
-						// Add to existing conflict set
-						e.conflictSets[csID].Vertices.Add(vertex.ID())
-						return csID
-					}
-					
-					// Create new conflict set
-					csID := ids.GenerateTestID()
-					e.conflictSets[csID] = &ConflictSet{
-						ID:       csID,
-						Vertices: set.NewSet[ids.ID](2),
-					}
-					e.conflictSets[csID].Vertices.Add(vertex.ID())
-					e.conflictSets[csID].Vertices.Add(existingID)
-					
-					// Update existing vertex's conflict set
-					e.vertexToCS[existingID] = csID
-					e.virtuous.Remove(existingID)
-					
-					e.metrics.ConflictSetsFormed++
-					return csID
-				}
-			}
-		}
-	}
+	// for _, tx := range vertex.Txs() {
+	// 	for existingID, existing := range e.vertices {
+	// 		if existingID == vertexID {
+	// 			continue
+	// 		}
+	// 		
+	// 		for _, existingTx := range existing.Txs() {
+	// 			if tx == existingTx {
+	// 				// Found conflict - check if existing vertex has conflict set
+	// 				if csID, exists := e.vertexToCS[existingID]; exists && csID != ids.Empty {
+	// 					// Add to existing conflict set
+	// 					e.conflictSets[csID].Vertices.Add(vertexID)
+	// 					return csID
+	// 				}
+	// 				
+	// 				// Create new conflict set
+	// 				csID := ids.GenerateTestID()
+	// 				e.conflictSets[csID] = &ConflictSet{
+	// 					ID:       csID,
+	// 					Vertices: set.NewSet[ids.ID](2),
+	// 				}
+	// 				e.conflictSets[csID].Vertices.Add(vertexID)
+	// 				e.conflictSets[csID].Vertices.Add(existingID)
+	// 				
+	// 				// Update existing vertex's conflict set
+	// 				e.vertexToCS[existingID] = csID
+	// 				e.virtuous.Remove(existingID)
+	// 				
+	// 				e.metrics.ConflictSetsFormed++
+	// 				return csID
+	// 			}
+	// 		}
+	// 	}
+	// }
 	
 	return ids.Empty // No conflicts
 }
@@ -167,16 +172,16 @@ func (e *Engine) Vote(ctx context.Context, vertexID ids.ID) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	vertex, exists := e.vertices[vertexID]
+	_, exists := e.vertices[vertexID]
 	if !exists {
 		return fmt.Errorf("vertex %s not found", vertexID)
 	}
 
-	// Update flare score
-	if flareVertex, ok := vertex.(*FlareVertex); ok {
-		flareVertex.IncrementPhotons()
-		flareVertex.UpdateFlareScore(flareVertex.FlareScore() + 1)
-	}
+	// TODO: Update flare score when FlareVertex can be type asserted
+	// if flareVertex, ok := vertex.(*FlareVertex); ok {
+	// 	flareVertex.IncrementPhotons()
+	// 	flareVertex.UpdateFlareScore(flareVertex.FlareScore() + 1)
+	// }
 
 	return nil
 }
@@ -272,7 +277,7 @@ func (e *Engine) finalizeVertex(ctx context.Context, vertexID ids.ID, csID ids.I
 	}
 
 	// Accept the vertex
-	if err := vertex.Accept(ctx); err != nil {
+	if err := vertex.Accept(); err != nil {
 		return err
 	}
 	
@@ -284,7 +289,7 @@ func (e *Engine) finalizeVertex(ctx context.Context, vertexID ids.ID, csID ids.I
 		for conflictID := range cs.Vertices {
 			if conflictID != vertexID {
 				if conflict, exists := e.vertices[conflictID]; exists {
-					conflict.Reject(ctx)
+					conflict.Reject()
 					e.processing.Remove(conflictID)
 					e.preferred.Remove(conflictID)
 					e.virtuous.Remove(conflictID)
@@ -303,7 +308,11 @@ func (e *Engine) Preferred() set.Set[ids.ID] {
 	defer e.mu.RUnlock()
 	
 	// Return copy to avoid external modification
-	return e.preferred.Copy()
+	result := set.NewSet[ids.ID](e.preferred.Len())
+	for id := range e.preferred {
+		result.Add(id)
+	}
+	return result
 }
 
 // Virtuous returns virtuous vertices (no conflicts)
@@ -311,7 +320,11 @@ func (e *Engine) Virtuous() set.Set[ids.ID] {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	
-	return e.virtuous.Copy()
+	result := set.NewSet[ids.ID](e.virtuous.Len())
+	for id := range e.virtuous {
+		result.Add(id)
+	}
+	return result
 }
 
 // Conflicts returns conflicting vertex sets
@@ -325,8 +338,12 @@ func (e *Engine) Conflicts(vertexID ids.ID) set.Set[ids.ID] {
 	}
 
 	if cs, exists := e.conflictSets[csID]; exists {
-		conflicts := cs.Vertices.Copy()
-		conflicts.Remove(vertexID) // Don't include self
+		conflicts := set.NewSet[ids.ID](cs.Vertices.Len())
+		for id := range cs.Vertices {
+			if id != vertexID { // Don't include self
+				conflicts.Add(id)
+			}
+		}
 		return conflicts
 	}
 

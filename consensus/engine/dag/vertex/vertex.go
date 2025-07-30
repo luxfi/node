@@ -92,3 +92,14 @@ type LinearizableVMWithEngine interface {
 	// GetEngine returns the consensus engine
 	GetEngine() interface{}
 }
+
+// DAGVM defines a DAG-based VM interface
+type DAGVM interface {
+	LinearizableVM
+}
+
+// LinearizableVMWithLinearize is a VM that can be linearized
+type LinearizableVMWithLinearize interface {
+	// Linearize linearizes the VM at the given stop vertex
+	Linearize(ctx context.Context, stopVertexID ids.ID) error
+}

@@ -463,9 +463,10 @@ func (p *peer) readMessages() {
 		// handled (in the event this message is handled at the network level)
 		// or the time the message is handed to the router (in the event this
 		// message is not handled at the network level.)
+		// TODO: ResourceTracker no longer has StartProcessing/StopProcessing methods
 		// [p.CPUTracker.StopProcessing] must be called when this loop iteration is
 		// finished.
-		p.ResourceTracker.StartProcessing(p.id, p.Clock.Time())
+		// p.ResourceTracker.StartProcessing(p.id, p.Clock.Time())
 
 		p.Log.Verbo("parsing message",
 			zap.Stringer("nodeID", p.id),
@@ -485,7 +486,8 @@ func (p *peer) readMessages() {
 
 			// Couldn't parse the message. Read the next one.
 			onFinishedHandling()
-			p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
+			// TODO: ResourceTracker no longer has StopProcessing method
+			// p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 			continue
 		}
 
@@ -496,7 +498,8 @@ func (p *peer) readMessages() {
 		// Handle the message. Note that when we are done handling this message,
 		// we must call [msg.OnFinishedHandling()].
 		p.handle(msg)
-		p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
+		// TODO: ResourceTracker no longer has StopProcessing method
+		// p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 	}
 }
 

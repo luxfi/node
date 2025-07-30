@@ -58,7 +58,8 @@ func (b *postForkOption) Reject() error {
 	// we do not reject the inner block here because that block may be contained
 	// in the proposer block that causing this block to be rejected.
 
-	delete(b.vm.verifiedBlocks, b.ID())
+	blkID, _ := ids.FromString(b.ID())
+	delete(b.vm.verifiedBlocks, blkID)
 	return nil
 }
 
@@ -83,7 +84,15 @@ func (b *postForkOption) Verify(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	b.timestamp = parent.Timestamp()
+	// Get timestamp from parent block
+	if pfb, ok := parent.(*postForkBlock); ok {
+		b.timestamp = pfb.Timestamp()
+	} else if pfo, ok := parent.(*postForkOption); ok {
+		b.timestamp = pfo.Timestamp()
+	} else {
+		// This should not happen in post-fork context
+		return errUnexpectedBlockType
+	}
 	return parent.verifyPostForkOption(ctx, b)
 }
 
@@ -112,7 +121,8 @@ func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) er
 }
 
 func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
-	parentID := b.ID()
+	parentIDStr := b.ID()
+	parentID, _ := ids.FromString(parentIDStr)
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
 		b.vm.ctx.Log.Error("unexpected build block failure",

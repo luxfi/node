@@ -82,7 +82,7 @@ type Sender interface {
 
 // ExternalSender sends messages to other nodes
 type ExternalSender interface {
-	Send(msg message.OutboundMessage, nodeSIDs ...ids.NodeID) []ids.NodeID
+	Send(msg message.OutboundMessage, nodeIDs ...ids.NodeID) []ids.NodeID
 }
 
 // Config configures the sender

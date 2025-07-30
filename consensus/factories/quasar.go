@@ -24,7 +24,7 @@ func (f *QuasarFactory) NewDAG(ctx *core.Context, vm interface{}) dag.Engine {
 }
 
 // NewLinear creates a new linear consensus engine using Quasar.
-func (f *QuasarFactory) NewLinear(ctx *core.Context, vm interface{}) linear.Engine {
+func (f *QuasarFactory) NewLinear(ctx *core.Context, vm interface{}) chain.Engine {
 	return quasar.NewLinearEngine(ctx, vm)
 }
 
@@ -34,7 +34,7 @@ type Factory interface {
 	NewDAG(ctx *core.Context, vm interface{}) dag.Engine
 
 	// NewLinear creates a new linear consensus engine.
-	NewLinear(ctx *core.Context, vm interface{}) linear.Engine
+	NewLinear(ctx *core.Context, vm interface{}) chain.Engine
 }
 
 // Config configures which consensus engine to use.

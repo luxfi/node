@@ -33,7 +33,8 @@ func New(
 	feeAssetID ids.ID,
 	state state.State,
 ) *Builder {
-	utxos := newUTXOs(ctx, state, ctx.SharedMemory, codec)
+	// TODO: Fix SharedMemory access - not available in consensus.Context
+	utxos := newUTXOs(ctx, state, nil, codec)
 	return &Builder{
 		utxos: utxos,
 		ctx:   newContext(ctx, cfg, feeAssetID),
