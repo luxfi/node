@@ -409,7 +409,10 @@ func TestTrackVerifiesSignatures(t *testing.T) {
 
 	cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
 	require.NoError(err)
-	nodeID := ids.NodeIDFromCert(cert)
+	nodeID := ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       cert.Raw,
+		PublicKey: cert.PublicKey,
+	})
 
 	require.NoError(network.config.Validators.AddStaker(constants.PrimaryNetworkID, nodeID, nil, ids.Empty, 1))
 
