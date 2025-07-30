@@ -96,7 +96,6 @@ require (
 	github.com/luxfi/geth v1.16.6
 	github.com/luxfi/ids v0.1.1
 	github.com/luxfi/ids/galiasreader v0.0.0-00010101000000-000000000000
-	github.com/supranational/blst v0.3.15
 )
 
 require (
@@ -142,7 +141,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/crypto v0.1.1 // indirect
+	github.com/luxfi/crypto v0.1.3 // indirect
 	github.com/luxfi/log v0.1.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -187,6 +186,3 @@ replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea
 replace github.com/luxfi/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
-
-// Use a specific commit of blst that works with our setup
-replace github.com/supranational/blst => github.com/supranational/blst v0.3.14

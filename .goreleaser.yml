@@ -15,8 +15,6 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
-      - goos: linux
-        goarch: arm64  # Skip Linux ARM64 cross-compilation for now
     env:
       - CGO_ENABLED=0
     ldflags:
