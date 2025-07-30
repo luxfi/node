@@ -36,6 +36,17 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 
 	metrics, err := gatherer.Gather()
 	require.NoError(err)
+	
+	// Clear CreatedTimestamp fields as they are automatically populated
+	// by newer versions of Prometheus and we don't care about their values
+	for _, mf := range metrics {
+		for _, m := range mf.Metric {
+			if m.Counter != nil {
+				m.Counter.CreatedTimestamp = nil
+			}
+		}
+	}
+	
 	require.Equal(
 		[]*dto.MetricFamily{
 			{

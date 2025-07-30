@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/ringtail"
+	"github.com/luxfi/ringtail"
 )
 
 var (

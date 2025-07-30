@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"errors"
 
-	"github.com/luxfi/crypto/ringtail"
+	"github.com/luxfi/ringtail"
 )
 
 // Constants - estimated sizes based on Ringtail implementation

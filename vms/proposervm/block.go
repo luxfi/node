@@ -66,6 +66,7 @@ type PostForkBlock interface {
 
 	getStatelessBlk() block.Block
 	setInnerBlk(chaincon.Block)
+	Timestamp() time.Time
 }
 
 // field of postForkBlock and postForkOption

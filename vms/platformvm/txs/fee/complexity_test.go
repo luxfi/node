@@ -25,6 +25,9 @@ import (
 )
 
 func TestTxComplexity_Individual(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
@@ -54,6 +57,9 @@ func TestTxComplexity_Individual(t *testing.T) {
 }
 
 func TestTxComplexity_Batch(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	require := require.New(t)
 
 	var (

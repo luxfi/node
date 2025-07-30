@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/version"
 )
 
 // Router routes consensus messages
@@ -87,4 +88,15 @@ type HealthConfig struct {
 type InboundHandler interface {
 	// HandleInbound handles an inbound message
 	HandleInbound(context.Context, message.InboundMessage) error
+}
+
+// ExternalHandler handles messages from peers, including connection lifecycle events
+type ExternalHandler interface {
+	InboundHandler
+	
+	// Connected is called when a peer connects
+	Connected(nodeID ids.NodeID, nodeVersion *version.Application, subnetID ids.ID)
+	
+	// Disconnected is called when a peer disconnects
+	Disconnected(nodeID ids.NodeID)
 }

@@ -46,7 +46,7 @@ func (b *postForkBlock) Accept() error {
 		b.vm.acceptedBlocksSlotHistogram.Observe(float64(*b.slot))
 	}
 	b.updateLastAcceptedTimestampMetric(outerBlockTypeMetricLabel, b.Timestamp())
-	b.updateLastAcceptedTimestampMetric(innerBlockTypeMetricLabel, b.innerBlk.Timestamp())
+	b.updateLastAcceptedTimestampMetric(innerBlockTypeMetricLabel, time.Unix(int64(b.innerBlk.Time()), 0))
 	return nil
 }
 
@@ -75,7 +75,8 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 
 func (b *postForkBlock) Reject() error {
 	// We do not reject the inner block here because it may be accepted later
-	delete(b.vm.verifiedBlocks, b.ID())
+	blkID, _ := ids.FromString(b.ID())
+	delete(b.vm.verifiedBlocks, blkID)
 	return nil
 }
 
@@ -119,7 +120,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 		return [2]chain.Block{}, err
 	}
 
-	parentID := b.ID()
+	parentID, _ := ids.FromString(b.ID())
 	outerOptions := [2]chain.Block{}
 	for i, innerOption := range innerOptions {
 		// Wrap the inner block's child option
@@ -179,9 +180,10 @@ func (b *postForkBlock) verifyPostForkOption(ctx context.Context, child *postFor
 
 // Return the child (a *postForkBlock) of this block
 func (b *postForkBlock) buildChild(ctx context.Context) (Block, error) {
+	blkID, _ := ids.FromString(b.ID())
 	return b.postForkCommonComponents.buildChild(
 		ctx,
-		b.ID(),
+		blkID,
 		b.Timestamp(),
 		b.PChainHeight(),
 	)

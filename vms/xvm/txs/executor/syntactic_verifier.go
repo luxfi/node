@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -50,8 +51,20 @@ type SyntacticVerifier struct {
 	Tx *txs.Tx
 }
 
+// quasarContext returns a quasar.Context created from the consensus.Context
+func (v *SyntacticVerifier) quasarContext() *quasar.Context {
+	return &quasar.Context{
+		NetworkID:  v.Ctx.NetworkID,
+		ChainID:    v.Ctx.ChainID,
+		SubnetID:   v.Ctx.SubnetID,
+		NodeID:     v.Ctx.NodeID,
+		LUXAssetID: v.Ctx.LUXAssetID,
+		Log:        v.Ctx.Log,
+	}
+}
+
 func (v *SyntacticVerifier) BaseTx(tx *txs.BaseTx) error {
-	if err := tx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -114,7 +127,7 @@ func (v *SyntacticVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
 		}
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -162,7 +175,7 @@ func (v *SyntacticVerifier) OperationTx(tx *txs.OperationTx) error {
 		return errNoOperations
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -222,7 +235,7 @@ func (v *SyntacticVerifier) ImportTx(tx *txs.ImportTx) error {
 		return errNoImportInputs
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -264,7 +277,7 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 		return errNoExportOutputs
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -303,7 +316,7 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 
 func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
 	// Verify the base transaction
-	if err := tx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -369,7 +382,7 @@ func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
 
 func (v *SyntacticVerifier) MintTx(tx *txs.MintTx) error {
 	// Verify the base transaction
-	if err := tx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -438,7 +451,7 @@ func (v *SyntacticVerifier) MintTx(tx *txs.MintTx) error {
 
 func (v *SyntacticVerifier) NFTTransferTx(tx *txs.NFTTransferTx) error {
 	// Verify the base transaction
-	if err := tx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 

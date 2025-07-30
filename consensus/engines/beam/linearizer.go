@@ -43,7 +43,7 @@ type Linearizer interface {
 // Block represents a block in the linear beam
 // (Previously snowman.Block)
 type Block interface {
-	linear.Block
+	chain.Block
 
 	// BeamHeight returns the block's position in the beam
 	BeamHeight() uint64

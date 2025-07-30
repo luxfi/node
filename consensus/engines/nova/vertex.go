@@ -1,7 +1,7 @@
 // Copyright (C) 2025, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package flare
+package nova
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/dag"
 	"github.com/luxfi/node/utils/set"
 )
@@ -17,8 +17,6 @@ import (
 // FlareVertex implements the Vertex interface for flare consensus
 // (Previously a concrete implementation of avalanche.Vertex)
 type FlareVertex struct {
-	// Embedded dag vertex for compatibility
-	dag.Vertex
 
 	id           ids.ID
 	parentIDs    []ids.ID
@@ -52,8 +50,13 @@ func NewFlareVertex(
 	}
 }
 
-// ID returns the vertex ID
-func (v *FlareVertex) ID() ids.ID {
+// ID returns the vertex ID as string
+func (v *FlareVertex) ID() string {
+	return v.id.String()
+}
+
+// Vertex returns the unique ID of this vertex
+func (v *FlareVertex) Vertex() ids.ID {
 	return v.id
 }
 
@@ -70,6 +73,12 @@ func (v *FlareVertex) Height() uint64 {
 // Timestamp returns the vertex timestamp
 func (v *FlareVertex) Timestamp() time.Time {
 	return v.timestamp
+}
+
+// Epoch returns the epoch of this vertex
+func (v *FlareVertex) Epoch() uint32 {
+	// Calculate epoch based on height
+	return uint32(v.height / 1000)
 }
 
 // Bytes returns the vertex bytes
@@ -108,7 +117,7 @@ func (v *FlareVertex) ConflictSet() ids.ID {
 }
 
 // Accept marks the vertex as accepted (finalized in the DAG)
-func (v *FlareVertex) Accept(ctx context.Context) error {
+func (v *FlareVertex) Accept() error {
 	if v.status == choices.Accepted {
 		return fmt.Errorf("vertex %s already accepted", v.id)
 	}
@@ -117,7 +126,7 @@ func (v *FlareVertex) Accept(ctx context.Context) error {
 }
 
 // Reject marks the vertex as rejected (excluded from the DAG)
-func (v *FlareVertex) Reject(ctx context.Context) error {
+func (v *FlareVertex) Reject() error {
 	if v.status == choices.Rejected {
 		return fmt.Errorf("vertex %s already rejected", v.id)
 	}
@@ -164,19 +173,71 @@ func (v *FlareVertex) SetConflictSet(conflictSetID ids.ID) {
 
 // FlareVertexWrapper wraps an existing dag.Vertex for flare consensus
 type FlareVertexWrapper struct {
-	dag.Vertex
-	flareHeight  uint64
-	flareScore   uint64
-	photonCount  int
-	conflictSet  ids.ID
+	wrappedVertex dag.Vertex
+	flareHeight   uint64
+	flareScore    uint64
+	photonCount   int
+	conflictSet   ids.ID
 }
 
 // WrapVertex wraps an existing dag vertex for flare consensus
 func WrapVertex(vertex dag.Vertex, height uint64) *FlareVertexWrapper {
 	return &FlareVertexWrapper{
-		Vertex:      vertex,
-		flareHeight: height,
+		wrappedVertex: vertex,
+		flareHeight:   height,
 	}
+}
+
+// Implement dag.Vertex interface for wrapper
+
+// ID returns the unique ID of this element
+func (w *FlareVertexWrapper) ID() string {
+	return w.wrappedVertex.ID()
+}
+
+// Accept accepts this element and changes its status to Accepted
+func (w *FlareVertexWrapper) Accept() error {
+	return w.wrappedVertex.Accept()
+}
+
+// Reject rejects this element and changes its status to Rejected
+func (w *FlareVertexWrapper) Reject() error {
+	return w.wrappedVertex.Reject()
+}
+
+// Status returns the current status
+func (w *FlareVertexWrapper) Status() choices.Status {
+	return w.wrappedVertex.Status()
+}
+
+// Vertex returns the unique ID of this vertex
+func (w *FlareVertexWrapper) Vertex() ids.ID {
+	return w.wrappedVertex.Vertex()
+}
+
+// Parents returns the parents of this vertex
+func (w *FlareVertexWrapper) Parents() []ids.ID {
+	return w.wrappedVertex.Parents()
+}
+
+// Height returns the height of this vertex
+func (w *FlareVertexWrapper) Height() uint64 {
+	return w.wrappedVertex.Height()
+}
+
+// Epoch returns the epoch of this vertex
+func (w *FlareVertexWrapper) Epoch() uint32 {
+	return w.wrappedVertex.Epoch()
+}
+
+// Verify that this vertex is valid
+func (w *FlareVertexWrapper) Verify(ctx context.Context) error {
+	return w.wrappedVertex.Verify(ctx)
+}
+
+// Bytes returns the byte representation of this vertex
+func (w *FlareVertexWrapper) Bytes() []byte {
+	return w.wrappedVertex.Bytes()
 }
 
 // FlareHeight returns the vertex's height in the DAG

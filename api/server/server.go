@@ -270,7 +270,7 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx *consensus.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.State != nil && ctx.State.Get() != consensus.NormalOp {
+		if ctx.State != nil && ctx.State.Get().State != consensus.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)

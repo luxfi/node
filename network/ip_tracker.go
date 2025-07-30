@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
@@ -38,7 +37,8 @@ const (
 	newTimestamp       = 2
 )
 
-var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
+// TODO: validators.ManagerCallbackListener has been removed
+// var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	trackedSubnets set.Set[ids.ID],

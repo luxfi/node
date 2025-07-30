@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/consensus/engine/core"
+	db "github.com/luxfi/database"
 )
 
 var (
@@ -108,6 +111,35 @@ type ChainVM interface {
 
 	// LastAccepted returns the last accepted block ID
 	LastAccepted(context.Context) (ids.ID, error)
+
+	// Initialize initializes the VM
+	Initialize(
+		ctx context.Context,
+		chainCtx *consensus.Context,
+		database db.Database,
+		genesisBytes []byte,
+		upgradeBytes []byte,
+		configBytes []byte,
+		fxs []*core.Fx,
+		appSender core.AppSender,
+	) error
+
+	// SetState sets the VM state
+	SetState(context.Context, consensus.State) error
+
+	// Shutdown shuts down the VM
+	Shutdown(context.Context) error
+
+	// WaitForEvent waits for the next event
+	WaitForEvent(context.Context) (core.Message, error)
+}
+
+// HeightIndexedChainVM is a ChainVM that supports retrieving blocks by height
+type HeightIndexedChainVM interface {
+	ChainVM
+
+	// GetBlockIDAtHeight returns the block ID at the given height
+	GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error)
 }
 
 // BatchedChainVM defines batch operations for ChainVM

@@ -347,6 +347,9 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 			limit,
 		)
 	} else {
+		// TODO: Fix SharedMemory access
+		// SharedMemory is not available in consensus.Context
+		/*
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
 			s.vm.ctx.SharedMemory,
 			s.vm.parser.Codec(),
@@ -356,6 +359,12 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 			startUTXO,
 			limit,
 		)
+		*/
+		// For now, return empty results for cross-chain queries
+		utxos = nil
+		endAddr = ids.ShortEmpty
+		endUTXOID = ids.Empty
+		err = fmt.Errorf("cross-chain UTXOs not supported without SharedMemory")
 	}
 	if err != nil {
 		return fmt.Errorf("problem retrieving UTXOs: %w", err)

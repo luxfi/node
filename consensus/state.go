@@ -26,6 +26,6 @@ func (s *EngineState) Set(state EngineState) {
 }
 
 // Get gets the engine state
-func (s *EngineState) Get() State {
-	return s.State
+func (s *EngineState) Get() *EngineState {
+	return s
 }

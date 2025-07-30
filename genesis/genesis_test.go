@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/evm/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
@@ -528,7 +527,10 @@ func TestCChainGenesisTimestamp(t *testing.T) {
 			require := require.New(t)
 
 			config := GetConfig(test.networkID)
-			var cChainGenesis core.Genesis
+			// Use a minimal struct to avoid importing evm/core
+			var cChainGenesis struct {
+				Timestamp uint64 `json:"timestamp"`
+			}
 			require.NoError(json.Unmarshal([]byte(config.CChainGenesis), &cChainGenesis))
 			require.Equal(
 				test.expectedGenesisTime,

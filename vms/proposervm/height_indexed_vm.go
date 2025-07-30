@@ -11,22 +11,28 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 const pruneCommitPeriod = 1024
 
 // vm.ctx.Lock should be held
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	heightIndexedVM, ok := vm.ChainVM.(block.HeightIndexedChainVM)
+	if !ok {
+		return ids.Empty, block.ErrRemoteVMNotImplemented
+	}
+
 	switch forkHeight, err := vm.State.GetForkHeight(); err {
 	case nil:
 		if height < forkHeight {
-			return vm.ChainVM.GetBlockIDAtHeight(ctx, height)
+			return heightIndexedVM.GetBlockIDAtHeight(ctx, height)
 		}
 		return vm.State.GetBlockIDAtHeight(height)
 
 	case database.ErrNotFound:
 		// fork not reached yet. Block must be pre-fork
-		return vm.ChainVM.GetBlockIDAtHeight(ctx, height)
+		return heightIndexedVM.GetBlockIDAtHeight(ctx, height)
 
 	default:
 		return ids.Empty, err
