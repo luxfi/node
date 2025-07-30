@@ -73,7 +73,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0
 	go.opentelemetry.io/otel/trace v1.37.0
 	go.uber.org/goleak v1.3.0
-	go.uber.org/mock v0.5.0
+	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
@@ -95,7 +95,7 @@ require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/db v0.1.0
+	github.com/luxfi/database v0.1.0
 	github.com/luxfi/ids v0.1.0
 	github.com/supranational/blst v0.3.15
 )
@@ -143,6 +143,8 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/crypto v1.0.0 // indirect
+	github.com/luxfi/log v0.1.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -182,3 +184,14 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+
+// Temporary replace until packages are published with all sub-packages
+replace github.com/luxfi/geth => ../geth
+
+replace github.com/luxfi/database => ../database
+
+replace github.com/luxfi/ids => ../ids
+
+replace github.com/luxfi/bft => ../bft
+
+replace github.com/luxfi/crypto => ../crypto
