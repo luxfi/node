@@ -94,10 +94,9 @@ require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/crypto v0.1.1
-	github.com/luxfi/database v0.1.1
+	github.com/luxfi/database v0.1.3
 	github.com/luxfi/geth v1.16.6
-	github.com/luxfi/ids v0.1.0
+	github.com/luxfi/ids v0.1.1
 	github.com/supranational/blst v0.3.15
 )
 
