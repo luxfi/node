@@ -188,5 +188,3 @@ replace github.com/luxfi/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
 
-// Use blst v0.3.13 to fix ARM64 build issues
-replace github.com/supranational/blst => github.com/supranational/blst v0.3.13
