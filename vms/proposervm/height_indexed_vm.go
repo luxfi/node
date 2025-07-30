@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 

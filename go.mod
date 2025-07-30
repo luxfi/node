@@ -94,6 +94,7 @@ require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/crypto v0.1.1
 	github.com/luxfi/database v0.1.0
 	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v0.1.0
@@ -143,7 +144,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/node/crypto v1.0.0 // indirect
 	github.com/luxfi/log v0.1.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect

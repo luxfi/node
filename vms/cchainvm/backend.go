@@ -59,14 +59,11 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
 	
-	// Read the head hash from migrated data
-	blockNumBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(blockNumBytes, migratedHeight)
-	canonicalKey := append([]byte{0x68}, blockNumBytes...)
-	canonicalKey = append(canonicalKey, 0x6e)
+	// Read the head hash from migrated data using 9-byte format
+	key := canonicalKey(migratedHeight)
 	
 	var headHash common.Hash
-	if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+	if val, err := db.Get(key); err == nil && len(val) == 32 {
 		copy(headHash[:], val)
 		fmt.Printf("Found migrated head hash at height %d: %x\n", migratedHeight, headHash)
 		
@@ -144,14 +141,11 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 	// Set the head pointers to the migrated height
 	fmt.Printf("Setting blockchain to migrated height %d\n", migratedHeight)
 	
-	// Get the hash at the migrated height
-	blockNumBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(blockNumBytes, migratedHeight)
-	canonicalKey := append([]byte{0x68}, blockNumBytes...)
-	canonicalKey = append(canonicalKey, 0x6e)
+	// Get the hash at the migrated height using 9-byte format
+	key := canonicalKey(migratedHeight)
 	
 	var headHash common.Hash
-	if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+	if val, err := db.Get(key); err == nil && len(val) == 32 {
 		copy(headHash[:], val)
 		fmt.Printf("Found head hash at height %d: %x\n", migratedHeight, headHash)
 		
@@ -257,13 +251,13 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	// Check if we need to initialize genesis first
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n", 
-		append([]byte{0x68}, append(make([]byte, 8), 0x6e)...), stored, nil)
+		canonicalKey(0), stored, nil)
 	
 	if stored == (common.Hash{}) {
 		// Double check with direct key access for migrated data
-		canonicalKey := append([]byte{0x68}, make([]byte, 8)...)
-		canonicalKey = append(canonicalKey, 0x6e)
-		if val, err := db.Get(canonicalKey); err == nil && len(val) == 32 {
+		// Use 9-byte canonical key format (no suffix)
+		key := canonicalKey(0)
+		if val, err := db.Get(key); err == nil && len(val) == 32 {
 			copy(stored[:], val)
 			fmt.Printf("Found canonical hash with direct key access: %x\n", stored)
 		}

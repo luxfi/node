@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	database "github.com/luxfi/db"
+	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	maybe "github.com/luxfi/node/utils/maybe"
 	gomock "go.uber.org/mock/gomock"

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 

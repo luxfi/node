@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/vms/proposervm/block"

@@ -6,7 +6,7 @@ package state
 import (
 	"github.com/google/btree"
 
-	"github.com/luxfi/db"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 
