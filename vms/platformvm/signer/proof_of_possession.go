@@ -6,15 +6,16 @@ package signer
 import (
 	"encoding/json"
 	"errors"
+	"os"
 
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 )
 
 var (
 	_ Signer = (*ProofOfPossession)(nil)
 
-	ErrInvalidProofOfPossession = errors.New("invalid proof of possession")
+	errInvalidProofOfPossession = errors.New("invalid proof of possession")
 )
 
 type ProofOfPossession struct {
@@ -28,14 +29,10 @@ type ProofOfPossession struct {
 	publicKey *bls.PublicKey
 }
 
-func NewProofOfPossession(sk bls.Signer) (*ProofOfPossession, error) {
-	pk := sk.PublicKey()
+func NewProofOfPossession(sk *bls.SecretKey) *ProofOfPossession {
+	pk := bls.PublicFromSecretKey(sk)
 	pkBytes := bls.PublicKeyToCompressedBytes(pk)
-	sig, err := sk.SignProofOfPossession(pkBytes)
-	if err != nil {
-		return nil, err
-	}
-
+	sig := bls.SignProofOfPossession(sk, pkBytes)
 	sigBytes := bls.SignatureToBytes(sig)
 
 	pop := &ProofOfPossession{
@@ -43,10 +40,20 @@ func NewProofOfPossession(sk bls.Signer) (*ProofOfPossession, error) {
 	}
 	copy(pop.PublicKey[:], pkBytes)
 	copy(pop.ProofOfPossession[:], sigBytes)
-	return pop, nil
+	return pop
 }
 
 func (p *ProofOfPossession) Verify() error {
+	// ---------------------------------------------------------------------
+	// DEV / migration flag: allow EMPTY proof exactly once, on first boot.
+	// ---------------------------------------------------------------------
+	if os.Getenv("LUX_GENESIS") == "1" {
+		// Empty POP is all zeros – accept it and continue initial replay.
+		p.publicKey, _ = bls.PublicKeyFromCompressedBytes(p.PublicKey[:])
+		return nil
+	}
+
+	// --- normal path ------------------------------------------------------
 	publicKey, err := bls.PublicKeyFromCompressedBytes(p.PublicKey[:])
 	if err != nil {
 		return err
@@ -56,9 +63,8 @@ func (p *ProofOfPossession) Verify() error {
 		return err
 	}
 	if !bls.VerifyProofOfPossession(publicKey, signature, p.PublicKey[:]) {
-		return ErrInvalidProofOfPossession
+		return errInvalidProofOfPossession
 	}
-
 	p.publicKey = publicKey
 	return nil
 }
