@@ -2,7 +2,7 @@
 project_name: node
 
 builds:
-  - id: luxd
+  - id: luxd-amd64
     main: ./main
     binary: luxd
     goos:
@@ -11,10 +11,19 @@ builds:
       - windows
     goarch:
       - amd64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+  
+  - id: luxd-arm64
+    main: ./main
+    binary: luxd
+    goos:
+      - linux
+      - darwin
+    goarch:
       - arm64
-    ignore:
-      - goos: windows
-        goarch: arm64
     env:
       - CGO_ENABLED=0
     tags:
