@@ -6,5 +6,7 @@ github.com/luxfi/database v0.1.1 h1:Q4f45Schxzm/Yxg5uLFvkXFA1W1mwHY20/ezBNaLG8I=
 github.com/luxfi/database v0.1.1/go.mod h1:/dUq+IYFvgFitQEXr4zj/9jJ0cjT/bf5558pB1rKpX8=
 github.com/luxfi/geth v1.16.2 h1:XdwE12vx5FViNQSA6LZDbYcAN3fLMyc/dy/zKr4rfm4=
 github.com/luxfi/geth v1.16.2/go.mod h1:oO6fREzo9o2clddJtgYkIN3pm/lngF9ayxDiXpIe6YA=
+github.com/luxfi/geth v1.16.5 h1:RydjEpFnp8lg/+Db+N5sQQHCcwnPToux53F8oxbv/tw=
+github.com/luxfi/geth v1.16.5/go.mod h1:cgsJN+hrDhbQguYCkT1DoCzkbWn/adwA0Jsb1CO/fUg=
 github.com/luxfi/ids v0.1.0 h1:Gu/4nw3BEMFFXwokj3QpS+MWoM4wnmUD66jPxVOqxsA=
 github.com/luxfi/ids v0.1.0/go.mod h1:IWuQ/699nCIHdZW9Mhz7voL7vqKMLvizoL5zmLpDUgM=
