@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -89,7 +90,10 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- core.PendingTxs:
+	case r.toEngine <- core.Message{
+		Type: message.NotifyOp,
+		Body: &core.PendingTxs{},
+	}:
 	default:
 	}
 

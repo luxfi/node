@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	smblock "github.com/luxfi/node/consensus/engine/chain/block"
 )
 
 var (
-	_ linear.Block              = (*Block)(nil)
-	_ linear.OracleBlock        = (*Block)(nil)
+	_ chain.Block              = (*Block)(nil)
+	_ chain.OracleBlock        = (*Block)(nil)
 	_ smblock.WithVerifyContext = (*Block)(nil)
 )
 
@@ -30,7 +31,7 @@ func (*Block) ShouldVerifyWithContext(context.Context) (bool, error) {
 }
 
 func (b *Block) VerifyWithContext(ctx context.Context, blockContext *smblock.Context) error {
-	blkID := b.ID()
+	blkID := b.Block.ID()
 	blkState, previouslyExecuted := b.manager.blkIDToState[blkID]
 	warpAlreadyVerified := previouslyExecuted && blkState.verifiedHeights.Contains(blockContext.PChainHeight)
 
@@ -42,7 +43,7 @@ func (b *Block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 			b.manager.ctx.NetworkID,
 			b.manager.ctx.ValidatorState,
 			blockContext.PChainHeight,
-			b,
+			b.Block,
 		)
 		if err != nil {
 			return err
@@ -74,19 +75,32 @@ func (b *Block) Verify(ctx context.Context) error {
 	)
 }
 
-func (b *Block) Accept(context.Context) error {
+func (b *Block) Accept() error {
 	return b.Visit(b.manager.acceptor)
 }
 
-func (b *Block) Reject(context.Context) error {
+func (b *Block) Reject() error {
 	return b.Visit(b.manager.rejector)
 }
 
-func (b *Block) Timestamp() time.Time {
-	return b.manager.getTimestamp(b.ID())
+func (b *Block) ID() string {
+	return b.Block.ID().String()
 }
 
-func (b *Block) Options(context.Context) ([2]linear.Block, error) {
+func (b *Block) Status() choices.Status {
+	// TODO: Implement proper status tracking
+	return choices.Processing
+}
+
+func (b *Block) Timestamp() time.Time {
+	return b.manager.getTimestamp(b.Block.ID())
+}
+
+func (b *Block) Time() uint64 {
+	return uint64(b.manager.getTimestamp(b.Block.ID()).Unix())
+}
+
+func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
 		log:                     b.manager.ctx.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
@@ -94,10 +108,10 @@ func (b *Block) Options(context.Context) ([2]linear.Block, error) {
 		state:                   b.manager.backend.state,
 	}
 	if err := b.Block.Visit(&options); err != nil {
-		return [2]linear.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
-	return [2]linear.Block{
+	return [2]chain.Block{
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil

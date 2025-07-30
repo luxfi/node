@@ -12,7 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/chain"
+	consensuschain "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -31,7 +32,7 @@ type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
 	WaitForEvent(ctx context.Context) (core.Message, error)
-	BuildBlock(ctx context.Context, blockContext *smblock.Context) (linear.Block, error)
+	BuildBlock(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error)
 }
 
 type builder struct {
@@ -79,14 +80,17 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 
 	for b.pendingTxs.Len() == 0 {
 		if err := b.pendingTxsCond.Wait(ctx); err != nil {
-			return 0, err
+			return core.Message{}, err
 		}
 	}
 
-	return core.PendingTxs, nil
+	return core.Message{
+		Type: message.NotifyOp,
+		Body: &core.PendingTxs{},
+	}, nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (linear.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error) {
 	preferredBlk, err := b.chain.GetBlock(b.preference)
 	if err != nil {
 		return nil, err
@@ -97,7 +101,7 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 		return nil, err
 	}
 
-	parentTimestamp := preferredBlk.Timestamp()
+	parentTimestamp := time.Unix(int64(preferredBlk.Time()), 0)
 	timestamp := time.Now().Truncate(time.Second)
 	if timestamp.Before(parentTimestamp) {
 		timestamp = parentTimestamp
@@ -140,9 +144,8 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 			// This tx was invalid, drop it and continue block building
 			continue
 		}
-		if err := txState.Commit(); err != nil {
-			return nil, err
-		}
+		// versiondb tracks changes - we update currentState to be this new state
+		currentState = txState
 
 		wipBlock.Txs = append(wipBlock.Txs, currentTx)
 	}

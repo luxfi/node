@@ -38,7 +38,7 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 			)
 		}
 	}
-	i.Router.Connected(vdrID, nodeVersion, subnetID)
+	// TODO: Router no longer has Connected method
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
@@ -52,5 +52,5 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 			zap.Error(err),
 		)
 	}
-	i.Router.Disconnected(vdrID)
+	// TODO: Router no longer has Disconnected method
 }

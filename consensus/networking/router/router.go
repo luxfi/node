@@ -79,9 +79,11 @@ type Chain struct {
 
 // HealthConfig configures router health checks
 type HealthConfig struct {
-	MaxOutstandingRequests int
-	MaxOutstandingDuration time.Duration
-	MaxDropRate            float64
+	MaxOutstandingRequests  int
+	MaxOutstandingDuration  time.Duration
+	MaxRunTimeRequests      time.Duration
+	MaxDropRate             float64
+	MaxDropRateHalflife     time.Duration
 }
 
 // InboundHandler handles inbound messages

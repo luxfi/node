@@ -1156,7 +1156,7 @@ func getCPUTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
 		return tracker.TargeterConfig{
-			VdrAlloc:           vdrAlloc,
+			VdrAlloc:           int64(vdrAlloc),
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
 		}, nil
@@ -1187,7 +1187,7 @@ func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
 		return tracker.TargeterConfig{
-			VdrAlloc:           vdrAlloc,
+			VdrAlloc:           int64(vdrAlloc),
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
 		}, nil

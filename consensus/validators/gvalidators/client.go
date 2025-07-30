@@ -6,8 +6,11 @@ package gvalidators
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
+	validatorstate "github.com/luxfi/node/proto/pb/validatorstate"
 )
 
 // Request types for gRPC methods
@@ -104,12 +107,12 @@ func (s *Server) GetMinimumHeight(ctx context.Context, req interface{}) (interfa
 }
 
 // GetCurrentHeight implements the gRPC server method.
-func (s *Server) GetCurrentHeight(ctx context.Context, req interface{}) (interface{}, error) {
+func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*validatorstate.GetCurrentHeightResponse, error) {
 	height, err := s.state.GetCurrentHeight(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &GetCurrentHeightResponse{Height: height}, nil
+	return &validatorstate.GetCurrentHeightResponse{Height: height}, nil
 }
 
 // GetSubnetID implements the gRPC server method.

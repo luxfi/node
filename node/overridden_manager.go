@@ -9,7 +9,6 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/set"
 )
 
 var _ validators.Manager = (*overriddenManager)(nil)
@@ -32,6 +31,37 @@ type overriddenManager struct {
 	subnetID ids.ID
 }
 
+func (o *overriddenManager) Add(_ ids.ID, validators validators.Set) error {
+	return o.manager.Add(o.subnetID, validators)
+}
+
+func (o *overriddenManager) Remove(_ ids.ID) error {
+	return o.manager.Remove(o.subnetID)
+}
+
+func (o *overriddenManager) Contains(_ ids.ID) bool {
+	return o.manager.Contains(o.subnetID)
+}
+
+func (o *overriddenManager) Get(_ ids.ID) (validators.Set, bool) {
+	return o.manager.Get(o.subnetID)
+}
+
+func (o *overriddenManager) GetByWeight(_ ids.ID, minWeight uint64) (validators.Set, bool) {
+	return o.manager.GetByWeight(o.subnetID, minWeight)
+}
+
+func (o *overriddenManager) RecalculateStakes(_ ids.ID) error {
+	return o.manager.RecalculateStakes(o.subnetID)
+}
+
+func (o *overriddenManager) Count() int {
+	if o.manager.Contains(o.subnetID) {
+		return 1
+	}
+	return 0
+}
+
 func (o *overriddenManager) AddStaker(_ ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
 	return o.manager.AddStaker(o.subnetID, nodeID, pk, txID, weight)
 }
@@ -44,43 +74,44 @@ func (o *overriddenManager) GetWeight(_ ids.ID, nodeID ids.NodeID) uint64 {
 	return o.manager.GetWeight(o.subnetID, nodeID)
 }
 
-func (o *overriddenManager) GetValidator(_ ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+func (o *overriddenManager) GetValidator(_ ids.ID, nodeID ids.NodeID) (*validators.Validator, error) {
 	return o.manager.GetValidator(o.subnetID, nodeID)
 }
 
-func (o *overriddenManager) SubsetWeight(_ ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
-	return o.manager.SubsetWeight(o.subnetID, nodeIDs)
-}
+// SubsetWeight is not part of the Manager interface anymore
+// func (o *overriddenManager) SubsetWeight(_ ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
+// 	return o.manager.SubsetWeight(o.subnetID, nodeIDs)
+// }
 
 func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return o.manager.RemoveWeight(o.subnetID, nodeID, weight)
 }
 
 func (o *overriddenManager) NumSubnets() int {
-	if o.manager.NumValidators(o.subnetID) == 0 {
-		return 0
+	// NumValidators is not in Manager interface anymore
+	// Check if the subnet has any validators by trying to get its Set
+	if vdrSet, ok := o.manager.Get(o.subnetID); ok && vdrSet.Len() > 0 {
+		return 1
 	}
-	return 1
+	return 0
 }
 
-func (o *overriddenManager) NumValidators(ids.ID) int {
-	return o.manager.NumValidators(o.subnetID)
-}
+// NumValidators is not part of the Manager interface anymore
+// func (o *overriddenManager) NumValidators(ids.ID) int {
+// 	return o.manager.NumValidators(o.subnetID)
+// }
 
 func (o *overriddenManager) TotalWeight(ids.ID) (uint64, error) {
 	return o.manager.TotalWeight(o.subnetID)
 }
 
-func (o *overriddenManager) Sample(_ ids.ID, size int) ([]ids.NodeID, error) {
-	return o.manager.Sample(o.subnetID, size)
-}
+// Sample is not part of the Manager interface anymore
+// func (o *overriddenManager) Sample(_ ids.ID, size int) ([]ids.NodeID, error) {
+// 	return o.manager.Sample(o.subnetID, size)
+// }
 
-func (o *overriddenManager) GetMap(ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
+func (o *overriddenManager) GetMap(ids.ID) map[ids.NodeID]*validators.Validator {
 	return o.manager.GetMap(o.subnetID)
-}
-
-func (o *overriddenManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
-	o.manager.RegisterCallbackListener(listener)
 }
 
 func (o *overriddenManager) RegisterSetCallbackListener(_ ids.ID, listener validators.SetCallbackListener) {
