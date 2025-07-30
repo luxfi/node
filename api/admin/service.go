@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/database"
+	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"

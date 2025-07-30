@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/database"
+	"github.com/luxfi/node/database"
 )
 
 const methodLabel = "method"
