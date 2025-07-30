@@ -4,7 +4,6 @@
 package chaintest
 
 import (
-	"cmp"
 	"context"
 	"time"
 
@@ -98,5 +97,11 @@ func (b *Block) Bytes() []byte {
 }
 
 func (b *Block) Compare(other *Block) int {
-	return cmp.Compare(b.HeightV, other.HeightV)
+	if b.HeightV < other.HeightV {
+		return -1
+	}
+	if b.HeightV > other.HeightV {
+		return 1
+	}
+	return 0
 }
