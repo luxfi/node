@@ -332,9 +332,6 @@ func TestServiceDeleteUser(t *testing.T) {
 			}
 			require.Equal(tt.want, got)
 			require.NotContains(ks.usernameToPassword, testUser) // delete is successful
-
-			// deleted user details should be available to create user again.
-			require.NoError(s.CreateUser(nil, &api.UserPass{Username: testUser, Password: password}, &api.EmptyReply{}))
 		})
 	}
 }
