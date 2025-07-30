@@ -61,7 +61,6 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.18.1
 	github.com/stretchr/testify v1.10.0
-	// github.com/supranational/blst v0.3.11
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.37.0
@@ -86,8 +85,6 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
-
-// require github.com/supranational/blst v0.3.11
 
 require (
 	github.com/StephenButtolph/canoto v0.17.1
@@ -191,4 +188,5 @@ replace github.com/luxfi/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
 
-replace github.com/supranational/blst => github.com/supranational/blst v0.3.11
+// Use blst v0.3.13 to fix ARM64 build issues
+replace github.com/supranational/blst => github.com/supranational/blst v0.3.13
