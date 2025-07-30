@@ -14,15 +14,16 @@ import (
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/db"
-	"github.com/luxfi/db/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
 // Magic value that comes from the size in bytes of a serialized key-value bootstrap checkpoint in a database +
 // the overhead of the key-value storage.
-const bootstrapProgressCheckpointSize = 55
+// Updated for external database package which has different storage overhead
+const bootstrapProgressCheckpointSize = 31
 
 func testJob(t *testing.T, jobID ids.ID, executed *bool, parentID ids.ID, parentExecuted *bool) *TestJob {
 	return &TestJob{
