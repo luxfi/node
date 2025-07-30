@@ -96,7 +96,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v0.1.1
 	github.com/luxfi/database v0.1.1
-	github.com/luxfi/geth v1.16.2
+	github.com/luxfi/geth v1.16.5
 	github.com/luxfi/ids v0.1.0
 	github.com/supranational/blst v0.3.15
 )
