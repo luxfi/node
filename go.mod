@@ -27,7 +27,6 @@ exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
 require (
-	github.com/DataDog/zstd v1.5.7
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
@@ -93,6 +92,7 @@ require (
 require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/holiman/uint256 v1.3.2
+	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/database v0.1.3
 	github.com/luxfi/database/encdb v0.0.0-00010101000000-000000000000
@@ -103,6 +103,7 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
@@ -140,7 +141,6 @@ require (
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -190,3 +190,5 @@ replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea
 replace github.com/luxfi/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
+
+replace github.com/supranational/blst => github.com/supranational/blst v0.3.11
