@@ -17,6 +17,8 @@ builds:
         goarch: arm64
     env:
       - CGO_ENABLED=0
+    tags:
+      - noblst
     ldflags:
       - -s -w
 
