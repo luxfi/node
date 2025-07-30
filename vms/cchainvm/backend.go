@@ -213,7 +213,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			GasLimit: 8000000,
 			Alloc: gethcore.GenesisAlloc{
 				// Default test account with some balance
-				common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): {
+				common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): gethcore.Account{
 					Balance: new(big.Int).Mul(big.NewInt(1000000), big.NewInt(params.Ether)),
 				},
 			},
