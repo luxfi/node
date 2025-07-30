@@ -14,7 +14,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	blst "github.com/supranational/blst/bindings/go"
+	bls "github.com/luxfi/node/utils/crypto/bls"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -98,10 +98,10 @@ func (mr *MockScheduledStakerMockRecorder) PendingPriority() *gomock.Call {
 }
 
 // PublicKey mocks base method.
-func (m *MockScheduledStaker) PublicKey() (*blst.P1Affine, bool, error) {
+func (m *MockScheduledStaker) PublicKey() (*bls.PublicKey, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PublicKey")
-	ret0, _ := ret[0].(*blst.P1Affine)
+	ret0, _ := ret[0].(*bls.PublicKey)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2

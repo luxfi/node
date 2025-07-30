@@ -1,76 +1,122 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//go:build !noblst
-// +build !noblst
-
 package bls
 
 import (
-	"crypto/rand"
 	"errors"
-	"runtime"
 
-	blst "github.com/supranational/blst/bindings/go"
+	luxbls "github.com/luxfi/crypto/bls"
 )
 
-const SecretKeyLen = blst.BLST_SCALAR_BYTES
+const SecretKeyLen = 32
 
 var (
-	errFailedSecretKeyDeserialize = errors.New("couldn't deserialize secret key")
-
-	// The ciphersuite is more commonly known as G2ProofOfPossession.
-	// There are two digests to ensure that message space for normal
-	// signatures and the proof of possession are distinct.
-	ciphersuiteSignature         = []byte("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_")
-	ciphersuiteProofOfPossession = []byte("BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_")
+	ErrFailedSecretKeyDecompress = errors.New("couldn't decompress secret key")
+	errInvalidSecretKey          = errors.New("invalid secret key")
 )
 
-type SecretKey = blst.SecretKey
+type SecretKey struct {
+	sk *luxbls.SecretKey
+}
 
 // NewSecretKey generates a new secret key from the local source of
 // cryptographically secure randomness.
 func NewSecretKey() (*SecretKey, error) {
-	var ikm [32]byte
-	_, err := rand.Read(ikm[:])
+	sk, err := luxbls.NewSecretKey()
 	if err != nil {
 		return nil, err
 	}
-	sk := blst.KeyGen(ikm[:])
-	ikm = [32]byte{} // zero out the ikm
-	return sk, nil
+	return &SecretKey{sk: sk}, nil
 }
 
 // SecretKeyToBytes returns the big-endian format of the secret key.
 func SecretKeyToBytes(sk *SecretKey) []byte {
-	return sk.Serialize()
+	if sk == nil || sk.sk == nil {
+		return make([]byte, SecretKeyLen)
+	}
+	return luxbls.SecretKeyToBytes(sk.sk)
 }
 
 // SecretKeyFromBytes parses the big-endian format of the secret key into a
 // secret key.
 func SecretKeyFromBytes(skBytes []byte) (*SecretKey, error) {
-	sk := new(SecretKey).Deserialize(skBytes)
-	if sk == nil {
-		return nil, errFailedSecretKeyDeserialize
+	sk, err := luxbls.SecretKeyFromBytes(skBytes)
+	if err != nil {
+		return nil, ErrFailedSecretKeyDecompress
 	}
-	runtime.SetFinalizer(sk, func(sk *SecretKey) {
-		sk.Zeroize()
-	})
-	return sk, nil
+	return &SecretKey{sk: sk}, nil
+}
+
+// PublicKey returns the public key that corresponds to this secret key.
+func (sk *SecretKey) PublicKey() *PublicKey {
+	if sk == nil || sk.sk == nil {
+		return nil
+	}
+	return &PublicKey{pk: sk.sk.PublicKey()}
+}
+
+// Sign [msg] to authorize this message from this [sk].
+func (sk *SecretKey) Sign(msg []byte) *Signature {
+	if sk == nil || sk.sk == nil {
+		return nil
+	}
+	return &Signature{sig: sk.sk.Sign(msg)}
+}
+
+// SignProofOfPossession signs [msg] to prove the ownership of this [sk].
+func (sk *SecretKey) SignProofOfPossession(msg []byte) *Signature {
+	if sk == nil || sk.sk == nil {
+		return nil
+	}
+	return &Signature{sig: sk.sk.SignProofOfPossession(msg)}
 }
 
 // PublicFromSecretKey returns the public key that corresponds to this secret
 // key.
 func PublicFromSecretKey(sk *SecretKey) *PublicKey {
-	return new(PublicKey).From(sk)
+	if sk == nil {
+		return nil
+	}
+	return sk.PublicKey()
 }
 
 // Sign [msg] to authorize this message from this [sk].
 func Sign(sk *SecretKey, msg []byte) *Signature {
-	return new(Signature).Sign(sk, msg, ciphersuiteSignature)
+	if sk == nil {
+		return nil
+	}
+	return sk.Sign(msg)
 }
 
-// Sign [msg] to prove the ownership of this [sk].
+// SignProofOfPossession signs [msg] to prove the ownership of this [sk].
 func SignProofOfPossession(sk *SecretKey, msg []byte) *Signature {
-	return new(Signature).Sign(sk, msg, ciphersuiteProofOfPossession)
+	if sk == nil {
+		return nil
+	}
+	return sk.SignProofOfPossession(msg)
+}
+
+// Methods for blst compatibility
+
+func (sk *SecretKey) Serialize() []byte {
+	return SecretKeyToBytes(sk)
+}
+
+func (sk *SecretKey) Deserialize(data []byte) *SecretKey {
+	newSk, err := SecretKeyFromBytes(data)
+	if err != nil {
+		return nil
+	}
+	return newSk
+}
+
+func (sk *SecretKey) Zeroize() {
+	// The luxfi/crypto implementation should handle secure cleanup
+	// Nothing to do here as the underlying implementation handles it
+}
+
+func (sk *SecretKey) KeyGen(ikm []byte, salt []byte, info []byte) {
+	// For compatibility - the luxfi/crypto implementation handles key generation differently
+	// This is a no-op since key generation is done via NewSecretKey or SecretKeyFromBytes
 }
