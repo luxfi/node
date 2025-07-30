@@ -171,7 +171,10 @@ func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []id
 
 		cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
 		require.NoError(t, err)
-		nodeID := ids.NodeIDFromCert(cert)
+		nodeID := ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       cert.Raw,
+			PublicKey: cert.PublicKey,
+		})
 
 		blsKey, err := bls.NewSecretKey()
 		require.NoError(t, err)
