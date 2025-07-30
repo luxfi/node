@@ -188,3 +188,5 @@ replace github.com/luxfi/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
 
+// Use a specific commit of blst that works with our setup
+replace github.com/supranational/blst => github.com/supranational/blst v0.3.14
