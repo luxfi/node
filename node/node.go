@@ -36,8 +36,9 @@ import (
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
-	apimetrics "github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
@@ -196,7 +197,7 @@ func New(
 	// and the engine (initChains) but after the metrics (initMetricsAPI)
 	// message.Creator currently record metrics under network namespace
 
-	networkRegisterer, err := apimetrics.MakeAndRegister(
+	networkRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		networkNamespace,
 	)
@@ -361,8 +362,8 @@ type Node struct {
 	shuttingDownExitCode utils.Atomic[int]
 
 	// Metrics Registerer
-	MetricsGatherer        apimetrics.MultiGatherer
-	MeterDBMetricsGatherer apimetrics.MultiGatherer
+	MetricsGatherer        metrics.MultiGatherer
+	MeterDBMetricsGatherer metrics.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -900,8 +901,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = apimetrics.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = apimetrics.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = metrics.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -994,7 +995,7 @@ func (n *Node) initAPIServer() error {
 	}
 	n.apiURI = fmt.Sprintf("%s://%s", protocol, listener.Addr())
 
-	apiRegisterer, err := apimetrics.MakeAndRegister(
+	apiRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		apiNamespace,
 	)
@@ -1226,7 +1227,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := apimetrics.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1270,7 +1271,7 @@ func (n *Node) initMetricsAPI() error {
 		return nil
 	}
 
-	processReg, err := apimetrics.MakeAndRegister(
+	processReg, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		processNamespace,
 	)
@@ -1421,7 +1422,7 @@ func (n *Node) initInfoAPI() error {
 // initHealthAPI initializes the Health API service
 // Assumes n.Log, n.Net, n.APIServer, n.HTTPLog already initialized
 func (n *Node) initHealthAPI() error {
-	healthReg, err := apimetrics.MakeAndRegister(
+	healthReg, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		healthNamespace,
 	)
@@ -1608,7 +1609,7 @@ func (n *Node) initAPIAliases(genesisBytes []byte) error {
 
 // Initialize [n.resourceManager].
 func (n *Node) initResourceManager() error {
-	systemResourcesRegisterer, err := apimetrics.MakeAndRegister(
+	systemResourcesRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		systemResourcesNamespace,
 	)
@@ -1629,7 +1630,7 @@ func (n *Node) initResourceManager() error {
 	n.resourceManager = resourceManager
 	n.resourceManager.TrackProcess(os.Getpid())
 
-	resourceTrackerRegisterer, err := apimetrics.MakeAndRegister(
+	resourceTrackerRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		resourceTrackerNamespace,
 	)
