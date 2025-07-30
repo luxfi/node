@@ -172,7 +172,10 @@ func initTestProposerVM(
 	}
 
 	ctx := consensustest.Context(t, ids.ID{1})
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	db := prefixdb.New([]byte{0}, memdb.New())
@@ -834,7 +837,10 @@ func TestExpiredBuildBlock(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	coreVM.InitializeF = func(
@@ -1080,7 +1086,10 @@ func TestInnerVMRollback(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	coreVM.InitializeF = func(
@@ -1620,7 +1629,10 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	require.NoError(proVM.Initialize(
@@ -1788,7 +1800,10 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = valState
 
 	require.NoError(proVM.Initialize(
@@ -1905,7 +1920,10 @@ func TestVMInnerBlkCache(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -2275,7 +2293,10 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 	ctx.ValidatorState = &validatorstest.State{
 		T: t,
 		GetMinimumHeightF: func(context.Context) (uint64, error) {

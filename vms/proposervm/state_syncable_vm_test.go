@@ -66,7 +66,10 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	)
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
 
 	require.NoError(vm.Initialize(
 		context.Background(),
