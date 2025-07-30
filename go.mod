@@ -91,9 +91,9 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/crypto v0.1.3
+	github.com/luxfi/crypto v0.1.5
 	github.com/luxfi/database v0.1.3
-	github.com/luxfi/database/encdb v0.0.0-00010101000000-000000000000
+	github.com/luxfi/node/database/encdb v0.0.0-00010101000000-000000000000
 	github.com/luxfi/geth v1.16.6
 	github.com/luxfi/ids v0.1.1
 	github.com/luxfi/ids/galiasreader v0.0.0-00010101000000-000000000000
@@ -185,6 +185,6 @@ require (
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 
-replace github.com/luxfi/database/encdb => ./database/encdb
+replace github.com/luxfi/node/database/encdb => ./database/encdb
 
 replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader
