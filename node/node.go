@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/metrics"
+	apimetrics "github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
@@ -57,16 +57,15 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/log"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -91,18 +90,18 @@ const (
 
 	ipResolutionTimeout = 30 * time.Second
 
-	apiNamespace             = constants.PlatformName + metric.NamespaceSeparator + "api"
-	benchlistNamespace       = constants.PlatformName + metric.NamespaceSeparator + "benchlist"
-	dbNamespace              = constants.PlatformName + metric.NamespaceSeparator + "db"
-	healthNamespace          = constants.PlatformName + metric.NamespaceSeparator + "health"
-	meterDBNamespace         = constants.PlatformName + metric.NamespaceSeparator + "meterdb"
-	networkNamespace         = constants.PlatformName + metric.NamespaceSeparator + "network"
-	processNamespace         = constants.PlatformName + metric.NamespaceSeparator + "process"
-	requestsNamespace        = constants.PlatformName + metric.NamespaceSeparator + "requests"
-	resourceTrackerNamespace = constants.PlatformName + metric.NamespaceSeparator + "resource_tracker"
-	responsesNamespace       = constants.PlatformName + metric.NamespaceSeparator + "responses"
-	rpcchainvmNamespace      = constants.PlatformName + metric.NamespaceSeparator + "rpcchainvm"
-	systemResourcesNamespace = constants.PlatformName + metric.NamespaceSeparator + "system_resources"
+	apiNamespace             = constants.PlatformName + "_" + "api"
+	benchlistNamespace       = constants.PlatformName + "_" + "benchlist"
+	dbNamespace              = constants.PlatformName + "_" + "db"
+	healthNamespace          = constants.PlatformName + "_" + "health"
+	meterDBNamespace         = constants.PlatformName + "_" + "meterdb"
+	networkNamespace         = constants.PlatformName + "_" + "network"
+	processNamespace         = constants.PlatformName + "_" + "process"
+	requestsNamespace        = constants.PlatformName + "_" + "requests"
+	resourceTrackerNamespace = constants.PlatformName + "_" + "resource_tracker"
+	responsesNamespace       = constants.PlatformName + "_" + "responses"
+	rpcchainvmNamespace      = constants.PlatformName + "_" + "rpcchainvm"
+	systemResourcesNamespace = constants.PlatformName + "_" + "system_resources"
 )
 
 var (
@@ -197,7 +196,7 @@ func New(
 	// and the engine (initChains) but after the metrics (initMetricsAPI)
 	// message.Creator currently record metrics under network namespace
 
-	networkRegisterer, err := metrics.MakeAndRegister(
+	networkRegisterer, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		networkNamespace,
 	)
@@ -362,8 +361,8 @@ type Node struct {
 	shuttingDownExitCode utils.Atomic[int]
 
 	// Metrics Registerer
-	MetricsGatherer        metrics.MultiGatherer
-	MeterDBMetricsGatherer metrics.MultiGatherer
+	MetricsGatherer        apimetrics.MultiGatherer
+	MeterDBMetricsGatherer apimetrics.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -901,8 +900,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = metrics.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = apimetrics.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = apimetrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -995,7 +994,7 @@ func (n *Node) initAPIServer() error {
 	}
 	n.apiURI = fmt.Sprintf("%s://%s", protocol, listener.Addr())
 
-	apiRegisterer, err := metrics.MakeAndRegister(
+	apiRegisterer, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		apiNamespace,
 	)
@@ -1009,7 +1008,7 @@ func (n *Node) initAPIServer() error {
 		n.Config.HTTPAllowedOrigins,
 		n.Config.ShutdownTimeout,
 		n.ID,
-		n.Config.TraceConfig.TracingExporter != trace.Disabled,
+		n.Config.TraceConfig.Type != trace.Disabled,
 		n.tracer,
 		apiRegisterer,
 		n.Config.HTTPConfig.HTTPConfig,
@@ -1150,7 +1149,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Upgrades:                                n.Config.UpgradeConfig,
 			ResourceTracker:                         n.resourceTracker,
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
-			TracingEnabled:                          n.Config.TraceConfig.TracingExporter != trace.Disabled,
+			TracingEnabled:                          n.Config.TraceConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            n.Config.ChainDataDir,
 			Subnets:                                 subnets,
@@ -1227,7 +1226,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := apimetrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1271,7 +1270,7 @@ func (n *Node) initMetricsAPI() error {
 		return nil
 	}
 
-	processReg, err := metrics.MakeAndRegister(
+	processReg, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		processNamespace,
 	)
@@ -1422,7 +1421,7 @@ func (n *Node) initInfoAPI() error {
 // initHealthAPI initializes the Health API service
 // Assumes n.Log, n.Net, n.APIServer, n.HTTPLog already initialized
 func (n *Node) initHealthAPI() error {
-	healthReg, err := metrics.MakeAndRegister(
+	healthReg, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		healthNamespace,
 	)
@@ -1609,7 +1608,7 @@ func (n *Node) initAPIAliases(genesisBytes []byte) error {
 
 // Initialize [n.resourceManager].
 func (n *Node) initResourceManager() error {
-	systemResourcesRegisterer, err := metrics.MakeAndRegister(
+	systemResourcesRegisterer, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		systemResourcesNamespace,
 	)
@@ -1630,7 +1629,7 @@ func (n *Node) initResourceManager() error {
 	n.resourceManager = resourceManager
 	n.resourceManager.TrackProcess(os.Getpid())
 
-	resourceTrackerRegisterer, err := metrics.MakeAndRegister(
+	resourceTrackerRegisterer, err := apimetrics.MakeAndRegister(
 		n.MetricsGatherer,
 		resourceTrackerNamespace,
 	)
@@ -1751,7 +1750,7 @@ func (n *Node) shutdown() {
 		}
 	}
 
-	if n.Config.TraceConfig.TracingExporter != trace.Disabled {
+	if n.Config.TraceConfig.Type != trace.Disabled {
 		n.Log.Info("shutting down tracing")
 	}
 
