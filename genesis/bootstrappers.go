@@ -26,8 +26,21 @@ var (
 )
 
 func init() {
-	if err := json.Unmarshal(bootstrappersPerNetworkJSON, &bootstrappersPerNetwork); err != nil {
+	// First unmarshal into raw format, then convert to Bootstrapper
+	var rawBootstrappers map[string][]json.RawMessage
+	if err := json.Unmarshal(bootstrappersPerNetworkJSON, &rawBootstrappers); err != nil {
 		panic(fmt.Sprintf("failed to decode bootstrappers.json %v", err))
+	}
+
+	bootstrappersPerNetwork = make(map[string][]Bootstrapper)
+	for network, rawBootstrapperList := range rawBootstrappers {
+		bootstrappers := make([]Bootstrapper, len(rawBootstrapperList))
+		for i, rawBootstrapper := range rawBootstrapperList {
+			if err := json.Unmarshal(rawBootstrapper, &bootstrappers[i]); err != nil {
+				panic(fmt.Sprintf("failed to decode bootstrapper for network %s: %v", network, err))
+			}
+		}
+		bootstrappersPerNetwork[network] = bootstrappers
 	}
 }
 

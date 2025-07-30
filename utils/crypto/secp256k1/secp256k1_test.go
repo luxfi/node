@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/cb58"
+	"github.com/luxfi/crypto/cb58"
 	"github.com/luxfi/node/utils/hashing"
 )
 

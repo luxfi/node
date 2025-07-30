@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -26,7 +26,7 @@ type Config struct {
 	RequestTimeout time.Duration
 
 	// Log is the logger
-	Log logging.Logger
+	Log log.Logger
 }
 
 // Bootstrapper handles the bootstrapping process for linear chains

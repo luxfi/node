@@ -164,6 +164,6 @@ func TestSubnetsBootstrapping(t *testing.T) {
 	require.Contains(bootstrapping, subnetID)
 
 	// Finish bootstrapping
-	subnet.Bootstrapped(chainID)
+	subnet.Bootstrapped()
 	require.Empty(subnets.Bootstrapping())
 }

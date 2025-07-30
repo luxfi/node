@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/consensus/networking/timeout"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -22,7 +22,7 @@ type Router interface {
 	// Initialize initializes the router
 	Initialize(
 		nodeID ids.NodeID,
-		log logging.Logger,
+		log log.Logger,
 		msgCreator message.Creator,
 		timeouts *timeout.Manager,
 		gossipFrequency time.Duration,
