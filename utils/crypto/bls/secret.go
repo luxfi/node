@@ -41,6 +41,11 @@ func SecretKeyToBytes(sk *SecretKey) []byte {
 // SecretKeyFromBytes parses the big-endian format of the secret key into a
 // secret key.
 func SecretKeyFromBytes(skBytes []byte) (*SecretKey, error) {
+	// Check length before attempting to deserialize
+	if len(skBytes) != SecretKeyLen {
+		return nil, ErrFailedSecretKeyDecompress
+	}
+	
 	sk, err := luxbls.SecretKeyFromBytes(skBytes)
 	if err != nil {
 		return nil, ErrFailedSecretKeyDecompress
