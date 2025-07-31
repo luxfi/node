@@ -25,11 +25,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -79,8 +79,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	xvm "github.com/luxfi/node/vms/xvm"
 
-	databasefactory "github.com/luxfi/database/factory"
-	geth "github.com/luxfi/evm/plugin/evm"
+	// geth "github.com/luxfi/evm/plugin/evm" // TODO: Fix logger compatibility
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
@@ -142,13 +141,13 @@ func New(
 	}
 
 	logger.Info("initializing node",
-		zap.Stringer("version", version.CurrentApp),
-		zap.String("commit", version.GitCommit),
-		zap.Stringer("nodeID", n.ID),
-		zap.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
-		zap.Reflect("nodePOP", pop),
-		zap.Reflect("providedFlags", n.Config.ProvidedFlags),
-		zap.Reflect("config", n.Config),
+		"version", version.CurrentApp,
+		"commit", version.GitCommit,
+		"nodeID", n.ID,
+		"stakingKeyType", tlsCert.PublicKeyAlgorithm,
+		"nodePOP", pop,
+		"providedFlags", n.Config.ProvidedFlags,
+		"config", n.Config,
 	)
 
 	n.VMFactoryLog = logFactory.New("vm-factory")
@@ -482,7 +481,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	if !ips.IsPublic(publicAddr) {
 		n.Log.Warn("P2P IP is private, you will not be publicly discoverable",
-			zap.Stringer("ip", publicAddr),
+			"ip", publicAddr,
 		)
 	}
 
@@ -497,7 +496,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	go n.ipUpdater.Dispatch(n.Log)
 
 	n.Log.Info("initializing networking",
-		zap.Stringer("ip", atomicIP.Get()),
+		"ip", atomicIP.Get(),
 	)
 
 	tlsKey, ok := n.Config.StakingTLSCert.PrivateKey.(crypto.Signer)
@@ -511,7 +510,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 			return err
 		}
 		n.Log.Warn("TLS key logging is enabled",
-			zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
+			"filename", n.Config.NetworkConfig.TLSKeyLogFile,
 		)
 	}
 
@@ -530,7 +529,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	}
 	if unknownLPs.Len() > 0 {
 		n.Log.Warn("gossiping unknown LPs",
-			zap.Reflect("lps", unknownLPs),
+			"lps", unknownLPs,
 		)
 	}
 
@@ -644,7 +643,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 // Write process context to the configured path. Supports the use of
 // dynamically chosen network ports with local network orchestration.
 func (n *Node) writeProcessContext() error {
-	n.Log.Info("writing process context", zap.String("path", n.Config.ProcessContextFilePath))
+	n.Log.Info("writing process context", "path", n.Config.ProcessContextFilePath)
 
 	// Write the process context to disk
 	processContext := &node.ProcessContext{
@@ -672,15 +671,15 @@ func (n *Node) Dispatch() error {
 	// Start the HTTP API server
 	go n.Log.RecoverAndPanic(func() {
 		n.Log.Info("API server listening",
-			zap.String("uri", n.apiURI),
+			"uri", n.apiURI,
 		)
 		err := n.APIServer.Dispatch()
 		// When [n].Shutdown() is called, [n.APIServer].Close() is called.
 		// This causes [n.APIServer].Dispatch() to return an error.
 		// If that happened, don't log/return an error here.
 		if !n.shuttingDown.Get() {
-			n.Log.Fatal("API server dispatch failed",
-				zap.Error(err),
+			n.Log.Crit("API server dispatch failed",
+				"error", err,
 			)
 		}
 		// If the API server isn't running, shut down the node.
@@ -701,8 +700,8 @@ func (n *Node) Dispatch() error {
 				return
 			}
 			n.Log.Warn("failed to connect to bootstrap nodes",
-				zap.Stringer("bootstrappers", n.bootstrappers),
-				zap.Duration("duration", n.Config.BootstrapBeaconConnectionTimeout),
+				"bootstrappers", n.bootstrappers,
+				"duration", n.Config.BootstrapBeaconConnectionTimeout,
 			)
 		case <-n.onSufficientlyConnected:
 		}
@@ -730,8 +729,8 @@ func (n *Node) Dispatch() error {
 		err := n.tlsKeyLogWriterCloser.Close()
 		if err != nil {
 			n.Log.Error("closing TLS key log file failed",
-				zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
-				zap.Error(err),
+				"filename", n.Config.NetworkConfig.TLSKeyLogFile,
+				"error", err,
 			)
 		}
 	}
@@ -740,8 +739,8 @@ func (n *Node) Dispatch() error {
 	// that the node is no longer running.
 	if err := os.Remove(n.Config.ProcessContextFilePath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		n.Log.Error("removal of process context file failed",
-			zap.String("path", n.Config.ProcessContextFilePath),
-			zap.Error(err),
+			"path", n.Config.ProcessContextFilePath,
+			"error", err,
 		)
 	}
 
@@ -770,16 +769,25 @@ func (n *Node) initDatabase() error {
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 
 	var err error
-	n.DB, err = databasefactory.New(
-		n.Config.DatabaseConfig.Name,
-		dbFullPath,
-		n.Config.DatabaseConfig.ReadOnly,
-		n.Config.DatabaseConfig.Config,
-		n.MetricsGatherer,
-		n.Log,
-		dbNamespace,
-		"all",
-	)
+	// Create database based on configured type
+	switch n.Config.DatabaseConfig.Name {
+	case leveldb.Name:
+		// Default cache sizes for leveldb
+		blockCacheSize := 12 * 1024 * 1024 // 12 MB
+		writeCacheSize := 4 * 1024 * 1024  // 4 MB
+		handleCap := 1024
+		n.DB, err = leveldb.New(dbFullPath, blockCacheSize, writeCacheSize, handleCap)
+	case pebbledb.Name:
+		// Default cache sizes for pebbledb
+		cache := 512 * 1024 * 1024 // 512 MB
+		handles := 256
+		readonly := n.Config.DatabaseConfig.ReadOnly
+		n.DB, err = pebbledb.New(dbFullPath, cache, handles, "pebbledb", readonly)
+	case memdb.Name:
+		n.DB = memdb.New()
+	default:
+		err = fmt.Errorf("unsupported database type: %s", n.Config.DatabaseConfig.Name)
+	}
 	if err != nil {
 		return fmt.Errorf("couldn't create database: %w", err)
 	}
@@ -809,7 +817,7 @@ func (n *Node) initDatabase() error {
 	}
 
 	n.Log.Info("initializing database",
-		zap.Stringer("genesisHash", genesisHash),
+		"genesisHash", genesisHash,
 	)
 
 	ok, err := n.DB.Has(ungracefulShutdown)
@@ -936,18 +944,18 @@ func (n *Node) initAPIServer() error {
 	if !hostIsPublic {
 		ip, err := ips.Lookup(n.Config.HTTPHost)
 		if err != nil {
-			n.Log.Fatal("failed to lookup HTTP host",
-				zap.String("host", n.Config.HTTPHost),
-				zap.Error(err),
+			n.Log.Crit("failed to lookup HTTP host",
+				"host", n.Config.HTTPHost,
+				"error", err,
 			)
 			return err
 		}
 		hostIsPublic = ips.IsPublic(ip)
 
 		n.Log.Debug("finished HTTP host lookup",
-			zap.String("host", n.Config.HTTPHost),
-			zap.Stringer("ip", ip),
-			zap.Bool("isPublic", hostIsPublic),
+			"host", n.Config.HTTPHost,
+			"ip", ip,
+			"isPublic", hostIsPublic,
 		)
 	}
 
@@ -967,7 +975,7 @@ func (n *Node) initAPIServer() error {
 	if hostIsPublic {
 		n.Log.Warn("HTTP server is binding to a potentially public host. "+
 			"You may be vulnerable to a DoS attack if your HTTP port is publicly accessible",
-			zap.String("host", n.Config.HTTPHost),
+			"host", n.Config.HTTPHost,
 		)
 
 		n.portMapper.Map(
@@ -1218,7 +1226,7 @@ func (n *Node) initVMs() error {
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
+		// n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}), // TODO: Fix logger compatibility
 	)
 	if err != nil {
 		return err
@@ -1249,8 +1257,8 @@ func (n *Node) initVMs() error {
 	_, failedVMs, err := n.VMRegistry.Reload(context.TODO())
 	for failedVM, err := range failedVMs {
 		n.Log.Error("failed to register VM",
-			zap.Stringer("vmID", failedVM),
-			zap.Error(err),
+			"vmID", failedVM,
+			"error", err,
 		)
 	}
 	return err
@@ -1368,8 +1376,8 @@ func (n *Node) initProfiler() {
 	go n.Log.RecoverAndPanic(func() {
 		err := n.profiler.Dispatch()
 		if err != nil {
-			n.Log.Fatal("continuous profiler failed",
-				zap.Error(err),
+			n.Log.Crit("continuous profiler failed",
+				"error", err,
 			)
 		}
 		n.Shutdown(1)
@@ -1474,8 +1482,8 @@ func (n *Node) initHealthAPI() error {
 
 		var err error
 		if availableDiskBytes < n.Config.RequiredAvailableDiskSpace {
-			n.Log.Fatal("low on disk space. Shutting down...",
-				zap.Uint64("remainingDiskBytes", availableDiskBytes),
+			n.Log.Crit("low on disk space. Shutting down...",
+				"remainingDiskBytes", availableDiskBytes,
 			)
 			go n.Shutdown(1)
 			err = fmt.Errorf("remaining available disk space (%d) is below minimum required available space (%d)", availableDiskBytes, n.Config.RequiredAvailableDiskSpace)
@@ -1685,7 +1693,7 @@ func (n *Node) Shutdown(exitCode int) {
 
 func (n *Node) shutdown() {
 	n.Log.Info("shutting down node",
-		zap.Int("exitCode", n.ExitCode()),
+		"exitCode", n.ExitCode(),
 	)
 
 	if n.health != nil {
@@ -1699,7 +1707,7 @@ func (n *Node) shutdown() {
 		err := n.health.RegisterHealthCheck("shuttingDown", shuttingDownCheck, health.ApplicationTag)
 		if err != nil {
 			n.Log.Debug("couldn't register shuttingDown health check",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 
@@ -1721,14 +1729,14 @@ func (n *Node) shutdown() {
 	}
 	if err := n.APIServer.Shutdown(); err != nil {
 		n.Log.Debug("error during API shutdown",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 	n.portMapper.UnmapAllPorts()
 	n.ipUpdater.Stop()
 	if err := n.indexer.Close(); err != nil {
 		n.Log.Debug("error closing tx indexer",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
@@ -1740,13 +1748,13 @@ func (n *Node) shutdown() {
 		if err := n.DB.Delete(ungracefulShutdown); err != nil {
 			n.Log.Error(
 				"failed to delete ungraceful shutdown key",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 
 		if err := n.DB.Close(); err != nil {
 			n.Log.Warn("error during DB shutdown",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 	}
@@ -1757,7 +1765,7 @@ func (n *Node) shutdown() {
 
 	if err := n.tracer.Close(); err != nil {
 		n.Log.Warn("error during tracer shutdown",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
@@ -1781,8 +1789,8 @@ func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Conte
 	}
 
 	d.log.Info("adding dev mode routes for C-Chain",
-		zap.String("chainName", chainName),
-		zap.Stringer("chainID", ctx.ChainID),
+		"chainName", chainName,
+		"chainID", ctx.ChainID,
 	)
 
 	// Create proxy handlers that redirect to C-Chain endpoints
@@ -1823,28 +1831,28 @@ func (d *devModeRegistrant) RegisterChain(chainName string, ctx *consensus.Conte
 	// Add the routes
 	if err := d.apiServer.AddRoute(rpcHandler, "", "rpc"); err != nil {
 		d.log.Error("failed to add /rpc route",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
 	if err := d.apiServer.AddRoute(wsHandler, "", "ws"); err != nil {
 		d.log.Error("failed to add /ws route",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
 	// Add root handler for dev mode
 	if err := d.apiServer.AddRoute(rootHandler, "", ""); err != nil {
 		d.log.Error("failed to add root handler",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
 	d.log.Info("successfully added dev mode routes",
-		zap.String("rpc", "/rpc -> /ext/bc/C/rpc"),
-		zap.String("ws", "/ws -> /ext/bc/C/ws"),
-		zap.String("root", "/ -> Ethereum-compatible info"),
-		zap.String("chainId", "1337"),
-		zap.String("port", "8545"),
+		"rpc", "/rpc -> /ext/bc/C/rpc",
+		"ws", "/ws -> /ext/bc/C/ws",
+		"root", "/ -> Ethereum-compatible info",
+		"chainId", "1337",
+		"port", "8545",
 	)
 }

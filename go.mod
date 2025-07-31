@@ -26,18 +26,18 @@ require (
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
+	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/consensus v0.1.0
 	github.com/luxfi/crypto v1.0.2
 	github.com/luxfi/database v1.1.3
-	github.com/luxfi/evm v0.8.1
+	github.com/luxfi/evm v0.8.2
 	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v0.1.0
 	github.com/luxfi/ledger-lux-go v0.0.2
-	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/trace v0.1.0
-	github.com/luxfi/ringtail v0.1.0
-	github.com/luxfi/consensus v0.1.0
-	github.com/luxfi/log v0.1.0
+	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.0.0
+	github.com/luxfi/ringtail v0.1.0
+	github.com/luxfi/trace v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
@@ -146,7 +146,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -213,5 +213,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-
 // All modules now use tagged versions from GitHub
+
+replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
+

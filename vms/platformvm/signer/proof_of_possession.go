@@ -8,7 +8,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 )
 
@@ -29,10 +29,13 @@ type ProofOfPossession struct {
 	publicKey *bls.PublicKey
 }
 
-func NewProofOfPossession(sk *bls.SecretKey) *ProofOfPossession {
-	pk := bls.PublicFromSecretKey(sk)
+func NewProofOfPossession(signer bls.Signer) (*ProofOfPossession, error) {
+	pk := signer.PublicKey()
 	pkBytes := bls.PublicKeyToCompressedBytes(pk)
-	sig := bls.SignProofOfPossession(sk, pkBytes)
+	sig, err := signer.SignProofOfPossession(pkBytes)
+	if err != nil {
+		return nil, err
+	}
 	sigBytes := bls.SignatureToBytes(sig)
 
 	pop := &ProofOfPossession{
@@ -40,7 +43,7 @@ func NewProofOfPossession(sk *bls.SecretKey) *ProofOfPossession {
 	}
 	copy(pop.PublicKey[:], pkBytes)
 	copy(pop.ProofOfPossession[:], sigBytes)
-	return pop
+	return pop, nil
 }
 
 func (p *ProofOfPossession) Verify() error {
