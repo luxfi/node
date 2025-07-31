@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/validators"
 )
 
 // Handler handles incoming consensus messages

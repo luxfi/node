@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/formatting"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"

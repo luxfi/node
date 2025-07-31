@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"

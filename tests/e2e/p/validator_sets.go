@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/constants"

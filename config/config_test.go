@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/subnets"
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -22,7 +22,7 @@ type testOperable struct {
 	Outputs []verify.State `serialize:"true"`
 }
 
-func (*testOperable) InitCtx(*consensus.Context) {}
+func (*testOperable) InitCtx(*quasar.Context) {}
 
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs

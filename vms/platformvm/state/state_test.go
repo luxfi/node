@@ -24,9 +24,9 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -64,7 +64,7 @@ func newTestState(t testing.TB, db db.Database) *state {
 		validators.NewManager(),
 		upgradetest.GetConfig(upgradetest.Latest),
 		&config.Default,
-		&consensus.Context{
+		&quasar.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
 			Log:       log.NewNoOpLogger(),

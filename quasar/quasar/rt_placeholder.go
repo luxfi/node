@@ -3,7 +3,7 @@
 
 package quasar
 
-import "github.com/luxfi/node/consensus/quasar/corona"
+import "github.com/luxfi/node/quasar/quasar/corona"
 
 // Placeholder types for corona package until it's available
 

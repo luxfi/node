@@ -14,13 +14,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chainmock"
-	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators/validatorsmock"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 
@@ -650,7 +650,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	vm := &VM{
 		ChainVM: innerVM,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			ValidatorState: vdrState,
 			Log:            log.NewNoOpLogger(),
 		},

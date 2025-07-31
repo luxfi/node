@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -41,7 +41,7 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx *consensus.Context) {
+func (b *StandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}

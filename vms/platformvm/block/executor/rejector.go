@@ -6,7 +6,7 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/vms/platformvm/block"
 )

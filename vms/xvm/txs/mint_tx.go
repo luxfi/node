@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -41,7 +41,7 @@ type MintTx struct {
 	MPCSignatures [][]byte `serialize:"true" json:"mpcSignatures"`
 }
 
-func (t *MintTx) InitCtx(ctx *consensus.Context) {
+func (t *MintTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
@@ -52,7 +52,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log: log.NewNoOpLogger(),
 			},
 			blkIDToState: map[ids.ID]*blockState{
@@ -90,7 +90,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
@@ -168,7 +168,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
@@ -255,7 +255,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
@@ -364,7 +364,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},

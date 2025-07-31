@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -28,12 +28,12 @@ type Builder struct {
 
 func New(
 	codec codec.Manager,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 	state state.State,
 ) *Builder {
-	// TODO: Fix SharedMemory access - not available in consensus.Context
+	// TODO: Fix SharedMemory access - not available in quasar.Context
 	utxos := newUTXOs(ctx, state, nil, codec)
 	return &Builder{
 		utxos: utxos,

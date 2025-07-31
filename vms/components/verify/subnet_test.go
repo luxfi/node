@@ -12,8 +12,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/validators/validatorsmock"
 )
 
 var errMissing = errors.New("missing")
@@ -26,15 +26,15 @@ func TestSameSubnet(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		ctxF    func(*gomock.Controller) *consensus.Context
+		ctxF    func(*gomock.Controller) *quasar.Context
 		chainID ids.ID
 		result  error
 	}{
 		{
 			name: "same chain",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(ctrl *gomock.Controller) *quasar.Context {
 				state := validatorsmock.NewState(ctrl)
-				return &consensus.Context{
+				return &quasar.Context{
 					SubnetID:       subnetID0,
 					ChainID:        chainID0,
 					ValidatorState: state,
@@ -45,10 +45,10 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "unknown chain",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(ctrl *gomock.Controller) *quasar.Context {
 				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, errMissing)
-				return &consensus.Context{
+				return &quasar.Context{
 					SubnetID:       subnetID0,
 					ChainID:        chainID0,
 					ValidatorState: state,
@@ -59,10 +59,10 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "wrong subnet",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(ctrl *gomock.Controller) *quasar.Context {
 				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, nil)
-				return &consensus.Context{
+				return &quasar.Context{
 					SubnetID:       subnetID0,
 					ChainID:        chainID0,
 					ValidatorState: state,
@@ -73,10 +73,10 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "same subnet",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(ctrl *gomock.Controller) *quasar.Context {
 				state := validatorsmock.NewState(ctrl)
 				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID0, nil)
-				return &consensus.Context{
+				return &quasar.Context{
 					SubnetID:       subnetID0,
 					ChainID:        chainID0,
 					ValidatorState: state,

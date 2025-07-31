@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/set"
 
-	"github.com/luxfi/node/consensus/focus"
-	"github.com/luxfi/node/consensus/photon"
-	"github.com/luxfi/node/consensus/wave"
+	"github.com/luxfi/node/quasar/focus"
+	"github.com/luxfi/node/quasar/photon"
+	"github.com/luxfi/node/quasar/wave"
 )
 
 // Engine implements the beam linearizer for linear chain consensus

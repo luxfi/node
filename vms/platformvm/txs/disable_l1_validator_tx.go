@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -20,7 +20,7 @@ type DisableL1ValidatorTx struct {
 	DisableAuth verify.Verifiable `serialize:"true" json:"disableAuthorization"`
 }
 
-func (tx *DisableL1ValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *DisableL1ValidatorTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

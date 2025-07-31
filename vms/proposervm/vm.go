@@ -19,10 +19,10 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	chaincon "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -85,7 +85,7 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	ctx *consensus.Context
+	ctx *quasar.Context
 	db  *versiondb.Database
 
 	// Block ID --> Block
@@ -98,7 +98,7 @@ type VM struct {
 	// processing a GetAncestors message from a bootstrapping node.
 	innerBlkCache  cache.Cacher[ids.ID, chaincon.Block]
 	preferred      ids.ID
-	consensusState consensus.State
+	consensusState quasar.State
 
 	// lastAcceptedTime is set to the last accepted PostForkBlock's timestamp
 	// if the last accepted block has been a PostForkOption block since having
@@ -141,7 +141,7 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	database db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -249,14 +249,14 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	return vm.ChainVM.Shutdown(ctx)
 }
 
-func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
+func (vm *VM) SetState(ctx context.Context, newState quasar.State) error {
 	if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 		return err
 	}
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != consensus.StateSyncing {
+	if oldState != quasar.StateSyncing {
 		return nil
 	}
 
@@ -394,11 +394,11 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != consensus.NormalOp {
+	if vm.consensusState != quasar.NormalOp {
 		return time.Time{}, false, nil
 	}
 
-	// Because the VM in marked as being in the [consensus.NormalOp] state, we know
+	// Because the VM in marked as being in the [quasar.NormalOp] state, we know
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
 	// If the preferred block is pre-fork, we should wait for events on the

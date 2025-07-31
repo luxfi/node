@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 func (vm *blockVM) GetAncestors(

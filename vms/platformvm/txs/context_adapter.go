@@ -4,13 +4,12 @@
 package txs
 
 import (
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/quasar"
 )
 
-// adaptToQuasarContext converts a consensus.Context to a quasar.Context
+// adaptToQuasarContext converts a quasar.Context to a quasar.Context
 // This is a temporary adapter until the contexts are unified
-func adaptToQuasarContext(ctx *consensus.Context) *quasar.Context {
+func adaptToQuasarContext(ctx *quasar.Context) *quasar.Context {
 	return &quasar.Context{
 		NetworkID:  ctx.NetworkID,
 		SubnetID:   ctx.SubnetID,

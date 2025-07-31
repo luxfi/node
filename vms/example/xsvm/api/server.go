@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -33,7 +33,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -49,7 +49,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *consensus.Context
+	ctx     *quasar.Context
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain

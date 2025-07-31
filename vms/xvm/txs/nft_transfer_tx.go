@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -40,7 +40,7 @@ type NFTTransferTx struct {
 	Metadata []byte `serialize:"true" json:"metadata"`
 }
 
-func (t *NFTTransferTx) InitCtx(ctx *consensus.Context) {
+func (t *NFTTransferTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 

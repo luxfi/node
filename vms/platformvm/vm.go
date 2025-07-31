@@ -19,10 +19,9 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -42,7 +41,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	linearblock "github.com/luxfi/node/consensus/engine/chain/block"
+	linearblock "github.com/luxfi/node/quasar/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -74,7 +73,7 @@ type VM struct {
 	uptimeManager uptimeManager
 
 	// The context of this vm
-	ctx *consensus.Context
+	ctx *quasar.Context
 	db  database.Database
 
 	state state.State
@@ -99,7 +98,7 @@ type VM struct {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -395,11 +394,11 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return vm.state.Commit()
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state quasar.State) error {
 	switch state {
-	case consensus.Bootstrapping:
+	case quasar.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case consensus.NormalOp:
+	case quasar.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
 		return ErrUnknownState

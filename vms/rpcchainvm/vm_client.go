@@ -23,13 +23,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	consensuschain "github.com/luxfi/node/consensus/chain"
-		"github.com/luxfi/node/consensus/validators/gvalidators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	consensuschain "github.com/luxfi/node/quasar/chain"
+		"github.com/luxfi/node/quasar/validators/gvalidators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/galiasreader"
 	log "github.com/luxfi/log"
@@ -49,7 +49,7 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
@@ -126,7 +126,7 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	db db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -328,7 +328,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
+func (vm *VMClient) SetState(ctx context.Context, state quasar.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(state),
 	})

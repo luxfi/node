@@ -5,7 +5,7 @@ package builder
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/gas"
@@ -20,9 +20,9 @@ type Context struct {
 	GasPrice          gas.Price
 }
 
-func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
+func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
+	return &quasar.Context{
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,

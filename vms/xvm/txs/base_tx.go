@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -23,7 +23,7 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *consensus.Context) {
+func (t *BaseTx) InitCtx(ctx *quasar.Context) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}

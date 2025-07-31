@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	consensuschain "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	consensuschain "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -36,7 +36,7 @@ type Builder interface {
 }
 
 type builder struct {
-	chainContext *consensus.Context
+	chainContext *quasar.Context
 	chain        chain.Chain
 
 	preference ids.ID
@@ -45,7 +45,7 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *consensus.Context, chain chain.Chain) Builder {
+func New(chainContext *quasar.Context, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -74,7 +74,7 @@ type Verifier interface {
 }
 
 func NewVerifier(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	clk *mockable.Clock,
 	fx fx.Fx,
 ) Verifier {
@@ -86,7 +86,7 @@ func NewVerifier(
 }
 
 type verifier struct {
-	ctx *consensus.Context
+	ctx *quasar.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

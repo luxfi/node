@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/database"
 	
 	// TODO: Import the real quantum consensus implementation
-	// quasarcore "github.com/luxfi/node/consensus/engine/quantum"
+	// quasarcore "github.com/luxfi/node/quasar/engine/quantum"
 )
 
 // QChain manages Q-blocks embedded in the P-Chain.

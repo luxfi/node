@@ -18,15 +18,15 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorstest"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -599,7 +599,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	chainID := ids.GenerateTestID()
 
 	vm := VM{
-		ctx: &consensus.Context{ChainID: chainID},
+		ctx: &quasar.Context{ChainID: chainID},
 		ChainVM: &blocktest.VM{
 			ParseBlockF: func(_ context.Context, rawBlock []byte) (linear.Block, error) {
 				return &chaintest.Block{BytesV: rawBlock}, nil
@@ -933,7 +933,7 @@ func initTestRemoteProposerVM(
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*consensus.Context,
+		*quasar.Context,
 		db.Database,
 		[]byte,
 		[]byte,
@@ -1033,7 +1033,7 @@ func initTestRemoteProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 	return coreVM, proVM
 }

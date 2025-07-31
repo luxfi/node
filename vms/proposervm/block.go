@@ -12,12 +12,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	chaincon "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 const (
@@ -127,7 +127,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == consensus.NormalOp {
+	if p.vm.consensusState == quasar.NormalOp {
 		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
 		if err != nil {
 			p.vm.ctx.Log.Error("block verification failed",

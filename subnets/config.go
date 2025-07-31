@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	binaryvote "github.com/luxfi/node/consensus/sampling"
+	binaryvote "github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/set"
 )
 

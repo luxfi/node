@@ -12,7 +12,7 @@ package luxmock
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -57,7 +57,7 @@ func (mr *TransferableOutMockRecorder) Amount() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *TransferableOut) InitCtx(arg0 *consensus.Context) {
+func (m *TransferableOut) InitCtx(arg0 *quasar.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

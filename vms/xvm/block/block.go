@@ -8,13 +8,13 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	consensus.ContextInitializable
+	quasar.ContextInitializable
 
 	ID() ids.ID
 	Parent() ids.ID

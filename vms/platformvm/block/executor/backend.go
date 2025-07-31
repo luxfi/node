@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -34,7 +34,7 @@ type backend struct {
 	blkIDToState map[ids.ID]*blockState
 	state        state.State
 
-	ctx *consensus.Context
+	ctx *quasar.Context
 }
 
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {

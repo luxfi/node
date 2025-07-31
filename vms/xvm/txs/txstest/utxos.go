@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/xvm/state"
@@ -27,7 +27,7 @@ var (
 )
 
 func newUTXOs(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	state state.State,
 	sharedMemory atomic.SharedMemory,
 	codec codec.Manager,

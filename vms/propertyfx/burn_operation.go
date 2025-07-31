@@ -4,7 +4,7 @@
 package propertyfx
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -13,7 +13,7 @@ type BurnOperation struct {
 	secp256k1fx.Input `serialize:"true"`
 }
 
-func (*BurnOperation) InitCtx(*consensus.Context) {}
+func (*BurnOperation) InitCtx(*quasar.Context) {}
 
 func (*BurnOperation) Outs() []verify.State {
 	return nil

@@ -10,10 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	db "github.com/luxfi/database"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/graph"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -41,7 +41,7 @@ type vertexVM struct {
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	db db.Database,
 	genesisBytes,
 	upgradeBytes,

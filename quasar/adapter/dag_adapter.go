@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/version"
 )
 

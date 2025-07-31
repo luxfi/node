@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -31,7 +31,7 @@ type InitialState struct {
 	Outs    []verify.State `serialize:"true"  json:"outputs"`
 }
 
-func (is *InitialState) InitCtx(ctx *consensus.Context) {
+func (is *InitialState) InitCtx(ctx *quasar.Context) {
 	for _, out := range is.Outs {
 		out.InitCtx(ctx)
 	}

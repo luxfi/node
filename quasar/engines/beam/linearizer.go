@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/chain"
+	"github.com/luxfi/node/quasar/engine/chain"
 )
 
 // Linearizer represents beam-based linear chain consensus

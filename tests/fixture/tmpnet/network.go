@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"

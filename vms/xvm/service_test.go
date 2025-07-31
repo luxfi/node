@@ -18,12 +18,12 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	log "github.com/luxfi/log"
@@ -2321,7 +2321,7 @@ func TestServiceGetBlock(t *testing.T) {
 			serviceAndExpectedBlockFunc: func(*testing.T, *gomock.Controller) (*Service, interface{}) {
 				return &Service{
 					vm: &VM{
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2338,7 +2338,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2359,7 +2359,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2383,7 +2383,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2407,7 +2407,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2431,7 +2431,7 @@ func TestServiceGetBlock(t *testing.T) {
 				return &Service{
 					vm: &VM{
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2487,7 +2487,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			serviceAndExpectedBlockFunc: func(*testing.T, *gomock.Controller) (*Service, interface{}) {
 				return &Service{
 					vm: &VM{
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2507,7 +2507,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2528,7 +2528,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2553,7 +2553,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2581,7 +2581,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2609,7 +2609,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2637,7 +2637,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2692,7 +2692,7 @@ func TestServiceGetHeight(t *testing.T) {
 			serviceFunc: func(*gomock.Controller) *Service {
 				return &Service{
 					vm: &VM{
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2712,7 +2712,7 @@ func TestServiceGetHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -2735,7 +2735,7 @@ func TestServiceGetHeight(t *testing.T) {
 					vm: &VM{
 						state:        state,
 						chainManager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},

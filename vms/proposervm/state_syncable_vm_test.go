@@ -16,14 +16,14 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chaintest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 
@@ -45,7 +45,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 
 	// load innerVM expectations
-	innerVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
+	innerVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -87,7 +87,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		nil,
 		nil,
 	))
-	require.NoError(vm.SetState(context.Background(), consensus.StateSyncing))
+	require.NoError(vm.SetState(context.Background(), quasar.StateSyncing))
 
 	return innerVM, vm
 }
@@ -588,7 +588,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	require.Equal(block.StateSyncStatic, status)
 	require.True(calledInnerAccept)
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 	require.Equal(summary.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())
 	require.NoError(err)
@@ -715,12 +715,12 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 	// ProposerVM should ignore the rollback and accept the inner state summary to
 	// notify the innerVM.
 	// This can result in the ProposerVM and innerVM diverging their last accepted block.
-	// These are re-aligned in SetState before transitioning to consensus.
+	// These are re-aligned in SetState before transitioning to quasar.
 	status, err := summary.Accept(context.Background())
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 	require.True(calledInnerAccept)
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 
 	require.Equal(innerBlk2.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())

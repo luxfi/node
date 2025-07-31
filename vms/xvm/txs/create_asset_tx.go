@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -22,7 +22,7 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx *consensus.Context) {
+func (t *CreateAssetTx) InitCtx(ctx *quasar.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}

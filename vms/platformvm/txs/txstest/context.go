@@ -4,7 +4,7 @@
 package txstest
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -12,7 +12,7 @@ import (
 )
 
 func newContext(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	config *config.Internal,
 	state state.State,
 ) *builder.Context {

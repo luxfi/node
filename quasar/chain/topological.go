@@ -11,9 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/params"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/params"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -23,7 +23,7 @@ type Topological struct {
 	params params.Parameters
 	
 	// context
-	ctx *consensus.Context
+	ctx *quasar.Context
 	
 	// metrics 
 	metrics *metrics
@@ -47,9 +47,9 @@ type Topological struct {
 // Initialize the consensus engine
 func (ts *Topological) Initialize(ctx context.Context, parameters Parameters, lastAcceptedID string, lastAcceptedHeight uint64, lastAcceptedTime uint64) error {
 	// Extract consensus context from context
-	consensusCtx, ok := ctx.Value("consensus").(*consensus.Context)
+	consensusCtx, ok := ctx.Value("consensus").(*quasar.Context)
 	if !ok {
-		consensusCtx = &consensus.Context{
+		consensusCtx = &quasar.Context{
 			ChainID: ids.GenerateTestID(),
 		}
 	}

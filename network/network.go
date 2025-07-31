@@ -21,9 +21,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"

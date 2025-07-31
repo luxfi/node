@@ -17,14 +17,14 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chainmock"
-	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorsmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	log "github.com/luxfi/log"
@@ -82,7 +82,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            log.NewNoOpLogger(),
@@ -392,7 +392,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 			Registerer:        prometheus.NewRegistry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log:            log.NewNoOpLogger(),

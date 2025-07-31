@@ -26,12 +26,12 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	log "github.com/luxfi/log"
@@ -1067,7 +1067,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -1088,7 +1088,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -1112,7 +1112,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -1140,7 +1140,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -1168,7 +1168,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -1196,7 +1196,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 					vm: &VM{
 						state:   state,
 						manager: manager,
-						ctx: &consensus.Context{
+						ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},

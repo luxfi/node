@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/version"
 	
 	// TODO: Import the real quantum-safe consensus implementation

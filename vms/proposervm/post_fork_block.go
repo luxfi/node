@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

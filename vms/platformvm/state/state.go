@@ -26,10 +26,10 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
@@ -334,7 +334,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *consensus.Context
+	ctx        *quasar.Context
 	upgrades   upgrade.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -531,7 +531,7 @@ func New(
 	validators validators.Manager,
 	upgrades upgrade.Config,
 	execCfg *config.Config,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {

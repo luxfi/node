@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -34,7 +34,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext *consensus.Context
+	ChainContext *quasar.Context
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool

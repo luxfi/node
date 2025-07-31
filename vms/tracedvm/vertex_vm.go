@@ -4,7 +4,7 @@
 package tracedvm
 
 import (
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
 	"github.com/luxfi/node/trace"
 )
 

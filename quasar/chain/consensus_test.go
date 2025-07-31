@@ -17,11 +17,11 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/params"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/params"
 )
 
 type testFunc func(*testing.T, Factory)
@@ -116,7 +116,7 @@ func InitializeTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -135,7 +135,7 @@ func NumProcessingTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -164,7 +164,7 @@ func AddToTailTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -188,7 +188,7 @@ func AddToNonTailTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -219,7 +219,7 @@ func StatusOrProcessingPreviouslyAcceptedTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -238,7 +238,7 @@ func RecordPollAcceptSingleBlockTest(t *testing.T, factory Factory) {
 	params := factory.Default()
 
 	// Create context with consensus context
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -265,7 +265,7 @@ func AddOnUnknownParentTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -297,7 +297,7 @@ func StatusOrProcessingPreviouslyRejectedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -317,7 +317,7 @@ func StatusOrProcessingUnissuedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -337,7 +337,7 @@ func StatusOrProcessingIssuedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -357,7 +357,7 @@ func RecordPollAcceptAndRejectTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -388,7 +388,7 @@ func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -421,7 +421,7 @@ func RecordPollWhenFinalizedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -441,7 +441,7 @@ func RecordPollRejectTransitivelyTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -486,7 +486,7 @@ func RecordPollTransitivelyResetConfidenceTest(t *testing.T, factory Factory) {
 		t.Skip("Test requires Beta > 1")
 	}
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -523,7 +523,7 @@ func RecordPollInvalidVoteTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -548,7 +548,7 @@ func RecordPollTransitiveVotingTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -592,7 +592,7 @@ func RecordPollDivergedVotingWithNoConflictingBitTest(t *testing.T, factory Fact
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -619,7 +619,7 @@ func RecordPollChangePreferredChainTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -657,7 +657,7 @@ func LastAcceptedTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -688,7 +688,7 @@ func MetricsProcessingErrorTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 		Registerer: prometheus.NewRegistry(),
 	})
@@ -708,7 +708,7 @@ func MetricsAcceptedErrorTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 		Registerer: prometheus.NewRegistry(),
 	})
@@ -738,7 +738,7 @@ func MetricsRejectedErrorTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 		Registerer: prometheus.NewRegistry(),
 	})
@@ -771,7 +771,7 @@ func ErrorOnAcceptTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -802,7 +802,7 @@ func ErrorOnRejectSiblingTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -834,7 +834,7 @@ func ErrorOnTransitiveRejectionTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -877,7 +877,7 @@ func RandomizedConsistencyTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -927,7 +927,7 @@ func ErrorOnAddDecidedBlockTest(t *testing.T, factory Factory) {
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -971,7 +971,7 @@ func RecordPollWithDefaultParameters(t *testing.T, factory Factory) {
 	require := require.New(t)
 	sm := prodFactory.New()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 
@@ -1003,7 +1003,7 @@ func RecordPollRegressionCalculateInDegreeIndegreeCalculation(t *testing.T, fact
 	sm := factory.New()
 	params := factory.Default()
 
-	ctx := context.WithValue(context.Background(), "consensus", &consensus.Context{
+	ctx := context.WithValue(context.Background(), "consensus", &quasar.Context{
 		ChainID: consensustest.CChainID,
 	})
 

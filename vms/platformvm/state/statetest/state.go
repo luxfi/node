@@ -13,8 +13,8 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
@@ -36,7 +36,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *consensus.Context
+	Context    *quasar.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -46,7 +46,7 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &consensus.Context{
+		c.Context = &quasar.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
 			Log:       log.NewNoOpLogger(),

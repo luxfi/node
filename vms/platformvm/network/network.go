@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/network/p2p/lp118"

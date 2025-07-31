@@ -221,9 +221,9 @@ func TestBuildFunctionConsistency(t *testing.T) {
 func TestImportAliasConsistency(t *testing.T) {
 	// Common aliases that should be consistent
 	expectedAliases := map[string]string{
-		"github.com/luxfi/node/consensus/consensustest":     "", // Should not have alias
-		"github.com/luxfi/node/consensus/chain/chaintest": "", // Should not have alias
-		"github.com/luxfi/node/consensus/chain/chainmock": "", // Should not have alias
+		"github.com/luxfi/node/quasar/consensustest":     "", // Should not have alias
+		"github.com/luxfi/node/quasar/chain/chaintest": "", // Should not have alias
+		"github.com/luxfi/node/quasar/chain/chainmock": "", // Should not have alias
 	}
 
 	err := filepath.WalkDir("..", func(path string, d fs.DirEntry, err error) error {

@@ -11,13 +11,13 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	consensuschain "github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar"
+	consensuschain "github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -156,7 +156,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == consensus.Bootstrapping,
+		b.chain.chainState == quasar.Bootstrapping,
 		blockContext,
 		b.Stateless,
 	)

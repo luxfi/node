@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/quasar/networking/router"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"

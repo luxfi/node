@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -66,7 +66,7 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx *consensus.Context) {
+func (out *TransferableOutput) InitCtx(ctx *quasar.Context) {
 	out.Out.InitCtx(ctx)
 }
 

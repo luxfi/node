@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 

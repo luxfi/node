@@ -8,9 +8,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -23,7 +23,7 @@ import (
 var _ gossip.Gossipable = (*Tx)(nil)
 
 type UnsignedTx interface {
-	consensus.ContextInitializable
+	quasar.ContextInitializable
 
 	SetBytes(unsignedBytes []byte)
 	Bytes() []byte

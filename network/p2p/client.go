@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/set"
 )

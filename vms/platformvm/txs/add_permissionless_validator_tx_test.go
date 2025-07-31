@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -138,7 +138,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -437,7 +437,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -824,7 +824,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleAddSubnetTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1124,7 +1124,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddSubnetTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexAddSubnetTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1381,7 +1381,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
+	ctx := &quasar.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

@@ -7,11 +7,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/vms/platformvm/block"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 var (

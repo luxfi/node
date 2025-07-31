@@ -4,7 +4,7 @@
 package consensustest
 
 import (
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 )
 
 // Status constants for test assertions

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -55,7 +55,7 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(*consensus.Context) {}
+func (*ApricotAbortBlock) InitCtx(*quasar.Context) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
 	return nil

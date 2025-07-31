@@ -20,8 +20,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -56,7 +56,7 @@ import (
 type testVerifierConfig struct {
 	DB                 db.Database
 	Upgrades           upgrade.Config
-	Context            *consensus.Context
+	Context            *quasar.Context
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -476,7 +476,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -550,7 +550,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -612,7 +612,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -685,7 +685,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
+				ctx: &quasar.Context{
 					Log: log.NewNoOpLogger(),
 				},
 			}
@@ -786,7 +786,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
+				ctx: &quasar.Context{
 					Log: log.NewNoOpLogger(),
 				},
 			}
@@ -864,7 +864,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -922,7 +922,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -977,7 +977,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -1021,7 +1021,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -1064,7 +1064,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -1108,7 +1108,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &quasar.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},

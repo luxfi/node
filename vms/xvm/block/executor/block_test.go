@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
@@ -940,7 +940,7 @@ func TestBlockReject(t *testing.T) {
 func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *executor.Backend {
 	return &executor.Backend{
 		Bootstrapped: bootstrapped,
-		Ctx: &consensus.Context{
+		Ctx: &quasar.Context{
 			SharedMemory: sharedMemory,
 			Log:          log.NewNoOpLogger(),
 		},

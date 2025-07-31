@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
