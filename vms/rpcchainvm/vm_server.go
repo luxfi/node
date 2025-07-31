@@ -574,7 +574,7 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 		vmHealth = "healthy"
 	}
 	
-	err = vm.db.HealthCheck()
+	_, err = vm.db.HealthCheck(context.Background())
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}
