@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -203,7 +203,7 @@ func (s *sender) SendStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID
 		s.subnet,
 	)
 	if sentTo.Len() == 0 {
-		if s.ctx.Log.Enabled(logging.Verbo) {
+		if s.ctx.Log.Enabled(log.Verbo) {
 			s.ctx.Log.Verbo("failed to send message",
 				zap.Stringer("messageOp", message.StateSummaryFrontierOp),
 				zap.Stringer("nodeID", nodeID),
@@ -859,7 +859,7 @@ func (s *sender) SendPut(_ context.Context, nodeID ids.NodeID, requestID uint32,
 		s.subnet,
 	)
 	if sentTo.Len() == 0 {
-		if s.ctx.Log.Enabled(logging.Verbo) {
+		if s.ctx.Log.Enabled(log.Verbo) {
 			s.ctx.Log.Verbo("failed to send message",
 				zap.Stringer("messageOp", message.PutOp),
 				zap.Stringer("nodeID", nodeID),
@@ -984,7 +984,7 @@ func (s *sender) SendPushQuery(
 
 	for nodeID := range nodeIDs {
 		if !sentTo.Contains(nodeID) {
-			if s.ctx.Log.Enabled(logging.Verbo) {
+			if s.ctx.Log.Enabled(log.Verbo) {
 				s.ctx.Log.Verbo("failed to send message",
 					zap.Stringer("messageOp", message.PushQueryOp),
 					zap.Stringer("nodeID", nodeID),
@@ -1306,7 +1306,7 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 
 	for nodeID := range nodeIDs {
 		if !sentTo.Contains(nodeID) {
-			if s.ctx.Log.Enabled(logging.Verbo) {
+			if s.ctx.Log.Enabled(log.Verbo) {
 				s.ctx.Log.Verbo("failed to send message",
 					zap.Stringer("messageOp", message.AppRequestOp),
 					zap.Stringer("nodeID", nodeID),
@@ -1380,7 +1380,7 @@ func (s *sender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, request
 		s.subnet,
 	)
 	if sentTo.Len() == 0 {
-		if s.ctx.Log.Enabled(logging.Verbo) {
+		if s.ctx.Log.Enabled(log.Verbo) {
 			s.ctx.Log.Verbo("failed to send message",
 				zap.Stringer("messageOp", message.AppResponseOp),
 				zap.Stringer("nodeID", nodeID),
@@ -1445,7 +1445,7 @@ func (s *sender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID 
 		s.subnet,
 	)
 	if sentTo.Len() == 0 {
-		if s.ctx.Log.Enabled(logging.Verbo) {
+		if s.ctx.Log.Enabled(log.Verbo) {
 			s.ctx.Log.Verbo("failed to send message",
 				zap.Stringer("messageOp", message.AppErrorOp),
 				zap.Stringer("nodeID", nodeID),
@@ -1492,7 +1492,7 @@ func (s *sender) SendAppGossip(
 		s.subnet,
 	)
 	if sentTo.Len() == 0 {
-		if s.ctx.Log.Enabled(logging.Verbo) {
+		if s.ctx.Log.Enabled(log.Verbo) {
 			s.ctx.Log.Verbo("failed to send message",
 				zap.Stringer("messageOp", message.AppGossipOp),
 				zap.Stringer("chainID", s.ctx.ChainID),

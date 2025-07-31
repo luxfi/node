@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/metrics"
 )
 
 const opLabel = "op"
@@ -25,7 +25,7 @@ func (m *messageQueueMetrics) initialize(
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) error {
-	namespace := metric.AppendNamespace(metricsNamespace, "unprocessed_msgs")
+	namespace := metrics.AppendNamespace(metricsNamespace, "unprocessed_msgs")
 	m.count = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: namespace,

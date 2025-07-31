@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -132,7 +132,7 @@ func init() {
 
 func newDefaultTargeter(t tracker.Tracker) tracker.Targeter {
 	return tracker.NewTargeter(
-		logging.NoLog{},
+		log.NoLog{},
 		&tracker.TargeterConfig{
 			VdrAlloc:           10,
 			MaxNonVdrUsage:     10,
@@ -197,7 +197,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -242,7 +242,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 			config,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NoLog{},
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -474,7 +474,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NoLog{},
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -553,7 +553,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NoLog{},
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -707,7 +707,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NoLog{},
 			listeners[i],
 			dialer,
 			&testHandler{

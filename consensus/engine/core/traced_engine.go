@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 

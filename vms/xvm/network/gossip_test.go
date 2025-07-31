@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
@@ -69,7 +69,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		log.NoLog{},
 		testVerifier{},
 		parser,
 		DefaultConfig.ExpectedBloomFilterElements,
@@ -106,7 +106,7 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		log.NoLog{},
 		testVerifier{
 			err: errTest, // We shouldn't be attempting to verify the tx in this flow
 		},

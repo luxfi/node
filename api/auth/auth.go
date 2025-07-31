@@ -19,7 +19,7 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/password"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -92,7 +92,7 @@ type auth struct {
 	// Used to mock time.
 	clock mockable.Clock
 
-	log      logging.Logger
+	log      log.Logger
 	endpoint string
 
 	lock sync.RWMutex
@@ -102,7 +102,7 @@ type auth struct {
 	revoked set.Set[string]
 }
 
-func New(log logging.Logger, endpoint, pw string) (Auth, error) {
+func New(log log.Logger, endpoint, pw string) (Auth, error) {
 	a := &auth{
 		log:      log,
 		endpoint: endpoint,
@@ -110,7 +110,7 @@ func New(log logging.Logger, endpoint, pw string) (Auth, error) {
 	return a, a.password.Set(pw)
 }
 
-func NewFromHash(log logging.Logger, endpoint string, pw password.Hash) Auth {
+func NewFromHash(log log.Logger, endpoint string, pw password.Hash) Auth {
 	return &auth{
 		log:      log,
 		endpoint: endpoint,

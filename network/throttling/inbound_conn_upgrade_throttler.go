@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -54,7 +54,7 @@ type InboundConnUpgradeThrottlerConfig struct {
 
 // Returns an InboundConnUpgradeThrottler that upgrades an inbound
 // connection from a given IP at most every [UpgradeCooldown].
-func NewInboundConnUpgradeThrottler(log logging.Logger, config InboundConnUpgradeThrottlerConfig) InboundConnUpgradeThrottler {
+func NewInboundConnUpgradeThrottler(log log.Logger, config InboundConnUpgradeThrottlerConfig) InboundConnUpgradeThrottler {
 	if config.UpgradeCooldown <= 0 || config.MaxRecentConnsUpgraded <= 0 {
 		return &noInboundConnUpgradeThrottler{}
 	}
@@ -84,7 +84,7 @@ type ipAndTime struct {
 
 type inboundConnUpgradeThrottler struct {
 	InboundConnUpgradeThrottlerConfig
-	log  logging.Logger
+	log  log.Logger
 	lock sync.Mutex
 	// Useful for faking time in tests
 	clock mockable.Clock

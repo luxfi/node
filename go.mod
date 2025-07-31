@@ -88,14 +88,17 @@ require (
 
 require (
 	github.com/StephenButtolph/canoto v0.17.1
+	github.com/ethereum/go-ethereum v1.16.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.1.1
 	github.com/luxfi/database v1.1.4
 	github.com/luxfi/geth v1.16.2
-	github.com/luxfi/ids v0.1.1
-	github.com/luxfi/ids/galiasreader v0.0.0-00010101000000-000000000000
+	github.com/luxfi/ids v1.0.2
+	github.com/luxfi/log v0.1.1
+	github.com/luxfi/metrics v1.1.1
+	github.com/luxfi/trace v0.1.0
 )
 
 require (
@@ -142,7 +145,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/log v0.1.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -183,7 +185,3 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
-
-replace github.com/luxfi/node/database/encdb => ./database/encdb
-
-replace github.com/luxfi/ids/galiasreader => ./ids/galiasreader

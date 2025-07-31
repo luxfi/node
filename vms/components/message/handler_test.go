@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type CounterHandler struct {
@@ -33,7 +33,7 @@ func TestHandleTx(t *testing.T) {
 
 func TestNoopHandler(t *testing.T) {
 	handler := NoopHandler{
-		Log: logging.NoLog{},
+		Log: log.NoLog{},
 	}
 
 	require.NoError(t, handler.HandleTx(ids.EmptyNodeID, 0, nil))

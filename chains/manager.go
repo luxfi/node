@@ -42,12 +42,12 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -189,7 +189,7 @@ type ManagerConfig struct {
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
-	Log                       logging.Logger
+	Log                       log.Logger
 	LogFactory                logging.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        consensus.AcceptorGroup
@@ -1631,7 +1631,7 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (metrics
 	vmGatherer, ok := m.vmGatherer[vmID]
 	if !ok {
 		vmName := constants.VMName(vmID)
-		vmNamespace := metric.AppendNamespace(constants.PlatformName, vmName)
+		vmNamespace := metrics.AppendNamespace(constants.PlatformName, vmName)
 		vmGatherer = metrics.NewLabelGatherer(ChainLabel)
 		err := m.Metrics.Register(
 			vmNamespace,

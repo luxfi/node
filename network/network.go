@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
@@ -174,7 +174,7 @@ func NewNetwork(
 	config *Config,
 	msgCreator message.Creator,
 	metricsRegisterer prometheus.Registerer,
-	log logging.Logger,
+	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,
 	router router.ExternalHandler,

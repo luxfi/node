@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -96,7 +96,7 @@ func TestExportKey(t *testing.T) {
 	service, _, _ := defaultService(t)
 	service.vm.ctx.Lock.Lock()
 
-	ks := keystore.New(logging.NoLog{}, memdb.New())
+	ks := keystore.New(log.NoLog{}, memdb.New())
 	require.NoError(ks.CreateUser(testUsername, testPassword))
 	service.vm.ctx.Keystore = ks.NewBlockchainKeyStore(service.vm.ctx.ChainID)
 
@@ -894,7 +894,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, nil
@@ -915,7 +915,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, nil
@@ -939,7 +939,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, block
@@ -967,7 +967,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, expected
@@ -995,7 +995,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, expected
@@ -1023,7 +1023,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 				}, expected

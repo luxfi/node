@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type Scheduler interface {
@@ -26,7 +26,7 @@ type Scheduler interface {
 // when the engine should call BuildBlock. Namely, when this node is allowed to
 // propose a block under the congestion control mechanism.
 type scheduler struct {
-	log logging.Logger
+	log log.Logger
 	// The VM sends a message on this channel when it wants to tell the engine
 	// that the engine should call the VM's BuildBlock method
 	fromVM <-chan core.Message
@@ -39,7 +39,7 @@ type scheduler struct {
 	newBuildBlockTime chan time.Time
 }
 
-func New(log logging.Logger, toEngine chan<- core.Message) (Scheduler, chan<- core.Message) {
+func New(log log.Logger, toEngine chan<- core.Message) (Scheduler, chan<- core.Message) {
 	vmToEngine := make(chan core.Message, cap(toEngine))
 	return &scheduler{
 		log:               log,

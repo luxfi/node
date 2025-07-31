@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 )
@@ -30,7 +30,7 @@ var _ Poll = (*Majority)(nil)
 type Majority struct {
 	requests
 
-	log         logging.Logger
+	log         log.Logger
 	nodeWeights map[ids.NodeID]uint64
 
 	// received maps the blockID to the total sum of weight that has reported
@@ -40,7 +40,7 @@ type Majority struct {
 }
 
 func NewMajority(
-	log logging.Logger,
+	log log.Logger,
 	nodeWeights map[ids.NodeID]uint64,
 	maxOutstanding int,
 ) *Majority {

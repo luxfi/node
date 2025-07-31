@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -67,7 +67,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -98,7 +98,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -142,7 +142,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -187,7 +187,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -233,7 +233,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -326,7 +326,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -398,7 +398,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -472,7 +472,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+							Log: log.NoLog{},
 						},
 					},
 					manager,
@@ -521,7 +521,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	backend := &txexecutor.Backend{
 		Ctx: &consensus.Context{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		},
 		Codec: parser.Codec(),
 	}

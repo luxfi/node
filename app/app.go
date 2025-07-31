@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/node"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"
 )
@@ -122,7 +122,7 @@ func Run(app App) int {
 // app is a wrapper around a node that runs in this process
 type app struct {
 	node       *node.Node
-	log        logging.Logger
+	log        log.Logger
 	logFactory logging.Factory
 	exitWG     sync.WaitGroup
 }

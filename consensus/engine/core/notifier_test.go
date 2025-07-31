@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type notifier func(_ context.Context, msg Message) error
@@ -45,7 +45,7 @@ func TestNotifier(t *testing.T) {
 	nf := NewNotificationForwarder(
 		Notifier(notifier),
 		subscriber,
-		&logging.NoLog{})
+		&log.NoLog{})
 
 	defer nf.Close()
 
@@ -71,7 +71,7 @@ func TestNotifierStopWhileSubscribing(_ *testing.T) {
 	nf := NewNotificationForwarder(
 		Notifier(notifier),
 		subscribe,
-		&logging.NoLog{})
+		&log.NoLog{})
 
 	subscribed.Wait()
 	nf.Close()
@@ -89,7 +89,7 @@ func TestNotifierWaitForPrefChangeAfterNotify(t *testing.T) {
 		return 0, nil
 	}
 
-	nf := NewNotificationForwarder(engine, subscribe, &logging.NoLog{})
+	nf := NewNotificationForwarder(engine, subscribe, &log.NoLog{})
 	defer nf.Close()
 
 	require.Eventually(t, func() bool {
@@ -145,7 +145,7 @@ func TestNotifierReSubscribeAtPrefChange(t *testing.T) {
 		}
 	}
 
-	nf := NewNotificationForwarder(engine, subscriber, &logging.NoLog{})
+	nf := NewNotificationForwarder(engine, subscriber, &log.NoLog{})
 	defer nf.Close()
 
 	select {

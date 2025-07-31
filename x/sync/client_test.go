@@ -20,8 +20,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 
@@ -69,7 +69,7 @@ func sendRangeProofRequest(
 		}
 
 		// Serves the range proof.
-		server = NewNetworkServer(sender, serverDB, logging.NoLog{})
+		server = NewNetworkServer(sender, serverDB, log.NoLog{})
 
 		clientNodeID, serverNodeID = ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 
@@ -94,7 +94,7 @@ func sendRangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           logging.NoLog{},
+		Log:           log.NoLog{},
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -368,7 +368,7 @@ func sendChangeProofRequest(
 		}
 
 		// Serves the change proof.
-		server = NewNetworkServer(sender, serverDB, logging.NoLog{})
+		server = NewNetworkServer(sender, serverDB, log.NoLog{})
 
 		clientNodeID, serverNodeID = ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 
@@ -391,7 +391,7 @@ func sendChangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           logging.NoLog{},
+		Log:           log.NoLog{},
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -753,7 +753,7 @@ func TestAppRequestSendFailed(t *testing.T) {
 	client, err := NewClient(
 		&ClientConfig{
 			NetworkClient: networkClient,
-			Log:           logging.NoLog{},
+			Log:           log.NoLog{},
 			Metrics:       &mockMetrics{},
 			BranchFactor:  merkledb.BranchFactor16,
 		},

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -26,9 +26,9 @@ func TestNew(t *testing.T) {
 	config := &ManagerConfig{
 		SkipBootstrap:    true,
 		EnableAutomining: true,
-		Log:              logging.NoLog{},
+		Log:              log.NoLog{},
 		Metrics:          metrics.NewMultiGatherer(),
-		VMManager:        vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		VMManager:        vms.NewManager(log.NoLog{}, ids.NewAliaser()),
 		ChainDataDir:     t.TempDir(),
 	}
 
@@ -74,9 +74,9 @@ func TestQueueChainCreation(t *testing.T) {
 	require.NoError(err)
 
 	config := &ManagerConfig{
-		Log:          logging.NoLog{},
+		Log:          log.NoLog{},
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 		Subnets:      subnets,
 	}
@@ -111,9 +111,9 @@ func TestLookup(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          logging.NoLog{},
+		Log:          log.NoLog{},
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -147,9 +147,9 @@ func TestIsBootstrapped(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          logging.NoLog{},
+		Log:          log.NoLog{},
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(logging.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -168,7 +168,7 @@ func TestIsBootstrapped(t *testing.T) {
 		NetworkID: constants.MainnetID,
 		SubnetID:  constants.PrimaryNetworkID,
 		ChainID:   chainID,
-		Log:       logging.NoLog{},
+		Log:       log.NoLog{},
 	}
 	ctx.State.Set(consensus.EngineState{
 		State: consensus.Initializing,

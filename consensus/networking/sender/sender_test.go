@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -78,7 +78,7 @@ func TestTimeout(t *testing.T) {
 
 	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -87,7 +87,7 @@ func TestTimeout(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		log.NoLog{},
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -123,7 +123,7 @@ func TestTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		log.NoLog{},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -338,7 +338,7 @@ func TestReliableMessages(t *testing.T) {
 
 	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -347,7 +347,7 @@ func TestReliableMessages(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		log.NoLog{},
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -383,7 +383,7 @@ func TestReliableMessages(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		log.NoLog{},
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -498,7 +498,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			metrics := prometheus.NewRegistry()
 			mc, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 				metrics,
 				constants.DefaultNetworkCompressionType,
 				10*time.Second,
@@ -507,7 +507,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			require.NoError(chainRouter.Initialize(
 				ids.EmptyNodeID,
-				logging.NoLog{},
+				log.NoLog{},
 				tm,
 				time.Second,
 				set.Set[ids.ID]{},
@@ -546,7 +546,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require.NoError(err)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				logging.NoLog{},
+				log.NoLog{},
 				"",
 				prometheus.NewRegistry(),
 				nil,

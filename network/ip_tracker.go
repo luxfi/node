@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/set"
 )
@@ -40,7 +40,7 @@ const (
 var _ validators.SetCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
@@ -74,7 +74,7 @@ func newIPTracker(
 }
 
 type ipTracker struct {
-	log              logging.Logger
+	log              log.Logger
 	numTrackedIPs    prometheus.Gauge
 	numGossipableIPs prometheus.Gauge
 	bloomMetrics     *bloom.Metrics

@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/api"
@@ -370,7 +370,7 @@ func defaultClock() *mockable.Clock {
 type fxVMInt struct {
 	registry codec.Registry
 	clk      *mockable.Clock
-	log      logging.Logger
+	log      log.Logger
 }
 
 func (fvi *fxVMInt) CodecRegistry() codec.Registry {
@@ -381,11 +381,11 @@ func (fvi *fxVMInt) Clock() *mockable.Clock {
 	return fvi.clk
 }
 
-func (fvi *fxVMInt) Logger() logging.Logger {
+func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(t *testing.T, clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(t *testing.T, clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	require := require.New(t)
 
 	fxVMInt := &fxVMInt{

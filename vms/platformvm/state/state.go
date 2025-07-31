@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -184,7 +184,7 @@ type State interface {
 	// database.
 	//
 	// TODO: Remove after v1.12.x is activated
-	ReindexBlocks(lock sync.Locker, log logging.Logger) error
+	ReindexBlocks(lock sync.Locker, log log.Logger) error
 
 	// Commit changes to the base database.
 	Commit() error
@@ -2320,7 +2320,7 @@ func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	return blk, true, err
 }
 
-func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	has, err := s.singletonDB.Has(BlocksReindexedKey)
 	if err != nil {
 		return err

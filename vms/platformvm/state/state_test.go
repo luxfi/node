@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -1348,7 +1348,7 @@ func TestReindexBlocks(t *testing.T) {
 	}
 
 	// Convert the indices to the new format.
-	require.NoError(s.ReindexBlocks(&sync.Mutex{}, logging.NoLog{}))
+	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NoLog{}))
 
 	// Verify that the blocks are stored in the new format.
 	for _, blk := range blks {

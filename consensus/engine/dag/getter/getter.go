@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -29,7 +29,7 @@ var _ core.AllGetsServer = (*getter)(nil)
 func New(
 	storage vertex.Storage,
 	sender core.Sender,
-	log logging.Logger,
+	log log.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
 	reg prometheus.Registerer,
@@ -43,7 +43,7 @@ func New(
 	}
 
 	var err error
-	gh.getAncestorsVtxs, err = metric.NewAverager(
+	gh.getAncestorsVtxs, err = metrics.NewAverager(
 		"bs_get_ancestors_vtxs",
 		"vertices fetched in a call to GetAncestors",
 		reg,
@@ -54,7 +54,7 @@ func New(
 type getter struct {
 	storage                   vertex.Storage
 	sender                    core.Sender
-	log                       logging.Logger
+	log                       log.Logger
 	maxTimeGetAncestors       time.Duration
 	maxContainersGetAncestors int
 

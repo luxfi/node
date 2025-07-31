@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
@@ -210,7 +210,7 @@ func (e *Engine) Gossip(ctx context.Context) error {
 func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkBytes []byte) error {
 	blk, err := e.VM.ParseBlock(ctx, blkBytes)
 	if err != nil {
-		if e.Ctx.Log.Enabled(logging.Verbo) {
+		if e.Ctx.Log.Enabled(log.Verbo) {
 			e.Ctx.Log.Verbo("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),
@@ -324,7 +324,7 @@ func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uin
 	blk, err := e.VM.ParseBlock(ctx, blkBytes)
 	// If parsing fails, we just drop the request, as we didn't ask for it
 	if err != nil {
-		if e.Ctx.Log.Enabled(logging.Verbo) {
+		if e.Ctx.Log.Enabled(log.Verbo) {
 			e.Ctx.Log.Verbo("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),

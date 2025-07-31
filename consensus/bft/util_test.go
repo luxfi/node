@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type newBlockConfig struct {
@@ -105,7 +105,7 @@ func newNetworkConfigs(t *testing.T, numNodes uint64) []*Config {
 				ChainID:   chainID,
 				NetworkID: constants.UnitTestID,
 			},
-			Log:        logging.NoLog{},
+			Log:        log.NoLog{},
 			Validators: newTestValidatorInfo(testNodes),
 			SignBLS:    node.signFunc,
 		}

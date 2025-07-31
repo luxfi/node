@@ -12,14 +12,14 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func Test_newOutboundBuilder(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		10*time.Second,
 	)

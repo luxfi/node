@@ -14,15 +14,15 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
 // See inbound_msg_throttler.go
 
 func newInboundMsgByteThrottler(
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,

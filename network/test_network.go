@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -73,7 +73,7 @@ func (*noopListener) Addr() net.Addr {
 }
 
 func NewTestNetwork(
-	log logging.Logger,
+	log log.Logger,
 	networkID uint32,
 	currentValidators validators.Manager,
 	trackedSubnets set.Set[ids.ID],
@@ -81,7 +81,7 @@ func NewTestNetwork(
 ) (Network, error) {
 	metrics := prometheus.NewRegistry()
 	msgCreator, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		constants.DefaultNetworkMaximumInboundTimeout,
@@ -196,7 +196,7 @@ func NewTestNetwork(
 			PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
 			ResourceTracker:              resourceTracker,
 			CPUTargeter: tracker.NewTargeter(
-				logging.NoLog{},
+				log.NoLog{},
 				&tracker.TargeterConfig{
 					VdrAlloc:           float64(runtime.NumCPU()),
 					MaxNonVdrUsage:     .8 * float64(runtime.NumCPU()),
@@ -206,7 +206,7 @@ func NewTestNetwork(
 				resourceTracker.CPUTracker(),
 			),
 			DiskTargeter: tracker.NewTargeter(
-				logging.NoLog{},
+				log.NoLog{},
 				&tracker.TargeterConfig{
 					VdrAlloc:           1000 * units.GiB,
 					MaxNonVdrUsage:     1000 * units.GiB,

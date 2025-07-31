@@ -20,7 +20,7 @@ import (
 	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
-	logging "github.com/luxfi/node/utils/logging"
+	logging "github.com/luxfi/log"
 	set "github.com/luxfi/node/utils/set"
 	version "github.com/luxfi/node/version"
 	prometheus "github.com/prometheus/client_golang/prometheus"
@@ -139,7 +139,7 @@ func (mr *RouterMockRecorder) HealthCheck(arg0 any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *Router) Initialize(nodeID ids.NodeID, log logging.Logger, timeouts timeout.Manager, shutdownTimeout time.Duration, criticalChains set.Set[ids.ID], sybilProtectionEnabled bool, trackedSubnets set.Set[ids.ID], onFatal func(int), healthConfig router.HealthConfig, reg prometheus.Registerer) error {
+func (m *Router) Initialize(nodeID ids.NodeID, log log.Logger, timeouts timeout.Manager, shutdownTimeout time.Duration, criticalChains set.Set[ids.ID], sybilProtectionEnabled bool, trackedSubnets set.Set[ids.ID], onFatal func(int), healthConfig router.HealthConfig, reg prometheus.Registerer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", nodeID, log, timeouts, shutdownTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, reg)
 	ret0, _ := ret[0].(error)

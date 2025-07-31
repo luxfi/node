@@ -4,7 +4,7 @@
 package cchainvm
 
 import (
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -14,6 +14,6 @@ var _ vms.Factory = (*Factory)(nil)
 type Factory struct{}
 
 // New creates a new C-Chain VM instance
-func (f *Factory) New(log logging.Logger) (interface{}, error) {
+func (f *Factory) New(log log.Logger) (interface{}, error) {
 	return &VM{}, nil
 }

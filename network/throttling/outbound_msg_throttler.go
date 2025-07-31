@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -42,7 +42,7 @@ type outboundMsgThrottler struct {
 }
 
 func NewSybilOutboundMsgThrottler(
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,

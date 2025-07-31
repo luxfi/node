@@ -57,7 +57,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -65,9 +65,9 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -121,7 +121,7 @@ var (
 func New(
 	config *Config,
 	logFactory logging.Factory,
-	logger logging.Logger,
+	logger log.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
 	stakingCert, err := staking.ParseCertificate(tlsCert.Raw)
@@ -283,8 +283,8 @@ func New(
 
 // Node is an instance of an Lux node.
 type Node struct {
-	Log          logging.Logger
-	VMFactoryLog logging.Logger
+	Log          log.Logger
+	VMFactoryLog log.Logger
 	LogFactory   logging.Factory
 
 	// This node's unique ID used when communicating with other nodes

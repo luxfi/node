@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -44,7 +44,7 @@ var (
 )
 
 type Config struct {
-	Log          logging.Logger
+	Log          log.Logger
 	ProfileDir   string
 	LogFactory   logging.Factory
 	NodeConfig   interface{}
@@ -231,13 +231,13 @@ func (a *Admin) Stacktrace(_ *http.Request, _ *struct{}, _ *api.EmptyReply) erro
 
 type SetLoggerLevelArgs struct {
 	LoggerName   string         `json:"loggerName"`
-	LogLevel     *logging.Level `json:"logLevel"`
-	DisplayLevel *logging.Level `json:"displayLevel"`
+	LogLevel     *log.Level `json:"logLevel"`
+	DisplayLevel *log.Level `json:"displayLevel"`
 }
 
 type LogAndDisplayLevels struct {
-	LogLevel     logging.Level `json:"logLevel"`
-	DisplayLevel logging.Level `json:"displayLevel"`
+	LogLevel     log.Level `json:"logLevel"`
+	DisplayLevel log.Level `json:"displayLevel"`
 }
 
 type LoggerLevelReply struct {

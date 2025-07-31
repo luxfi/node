@@ -8,13 +8,13 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Config wraps all the parameters needed for a bft engine
 type Config struct {
 	Ctx BFTChainContext
-	Log logging.Logger
+	Log log.Logger
 
 	Sender             sender.ExternalSender
 	OutboundMsgBuilder message.OutboundMsgBuilder

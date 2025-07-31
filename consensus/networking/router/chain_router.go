@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
@@ -60,7 +60,7 @@ type peer struct {
 // Invariant: P-chain must be registered before processing any messages
 type ChainRouter struct {
 	clock         mockable.Clock
-	log           logging.Logger
+	log           log.Logger
 	lock          sync.Mutex
 	closing       bool
 	chainHandlers map[ids.ID]handler.Handler
@@ -93,7 +93,7 @@ type ChainRouter struct {
 // applicable.
 func (cr *ChainRouter) Initialize(
 	nodeID ids.NodeID,
-	log logging.Logger,
+	log log.Logger,
 	timeoutManager timeout.Manager,
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],

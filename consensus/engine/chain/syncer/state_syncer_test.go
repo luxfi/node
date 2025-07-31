@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/getter"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -49,7 +49,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err := getter.New(
 		nonStateSyncableVM,
 		sender,
-		logging.NoLog{},
+		log.NoLog{},
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),
@@ -78,7 +78,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err = getter.New(
 		fullVM,
 		sender,
-		logging.NoLog{},
+		log.NoLog{},
 		time.Second,
 		2000,
 		prometheus.NewRegistry())

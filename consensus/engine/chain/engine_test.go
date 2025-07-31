@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -3223,7 +3223,7 @@ func TestEngineAbortQueryWhenInPartition(t *testing.T) {
 
 	conf := DefaultConfig(t)
 	// Overwrite the log to record what it says
-	conf.Ctx.Log = logging.NewLogger("", logging.NewWrappedCore(logging.Verbo, &buff, logging.Plain.ConsoleEncoder()))
+	conf.Ctx.Log = logging.NewLogger("", logging.NewWrappedCore(log.Verbo, &buff, logging.Plain.ConsoleEncoder()))
 	conf.Params = sampling.DefaultParameters
 	conf.ConnectedValidators = &mockConnVDR{percent: 0.7, Peers: conf.ConnectedValidators}
 

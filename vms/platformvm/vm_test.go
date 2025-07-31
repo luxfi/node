@@ -43,7 +43,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -1444,12 +1444,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	chainRouter := &router.ChainRouter{}
 
 	metrics := prometheus.NewRegistry()
-	mc, err := message.NewCreator(logging.NoLog{}, metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
+	mc, err := message.NewCreator(log.NoLog{}, metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		logging.NoLog{},
+		log.NoLog{},
 		timeoutManager,
 		time.Second,
 		set.Set[ids.ID]{},

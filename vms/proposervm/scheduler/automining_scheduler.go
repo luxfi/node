@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // AutominingScheduler is a scheduler that continuously produces blocks at a fixed interval
@@ -39,7 +39,7 @@ type autominingCommand struct {
 }
 
 // NewAutomining creates a new scheduler with automining capabilities
-func NewAutomining(log logging.Logger, toEngine chan<- core.Message) (AutominingScheduler, chan<- core.Message) {
+func NewAutomining(log log.Logger, toEngine chan<- core.Message) (AutominingScheduler, chan<- core.Message) {
 	vmToEngine := make(chan core.Message, cap(toEngine))
 	baseScheduler := &scheduler{
 		log:               log,

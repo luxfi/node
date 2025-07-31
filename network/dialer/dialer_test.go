@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Test that canceling a context passed into Dial results
@@ -55,7 +55,7 @@ func TestDialerCancelDial(t *testing.T) {
 			ThrottleRps:       10,
 			ConnectionTimeout: 30 * time.Second,
 		},
-		logging.NoLog{},
+		log.NoLog{},
 	)
 
 	// Make an outgoing connection with a cancelled context

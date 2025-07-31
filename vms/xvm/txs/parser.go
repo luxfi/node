@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/fxs"
 )
@@ -43,7 +43,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
-		logging.NoLog{},
+		log.NoLog{},
 		fxs,
 	)
 }
@@ -51,7 +51,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 func NewCustomParser(
 	typeToFxIndex map[reflect.Type]int,
 	clock *mockable.Clock,
-	log logging.Logger,
+	log log.Logger,
 	fxs []fxs.Fx,
 ) (Parser, error) {
 	gc := linearcodec.NewDefault()

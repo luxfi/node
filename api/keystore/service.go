@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type service struct {
@@ -22,7 +22,7 @@ func (s *service) CreateUser(_ *http.Request, args *api.UserPass, _ *api.EmptyRe
 	s.ks.log.Warn("deprecated API called",
 		zap.String("service", "keystore"),
 		zap.String("method", "createUser"),
-		logging.UserString("username", args.Username),
+		log.UserString("username", args.Username),
 	)
 
 	return s.ks.CreateUser(args.Username, args.Password)
@@ -32,7 +32,7 @@ func (s *service) DeleteUser(_ *http.Request, args *api.UserPass, _ *api.EmptyRe
 	s.ks.log.Warn("deprecated API called",
 		zap.String("service", "keystore"),
 		zap.String("method", "deleteUser"),
-		logging.UserString("username", args.Username),
+		log.UserString("username", args.Username),
 	)
 
 	return s.ks.DeleteUser(args.Username, args.Password)
@@ -66,7 +66,7 @@ func (s *service) ImportUser(_ *http.Request, args *ImportUserArgs, _ *api.Empty
 	s.ks.log.Warn("deprecated API called",
 		zap.String("service", "keystore"),
 		zap.String("method", "importUser"),
-		logging.UserString("username", args.Username),
+		log.UserString("username", args.Username),
 	)
 
 	// Decode the user from string to bytes
@@ -96,7 +96,7 @@ func (s *service) ExportUser(_ *http.Request, args *ExportUserArgs, reply *Expor
 	s.ks.log.Warn("deprecated API called",
 		zap.String("service", "keystore"),
 		zap.String("method", "exportUser"),
-		logging.UserString("username", args.Username),
+		log.UserString("username", args.Username),
 	)
 
 	userBytes, err := s.ks.ExportUser(args.Username, args.Password)

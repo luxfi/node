@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
 func TestNewMinority(t *testing.T) {
 	minority := NewMinority(
-		logging.NoLog{}, // log
+		log.NoLog{}, // log
 		set.Of(nodeID0), // frontierNodes
 		2,               // maxOutstanding
 	)
@@ -26,7 +26,7 @@ func TestNewMinority(t *testing.T) {
 			maxOutstanding: 2,
 			pendingSend:    set.Of(nodeID0),
 		},
-		log: logging.NoLog{},
+		log: log.NoLog{},
 	}
 	require.Equal(t, expectedMinority, minority)
 }
@@ -46,7 +46,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -54,7 +54,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedPeers: nil,
 		},
@@ -65,7 +65,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0, nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -73,7 +73,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0, nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedPeers: set.Of(nodeID0, nodeID1),
 		},
@@ -84,7 +84,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -92,7 +92,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedPeers: set.Of(nodeID0),
 		},
@@ -125,7 +125,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			nodeID: nodeID0,
 			blkIDs: nil,
@@ -135,7 +135,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			expectedErr: nil,
 		},
@@ -147,7 +147,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			nodeID: nodeID1,
 			blkIDs: set.Of(blkID0),
@@ -157,7 +157,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log:         logging.NoLog{},
+				log:         log.NoLog{},
 				receivedSet: set.Of(blkID0),
 			},
 			expectedErr: nil,
@@ -169,7 +169,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID2),
 				},
-				log: logging.NoLog{},
+				log: log.NoLog{},
 			},
 			nodeID: nodeID2,
 			blkIDs: set.Of(blkID1),
@@ -178,7 +178,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log:         logging.NoLog{},
+				log:         log.NoLog{},
 				receivedSet: set.Of(blkID1),
 				received:    []ids.ID{blkID1},
 			},
@@ -210,7 +210,7 @@ func TestMinorityResult(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log:      logging.NoLog{},
+				log:      log.NoLog{},
 				received: nil,
 			},
 			expectedAccepted:  nil,
@@ -222,7 +222,7 @@ func TestMinorityResult(t *testing.T) {
 				requests: requests{
 					maxOutstanding: 1,
 				},
-				log:         logging.NoLog{},
+				log:         log.NoLog{},
 				receivedSet: set.Of(blkID0),
 				received:    []ids.ID{blkID0},
 			},

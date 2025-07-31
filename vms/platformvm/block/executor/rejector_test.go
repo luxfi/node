@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -128,7 +128,7 @@ func TestRejectBlock(t *testing.T) {
 			rejector := &rejector{
 				backend: &backend{
 					ctx: &consensus.Context{
-						Log: logging.NoLog{},
+						Log: log.NoLog{},
 					},
 					blkIDToState: blkIDToState,
 					Mempool:      mempool,

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -137,7 +137,7 @@ func (m *outboundMessage) BytesSavedCompression() int {
 
 // TODO: add other compression algorithms with extended interface
 type msgBuilder struct {
-	log logging.Logger
+	log log.Logger
 
 	zstdCompressor compression.Compressor
 	count          *prometheus.CounterVec // type + op + direction
@@ -147,7 +147,7 @@ type msgBuilder struct {
 }
 
 func newMsgBuilder(
-	log logging.Logger,
+	log log.Logger,
 	metrics prometheus.Registerer,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {

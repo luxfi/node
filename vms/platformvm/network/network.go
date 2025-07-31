@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
@@ -28,7 +28,7 @@ var errMempoolDisabledWithPartialSync = errors.New("mempool is disabled partial 
 type Network struct {
 	*p2p.Network
 
-	log                       logging.Logger
+	log                       log.Logger
 	txVerifier                TxVerifier
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
@@ -41,7 +41,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log log.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,

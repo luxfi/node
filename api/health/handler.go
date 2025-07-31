@@ -9,14 +9,14 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 
 	avajson "github.com/luxfi/node/utils/json"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc
 // POST requests.
-func NewGetAndPostHandler(log logging.Logger, reporter Reporter) (http.Handler, error) {
+func NewGetAndPostHandler(log log.Logger, reporter Reporter) (http.Handler, error) {
 	newServer := rpc.NewServer()
 	codec := avajson.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")

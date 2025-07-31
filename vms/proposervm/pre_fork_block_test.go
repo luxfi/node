@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -657,7 +657,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 		ChainVM: innerVM,
 		ctx: &consensus.Context{
 			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
+			Log:            log.NoLog{},
 		},
 	}
 

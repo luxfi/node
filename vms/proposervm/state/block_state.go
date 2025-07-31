@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -68,7 +68,7 @@ func NewBlockState(db database.Database) BlockState {
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		metric.AppendNamespace(namespace, "block_cache"),
+		metrics.AppendNamespace(namespace, "block_cache"),
 		metrics,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,

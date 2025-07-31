@@ -6,12 +6,12 @@
 
 package ulimit
 
-import "github.com/luxfi/node/utils/logging"
+import "github.com/luxfi/log"
 
 const DefaultFDLimit = 16384
 
 // Set is a no-op for windows and will warn if the default is not used.
-func Set(max uint64, log logging.Logger) error {
+func Set(max uint64, log log.Logger) error {
 	if max != DefaultFDLimit {
 		log.Warn("fd-limit is not supported for windows")
 	}

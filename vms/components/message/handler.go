@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var _ Handler = NoopHandler{}
@@ -17,7 +17,7 @@ type Handler interface {
 }
 
 type NoopHandler struct {
-	Log logging.Logger
+	Log log.Logger
 }
 
 func (h NoopHandler) HandleTx(nodeID ids.NodeID, requestID uint32, _ *Tx) error {

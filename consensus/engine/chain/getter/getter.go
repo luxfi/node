@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -25,7 +25,7 @@ var _ core.AllGetsServer = (*getter)(nil)
 func New(
 	vm block.ChainVM,
 	sender core.Sender,
-	log logging.Logger,
+	log log.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
 	reg prometheus.Registerer,
@@ -41,7 +41,7 @@ func New(
 	}
 
 	var err error
-	gh.getAncestorsBlks, err = metric.NewAverager(
+	gh.getAncestorsBlks, err = metrics.NewAverager(
 		"get_ancestors_blks",
 		"blocks fetched in a call to GetAncestors",
 		reg,
@@ -54,7 +54,7 @@ type getter struct {
 	ssVM block.StateSyncableVM // can be nil
 
 	sender core.Sender
-	log    logging.Logger
+	log    log.Logger
 	// Max time to spend fetching a container and its ancestors when responding
 	// to a GetAncestors
 	maxTimeGetAncestors time.Duration

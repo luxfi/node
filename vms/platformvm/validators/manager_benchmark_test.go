@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/api"
@@ -48,7 +48,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	db, err := leveldb.New(
 		b.TempDir(),
 		nil,
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
@@ -117,7 +117,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log:       logging.NoLog{},
+			Log:       log.NoLog{},
 		},
 		metrics,
 		reward.NewCalculator(reward.Config{
@@ -130,7 +130,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	require.NoError(err)
 
 	m := NewManager(
-		logging.NoLog{},
+		log.NoLog{},
 		config.Config{
 			Validators: vdrs,
 		},

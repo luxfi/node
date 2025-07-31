@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -58,7 +58,7 @@ type AddressTxsIndexer interface {
 }
 
 type indexer struct {
-	log     logging.Logger
+	log     log.Logger
 	metrics metrics
 	db      database.Database
 }
@@ -67,7 +67,7 @@ type indexer struct {
 // The returned indexer ignores UTXOs that are not type secp256k1fx.TransferOutput.
 func NewIndexer(
 	db database.Database,
-	log logging.Logger,
+	log log.Logger,
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 	allowIncompleteIndices bool,

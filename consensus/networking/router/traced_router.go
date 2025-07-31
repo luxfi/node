@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -39,7 +39,7 @@ func Trace(router Router, tracer trace.Tracer) Router {
 
 func (r *tracedRouter) Initialize(
 	nodeID ids.NodeID,
-	log logging.Logger,
+	log log.Logger,
 	timeoutManager timeout.Manager,
 	closeTimeout time.Duration,
 	criticalChains set.Set[ids.ID],

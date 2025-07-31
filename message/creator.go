@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var _ Creator = (*creator)(nil)
@@ -25,7 +25,7 @@ type creator struct {
 }
 
 func NewCreator(
-	log logging.Logger,
+	log log.Logger,
 	metrics prometheus.Registerer,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,

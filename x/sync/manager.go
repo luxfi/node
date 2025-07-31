@@ -15,7 +15,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/x/merkledb"
@@ -113,7 +113,7 @@ type ManagerConfig struct {
 	DB                    DB
 	Client                Client
 	SimultaneousWorkLimit int
-	Log                   logging.Logger
+	Log                   log.Logger
 	TargetRoot            ids.ID
 	BranchFactor          merkledb.BranchFactor
 }

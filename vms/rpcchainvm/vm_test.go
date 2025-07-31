@@ -17,7 +17,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -128,9 +128,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "happy path",
 			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stderr:           log.NoLog{},
+				Stdout:           log.NoLog{},
+				Log:              log.NoLog{},
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -141,8 +141,8 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "invalid stderr",
 			config: &subprocess.Config{
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stdout:           log.NoLog{},
+				Log:              log.NoLog{},
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -153,9 +153,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "handshake timeout",
 			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stderr:           log.NoLog{},
+				Stdout:           log.NoLog{},
+				Log:              log.NoLog{},
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {

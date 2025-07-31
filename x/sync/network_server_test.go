@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
@@ -130,7 +130,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 					return nil
 				},
 			).AnyTimes()
-			handler := NewNetworkServer(sender, smallTrieDB, logging.NoLog{})
+			handler := NewNetworkServer(sender, smallTrieDB, log.NoLog{})
 			err := handler.HandleRangeProofRequest(context.Background(), test.nodeID, 0, test.request)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
@@ -327,7 +327,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 				},
 			).AnyTimes()
 
-			handler := NewNetworkServer(sender, trieDB, logging.NoLog{})
+			handler := NewNetworkServer(sender, trieDB, log.NoLog{})
 			err := handler.HandleChangeProofRequest(context.Background(), test.nodeID, 0, test.request)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
@@ -412,7 +412,7 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 					gomock.Any(),
 				).Return(&merkledb.ChangeProof{}, nil).Times(1)
 
-				return NewNetworkServer(sender, db, logging.NoLog{})
+				return NewNetworkServer(sender, db, log.NoLog{})
 			},
 			expectedErr: errAppSendFailed,
 		},
@@ -449,7 +449,7 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 					gomock.Any(),
 				).Return(&merkledb.RangeProof{}, nil).Times(1)
 
-				return NewNetworkServer(sender, db, logging.NoLog{})
+				return NewNetworkServer(sender, db, log.NoLog{})
 			},
 			expectedErr: errAppSendFailed,
 		},
