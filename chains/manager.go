@@ -25,19 +25,19 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/tracker"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/tracker"
 	// "github.com/luxfi/node/consensus/engine/dag/bootstrap/queue"
 	// "github.com/luxfi/node/consensus/engine/dag/state"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	// "github.com/luxfi/node/consensus/engine/chain/syncer"
-	"github.com/luxfi/node/consensus/networking/handler"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/networking/handler"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/networking/timeout"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
@@ -52,7 +52,7 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/consensus/adapter"
+	"github.com/luxfi/node/quasar/adapter"
 	"github.com/luxfi/node/vms/fx"
 	"github.com/luxfi/node/vms/metervm"
 	"github.com/luxfi/node/vms/nftfx"
@@ -63,15 +63,15 @@ import (
 	"github.com/luxfi/node/vms/tracedvm"
 	"github.com/luxfi/node/version"
 
-	luxeng "github.com/luxfi/node/consensus/engine/dag"
+	luxeng "github.com/luxfi/node/quasar/engine/dag"
 	// luxbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
-	luxgetter "github.com/luxfi/node/consensus/engine/dag/getter"
-	smeng "github.com/luxfi/node/consensus/engine/chain"
+	luxgetter "github.com/luxfi/node/quasar/engine/dag/getter"
+	smeng "github.com/luxfi/node/quasar/engine/chain"
 	// smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
-	lineargetter "github.com/luxfi/node/consensus/engine/chain/getter"
+	lineargetter "github.com/luxfi/node/quasar/engine/chain/getter"
 	// factories "github.com/luxfi/node/consensus/factories"
-	smcon "github.com/luxfi/node/consensus/chain"
-	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	smcon "github.com/luxfi/node/quasar/chain"
+	timetracker "github.com/luxfi/node/quasar/networking/tracker"
 	// p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
@@ -629,7 +629,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 
 // Create a DAG-based blockchain that uses Lux
 func (m *manager) createLuxChain(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
@@ -1128,7 +1128,7 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Linear consensus engine
 func (m *manager) createLinearChain(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,

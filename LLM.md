@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-This is the core node implementation for the Lux Network, a fork of Avalanche that introduces the Multi-Consensus architecture. The node enables validation of multiple L1 blockchains (Lux v2, Lux v1, and Avalanche) in parallel using a single node instance.
+This is the core node implementation for the Lux Network. The node enables
+validation of multiple L1,L2,L3 blockchains in parallel using a single node
+instance.
 
 ## Key Features and Changes
 
@@ -16,7 +18,7 @@ This is the core node implementation for the Lux Network, a fork of Avalanche th
 
 ### 2. Database Improvements
 - **Default Backend**: Changed from LevelDB to BadgerDB for better performance
-- **Implementation**: 
+- **Implementation**:
   - BadgerDB set as default in EVM module
   - All database backends (LevelDB, PebbleDB, BadgerDB) pass test suite
   - Database factory in `/luxfi/database` package
@@ -119,7 +121,6 @@ make tmpnetctl         # Build tmpnetctl for test networks
 ### Multi-Consensus Implementation
 1. Design ConsensusModule interface
 2. Implement multi-consensus manager
-3. Create compatibility modules for Lux v1 and Avalanche
 4. Implement network isolation and routing
 5. Add monitoring endpoints for multi-consensus operation
 
@@ -156,9 +157,3 @@ make tmpnetctl         # Build tmpnetctl for test networks
 2. **Database**: Ensure clean data directory for fresh start
 3. **Ports**: Default HTTP port 9650, staking port 9651
 4. **Genesis**: Verify genesis hash matches expected value
-
-## References
-
-- Original Avalanche documentation: https://docs.avax.network/
-- Lux Network specifications: Internal documentation
-- Multi-Consensus design: Architecture documents (pending)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
@@ -16,7 +16,7 @@ import (
 
 // wrapper wraps an ExternalSender to implement the Sender interface
 type wrapper struct {
-	ctx           *consensus.Context
+	ctx           *quasar.Context
 	externalSender ExternalSender
 	msgCreator    message.Creator
 	subnetTracker subnets.Tracker
@@ -24,7 +24,7 @@ type wrapper struct {
 
 // New creates a new Sender that wraps an ExternalSender
 func New(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	msgCreator message.Creator,
 	externalSender ExternalSender,
 	subnetTracker subnets.Tracker,

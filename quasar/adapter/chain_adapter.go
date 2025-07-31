@@ -14,11 +14,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/chain"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/chain"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/validators"
 )
 
 var (
