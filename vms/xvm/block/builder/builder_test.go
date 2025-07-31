@@ -18,10 +18,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -69,7 +69,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -100,7 +100,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -141,7 +141,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -183,7 +183,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -226,7 +226,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -315,7 +315,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -385,7 +385,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -457,7 +457,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &quasar.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -505,7 +505,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx: &consensus.Context{
+		Ctx: &quasar.Context{
 			Log: log.NewNoOpLogger(),
 		},
 		Codec: parser.Codec(),

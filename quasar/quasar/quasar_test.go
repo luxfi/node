@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	// "github.com/luxfi/crypto/bls"
 	// "github.com/luxfi/crypto/ringtail"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/stretchr/testify/require"
 )
 

@@ -13,8 +13,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
@@ -621,7 +621,7 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx *consensus.Context, txID ids.ID) (*txs.Tx, error) {
+func NewRewardValidatorTx(ctx *quasar.Context, txID ids.ID) (*txs.Tx, error) {
 	utx := &txs.RewardValidatorTx{TxID: txID}
 	tx, err := txs.NewSigned(utx, txs.Codec, nil)
 	if err != nil {

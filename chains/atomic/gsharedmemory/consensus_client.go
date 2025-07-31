@@ -7,13 +7,13 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
 
-var _ consensus.SharedMemory = (*ConsensusClient)(nil)
+var _ quasar.SharedMemory = (*ConsensusClient)(nil)
 
-// ConsensusClient is consensus.SharedMemory that talks over RPC.
+// ConsensusClient is quasar.SharedMemory that talks over RPC.
 type ConsensusClient struct {
 	client sharedmemorypb.SharedMemoryClient
 }
@@ -59,7 +59,7 @@ func (c *ConsensusClient) Indexed(
 	return resp.Values, resp.LastTrait, resp.LastKey, nil
 }
 
-func (c *ConsensusClient) Apply(requests map[ids.ID]*consensus.Requests, batches ...interface{}) error {
+func (c *ConsensusClient) Apply(requests map[ids.ID]*quasar.Requests, batches ...interface{}) error {
 	req := &sharedmemorypb.ApplyRequest{
 		Requests: make([]*sharedmemorypb.AtomicRequest, 0, len(requests)),
 		Batches:  make([]*sharedmemorypb.Batch, 0),
@@ -81,7 +81,7 @@ func (c *ConsensusClient) Apply(requests map[ids.ID]*consensus.Requests, batches
 		req.Requests = append(req.Requests, chainReq)
 	}
 	
-	// Note: batches are interface{} in consensus.SharedMemory
+	// Note: batches are interface{} in quasar.SharedMemory
 	// We'll skip processing them for now as the exact type is unclear
 	
 	_, err := c.client.Apply(context.Background(), req)

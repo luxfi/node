@@ -5,7 +5,7 @@ import (
     "sync"
     "time"
 
-    rt "github.com/luxfi/node/consensus/quasar/ringtail"
+    rt "github.com/luxfi/node/quasar/quasar/ringtail"
 )
 
 // Aggregator collects Ringtail shares → certificate once quorum reached.

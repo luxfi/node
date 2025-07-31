@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"

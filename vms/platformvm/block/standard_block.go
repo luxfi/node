@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -64,7 +64,7 @@ func (b *ApricotStandardBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotStandardBlock) InitCtx(ctx *consensus.Context) {
+func (b *ApricotStandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}

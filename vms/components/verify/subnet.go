@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
 func SameSubnet(ctx context.Context, chainCtx interface{}, peerChainID ids.ID) error {
-	// Handle both core.Context and consensus.Context
+	// Handle both core.Context and quasar.Context
 	var chainID ids.ID
 	var subnetID ids.ID
 	var validatorState interface {
@@ -34,7 +34,7 @@ func SameSubnet(ctx context.Context, chainCtx interface{}, peerChainID ids.ID) e
 		chainID = c.ChainID
 		subnetID = c.SubnetID
 		validatorState = c.ValidatorState
-	case *consensus.Context:
+	case *quasar.Context:
 		chainID = c.ChainID
 		subnetID = c.SubnetID
 		validatorState = c.ValidatorState

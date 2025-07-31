@@ -5,13 +5,13 @@ package txstest
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
 func newContext(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 ) *builder.Context {

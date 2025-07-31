@@ -23,11 +23,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/validators/gvalidators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/validators/gvalidators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/galiasreader"
@@ -42,7 +42,7 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
@@ -79,7 +79,7 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    *consensus.Context
+	ctx    *quasar.Context
 	closed chan struct{}
 }
 
@@ -220,7 +220,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.closed = make(chan struct{})
 
-	vm.ctx = &consensus.Context{
+	vm.ctx = &quasar.Context{
 		NetworkID:       req.NetworkId,
 		SubnetID:        subnetID,
 		ChainID:         chainID,
@@ -284,7 +284,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 }
 
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
-	err := vm.vm.SetState(ctx, consensus.State(stateReq.State))
+	err := vm.vm.SetState(ctx, quasar.State(stateReq.State))
 	if err != nil {
 		return nil, err
 	}
@@ -574,7 +574,7 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 		vmHealth = "healthy"
 	}
 	
-	err = vm.db.HealthCheck()
+	_, err = vm.db.HealthCheck(ctx)
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
 	}

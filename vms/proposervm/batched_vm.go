@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	chaincon "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"

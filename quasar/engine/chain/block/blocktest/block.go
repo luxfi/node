@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 // TestBlock is a test implementation of block.Block

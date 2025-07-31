@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"

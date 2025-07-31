@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"

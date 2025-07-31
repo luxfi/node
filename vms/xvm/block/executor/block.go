@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs/executor"

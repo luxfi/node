@@ -51,7 +51,7 @@ type SyntacticVerifier struct {
 	Tx *txs.Tx
 }
 
-// quasarContext returns a quasar.Context created from the consensus.Context
+// quasarContext returns a quasar.Context created from the quasar.Context
 func (v *SyntacticVerifier) quasarContext() *quasar.Context {
 	return &quasar.Context{
 		NetworkID:  v.Ctx.NetworkID,

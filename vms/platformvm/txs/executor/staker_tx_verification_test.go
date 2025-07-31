@@ -12,8 +12,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -571,7 +571,7 @@ func TestGetValidatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &consensus.Context{
+				Ctx: &quasar.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},
@@ -688,7 +688,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &consensus.Context{
+				Ctx: &quasar.Context{
 					LUXAssetID: luxAssetID,
 				},
 			},

@@ -22,18 +22,18 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chainmock"
-	"github.com/luxfi/node/consensus/chain/chaintest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorstest"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -106,7 +106,7 @@ func initTestProposerVM(
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -204,7 +204,7 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	proVM.Set(chaintest.GenesisTimestamp)
@@ -857,7 +857,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		_ context.Context,
-		_ *consensus.Context,
+		_ *quasar.Context,
 		_ db.Database,
 		_ []byte,
 		_ []byte,
@@ -886,7 +886,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	// Notify the proposer VM of a new block on the inner block side
@@ -1084,7 +1084,7 @@ func TestInnerVMRollback(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*consensus.Context,
+				*quasar.Context,
 				db.Database,
 				[]byte,
 				[]byte,
@@ -1145,7 +1145,7 @@ func TestInnerVMRollback(t *testing.T) {
 		nil,
 	))
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	coreBlk := chaintest.BuildChild(chaintest.Genesis)
@@ -1558,7 +1558,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -1653,7 +1653,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
@@ -1726,7 +1726,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, db.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -1821,7 +1821,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
 	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
@@ -2143,7 +2143,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *consensus.Context, db.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
+			InitializeF: func(context.Context, *quasar.Context, db.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},
@@ -2218,7 +2218,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2307,7 +2307,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2352,7 +2352,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2487,7 +2487,7 @@ func TestLocalParse(t *testing.T) {
 
 	db := prefixdb.New([]byte{}, memdb.New())
 
-	_ = vm.Initialize(context.Background(), &consensus.Context{
+	_ = vm.Initialize(context.Background(), &quasar.Context{
 		Log:     log.NewNoOpLogger(),
 		ChainID: chainID,
 	}, db, nil, nil, nil, nil, nil)
@@ -2671,7 +2671,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *consensus.Context, _ db.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
+			InitializeF: func(_ context.Context, _ *quasar.Context, _ db.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
 				return nil
 			},
 		},
@@ -2766,7 +2766,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(proVM.SetState(context.Background(), quasar.Bootstrapping))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
@@ -2812,7 +2812,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
 	// If the inner VM requests building a block, the proposervm passes that
 	// message to the consensus core. This is really the source of the issue,

@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/uptime/uptimemock"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/uptime/uptimemock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"

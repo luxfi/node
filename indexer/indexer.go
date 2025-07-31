@@ -16,10 +16,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	log "github.com/luxfi/log"
@@ -48,9 +48,9 @@ type Config struct {
 	Log                  log.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
-	BlockAcceptorGroup   consensus.AcceptorGroup
-	TxAcceptorGroup      consensus.AcceptorGroup
-	VertexAcceptorGroup  consensus.AcceptorGroup
+	BlockAcceptorGroup   quasar.AcceptorGroup
+	TxAcceptorGroup      quasar.AcceptorGroup
+	VertexAcceptorGroup  quasar.AcceptorGroup
 	APIServer            server.PathAdder
 	ShutdownF            func()
 }
@@ -121,15 +121,15 @@ type indexer struct {
 	txIndices map[ids.ID]*index
 
 	// Notifies of newly accepted blocks
-	blockAcceptorGroup consensus.AcceptorGroup
+	blockAcceptorGroup quasar.AcceptorGroup
 	// Notifies of newly accepted transactions
-	txAcceptorGroup consensus.AcceptorGroup
+	txAcceptorGroup quasar.AcceptorGroup
 	// Notifies of newly accepted vertices
-	vertexAcceptorGroup consensus.AcceptorGroup
+	vertexAcceptorGroup quasar.AcceptorGroup
 }
 
 // Assumes [ctx.Lock] is not held
-func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx *quasar.Context, vm core.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -310,7 +310,7 @@ func (i *indexer) registerChainHelper(
 	chainID ids.ID,
 	prefixEnd byte,
 	name, endpoint string,
-	acceptorGroup consensus.AcceptorGroup,
+	acceptorGroup quasar.AcceptorGroup,
 ) (*index, error) {
 	prefix := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(prefix, chainID[:])

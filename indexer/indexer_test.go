@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
-	"github.com/luxfi/node/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/dag/vertex/vertexmock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
 )
@@ -56,9 +56,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  log.NewNoOpLogger(),
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -97,9 +97,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 log.NewNoOpLogger(),
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:     quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup: quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -136,9 +136,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -404,9 +404,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NewNoOpLogger(),
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -486,9 +486,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -500,7 +500,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := consensustest.ConsensusContext(&consensus.Context{
+	chain1Ctx := consensustest.ConsensusContext(&quasar.Context{
 		ChainID:  ids.GenerateTestID(),
 		SubnetID: ids.GenerateTestID(),
 	})

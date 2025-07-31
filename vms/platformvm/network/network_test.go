@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"

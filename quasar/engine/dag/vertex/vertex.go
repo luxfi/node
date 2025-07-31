@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/node/quasar/choices"
 )
 
 // Vertex is a basic vertex interface

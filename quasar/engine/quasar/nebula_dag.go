@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/version"
 	
 	// TODO: Fix quantum consensus imports
-	// "github.com/luxfi/node/consensus/engine/quantum"
+	// "github.com/luxfi/node/quasar/engine/quantum"
 )
 
 // NebulaDAGEngine implements DAG consensus using Nebula with Quasar validation

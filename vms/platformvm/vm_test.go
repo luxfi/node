@@ -19,27 +19,27 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/chain/bootstrap"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/handler"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/networking/sender/sendertest"
-	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/tracker"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/bootstrap"
+	"github.com/luxfi/node/quasar/networking/benchlist"
+	"github.com/luxfi/node/quasar/networking/handler"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/networking/sender/sendertest"
+	"github.com/luxfi/node/quasar/networking/timeout"
+	"github.com/luxfi/node/quasar/sampling"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -62,11 +62,11 @@ import (
 	pwallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
-	smeng "github.com/luxfi/node/consensus/engine/chain"
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/engine/chain/getter"
-	smcon "github.com/luxfi/node/consensus/chain"
-	timetracker "github.com/luxfi/node/consensus/networking/tracker"
+	smeng "github.com/luxfi/node/quasar/engine/chain"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/getter"
+	smcon "github.com/luxfi/node/quasar/chain"
+	timetracker "github.com/luxfi/node/quasar/networking/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
@@ -188,7 +188,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, db.Database, *mutableShar
 		Capacity: defaultDynamicFeeConfig.MaxCapacity,
 	})
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	wallet := newWallet(t, vm, walletConfig{
 		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
@@ -1007,13 +1007,13 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
 	require.NoError(blk.Accept(context.Background()))
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1361,9 +1361,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	})
 
-	consensusCtx.State.Set(consensus.EngineState{
+	consensusCtx.State.Set(quasar.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping,
+		State: quasar.Bootstrapping,
 	})
 
 	// Allow incoming messages to be routed to the new chain
@@ -1690,8 +1690,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(firstVM.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(firstVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(firstVM.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(firstVM.SetState(context.Background(), quasar.NormalOp))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
 	durationForReward := genesistest.DefaultValidatorEndTime.Sub(genesistest.DefaultValidatorStartTime) * firstUptimePercentage / 100
@@ -1739,8 +1739,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	secondVM.clock.Set(vmStopTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(secondVM.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(secondVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(secondVM.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(secondVM.SetState(context.Background(), quasar.NormalOp))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
 	secondVM.clock.Set(genesistest.DefaultValidatorEndTime)
@@ -1837,8 +1837,8 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	vm.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.clock.Set(genesistest.DefaultValidatorEndTime)

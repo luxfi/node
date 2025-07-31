@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
 )
 

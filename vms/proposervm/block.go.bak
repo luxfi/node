@@ -12,12 +12,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	chaincon "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 const (

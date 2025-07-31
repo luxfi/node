@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
@@ -29,7 +29,7 @@ import (
 
 func NewWallet(
 	t testing.TB,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,

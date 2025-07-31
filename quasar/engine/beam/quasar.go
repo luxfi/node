@@ -9,7 +9,7 @@ import (
 	"time"
 	
 	// TODO: Import from external consensus module
-	// "github.com/luxfi/node/consensus/quasar"
+	// "github.com/luxfi/node/quasar/quasar"
 	// rt "github.com/luxfi/ringtail"
 )
 

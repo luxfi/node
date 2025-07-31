@@ -10,27 +10,27 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
 )
 
 func TestRejectMiddleware(t *testing.T) {
 	type test struct {
 		name               string
 		handler            http.Handler
-		state              consensus.State
+		state              quasar.State
 		expectedStatusCode int
 	}
 
 	tests := []test{
 		{
 			name:               "chain is state syncing",
-			state:              consensus.StateSyncing,
+			state:              quasar.StateSyncing,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
 			name:               "chain is bootstrapping",
-			state:              consensus.Bootstrapping,
+			state:              quasar.Bootstrapping,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -38,7 +38,7 @@ func TestRejectMiddleware(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusTeapot)
 			}),
-			state:              consensus.NormalOp,
+			state:              quasar.NormalOp,
 			expectedStatusCode: http.StatusTeapot,
 		},
 	}
@@ -49,7 +49,7 @@ func TestRejectMiddleware(t *testing.T) {
 
 			ctx := consensustest.Context(t, consensustest.CChainID)
 			ctx = consensustest.ConsensusContext(ctx)
-			ctx.State.Set(consensus.EngineState{
+			ctx.State.Set(quasar.EngineState{
 				State: tt.state,
 			})
 

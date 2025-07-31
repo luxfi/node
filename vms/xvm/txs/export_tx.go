@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -26,7 +26,7 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx *consensus.Context) {
+func (t *ExportTx) InitCtx(ctx *quasar.Context) {
 	for _, out := range t.ExportedOuts {
 		out.InitCtx(ctx)
 	}

@@ -19,12 +19,11 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/graph"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -105,7 +104,7 @@ type VM struct {
 	utxo.Spender
 
 	// Contains information of where this VM is executing
-	ctx *consensus.Context
+	ctx *quasar.Context
 
 	// Used to check local time
 	clock mockable.Clock
@@ -175,7 +174,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	database db.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -310,11 +309,11 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state quasar.State) error {
 	switch state {
-	case consensus.Bootstrapping:
+	case quasar.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case consensus.NormalOp:
+	case quasar.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
 		return fmt.Errorf("unknown state: %s", state)
@@ -530,7 +529,7 @@ func (vm *VM) ParseTx(_ context.Context, bytes []byte) (graph.Tx, error) {
  ******************************************************************************
  */
 
-// issueTxFromRPC attempts to send a transaction to consensus.
+// issueTxFromRPC attempts to send a transaction to quasar.
 //
 // Invariant: The context lock is not held
 // Invariant: This function is only called after Linearize has been called.

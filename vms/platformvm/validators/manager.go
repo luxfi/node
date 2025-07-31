@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/window"
@@ -321,7 +321,7 @@ func (m *manager) getCurrentValidatorSet(
 }
 
 func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
-	if chainID == constants.PlatformChainID {
+	if chainID == constants.PlatformChainID() {
 		return constants.PrimaryNetworkID, nil
 	}
 

@@ -12,7 +12,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -129,7 +129,7 @@ func TestRejectBlock(t *testing.T) {
 			}
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &consensus.Context{
+					ctx: &quasar.Context{
 						Log: log.NewNoOpLogger(),
 					},
 					blkIDToState: blkIDToState,

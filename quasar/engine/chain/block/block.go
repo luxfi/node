@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/core"
 	db "github.com/luxfi/database"
 )
 
@@ -115,7 +115,7 @@ type ChainVM interface {
 	// Initialize initializes the VM
 	Initialize(
 		ctx context.Context,
-		chainCtx *consensus.Context,
+		chainCtx *quasar.Context,
 		database db.Database,
 		genesisBytes []byte,
 		upgradeBytes []byte,
@@ -125,7 +125,7 @@ type ChainVM interface {
 	) error
 
 	// SetState sets the VM state
-	SetState(context.Context, consensus.State) error
+	SetState(context.Context, quasar.State) error
 
 	// Shutdown shuts down the VM
 	Shutdown(context.Context) error

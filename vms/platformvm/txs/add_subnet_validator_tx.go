@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -47,7 +47,7 @@ func (*AddSubnetValidatorTx) CurrentPriority() Priority {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

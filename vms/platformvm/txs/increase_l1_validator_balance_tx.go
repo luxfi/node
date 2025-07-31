@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 )
 
 var (
@@ -25,7 +25,7 @@ type IncreaseL1ValidatorBalanceTx struct {
 	Balance uint64 `serialize:"true" json:"balance"`
 }
 
-func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

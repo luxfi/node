@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -23,7 +23,7 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *consensus.Context) {
+func (t *OperationTx) InitCtx(ctx *quasar.Context) {
 	for _, op := range t.Ops {
 		op.Op.InitCtx(ctx)
 	}

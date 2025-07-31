@@ -9,14 +9,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/validators"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 )
 
-var _ consensus.ValidatorState = (*GRPCClient)(nil)
+var _ quasar.ValidatorState = (*GRPCClient)(nil)
 
-// GRPCClient is a gRPC client that implements consensus.ValidatorState
+// GRPCClient is a gRPC client that implements quasar.ValidatorState
 type GRPCClient struct {
 	client validatorstatepb.ValidatorStateClient
 }
@@ -28,7 +28,7 @@ func NewGRPCClient(client validatorstatepb.ValidatorStateClient) *GRPCClient {
 	}
 }
 
-// GetMinimumHeight implements consensus.ValidatorState
+// GetMinimumHeight implements quasar.ValidatorState
 func (c *GRPCClient) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	resp, err := c.client.GetMinimumHeight(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -37,7 +37,7 @@ func (c *GRPCClient) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	return resp.Height, nil
 }
 
-// GetCurrentHeight implements consensus.ValidatorState
+// GetCurrentHeight implements quasar.ValidatorState
 func (c *GRPCClient) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	resp, err := c.client.GetCurrentHeight(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -46,7 +46,7 @@ func (c *GRPCClient) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return resp.Height, nil
 }
 
-// GetSubnetID implements consensus.ValidatorState
+// GetSubnetID implements quasar.ValidatorState
 func (c *GRPCClient) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	resp, err := c.client.GetSubnetID(ctx, &validatorstatepb.GetSubnetIDRequest{
 		ChainId: chainID[:],
@@ -57,7 +57,7 @@ func (c *GRPCClient) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, e
 	return ids.ToID(resp.SubnetId)
 }
 
-// GetValidatorSet implements consensus.ValidatorState
+// GetValidatorSet implements quasar.ValidatorState
 func (c *GRPCClient) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
@@ -77,7 +77,7 @@ func (c *GRPCClient) GetValidatorSet(
 	return validators, nil
 }
 
-// ApplyValidatorWeightDiffs implements consensus.ValidatorState
+// ApplyValidatorWeightDiffs implements quasar.ValidatorState
 func (c *GRPCClient) ApplyValidatorWeightDiffs(
 	ctx context.Context,
 	validators map[ids.NodeID]*validators.GetValidatorOutput,
@@ -90,7 +90,7 @@ func (c *GRPCClient) ApplyValidatorWeightDiffs(
 	return nil
 }
 
-// ApplyValidatorPublicKeyDiffs implements consensus.ValidatorState
+// ApplyValidatorPublicKeyDiffs implements quasar.ValidatorState
 func (c *GRPCClient) ApplyValidatorPublicKeyDiffs(
 	ctx context.Context,
 	validators map[ids.NodeID]*validators.GetValidatorOutput,
@@ -103,7 +103,7 @@ func (c *GRPCClient) ApplyValidatorPublicKeyDiffs(
 	return nil
 }
 
-// GetCurrentValidatorSet implements consensus.ValidatorState
+// GetCurrentValidatorSet implements quasar.ValidatorState
 func (c *GRPCClient) GetCurrentValidatorSet(
 	ctx context.Context,
 	subnetID ids.ID,

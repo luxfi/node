@@ -5,7 +5,7 @@ package builder
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	log "github.com/luxfi/log"
 )
@@ -24,9 +24,9 @@ func NewLinearContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (*consensus.Context, error) {
+) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
+	return &quasar.Context{
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    blockchainID,

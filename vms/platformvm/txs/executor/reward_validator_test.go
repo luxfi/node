@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"

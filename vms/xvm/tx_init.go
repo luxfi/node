@@ -6,7 +6,7 @@ package xvm
 import (
 	"reflect"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -16,7 +16,7 @@ var _ txs.Visitor = (*txInit)(nil)
 // txInit initializes FxID where required
 type txInit struct {
 	tx            *txs.Tx
-	ctx           *consensus.Context
+	ctx           *quasar.Context
 	typeToFxIndex map[reflect.Type]int
 	fxs           []*fxs.ParsedFx
 }

@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -41,7 +41,7 @@ type BurnTx struct {
 	TeleportData []byte `serialize:"true" json:"teleportData"`
 }
 
-func (t *BurnTx) InitCtx(ctx *consensus.Context) {
+func (t *BurnTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 

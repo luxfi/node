@@ -4,7 +4,7 @@
 package fx
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -47,7 +47,7 @@ type Owner interface {
 	verify.IsNotState
 
 	verify.Verifiable
-	consensus.ContextInitializable
+	quasar.ContextInitializable
 }
 
 type Owned interface {

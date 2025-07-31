@@ -14,11 +14,11 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chaintest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -547,7 +547,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*consensus.Context,
+		*quasar.Context,
 		db.Database,
 		[]byte,
 		[]byte,

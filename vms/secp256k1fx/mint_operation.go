@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -18,7 +18,7 @@ type MintOperation struct {
 	TransferOutput TransferOutput `serialize:"true" json:"transferOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *consensus.Context) {
+func (op *MintOperation) InitCtx(ctx *quasar.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
 }

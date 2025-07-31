@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	linear "github.com/luxfi/node/consensus/chain"
+	linear "github.com/luxfi/node/quasar/chain"
 	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "go.uber.org/mock/gomock"
 )

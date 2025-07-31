@@ -8,7 +8,7 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"

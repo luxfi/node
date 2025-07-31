@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/utils/constants"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -43,7 +43,7 @@ var (
 type VM struct {
 	*p2p.Network
 
-	chainContext *consensus.Context
+	chainContext *quasar.Context
 	db           db.Database
 	genesis      *genesis.Genesis
 
@@ -53,7 +53,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *consensus.Context,
+	chainContext *quasar.Context,
 	db db.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -121,7 +121,7 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state quasar.State) error {
 	vm.chain.SetChainState(state)
 	return nil
 }

@@ -10,10 +10,10 @@ import (
 
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/version"
 )
 
@@ -33,7 +33,7 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize   block.ChainVM
 	vmToLinearize    *linearizeOnInitializeVM
 
-	ctx              *consensus.Context
+	ctx              *quasar.Context
 	db               db.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
@@ -96,7 +96,7 @@ func NewLinearizeOnInitializeVM(vm interface{}) *linearizeOnInitializeVM {
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *consensus.Context,
+	_ *quasar.Context,
 	_ db.Database,
 	_ []byte,
 	_ []byte,
@@ -127,7 +127,7 @@ func (vm *linearizeOnInitializeVM) GetBlock(ctx context.Context, blockID ids.ID)
 	return nil, errNotImplemented
 }
 
-func (vm *linearizeOnInitializeVM) SetState(ctx context.Context, state consensus.State) error {
+func (vm *linearizeOnInitializeVM) SetState(ctx context.Context, state quasar.State) error {
 	// This should be implemented by the underlying LinearizableVMWithEngine
 	return nil
 }

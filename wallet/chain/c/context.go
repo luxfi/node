@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
@@ -55,9 +55,9 @@ func NewContextFromClients(
 	}, nil
 }
 
-func newLinearContext(c *Context) (*consensus.Context, error) {
+func newLinearContext(c *Context) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
+	return &quasar.Context{
 		NetworkID:  c.NetworkID,
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    c.BlockchainID,

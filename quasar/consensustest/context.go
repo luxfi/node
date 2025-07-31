@@ -7,21 +7,21 @@ import (
 	"testing"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 )
 
 // CChainID is a test chain ID
 var CChainID = ids.GenerateTestID()
 
 // Context creates a test consensus context
-func Context(t *testing.T, chainID ids.ID) *consensus.Context {
-	return &consensus.Context{
+func Context(t *testing.T, chainID ids.ID) *quasar.Context {
+	return &quasar.Context{
 		ChainID: chainID,
-		State:   &consensus.EngineState{},
+		State:   &quasar.EngineState{},
 	}
 }
 
 // ConsensusContext returns the context as-is (for compatibility)
-func ConsensusContext(ctx *consensus.Context) *consensus.Context {
+func ConsensusContext(ctx *quasar.Context) *quasar.Context {
 	return ctx
 }

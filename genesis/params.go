@@ -6,7 +6,7 @@ package genesis
 import (
 	"time"
 
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"

@@ -7,7 +7,7 @@ import (
 	"context"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 )
 
 // Block interface matches chain.Block to avoid import cycle

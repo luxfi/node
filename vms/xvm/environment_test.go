@@ -14,13 +14,13 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/enginetest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
@@ -156,7 +156,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
 	}
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 	if c.notLinearized {
 		return env
 	}
@@ -166,7 +166,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		return env
 	}
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	tb.Cleanup(func() {
 		env.vm.ctx.Lock.Lock()

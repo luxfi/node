@@ -4,15 +4,15 @@
 package quasar
 
 import (
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag"
-	"github.com/luxfi/node/consensus/engine/chain"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag"
+	"github.com/luxfi/node/quasar/engine/chain"
 	"github.com/luxfi/ids"
 	
 	// Import the quantum consensus implementations
 	// TODO: Fix quantum consensus imports
-	// "github.com/luxfi/node/consensus/engine/quantum"
-	// "github.com/luxfi/node/consensus/config"
+	// "github.com/luxfi/node/quasar/engine/quantum"
+	// "github.com/luxfi/node/quasar/config"
 )
 
 // NewDAGEngine creates a new DAG consensus engine using Nebula

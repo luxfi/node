@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/quasar"
-	"github.com/luxfi/node/consensus/engines/nova"
+	"github.com/luxfi/node/quasar/engine/quasar"
+	"github.com/luxfi/node/quasar/engines/nova"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/ringtail"

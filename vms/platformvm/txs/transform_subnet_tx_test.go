@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -114,7 +114,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleTransformTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleTransformTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -340,7 +340,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	require.NoError(complexTransformTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexTransformTx.SyntacticVerify(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -526,7 +526,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransformTx.InitCtx(&consensus.Context{
+	unsignedComplexTransformTx.InitCtx(&quasar.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -641,7 +641,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
+	ctx := &quasar.Context{
 		ChainID:    chainID,
 		NetworkID:  networkID,
 		LUXAssetID: ids.GenerateTestID(),

@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	chaincon "github.com/luxfi/node/consensus/chain"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

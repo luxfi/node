@@ -9,9 +9,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -127,7 +127,7 @@ func (tx *Tx) InputIDs() set.Set[ids.ID] {
 	return tx.Unsigned.InputIDs()
 }
 
-func (tx *Tx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *Tx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx

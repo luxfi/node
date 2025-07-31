@@ -14,9 +14,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorstest"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"

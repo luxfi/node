@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/confidence"
 	"github.com/luxfi/consensus/poll"
-	"github.com/luxfi/node/consensus/params"
+	"github.com/luxfi/node/quasar/params"
 )
 
 // Engine represents the Lux consensus engine using the photonic framework

@@ -4,10 +4,10 @@
 package factories
 
 import (
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/dag"
-	"github.com/luxfi/node/consensus/engine/chain"
-	"github.com/luxfi/node/consensus/engine/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag"
+	"github.com/luxfi/node/quasar/engine/chain"
+	"github.com/luxfi/node/quasar/engine/quasar"
 )
 
 // QuasarFactory creates Quasar consensus engines.
