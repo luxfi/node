@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 const (

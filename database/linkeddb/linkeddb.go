@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 const (

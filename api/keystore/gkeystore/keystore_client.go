@@ -7,13 +7,13 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/database"
-		"github.com/luxfi/node/database/encdb"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/database"
+		"github.com/luxfi/database/encdb"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 var _ keystore.BlockchainKeystore = (*Client)(nil)

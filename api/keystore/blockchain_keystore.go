@@ -6,8 +6,8 @@ package keystore
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-		"github.com/luxfi/node/database/encdb"
+	"github.com/luxfi/database"
+		"github.com/luxfi/database/encdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 )

@@ -4,9 +4,9 @@
 package rpcdb
 
 import (
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 var (
