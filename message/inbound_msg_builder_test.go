@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -22,7 +22,7 @@ func Test_newMsgBuilder(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		10*time.Second,
 	)
@@ -391,7 +391,7 @@ func TestAppError(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		time.Second,
 	)

@@ -17,14 +17,14 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func TestMessage(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -666,7 +666,7 @@ func TestInboundMessageToString(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -696,7 +696,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -716,7 +716,7 @@ func TestNilInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)

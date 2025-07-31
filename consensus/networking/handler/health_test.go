@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -75,7 +75,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				logging.NoLog{},
+				log.NoLog{},
 				"",
 				prometheus.NewRegistry(),
 				nil,

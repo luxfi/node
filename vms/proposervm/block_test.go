@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/scheduler"
@@ -85,7 +85,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
+			Log:            log.NoLog{},
 		},
 		Windower: windower,
 	}
@@ -397,7 +397,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
+			Log:            log.NoLog{},
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,

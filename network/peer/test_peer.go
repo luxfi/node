@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -75,7 +75,7 @@ func StartTestPeer(
 	}
 
 	mc, err := message.NewCreator(
-		logging.NoLog{},
+		log.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -109,7 +109,7 @@ func StartTestPeer(
 		&Config{
 			Metrics:              metrics,
 			MessageCreator:       mc,
-			Log:                  logging.NoLog{},
+			Log:                  log.NoLog{},
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
@@ -137,7 +137,7 @@ func StartTestPeer(
 		peerID,
 		NewBlockingMessageQueue(
 			metrics,
-			logging.NoLog{},
+			log.NoLog{},
 			maxMessageToSend,
 		),
 	)

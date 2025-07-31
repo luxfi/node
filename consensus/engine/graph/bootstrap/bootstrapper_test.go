@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -92,7 +92,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		logging.NoLog{},
+		log.NoLog{},
 		"",
 		prometheus.NewRegistry(),
 		nil,

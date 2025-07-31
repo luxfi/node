@@ -26,10 +26,10 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/ids/galiasreader"
+	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -71,7 +71,7 @@ type VMServer struct {
 
 	metrics prometheus.Gatherer
 	db      database.Database
-	log     logging.Logger
+	log     log.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
@@ -181,7 +181,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.log = logging.NewLogger(
 		fmt.Sprintf("<%s Chain>", chainID),
 		logging.NewWrappedCore(
-			logging.Info,
+			log.Info,
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),

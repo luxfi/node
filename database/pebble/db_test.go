@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func newDB(t testing.TB) *Database {
 	folder := t.TempDir()
-	db, err := New(folder, DefaultConfigBytes, logging.NoLog{}, "pebble", prometheus.NewRegistry())
+	db, err := New(folder, DefaultConfigBytes, log.NoLog{}, "pebble", prometheus.NewRegistry())
 	require.NoError(t, err)
 	return db.(*Database)
 }

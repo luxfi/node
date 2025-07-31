@@ -24,7 +24,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -186,7 +186,7 @@ type config struct {
 }
 
 // New returns a wrapped LevelDB object.
-func New(file string, configBytes []byte, log logging.Logger, reg prometheus.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log log.Logger, reg prometheus.Registerer) (database.Database, error) {
 	parsedConfig := config{
 		BlockCacheCapacity:     DefaultBlockCacheSize,
 		DisableSeeksCompaction: true,

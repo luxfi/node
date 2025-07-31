@@ -13,8 +13,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -57,7 +57,7 @@ type BandwidthThrottlerConfig struct {
 }
 
 func newBandwidthThrottler(
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
@@ -91,7 +91,7 @@ type bandwidthThrottlerMetrics struct {
 type bandwidthThrottlerImpl struct {
 	BandwidthThrottlerConfig
 	metrics bandwidthThrottlerMetrics
-	log     logging.Logger
+	log     log.Logger
 	lock    sync.RWMutex
 	// Node ID --> token bucket based rate limiter where each token
 	// is a byte of bandwidth.

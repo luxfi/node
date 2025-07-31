@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Note: TestInterface tests other batch functionality.
@@ -18,7 +18,7 @@ func TestBatch(t *testing.T) {
 	require := require.New(t)
 	dirName := t.TempDir()
 
-	db, err := New(dirName, DefaultConfigBytes, logging.NoLog{}, "", prometheus.NewRegistry())
+	db, err := New(dirName, DefaultConfigBytes, log.NoLog{}, "", prometheus.NewRegistry())
 	require.NoError(err)
 
 	batchIntf := db.NewBatch()

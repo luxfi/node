@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/window"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -89,7 +89,7 @@ type State interface {
 }
 
 func NewManager(
-	log logging.Logger,
+	log log.Logger,
 	cfg config.Config,
 	state State,
 	metrics metrics.Metrics,
@@ -116,7 +116,7 @@ func NewManager(
 // TODO: Remove requirement for the P-chain's context lock to be held when
 // calling exported functions.
 type manager struct {
-	log     logging.Logger
+	log     log.Logger
 	cfg     config.Config
 	state   State
 	metrics metrics.Metrics

@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -270,7 +270,7 @@ func TestExecute(t *testing.T) {
 			require.NoError(execute(
 				context.Background(),
 				test.haltable.Halted,
-				logging.NoLog{}.Info,
+				log.NoLog{}.Info,
 				db,
 				parser,
 				tree,

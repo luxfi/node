@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 
@@ -69,7 +69,7 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 func newGossipMempool(
 	mempool pmempool.Mempool,
 	registerer prometheus.Registerer,
-	log logging.Logger,
+	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,
 	targetFalsePositiveProbability,
@@ -86,7 +86,7 @@ func newGossipMempool(
 
 type gossipMempool struct {
 	pmempool.Mempool
-	log        logging.Logger
+	log        log.Logger
 	txVerifier TxVerifier
 
 	lock  sync.RWMutex

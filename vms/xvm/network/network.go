@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
 )
@@ -29,7 +29,7 @@ var (
 type Network struct {
 	*p2p.Network
 
-	log       logging.Logger
+	log       log.Logger
 	parser    txs.Parser
 	mempool   *gossipMempool
 	appSender core.AppSender
@@ -41,7 +41,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log log.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,

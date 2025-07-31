@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs/socket"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -105,7 +105,7 @@ func (ipcs *EventSockets) DecisionsURL() string {
 // eventSocket is a single IPC socket for a single chain
 type eventSocket struct {
 	url          string
-	log          logging.Logger
+	log          log.Logger
 	socket       *socket.Socket
 	unregisterFn func() error
 }

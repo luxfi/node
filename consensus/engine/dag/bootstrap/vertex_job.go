@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -26,7 +26,7 @@ var (
 )
 
 type vtxParser struct {
-	log         logging.Logger
+	log         log.Logger
 	numAccepted prometheus.Counter
 	manager     vertex.Manager
 }
@@ -44,7 +44,7 @@ func (p *vtxParser) Parse(ctx context.Context, vtxBytes []byte) (queue.Job, erro
 }
 
 type vertexJob struct {
-	log         logging.Logger
+	log         log.Logger
 	numAccepted prometheus.Counter
 	vtx         dag.Vertex
 }

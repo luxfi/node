@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var errUnknownTx = errors.New("unknown tx")
@@ -35,7 +35,7 @@ func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (dag.Tx
 			ChainID: ids.Empty,
 			VM:      &vm,
 			DB:      baseDB,
-			Log:     logging.NoLog{},
+			Log:     log.NoLog{},
 		},
 	)
 

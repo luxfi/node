@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -47,7 +47,7 @@ func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetes
 	bs, err := New(
 		vm,
 		sender,
-		logging.NoLog{},
+		log.NoLog{},
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -53,7 +53,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 	acceptor := &acceptor{
 		backend: &backend{
 			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+				Log: log.NoLog{},
 			},
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
@@ -91,7 +91,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -171,7 +171,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -260,7 +260,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -370,7 +370,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},

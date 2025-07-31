@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var _ Resolver = (*mockResolver)(nil)
@@ -65,7 +65,7 @@ func TestNewUpdater(t *testing.T) {
 	require.Equal(updateFrequency, updater.updateFreq)
 
 	// Start updating the IP address
-	go updater.Dispatch(logging.NoLog{})
+	go updater.Dispatch(log.NoLog{})
 
 	// Assert that the IP is updated within 5s.
 	require.Eventually(

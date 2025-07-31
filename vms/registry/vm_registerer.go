@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -42,8 +42,8 @@ type registerer interface {
 // VMRegistererConfig configures settings for VMRegisterer.
 type VMRegistererConfig struct {
 	APIServer    server.Server
-	Log          logging.Logger
-	VMFactoryLog logging.Logger
+	Log          log.Logger
+	VMFactoryLog log.Logger
 	VMManager    vms.Manager
 }
 

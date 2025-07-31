@@ -6,7 +6,7 @@ package metervm
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -27,7 +27,7 @@ const (
 )
 
 type context struct {
-	log       logging.Logger
+	log       log.Logger
 	networkID uint32
 	path      string
 }
@@ -44,7 +44,7 @@ type ChainIPCs struct {
 // NewChainIPCs creates a new *ChainIPCs that writes consensus and decision
 // events to IPC sockets
 func NewChainIPCs(
-	log logging.Logger,
+	log log.Logger,
 	path string,
 	networkID uint32,
 	blockAcceptorGroup consensus.AcceptorGroup,

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -97,7 +97,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                logging.Debug.String(),
+			config.LogLevelKey:                log.Debug.String(),
 			config.LogDisplayLevelKey:         logging.Trace.String(),
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,

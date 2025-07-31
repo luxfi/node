@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
@@ -83,7 +83,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		logging.NoLog{},
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -163,7 +163,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		logging.NoLog{},
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -247,7 +247,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		logging.NoLog{},
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block

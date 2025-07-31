@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 )
@@ -45,7 +45,7 @@ type SerializerConfig struct {
 	ChainID ids.ID
 	VM      vertex.GRAPHVM
 	DB      database.Database
-	Log     logging.Logger
+	Log     log.Logger
 }
 
 func NewSerializer(config SerializerConfig) vertex.Manager {

@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/database"
 		"github.com/luxfi/database/encdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var _ BlockchainKeystore = (*blockchainKeystore)(nil)
@@ -33,7 +33,7 @@ type blockchainKeystore struct {
 func (bks *blockchainKeystore) GetDatabase(username, password string) (*encdb.Database, error) {
 	bks.ks.log.Warn("deprecated keystore called",
 		zap.String("method", "getDatabase"),
-		logging.UserString("username", username),
+		log.UserString("username", username),
 		zap.Stringer("blockchainID", bks.blockchainID),
 	)
 
@@ -43,7 +43,7 @@ func (bks *blockchainKeystore) GetDatabase(username, password string) (*encdb.Da
 func (bks *blockchainKeystore) GetRawDatabase(username, password string) (database.Database, error) {
 	bks.ks.log.Warn("deprecated keystore called",
 		zap.String("method", "getRawDatabase"),
-		logging.UserString("username", username),
+		log.UserString("username", username),
 		zap.Stringer("blockchainID", bks.blockchainID),
 	)
 

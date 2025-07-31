@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/x/merkledb"
@@ -55,10 +55,10 @@ var (
 type NetworkServer struct {
 	appSender core.AppSender // Used to respond to peer requests via AppResponse.
 	db        DB
-	log       logging.Logger
+	log       log.Logger
 }
 
-func NewNetworkServer(appSender core.AppSender, db DB, log logging.Logger) *NetworkServer {
+func NewNetworkServer(appSender core.AppSender, db DB, log log.Logger) *NetworkServer {
 	return &NetworkServer{
 		appSender: appSender,
 		db:        db,

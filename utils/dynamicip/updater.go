@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 const ipResolutionTimeout = 10 * time.Second
@@ -24,7 +24,7 @@ type Updater interface {
 	// Start periodically resolving and updating our public IP.
 	// Doesn't return until after Stop() is called.
 	// Should be called in a goroutine.
-	Dispatch(log logging.Logger)
+	Dispatch(log log.Logger)
 	// Stop resolving and updating our public IP.
 	Stop()
 }
@@ -67,7 +67,7 @@ func NewUpdater(
 
 // Start updating [u.dynamicIP] every [u.updateFreq].
 // Stops when [dynamicIP.stopChan] is closed.
-func (u *updater) Dispatch(log logging.Logger) {
+func (u *updater) Dispatch(log log.Logger) {
 	ticker := time.NewTicker(u.updateFreq)
 	defer func() {
 		ticker.Stop()

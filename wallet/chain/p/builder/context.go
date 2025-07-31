@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
 )
 
@@ -76,7 +76,7 @@ func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*consensus.Contex
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		Log:        logging.NoLog{},
+		Log:        log.NoLog{},
 		BCLookup:   lookup,
 	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

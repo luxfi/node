@@ -15,7 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 
@@ -69,7 +69,7 @@ type client struct {
 	networkClient    NetworkClient
 	stateSyncNodes   []ids.NodeID
 	stateSyncNodeIdx uint32
-	log              logging.Logger
+	log              log.Logger
 	metrics          SyncMetrics
 	tokenSize        int
 	hasher           merkledb.Hasher
@@ -78,7 +78,7 @@ type client struct {
 type ClientConfig struct {
 	NetworkClient    NetworkClient
 	StateSyncNodeIDs []ids.NodeID
-	Log              logging.Logger
+	Log              log.Logger
 	Metrics          SyncMetrics
 	BranchFactor     merkledb.BranchFactor
 	// If not specified, [merkledb.DefaultHasher] will be used.

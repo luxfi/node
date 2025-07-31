@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"

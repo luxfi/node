@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -268,7 +268,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	log := logging.NewLogger(
 		testKey,
 		logging.NewWrappedCore(
-			logging.Info,
+			log.Info,
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),

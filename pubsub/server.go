@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -59,7 +59,7 @@ var upgrader = websocket.Upgrader{
 
 // Server maintains the set of active clients and sends messages to the clients.
 type Server struct {
-	log  logging.Logger
+	log  log.Logger
 	lock sync.RWMutex
 	// conns a list of all our connections
 	conns set.Set[*connection]
@@ -68,7 +68,7 @@ type Server struct {
 }
 
 // Deprecated: The pubsub server is deprecated.
-func New(log logging.Logger) *Server {
+func New(log log.Logger) *Server {
 	return &Server{
 		log:                   log,
 		subscribedConnections: newConnections(),

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -45,7 +45,7 @@ func TestRegisterBadVM(t *testing.T) {
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
 	// Since this factory produces a bad vm, we should get an error.
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 
 	err := resources.registerer.Register(context.Background(), id, vmFactory)
 	require.ErrorIs(t, err, errNotVM)
@@ -59,7 +59,7 @@ func TestRegisterCreateHandlersAndShutdownFails(t *testing.T) {
 	vm := block.NewMockChainVM(resources.ctrl)
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	// We fail to create handlers + fail to shutdown
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(nil, errTest).Times(1)
 	vm.EXPECT().Shutdown(gomock.Any()).Return(errTest).Times(1)
@@ -76,7 +76,7 @@ func TestRegisterCreateHandlersFails(t *testing.T) {
 	vm := block.NewMockChainVM(resources.ctrl)
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	// We fail to create handlers + but succeed our shutdown
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(nil, errTest).Times(1)
 	vm.EXPECT().Shutdown(gomock.Any()).Return(nil).Times(1)
@@ -97,7 +97,7 @@ func TestRegisterAddRouteFails(t *testing.T) {
 	}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	// We fail to create an endpoint for the handler
 	resources.mockServer.EXPECT().
@@ -125,7 +125,7 @@ func TestRegisterAliasLookupFails(t *testing.T) {
 	}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	// Registering the route fails
 	resources.mockServer.EXPECT().
@@ -155,7 +155,7 @@ func TestRegisterAddAliasesFails(t *testing.T) {
 	aliases := []string{"alias-1", "alias-2"}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	resources.mockServer.EXPECT().
 		AddRoute(
@@ -192,7 +192,7 @@ func TestRegisterHappyCase(t *testing.T) {
 	aliases := []string{"alias-1", "alias-2"}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	resources.mockServer.EXPECT().
 		AddRoute(
@@ -237,7 +237,7 @@ func TestRegisterWithReadLockBadVM(t *testing.T) {
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
 	// Since this factory produces a bad vm, we should get an error.
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 
 	err := resources.registerer.RegisterWithReadLock(context.Background(), id, vmFactory)
 	require.ErrorIs(t, err, errNotVM)
@@ -251,7 +251,7 @@ func TestRegisterWithReadLockCreateHandlersAndShutdownFails(t *testing.T) {
 	vm := block.NewMockChainVM(resources.ctrl)
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	// We fail to create handlers + fail to shutdown
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(nil, errTest).Times(1)
 	vm.EXPECT().Shutdown(gomock.Any()).Return(errTest).Times(1)
@@ -268,7 +268,7 @@ func TestRegisterWithReadLockCreateHandlersFails(t *testing.T) {
 	vm := block.NewMockChainVM(resources.ctrl)
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	// We fail to create handlers + but succeed our shutdown
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(nil, errTest).Times(1)
 	vm.EXPECT().Shutdown(gomock.Any()).Return(nil).Times(1)
@@ -289,7 +289,7 @@ func TestRegisterWithReadLockAddRouteWithReadLockFails(t *testing.T) {
 	}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	// We fail to create an endpoint for the handler
 	resources.mockServer.EXPECT().
@@ -317,7 +317,7 @@ func TestRegisterWithReadLockAliasLookupFails(t *testing.T) {
 	}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	// RegisterWithReadLocking the route fails
 	resources.mockServer.EXPECT().
@@ -347,7 +347,7 @@ func TestRegisterWithReadLockAddAliasesFails(t *testing.T) {
 	aliases := []string{"alias-1", "alias-2"}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	resources.mockServer.EXPECT().
 		AddRouteWithReadLock(
@@ -384,7 +384,7 @@ func TestRegisterWithReadLockHappyCase(t *testing.T) {
 	aliases := []string{"alias-1", "alias-2"}
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
-	vmFactory.EXPECT().New(logging.NoLog{}).Times(1).Return(vm, nil)
+	vmFactory.EXPECT().New(log.NoLog{}).Times(1).Return(vm, nil)
 	vm.EXPECT().CreateHandlers(gomock.Any()).Return(handlers, nil).Times(1)
 	resources.mockServer.EXPECT().
 		AddRouteWithReadLock(
@@ -425,7 +425,7 @@ func initRegistererTest(t *testing.T) *vmRegistererTestResources {
 	registerer := NewVMRegisterer(VMRegistererConfig{
 		APIServer:    mockServer,
 		Log:          mockLog,
-		VMFactoryLog: logging.NoLog{},
+		VMFactoryLog: log.NoLog{},
 		VMManager:    mockManager,
 	})
 

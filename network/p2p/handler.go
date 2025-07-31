@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -65,7 +65,7 @@ func (NoOpHandler) CrossChainAppRequest(context.Context, ids.ID, time.Time, []by
 func NewValidatorHandler(
 	handler Handler,
 	validatorSet ValidatorSet,
-	log logging.Logger,
+	log log.Logger,
 ) *ValidatorHandler {
 	return &ValidatorHandler{
 		handler:      handler,
@@ -78,7 +78,7 @@ func NewValidatorHandler(
 type ValidatorHandler struct {
 	handler      Handler
 	validatorSet ValidatorSet
-	log          logging.Logger
+	log          log.Logger
 }
 
 func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -109,7 +109,7 @@ func (v ValidatorHandler) CrossChainAppRequest(ctx context.Context, chainID ids.
 type responder struct {
 	Handler
 	handlerID uint64
-	log       logging.Logger
+	log       log.Logger
 	sender    core.AppSender
 }
 

@@ -22,9 +22,9 @@ import (
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -78,7 +78,7 @@ type HTTPConfig struct {
 
 type server struct {
 	// log this server writes to
-	log logging.Logger
+	log log.Logger
 	// generates new logs for chains to write to
 	factory logging.Factory
 
@@ -100,7 +100,7 @@ type server struct {
 
 // New returns an instance of a Server.
 func New(
-	log logging.Logger,
+	log log.Logger,
 	factory logging.Factory,
 	listener net.Listener,
 	allowedOrigins []string,
