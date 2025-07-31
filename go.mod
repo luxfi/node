@@ -29,7 +29,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/consensus v0.1.0
 	github.com/luxfi/crypto v1.0.2
-	github.com/luxfi/database v1.1.3
+	github.com/luxfi/database v1.1.4
 	github.com/luxfi/evm v0.8.2
 	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v0.1.0
@@ -216,4 +216,3 @@ require (
 // All modules now use tagged versions from GitHub
 
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
-
