@@ -23,7 +23,13 @@ type CreateSubnetTx struct {
 // the addresses can be json marshalled into human readable format
 func (tx *CreateSubnetTx) InitCtx(ctx *quasar.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	tx.Owner.InitCtx(ctx)
+	tx.Owner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *CreateSubnetTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 // SyntacticVerify verifies that this transaction is well-formed

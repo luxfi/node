@@ -59,7 +59,7 @@ func (c *ConsensusClient) Indexed(
 	return resp.Values, resp.LastTrait, resp.LastKey, nil
 }
 
-func (c *ConsensusClient) Apply(requests map[ids.ID]*quasar.Requests, batches ...interface{}) error {
+func (c *ConsensusClient) Apply(requests map[ids.ID]*quasar.Requests, batch quasar.Batch) error {
 	req := &sharedmemorypb.ApplyRequest{
 		Requests: make([]*sharedmemorypb.AtomicRequest, 0, len(requests)),
 		Batches:  make([]*sharedmemorypb.Batch, 0),

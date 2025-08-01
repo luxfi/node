@@ -73,7 +73,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -128,7 +128,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -180,7 +180,7 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 	return nil
 }
 
-// IssueTx attempts to issue a transaction into consensus
+// IssueTx attempts to issue a transaction into quasar
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
@@ -348,7 +348,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 		)
 	} else {
 		// TODO: Fix SharedMemory access
-		// SharedMemory is not available in consensus.Context
+		// SharedMemory is not available in quasar.Context
 		/*
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
 			s.vm.ctx.SharedMemory,

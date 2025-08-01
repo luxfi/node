@@ -28,8 +28,14 @@ func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotAtomicBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
 func (b *ApricotAtomicBlock) InitCtx(ctx *quasar.Context) {
-	b.Tx.Unsigned.InitCtx(ctx)
+	b.Tx.Unsigned.Initialize(ctx)
 }
 
 func (b *ApricotAtomicBlock) Txs() []*txs.Tx {

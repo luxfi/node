@@ -5,6 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -24,6 +25,19 @@ type ImportTx struct {
 
 	// The inputs to this transaction
 	ImportedIns []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
+}
+
+func (t *ImportTx) InitCtx(ctx *quasar.Context) {
+	for _, in := range t.ImportedIns {
+		in.InitCtx(ctx)
+	}
+	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *ImportTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // InputUTXOs track which UTXOs this transaction is consuming.

@@ -7,13 +7,12 @@ import (
 	"context"
 
 	"github.com/luxfi/database/rpcdb"
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
-
-	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 type Client struct {

@@ -15,9 +15,13 @@ var CChainID = ids.GenerateTestID()
 
 // Context creates a test consensus context
 func Context(t *testing.T, chainID ids.ID) *quasar.Context {
+	state := &quasar.EngineState{}
 	return &quasar.Context{
-		ChainID: chainID,
-		State:   &quasar.EngineState{},
+		NetworkID: 10, // constants.UnitTestID
+		ChainID:   chainID,
+		State:     state,
+		CChainID:  CChainID,
+		XChainID:  XChainID,
 	}
 }
 

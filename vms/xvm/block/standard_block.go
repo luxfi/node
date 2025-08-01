@@ -43,8 +43,14 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 
 func (b *StandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.Initialize(ctx)
 	}
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *StandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
 }
 
 func (b *StandardBlock) ID() ids.ID {

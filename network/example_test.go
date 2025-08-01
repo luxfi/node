@@ -5,7 +5,6 @@ package network
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,11 +34,12 @@ type testExternalHandler struct {
 // implementation does not implicitly register timeouts, so this handler is only
 // called by messages explicitly sent by the peer. If timeouts are required,
 // that must be handled by the user of this utility.
-func (t *testExternalHandler) HandleInbound(_ context.Context, message message.InboundMessage) {
+func (t *testExternalHandler) HandleInbound(_ context.Context, message message.InboundMessage) error {
 	t.log.Info(
 		"receiving message",
 		zap.Stringer("op", message.Op()),
 	)
+	return nil
 }
 
 func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, subnetID ids.ID) {
@@ -62,19 +62,12 @@ type testAggressiveValidatorManager struct {
 	validators.Manager
 }
 
-func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
+func (*testAggressiveValidatorManager) Contains(ids.ID) bool {
 	return true
 }
 
 func ExampleNewTestNetwork() {
-	log := log.NewZapLogger(
-		"networking",
-		logging.NewWrappedCore(
-			log.LevelInfo,
-			os.Stdout,
-			logging.Colors.ConsoleEncoder(),
-		),
-	)
+	log := log.NewNoOpLogger()
 
 	// Needs to be periodically updated by the caller to have the latest
 	// validator set

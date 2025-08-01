@@ -4,6 +4,7 @@
 package consensustest
 
 import (
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar/choices"
 )
 
@@ -20,4 +21,7 @@ var (
 	
 	// Unknown represents an unknown status
 	Unknown = choices.Unknown
+	
+	// XChainID is a test X-Chain ID
+	XChainID = ids.ID{5, 4, 3, 2, 1}
 )

@@ -44,6 +44,12 @@ func (t *NFTTransferTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *NFTTransferTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *NFTTransferTx) Visit(v Visitor) error {
 	return v.NFTTransferTx(t)
 }

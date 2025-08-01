@@ -11,9 +11,9 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/quasar/engine/dag/vertex"
-	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/version"
 )
 

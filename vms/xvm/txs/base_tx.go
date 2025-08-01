@@ -29,6 +29,12 @@ func (t *BaseTx) InitCtx(ctx *quasar.Context) {
 	}
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *BaseTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *BaseTx) SetBytes(bytes []byte) {
 	t.bytes = bytes
 }

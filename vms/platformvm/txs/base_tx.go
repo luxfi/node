@@ -68,6 +68,12 @@ func (tx *BaseTx) InitCtx(ctx *quasar.Context) {
 	}
 }
 
+// Initialize implements quasar.ContextInitializable
+func (tx *BaseTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 // SyntacticVerify returns nil iff this tx is well formed
 func (tx *BaseTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {

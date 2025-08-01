@@ -55,6 +55,18 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotCommitBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *BanffCommitBlock) Initialize(ctx *quasar.Context) error {
+	b.ApricotCommitBlock.Initialize(ctx)
+	return nil
+}
+
 func (*ApricotCommitBlock) InitCtx(*quasar.Context) {}
 
 func (*ApricotCommitBlock) Txs() []*txs.Tx {

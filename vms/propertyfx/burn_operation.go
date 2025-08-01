@@ -15,6 +15,12 @@ type BurnOperation struct {
 
 func (*BurnOperation) InitCtx(*quasar.Context) {}
 
+// Initialize implements quasar.ContextInitializable
+func (op *BurnOperation) Initialize(ctx *quasar.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (*BurnOperation) Outs() []verify.State {
 	return nil
 }

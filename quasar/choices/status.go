@@ -21,12 +21,14 @@ const (
 	Rejected
 	// Dropped indicates the element was dropped
 	Dropped
+	// Quantum indicates the element is in quantum consensus state
+	Quantum
 )
 
 // Valid returns true if the status is a valid status.
 func (s Status) Valid() bool {
 	switch s {
-	case Unknown, Processing, Accepted, Rejected, Dropped:
+	case Unknown, Processing, Accepted, Rejected, Dropped, Quantum:
 		return true
 	default:
 		return false
@@ -36,7 +38,7 @@ func (s Status) Valid() bool {
 // Fetched returns true if the status implies the block has been fetched.
 func (s Status) Fetched() bool {
 	switch s {
-	case Processing, Accepted, Rejected:
+	case Processing, Accepted, Rejected, Quantum:
 		return true
 	default:
 		return false
@@ -46,11 +48,16 @@ func (s Status) Fetched() bool {
 // Decided returns true if the status implies a decision has been made.
 func (s Status) Decided() bool {
 	switch s {
-	case Accepted, Rejected:
+	case Accepted, Rejected, Quantum:
 		return true
 	default:
 		return false
 	}
+}
+
+// IsQuantum returns true if the status is Quantum.
+func (s Status) IsQuantum() bool {
+	return s == Quantum
 }
 
 // String returns a human-readable string for this status.
@@ -66,6 +73,8 @@ func (s Status) String() string {
 		return "Rejected"
 	case Dropped:
 		return "Dropped"
+	case Quantum:
+		return "Quantum"
 	default:
 		return fmt.Sprintf("Status(%d)", s)
 	}

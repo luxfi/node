@@ -47,7 +47,13 @@ func (tx *AddDelegatorTx) InitCtx(ctx *quasar.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.DelegationRewardsOwner.InitCtx(ctx)
+	tx.DelegationRewardsOwner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddDelegatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (*AddDelegatorTx) SubnetID() ids.ID {

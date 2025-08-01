@@ -23,6 +23,12 @@ func (op *MintOperation) InitCtx(ctx *quasar.Context) {
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (op *MintOperation) Initialize(ctx *quasar.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *MintOperation) Cost() (uint64, error) {
 	return op.MintInput.Cost()
 }

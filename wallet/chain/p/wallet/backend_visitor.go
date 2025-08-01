@@ -175,7 +175,7 @@ func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) erro
 func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	return b.b.removeUTXOs(
 		b.ctx,
-		constants.PlatformChainID,
+		constants.PlatformChainID(),
 		tx.InputIDs(),
 	)
 }

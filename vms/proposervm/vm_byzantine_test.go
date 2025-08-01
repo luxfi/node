@@ -151,7 +151,7 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 	wrappedXBlock, err := proVM.ParseBlock(context.Background(), xBlock.Bytes())
 	require.NoError(err)
 
-	// This should never be invoked by the consensus engine. However, it is
+	// This should never be invoked by the quasar engine. However, it is
 	// enforced to fail verification as a failsafe.
 	err = wrappedXBlock.Verify(context.Background())
 	require.ErrorIs(err, errUnexpectedBlockType)
@@ -218,7 +218,7 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 	wrappedXBlock, err := proVM.ParseBlock(context.Background(), xBlock.Bytes())
 	require.NoError(err)
 
-	// This should never be invoked by the consensus engine. However, it is
+	// This should never be invoked by the quasar engine. However, it is
 	// enforced to fail verification as a failsafe.
 	err = wrappedXBlock.Verify(context.Background())
 	require.ErrorIs(err, errUnexpectedBlockType)

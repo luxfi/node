@@ -45,6 +45,12 @@ func (t *MintTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *MintTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *MintTx) Visit(v Visitor) error {
 	return v.MintTx(t)
 }

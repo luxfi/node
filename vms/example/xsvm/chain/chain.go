@@ -20,7 +20,7 @@ type Chain interface {
 	GetBlock(blkID ids.ID) (Block, error)
 
 	// Creates a fully verifiable and executable block, which can be processed
-	// by the consensus engine, from a stateless block.
+	// by the quasar engine, from a stateless block.
 	NewBlock(blk *xsblock.Stateless) (Block, error)
 }
 
@@ -28,7 +28,7 @@ type chain struct {
 	chainContext  *quasar.Context
 	acceptedState db.Database
 
-	// chain state as driven by the consensus engine
+	// chain state as driven by the quasar engine
 	chainState quasar.State
 
 	lastAcceptedID ids.ID

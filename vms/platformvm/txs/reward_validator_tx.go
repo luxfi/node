@@ -35,6 +35,12 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 
 func (*RewardValidatorTx) InitCtx(*quasar.Context) {}
 
+// Initialize implements quasar.ContextInitializable
+func (tx *RewardValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
 }

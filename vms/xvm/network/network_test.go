@@ -15,8 +15,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/coremock"
 	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/quasar/validators/validatorstest"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
@@ -190,8 +190,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
@@ -221,7 +221,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -231,7 +231,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validatorstest.State{
+				&mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -272,8 +272,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
 			expectedErr: nil,
@@ -295,7 +295,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			require.NoError(err)
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -305,7 +305,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validatorstest.State{
+				&mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},

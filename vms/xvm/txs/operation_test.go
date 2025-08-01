@@ -24,6 +24,11 @@ type testOperable struct {
 
 func (*testOperable) InitCtx(*quasar.Context) {}
 
+// Initialize implements fxs.FxOperation
+func (*testOperable) Initialize(*quasar.Context) error {
+	return nil
+}
+
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs
 }

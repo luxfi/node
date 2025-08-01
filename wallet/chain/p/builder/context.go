@@ -25,9 +25,9 @@ func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*quasar.Context, err
 	return &quasar.Context{
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    constants.PlatformChainID(),
 		LUXAssetID: luxAssetID,
 		Log:        log.NewNoOpLogger(),
 		BCLookup:   lookup,
-	}, lookup.Alias(constants.PlatformChainID, Alias)
+	}, lookup.Alias(constants.PlatformChainID(), Alias)
 }

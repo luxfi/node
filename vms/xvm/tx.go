@@ -78,7 +78,7 @@ func (tx *Tx) Accept(context.Context) error {
 
 	defer tx.vm.state.Abort()
 	// TODO: Fix SharedMemory access
-	// SharedMemory is not available in consensus.Context
+	// SharedMemory is not available in quasar.Context
 	/*
 	err = tx.vm.ctx.SharedMemory.Apply(
 		executor.AtomicRequests,

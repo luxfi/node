@@ -47,7 +47,7 @@ type State struct {
 	buildBlockWithContext func(context.Context, *block.Context) (chaincon.Block, error)
 
 	// verifiedBlocks is a map of blocks that have been verified and are
-	// therefore currently in consensus.
+	// therefore currently in quasar.
 	verifiedBlocks map[ids.ID]*BlockWrapper
 	// decidedBlocks is an LRU cache of decided blocks.
 	decidedBlocks cache.Cacher[ids.ID, *BlockWrapper]
@@ -210,7 +210,7 @@ func (s *State) GetBlock(ctx context.Context, blkID ids.ID) (chaincon.Block, err
 		return nil, err
 	}
 
-	// Since this block is not in consensus, addBlockOutsideConsensus
+	// Since this block is not in quasar, addBlockOutsideConsensus
 	// is called to add [blk] to the correct cache.
 	return s.addBlockOutsideConsensus(blk), nil
 }
@@ -278,7 +278,7 @@ func (s *State) ParseBlock(ctx context.Context, b []byte) (chaincon.Block, error
 
 	s.missingBlocks.Evict(blkID)
 
-	// Since this block is not in consensus, addBlockOutsideConsensus
+	// Since this block is not in quasar, addBlockOutsideConsensus
 	// is called to add [blk] to the correct cache.
 	return s.addBlockOutsideConsensus(blk), nil
 }
@@ -409,8 +409,8 @@ func (s *State) deduplicate(blk chaincon.Block) chaincon.Block {
 // addBlockOutsideConsensus adds [blk] to the correct cache and returns
 // a wrapped version of [blk]
 // assumes [blk] is a known, non-wrapped block that is not currently
-// in consensus. [blk] could be either decided or a block that has not yet
-// been verified and added to consensus.
+// in quasar. [blk] could be either decided or a block that has not yet
+// been verified and added to quasar.
 func (s *State) addBlockOutsideConsensus(blk chaincon.Block) chaincon.Block {
 	wrappedBlk := &BlockWrapper{
 		Block: blk,
@@ -446,7 +446,7 @@ func (s *State) LastAcceptedBlockInternal() chaincon.Block {
 	return s.LastAcceptedBlock().Block
 }
 
-// IsProcessing returns whether [blkID] is processing in consensus
+// IsProcessing returns whether [blkID] is processing in quasar
 func (s *State) IsProcessing(blkID ids.ID) bool {
 	_, ok := s.verifiedBlocks[blkID]
 	return ok

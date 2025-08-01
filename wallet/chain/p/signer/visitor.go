@@ -52,7 +52,7 @@ func (*visitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 }
 
 func (s *visitor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (s *visitor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
 }
 
 func (s *visitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (s *visitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 }
 
 func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 func (s *visitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (s *visitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 }
 
 func (s *visitor) ImportTx(tx *txs.ImportTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (s *visitor) ImportTx(tx *txs.ImportTx) error {
 }
 
 func (s *visitor) ExportTx(tx *txs.ExportTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (s *visitor) ExportTx(tx *txs.ExportTx) error {
 }
 
 func (s *visitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (s *visitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error
 }
 
 func (s *visitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (s *visitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
 }
 
 func (s *visitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (s *visitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidato
 }
 
 func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegato
 }
 
 func (s *visitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (s *visitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) e
 }
 
 func (s *visitor) BaseTx(tx *txs.BaseTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (s *visitor) BaseTx(tx *txs.BaseTx) error {
 }
 
 func (s *visitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (s *visitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 }
 
 func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 }
 
 func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 }
 
 func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanc
 }
 
 func (s *visitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID(), tx.Ins)
 	if err != nil {
 		return err
 	}

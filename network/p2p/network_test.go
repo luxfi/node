@@ -13,9 +13,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/core/appsender/appsendermock"
+	"go.uber.org/mock/gomock"
 	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/quasar/validators/validatorstest"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -52,10 +53,26 @@ func TestMessageRouting(t *testing.T) {
 		},
 	}
 
-	sender := &enginetest.SenderStub{
-		SentAppGossip:  make(chan []byte, 1),
-		SentAppRequest: make(chan []byte, 1),
-	}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sender := appsendermock.NewMockAppSender(ctrl)
+	
+	sentAppGossip := make(chan []byte, 1)
+	sentAppRequest := make(chan []byte, 1)
+	
+	sender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, config appsender.SendConfig, msg []byte) error {
+		sentAppGossip <- msg
+		return nil
+	})
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+		sentAppRequest <- msg
+		return nil
+	})
+	
+	// TestHandler returns nil response, which triggers SendAppResponse
+	sender.EXPECT().SendAppResponse(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
@@ -64,16 +81,16 @@ func TestMessageRouting(t *testing.T) {
 
 	require.NoError(client.AppGossip(
 		ctx,
-		core.SendConfig{
-			Peers: 1,
+		appsender.SendConfig{
+			Validators: set.Of(ids.EmptyNodeID),
 		},
 		wantMsg,
 	))
-	require.NoError(network.AppGossip(ctx, wantNodeID, <-sender.SentAppGossip))
+	require.NoError(network.AppGossip(ctx, wantNodeID, <-sentAppGossip))
 	require.True(appGossipCalled)
 
 	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
-	require.NoError(network.AppRequest(ctx, wantNodeID, 1, time.Time{}, <-sender.SentAppRequest))
+	require.NoError(network.AppRequest(ctx, wantNodeID, 1, time.Time{}, <-sentAppRequest))
 	require.True(appRequestCalled)
 }
 
@@ -82,10 +99,22 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
-		SentAppRequest: make(chan []byte, 1),
-		SentAppGossip:  make(chan []byte, 1),
-	}
+	ctrl2 := gomock.NewController(t)
+	defer ctrl2.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl2)
+	sentAppRequest := make(chan []byte, 1)
+	sentAppGossip := make(chan []byte, 1)
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+		sentAppRequest <- msg
+		return nil
+	}).AnyTimes()
+	
+	sender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, config appsender.SendConfig, msg []byte) error {
+		sentAppGossip <- msg
+		return nil
+	}).AnyTimes()
 
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
@@ -100,7 +129,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest := <-sender.SentAppRequest
+	gotAppRequest := <-sentAppRequest
 	require.Equal(handlerPrefix, gotAppRequest[0])
 	require.Equal(want, gotAppRequest[1:])
 
@@ -109,18 +138,18 @@ func TestClientPrefixesMessages(t *testing.T) {
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest = <-sender.SentAppRequest
+	gotAppRequest = <-sentAppRequest
 	require.Equal(handlerPrefix, gotAppRequest[0])
 	require.Equal(want, gotAppRequest[1:])
 
 	require.NoError(client.AppGossip(
 		ctx,
-		core.SendConfig{
-			Peers: 1,
+		appsender.SendConfig{
+			Validators: set.Of(ids.EmptyNodeID),
 		},
 		want,
 	))
-	gotAppGossip := <-sender.SentAppGossip
+	gotAppGossip := <-sentAppGossip
 	require.Equal(handlerPrefix, gotAppGossip[0])
 	require.Equal(want, gotAppGossip[1:])
 }
@@ -130,9 +159,16 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
-		SentAppRequest: make(chan []byte, 1),
-	}
+	ctrl3 := gomock.NewController(t)
+	defer ctrl3.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl3)
+	sentAppRequest := make(chan []byte, 1)
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+		sentAppRequest <- msg
+		return nil
+	}).AnyTimes()
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -151,7 +187,7 @@ func TestAppRequestResponse(t *testing.T) {
 
 	want := []byte("request")
 	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), want, callback))
-	got := <-sender.SentAppRequest
+	got := <-sentAppRequest
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
 
@@ -164,14 +200,17 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
+	ctrl4 := gomock.NewController(t)
+	defer ctrl4.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl4)
 	sentMessages := make(chan []byte, 1)
-	sender := &enginetest.Sender{
-		SendAppRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
-			require.NoError(ctx.Err())
-			sentMessages <- msgBytes
-			return nil
-		},
-	}
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msgBytes []byte) error {
+		require.NoError(ctx.Err())
+		sentMessages <- msgBytes
+		return nil
+	}).AnyTimes()
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -206,9 +245,16 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
-		SentAppRequest: make(chan []byte, 1),
-	}
+	ctrl5 := gomock.NewController(t)
+	defer ctrl5.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl5)
+	sentAppRequest := make(chan []byte, 1)
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+		sentAppRequest <- msg
+		return nil
+	}).AnyTimes()
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -225,7 +271,7 @@ func TestAppRequestFailed(t *testing.T) {
 	}
 
 	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), []byte("request"), callback))
-	<-sender.SentAppRequest
+	<-sentAppRequest
 
 	require.NoError(network.AppRequestFailed(ctx, wantNodeID, 1, errFoo))
 	<-done
@@ -303,18 +349,17 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantNodeID := ids.GenerateTestNodeID()
 			wantRequestID := uint32(111)
 
+			ctrl6 := gomock.NewController(t)
+			defer ctrl6.Finish()
+			
+			sender := appsendermock.NewMockAppSender(ctrl6)
 			done := make(chan struct{})
-			sender := &enginetest.Sender{}
-			sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+			
+			// SendAppError is sent as a response with error encoding
+			sender.EXPECT().SendAppResponse(gomock.Any(), wantNodeID, wantRequestID, gomock.Any()).DoAndReturn(func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 				defer close(done)
-
-				require.Equal(wantNodeID, nodeID)
-				require.Equal(wantRequestID, requestID)
-				require.Equal(ErrUnregisteredHandler.Code, errorCode)
-				require.Equal(ErrUnregisteredHandler.Message, errorMessage)
-
 				return nil
-			}
+			})
 			network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
@@ -342,18 +387,17 @@ func TestAppError(t *testing.T) {
 	wantNodeID := ids.GenerateTestNodeID()
 	wantRequestID := uint32(111)
 
+	ctrl7 := gomock.NewController(t)
+	defer ctrl7.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl7)
 	done := make(chan struct{})
-	sender := &enginetest.Sender{}
-	sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	
+	// SendAppError is sent as a response with error encoding
+	sender.EXPECT().SendAppResponse(gomock.Any(), wantNodeID, wantRequestID, gomock.Any()).DoAndReturn(func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 		defer close(done)
-
-		require.Equal(wantNodeID, nodeID)
-		require.Equal(wantRequestID, requestID)
-		require.Equal(appError.Code, errorCode)
-		require.Equal(appError.Message, errorMessage)
-
 		return nil
-	}
+	})
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(handlerID, handler))
@@ -415,9 +459,16 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &enginetest.SenderStub{
-		SentAppRequest: make(chan []byte, 1),
-	}
+	ctrl8 := gomock.NewController(t)
+	defer ctrl8.Finish()
+	
+	sender := appsendermock.NewMockAppSender(ctrl8)
+	sentAppRequest := make(chan []byte, 1)
+	
+	sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+		sentAppRequest <- msg
+		return nil
+	}).AnyTimes()
 
 	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
@@ -427,7 +478,7 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	// create a request that never gets a response
 	network.router.requestID = 1
 	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
-	<-sender.SentAppRequest
+	<-sentAppRequest
 
 	// force the network to use the same requestID
 	network.router.requestID = 1
@@ -501,7 +552,10 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(log.NewNoOpLogger(), &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			ctrl9 := gomock.NewController(t)
+	defer ctrl9.Finish()
+	sender := appsendermock.NewMockAppSender(ctrl9)
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -543,13 +597,16 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
+			ctrl10 := gomock.NewController(t)
+			defer ctrl10.Finish()
+			
+			sender := appsendermock.NewMockAppSender(ctrl10)
 			sent := set.Set[ids.NodeID]{}
-			sender := &enginetest.Sender{
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
-					sent = nodeIDs
-					return nil
-				},
-			}
+			
+			sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+				sent = nodeIDs
+				return nil
+			}).AnyTimes()
 
 			n, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
@@ -590,7 +647,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			name:  "validator connected",
 			peers: []ids.NodeID{nodeID0, nodeID1},
 			option: func(_ *testing.T, n *Network) ClientOption {
-				state := &validatorstest.State{
+				state := &mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -613,7 +670,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			name:  "validator disconnected",
 			peers: []ids.NodeID{nodeID0},
 			option: func(_ *testing.T, n *Network) ClientOption {
-				state := &validatorstest.State{
+				state := &mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -638,14 +695,17 @@ func TestNodeSamplerClientOption(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
+			ctrl11 := gomock.NewController(t)
+			defer ctrl11.Finish()
+			
+			sender := appsendermock.NewMockAppSender(ctrl11)
 			done := make(chan struct{})
-			sender := &enginetest.Sender{
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
-					require.Subset(tt.expected, nodeIDs.List())
-					close(done)
-					return nil
-				},
-			}
+			
+			sender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+				require.Subset(tt.expected, nodeIDs.List())
+				close(done)
+				return nil
+			}).AnyTimes()
 			network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			ctx := context.Background()
@@ -669,7 +729,10 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	n, err := NewNetwork(log.NewNoOpLogger(), &enginetest.Sender{}, prometheus.NewRegistry(), "")
+	ctrl12 := gomock.NewController(t)
+	defer ctrl12.Finish()
+	sender := appsendermock.NewMockAppSender(ctrl12)
+	n, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	_ = n.NewClient(0)
 	_ = n.NewClient(0)

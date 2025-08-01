@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -19,8 +20,10 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	db "github.com/luxfi/database"
-	"github.com/luxfi/database/rpcdb"
+	dbrpcdb "github.com/luxfi/database/rpcdb"
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	"github.com/luxfi/ids"
+	luxmetrics "github.com/luxfi/metrics"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/quasar"
@@ -47,7 +50,53 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
+
+// warpSignerAdapter adapts gwarp.Client to quasar.WarpSigner
+type warpSignerAdapter struct {
+	client *gwarp.Client
+}
+
+func (w *warpSignerAdapter) Sign(msg *quasar.WarpMessage) (*quasar.WarpSignature, error) {
+	// Convert quasar.WarpMessage to warp.UnsignedMessage
+	unsignedMsg := &warp.UnsignedMessage{
+		// TODO: Add proper field mapping
+	}
+	_, err := w.client.Sign(unsignedMsg)
+	if err != nil {
+		return nil, err
+	}
+	return &quasar.WarpSignature{
+		// TODO: Convert signature bytes
+		// For now, we'll just return an empty signature
+	}, nil
+}
+
+// prometheusRegistryAdapter adapts prometheus.Registry to metrics.Registry
+type prometheusRegistryAdapter struct {
+	reg *prometheus.Registry
+}
+
+func (p *prometheusRegistryAdapter) Register(c luxmetrics.Collector) error {
+	// For now, just return nil as we can't directly convert between Lux and Prometheus collectors
+	return nil
+}
+
+func (p *prometheusRegistryAdapter) MustRegister(c luxmetrics.Collector) {
+	// For now, do nothing as we can't directly convert between Lux and Prometheus collectors
+}
+
+func (p *prometheusRegistryAdapter) Unregister(c luxmetrics.Collector) bool {
+	// For now, return true as we can't directly convert between Lux and Prometheus collectors
+	return true
+}
+
+func (p *prometheusRegistryAdapter) Gather() ([]*luxmetrics.MetricFamily, error) {
+	// This would need proper conversion from prometheus MetricFamily to Lux MetricFamily
+	// For now, return empty
+	return nil, nil
+}
 
 var (
 	_ vmpb.VMServer = (*VMServer)(nil)
@@ -170,6 +219,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 
 	vmMetrics := metrics.NewPrefixGatherer()
+	vmRegistry := prometheus.NewRegistry()
 	if err := vm.metrics.Register("vm", vmMetrics); err != nil {
 		return nil, err
 	}
@@ -197,7 +247,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.log = log.NewZapLogger(zapLogger.Named(fmt.Sprintf("<%s Chain>", chainID)))
 
 	// Create a no-op logger for corruptabledb since it expects a different interface
-	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
+	vm.db = dbrpcdb.NewClient(dbpb.NewDatabaseClient(dbClientConn))
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,
@@ -216,7 +266,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewGRPCClient(validatorstatepb.NewValidatorStateClient(clientConn))
-	warpSignerClient := gwarp.NewClient(warppb.NewSignerClient(clientConn))
+	gwarpClient := gwarp.NewClient(warppb.NewSignerClient(clientConn))
+	warpSignerClient := &warpSignerAdapter{client: gwarpClient}
 
 	vm.closed = make(chan struct{})
 
@@ -225,8 +276,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		SubnetID:        subnetID,
 		ChainID:         chainID,
 		NodeID:          nodeID,
-		PublicKey:       publicKey,
-		NetworkUpgrades: networkUpgrades,
+		PublicKey:       bls.PublicKeyToUncompressedBytes(publicKey),
+		NetworkUpgrades: &networkUpgrades,
 
 		XChainID:   xChainID,
 		CChainID:   cChainID,
@@ -235,7 +286,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		Log:          vm.log,
 		SharedMemory: sharedMemoryClient,
 		BCLookup:     bcLookupClient,
-		Metrics:      vmMetrics,
+		Metrics:      &prometheusRegistryAdapter{reg: vmRegistry},
 
 		// Signs warp messages
 		WarpSigner: warpSignerClient,

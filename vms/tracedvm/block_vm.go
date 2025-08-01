@@ -94,7 +94,7 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 /*
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	db db.Database,
 	genesisBytes,
 	upgradeBytes,

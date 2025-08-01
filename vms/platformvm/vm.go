@@ -190,7 +190,7 @@ func (vm *VM) Initialize(
 		validatorManager,
 	)
 
-	txVerifier := network.NewLockedTxVerifier(txExecutorBackend.Ctx.Lock, vm.manager)
+	txVerifier := network.NewLockedTxVerifier(&txExecutorBackend.Ctx.Lock, vm.manager)
 	vm.Network, err = network.New(
 		chainCtx.Log,
 		chainCtx.NodeID,
@@ -200,7 +200,7 @@ func (vm *VM) Initialize(
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
 		appSender,
-		chainCtx.Lock,
+		&chainCtx.Lock,
 		vm.state,
 		chainCtx.WarpSigner.(warp.Signer),
 		registerer,
@@ -243,7 +243,7 @@ func (vm *VM) Initialize(
 	go vm.periodicallyPruneMempool(execConfig.MempoolPruneFrequency)
 
 	go func() {
-		err := vm.state.ReindexBlocks(vm.ctx.Lock, vm.ctx.Log)
+		err := vm.state.ReindexBlocks(&vm.ctx.Lock, vm.ctx.Log)
 		if err != nil {
 			vm.ctx.Log.Warn("reindexing blocks failed",
 				zap.Error(err),

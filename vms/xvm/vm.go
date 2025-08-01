@@ -288,7 +288,7 @@ func (vm *VM) Initialize(
 	return vm.state.Commit()
 }
 
-// onBootstrapStarted is called by the consensus engine when it starts bootstrapping this chain
+// onBootstrapStarted is called by the quasar engine when it starts bootstrapping this chain
 func (vm *VM) onBootstrapStarted() error {
 	vm.txBackend.Bootstrapped = false
 	for _, fx := range vm.fxs {
@@ -413,14 +413,14 @@ func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (vertex.Vertex, 
 	return nil, fmt.Errorf("vertex parsing not supported after linearization")
 }
 
-// BuildVertex builds a new vertex to be added to consensus
+// BuildVertex builds a new vertex to be added to quasar
 func (vm *VM) BuildVertex(ctx context.Context) (vertex.Vertex, error) {
 	// Since we're linearizing the DAG, we don't actually build vertices
 	// Return nil to indicate no vertex is available
 	return nil, nil
 }
 
-// GetEngine returns the consensus engine
+// GetEngine returns the quasar engine
 func (vm *VM) GetEngine() interface{} {
 	// Return nil as we don't have a DAG engine
 	return nil
@@ -461,7 +461,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 		vm.ctx.ValidatorState,
 		vm.parser,
 		network.NewLockedTxVerifier(
-			vm.ctx.Lock,
+			&vm.ctx.Lock,
 			vm.chainManager,
 		),
 		mempool,

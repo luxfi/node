@@ -17,9 +17,9 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/crypto/bls"
 	db "github.com/luxfi/database"
-	"github.com/luxfi/database/rpcdb"
+	dbrpcdb "github.com/luxfi/database/rpcdb"
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
@@ -215,7 +215,7 @@ func (vm *VMClient) Initialize(
 		SubnetId:        chainCtx.SubnetID[:],
 		ChainId:         chainCtx.ChainID[:],
 		NodeId:          chainCtx.NodeID.Bytes(),
-		PublicKey:       bls.PublicKeyToCompressedBytes(chainCtx.PublicKey.(*bls.PublicKey)),
+		PublicKey:       chainCtx.PublicKey,
 		NetworkUpgrades: networkUpgrades,
 		XChainId:        chainCtx.XChainID[:],
 		CChainId:        chainCtx.CChainID[:],
@@ -293,7 +293,7 @@ func (vm *VMClient) newDBServer(db db.Database) *grpc.Server {
 	vm.serverCloser.Add(server)
 
 	// Register services
-	rpcdbpb.RegisterDatabaseServer(server, rpcdb.NewServer(db))
+	dbpb.RegisterDatabaseServer(server, dbrpcdb.NewServer(db))
 	healthpb.RegisterHealthServer(server, grpcHealth)
 
 	// Ensure metric counters are zeroed on restart

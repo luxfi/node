@@ -10,31 +10,25 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/tracker"
-	"github.com/luxfi/node/quasar/networking/tracker/trackermock"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
+	"github.com/luxfi/node/network/throttling/tracker"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 func TestNewSystemThrottler(t *testing.T) {
-	ctrl := gomock.NewController(t)
 	require := require.New(t)
 	reg := prometheus.NewRegistry()
 	clock := mockable.Clock{}
 	clock.Set(time.Now())
-	resourceTracker, err := tracker.NewResourceTracker(reg, resource.NoUsage, meter.ContinuousFactory{}, time.Second)
-	require.NoError(err)
+	resourceTracker := tracker.NewResourceTracker()
 	cpuTracker := resourceTracker.CPUTracker()
 
 	config := SystemThrottlerConfig{
 		Clock:           clock,
 		MaxRecheckDelay: time.Second,
 	}
-	targeter := trackermock.NewTargeter(ctrl)
+	targeter := tracker.NewTargeter(10)
 	throttlerIntf, err := NewSystemThrottler("", reg, config, cpuTracker, targeter)
 	require.NoError(err)
 	require.IsType(&systemThrottler{}, throttlerIntf)
@@ -46,45 +40,67 @@ func TestNewSystemThrottler(t *testing.T) {
 }
 
 func TestSystemThrottler(t *testing.T) {
-	ctrl := gomock.NewController(t)
 	require := require.New(t)
 
 	// Setup
-	mockTracker := trackermock.NewTracker(ctrl)
 	maxRecheckDelay := 100 * time.Millisecond
 	config := SystemThrottlerConfig{
 		MaxRecheckDelay: maxRecheckDelay,
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
+	
+	// Track the calls for validation
+	targetUsageCalls := make(map[ids.NodeID][]uint64)
+	usageCalls := make(map[ids.NodeID][]uint64)
+	
+	mockTracker := &mockTracker{
+		UsageF: func(nodeID ids.NodeID, currentTime time.Time) uint64 {
+			calls := usageCalls[nodeID]
+			if len(calls) == 0 {
+				return 90
+			}
+			result := calls[0]
+			usageCalls[nodeID] = calls[1:]
+			return result
+		},
+		TimeUntilUsageF: func(nodeID ids.NodeID, usage uint64) time.Duration {
+			return 100 * maxRecheckDelay
+		},
+	}
+	
+	mockTargeter := &mockTargeter{
+		TargetUsageF: func(nodeID ids.NodeID) uint64 {
+			calls := targetUsageCalls[nodeID]
+			if len(calls) == 0 {
+				return 100
+			}
+			result := calls[0]
+			targetUsageCalls[nodeID] = calls[1:]
+			return result
+		},
+	}
+	
+	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, mockTargeter)
 	require.NoError(err)
 
 	// Case: Actual usage <= target usage; should return immediately
 	// for both validator and non-validator
-	targeter.EXPECT().TargetUsage(vdrID).Return(1.0).Times(1)
-	mockTracker.EXPECT().Usage(vdrID, gomock.Any()).Return(0.9).Times(1)
+	targetUsageCalls[vdrID] = []uint64{100}
+	usageCalls[vdrID] = []uint64{90}
 
 	throttler.Acquire(context.Background(), vdrID)
 
-	targeter.EXPECT().TargetUsage(nonVdrID).Return(1.0).Times(1)
-	mockTracker.EXPECT().Usage(nonVdrID, gomock.Any()).Return(0.9).Times(1)
+	targetUsageCalls[nonVdrID] = []uint64{100}
+	usageCalls[nonVdrID] = []uint64{90}
 
 	throttler.Acquire(context.Background(), nonVdrID)
 
 	// Case: Actual usage > target usage; we should wait.
 	// In the first loop iteration inside acquire,
 	// say the actual usage exceeds the target.
-	targeter.EXPECT().TargetUsage(vdrID).Return(0.0).Times(1)
-	mockTracker.EXPECT().Usage(vdrID, gomock.Any()).Return(1.0).Times(1)
-	// Note we'll only actually wait [maxRecheckDelay]. We set [timeUntilAtDiskTarget]
-	// much larger to assert that the min recheck frequency is honored below.
-	timeUntilAtDiskTarget := 100 * maxRecheckDelay
-	mockTracker.EXPECT().TimeUntilUsage(vdrID, gomock.Any(), gomock.Any()).Return(timeUntilAtDiskTarget).Times(1)
-
-	// The second iteration, say the usage is OK.
-	targeter.EXPECT().TargetUsage(vdrID).Return(1.0).Times(1)
-	mockTracker.EXPECT().Usage(vdrID, gomock.Any()).Return(0.0).Times(1)
+	targetUsageCalls[vdrID] = []uint64{0, 100}
+	usageCalls[vdrID] = []uint64{100, 0}
+	// Note we'll only actually wait [maxRecheckDelay].
 
 	onAcquire := make(chan struct{})
 
@@ -103,13 +119,8 @@ func TestSystemThrottler(t *testing.T) {
 	case <-onAcquire:
 	}
 
-	targeter.EXPECT().TargetUsage(nonVdrID).Return(0.0).Times(1)
-	mockTracker.EXPECT().Usage(nonVdrID, gomock.Any()).Return(1.0).Times(1)
-
-	mockTracker.EXPECT().TimeUntilUsage(nonVdrID, gomock.Any(), gomock.Any()).Return(timeUntilAtDiskTarget).Times(1)
-
-	targeter.EXPECT().TargetUsage(nonVdrID).Return(1.0).Times(1)
-	mockTracker.EXPECT().Usage(nonVdrID, gomock.Any()).Return(0.0).Times(1)
+	targetUsageCalls[nonVdrID] = []uint64{0, 100}
+	usageCalls[nonVdrID] = []uint64{100, 0}
 
 	// Check for non-validator
 	go func() {
@@ -129,26 +140,36 @@ func TestSystemThrottler(t *testing.T) {
 
 func TestSystemThrottlerContextCancel(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	// Setup
-	mockTracker := trackermock.NewTracker(ctrl)
 	maxRecheckDelay := 10 * time.Second
 	config := SystemThrottlerConfig{
 		MaxRecheckDelay: maxRecheckDelay,
 	}
 	vdrID := ids.GenerateTestNodeID()
-	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
+	
+	mockTracker := &mockTracker{
+		UsageF: func(nodeID ids.NodeID, currentTime time.Time) uint64 {
+			return 100
+		},
+		TimeUntilUsageF: func(nodeID ids.NodeID, usage uint64) time.Duration {
+			return maxRecheckDelay
+		},
+	}
+	
+	mockTargeter := &mockTargeter{
+		TargetUsageF: func(nodeID ids.NodeID) uint64 {
+			return 0
+		},
+	}
+	
+	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, mockTargeter)
 	require.NoError(err)
 
 	// Case: Actual usage > target usage; we should wait.
 	// Mock the tracker so that the first loop iteration inside acquire,
 	// it says the actual usage exceeds the target.
 	// There should be no second iteration because we've already returned.
-	targeter.EXPECT().TargetUsage(vdrID).Return(0.0).Times(1)
-	mockTracker.EXPECT().Usage(vdrID, gomock.Any()).Return(1.0).Times(1)
-	mockTracker.EXPECT().TimeUntilUsage(vdrID, gomock.Any(), gomock.Any()).Return(maxRecheckDelay).Times(1)
 	onAcquire := make(chan struct{})
 	// Pass a canceled context into Acquire so that it returns immediately.
 	ctx, cancel := context.WithCancel(context.Background())

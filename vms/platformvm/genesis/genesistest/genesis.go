@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	// "github.com/luxfi/consensus/consensustest" // TODO: Use when AssetID is available
+	// "github.com/luxfi/quasar/consensustest" // TODO: Use when AssetID is available
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -131,7 +131,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		validator := &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    c.NetworkID,
-				BlockchainID: constants.PlatformChainID,
+				BlockchainID: constants.PlatformChainID(),
 			}},
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -160,7 +160,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	chain := &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    c.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: constants.PlatformChainID(),
 		}},
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,

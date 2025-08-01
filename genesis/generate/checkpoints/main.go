@@ -66,14 +66,14 @@ func main() {
 
 	checkpoints := map[string]map[ids.ID]set.Set[ids.ID]{
 		constants.TestnetName: {
-			constants.PlatformChainID: testnetPChainCheckpoints,
-			testnetXChainID:           testnetXChainCheckpoints,
-			testnetCChainID:           testnetCChainCheckpoints,
+			constants.PlatformChainID(): testnetPChainCheckpoints,
+			testnetXChainID:             testnetXChainCheckpoints,
+			testnetCChainID:             testnetCChainCheckpoints,
 		},
 		constants.MainnetName: {
-			constants.PlatformChainID: mainnetPChainCheckpoints,
-			mainnetXChainID:           mainnetXChainCheckpoints,
-			mainnetCChainID:           mainnetCChainCheckpoints,
+			constants.PlatformChainID(): mainnetPChainCheckpoints,
+			mainnetXChainID:             mainnetXChainCheckpoints,
+			mainnetCChainID:             mainnetCChainCheckpoints,
 		},
 	}
 	checkpointsJSON, err := json.MarshalIndent(checkpoints, "", "\t")

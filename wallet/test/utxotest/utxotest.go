@@ -21,12 +21,12 @@ func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*lux.UTXO) *
 	for subnetID, utxos := range utxoSets {
 		for _, utxo := range utxos {
 			require.NoError(
-				t, globalUTXOs.AddUTXO(context.Background(), subnetID, constants.PlatformChainID, utxo),
+				t, globalUTXOs.AddUTXO(context.Background(), subnetID, constants.PlatformChainID(), utxo),
 			)
 		}
 	}
 	return &DeterministicChainUTXOs{
-		ChainUTXOs: wallet.NewChainUTXOs(constants.PlatformChainID, globalUTXOs),
+		ChainUTXOs: wallet.NewChainUTXOs(constants.PlatformChainID(), globalUTXOs),
 	}
 }
 

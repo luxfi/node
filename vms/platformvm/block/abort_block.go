@@ -55,6 +55,18 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotAbortBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *BanffAbortBlock) Initialize(ctx *quasar.Context) error {
+	b.ApricotAbortBlock.Initialize(ctx)
+	return nil
+}
+
 func (*ApricotAbortBlock) InitCtx(*quasar.Context) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {

@@ -37,6 +37,12 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 
 func (*AdvanceTimeTx) InitCtx(*quasar.Context) {}
 
+// Initialize implements quasar.ContextInitializable
+func (tx *AdvanceTimeTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
 	return time.Unix(int64(tx.Time), 0)

@@ -38,7 +38,6 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
@@ -1458,8 +1457,14 @@ func (n *Node) initHealthAPI() error {
 
 	// TODO: add database health to liveness check
 	// Create a wrapper to adapt database health check interface
+<<<<<<< HEAD
 	dbHealthChecker := health.CheckerFunc(func(context.Context) (interface{}, error) {
 		if _, err := n.DB.HealthCheck(context.Background()); err != nil {
+=======
+	dbHealthChecker := health.CheckerFunc(func(ctx context.Context) (interface{}, error) {
+		_, err := n.DB.HealthCheck(ctx)
+		if err != nil {
+>>>>>>> a76b5b24a (Sync quasar)
 			return nil, err
 		}
 		return map[string]string{"status": "healthy"}, nil
@@ -1509,12 +1514,15 @@ func (n *Node) initHealthAPI() error {
 			return "validator doesn't have a BLS key", nil
 		}
 
+<<<<<<< HEAD
 		// Verify that the validator's compressed bytes are valid
 		_, err = bls.PublicKeyFromCompressedBytes(vdrPKBytes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse validator BLS key: %w", err)
 		}
 
+=======
+>>>>>>> a76b5b24a (Sync quasar)
 		nodePK := n.Config.StakingSigningKey.PublicKey()
 		nodePKBytes := bls.PublicKeyToCompressedBytes(nodePK)
 		if bytes.Equal(nodePKBytes, vdrPKBytes) {

@@ -42,6 +42,12 @@ func (out *OutputOwners) InitCtx(ctx *quasar.Context) {
 	out.ctx = ctx
 }
 
+// Initialize implements quasar.ContextInitializable
+func (out *OutputOwners) Initialize(ctx *quasar.Context) error {
+	out.InitCtx(ctx)
+	return nil
+}
+
 // MarshalJSON marshals OutputOwners as JSON with human readable addresses.
 // OutputOwners.InitCtx must be called before marshalling this or one of
 // the parent objects to json. Uses the OutputOwners.ctx method to format

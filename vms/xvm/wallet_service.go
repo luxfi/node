@@ -92,7 +92,7 @@ func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 	return txID, nil
 }
 
-// IssueTx attempts to issue a transaction into consensus
+// IssueTx attempts to issue a transaction into quasar
 func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),

@@ -55,7 +55,7 @@ func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	}
 
 	producedUTXOSlice := tx.UTXOs()
-	return b.addUTXOs(ctx, constants.PlatformChainID, producedUTXOSlice)
+	return b.addUTXOs(ctx, constants.PlatformChainID(), producedUTXOSlice)
 }
 
 func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*lux.UTXO) error {

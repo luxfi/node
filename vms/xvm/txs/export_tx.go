@@ -33,6 +33,12 @@ func (t *ExportTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *ExportTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *ExportTx) Visit(v Visitor) error {
 	return v.ExportTx(t)
 }

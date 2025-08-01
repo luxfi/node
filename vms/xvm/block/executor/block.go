@@ -268,7 +268,7 @@ func (b *Block) Accept() error {
 	}
 
 	// TODO: Fix SharedMemory access
-	// SharedMemory is not available in consensus.Context
+	// SharedMemory is not available in quasar.Context
 	// This needs to be refactored to use proper SharedMemory interface
 	// For now, just consume the batch to avoid unused variable error
 	_ = batch
