@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 )
 
 var (
@@ -49,6 +49,6 @@ func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 	}
 
 	msgBytes := msg.Bytes()
-	sig := bls.Sign(s.sk, msgBytes)
+	sig := s.sk.Sign(msgBytes)
 	return bls.SignatureToBytes(sig), nil
 }

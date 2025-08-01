@@ -4,6 +4,7 @@
 package throttling
 
 import (
+	"github.com/luxfi/node/utils/metric"
 	"context"
 	"testing"
 	"time"

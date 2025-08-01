@@ -9,15 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metrics struct {
+type handlerMetrics struct {
 	expired             *prometheus.CounterVec // op
 	messages            *prometheus.CounterVec // op
 	lockingTime         prometheus.Gauge
 	messageHandlingTime *prometheus.GaugeVec // op
 }
 
-func newMetrics(reg prometheus.Registerer) (*metrics, error) {
-	m := &metrics{
+func newMetrics(reg prometheus.Registerer) (*handlerMetrics, error) {
+	m := &handlerMetrics{
 		expired: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "expired",

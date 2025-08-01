@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -43,7 +43,7 @@ func New(
 	}
 
 	var err error
-	gh.getAncestorsVtxs, err = metrics.NewAverager(
+	gh.getAncestorsVtxs, err = metric.NewAverager(
 		"bs_get_ancestors_vtxs",
 		"vertices fetched in a call to GetAncestors",
 		reg,

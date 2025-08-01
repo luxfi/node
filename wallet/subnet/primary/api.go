@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/coreth/ethclient"
-	gethcommon "github.com/luxfi/coreth/common"
+	"github.com/luxfi/geth/ethclient"
+	gethcommon "github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/x"
 
-	ethcommon "github.com/luxfi/coreth/common"
+	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"

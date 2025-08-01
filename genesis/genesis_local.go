@@ -9,7 +9,7 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/node/utils/cb58"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/reward"

@@ -5,7 +5,7 @@ package txstest
 
 import (
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"

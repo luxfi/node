@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/coreth"
-	"github.com/luxfi/coreth/core/types"
-	"github.com/luxfi/coreth/ethclient"
+	// "github.com/luxfi/coreth"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"

@@ -76,7 +76,7 @@ func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*consensus.Contex
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		Log:        log.NoLog{},
+		Log:        log.NewNoOpLogger(),
 		BCLookup:   lookup,
 	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

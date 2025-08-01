@@ -92,18 +92,20 @@ func (hi *heightIndex) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	}
 
 	key := database.PackUInt64(height)
-	blkID, err := database.GetID(hi.heightDB, key)
+	luxID, err := database.GetID(hi.heightDB, key)
 	if err != nil {
 		return ids.Empty, err
 	}
+	blkID := ids.ID(luxID)
 	hi.heightsCache.Put(height, blkID)
-	return blkID, err
+	return blkID, nil
 }
 
 func (hi *heightIndex) SetBlockIDAtHeight(height uint64, blkID ids.ID) error {
 	hi.heightsCache.Put(height, blkID)
 	key := database.PackUInt64(height)
-	return database.PutID(hi.heightDB, key, blkID)
+	luxID := ([32]byte)(blkID)
+	return database.PutID(hi.heightDB, key, luxID)
 }
 
 func (hi *heightIndex) DeleteBlockIDAtHeight(height uint64) error {
@@ -121,11 +123,16 @@ func (hi *heightIndex) SetForkHeight(height uint64) error {
 }
 
 func (hi *heightIndex) GetCheckpoint() (ids.ID, error) {
-	return database.GetID(hi.metadataDB, checkpointKey)
+	luxID, err := database.GetID(hi.metadataDB, checkpointKey)
+	if err != nil {
+		return ids.Empty, err
+	}
+	return ids.ID(luxID), nil
 }
 
 func (hi *heightIndex) SetCheckpoint(blkID ids.ID) error {
-	return database.PutID(hi.metadataDB, checkpointKey, blkID)
+	luxID := ([32]byte)(blkID)
+	return database.PutID(hi.metadataDB, checkpointKey, luxID)
 }
 
 func (hi *heightIndex) DeleteCheckpoint() error {

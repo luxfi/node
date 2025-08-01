@@ -46,7 +46,7 @@ var (
 type Config struct {
 	Log          log.Logger
 	ProfileDir   string
-	LogFactory   logging.Factory
+	LogFactory   log.Factory
 	NodeConfig   interface{}
 	DB           database.Database
 	ChainManager chains.Manager
@@ -141,8 +141,8 @@ func (a *Admin) Alias(_ *http.Request, args *AliasArgs, _ *api.EmptyReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "alias"),
-		logging.UserString("endpoint", args.Endpoint),
-		logging.UserString("alias", args.Alias),
+		log.UserString("endpoint", args.Endpoint),
+		log.UserString("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -163,8 +163,8 @@ func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyRe
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "aliasChain"),
-		logging.UserString("chain", args.Chain),
-		logging.UserString("alias", args.Alias),
+		log.UserString("chain", args.Chain),
+		log.UserString("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -202,7 +202,7 @@ func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, repl
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getChainAliases"),
-		logging.UserString("chain", args.Chain),
+		log.UserString("chain", args.Chain),
 	)
 
 	id, err := ids.FromString(args.Chain)
@@ -257,7 +257,7 @@ func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "setLoggerLevel"),
-		logging.UserString("loggerName", args.LoggerName),
+		log.UserString("loggerName", args.LoggerName),
 		zap.Stringer("logLevel", args.LogLevel),
 		zap.Stringer("displayLevel", args.DisplayLevel),
 	)
@@ -297,7 +297,7 @@ func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getLoggerLevels"),
-		logging.UserString("loggerName", args.LoggerName),
+		log.UserString("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()
@@ -396,7 +396,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "dbGet"),
-		logging.UserString("key", args.Key),
+		log.UserString("key", args.Key),
 	)
 
 	key, err := formatting.Decode(formatting.HexNC, args.Key)

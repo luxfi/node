@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/set"

@@ -80,7 +80,7 @@ type Handler interface {
 type handler struct {
 	haltBootstrapping func()
 
-	metrics *metrics
+	metrics *handlerMetrics
 
 	nf           *enginepkg.NotificationForwarder
 	subscription enginepkg.Subscription
@@ -447,7 +447,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
-	if h.ctx.Log.Enabled(log.Verbo) {
+	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 		h.ctx.Log.Verbo("forwarding sync message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
@@ -796,7 +796,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		body      = msg.Message()
 		startTime = h.clock.Time()
 	)
-	if h.ctx.Log.Enabled(log.Verbo) {
+	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 		h.ctx.Log.Verbo("forwarding async message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
@@ -885,7 +885,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
-	if h.ctx.Log.Enabled(log.Verbo) {
+	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 		h.ctx.Log.Verbo("forwarding chan message to consensus",
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),

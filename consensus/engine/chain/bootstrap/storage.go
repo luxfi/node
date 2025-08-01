@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
 )
@@ -127,7 +126,7 @@ func process(
 func execute(
 	ctx context.Context,
 	shouldHalt func() bool,
-	log logging.Func,
+	log func(msg string, fields ...zap.Field),
 	db database.Database,
 	nonVerifyingParser block.Parser,
 	tree *interval.Tree,

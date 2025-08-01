@@ -18,13 +18,13 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
+	"github.com/luxfi/trace"
 )
 
 const (
@@ -80,7 +80,7 @@ type server struct {
 	// log this server writes to
 	log log.Logger
 	// generates new logs for chains to write to
-	factory logging.Factory
+	factory log.Factory
 
 	shutdownTimeout time.Duration
 
@@ -101,7 +101,7 @@ type server struct {
 // New returns an instance of a Server.
 func New(
 	log log.Logger,
-	factory logging.Factory,
+	factory log.Factory,
 	listener net.Listener,
 	allowedOrigins []string,
 	shutdownTimeout time.Duration,

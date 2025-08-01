@@ -42,7 +42,7 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 }
 
 // New mocks base method.
-func (m *MockFactory) New(arg0 log.Logger) (any, error) {
+func (m *MockFactory) New(arg0 logging.Logger) (any, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "New", arg0)
 	ret0, _ := ret[0].(any)

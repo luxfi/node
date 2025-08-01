@@ -17,7 +17,6 @@ import (
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
@@ -45,9 +44,10 @@ import (
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metrics"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -78,14 +78,14 @@ const (
 	defaultChannelSize = 1
 	initialQueueSize   = 3
 
-	luxNamespace          = constants.PlatformName + metric.NamespaceSeparator + "lux"
-	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
-	meterchainvmNamespace = constants.PlatformName + metric.NamespaceSeparator + "meterchainvm"
-	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
-	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
-	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
-	linearNamespace       = constants.PlatformName + metric.NamespaceSeparator + "linear"
-	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
+	luxNamespace          = constants.PlatformName + "_lux"
+	handlerNamespace      = constants.PlatformName + "_handler"
+	meterchainvmNamespace = constants.PlatformName + "_meterchainvm"
+	meterdagvmNamespace   = constants.PlatformName + "_meterdagvm"
+	proposervmNamespace   = constants.PlatformName + "_proposervm"
+	p2pNamespace          = constants.PlatformName + "_p2p"
+	linearNamespace       = constants.PlatformName + "_linear"
+	stakeNamespace        = constants.PlatformName + "_stake"
 )
 
 var (
@@ -190,7 +190,7 @@ type ManagerConfig struct {
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
 	Log                       log.Logger
-	LogFactory                logging.Factory
+	LogFactory                log.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        consensus.AcceptorGroup
 	TxAcceptorGroup           consensus.AcceptorGroup
@@ -1631,7 +1631,7 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (metrics
 	vmGatherer, ok := m.vmGatherer[vmID]
 	if !ok {
 		vmName := constants.VMName(vmID)
-		vmNamespace := metrics.AppendNamespace(constants.PlatformName, vmName)
+		vmNamespace := metric.AppendNamespace(constants.PlatformName, vmName)
 		vmGatherer = metrics.NewLabelGatherer(ChainLabel)
 		err := m.Metrics.Register(
 			vmNamespace,

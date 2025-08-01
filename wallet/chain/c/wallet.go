@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/coreth/ethclient"
+	"github.com/luxfi/geth/ethclient"
 	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/ids"
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/luxfi/coreth/common"
+	ethcommon "github.com/luxfi/geth/common"
 )
 
 var _ Wallet = (*wallet)(nil)

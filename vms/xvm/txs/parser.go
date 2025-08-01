@@ -43,7 +43,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		fxs,
 	)
 }

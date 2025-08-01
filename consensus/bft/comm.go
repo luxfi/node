@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
@@ -23,6 +24,51 @@ var (
 	_               bft.Communication = (*Comm)(nil)
 	errNodeNotFound                       = errors.New("node not found in the validator list")
 )
+
+// loggerAdapter adapts log.Logger to bft.Logger
+type loggerAdapter struct {
+	wrapped log.Logger
+}
+
+// Ensure loggerAdapter implements bft.Logger
+var _ bft.Logger = (*loggerAdapter)(nil)
+
+func (l *loggerAdapter) Fatal(msg string, fields ...zap.Field) {
+	l.wrapped.Fatal(msg, fields...)
+}
+
+func (l *loggerAdapter) Error(msg string, fields ...zap.Field) {
+	l.wrapped.Error(msg, fieldsToInterface(fields)...)
+}
+
+func (l *loggerAdapter) Warn(msg string, fields ...zap.Field) {
+	l.wrapped.Warn(msg, fieldsToInterface(fields)...)
+}
+
+func (l *loggerAdapter) Info(msg string, fields ...zap.Field) {
+	l.wrapped.Info(msg, fieldsToInterface(fields)...)
+}
+
+func (l *loggerAdapter) Trace(msg string, fields ...zap.Field) {
+	l.wrapped.Trace(msg, fieldsToInterface(fields)...)
+}
+
+func (l *loggerAdapter) Debug(msg string, fields ...zap.Field) {
+	l.wrapped.Debug(msg, fieldsToInterface(fields)...)
+}
+
+func (l *loggerAdapter) Verbo(msg string, fields ...zap.Field) {
+	l.wrapped.Verbo(msg, fields...)
+}
+
+// fieldsToInterface converts zap.Field slice to interface{} slice
+func fieldsToInterface(fields []zap.Field) []interface{} {
+	result := make([]interface{}, 0, len(fields)*2)
+	for _, field := range fields {
+		result = append(result, field.Key, field.Interface)
+	}
+	return result
+}
 
 type Comm struct {
 	logger   bft.Logger
@@ -64,7 +110,7 @@ func NewComm(config *Config) (*Comm, error) {
 		subnetID:       config.Ctx.SubnetID,
 		broadcastNodes: broadcastNodes,
 		allNodes:       allNodes,
-		logger:         config.Log,
+		logger:         &loggerAdapter{wrapped: config.Log},
 		sender:         config.Sender,
 		msgBuilder:     config.OutboundMsgBuilder,
 		chainID:        config.Ctx.ChainID,

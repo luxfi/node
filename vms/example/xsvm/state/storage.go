@@ -47,16 +47,25 @@ func SetInitialized(db database.KeyValueWriter) error {
 // Block state
 
 func GetLastAccepted(db database.KeyValueReader) (ids.ID, error) {
-	return database.GetID(db, blockPrefix)
+	luxID, err := database.GetID(db, blockPrefix)
+	if err != nil {
+		return ids.Empty, err
+	}
+	return ids.ID(luxID), nil
 }
 
 func SetLastAccepted(db database.KeyValueWriter, blkID ids.ID) error {
-	return database.PutID(db, blockPrefix, blkID)
+	luxID := ([32]byte)(blkID)
+	return database.PutID(db, blockPrefix, luxID)
 }
 
 func GetBlockIDByHeight(db database.KeyValueReader, height uint64) (ids.ID, error) {
 	key := Flatten(blockPrefix, database.PackUInt64(height))
-	return database.GetID(db, key)
+	luxID, err := database.GetID(db, key)
+	if err != nil {
+		return ids.Empty, err
+	}
+	return ids.ID(luxID), nil
 }
 
 func GetBlock(db database.KeyValueReader, blkID ids.ID) ([]byte, error) {
@@ -66,7 +75,8 @@ func GetBlock(db database.KeyValueReader, blkID ids.ID) ([]byte, error) {
 
 func AddBlock(db database.KeyValueWriter, height uint64, blkID ids.ID, blk []byte) error {
 	heightToIDKey := Flatten(blockPrefix, database.PackUInt64(height))
-	if err := database.PutID(db, heightToIDKey, blkID); err != nil {
+	luxID := ([32]byte)(blkID)
+	if err := database.PutID(db, heightToIDKey, luxID); err != nil {
 		return err
 	}
 	idToBlockKey := Flatten(blockPrefix, blkID[:])

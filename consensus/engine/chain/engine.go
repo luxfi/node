@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
@@ -30,7 +32,6 @@ import (
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/bimap"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
@@ -51,7 +52,7 @@ func cachedBlockSize(_ ids.ID, blk chain.Block) int {
 // Engine dependencies.
 type Engine struct {
 	Config
-	*metrics
+	*chainMetrics
 
 	// list of NoOpsHandler for messages dropped by engine
 	core.StateSummaryFrontierHandler
@@ -69,7 +70,7 @@ type Engine struct {
 
 	// blocks that have we have sent get requests for but haven't yet received
 	blkReqs            *bimap.BiMap[core.Request, ids.ID]
-	blkReqSourceMetric map[core.Request]prometheus.Counter
+	blkReqSourceMetric map[core.Request]metrics.Counter
 
 	// blocks that are queued to be issued to consensus once missing dependencies are fetched
 	// Block ID --> Block
@@ -130,14 +131,22 @@ func New(config Config) (*Engine, error) {
 		return nil, err
 	}
 
-	metrics, err := newMetrics(config.Ctx.Registerer)
+	// Convert prometheus.Registerer to metrics.Registry
+	promReg, ok := config.Ctx.Registerer.(*prometheus.Registry)
+	if !ok {
+		// If it's not a *prometheus.Registry, we need to create a new one
+		promReg = prometheus.NewRegistry()
+	}
+	metricsRegistry := metrics.WrapPrometheusRegistry(promReg)
+	
+	chainMetrics, err := newMetrics(metricsRegistry)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Engine{
 		Config:                      config,
-		metrics:                     metrics,
+		chainMetrics:                chainMetrics,
 		StateSummaryFrontierHandler: core.NewNoOpStateSummaryFrontierHandler(config.Ctx.Log),
 		AcceptedStateSummaryHandler: core.NewNoOpAcceptedStateSummaryHandler(config.Ctx.Log),
 		AcceptedFrontierHandler:     core.NewNoOpAcceptedFrontierHandler(config.Ctx.Log),
@@ -152,7 +161,7 @@ func New(config Config) (*Engine, error) {
 		blocked:                     job.NewScheduler[ids.ID](),
 		polls:                       polls,
 		blkReqs:                     bimap.New[core.Request, ids.ID](),
-		blkReqSourceMetric:          make(map[core.Request]prometheus.Counter),
+		blkReqSourceMetric:          make(map[core.Request]metrics.Counter),
 	}, nil
 }
 
@@ -210,7 +219,7 @@ func (e *Engine) Gossip(ctx context.Context) error {
 func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkBytes []byte) error {
 	blk, err := e.VM.ParseBlock(ctx, blkBytes)
 	if err != nil {
-		if e.Ctx.Log.Enabled(log.Verbo) {
+		if e.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 			e.Ctx.Log.Verbo("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),
@@ -235,7 +244,7 @@ func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, b
 			NodeID:    nodeID,
 			RequestID: requestID,
 		}
-		issuedMetric prometheus.Counter
+		issuedMetric metrics.Counter
 	)
 	switch expectedBlkID, ok := e.blkReqs.GetValue(req); {
 	case ok:
@@ -260,11 +269,11 @@ func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, b
 		//
 		// Note: It is still possible this block will be issued here, because
 		// the block may have previously failed verification.
-		issuedMetric = e.metrics.issued.WithLabelValues(unknownSource)
+		issuedMetric = e.chainMetrics.issued.WithLabelValues(unknownSource)
 	}
 
 	if !e.shouldIssueBlock(blk) {
-		e.metrics.numUselessPutBytes.Add(float64(len(blkBytes)))
+		e.chainMetrics.numUselessPutBytes.Add(float64(len(blkBytes)))
 	}
 
 	// issue the block into consensus. If the block has already been issued,
@@ -307,7 +316,7 @@ func (e *Engine) GetFailed(ctx context.Context, nodeID ids.NodeID, requestID uin
 func (e *Engine) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkID ids.ID, requestedHeight uint64) error {
 	e.sendChits(ctx, nodeID, requestID, requestedHeight)
 
-	issuedMetric := e.metrics.issued.WithLabelValues(pushGossipSource)
+	issuedMetric := e.chainMetrics.issued.WithLabelValues(pushGossipSource)
 
 	// Try to issue [blkID] to consensus.
 	// If we're missing an ancestor, request it from [vdr]
@@ -324,7 +333,7 @@ func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uin
 	blk, err := e.VM.ParseBlock(ctx, blkBytes)
 	// If parsing fails, we just drop the request, as we didn't ask for it
 	if err != nil {
-		if e.Ctx.Log.Enabled(log.Verbo) {
+		if e.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 			e.Ctx.Log.Verbo("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),
@@ -342,10 +351,10 @@ func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uin
 	}
 
 	if !e.shouldIssueBlock(blk) {
-		e.metrics.numUselessPushQueryBytes.Add(float64(len(blkBytes)))
+		e.chainMetrics.numUselessPushQueryBytes.Add(float64(len(blkBytes)))
 	}
 
-	issuedMetric := e.metrics.issued.WithLabelValues(pushGossipSource)
+	issuedMetric := e.chainMetrics.issued.WithLabelValues(pushGossipSource)
 
 	// issue the block into consensus. If the block has already been issued,
 	// this will be a noop. If this block has missing dependencies, nodeID will
@@ -371,7 +380,7 @@ func (e *Engine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32,
 		zap.Uint64("acceptedHeight", acceptedHeight),
 	)
 
-	issuedMetric := e.metrics.issued.WithLabelValues(pullGossipSource)
+	issuedMetric := e.chainMetrics.issued.WithLabelValues(pullGossipSource)
 	if err := e.issueFromByID(ctx, nodeID, preferredID, issuedMetric); err != nil {
 		return err
 	}
@@ -554,7 +563,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 		case err != nil:
 			return err
 		default:
-			issuedMetric := e.metrics.issued.WithLabelValues(builtSource)
+			issuedMetric := e.chainMetrics.issued.WithLabelValues(builtSource)
 			for _, blk := range options {
 				// note that deliver will set the VM's preference
 				if err := e.deliver(ctx, e.Ctx.NodeID, blk, false, issuedMetric); err != nil {
@@ -570,7 +579,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 		zap.Stringer("lastAcceptedID", lastAcceptedID),
 		zap.Uint64("lastAcceptedHeight", lastAcceptedHeight),
 	)
-	e.metrics.bootstrapFinished.Set(1)
+	e.chainMetrics.bootstrapFinished.Set(1)
 
 	e.Ctx.State.Set(consensus.EngineState{
 		Type:  p2p.EngineType_ENGINE_TYPE_LINEAR,
@@ -615,10 +624,10 @@ func (e *Engine) executeDeferredWork(ctx context.Context) error {
 		return err
 	}
 
-	e.metrics.numRequests.Set(float64(e.blkReqs.Len()))
-	e.metrics.numBlocked.Set(float64(len(e.pending)))
-	e.metrics.numBlockers.Set(float64(e.blocked.NumDependencies()))
-	e.metrics.numNonVerifieds.Set(float64(e.unverifiedIDToAncestor.Len()))
+	e.chainMetrics.numRequests.Set(float64(e.blkReqs.Len()))
+	e.chainMetrics.numBlocked.Set(float64(len(e.pending)))
+	e.chainMetrics.numBlockers.Set(float64(e.blocked.NumDependencies()))
+	e.chainMetrics.numNonVerifieds.Set(float64(e.unverifiedIDToAncestor.Len()))
 	return nil
 }
 
@@ -729,7 +738,7 @@ func (e *Engine) buildBlocks(ctx context.Context) error {
 			)
 		}
 
-		issuedMetric := e.metrics.issued.WithLabelValues(builtSource)
+		issuedMetric := e.chainMetrics.issued.WithLabelValues(builtSource)
 		if err := e.issueWithAncestors(ctx, blk, issuedMetric); err != nil {
 			return err
 		}
@@ -766,7 +775,7 @@ func (e *Engine) issueFromByID(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	blkID ids.ID,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) error {
 	blk, err := e.getBlock(ctx, blkID)
 	if err != nil {
@@ -784,7 +793,7 @@ func (e *Engine) issueFrom(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	blk chain.Block,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) error {
 	// issue [blk] and its ancestors to consensus.
 	blkID := blk.ID()
@@ -823,7 +832,7 @@ func (e *Engine) issueFrom(
 func (e *Engine) issueWithAncestors(
 	ctx context.Context,
 	blk chain.Block,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) error {
 	blkID := blk.ID()
 	// issue [blk] and its ancestors into consensus
@@ -858,7 +867,7 @@ func (e *Engine) issue(
 	nodeID ids.NodeID,
 	blk chain.Block,
 	push bool,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) error {
 	blkID := blk.ID()
 
@@ -898,7 +907,7 @@ func (e *Engine) sendRequest(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	blkID ids.ID,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) {
 	// There is already an outstanding request for this block
 	if e.blkReqs.HasValue(blkID) {
@@ -1002,7 +1011,7 @@ func (e *Engine) deliver(
 	nodeID ids.NodeID,
 	blk chain.Block,
 	push bool,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) error {
 	// we are no longer waiting on adding the block to consensus, so it is no
 	// longer pending
@@ -1130,7 +1139,7 @@ func (e *Engine) addUnverifiedBlockToConsensus(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	blk chain.Block,
-	issuedMetric prometheus.Counter,
+	issuedMetric metrics.Counter,
 ) (bool, error) {
 	blkID := blk.ID()
 	blkHeight := blk.Height()
@@ -1152,7 +1161,7 @@ func (e *Engine) addUnverifiedBlockToConsensus(
 	issuedMetric.Inc()
 	e.unverifiedIDToAncestor.Remove(blkID)
 	e.unverifiedBlockCache.Evict(blkID)
-	e.metrics.issuerStake.Observe(float64(e.Validators.GetWeight(e.Ctx.SubnetID, nodeID)))
+	e.chainMetrics.issuerStake.Observe(float64(e.Validators.GetWeight(e.Ctx.SubnetID, nodeID)))
 	e.Ctx.Log.Verbo("adding block to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("blkID", blkID),
@@ -1160,7 +1169,7 @@ func (e *Engine) addUnverifiedBlockToConsensus(
 	)
 	return true, e.Consensus.Add(&memoryBlock{
 		Block:   blk,
-		metrics: e.metrics,
+		metrics: e.chainMetrics,
 		tree:    e.unverifiedIDToAncestor,
 	})
 }

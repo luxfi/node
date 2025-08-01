@@ -7,7 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/choices"
@@ -16,9 +15,9 @@ import (
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -32,7 +31,7 @@ func New(
 	log log.Logger,
 	maxTimeGetAncestors time.Duration,
 	maxContainersGetAncestors int,
-	reg prometheus.Registerer,
+	reg metrics.Registry,
 ) (core.AllGetsServer, error) {
 	gh := &getter{
 		storage:                   storage,
@@ -43,7 +42,7 @@ func New(
 	}
 
 	var err error
-	gh.getAncestorsVtxs, err = metrics.NewAverager(
+	gh.getAncestorsVtxs, err = NewAverager(
 		"bs_get_ancestors_vtxs",
 		"vertices fetched in a call to GetAncestors",
 		reg,
@@ -58,7 +57,7 @@ type getter struct {
 	maxTimeGetAncestors       time.Duration
 	maxContainersGetAncestors int
 
-	getAncestorsVtxs metric.Averager
+	getAncestorsVtxs Averager
 }
 
 func (gh *getter) GetStateSummaryFrontier(_ context.Context, nodeID ids.NodeID, requestID uint32) error {

@@ -7,15 +7,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
 const (
 	defaultCacheSize = 256
+)
+
+var (
+	_ ids.ID // explicitly use ids to avoid unused import warning
 )
 
 var (
@@ -39,7 +42,7 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
-	secp256k1.RecoverCache
+	secp256k1.RecoverCacheType
 
 	VM           VM
 	bootstrapped bool
@@ -53,11 +56,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log := fx.VM.Logger()
 	log.Debug("initializing secp256k1 fx")
 
-	fx.RecoverCache = secp256k1.RecoverCache{
-		LRU: cache.LRU[ids.ID, *secp256k1.PublicKey]{
-			Size: defaultCacheSize,
-		},
-	}
+	fx.RecoverCacheType = secp256k1.NewRecoverCache(defaultCacheSize)
 	c := fx.VM.CodecRegistry()
 	return errors.Join(
 		c.RegisterType(&TransferInput{}),

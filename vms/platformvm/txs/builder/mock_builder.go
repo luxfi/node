@@ -12,7 +12,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	secp256k1 "github.com/luxfi/node/utils/crypto/secp256k1"
+	secp256k1 "github.com/luxfi/crypto/secp256k1"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	secp256k1fx "github.com/luxfi/node/vms/secp256k1fx"
 	gomock "go.uber.org/mock/gomock"

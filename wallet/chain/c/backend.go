@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/luxfi/coreth/common"
+	ethcommon "github.com/luxfi/geth/common"
 )
 
 var (

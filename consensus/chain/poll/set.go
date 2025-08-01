@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
 	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
 )
 
 var (
@@ -65,7 +65,7 @@ func NewSet(
 		return nil, fmt.Errorf("%w: %w", errFailedPollsMetric, err)
 	}
 
-	durPolls, err := metrics.NewAverager(
+	durPolls, err := metric.NewAverager(
 		"poll_duration",
 		"time (in ns) this poll took to complete",
 		reg,

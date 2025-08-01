@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/secp256k1fx"

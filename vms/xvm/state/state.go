@@ -282,7 +282,7 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 
 	heightKey := database.PackUInt64(height)
 
-	blkID, err := database.GetID(s.blockIDDB, heightKey)
+	blkIDArrray, err := database.GetID(s.blockIDDB, heightKey)
 	if err == database.ErrNotFound {
 		s.blockIDCache.Put(height, ids.Empty)
 		return ids.Empty, database.ErrNotFound
@@ -290,7 +290,7 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	if err != nil {
 		return ids.Empty, err
 	}
-
+	blkID := ids.ID(blkIDArrray)
 	s.blockIDCache.Put(height, blkID)
 	return blkID, nil
 }
@@ -332,7 +332,8 @@ func (s *state) AddBlock(block block.Block) {
 }
 
 func (s *state) InitializeChainState(stopVertexID ids.ID, genesisTimestamp time.Time) error {
-	lastAccepted, err := database.GetID(s.singletonDB, lastAcceptedKey)
+	lastAcceptedArray, err := database.GetID(s.singletonDB, lastAcceptedKey)
+	lastAccepted := ids.ID(lastAcceptedArray)
 	if err == database.ErrNotFound {
 		return s.initializeChainState(stopVertexID, genesisTimestamp)
 	} else if err != nil {
@@ -465,7 +466,8 @@ func (s *state) writeBlockIDs() error {
 
 		delete(s.addedBlockIDs, height)
 		s.blockIDCache.Put(height, blkID)
-		if err := database.PutID(s.blockIDDB, heightKey, blkID); err != nil {
+		blkIDArray := ([32]byte)(blkID)
+		if err := database.PutID(s.blockIDDB, heightKey, blkIDArray); err != nil {
 			return fmt.Errorf("failed to add blockID: %w", err)
 		}
 	}
@@ -494,7 +496,8 @@ func (s *state) writeMetadata() error {
 		s.persistedTimestamp = s.timestamp
 	}
 	if s.persistedLastAccepted != s.lastAccepted {
-		if err := database.PutID(s.singletonDB, lastAcceptedKey, s.lastAccepted); err != nil {
+		lastAcceptedArray := ([32]byte)(s.lastAccepted)
+		if err := database.PutID(s.singletonDB, lastAcceptedKey, lastAcceptedArray); err != nil {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
 		s.persistedLastAccepted = s.lastAccepted

@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
@@ -92,7 +93,15 @@ func NewMessageQueue(
 		nodeToUnprocessedMsgs: make(map[ids.NodeID]int),
 		msgAndCtxs:            buffer.NewUnboundedDeque[*msgAndContext](1 /*=initSize*/),
 	}
-	return m, m.metrics.initialize(metricsNamespace, reg)
+	// Convert prometheus.Registerer to metrics.Registry
+	promReg, ok := reg.(*prometheus.Registry)
+	if !ok {
+		// If it's not a *prometheus.Registry, we need to create a new one
+		promReg = prometheus.NewRegistry()
+	}
+	metricsRegistry := metrics.WrapPrometheusRegistry(promReg)
+	
+	return m, m.metrics.initialize(metricsNamespace, metricsRegistry)
 }
 
 func (m *messageQueue) Push(ctx context.Context, msg Message) {
@@ -112,7 +121,7 @@ func (m *messageQueue) Push(ctx context.Context, msg Message) {
 	m.nodeToUnprocessedMsgs[msg.NodeID()]++
 
 	// Update metrics
-	m.metrics.count.With(prometheus.Labels{
+	m.metrics.count.With(metrics.Labels{
 		opLabel: msg.Op().String(),
 	}).Inc()
 	m.metrics.nodesWithMessages.Set(float64(len(m.nodeToUnprocessedMsgs)))
@@ -159,7 +168,7 @@ func (m *messageQueue) Pop() (context.Context, Message, bool) {
 			if m.nodeToUnprocessedMsgs[nodeID] == 0 {
 				delete(m.nodeToUnprocessedMsgs, nodeID)
 			}
-			m.metrics.count.With(prometheus.Labels{
+			m.metrics.count.With(metrics.Labels{
 				opLabel: msg.Op().String(),
 			}).Dec()
 			m.metrics.nodesWithMessages.Set(float64(len(m.nodeToUnprocessedMsgs)))
@@ -192,7 +201,8 @@ func (m *messageQueue) Shutdown() {
 	m.nodeToUnprocessedMsgs = nil
 
 	// Update metrics
-	m.metrics.count.Reset()
+	// TODO: luxfi/metrics GaugeVec doesn't have Reset method
+	// m.metrics.count.Reset()
 	m.metrics.nodesWithMessages.Set(0)
 
 	// Mark the queue as closed
