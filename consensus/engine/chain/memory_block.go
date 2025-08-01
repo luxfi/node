@@ -17,7 +17,7 @@ type memoryBlock struct {
 	chain.Block
 
 	tree    ancestor.Tree
-	metrics *metrics
+	metrics *chainMetrics
 }
 
 // Accept accepts the underlying block & removes sibling subtrees

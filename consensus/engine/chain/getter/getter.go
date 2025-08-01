@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -41,7 +41,7 @@ func New(
 	}
 
 	var err error
-	gh.getAncestorsBlks, err = metrics.NewAverager(
+	gh.getAncestorsBlks, err = metric.NewAverager(
 		"get_ancestors_blks",
 		"blocks fetched in a call to GetAncestors",
 		reg,

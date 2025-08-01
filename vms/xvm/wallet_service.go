@@ -132,7 +132,7 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "issueTx"),
-		logging.UserString("tx", args.Tx),
+		log.UserString("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -167,7 +167,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "sendMultiple"),
-		logging.UserString("username", args.Username),
+		log.UserString("username", args.Username),
 	)
 
 	// Validate the memo field

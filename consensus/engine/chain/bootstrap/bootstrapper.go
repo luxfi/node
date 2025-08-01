@@ -659,10 +659,14 @@ func (b *Bootstrapper) tryStartExecuting(ctx context.Context) error {
 	}
 
 	numToExecute := b.tree.Len()
+	// Create a wrapper to convert log method to logging.Func
+	logFunc := func(msg string, fields ...zap.Field) {
+		log(msg)
+	}
 	err = execute(
 		ctx,
 		b.Halted,
-		log,
+		logFunc,
 		b.DB,
 		&parseAcceptor{
 			parser:      b.nonVerifyingParser,

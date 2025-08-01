@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
@@ -178,14 +178,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
 
 	// TODO: Allow the logger to be configured by the client
-	vm.log = logging.NewLogger(
-		fmt.Sprintf("<%s Chain>", chainID),
-		logging.NewWrappedCore(
-			log.Info,
-			originalStderr,
-			logging.Colors.ConsoleEncoder(),
-		),
-	)
+	// TODO: Properly configure logger
+	vm.log = log.NewNoOpLogger()
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,

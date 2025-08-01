@@ -56,13 +56,13 @@ func (s *Service) PublishBlockchain(_ *http.Request, args *PublishBlockchainArgs
 	s.log.Warn("deprecated API called",
 		zap.String("service", "ipcs"),
 		zap.String("method", "publishBlockchain"),
-		logging.UserString("blockchainID", args.BlockchainID),
+		log.UserString("blockchainID", args.BlockchainID),
 	)
 
 	chainID, err := s.chainManager.Lookup(args.BlockchainID)
 	if err != nil {
 		s.log.Error("chain lookup failed",
-			logging.UserString("blockchainID", args.BlockchainID),
+			log.UserString("blockchainID", args.BlockchainID),
 			zap.Error(err),
 		)
 		return err
@@ -74,7 +74,7 @@ func (s *Service) PublishBlockchain(_ *http.Request, args *PublishBlockchainArgs
 	ipcs, err := s.ipcs.Publish(chainID)
 	if err != nil {
 		s.log.Error("couldn't publish chain",
-			logging.UserString("blockchainID", args.BlockchainID),
+			log.UserString("blockchainID", args.BlockchainID),
 			zap.Error(err),
 		)
 		return err
@@ -95,13 +95,13 @@ func (s *Service) UnpublishBlockchain(_ *http.Request, args *UnpublishBlockchain
 	s.log.Warn("deprecated API called",
 		zap.String("service", "ipcs"),
 		zap.String("method", "unpublishBlockchain"),
-		logging.UserString("blockchainID", args.BlockchainID),
+		log.UserString("blockchainID", args.BlockchainID),
 	)
 
 	chainID, err := s.chainManager.Lookup(args.BlockchainID)
 	if err != nil {
 		s.log.Error("chain lookup failed",
-			logging.UserString("blockchainID", args.BlockchainID),
+			log.UserString("blockchainID", args.BlockchainID),
 			zap.Error(err),
 		)
 		return err
@@ -113,7 +113,7 @@ func (s *Service) UnpublishBlockchain(_ *http.Request, args *UnpublishBlockchain
 	ok, err := s.ipcs.Unpublish(chainID)
 	if !ok {
 		s.log.Error("couldn't publish chain",
-			logging.UserString("blockchainID", args.BlockchainID),
+			log.UserString("blockchainID", args.BlockchainID),
 			zap.Error(err),
 		)
 	}

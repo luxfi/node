@@ -4,17 +4,10 @@
 package tx
 
 import (
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 )
-
-var secpCache = secp256k1.RecoverCache{
-	LRU: cache.LRU[ids.ID, *secp256k1.PublicKey]{
-		Size: 2048,
-	},
-}
 
 type Tx struct {
 	Unsigned  `serialize:"true" json:"unsigned"`
@@ -41,7 +34,7 @@ func Sign(utx Unsigned, key *secp256k1.PrivateKey) (*Tx, error) {
 	tx := &Tx{
 		Unsigned: utx,
 	}
-	copy(tx.Signature[:], sig)
+	copy(tx.Signature[:], sig[:])
 	return tx, nil
 }
 
@@ -56,9 +49,10 @@ func (tx *Tx) SenderID() (ids.ShortID, error) {
 		return ids.ShortEmpty, err
 	}
 
-	pk, err := secpCache.RecoverPublicKey(unsignedBytes, tx.Signature[:])
+	pk, err := secp256k1.RecoverPublicKey(unsignedBytes, tx.Signature[:])
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	return pk.Address(), nil
+	addr := pk.Address()
+	return ids.ShortID(addr), nil
 }

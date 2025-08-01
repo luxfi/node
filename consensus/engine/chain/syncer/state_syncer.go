@@ -191,7 +191,7 @@ func (ss *stateSyncer) StateSummaryFrontier(ctx context.Context, nodeID ids.Node
 			ss.uniqueSummariesHeights = append(ss.uniqueSummariesHeights, height)
 		}
 	} else {
-		if ss.Ctx.Log.Enabled(log.Verbo) {
+		if ss.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
 			ss.Ctx.Log.Verbo("failed to parse summary",
 				zap.Binary("summary", summaryBytes),
 				zap.Error(err),

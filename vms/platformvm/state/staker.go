@@ -10,7 +10,7 @@ import (
 	"github.com/google/btree"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

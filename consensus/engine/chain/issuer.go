@@ -6,8 +6,7 @@ package chain
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/consensus/engine/chain/job"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/ids"
@@ -21,7 +20,7 @@ type issuer struct {
 	nodeID       ids.NodeID // nodeID of the peer that provided this block
 	blk          chain.Block
 	push         bool
-	issuedMetric prometheus.Counter
+	issuedMetric metrics.Counter
 }
 
 func (i *issuer) Execute(ctx context.Context, _ []ids.ID, abandoned []ids.ID) error {

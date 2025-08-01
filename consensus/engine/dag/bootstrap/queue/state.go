@@ -17,7 +17,6 @@ import (
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -63,7 +62,7 @@ func newState(
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) (*state, error) {
-	jobsCacheMetricsNamespace := metrics.AppendNamespace(metricsNamespace, "jobs_cache")
+	jobsCacheMetricsNamespace := metricsNamespace + "_jobs_cache"
 	jobsCache, err := metercacher.New[ids.ID, Job](
 		jobsCacheMetricsNamespace,
 		metricsRegisterer,

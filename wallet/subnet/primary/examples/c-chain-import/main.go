@@ -9,7 +9,7 @@ import (
 	"time"
 
 	// "github.com/luxfi/evm"
-	"github.com/luxfi/coreth/common"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"

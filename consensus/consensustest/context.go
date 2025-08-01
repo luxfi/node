@@ -20,8 +20,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -55,7 +54,7 @@ func ConsensusContext(ctx *consensus.Context) *consensus.Context {
 func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 	require := require.New(tb)
 
-	secretKey, err := localsigner.New()
+	secretKey, err := bls.NewSecretKey()
 	require.NoError(err)
 	publicKey := bls.PublicFromSecretKey(secretKey)
 
@@ -99,7 +98,7 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
-		Log:          log.NoLog{},
+		Log:          log.NewNoOpLogger(),
 		SharedMemory: sharedMemory,
 		BCLookup:     aliaser,
 		Metrics:      metrics.NewPrefixGatherer(),

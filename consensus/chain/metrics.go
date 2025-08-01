@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

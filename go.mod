@@ -6,8 +6,6 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
-replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
-
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 replace go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.37.0
 
@@ -94,11 +92,12 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.1.1
 	github.com/luxfi/database v1.1.4
-	github.com/luxfi/coreth v1.16.2
+	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
 	github.com/luxfi/trace v0.1.0
+	golang.org/x/mod v0.26.0
 )
 
 require (
@@ -125,6 +124,7 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
+	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v0.1.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
@@ -185,3 +185,13 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+
+replace github.com/luxfi/geth v1.16.2 => github.com/luxfi/geth v1.16.1-lux
+
+replace github.com/luxfi/coreth => ../coreth
+
+replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
+
+replace github.com/tyler-smith/go-bip32 => github.com/luxfi/go-bip32 v1.0.0
+
+replace github.com/luxfi/crypto => ../crypto

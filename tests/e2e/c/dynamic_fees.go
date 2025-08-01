@@ -9,16 +9,16 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/luxfi/coreth/accounts/abi"
-	"github.com/luxfi/coreth/common"
-	"github.com/luxfi/coreth/core/types"
-	"github.com/luxfi/coreth/params"
+	"github.com/luxfi/geth/accounts/abi"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

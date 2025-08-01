@@ -63,7 +63,7 @@ func newConsensusContext(c *Context) (*consensus.Context, error) {
 		ChainID:    c.BlockchainID,
 		CChainID:   c.BlockchainID,
 		LUXAssetID: c.LUXAssetID,
-		Log:        log.NoLog{},
+		Log:        log.NewNoOpLogger(),
 		BCLookup:   lookup,
 	}, lookup.Alias(c.BlockchainID, Alias)
 }

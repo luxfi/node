@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -81,7 +81,7 @@ func NewTestNetwork(
 ) (Network, error) {
 	metrics := prometheus.NewRegistry()
 	msgCreator, err := message.NewCreator(
-		log.NoLog{},
+		log,
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		constants.DefaultNetworkMaximumInboundTimeout,
@@ -196,7 +196,7 @@ func NewTestNetwork(
 			PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
 			ResourceTracker:              resourceTracker,
 			CPUTargeter: tracker.NewTargeter(
-				log.NoLog{},
+				log,
 				&tracker.TargeterConfig{
 					VdrAlloc:           float64(runtime.NumCPU()),
 					MaxNonVdrUsage:     .8 * float64(runtime.NumCPU()),
@@ -206,7 +206,7 @@ func NewTestNetwork(
 				resourceTracker.CPUTracker(),
 			),
 			DiskTargeter: tracker.NewTargeter(
-				log.NoLog{},
+				log,
 				&tracker.TargeterConfig{
 					VdrAlloc:           1000 * units.GiB,
 					MaxNonVdrUsage:     1000 * units.GiB,

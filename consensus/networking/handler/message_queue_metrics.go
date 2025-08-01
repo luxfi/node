@@ -4,10 +4,6 @@
 package handler
 
 import (
-	"errors"
-
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/luxfi/metrics"
 )
 
@@ -16,38 +12,32 @@ const opLabel = "op"
 var opLabels = []string{opLabel}
 
 type messageQueueMetrics struct {
-	count             *prometheus.GaugeVec
-	nodesWithMessages prometheus.Gauge
-	numExcessiveCPU   prometheus.Counter
+	count             metrics.GaugeVec
+	nodesWithMessages metrics.Gauge
+	numExcessiveCPU   metrics.Counter
 }
 
 func (m *messageQueueMetrics) initialize(
 	metricsNamespace string,
-	metricsRegisterer prometheus.Registerer,
+	metricsRegisterer metrics.Registry,
 ) error {
-	namespace := metrics.AppendNamespace(metricsNamespace, "unprocessed_msgs")
-	m.count = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "count",
-			Help:      "messages in the queue",
-		},
+	namespace := metricsNamespace + "_unprocessed_msgs"
+	metricsInstance := metrics.NewWithRegistry(namespace, metricsRegisterer)
+	
+	m.count = metricsInstance.NewGaugeVec(
+		"count",
+		"messages in the queue",
 		opLabels,
 	)
-	m.nodesWithMessages = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Name:      "nodes",
-		Help:      "nodes with at least 1 message ready to be processed",
-	})
-	m.numExcessiveCPU = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Name:      "excessive_cpu",
-		Help:      "times a message has been deferred due to excessive CPU usage",
-	})
-
-	return errors.Join(
-		metricsRegisterer.Register(m.count),
-		metricsRegisterer.Register(m.nodesWithMessages),
-		metricsRegisterer.Register(m.numExcessiveCPU),
+	m.nodesWithMessages = metricsInstance.NewGauge(
+		"nodes",
+		"nodes with at least 1 message ready to be processed",
 	)
+	m.numExcessiveCPU = metricsInstance.NewCounter(
+		"excessive_cpu",
+		"times a message has been deferred due to excessive CPU usage",
+	)
+
+	// Metrics are auto-registered with luxfi/metrics
+	return nil
 }

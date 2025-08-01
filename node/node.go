@@ -60,14 +60,14 @@ import (
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -92,18 +92,18 @@ const (
 
 	ipResolutionTimeout = 30 * time.Second
 
-	apiNamespace             = constants.PlatformName + metric.NamespaceSeparator + "api"
-	benchlistNamespace       = constants.PlatformName + metric.NamespaceSeparator + "benchlist"
-	dbNamespace              = constants.PlatformName + metric.NamespaceSeparator + "db"
-	healthNamespace          = constants.PlatformName + metric.NamespaceSeparator + "health"
-	meterDBNamespace         = constants.PlatformName + metric.NamespaceSeparator + "meterdb"
-	networkNamespace         = constants.PlatformName + metric.NamespaceSeparator + "network"
-	processNamespace         = constants.PlatformName + metric.NamespaceSeparator + "process"
-	requestsNamespace        = constants.PlatformName + metric.NamespaceSeparator + "requests"
-	resourceTrackerNamespace = constants.PlatformName + metric.NamespaceSeparator + "resource_tracker"
-	responsesNamespace       = constants.PlatformName + metric.NamespaceSeparator + "responses"
-	rpcchainvmNamespace      = constants.PlatformName + metric.NamespaceSeparator + "rpcchainvm"
-	systemResourcesNamespace = constants.PlatformName + metric.NamespaceSeparator + "system_resources"
+	apiNamespace             = constants.PlatformName + "_" + "api"
+	benchlistNamespace       = constants.PlatformName + "_" + "benchlist"
+	dbNamespace              = constants.PlatformName + "_" + "db"
+	healthNamespace          = constants.PlatformName + "_" + "health"
+	meterDBNamespace         = constants.PlatformName + "_" + "meterdb"
+	networkNamespace         = constants.PlatformName + "_" + "network"
+	processNamespace         = constants.PlatformName + "_" + "process"
+	requestsNamespace        = constants.PlatformName + "_" + "requests"
+	resourceTrackerNamespace = constants.PlatformName + "_" + "resource_tracker"
+	responsesNamespace       = constants.PlatformName + "_" + "responses"
+	rpcchainvmNamespace      = constants.PlatformName + "_" + "rpcchainvm"
+	systemResourcesNamespace = constants.PlatformName + "_" + "system_resources"
 )
 
 var (
@@ -120,7 +120,7 @@ var (
 // New returns an instance of Node
 func New(
 	config *Config,
-	logFactory logging.Factory,
+	logFactory log.Factory,
 	logger log.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
@@ -285,7 +285,7 @@ func New(
 type Node struct {
 	Log          log.Logger
 	VMFactoryLog log.Logger
-	LogFactory   logging.Factory
+	LogFactory   log.Factory
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -379,8 +379,8 @@ type Node struct {
 	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
-	MetricsGatherer        metrics.MultiGatherer
-	MeterDBMetricsGatherer metrics.MultiGatherer
+	MetricsGatherer        luxmetrics.MultiGatherer
+	MeterDBMetricsGatherer luxmetrics.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -555,7 +555,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	// Create chain router
 	n.chainRouter = &router.ChainRouter{}
-	if n.Config.TraceConfig.Enabled {
+	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		n.chainRouter = router.Trace(n.chainRouter, n.tracer)
 	}
 
@@ -950,8 +950,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = metrics.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = luxmetrics.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = luxmetrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1059,7 +1059,7 @@ func (n *Node) initAPIServer() error {
 		n.Config.HTTPAllowedOrigins,
 		n.Config.ShutdownTimeout,
 		n.ID,
-		n.Config.TraceConfig.Enabled,
+		n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 		n.tracer,
 		apiRegisterer,
 		n.Config.HTTPConfig.HTTPConfig,
@@ -1198,7 +1198,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
 			ResourceTracker:                         n.resourceTracker,
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
-			TracingEnabled:                          n.Config.TraceConfig.Enabled,
+			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            n.Config.ChainDataDir,
 			Subnets:                                 subnets,
@@ -1275,7 +1275,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := luxmetrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1756,7 +1756,7 @@ func (n *Node) shutdown() {
 		}
 	}
 
-	if n.Config.TraceConfig.Enabled {
+	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		n.Log.Info("shutting down tracing")
 	}
 

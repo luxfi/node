@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )
 

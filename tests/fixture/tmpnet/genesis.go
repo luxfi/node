@@ -10,13 +10,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/coreth/core"
-	"github.com/luxfi/coreth/params"
+	"github.com/luxfi/geth/core"
+	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"

@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/coreth/common"
-	"github.com/luxfi/coreth/crypto"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/verify"
@@ -171,5 +170,5 @@ func (kc Keychain) get(id ids.ShortID) (*secp256k1.PrivateKey, bool) {
 }
 
 func publicKeyToEthAddress(pk *secp256k1.PublicKey) common.Address {
-	return crypto.PubkeyToAddress(*(pk.ToECDSA()))
+	return secp256k1.PubkeyToAddress(*(pk.ToECDSA()))
 }
