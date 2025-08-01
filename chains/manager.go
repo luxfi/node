@@ -52,6 +52,7 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/consensus/adapter"
 	"github.com/luxfi/node/vms/fx"
 	"github.com/luxfi/node/vms/metervm"
 	"github.com/luxfi/node/vms/nftfx"
@@ -65,7 +66,7 @@ import (
 	luxeng "github.com/luxfi/node/consensus/engine/dag"
 	// luxbootstrap "github.com/luxfi/node/consensus/engine/dag/bootstrap"
 	luxgetter "github.com/luxfi/node/consensus/engine/dag/getter"
-	// smeng "github.com/luxfi/node/consensus/engine/chain"
+	smeng "github.com/luxfi/node/consensus/engine/chain"
 	// smbootstrap "github.com/luxfi/node/consensus/engine/chain/bootstrap"
 	lineargetter "github.com/luxfi/node/consensus/engine/chain/getter"
 	// factories "github.com/luxfi/node/consensus/factories"
@@ -491,7 +492,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Note: Registering this after the chain has been tracked prevents a race
 	//       condition between the health check and adding the first chain to
 	//       the manager.
-	if chainParams.ID == constants.PlatformChainID {
+	if chainParams.ID == constants.QuantumChainID {
 		if err := m.registerBootstrappedHealthChecks(); err != nil {
 			chain.Handler.Stop(context.TODO())
 			m.Log.Error("failed to register bootstrapped health checks",
@@ -513,7 +514,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 // Create a chain
 func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*chain, error) {
-	if chainParams.ID != constants.PlatformChainID && chainParams.VMID == constants.PlatformVMID {
+	if chainParams.ID != constants.QuantumChainID && chainParams.VMID == constants.PlatformVMID {
 		return nil, errCreatePlatformVM
 	}
 	primaryAlias := m.PrimaryAliasOrDefault(chainParams.ID)
@@ -587,7 +588,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		}
 	case block.ChainVM:
 		beacons := m.Validators
-		if chainParams.ID == constants.PlatformChainID {
+		if chainParams.ID == constants.QuantumChainID {
 			beacons = chainParams.CustomBeacons
 		}
 
@@ -975,16 +976,23 @@ func (m *manager) createLuxChain(
 	// 	Params:              consensusParams,
 	// 	Consensus:           linearConsensus,
 	// }
-	// TODO: Implement linearEngine when smeng.New is available
-	var _ core.Engine
-	// linearEngine, err = smeng.New(linearEngineConfig)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error initializing linear engine: %w", err)
-	// }
-
-	// if m.TracingEnabled {
-	// 	linearEngine = core.TraceEngine(linearEngine, m.Tracer)
-	// }
+	// Create linear engine using our consensus adapter
+	linearEngine := adapter.NewChainAdapter()
+	chainParams := smeng.Parameters{
+		BatchSize:       128,
+		ConsensusParams: vmWrappingProposerVM,
+	}
+	
+	// Create context with engine context
+	engineCtx := context.WithValue(context.Background(), "engineContext", ctx)
+	if err := linearEngine.Initialize(engineCtx, chainParams); err != nil {
+		return nil, fmt.Errorf("error initializing linear engine: %w", err)
+	}
+	
+	if m.TracingEnabled {
+		// TODO: Enable tracing when core.TraceEngine is available
+		// linearEngine = core.TraceEngine(linearEngine, m.Tracer)
+	}
 
 	// create bootstrap gear
 	// TODO: bootstrap.Config has different fields now
@@ -1026,12 +1034,34 @@ func (m *manager) createLuxChain(
 	// )
 
 	// create engine gear
-	// TODO: luxeng.New doesn't exist
-	var _ luxeng.Engine
-	// luxEngine := luxeng.New(ctx, luxGetHandler)
-	// if m.TracingEnabled {
-	// 	luxEngine = core.TraceEngine(luxEngine, m.Tracer)
-	// }
+	luxEngine := adapter.NewDAGAdapter()
+	
+	// Get validators for DAG
+	// For DAG consensus, we need validators.State not validators.Manager
+	// m.validatorState is already a validators.State
+	dagConfig := &adapter.Config{
+		VM:         dagVM,
+		Sender:     messageSender,
+		Validators: m.validatorState,  // Use validatorState which implements validators.State
+	}
+	
+	// Create DAG parameters
+	dagParams := luxeng.Parameters{
+		Parents:         2,
+		BatchSize:       128,
+		ConsensusParams: dagConfig,
+	}
+	
+	// Create context with engine context
+	engineCtxDAG := context.WithValue(context.Background(), "engineContext", ctx)
+	if err := luxEngine.Initialize(engineCtxDAG, dagParams); err != nil {
+		return nil, fmt.Errorf("error initializing DAG engine: %w", err)
+	}
+	
+	if m.TracingEnabled {
+		// TODO: Enable tracing when core.TraceEngine is available
+		// luxEngine = core.TraceEngine(luxEngine, m.Tracer)
+	}
 
 	// create bootstrap gear
 	// TODO: luxbootstrap.Config and luxbootstrap.New need to be updated
@@ -1134,21 +1164,8 @@ func (m *manager) createLinearChain(
 	// bootstrappingDB := prefixdb.New(ChainBootstrappingDBPrefix, prefixDB)
 
 	// Passes messages from the consensus engine to the network
-	// TODO: Need to implement sender.New function
-	var messageSender sender.Sender
-	// messageSender, err := sender.New(
-	// 	ctx,
-	// 	m.MsgCreator,
-	// 	m.Net,
-	// 	m.ManagerConfig.Router,
-	// 	m.TimeoutManager,
-	// 	p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-	// 	sb,
-	// 	ctx.Registerer,
-	// )
-	// if err != nil {
-	// 	return nil, fmt.Errorf("couldn't initialize sender: %w", err)
-	// }
+	// Create a sender that wraps the network's ExternalSender interface
+	messageSender := sender.New(ctx, m.MsgCreator, m.Net, sb)
 
 	// if m.TracingEnabled {
 	// 	messageSender = sender.Trace(messageSender, m.Tracer)
@@ -1532,7 +1549,7 @@ func (m *manager) registerBootstrappedHealthChecks() error {
 	partialSyncCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
 		// Note: The health check is skipped during bootstrapping to allow a
 		// node to sync the network even if it was previously a validator.
-		if !m.IsBootstrapped(constants.PlatformChainID) {
+		if !m.IsBootstrapped(constants.QuantumChainID) {
 			return "node is currently bootstrapping", nil
 		}
 		if _, err := m.Validators.GetValidator(constants.PrimaryNetworkID, m.NodeID); err != nil {

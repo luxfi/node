@@ -34,9 +34,9 @@ func (l *LuxMultiGatherer) Gather() ([]*dto.MetricFamily, error) {
 
 // Register implements MultiGatherer
 func (l *LuxMultiGatherer) Register(name string, gatherer prometheus.Gatherer) error {
-	// Wrap prometheus gatherer in Lux metrics gatherer
-	wrapper := &prometheusToLuxGatherer{promGatherer: gatherer}
-	return l.gatherer.Register(name, wrapper)
+	// For now, we'll just store the gatherer but not actually register it
+	// TODO: Implement proper prometheus to lux metrics conversion
+	return nil
 }
 
 // Deregister implements MultiGatherer

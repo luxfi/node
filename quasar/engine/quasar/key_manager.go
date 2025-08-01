@@ -12,7 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/corona"
+	// TODO: Fix corona import - it's a main package, not importable
+	// "github.com/luxfi/corona"
 )
 
 // KeyManager manages validator keys and rotation for Quasar
@@ -57,7 +58,9 @@ func NewKeyManager(nodeID ids.NodeID, blsSigner bls.Signer, coronaSK []byte) *Ke
 	blsPK := blsSigner.PublicKey()
 	
 	// Generate Corona public key
-	_, coronaPK, _ := corona.KeyGen(coronaSK)
+	// TODO: Re-enable when corona package is properly structured
+	// _, coronaPK, _ := corona.KeyGen(coronaSK)
+	var coronaPK interface{} = nil
 	
 	return &KeyManager{
 		nodeID:           nodeID,
@@ -136,7 +139,10 @@ func (km *KeyManager) rotateKeys(ctx context.Context) error {
 		return err
 	}
 	
-	newSK, newPK, err := corona.KeyGen(seed)
+	// TODO: Re-enable when corona package is properly structured
+	// newSK, newPK, err := corona.KeyGen(seed)
+	var newSK, newPK interface{}
+	err := errors.New("corona package not available")
 	if err != nil {
 		return err
 	}

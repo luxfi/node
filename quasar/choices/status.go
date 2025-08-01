@@ -11,113 +11,95 @@ import (
 type Status uint32
 
 const (
-	// Unknown means the status is not known
+	// Unknown indicates the status is not known
 	Unknown Status = iota
-	// Processing means the block is being processed
+	// Processing indicates the element is being processed
 	Processing
-	// Rejected means the block was rejected
-	Rejected
-	// Accepted means the block was accepted with dual certificates
+	// Accepted indicates the element was accepted
 	Accepted
-	// Quantum means the block has quantum-secure finality
-	Quantum
+	// Rejected indicates the element was rejected
+	Rejected
+	// Dropped indicates the element was dropped
+	Dropped
 )
 
+// Valid returns true if the status is a valid status.
+func (s Status) Valid() bool {
+	switch s {
+	case Unknown, Processing, Accepted, Rejected, Dropped:
+		return true
+	default:
+		return false
+	}
+}
+
+// Fetched returns true if the status implies the block has been fetched.
+func (s Status) Fetched() bool {
+	switch s {
+	case Processing, Accepted, Rejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// Decided returns true if the status implies a decision has been made.
+func (s Status) Decided() bool {
+	switch s {
+	case Accepted, Rejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns a human-readable string for this status.
 func (s Status) String() string {
 	switch s {
 	case Unknown:
 		return "Unknown"
 	case Processing:
 		return "Processing"
-	case Rejected:
-		return "Rejected"
 	case Accepted:
 		return "Accepted"
-	case Quantum:
-		return "Quantum"
+	case Rejected:
+		return "Rejected"
+	case Dropped:
+		return "Dropped"
 	default:
 		return fmt.Sprintf("Status(%d)", s)
 	}
 }
 
-// Valid returns true if the status is a valid status
-func (s Status) Valid() bool {
-	return s <= Quantum
+// MarshalJSON marshals the status as a string.
+func (s Status) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + s.String() + "\""), nil
 }
 
-// Fetched returns true if the block has been fetched
-func (s Status) Fetched() bool {
-	switch s {
-	case Unknown:
-		return false
-	default:
-		return true
-	}
-}
-
-// Decided returns true if the block has been decided
-func (s Status) Decided() bool {
-	switch s {
-	case Unknown, Processing:
-		return false
-	default:
-		return true
-	}
-}
-
-// IsAccepted returns true if the block was accepted
-func (s Status) IsAccepted() bool {
-	switch s {
-	case Accepted, Quantum:
-		return true
-	default:
-		return false
-	}
-}
-
-// IsQuantum returns true if the block has quantum-secure finality
-func (s Status) IsQuantum() bool {
-	return s == Quantum
-}
-
-// Preference returns the preferred status
-type Preference struct {
-	// Status is the current status
-	Status Status
-	// DualCert indicates if both BLS and RT certificates are present
-	DualCert bool
-}
-
-// TestDecidable is a test interface for decidable blocks
-type TestDecidable struct {
-	IDV         string
-	StatusV     Status
-	PreferenceV Preference
-}
-
-func (t *TestDecidable) ID() string      { return t.IDV }
-func (t *TestDecidable) Status() Status   { return t.StatusV }
-func (t *TestDecidable) Accept() error   { t.StatusV = Accepted; return nil }
-func (t *TestDecidable) Reject() error   { t.StatusV = Rejected; return nil }
-func (t *TestDecidable) SetQuantum() error { t.StatusV = Quantum; return nil }
-
-// Decidable represents an element that can be decided
+// Decidable represents an element that can be decided.
 type Decidable interface {
-	// ID returns the unique ID of this element
+	// ID returns the unique ID of this element.
 	ID() string
-	// Accept marks this element as accepted
+
+	// Accept this element.
 	Accept() error
-	// Reject marks this element as rejected
+
+	// Reject this element.
 	Reject() error
-	// Status returns the current status
+
+	// Status returns the current status of this element.
 	Status() Status
 }
 
-// Quasar extends Decidable with quantum-secure finality
-type Quasar interface {
-	Decidable
-	// SetQuantum marks this element as having quantum-secure finality
-	SetQuantum() error
-	// HasDualCert returns true if both BLS and RT certificates are present
-	HasDualCert() bool
+// TestDecidable is a test implementation of Decidable.
+type TestDecidable struct {
+	IDV        string
+	AcceptV    error
+	RejectV    error
+	StatusV    Status
 }
+
+func (d *TestDecidable) ID() string     { return d.IDV }
+func (d *TestDecidable) Accept() error  { return d.AcceptV }
+func (d *TestDecidable) Reject() error  { return d.RejectV }
+func (d *TestDecidable) Status() Status { return d.StatusV }

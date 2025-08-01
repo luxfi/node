@@ -559,7 +559,7 @@ func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKe
 	
 	pkBytes := []byte(nil)
 	if pk != nil {
-		pkBytes = pk.Serialize()
+		pkBytes = bls.PublicKeyToCompressedBytes(pk)
 	}
 	
 	return validators.Add(nodeID, pkBytes, weight)

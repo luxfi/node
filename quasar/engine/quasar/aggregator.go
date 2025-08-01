@@ -12,7 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/corona"
+	// TODO: Fix corona import - it's a main package, not importable
+	// "github.com/luxfi/corona"
 )
 
 var (
