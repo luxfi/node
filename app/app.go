@@ -13,18 +13,17 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/node"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"
 )
 
-const Header = `     _____               .__                       .__
-    /  _  \___  _______  |  | _____    ____   ____ |  |__   ____    ,_ o
-   /  /_\  \  \/ /\__  \ |  | \__  \  /    \_/ ___\|  |  \_/ __ \   / //\,
-  /    |    \   /  / __ \|  |__/ __ \|   |  \  \___|   Y  \  ___/    \>> |
-  \____|__  /\_/  (____  /____(____  /___|  /\___  >___|  /\___  >    \\
-          \/           \/          \/     \/     \/     \/     \/`
+const Header = `
+         ▼▼▼▼▼
+		  ▼▼▼
+		   ▼
+`
 
 var _ App = (*app)(nil)
 

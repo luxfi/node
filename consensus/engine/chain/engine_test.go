@@ -390,7 +390,7 @@ func TestEngineMultipleQuery(t *testing.T) {
 		te.Ctx.NodeID,
 		blk0,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (consensuschain.Block, error) {
@@ -480,7 +480,7 @@ func TestEngineBlockedIssue(t *testing.T) {
 		te.Ctx.NodeID,
 		blk1,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	require.NoError(te.issue(
@@ -488,7 +488,7 @@ func TestEngineBlockedIssue(t *testing.T) {
 		te.Ctx.NodeID,
 		blk0,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	require.Equal(blk1.ID(), te.Consensus.Preference())
@@ -704,7 +704,7 @@ func TestVoteCanceling(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		true,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	require.Equal(1, te.polls.Len())
@@ -758,7 +758,7 @@ func TestEngineNoQuery(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 }
 
@@ -854,7 +854,7 @@ func TestEngineAbandonChit(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	fakeBlkID := ids.GenerateTestID()
@@ -907,7 +907,7 @@ func TestEngineAbandonChitWithUnexpectedPutBlock(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		true,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	fakeBlkID := ids.GenerateTestID()
@@ -971,7 +971,7 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 		te.Ctx.NodeID,
 		parentBlk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	sender.CantSendChits = false
@@ -987,7 +987,7 @@ func TestEngineBlockingChitRequest(t *testing.T) {
 		te.Ctx.NodeID,
 		missingBlk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	require.Zero(te.blocked.NumDependencies())
@@ -1205,7 +1205,7 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		te.Ctx.NodeID,
 		validBlk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 	sender.SendPushQueryF = nil
 	require.NoError(te.issue(
@@ -1213,7 +1213,7 @@ func TestEngineUndeclaredDependencyDeadlock(t *testing.T) {
 		te.Ctx.NodeID,
 		invalidBlk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 	require.NoError(te.Chits(context.Background(), vdr, *reqID, invalidBlkID, invalidBlkID, invalidBlkID, invalidBlk.Height()))
 
@@ -1542,7 +1542,7 @@ func TestEngineDoubleChit(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		false,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (consensuschain.Block, error) {
@@ -2209,7 +2209,7 @@ func TestEngineApplyAcceptedFrontierInQueryFailed(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		true,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	vm.GetBlockF = func(_ context.Context, id ids.ID) (consensuschain.Block, error) {
@@ -2297,7 +2297,7 @@ func TestEngineRepollsMisconfiguredSubnet(t *testing.T) {
 		te.Ctx.NodeID,
 		blk,
 		true,
-		te.metrics.issued.WithLabelValues(unknownSource),
+		te.issued.WithLabelValues(unknownSource),
 	))
 
 	// The block should have successfully been added into consensus.
