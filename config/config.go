@@ -112,11 +112,11 @@ func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
-	loggingConfig := logging.Config{}
+func getLoggingConfig(v *viper.Viper) (log.Config, error) {
+	loggingConfig := log.Config{}
 	loggingConfig.Directory = GetExpandedArg(v, LogsDirKey)
 	var err error
-	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
+	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
 	if err != nil {
 		return loggingConfig, err
 	}
@@ -124,11 +124,11 @@ func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	if v.IsSet(LogDisplayLevelKey) {
 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
 	}
-	loggingConfig.DisplayLevel, err = logging.ToLevel(logDisplayLevel)
+	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
 	if err != nil {
 		return loggingConfig, err
 	}
-	loggingConfig.LogFormat, err = logging.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
@@ -1178,9 +1178,7 @@ func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 	enabled := v.GetBool(TracingEnabledKey)
 	if !enabled {
-		return trace.Config{
-			Enabled: false,
-		}, nil
+		return trace.Config{}, nil
 	}
 
 	exporterTypeStr := v.GetString(TracingExporterTypeKey)
@@ -1201,7 +1199,6 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 			Insecure: v.GetBool(TracingInsecureKey),
 			Headers:  v.GetStringMapString(TracingHeadersKey),
 		},
-		Enabled:         true,
 		TraceSampleRate: v.GetFloat64(TracingSampleRateKey),
 		AppName:         constants.AppName,
 		Version:         version.Current.String(),

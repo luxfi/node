@@ -31,7 +31,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/compose-spec/compose-go v1.20.2
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.0
@@ -79,7 +79,7 @@ require (
 	gonum.org/v1/gonum v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074
 	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.34.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -186,10 +186,12 @@ require (
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 
-replace github.com/luxfi/geth v1.16.2 => github.com/luxfi/geth v1.16.1-lux
+replace github.com/luxfi/geth => ../geth
 
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
 
 replace github.com/tyler-smith/go-bip32 => github.com/luxfi/go-bip32 v1.0.0
 
 replace github.com/luxfi/crypto => ../crypto
+
+replace github.com/luxfi/database => ../database

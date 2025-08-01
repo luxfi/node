@@ -51,8 +51,8 @@ func New(config node.Config) (App, error) {
 		return nil, fmt.Errorf("failed to restrict the permissions of the log directory with: %w", err)
 	}
 
-	logFactory := logging.NewFactory(config.LoggingConfig)
-	log, err := logFactory.Make("main")
+	logFactory := log.NewFactoryWithConfig(config.LoggingConfig)
+	logger, err := logFactory.Make("main")
 	if err != nil {
 		logFactory.Close()
 		return nil, fmt.Errorf("failed to initialize log: %w", err)
@@ -60,24 +60,24 @@ func New(config node.Config) (App, error) {
 
 	// update fd limit
 	fdLimit := config.FdLimit
-	if err := ulimit.Set(fdLimit, log); err != nil {
-		log.Fatal("failed to set fd-limit",
+	if err := ulimit.Set(fdLimit, logger); err != nil {
+		logger.Fatal("failed to set fd-limit",
 			zap.Error(err),
 		)
 		logFactory.Close()
 		return nil, err
 	}
 
-	n, err := node.New(&config, logFactory, log)
+	n, err := node.New(&config, logFactory, logger)
 	if err != nil {
-		log.Stop()
+		logger.Stop()
 		logFactory.Close()
 		return nil, fmt.Errorf("failed to initialize node: %w", err)
 	}
 
 	return &app{
 		node:       n,
-		log:        log,
+		log:        logger,
 		logFactory: logFactory,
 	}, nil
 }
@@ -122,7 +122,7 @@ func Run(app App) int {
 type app struct {
 	node       *node.Node
 	log        log.Logger
-	logFactory logging.Factory
+	logFactory log.Factory
 	exitWG     sync.WaitGroup
 }
 

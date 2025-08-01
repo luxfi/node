@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	pb "github.com/luxfi/node/proto/pb/validatorstate"
