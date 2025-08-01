@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/common/hexutil"
-	"github.com/luxfi/geth/core/rawdb"
-	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/geth/rpc"
+	"github.com/luxfi/coreth/common"
+	"github.com/luxfi/coreth/common/hexutil"
+	"github.com/luxfi/coreth/core/rawdb"
+	"github.com/luxfi/coreth/core/types"
+	"github.com/luxfi/coreth/crypto"
+	"github.com/luxfi/coreth/rpc"
 )
 
 // EthAPI provides an Ethereum RPC API

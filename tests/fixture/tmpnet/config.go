@@ -15,10 +15,10 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/geth/params"
+	"github.com/luxfi/coreth/common"
+	"github.com/luxfi/coreth/core"
+	"github.com/luxfi/coreth/crypto"
+	"github.com/luxfi/coreth/params"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"

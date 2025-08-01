@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/geth/common"
+	"github.com/luxfi/coreth/common"
 )
 
 // Tx represents a transaction on the C-Chain

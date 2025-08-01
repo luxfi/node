@@ -1,7 +1,7 @@
 #!/bin/bash
 # Patch geth pebble.go to fix type mismatches
 
-GETH_PATH="/go/pkg/mod/github.com/luxfi/geth@v0.13.7"
+GETH_PATH="/go/pkg/mod/github.com/luxfi/coreth@v0.13.7"
 
 # Make the directory writable
 chmod -R +w $GETH_PATH || true

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/geth/ethdb"
+	"github.com/luxfi/coreth/ethdb"
 	"github.com/luxfi/database"
 )
 
