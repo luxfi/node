@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/coreth/common"
+	"github.com/luxfi/coreth/crypto"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"

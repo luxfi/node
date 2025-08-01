@@ -8,7 +8,7 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/coreth/core/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"

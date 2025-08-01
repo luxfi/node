@@ -9,10 +9,10 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/luxfi/geth/accounts/abi"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/params"
+	"github.com/luxfi/coreth/accounts/abi"
+	"github.com/luxfi/coreth/common"
+	"github.com/luxfi/coreth/core/types"
+	"github.com/luxfi/coreth/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

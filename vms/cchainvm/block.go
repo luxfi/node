@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/rlp"
+	"github.com/luxfi/coreth/core/types"
+	"github.com/luxfi/coreth/rlp"
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/chain"

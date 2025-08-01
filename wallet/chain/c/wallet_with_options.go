@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	ethcommon "github.com/luxfi/geth/common"
+	ethcommon "github.com/luxfi/coreth/common"
 )
 
 var _ Wallet = (*walletWithOptions)(nil)

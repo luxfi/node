@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/geth/common"
+	"github.com/luxfi/coreth/common"
 	// "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/database"
