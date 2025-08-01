@@ -188,8 +188,6 @@ replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea
 
 replace github.com/luxfi/geth v1.16.2 => github.com/luxfi/geth v1.16.1-lux
 
-replace github.com/luxfi/coreth => ../coreth
-
 replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
 
 replace github.com/tyler-smith/go-bip32 => github.com/luxfi/go-bip32 v1.0.0
