@@ -31,7 +31,7 @@ require (
 	github.com/luxfi/crypto v1.1.1
 	github.com/luxfi/database v1.1.4
 	github.com/luxfi/evm v0.8.2
-	github.com/luxfi/geth v1.16.6
+	github.com/luxfi/geth v1.16.2
 	github.com/luxfi/ids v0.1.1
 	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/log v0.1.1

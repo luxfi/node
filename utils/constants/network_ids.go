@@ -52,7 +52,7 @@ const (
 // Variables to be exported
 var (
 	PrimaryNetworkID = ids.Empty
-	PlatformChainID  = ids.Empty
+	QuantumChainID   = ids.Empty // Q-Chain is the quantum chain (formerly P-Chain/Platform Chain)
 
 	NetworkIDToNetworkName = map[uint32]string{
 		MainnetID:    MainnetName,
@@ -137,4 +137,10 @@ func NetworkID(networkName string) (uint32, error) {
 		return 0, fmt.Errorf("%w: %q", ErrParseNetworkName, networkName)
 	}
 	return uint32(id), nil
+}
+
+// PlatformChainID returns the QuantumChainID.
+// Deprecated: Use QuantumChainID directly. This function exists for backward compatibility.
+func PlatformChainID() ids.ID {
+	return QuantumChainID
 }

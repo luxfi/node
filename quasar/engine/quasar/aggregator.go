@@ -12,7 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/ringtail"
+	// TODO: Fix ringtail import - it's a main package, not importable
+	// "github.com/luxfi/ringtail"
 )
 
 var (

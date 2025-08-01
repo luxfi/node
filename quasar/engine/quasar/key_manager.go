@@ -12,7 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/ringtail"
+	// TODO: Fix ringtail import - it's a main package, not importable
+	// "github.com/luxfi/ringtail"
 )
 
 // KeyManager manages validator keys and rotation for Quasar
@@ -57,7 +58,9 @@ func NewKeyManager(nodeID ids.NodeID, blsSigner bls.Signer, ringtailSK []byte) *
 	blsPK := blsSigner.PublicKey()
 	
 	// Generate Ringtail public key
-	_, ringtailPK, _ := ringtail.KeyGen(ringtailSK)
+	// TODO: Re-enable when ringtail package is properly structured
+	// _, ringtailPK, _ := ringtail.KeyGen(ringtailSK)
+	var ringtailPK interface{} = nil
 	
 	return &KeyManager{
 		nodeID:           nodeID,
@@ -136,7 +139,10 @@ func (km *KeyManager) rotateKeys(ctx context.Context) error {
 		return err
 	}
 	
-	newSK, newPK, err := ringtail.KeyGen(seed)
+	// TODO: Re-enable when ringtail package is properly structured
+	// newSK, newPK, err := ringtail.KeyGen(seed)
+	var newSK, newPK interface{}
+	err := errors.New("ringtail package not available")
 	if err != nil {
 		return err
 	}

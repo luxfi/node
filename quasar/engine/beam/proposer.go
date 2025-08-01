@@ -8,7 +8,8 @@ import (
 	"time"
 	
 	"github.com/luxfi/ids"
-	rt "github.com/luxfi/ringtail"
+	// TODO: Fix ringtail import - it's a main package, not importable
+	// rt "github.com/luxfi/ringtail"
 )
 
 // Engine represents the Beam consensus engine
@@ -127,13 +128,14 @@ func (p *Proposer) Propose(height uint64, txs [][]byte) (*Block, error) {
 	}
 }
 
-// broadcastRTShare sends the share to all validators
-func (p *Proposer) broadcastRTShare(height uint64, share rt.Share) {
-	// In production, use actual P2P broadcast
-	// Message format: "RTSH|height|shareBytes"
-	msg := fmt.Sprintf("RTSH|%d|%x", height, share)
-	p.engine.Broadcast(msg)
-}
+// TODO: Re-enable when ringtail package is properly structured
+// // broadcastRTShare sends the share to all validators
+// func (p *Proposer) broadcastRTShare(height uint64, share rt.Share) {
+// 	// In production, use actual P2P broadcast
+// 	// Message format: "RTSH|height|shareBytes"
+// 	msg := fmt.Sprintf("RTSH|%d|%x", height, share)
+// 	p.engine.Broadcast(msg)
+// }
 
 // gossipBlock broadcasts the completed block with dual certificates
 func (p *Proposer) gossipBlock(block *Block) {
