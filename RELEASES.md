@@ -14,15 +14,21 @@
 - Initial production deployment with 21 validators
 - Established primary network infrastructure
 
-### Second Major Update (January 2023)
-- Network upgrade to avalanchego v1.9.x compatibility
+### First Public Network - Chain ID 7777 (December 2023)
+- **Version**: v1.10.20
+- First public deployment with Chain ID 7777
+- Based on avalanchego v1.10.20 compatibility
+- Beginning of public testing phase
+- Network upgrade to avalanchego v1.9.x/v1.10.x compatibility
 - Enhanced stability and performance improvements
 - Added support for dynamic fees
 - Improved subnet management capabilities
 
-### Public Mainnet (November 2024)
+### Public Mainnet - Chain ID 96369 (November 2024)
+- **Version**: v1.11.13
+- Official mainnet launch with Chain ID 96369
 - Upgraded to avalanchego v1.11.x compatibility
-- Public mainnet launch
+- Public mainnet launch with original genesis
 - Enhanced Warp messaging support
 - Improved cross-chain communication
 - Running stable through July 2025
@@ -35,13 +41,35 @@
 
 ---
 
+## Historical Version Tags
+
+### Preserved for Historical Reference
+
+- **v1.10.20** - Chain ID 7777 genesis version (December 2023)
+- **v1.11.13** - Chain ID 96369 original genesis version (November 2024)
+- **v1.13.13** - Current development version (August 2025)
+
+---
+
 ## Current Releases
 
-## [v1.13.3](https://github.com/luxfi/node/releases/tag/v1.13.3)
+## [v1.13.13](https://github.com/luxfi/node/releases/tag/v1.13.13)
 
-**First Official Tagged Release of Lux Node**
+**Current Development Version**
 
-This is the first officially tagged release of Lux Node, fully synchronized with avalanchego v1.13.3.
+This version represents the current state of development, fully synchronized with upstream avalanchego.
+
+## [v1.11.13](https://github.com/luxfi/node/releases/tag/v1.11.13)
+
+**Chain ID 96369 Genesis Version**
+
+This was the version used for the official Lux Network mainnet launch in November 2024 with Chain ID 96369.
+
+## [v1.10.20](https://github.com/luxfi/node/releases/tag/v1.10.20)
+
+**Chain ID 7777 Genesis Version**
+
+This was the version used for the first public Lux Network deployment in December 2023 with Chain ID 7777.
 
 ### Key Features
 
