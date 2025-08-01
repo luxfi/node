@@ -67,8 +67,14 @@ func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *quasar.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.ValidatorRewardsOwner.InitCtx(ctx)
-	tx.DelegatorRewardsOwner.InitCtx(ctx)
+	tx.ValidatorRewardsOwner.Initialize(ctx)
+	tx.DelegatorRewardsOwner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddPermissionlessValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (tx *AddPermissionlessValidatorTx) SubnetID() ids.ID {

@@ -441,7 +441,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	}
 
 	// It's not our turn to propose a block yet. This is likely caused by having
-	// previously notified the consensus engine to attempt to build a block on
+	// previously notified the quasar engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
 	p.vm.ctx.Log.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),
@@ -483,7 +483,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	}
 
 	// It's not our turn to propose a block yet. This is likely caused by having
-	// previously notified the consensus engine to attempt to build a block on
+	// previously notified the quasar engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
 	p.vm.ctx.Log.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),

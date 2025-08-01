@@ -327,6 +327,10 @@ var (
 		Code:    -1,
 		Message: "undefined error",
 	}
+	ErrTimeout = &AppError{
+		Code:    -2,
+		Message: "timeout",
+	}
 )
 
 // SendConfig configures sending behavior

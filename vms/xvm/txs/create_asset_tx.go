@@ -29,6 +29,12 @@ func (t *CreateAssetTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *CreateAssetTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 // InitialStates track which virtual machines, and the initial state of these
 // machines, this asset uses. The returned array should not be modified.
 func (t *CreateAssetTx) InitialStates() []*InitialState {

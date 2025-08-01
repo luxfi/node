@@ -1225,7 +1225,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 	subnet := subnets.New(ctx.NodeID, subnets.Config{})
-	// Passes messages from the consensus engine to the network
+	// Passes messages from the quasar engine to the network
 	sender, err := sender.New(
 		consensusCtx,
 		mc,
@@ -1258,7 +1258,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	startup := tracker.NewStartup(peers, 1)
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
-	// The engine handles consensus
+	// The engine handles quasar
 	getHandler, err := getter.New(
 		vm,
 		sender,
@@ -1294,7 +1294,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		VM:                             vm,
 	}
 
-	// Asynchronously passes messages from the network to the consensus engine
+	// Asynchronously passes messages from the network to the quasar engine
 	cpuTracker, err := timetracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -1487,7 +1487,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(bootstrapper.Accepted(context.Background(), vdrID, reqID, frontier))
 
 	// Verify the locally preferred option on the validator removal aligns with
-	// our consensus preference.
+	// our quasar preference.
 	//
 	// We should prefer commit because our VM thinks we have been offline for
 	// the staking duration.

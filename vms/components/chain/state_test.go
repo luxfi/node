@@ -709,18 +709,18 @@ func TestIsProcessing(t *testing.T) {
 	parsedBlk1, err := chainState.ParseBlock(context.Background(), blk1.Bytes())
 	require.NoError(err)
 
-	// Check that it is not processing in consensus
+	// Check that it is not processing in quasar
 	require.False(chainState.IsProcessing(parsedBlk1.ID()))
 
 	// Verify blk1
 	require.NoError(parsedBlk1.Verify(context.Background()))
 
-	// Check that it is processing in consensus
+	// Check that it is processing in quasar
 	require.True(chainState.IsProcessing(parsedBlk1.ID()))
 
 	// Accept blk1
 	require.NoError(parsedBlk1.Accept(context.Background()))
 
-	// Check that it is no longer processing in consensus
+	// Check that it is no longer processing in quasar
 	require.False(chainState.IsProcessing(parsedBlk1.ID()))
 }

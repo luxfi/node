@@ -12,14 +12,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
+	
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/engine/dag/vertex/vertexmock"
+	"github.com/luxfi/node/quasar/engine/core/coremock"
 	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
 	"github.com/luxfi/node/utils"
 	log "github.com/luxfi/log"
@@ -162,7 +162,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -265,7 +265,7 @@ func TestIndexer(t *testing.T) {
 	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	dagVM := vertexmock.NewLinearizableVM(ctrl)
+	dagVM := coremock.NewMockVM(ctrl)
 	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
 	require.NoError(err)
 	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -425,7 +425,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -506,7 +506,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	})
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

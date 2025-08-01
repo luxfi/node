@@ -1,68 +1,130 @@
-// Copyright (C) 2025, Lux Partners Limited. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package quasar
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
+
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/quasar/validators"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Context contains the state that is used by consensus engines.
-type Context struct {
-	// NetworkID is the ID of the network this node is connected to.
+var (
+	// ErrNotFound is returned when a requested item is not found
+	ErrNotFound = errors.New("not found")
+)
+
+// Sender sends consensus messages
+type Sender interface {
+	// SendGetAcceptedFrontier sends a GetAcceptedFrontier message
+	SendGetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32) error
+
+	// SendAcceptedFrontier sends an AcceptedFrontier message
+	SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
+
+	// SendGetAccepted sends a GetAccepted message
+	SendGetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
+
+	// SendAccepted sends an Accepted message
+	SendAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID) error
+
+	// SendGet sends a Get message  
+	SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error
+
+	// SendPut sends a Put message
+	SendPut(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error
+
+	// SendPushQuery sends a PushQuery message
+	SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, container []byte) error
+
+	// SendPullQuery sends a PullQuery message
+	SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, containerID ids.ID) error
+
+	// SendChits sends a Chits message
+	SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, acceptedID ids.ID) error
+}
+
+// Context is an alias for ConsensusContext
+type Context = ConsensusContext
+
+// ConsensusContext provides the context needed for consensus engines
+type ConsensusContext struct {
+	// NetworkID is the ID of the network this node is running on
 	NetworkID uint32
 
-	// ChainID is the chain this engine is working on.
+	// ChainID is the ID of the chain this consensus engine is running on
 	ChainID ids.ID
 
-	// SubnetID is the subnet this engine is working on.
+	// SubnetID is the ID of the subnet this chain belongs to
 	SubnetID ids.ID
 
-	// NodeID is the ID of this node.
+	// NodeID is the ID of this node
 	NodeID ids.NodeID
 
-	// BCLookup maps aliases to chain IDs.
-	BCLookup BCLookup
+	// Log is the logger for this consensus engine
+	Log log.Logger
 
-	// Registerer for registering metrics.
-	Registerer Registerer
+	// Metrics registry for this consensus engine
+	Metrics metrics.Registry
 
-	// Log is used for logging messages.
-	Log Logger
-
-	// Lock is used to synchronize access to shared resources.
-	Lock sync.Locker
-
-	// ValidatorSet contains the validators for this subnet.
-	ValidatorSet validators.Set
-
-	// ValidatorState provides access to validator information.
-	ValidatorState ValidatorState
-
-	// Sender is used to send messages to other nodes.
+	// Network sender for consensus messages
 	Sender Sender
 
-	// Bootstrappers are the nodes that are used to bootstrap this chain.
-	Bootstrappers []ids.NodeID
+	// Validators manager
+	Validators validators.Manager
 
-	// StartTime is the time this engine started.
-	StartTime time.Time
+	// Current time provider
+	Clock Clock
 
-	// RequestID is used to create unique request IDs.
-	RequestID *RequestID
+	// Consensus parameters
+	Parameters Parameters
 
-	// LUXAssetID is the ID of the LUX asset.
+	// Metrics registerer
+	Registerer metrics.Registerer
+
+	// Validator state
+	ValidatorState validators.State
+
+	// Ringtail secret key
+	RingtailSK []byte
+
+	// Ringtail public key
+	RingtailPK []byte
+
+	// Nested context for advanced operations
+	Context *Context
+
+	// BCLookup provides blockchain lookup functionality
+	BCLookup ids.AliaserReader
+
+	// Lock provides synchronization for the consensus engine
+	Lock sync.RWMutex
+
+	// State provides the chain state management
+	State *EngineState
+
+	// LUXAssetID is the asset ID for LUX
 	LUXAssetID ids.ID
 
-	// State represents the current consensus state
-	State *EngineState
+	// SharedMemory for cross-chain communication
+	SharedMemory SharedMemory
+
+	// WarpSigner for warp message signing
+	WarpSigner WarpSigner
+
+	// NetworkUpgrades configuration
+	NetworkUpgrades NetworkUpgrades
+
+	// PublicKey of this node
+	PublicKey []byte
 
 	// XChainID is the ID of the X-Chain
 	XChainID ids.ID
@@ -70,117 +132,130 @@ type Context struct {
 	// CChainID is the ID of the C-Chain
 	CChainID ids.ID
 
-	// NetworkUpgrades contains the network upgrade times
-	NetworkUpgrades interface{}
-
-	// PublicKey is the BLS public key of this node
-	PublicKey interface{}
-
-	// WarpSigner is the signer for warp messages
-	WarpSigner interface{}
-
-	// Metrics is the metrics gatherer
-	Metrics interface{}
-
 	// ChainDataDir is the directory for chain data
 	ChainDataDir string
 
-	// SharedMemory is the shared memory interface
-	SharedMemory SharedMemory
+	// ValidatorSet provides access to the current validator set
+	ValidatorSet ValidatorSet
+
+	// Bootstrappers is the set of nodes to bootstrap from
+	Bootstrappers validators.Set
+
+	// StartTime is the time the consensus engine started
+	StartTime time.Time
+
+	// RequestID for tracking requests
+	RequestID RequestID
 }
 
-// ContextInitializable defines an interface for objects that need context initialization
-type ContextInitializable interface {
-	InitCtx(ctx *Context)
+
+
+// WarpSigner provides warp message signing functionality
+type WarpSigner interface {
+	// Sign signs a warp message
+	Sign(msg *WarpMessage) (*WarpSignature, error)
 }
 
-// ValidatorState provides access to validator information
-type ValidatorState interface {
-	// GetMinimumHeight returns the minimum height of the P-chain.
-	GetMinimumHeight(ctx context.Context) (uint64, error)
-
-	// GetCurrentHeight returns the current height of the P-chain.
-	GetCurrentHeight(ctx context.Context) (uint64, error)
-
-	// GetSubnetID returns the subnet ID for the given chain ID.
-	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
-
-	// GetValidatorSet returns the validators of the given subnet at the
-	// given P-chain height.
-	GetValidatorSet(
-		ctx context.Context,
-		height uint64,
-		subnetID ids.ID,
-	) (map[ids.NodeID]*validators.GetValidatorOutput, error)
-
-	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
-	// block until it has applied all of the diffs up to and including
-	// [endHeight]. Applying the diffs modifies [validators].
-	ApplyValidatorWeightDiffs(
-		ctx context.Context,
-		validators map[ids.NodeID]*validators.GetValidatorOutput,
-		startHeight uint64,
-		endHeight uint64,
-		subnetID ids.ID,
-	) error
-
-	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
-	// genesis block until it has applied all of the diffs up to and including
-	// [endHeight]. Applying the diffs modifies [validators].
-	ApplyValidatorPublicKeyDiffs(
-		ctx context.Context,
-		validators map[ids.NodeID]*validators.GetValidatorOutput,
-		startHeight uint64,
-		endHeight uint64,
-		subnetID ids.ID,
-	) error
-
-	// GetCurrentValidatorSet returns the current validators
-	GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error)
+// WarpMessage represents a warp message
+type WarpMessage struct {
+	// Message fields would go here
 }
 
-// BCLookup is the interface for looking up chain IDs by alias
-type BCLookup interface {
-	Lookup(alias string) (ids.ID, error)
-	PrimaryAlias(id ids.ID) (string, error)
-	Aliases(id ids.ID) ([]string, error)
+// WarpSignature represents a warp signature
+type WarpSignature struct {
+	// Signature fields would go here
 }
 
-// For missing imports
-type (
-	Registerer prometheus.Registerer
-	Logger     log.Logger
-	Sender     interface{}
-	RequestID  struct{}
-)
-
-// SharedMemory interface for cross-chain communication
-type SharedMemory interface {
-	Get(peerChainID ids.ID, keys [][]byte) (values [][]byte, err error)
-	Indexed(
-		peerChainID ids.ID,
-		traits [][]byte,
-		startTrait,
-		startKey []byte,
-		limit int,
-	) (
-		values [][]byte,
-		lastTrait,
-		lastKey []byte,
-		err error,
-	)
-	Apply(requests map[ids.ID]*Requests, batches ...interface{}) error
+// NetworkUpgrades represents network upgrade configuration
+type NetworkUpgrades interface {
+	// IsActivated checks if an upgrade is activated at a given time
+	IsActivated(upgradeTime time.Time) bool
 }
 
-// Requests represents atomic requests
-type Requests struct {
-	PutRequests    []Element
-	RemoveRequests [][]byte
+// Clock provides time functionality
+type Clock interface {
+	Time() time.Time
 }
 
-// Element represents an atomic element
-type Element struct {
-	Key    []byte
-	Value  []byte
-	Traits [][]byte
+// ValidatorSet provides access to the validator set
+type ValidatorSet interface {
+	// GetValidatorSet returns the validator set at a given height
+	GetValidatorSet(height uint64) (validators.Set, error)
+}
+
+// RequestID represents a request identifier
+type RequestID struct {
+	// Fields for request tracking
+}
+
+// Logger creates a logger from a base logger
+type Logger func(log.Logger) log.Logger
+
+// Registerer creates a metrics registerer
+type Registerer func(metrics.Registry) metrics.Registry
+
+// Parameters holds consensus parameters
+type Parameters struct {
+	// K is the number of consecutive successful polls required for finalization
+	K int
+
+	// Alpha is the required percentage of stake to consider a poll successful
+	Alpha int
+
+	// Beta is the number of polls with no progress before declaring the block stuck
+	Beta int
+
+	// ConcurrentRepolls is the number of concurrent polls to run
+	ConcurrentRepolls int
+
+	// OptimalProcessing is the optimal number of processing items
+	OptimalProcessing int
+
+	// MaxOutstandingItems is the maximum number of outstanding items
+	MaxOutstandingItems int
+
+	// MaxItemProcessingTime is the maximum time to process an item
+	MaxItemProcessingTime time.Duration
+}
+
+// NewMemoryStore creates a new in-memory block store
+func NewMemoryStore() BlockStore {
+	return &memoryStore{
+		blocks: make(map[ids.ID]interface{}),
+	}
+}
+
+// BlockStore manages block storage
+type BlockStore interface {
+	// GetBlock retrieves a block by ID
+	GetBlock(id ids.ID) (interface{}, error)
+
+	// PutBlock stores a block
+	PutBlock(id ids.ID, block interface{}) error
+
+	// DeleteBlock removes a block
+	DeleteBlock(id ids.ID) error
+}
+
+// memoryStore is an in-memory implementation of BlockStore
+type memoryStore struct {
+	blocks map[ids.ID]interface{}
+}
+
+func (s *memoryStore) GetBlock(id ids.ID) (interface{}, error) {
+	block, ok := s.blocks[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return block, nil
+}
+
+func (s *memoryStore) PutBlock(id ids.ID, block interface{}) error {
+	s.blocks[id] = block
+	return nil
+}
+
+func (s *memoryStore) DeleteBlock(id ids.ID) error {
+	delete(s.blocks, id)
+	return nil
 }

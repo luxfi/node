@@ -45,6 +45,12 @@ func (t *BurnTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (t *BurnTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *BurnTx) Visit(v Visitor) error {
 	return v.BurnTx(t)
 }

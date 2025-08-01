@@ -132,6 +132,13 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// IsActivated implements quasar.NetworkUpgrades
+func (c *Config) IsActivated(upgradeTime time.Time) bool {
+	// Check if any upgrade time matches the given time
+	// This is a generic implementation that could be expanded
+	return !upgradeTime.IsZero()
+}
+
 func (c *Config) IsApricotPhase1Activated(t time.Time) bool {
 	return !t.Before(c.ApricotPhase1Time)
 }

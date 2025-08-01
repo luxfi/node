@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	codec "github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
+	quasar "github.com/luxfi/node/quasar"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )

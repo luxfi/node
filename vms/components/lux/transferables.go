@@ -67,7 +67,10 @@ type TransferableOutput struct {
 }
 
 func (out *TransferableOutput) InitCtx(ctx *quasar.Context) {
-	out.Out.InitCtx(ctx)
+	// TransferableOut interface doesn't require InitCtx, so we check if it's available
+	if initializable, ok := out.Out.(interface{ InitCtx(*quasar.Context) }); ok {
+		initializable.InitCtx(ctx)
+	}
 }
 
 // Output returns the feature extension output that this Output is using.
@@ -141,6 +144,15 @@ type TransferableInput struct {
 	// FxID has serialize false because we don't want this to be encoded in bytes
 	FxID ids.ID         `serialize:"false" json:"fxID"`
 	In   TransferableIn `serialize:"true"  json:"input"`
+}
+
+// InitCtx allows addresses to be formatted into their human readable format
+// during json marshalling.
+func (in *TransferableInput) InitCtx(ctx *quasar.Context) {
+	// TransferableIn interface doesn't require InitCtx, so we check if it's available
+	if initializable, ok := in.In.(interface{ InitCtx(*quasar.Context) }); ok {
+		initializable.InitCtx(ctx)
+	}
 }
 
 // Input returns the feature extension input that this Input is using.

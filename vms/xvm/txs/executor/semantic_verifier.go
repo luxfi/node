@@ -99,7 +99,7 @@ func (v *SemanticVerifier) ImportTx(tx *txs.ImportTx) error {
 	*/
 
 	// TODO: Fix SharedMemory access
-	// SharedMemory is not available in consensus.Context
+	// SharedMemory is not available in quasar.Context
 	// This needs to be refactored to use proper SharedMemory interface
 	/*
 	utxoIDs := make([][]byte, len(tx.ImportedIns))

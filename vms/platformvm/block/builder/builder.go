@@ -62,7 +62,7 @@ type Builder interface {
 	// valid block of infinite size. The returned txs are all verified against
 	// the preferred state.
 	//
-	// Note: This function does not call the consensus core.
+	// Note: This function does not call the quasar core.
 	PackAllBlockTxs() ([]*txs.Tx, error)
 }
 

@@ -76,7 +76,8 @@ func (ts *Topological) Initialize(ctx context.Context, parameters Parameters, la
 	
 	namespace := fmt.Sprintf("consensus_%s_chain", ts.ctx.ChainID)
 	if ts.ctx.Registerer != nil {
-		ts.metrics = newMetrics(namespace, ts.ctx.Registerer)
+		promRegisterer := quasar.NewMetricsRegistererWrapper(ts.ctx.Registerer)
+		ts.metrics = newMetrics(namespace, promRegisterer)
 	}
 	
 	return nil

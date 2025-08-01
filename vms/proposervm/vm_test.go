@@ -891,7 +891,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	// Notify the proposer VM of a new block on the inner block side
 	events <- core.PendingTxs
-	// The first notification will be read from the consensus engine
+	// The first notification will be read from the quasar engine
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
 	require.Equal(core.PendingTxs, msg)
@@ -2815,7 +2815,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
 	// If the inner VM requests building a block, the proposervm passes that
-	// message to the consensus core. This is really the source of the issue,
+	// message to the quasar core. This is really the source of the issue,
 	// as the proposervm is not currently in a state where it can correctly
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())

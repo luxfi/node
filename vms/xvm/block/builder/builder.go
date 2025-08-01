@@ -67,7 +67,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 
-// BuildBlock builds a block to be added to consensus.
+// BuildBlock builds a block to be added to quasar.
 func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")

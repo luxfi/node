@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	consensus "github.com/luxfi/node/quasar"
+	quasar "github.com/luxfi/node/quasar"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	txs "github.com/luxfi/node/vms/xvm/txs"

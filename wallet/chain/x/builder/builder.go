@@ -886,6 +886,5 @@ func (b *builder) initCtx(tx txs.UnsignedTx) error {
 		return err
 	}
 
-	tx.InitCtx(ctx)
-	return nil
+	return tx.Initialize(ctx)
 }

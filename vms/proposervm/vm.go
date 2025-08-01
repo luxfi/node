@@ -389,7 +389,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Block building is only supported if the consensus state is normal
+	// Block building is only supported if the quasar state is normal
 	// operations and the vm is not state syncing.
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
@@ -463,7 +463,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	}
 
 	// Note: The P-chain does not currently try to target any block time. It
-	// notifies the consensus engine as soon as a new block may be built. To
+	// notifies the quasar engine as soon as a new block may be built. To
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
@@ -487,7 +487,7 @@ func (vm *VM) getPostDurangoSlotTime(
 		slot,
 	)
 	// Note: The P-chain does not currently try to target any block time. It
-	// notifies the consensus engine as soon as a new block may be built. To
+	// notifies the quasar engine as soon as a new block may be built. To
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block

@@ -22,6 +22,12 @@ func (op *TransferOperation) InitCtx(ctx *quasar.Context) {
 	op.Output.OutputOwners.InitCtx(ctx)
 }
 
+// Initialize implements quasar.ContextInitializable
+func (op *TransferOperation) Initialize(ctx *quasar.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *TransferOperation) Cost() (uint64, error) {
 	return op.Input.Cost()
 }

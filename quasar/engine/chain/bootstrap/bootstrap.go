@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -84,12 +84,12 @@ func (b *Bootstrapper) Add(blockIDs ...ids.ID) error {
 }
 
 // Put handles received blocks
-func (b *Bootstrapper) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, block interface{}) error {
+func (b *Bootstrapper) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, blkIntf interface{}) error {
 	// Process received block
 	b.currentJob.numAccepted++
 
 	// Remove from pending
-	if blk, ok := block.(common.Block); ok {
+	if blk, ok := blkIntf.(block.Block); ok {
 		delete(b.pending, blk.ID())
 		b.currentJob.missingIDs.Remove(blk.ID())
 	}

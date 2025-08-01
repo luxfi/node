@@ -15,6 +15,19 @@ type SharedMemoryWrapper struct {
 	sm quasar.SharedMemory
 }
 
+// batchWrapper wraps db.Batch to implement quasar.Batch
+type batchWrapper struct {
+	db db.Batch
+}
+
+func (b *batchWrapper) Write(key, value []byte) error {
+	return b.db.Put(key, value)
+}
+
+func (b *batchWrapper) Delete(key []byte) error {
+	return b.db.Delete(key)
+}
+
 // NewSharedMemoryWrapper creates a new wrapper
 func NewSharedMemoryWrapper(sm quasar.SharedMemory) atomic.SharedMemory {
 	return &SharedMemoryWrapper{sm: sm}
@@ -48,10 +61,10 @@ func (w *SharedMemoryWrapper) Apply(requests map[ids.ID]*atomic.Requests, batche
 	for chainID, req := range requests {
 		consensusReq := &quasar.Requests{
 			RemoveRequests: req.RemoveRequests,
-			PutRequests:    make([]quasar.Element, len(req.PutRequests)),
+			PutRequests:    make([]*quasar.Element, len(req.PutRequests)),
 		}
 		for i, elem := range req.PutRequests {
-			consensusReq.PutRequests[i] = quasar.Element{
+			consensusReq.PutRequests[i] = &quasar.Element{
 				Key:    elem.Key,
 				Value:  elem.Value,
 				Traits: elem.Traits,
@@ -60,11 +73,12 @@ func (w *SharedMemoryWrapper) Apply(requests map[ids.ID]*atomic.Requests, batche
 		consensusRequests[chainID] = consensusReq
 	}
 	
-	// Convert batches to interface{}
-	interfaceBatches := make([]interface{}, len(batches))
-	for i, batch := range batches {
-		interfaceBatches[i] = batch
+	// For now, we'll use the first batch if available
+	var batch quasar.Batch
+	if len(batches) > 0 {
+		// Create a wrapper batch that delegates to the first db.Batch
+		batch = &batchWrapper{db: batches[0]}
 	}
 	
-	return w.sm.Apply(consensusRequests, interfaceBatches...)
+	return w.sm.Apply(consensusRequests, batch)
 }

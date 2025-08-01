@@ -26,7 +26,7 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 /*
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx *quasar.Context,
 	db db.Database,
 	genesisBytes,
 	upgradeBytes,

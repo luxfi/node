@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/ringtail"
+	"github.com/luxfi/node/quasar/crypto/ringtail"
 )
 
 var (

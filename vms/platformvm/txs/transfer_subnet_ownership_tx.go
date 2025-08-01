@@ -35,7 +35,13 @@ type TransferSubnetOwnershipTx struct {
 // that the addresses can be json marshalled into human readable format
 func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *quasar.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	tx.Owner.InitCtx(ctx)
+	tx.Owner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *TransferSubnetOwnershipTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *quasar.Context) error {

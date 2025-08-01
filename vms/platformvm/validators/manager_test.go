@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar/validators"
@@ -25,6 +26,21 @@ import (
 
 	. "github.com/luxfi/node/vms/platformvm/validators"
 )
+
+// testStateWrapper wraps state.State to implement State interface
+type testStateWrapper struct {
+	state.State
+}
+
+// GetSubnetID implements State
+func (s *testStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+// GetValidatorSet implements State
+func (s *testStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
 
 func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	require := require.New(t)
@@ -101,7 +117,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		config.Internal{
 			Validators: vdrs,
 		},
-		s,
+		&testStateWrapper{State: s},
 		metrics.Noop,
 		new(mockable.Clock),
 	)
@@ -111,7 +127,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		{
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
-				PublicKey: pk,
+				PublicKey: bls.PublicKeyToUncompressedBytes(pk),
 				Weight:    subnetStaker.Weight,
 			},
 		}, // Subnet staker was added at height 1

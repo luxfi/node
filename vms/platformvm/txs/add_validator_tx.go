@@ -50,7 +50,13 @@ func (tx *AddValidatorTx) InitCtx(ctx *quasar.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.RewardsOwner.InitCtx(ctx)
+	tx.RewardsOwner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (*AddValidatorTx) SubnetID() ids.ID {

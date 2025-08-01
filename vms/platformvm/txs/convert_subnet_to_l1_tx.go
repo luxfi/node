@@ -46,6 +46,19 @@ type ConvertSubnetToL1Tx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
+// InitCtx sets the FxID fields in the inputs and outputs of this
+// [ConvertSubnetToL1Tx]. Also sets the [ctx] to the given [vm.ctx] so that
+// the addresses can be json marshalled into human readable format
+func (tx *ConvertSubnetToL1Tx) InitCtx(ctx *quasar.Context) {
+	tx.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *ConvertSubnetToL1Tx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:

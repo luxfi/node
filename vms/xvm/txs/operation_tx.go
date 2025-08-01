@@ -25,9 +25,15 @@ type OperationTx struct {
 
 func (t *OperationTx) InitCtx(ctx *quasar.Context) {
 	for _, op := range t.Ops {
-		op.Op.InitCtx(ctx)
+		op.Op.Initialize(ctx)
 	}
 	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *OperationTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // Operations track which ops this transaction is performing. The returned array

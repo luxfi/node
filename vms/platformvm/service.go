@@ -1464,7 +1464,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetT
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		tx.Unsigned.InitCtx(s.vm.ctx)
+		tx.Unsigned.Initialize(s.vm.ctx)
 		result = tx
 	} else {
 		result, err = formatting.Encode(args.Encoding, tx.Bytes())
@@ -1919,7 +1919,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())
@@ -1961,7 +1961,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())

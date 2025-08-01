@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/quasar"
@@ -168,7 +168,7 @@ func NewEngine(
 		config:       config,
 		ctx:          ctx,
 		vm:           vm,
-		state:        quasar.NewMemoryState(),
+		state:        quasar.NormalOp, // Start in normal operation state
 		polls:        poll.NewSet(),
 		slashChannel: make(chan SlashEvent, 10),
 		incomingMsgs: make(chan message, 1000),
@@ -176,14 +176,8 @@ func NewEngine(
 	}
 
 	// Initialize metrics
-	// Create a metrics instance using the prometheus registerer
-	var metricsInstance metrics.Metrics
-	if promReg, ok := ctx.Registerer.(*prometheus.Registry); ok {
-		metricsInstance = metrics.NewPrometheusMetrics("quasar", promReg)
-	} else {
-		// Fallback to no-op metrics if not a prometheus registry
-		metricsInstance = metrics.NewNoOpMetrics("quasar")
-	}
+	// Create a metrics instance
+	metricsInstance := metrics.New("quasar")
 	e.metrics = newMetrics(metricsInstance)
 
 	// Initialize Quasar if enabled

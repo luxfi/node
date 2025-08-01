@@ -64,9 +64,21 @@ func (b *ApricotStandardBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotStandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *BanffStandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
 func (b *ApricotStandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.Initialize(ctx)
 	}
 }
 

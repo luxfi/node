@@ -17,7 +17,7 @@ type State interface {
 	ContextInitializable
 	Verifiable
 	IsState
-	// InitCtx initializes the state with consensus context
+	// InitCtx initializes the state with quasar context
 	InitCtx(ctx interface{})
 }
 

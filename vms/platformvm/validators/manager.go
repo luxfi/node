@@ -26,10 +26,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-// GetValidatorOutput re-exports the type from consensus/validators
+// GetValidatorOutput re-exports the type from quasar/validators
 type GetValidatorOutput = validators.GetValidatorOutput
 
-// GetCurrentValidatorOutput re-exports the type from consensus/validators
+// GetCurrentValidatorOutput re-exports the type from quasar/validators
 type GetCurrentValidatorOutput = validators.GetCurrentValidatorOutput
 
 const (

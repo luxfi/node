@@ -30,6 +30,19 @@ type AddSubnetValidatorTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
+// InitCtx sets the FxID fields in the inputs and outputs of this
+// [AddSubnetValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// the addresses can be json marshalled into human readable format
+func (tx *AddSubnetValidatorTx) InitCtx(ctx *quasar.Context) {
+	tx.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddSubnetValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 func (tx *AddSubnetValidatorTx) NodeID() ids.NodeID {
 	return tx.SubnetValidator.NodeID
 }

@@ -35,9 +35,15 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *BanffProposalBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
 func (b *BanffProposalBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.Initialize(ctx)
 	}
 	b.ApricotProposalBlock.InitCtx(ctx)
 }
@@ -92,8 +98,14 @@ func (b *ApricotProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotProposalBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
 func (b *ApricotProposalBlock) InitCtx(ctx *quasar.Context) {
-	b.Tx.Unsigned.InitCtx(ctx)
+	b.Tx.Unsigned.Initialize(ctx)
 }
 
 func (b *ApricotProposalBlock) Txs() []*txs.Tx {
