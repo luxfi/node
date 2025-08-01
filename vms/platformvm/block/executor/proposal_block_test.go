@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/gas"

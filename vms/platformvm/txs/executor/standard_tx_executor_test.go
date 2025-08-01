@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"

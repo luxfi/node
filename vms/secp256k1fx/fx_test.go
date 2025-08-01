@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/crypto/cb58"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	log "github.com/luxfi/log"
 )
 

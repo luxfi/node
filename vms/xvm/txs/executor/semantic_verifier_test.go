@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"

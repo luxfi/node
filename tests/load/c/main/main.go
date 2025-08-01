@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/tests/load"
 	"github.com/luxfi/node/tests/load/c"
 	"github.com/luxfi/node/tests/load/c/listener"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	log "github.com/luxfi/log"
 )
 
