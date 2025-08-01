@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"

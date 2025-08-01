@@ -13,7 +13,7 @@ import (
 	// "github.com/luxfi/consensus/consensustest" // TODO: Use when AssetID is available
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"

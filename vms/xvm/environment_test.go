@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
