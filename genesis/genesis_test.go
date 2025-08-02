@@ -13,10 +13,7 @@ import (
 	"testing"
 	"time"
 
-<<<<<<< HEAD
 	"github.com/luxfi/evm/core"
-=======
->>>>>>> main
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
@@ -151,13 +148,7 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 5,
 			config: func() *Config {
 				thisConfig := TestnetConfig
-<<<<<<< HEAD
 				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, LocalConfig.InitialStakedFunds[0])
-=======
-				// Use a dummy address that's not in the allocations
-				dummyAddr := ids.ShortID{9, 8, 7, 6, 5}
-				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, dummyAddr)
->>>>>>> main
 				return &thisConfig
 			}(),
 			expectedErr: errNoAllocationToStake,

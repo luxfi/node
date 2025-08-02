@@ -8,10 +8,6 @@ import (
 	"fmt"
 
 	"github.com/luxfi/evm/ethclient"
-<<<<<<< HEAD
-	"github.com/luxfi/evm/plugin/evm/atomic"
-=======
->>>>>>> main
 	"github.com/luxfi/evm/plugin/evm/client"
 
 	"github.com/luxfi/ids"
@@ -32,19 +28,11 @@ import (
 	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-<<<<<<< HEAD
-	ethcommon "github.com/ethereum/go-ethereum/common"
-=======
->>>>>>> main
 )
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
-<<<<<<< HEAD
 	TestnetAPIURI    = "https://api.lux-test.network"
-=======
-	TestnetAPIURI = "https://api.lux-test.network"
->>>>>>> main
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024

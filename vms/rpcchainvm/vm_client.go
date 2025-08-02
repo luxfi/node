@@ -18,8 +18,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	db "github.com/luxfi/database"
-	dbrpcdb "github.com/luxfi/database/rpcdb"
 	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	dbrpcdb "github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
@@ -49,7 +49,6 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"

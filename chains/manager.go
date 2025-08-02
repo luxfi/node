@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
@@ -1052,7 +1052,6 @@ func (m *manager) createDAGBasedChain(
 	// Create a sender that wraps the network's ExternalSender interface
 	// TODO: Fix type mismatch - m.MsgCreator is OutboundMsgBuilder but needs Creator
 	// messageSender := sender.New(ctx, m.MsgCreator, m.Net, sb)
-	var messageSender sender.Sender // placeholder - will be nil
 
 	// create engine gear
 	luxEngine := adapter.NewDAGAdapter()
@@ -1092,51 +1091,9 @@ func (m *manager) createDAGBasedChain(
 	// 	Haltable:                       &halter,
 	// }
 	// if ctx.ChainID == m.XChainID {
-	// 	luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
+	// 		// 	luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
 	// }
-
-	// TODO: core.BootstrapableEngine doesn't exist
-	// var luxBootstrapper core.BootstrapableEngine
-	var _ interface{}
-	// luxBootstrapper, err = luxbootstrap.New(
-	// 	luxBootstrapperConfig,
-	// 	linearBootstrapper.Start,
-	// 	luxMetrics,
-	// )
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
-	// }
-
-	// if m.TracingEnabled {
-	// 	luxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
-	// }
-
-	// TODO: h.SetEngineManager doesn't exist
-	// h.SetEngineManager(&handler.EngineManager{
-	// 	Dag: &handler.Engine{
-	// 		StateSyncer:  nil,
-	// 		Bootstrapper: luxBootstrapper,
-	// 		Consensus:    luxEngine,
-	// 	},
-	// 	Chain: &handler.Engine{
-	// 		StateSyncer:  nil,
-	// 		Bootstrapper: linearBootstrapper,
-	// 		Consensus:    linearEngine,
-	// 	},
-	// })
-
-	// Register health check for this chain
-	// TODO: handler.Handler doesn't implement health.Checker
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
-	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
-	// }
-
-	return &chainInfo{
-		Name:    primaryAlias,
-		Context: ctx,
-		VM:      nil, // TODO: dagVM doesn't implement core.VM
-		Handler: nil, // TODO: handler.Handler doesn't implement core.Handler
-	}, nil
+	return nil, nil
 }
 
 // Create a linear chain using the Linear consensus engine

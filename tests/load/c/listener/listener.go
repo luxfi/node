@@ -9,13 +9,8 @@ import (
 	"math/big"
 	"sync"
 
-<<<<<<< HEAD
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/luxfi/evm/ethclient"
-=======
-	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/geth/common"
->>>>>>> main
+	"github.com/luxfi/evm/ethclient"
 
 	"github.com/luxfi/node/tests/load"
 )

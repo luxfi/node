@@ -11,13 +11,7 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/core"
-<<<<<<< HEAD
 	"github.com/luxfi/evm/params"
-=======
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/params"
-	ethparams "github.com/luxfi/geth/params"
->>>>>>> main
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"

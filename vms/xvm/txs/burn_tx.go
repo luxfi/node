@@ -5,31 +5,14 @@ package txs
 
 import (
 	"errors"
-
-<<<<<<< HEAD
+	
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/vms/components/verify"
-)
-
-var (
-	_ UnsignedTx = (*BurnTx)(nil)
-=======
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-var (
-	_ UnsignedTx             = (*BurnTx)(nil)
-	_ secp256k1fx.UnsignedTx = (*BurnTx)(nil)
->>>>>>> main
-
-	ErrInvalidDestChain   = errors.New("invalid destination chain")
-	ErrInvalidDestAddress = errors.New("invalid destination address")
-	ErrInvalidAmount      = errors.New("invalid burn amount")
-)
+var _ UnsignedTx = (*BurnTx)(nil)
 
 // BurnTx burns assets on X-Chain for cross-chain transfers via Teleport Protocol
 type BurnTx struct {
@@ -52,13 +35,12 @@ type BurnTx struct {
 	TeleportData []byte `serialize:"true" json:"teleportData"`
 }
 
-<<<<<<< HEAD
-func (t *BurnTx) InitCtx(ctx *consensus.Context) {
+func (t *BurnTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
 func (t *BurnTx) SyntacticVerify(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	c codec.Manager,
 	txFeeAssetID ids.ID,
 	txFee uint64,
@@ -110,22 +92,9 @@ func (t *BurnTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Verifiable)
 	// Additional semantic checks can be added here
 	// For example, checking if the destination chain is supported
 
-=======
-func (t *BurnTx) InitCtx(ctx *quasar.Context) {
-	t.BaseTx.InitCtx(ctx)
-}
-
-// Initialize implements quasar.ContextInitializable
-func (t *BurnTx) Initialize(ctx *quasar.Context) error {
-	t.InitCtx(ctx)
->>>>>>> main
 	return nil
 }
 
 func (t *BurnTx) Visit(v Visitor) error {
 	return v.BurnTx(t)
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> main

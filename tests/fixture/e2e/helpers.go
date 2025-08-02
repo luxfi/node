@@ -14,13 +14,8 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/ethclient"
-<<<<<<< HEAD
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum"
-=======
-	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
->>>>>>> main
+	"github.com/luxfi/geth"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/consensus/config"
+	qparams "github.com/luxfi/node/quasar/params"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/quasar/engine/core"
@@ -29,7 +29,7 @@ type DAGAdapter struct {
 	vm          vertex.LinearizableVM
 	sender      sender.Sender
 	validators  validators.State
-	params      config.Parameters
+	params      qparams.Parameters
 	// consensus will be added when nebula is available
 	vertexMap   map[ids.ID]dag.Vertex
 	initialized bool
@@ -53,17 +53,11 @@ func (da *DAGAdapter) Initialize(ctx context.Context, params dag.Parameters) err
 	
 	// Extract VM from params
 	// This is a simplified initialization
-	engineParams, ok := params.ConsensusParams.(*Config)
-	if !ok {
-		return errors.New("invalid parameters for DAG engine")
-	}
-	
-	da.vm = engineParams.VM
-	da.sender = engineParams.Sender
-	da.validators = engineParams.Validators
+	// For now, we'll just cast the ConsensusParams to vertex.LinearizableVM
+	da.vm, _ = params.ConsensusParams.(vertex.LinearizableVM)
 	
 	// Convert to consensus parameters
-	consensusParams := config.Parameters{
+	consensusParams := qparams.Parameters{
 		K:                     21, // Default for mainnet
 		AlphaPreference:       13,
 		AlphaConfidence:       18,

@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
@@ -861,14 +861,14 @@ func (db *merkleDB) Has(k []byte) (bool, error) {
 	return err == nil, err
 }
 
-func (db *merkleDB) HealthCheck() error {
+func (db *merkleDB) HealthCheck(ctx context.Context) (interface{}, error) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
 	if db.closed {
-		return database.ErrClosed
+		return nil, database.ErrClosed
 	}
-	return db.baseDB.HealthCheck()
+	return db.baseDB.HealthCheck(ctx)
 }
 
 func (db *merkleDB) NewBatch() database.Batch {

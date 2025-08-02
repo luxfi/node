@@ -31,11 +31,7 @@ func main() {
 	}
 
 	validators := map[string]set.Set[ids.NodeID]{
-<<<<<<< HEAD
 		constants.TestnetName:    testnetValidators,
-=======
-		constants.TestnetName: testnetValidators,
->>>>>>> main
 		constants.MainnetName: mainnetValidators,
 	}
 	validatorsJSON, err := json.MarshalIndent(validators, "", "\t")

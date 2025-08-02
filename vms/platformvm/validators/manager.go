@@ -321,7 +321,7 @@ func (m *manager) getCurrentValidatorSet(
 }
 
 func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
-	if chainID == constants.PlatformChainID() {
+	if chainID == constants.PlatformChainID {
 		return constants.PrimaryNetworkID, nil
 	}
 

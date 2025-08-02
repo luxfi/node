@@ -6,29 +6,17 @@ package txs
 import (
 	"errors"
 
-<<<<<<< HEAD
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/quasar"
 )
 
 var (
 	_ UnsignedTx = (*MintTx)(nil)
-=======
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/secp256k1fx"
-)
-
-var (
-	_ UnsignedTx             = (*MintTx)(nil)
-	_ secp256k1fx.UnsignedTx = (*MintTx)(nil)
->>>>>>> main
 
 	ErrInvalidSourceChain = errors.New("invalid source chain")
 	ErrInvalidBurnProof   = errors.New("invalid burn proof")
-	ErrInvalidMintAmount  = errors.New("invalid mint amount")
 )
 
 // MintTx mints assets on X-Chain from cross-chain transfers via Teleport Protocol
@@ -52,13 +40,12 @@ type MintTx struct {
 	MPCSignatures [][]byte `serialize:"true" json:"mpcSignatures"`
 }
 
-<<<<<<< HEAD
-func (t *MintTx) InitCtx(ctx *consensus.Context) {
+func (t *MintTx) InitCtx(ctx *quasar.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
 func (t *MintTx) SyntacticVerify(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	c codec.Manager,
 	txFeeAssetID ids.ID,
 	txFee uint64,
@@ -114,22 +101,9 @@ func (t *MintTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Verifiable)
 	// TODO: Verify MPC signatures
 	// This would involve checking threshold signatures from validators
 
-=======
-func (t *MintTx) InitCtx(ctx *quasar.Context) {
-	t.BaseTx.InitCtx(ctx)
-}
-
-// Initialize implements quasar.ContextInitializable
-func (t *MintTx) Initialize(ctx *quasar.Context) error {
-	t.InitCtx(ctx)
->>>>>>> main
 	return nil
 }
 
 func (t *MintTx) Visit(v Visitor) error {
 	return v.MintTx(t)
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> main

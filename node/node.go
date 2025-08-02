@@ -37,6 +37,7 @@ import (
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
@@ -77,6 +78,11 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	xvm "github.com/luxfi/node/vms/xvm"
+	aivm "github.com/luxfi/node/vms/aivm"
+	bvm "github.com/luxfi/node/vms/bridgevm"
+	mpcvm "github.com/luxfi/node/vms/mpcvm/plugin/mpcvm"
+	quantumvm "github.com/luxfi/node/vms/quantumvm"
+	zkvm "github.com/luxfi/node/vms/zkvm"
 
 	databasefactory "github.com/luxfi/database/factory"
 	geth "github.com/luxfi/evm/plugin/evm"
@@ -890,7 +896,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 	n.Log.Info("initializing chains")
 
 	platformChain := chains.ChainParameters{
-		ID:            constants.PlatformChainID(),
+		ID:            constants.PlatformChainID,
 		SubnetID:      constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
@@ -1051,7 +1057,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 
 	// If any of these chains die, the node shuts down
 	criticalChains := set.Of(
-		constants.PlatformChainID(),
+		constants.PlatformChainID,
 		xChainID,
 		cChainID,
 	)
@@ -1220,6 +1226,11 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.MPCVMID, &mpcvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.QuantumVMID, &quantumvm.Factory{}),
 	)
 	if err != nil {
 		return err

@@ -38,7 +38,10 @@ func (n *Node) initializeEVMPlugin() error {
 	}
 	
 	// Use the VM...
-	return n.registerVM(vm)
+	// TODO: implement registerVM or use proper VM registration
+	// return n.registerVM(vm)
+	_ = vm
+	return nil
 }
 
 // VMInterface would be defined in a common package that both node and evm can import

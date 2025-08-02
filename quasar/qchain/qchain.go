@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	
 	// TODO: Import the real quantum consensus implementation
 	// quasarcore "github.com/luxfi/node/quasar/engine/quantum"

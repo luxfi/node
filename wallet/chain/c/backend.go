@@ -11,17 +11,12 @@ import (
 	"sync"
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	walletutil "github.com/luxfi/node/wallet"
-
-<<<<<<< HEAD
-	"github.com/luxfi/evm"
-=======
-	geth "github.com/luxfi/geth/common"
->>>>>>> main
 )
 
 var (
@@ -43,7 +38,7 @@ type backend struct {
 	walletutil.ChainUTXOs
 
 	accountsLock sync.RWMutex
-	accounts     map[geth.Address]*Account
+	accounts     map[common.Address]*Account
 }
 
 type Account struct {
@@ -53,7 +48,7 @@ type Account struct {
 
 func NewBackend(
 	utxos walletutil.ChainUTXOs,
-	accounts map[geth.Address]*Account,
+	accounts map[common.Address]*Account,
 ) Backend {
 	return &backend{
 		ChainUTXOs: utxos,
@@ -132,7 +127,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 	return nil
 }
 
-func (b *backend) Balance(_ context.Context, addr geth.Address) (*big.Int, error) {
+func (b *backend) Balance(_ context.Context, addr common.Address) (*big.Int, error) {
 	b.accountsLock.RLock()
 	defer b.accountsLock.RUnlock()
 
@@ -143,7 +138,7 @@ func (b *backend) Balance(_ context.Context, addr geth.Address) (*big.Int, error
 	return account.Balance, nil
 }
 
-func (b *backend) Nonce(_ context.Context, addr geth.Address) (uint64, error) {
+func (b *backend) Nonce(_ context.Context, addr common.Address) (uint64, error) {
 	b.accountsLock.RLock()
 	defer b.accountsLock.RUnlock()
 

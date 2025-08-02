@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	// "github.com/luxfi/quasar/consensustest" // TODO: Use when AssetID is available
+	// "github.com/luxfi/node/quasar/consensustest" // TODO: Use when AssetID is available
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"

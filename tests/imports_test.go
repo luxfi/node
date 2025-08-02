@@ -24,7 +24,7 @@ func TestMustNotImport(t *testing.T) {
 		},
 	}
 	for packageName, forbiddenImports := range mustNotImport {
-		packagePath := path.Join("github.com/luxfi/node", packageName)
+		packagePath := path.Join("github.com/luxfi/node/node", packageName)
 		imports, err := packages.GetDependencies(packagePath)
 		require.NoError(err)
 
