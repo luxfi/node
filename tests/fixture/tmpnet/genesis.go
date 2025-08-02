@@ -142,7 +142,7 @@ func NewTestGenesisWithFunds(
 
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		Config:     params.LuxLocalChainConfig,
+		Config:     params.AllEthashProtocolChanges, // LuxLocalChainConfig was removed, using AllEthashProtocolChanges
 		Difficulty: big.NewInt(0), // Difficulty is a mandatory field
 		GasLimit:   defaultGasLimit,
 		Alloc:      cChainBalances,
