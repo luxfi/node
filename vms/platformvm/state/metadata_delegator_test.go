@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 func TestParseDelegatorMetadata(t *testing.T) {

@@ -12,8 +12,8 @@ import (
 	"connectrpc.com/connect"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/connectproto/pb/xsvm"
-	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
+	"github.com/luxfi/node/v2/connectproto/pb/xsvm"
+	"github.com/luxfi/node/v2/connectproto/pb/xsvm/xsvmconnect"
 	log "github.com/luxfi/log"
 )
 

@@ -12,20 +12,20 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/log"
 
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/v2/api/metrics"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/core"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/profiler"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 
-	statesyncclient "github.com/luxfi/node/state_sync/client"
+	statesyncclient "github.com/luxfi/node/v2/state_sync/client"
 )
 
 const (

@@ -8,18 +8,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/v2/plugin/evm/atomic"
 	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/utils/crypto/keychain"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 const version = 0

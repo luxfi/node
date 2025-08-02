@@ -11,15 +11,15 @@ import (
 	"testing"
 
 	"github.com/holiman/uint256"
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/internal/testutils"
-	"github.com/luxfi/evm/trie"
+	"github.com/luxfi/evm/v2/core/types"
+	"github.com/luxfi/evm/v2/internal/testutils"
+	"github.com/luxfi/evm/v2/trie"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/trie/trienode"
 	"github.com/luxfi/geth/triedb"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/wrappers"
 	"github.com/stretchr/testify/assert"
 )
 

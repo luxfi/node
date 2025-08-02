@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/crypto/ringtail"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/crypto/ringtail"
+	"github.com/luxfi/node/v2/quasar/validators"
 	"github.com/luxfi/log"
 )
 

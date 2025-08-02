@@ -10,16 +10,16 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/wallet/chain/x/builder"
+	"github.com/luxfi/node/v2/utils/crypto/keychain"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
+	"github.com/luxfi/node/v2/wallet/chain/x/builder"
 )
 
 var (

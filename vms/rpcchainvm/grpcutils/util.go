@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	httppb "github.com/luxfi/node/proto/pb/http"
+	httppb "github.com/luxfi/node/v2/proto/pb/http"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )

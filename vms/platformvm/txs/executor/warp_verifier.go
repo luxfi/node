@@ -6,9 +6,9 @@ package executor
 import (
 	"context"
 
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 const (

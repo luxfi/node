@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain/keychainmock"
+	"github.com/luxfi/node/v2/utils/crypto/keychain/keychainmock"
 )
 
 var errTest = errors.New("test")

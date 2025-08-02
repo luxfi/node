@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"

@@ -15,11 +15,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/x/merkledb"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 func Test_Server_GetRangeProof(t *testing.T) {

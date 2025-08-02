@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 var _ btree.LessFunc[*Staker] = (*Staker).Less

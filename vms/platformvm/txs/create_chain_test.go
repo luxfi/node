@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {

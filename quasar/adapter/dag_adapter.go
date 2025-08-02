@@ -8,15 +8,15 @@ import (
 	"errors"
 	"time"
 
-	qparams "github.com/luxfi/node/quasar/params"
+	qparams "github.com/luxfi/node/v2/quasar/params"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/dag"
-	"github.com/luxfi/node/quasar/engine/dag/vertex"
-	"github.com/luxfi/node/quasar/networking/sender"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/dag"
+	"github.com/luxfi/node/v2/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/v2/quasar/networking/sender"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/version"
 )
 
 var (

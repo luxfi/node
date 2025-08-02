@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/quasar"
 )
 
 var (

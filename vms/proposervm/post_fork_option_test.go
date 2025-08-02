@@ -14,13 +14,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/upgrade/upgradetest"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 var _ linear.OracleBlock = (*TestOptionsBlock)(nil)

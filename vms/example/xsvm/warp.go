@@ -6,9 +6,9 @@ package xsvm
 import (
 	"context"
 
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p/lp118"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p/lp118"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 var _ lp118.Verifier = (*lp118Verifier)(nil)

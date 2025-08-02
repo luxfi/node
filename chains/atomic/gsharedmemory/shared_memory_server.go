@@ -8,9 +8,9 @@ import (
 
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/v2/chains/atomic"
 
-	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/luxfi/node/v2/proto/pb/sharedmemory"
 )
 
 var _ sharedmemorypb.SharedMemoryServer = (*Server)(nil)

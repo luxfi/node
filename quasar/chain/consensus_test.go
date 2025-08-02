@@ -17,11 +17,11 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/params"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/params"
 )
 
 type testFunc func(*testing.T, Factory)

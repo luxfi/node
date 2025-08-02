@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/v2/staking"
 )
 
 func TestBuild(t *testing.T) {

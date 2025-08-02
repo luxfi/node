@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
 )
 
 type TxIssuance struct {

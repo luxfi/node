@@ -8,14 +8,14 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/message"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/types"
 )
 
 const MaxSubnetAddressLength = 4096

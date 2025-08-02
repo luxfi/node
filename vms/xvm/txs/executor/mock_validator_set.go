@@ -5,7 +5,7 @@ package executor
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 // mockValidatorSet is a simple validator set for testing

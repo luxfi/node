@@ -5,8 +5,8 @@ package builder
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
 )
 

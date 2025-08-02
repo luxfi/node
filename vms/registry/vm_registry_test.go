@@ -11,9 +11,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/registry/registrymock"
-	"github.com/luxfi/node/vms/vmsmock"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/vms/registry/registrymock"
+	"github.com/luxfi/node/v2/vms/vmsmock"
 )
 
 var (

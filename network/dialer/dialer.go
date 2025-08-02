@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/v2/network/throttling"
 	log "github.com/luxfi/log"
 )
 

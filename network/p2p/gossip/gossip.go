@@ -14,14 +14,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/quasar/engine/core/appsender"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/buffer"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/utils/bloom"
+	"github.com/luxfi/node/v2/utils/buffer"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 const (

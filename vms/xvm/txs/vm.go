@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 // VM defines the interface that the transactions need to access VM state

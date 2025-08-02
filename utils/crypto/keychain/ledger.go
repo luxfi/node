@@ -5,7 +5,7 @@ package keychain
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 // Ledger interface for the ledger wrapper

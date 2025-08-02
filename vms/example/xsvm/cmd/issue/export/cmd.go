@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/node/vms/example/xsvm/api"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/vms/example/xsvm/api"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/issue/status"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
 )
 
 func Command() *cobra.Command {

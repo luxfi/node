@@ -10,11 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	db "github.com/luxfi/database"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/dag/vertex"
-	"github.com/luxfi/node/quasar/graph"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/v2/quasar/graph"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 )
 
 var (

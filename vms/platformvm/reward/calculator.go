@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/v2/utils/math"
 )
 
 var _ Calculator = (*calculator)(nil)

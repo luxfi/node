@@ -8,11 +8,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/wallet/chain/x"
-	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/wallet/chain/x"
+	"github.com/luxfi/node/v2/wallet/chain/x/builder"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 func main() {

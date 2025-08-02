@@ -6,10 +6,10 @@ package p
 import (
 	"context"
 
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/wallet/chain/p/builder"
+	"github.com/luxfi/node/v2/api/info"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/wallet/chain/p/builder"
 )
 
 // gasPriceMultiplier increases the gas price to support multiple transactions

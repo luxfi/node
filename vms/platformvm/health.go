@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 func (vm *VM) HealthCheck(context.Context) (interface{}, error) {

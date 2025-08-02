@@ -16,8 +16,8 @@ import (
 
 	"github.com/luxfi/database"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 const (

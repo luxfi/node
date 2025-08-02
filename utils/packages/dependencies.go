@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // GetDependencies takes a fully qualified package name and returns a map of all

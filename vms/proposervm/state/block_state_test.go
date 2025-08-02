@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 func testBlockState(require *require.Assertions, bs BlockState) {

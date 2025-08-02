@@ -6,7 +6,7 @@ package buffer
 import (
 	"sync"
 
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/utils"
 )
 
 var _ BlockingDeque[int] = (*unboundedBlockingDeque[int])(nil)

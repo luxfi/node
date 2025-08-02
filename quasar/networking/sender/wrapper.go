@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/subnets"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // wrapper wraps an ExternalSender to implement the Sender interface

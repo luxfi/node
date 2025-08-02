@@ -11,7 +11,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/v2/staking"
 )
 
 var (

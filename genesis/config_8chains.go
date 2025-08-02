@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 // mustToID converts bytes to ID, panics on error

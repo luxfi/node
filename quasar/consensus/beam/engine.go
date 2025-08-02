@@ -12,9 +12,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metrics"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/consensus/beam/poll"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/consensus/beam/poll"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Engine implements the Beam consensus engine

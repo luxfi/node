@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
 
-	"github.com/luxfi/node/app"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/app"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/version"
 )
 
 func main() {

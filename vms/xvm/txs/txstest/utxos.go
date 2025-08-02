@@ -9,14 +9,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/chain/x/signer"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/xvm/state"
+	"github.com/luxfi/node/v2/wallet/chain/x/builder"
+	"github.com/luxfi/node/v2/wallet/chain/x/signer"
 )
 
 const maxPageSize uint64 = 1024

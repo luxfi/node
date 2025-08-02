@@ -9,11 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/v2/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/metrics"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/validators"
 )
 
 var (

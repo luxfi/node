@@ -1,4 +1,4 @@
-module github.com/luxfi/node
+module github.com/luxfi/node/v2
 
 // - Changes to the minimum golang version must also be replicated in:
 //   - CONTRIBUTING.md
@@ -16,7 +16,6 @@ require (
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cockroachdb/pebble v1.1.5
-	github.com/ethereum/go-ethereum v1.16.1
 	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.0
 	github.com/google/uuid v1.6.0
@@ -30,7 +29,7 @@ require (
 	github.com/leanovate/gopter v0.2.11
 	github.com/luxfi/crypto v1.1.1
 	github.com/luxfi/database v1.1.4
-	github.com/luxfi/evm v0.8.2
+	github.com/luxfi/evm/v2 v2.0.0-alpha.1
 	github.com/luxfi/geth v1.16.6
 	github.com/luxfi/ids v0.1.1
 	github.com/luxfi/ledger-lux-go v0.0.2
@@ -155,7 +154,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/go-bip39 v1.1.1 // indirect
 	github.com/luxfi/warp v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -221,9 +219,3 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace (
-	github.com/luxfi/consensus => ../consensus
-	github.com/luxfi/evm => ../evm
-	github.com/luxfi/geth => ../geth
-	github.com/luxfi/metrics => ../metrics
-)

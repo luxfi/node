@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/core/appsender"
-	"github.com/luxfi/node/quasar/engine/core/appsender/appsendermock"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender/appsendermock"
 	"go.uber.org/mock/gomock"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/version"
 )
 
 const (

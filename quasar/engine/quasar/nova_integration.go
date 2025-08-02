@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/choices"
 )
 
 // NovaHook provides integration between Nova consensus and Quasar finality

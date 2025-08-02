@@ -12,13 +12,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/node"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/node"
+	"github.com/luxfi/node/v2/utils"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/ulimit"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/utils/ulimit"
 
-	nodeconfig "github.com/luxfi/node/config/node"
+	nodeconfig "github.com/luxfi/node/v2/config/node"
 )
 
 const Header = `                                                                                                                                                       

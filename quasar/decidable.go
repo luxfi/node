@@ -5,7 +5,7 @@ package quasar
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/choices"
 )
 
 // Decidable represents an element that can be decided by consensus

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/crypto/bls"
-	"github.com/luxfi/node/quasar/crypto/ringtail"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/quasar/crypto/bls"
+	"github.com/luxfi/node/v2/quasar/crypto/ringtail"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 // QuantumFinalityEngine coordinates dual-finality between P-Chain and Q-Chain

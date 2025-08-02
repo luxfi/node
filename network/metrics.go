@@ -11,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/network/peer"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 type metrics struct {

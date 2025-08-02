@@ -10,7 +10,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/evm/peer"
+	"github.com/luxfi/evm/v2/peer"
 )
 
 var _ peer.NetworkClient = &mockNetwork{}

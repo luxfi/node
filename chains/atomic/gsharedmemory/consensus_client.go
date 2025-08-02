@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
+	"github.com/luxfi/node/v2/quasar"
+	sharedmemorypb "github.com/luxfi/node/v2/proto/pb/sharedmemory"
 )
 
 var _ quasar.SharedMemory = (*ConsensusClient)(nil)

@@ -6,9 +6,9 @@ package executor
 import (
 	"context"
 
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/executor"
 )
 
 // VerifyWarpMessages verifies all warp messages in the block. If any of the

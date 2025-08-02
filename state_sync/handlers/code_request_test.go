@@ -8,13 +8,13 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/luxfi/evm/core/rawdb"
-	"github.com/luxfi/evm/ethdb/memorydb"
-	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/evm/v2/core/rawdb"
+	"github.com/luxfi/evm/v2/ethdb/memorydb"
+	"github.com/luxfi/evm/v2/plugin/evm/message"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/state_sync/handlers/stats"
+	"github.com/luxfi/node/v2/state_sync/handlers/stats"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Const variables to be exported

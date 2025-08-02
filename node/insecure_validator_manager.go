@@ -7,11 +7,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 type insecureValidatorManager struct {

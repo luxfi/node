@@ -7,10 +7,10 @@ import (
 	"reflect"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/xvm/config"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
 )
 
 type Backend struct {

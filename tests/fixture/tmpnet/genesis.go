@@ -10,19 +10,19 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/evm/core"
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/params"
+	"github.com/luxfi/evm/v2/core"
+	"github.com/luxfi/evm/v2/core/types"
+	"github.com/luxfi/evm/v2/params"
 	ethparams "github.com/luxfi/geth/params"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
 )
 
 const (

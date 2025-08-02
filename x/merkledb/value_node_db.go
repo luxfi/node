@@ -7,9 +7,9 @@ import (
 	"errors"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/utils"
 )
 
 var (

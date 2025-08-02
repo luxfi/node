@@ -12,14 +12,14 @@ import (
 
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/chain/p/builder"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/upgrade/upgradetest"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/wallet/chain/p/builder"
 )
 
 var fundedSharedMemoryCalls byte

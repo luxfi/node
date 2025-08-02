@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/node/vms/example/xsvm"
-	"github.com/luxfi/node/vms/rpcchainvm"
+	"github.com/luxfi/node/v2/vms/example/xsvm"
+	"github.com/luxfi/node/v2/vms/rpcchainvm"
 )
 
 func Command() *cobra.Command {

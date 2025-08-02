@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/choices"
 )
 
 // Block represents a block in the Beam consensus

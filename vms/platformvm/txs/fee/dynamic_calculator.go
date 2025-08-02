@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 var (

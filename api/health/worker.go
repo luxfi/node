@@ -15,9 +15,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/utils"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var (

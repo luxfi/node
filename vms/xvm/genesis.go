@@ -8,16 +8,16 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 var (

@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
 )
 
 const localNetworkUpdateStartTimePeriod = 9 * 30 * 24 * time.Hour // 9 months

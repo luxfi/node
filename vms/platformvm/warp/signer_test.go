@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/platformvm/warp/signertest"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/signertest"
 )
 
 func TestSigner(t *testing.T) {

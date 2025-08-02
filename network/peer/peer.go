@@ -19,17 +19,17 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/proto/pb/p2p"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/bloom"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/ips"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/wrappers"
+	"github.com/luxfi/node/v2/version"
 )
 
 const (

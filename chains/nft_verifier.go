@@ -8,8 +8,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/ids"
 )
 

@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/ulimit"
-	"github.com/luxfi/node/vms/rpcchainvm"
+	"github.com/luxfi/node/v2/utils/logging"
+	"github.com/luxfi/node/v2/utils/ulimit"
+	"github.com/luxfi/node/v2/vms/rpcchainvm"
 
-	"github.com/luxfi/node/vms/mpcvm/plugin/mpcvm"
+	"github.com/luxfi/node/v2/vms/mpcvm/plugin/mpcvm"
 )
 
 // Run starts the MPCVM VM

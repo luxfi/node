@@ -6,7 +6,7 @@ package consensustest
 import (
 	"fmt"
 
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Poll defines the interface for a poll.

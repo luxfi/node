@@ -12,10 +12,10 @@ import (
 
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/txs/mempool"
 
-	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
+	pmempool "github.com/luxfi/node/v2/vms/platformvm/txs/mempool"
 )
 
 var errFoo = errors.New("foo")

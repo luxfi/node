@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/luxfi/evm/accounts/abi"
-	"github.com/luxfi/evm/accounts/abi/bind"
+	"github.com/luxfi/evm/v2/accounts/abi"
+	"github.com/luxfi/evm/v2/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/event"

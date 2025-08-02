@@ -3,7 +3,7 @@
 
 package iterator
 
-import "github.com/luxfi/node/utils/set"
+import "github.com/luxfi/node/v2/utils/set"
 
 var _ Iterator[any] = (*filtered[any])(nil)
 

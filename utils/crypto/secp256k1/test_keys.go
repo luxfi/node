@@ -3,7 +3,7 @@
 
 package secp256k1
 
-import "github.com/luxfi/node/utils/cb58"
+import "github.com/luxfi/node/v2/utils/cb58"
 
 func TestKeys() []*PrivateKey {
 	var (

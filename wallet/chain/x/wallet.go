@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/txs"
-	walletutil "github.com/luxfi/node/wallet"
-	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/chain/x/signer"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
+	walletutil "github.com/luxfi/node/v2/wallet"
+	"github.com/luxfi/node/v2/wallet/chain/x/builder"
+	"github.com/luxfi/node/v2/wallet/chain/x/signer"
 )
 
 var _ Wallet = (*wallet)(nil)

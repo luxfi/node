@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"plugin"
 	
-	"github.com/luxfi/node/vms/registry"
+	"github.com/luxfi/node/v2/vms/registry"
 )
 
 // LoadPlugins loads all available VM plugins

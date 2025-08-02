@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 func TestNewApricotAtomicBlock(t *testing.T) {

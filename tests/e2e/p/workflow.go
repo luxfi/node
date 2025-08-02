@@ -12,16 +12,16 @@ import (
 
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations

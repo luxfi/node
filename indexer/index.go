@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/quasar"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 )
 
 // Maximum number of containers IDs that can be fetched at a time in a call to

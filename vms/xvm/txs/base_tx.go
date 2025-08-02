@@ -5,12 +5,12 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var (

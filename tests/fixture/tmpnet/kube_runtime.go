@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/v2/config"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

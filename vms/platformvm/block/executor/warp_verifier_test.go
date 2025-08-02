@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 func TestVerifyWarpMessages(t *testing.T) {

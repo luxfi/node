@@ -7,7 +7,7 @@ import (
 	"context"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 // mockValidatorsState is a simple mock implementation of validators.State for testing

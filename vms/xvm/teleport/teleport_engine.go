@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/geth/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 // TeleportEngine manages omnichain asset transfers via burn/mint

@@ -8,10 +8,10 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var (

@@ -4,11 +4,11 @@
 package builder
 
 import (
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm/block"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
 )
 
 const (

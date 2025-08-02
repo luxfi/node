@@ -4,7 +4,7 @@
 package tracedvm
 
 import (
-	"github.com/luxfi/node/quasar/graph"
+	"github.com/luxfi/node/v2/quasar/graph"
 	"github.com/luxfi/trace"
 )
 

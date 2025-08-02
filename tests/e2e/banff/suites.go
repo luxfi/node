@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var _ = ginkgo.Describe("[Banff]", func() {

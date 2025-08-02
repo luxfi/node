@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/validators/fee"
 )
 
 var (

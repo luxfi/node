@@ -10,15 +10,15 @@ import (
 
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/cache/metercacher"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/metric"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/utils/wrappers"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 const blockCacheSize = 64 * units.MiB

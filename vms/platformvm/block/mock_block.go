@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	quasar "github.com/luxfi/node/quasar"
-	txs "github.com/luxfi/node/vms/platformvm/txs"
+	quasar "github.com/luxfi/node/v2/quasar"
+	txs "github.com/luxfi/node/v2/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

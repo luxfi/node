@@ -5,8 +5,8 @@ package network
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/version"
 )
 
 var _ router.ExternalHandler = (*testHandler)(nil)

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/engine/chain"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/engine/chain"
 )
 
 // BeamBlock implements the Block interface for beam consensus

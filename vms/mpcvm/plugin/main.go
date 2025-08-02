@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/rpcchainvm"
+	"github.com/luxfi/node/v2/version"
+	"github.com/luxfi/node/v2/vms/rpcchainvm"
 
-	"github.com/luxfi/node/vms/mpcvm/plugin/runner"
+	"github.com/luxfi/node/v2/vms/mpcvm/plugin/runner"
 )
 
 func main() {

@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
 )
 

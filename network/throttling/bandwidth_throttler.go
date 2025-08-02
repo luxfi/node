@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/metric"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 var _ bandwidthThrottler = (*bandwidthThrottlerImpl)(nil)

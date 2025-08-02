@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/lux"
 )
 
 var (

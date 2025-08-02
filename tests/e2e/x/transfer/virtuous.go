@@ -14,17 +14,17 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 const (

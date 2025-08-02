@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	vertex "github.com/luxfi/node/quasar/engine/dag/vertex"
+	vertex "github.com/luxfi/node/v2/quasar/engine/dag/vertex"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/mr-tron/base58/base58"
 
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 const checksumLen = 4

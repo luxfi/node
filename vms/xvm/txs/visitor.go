@@ -3,7 +3,7 @@
 
 package txs
 
-import "github.com/luxfi/node/vms/components/lux"
+import "github.com/luxfi/node/v2/vms/components/lux"
 
 var _ Visitor = (*utxoGetter)(nil)
 

@@ -9,10 +9,10 @@ import (
 	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/v2/api"
+	"github.com/luxfi/node/v2/utils/formatting"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/v2/utils/rpc"
 )
 
 type Client struct {

@@ -14,12 +14,12 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	iterator "github.com/luxfi/node/utils/iterator"
-	gas "github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/node/vms/components/lux"
-	fx "github.com/luxfi/node/vms/platformvm/fx"
-	status "github.com/luxfi/node/vms/platformvm/status"
-	txs "github.com/luxfi/node/vms/platformvm/txs"
+	iterator "github.com/luxfi/node/v2/utils/iterator"
+	gas "github.com/luxfi/node/v2/vms/components/gas"
+	lux "github.com/luxfi/node/v2/vms/components/lux"
+	fx "github.com/luxfi/node/v2/vms/platformvm/fx"
+	status "github.com/luxfi/node/v2/vms/platformvm/status"
+	txs "github.com/luxfi/node/v2/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

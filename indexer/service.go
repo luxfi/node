@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/v2/utils/formatting"
+	"github.com/luxfi/node/v2/utils/json"
 )
 
 type service struct {

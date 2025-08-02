@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/core/tracker"
-	"github.com/luxfi/node/quasar/engine/dag/bootstrap/queue"
-	"github.com/luxfi/node/quasar/engine/dag/vertex"
-	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/core/tracker"
+	"github.com/luxfi/node/v2/quasar/engine/dag/bootstrap/queue"
+	"github.com/luxfi/node/v2/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/v2/quasar/networking/sender"
 )
 
 // Bootstrapper bootstraps a DAG

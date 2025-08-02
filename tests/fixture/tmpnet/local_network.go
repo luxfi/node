@@ -6,9 +6,9 @@ package tmpnet
 import (
 	"fmt"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
 )
 
 func LocalNetworkOrPanic() *Network {

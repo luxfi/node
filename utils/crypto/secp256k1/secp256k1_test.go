@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/cb58"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/utils/cb58"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 func TestRecover(t *testing.T) {

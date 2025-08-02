@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/linearcodec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 type testOperable struct {

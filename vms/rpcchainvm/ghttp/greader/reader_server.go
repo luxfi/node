@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	readerpb "github.com/luxfi/node/proto/pb/io/reader"
+	readerpb "github.com/luxfi/node/v2/proto/pb/io/reader"
 )
 
 var _ readerpb.ReaderServer = (*Server)(nil)

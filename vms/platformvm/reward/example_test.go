@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 func ExampleNewCalculator() {

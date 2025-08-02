@@ -6,7 +6,7 @@ package fee
 import (
 	"errors"
 
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 var ErrUnsupportedTx = errors.New("unsupported transaction type")
