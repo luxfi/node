@@ -53,6 +53,21 @@ func (g *prefixGatherer) Register(prefix string, gatherer prometheus.Gatherer) e
 	return nil
 }
 
+func (g *prefixGatherer) Deregister(prefix string) bool {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+
+	for i, existingPrefix := range g.names {
+		if existingPrefix == prefix {
+			// Remove the gatherer and prefix
+			g.names = append(g.names[:i], g.names[i+1:]...)
+			g.gatherers = append(g.gatherers[:i], g.gatherers[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 type prefixedGatherer struct {
 	prefix   string
 	gatherer prometheus.Gatherer

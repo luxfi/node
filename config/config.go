@@ -810,22 +810,14 @@ func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackSubnetsStr := v.GetString(TrackSubnetsKey)
 	trackSubnetsStrs := strings.Split(trackSubnetsStr, ",")
 	trackedSubnetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
-	forceIgnoreChecksum := v.GetBool(ForceIgnoreChecksumKey)
 
 	for _, subnet := range trackSubnetsStrs {
 		if subnet == "" {
 			continue
 		}
 
-		var subnetID ids.ID
-		var err error
-
-		if forceIgnoreChecksum {
-			// Try to parse with force flag
-			subnetID, err = ids.FromStringWithForce(subnet, true)
-		} else {
-			subnetID, err = ids.FromString(subnet)
-		}
+		// Parse subnet ID
+		subnetID, err := ids.FromString(subnet)
 
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse subnetID %q: %w", subnet, err)
