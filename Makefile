@@ -2,7 +2,7 @@
 
 # Variables
 BINARY_NAME := luxd
-BUILD_DIR := build
+BUILD_DIR := bin
 LINUX_BINARY := $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64
 MAC_BINARY := $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64
 DOCKER_IMAGE := ghcr.io/luxfi/node
